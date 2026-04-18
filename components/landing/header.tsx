@@ -44,7 +44,7 @@ export function Header() {
                 alt="The Milano Seal"
                 width={44}
                 height={44}
-                className="object-contain"
+                className="object-contain w-auto h-auto"
               />
               <span className="font-serif text-xl font-medium text-white hidden sm:inline">
                 The Milano Seal<span className="text-[#C6A55A]">™</span>
