@@ -7,6 +7,8 @@ export async function createClient() {
   // Read env vars inside function to ensure fresh values after integration changes
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  
+  console.log('[v0] Creating Supabase client with URL:', supabaseUrl)
 
   return createServerClient(
     supabaseUrl,
