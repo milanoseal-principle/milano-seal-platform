@@ -76,6 +76,9 @@ export async function POST(request: Request) {
       mappedUrgency = 'standard'
     }
 
+    // Debug: Log Supabase URL to verify correct project
+    console.log('[v0] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+    
     const supabase = await createClient()
 
     // Insert into deals table with correct column names

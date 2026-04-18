@@ -12,6 +12,7 @@ import { Footer } from '@/components/landing/footer'
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
+      {/* Full Milano Seal Platform */}
       <Header />
       <Hero />
       <TrustStrip />
