@@ -22,7 +22,7 @@ export async function GET(
           { status: 404 }
         )
       }
-      console.error('Database error:', error)
+      console.error('[v0] Database error:', error)
       return NextResponse.json(
         { error: 'Failed to fetch deal' },
         { status: 500 }
@@ -31,7 +31,7 @@ export async function GET(
     
     return NextResponse.json({ deal })
   } catch (error) {
-    console.error('API error:', error)
+    console.error('[v0] API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -48,17 +48,20 @@ export async function PATCH(
     const body = await request.json()
     const supabase = await createClient()
     
-    // Validate status if being updated
-    const validStatuses = ['awaiting_payment', 'scheduled', 'in_execution', 'apostille', 'completed', 'lost']
-    if (body.status && !validStatuses.includes(body.status)) {
+    // Valid stages based on database schema
+    const validStages = [
+      'new_lead', 'contacted', 'quote_sent', 'negotiating',
+      'documents_received', 'in_progress', 'completed', 'lost', 'on_hold'
+    ]
+    if (body.stage && !validStages.includes(body.stage)) {
       return NextResponse.json(
-        { error: 'Invalid status' },
+        { error: 'Invalid stage' },
         { status: 400 }
       )
     }
     
-    // Validate payment_status if being updated
-    const validPaymentStatuses = ['pending', 'paid', 'failed']
+    // Valid payment statuses based on database schema
+    const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded']
     if (body.payment_status && !validPaymentStatuses.includes(body.payment_status)) {
       return NextResponse.json(
         { error: 'Invalid payment status' },
@@ -66,8 +69,8 @@ export async function PATCH(
       )
     }
     
-    // Enforce payment rule: Can't move to execution without payment
-    if (body.status === 'in_execution' || body.status === 'scheduled') {
+    // Enforce payment rule: Can't move to in_progress without payment
+    if (body.stage === 'in_progress') {
       const { data: existingDeal } = await supabase
         .from('deals')
         .select('payment_status')
@@ -84,23 +87,25 @@ export async function PATCH(
     
     // Build update object with allowed fields only
     const allowedFields = [
-      'status',
+      'stage',
       'payment_status',
-      'execution_date',
-      'completed_at',
-      'followup_24h',
-      'followup_72h',
-      'wise_transfer_id',
+      'estimated_value',
+      'actual_value',
+      'notes',
+      'urgency',
+      'assigned_to',
     ]
     
-    const updateData: Record<string, unknown> = {}
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updateData[field] = body[field]
       }
     }
     
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(updateData).length === 1) { // Only updated_at
       return NextResponse.json(
         { error: 'No valid fields to update' },
         { status: 400 }
@@ -121,7 +126,7 @@ export async function PATCH(
           { status: 404 }
         )
       }
-      console.error('Database error:', error)
+      console.error('[v0] Database error:', error)
       return NextResponse.json(
         { error: 'Failed to update deal' },
         { status: 500 }
@@ -130,7 +135,7 @@ export async function PATCH(
     
     return NextResponse.json({ deal })
   } catch (error) {
-    console.error('API error:', error)
+    console.error('[v0] API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

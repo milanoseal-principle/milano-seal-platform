@@ -104,7 +104,7 @@ export function Hero() {
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-[#2A2A2A] gold-glow">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
               <Image
-                src="/nicholas-milano.jpg"
+                src="/headshot.jpg"
                 alt="Nicholas Milano - Certified Florida Notary Public"
                 fill
                 className="object-cover"

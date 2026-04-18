@@ -20,7 +20,7 @@ async function getDeals() {
     .limit(100)
   
   if (error) {
-    console.error('Error fetching deals:', error)
+    console.error('[v0] Error fetching deals:', error)
     return []
   }
   
@@ -32,16 +32,16 @@ async function getStats() {
   
   const { data: deals } = await supabase
     .from('deals')
-    .select('status, payment_status, amount')
+    .select('stage, payment_status, estimated_value')
   
   if (!deals) return { total: 0, pending: 0, paid: 0, revenue: 0 }
   
   const total = deals.length
-  const pending = deals.filter(d => d.status === 'awaiting_payment').length
+  const pending = deals.filter(d => d.stage === 'quote_sent' || d.stage === 'new_lead').length
   const paid = deals.filter(d => d.payment_status === 'paid').length
   const revenue = deals
     .filter(d => d.payment_status === 'paid')
-    .reduce((sum, d) => sum + Number(d.amount), 0)
+    .reduce((sum, d) => sum + Number(d.estimated_value || 0), 0)
   
   return { total, pending, paid, revenue }
 }

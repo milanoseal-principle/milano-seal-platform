@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     
-    const status = searchParams.get('status')
+    const stage = searchParams.get('stage')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
-    if (status) {
-      query = query.eq('status', status)
+    if (stage) {
+      query = query.eq('stage', stage)
     }
     
     const { data: deals, error, count } = await query
