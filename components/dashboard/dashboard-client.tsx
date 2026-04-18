@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { 
   FileText, 
   Clock, 
@@ -14,7 +16,8 @@ import {
   Globe,
   Mail,
   Phone,
-  Calendar
+  Calendar,
+  LogOut
 } from 'lucide-react'
 
 interface Deal {
@@ -69,6 +72,13 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/operator/login')
+  }
 
   const filteredDeals = deals.filter((deal) => {
     const matchesSearch = 
@@ -152,14 +162,23 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
               </div>
             </div>
             
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-red-400 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
