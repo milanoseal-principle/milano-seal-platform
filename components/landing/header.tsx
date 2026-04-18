@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ArrowRight } from 'lucide-react'
 
@@ -37,8 +38,15 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <span className="font-serif text-xl font-medium text-white">
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/logo.png"
+                alt="The Milano Seal"
+                width={44}
+                height={44}
+                className="object-contain"
+              />
+              <span className="font-serif text-xl font-medium text-white hidden sm:inline">
                 The Milano Seal<span className="text-[#C6A55A]">™</span>
               </span>
             </Link>
