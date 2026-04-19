@@ -114,3 +114,4 @@ export function Hero() {
     </section>
   )
 }
+<WorldMap />
