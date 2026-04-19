@@ -6,28 +6,29 @@ import './globals.css'
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
-  icons: {
-    icon: [
+export const metadata = {
+  title: "The Milano Seal™ — International Document Execution",
+  description: "A trusted U.S. liaison for notarization and apostille services worldwide.",
+  openGraph: {
+    title: "The Milano Seal™",
+    description: "International document execution and apostille coordination.",
+    url: "https://themilanoseal.com",
+    siteName: "The Milano Seal",
+    images: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: "https://themilanoseal.com/nick.jpg",
+        width: 1200,
+        height: 630,
       },
     ],
-    apple: '/apple-icon.png',
+    locale: "en_US",
+    type: "website",
   },
-}
+  twitter: {
+    card: "summary_large_image",
+    images: ["https://themilanoseal.com/nick.jpg"],
+  },
+};
 
 export default function RootLayout({
   children,
