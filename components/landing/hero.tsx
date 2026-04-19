@@ -93,7 +93,7 @@ export function Hero() {
             <div style={{position:'relative',borderRadius:'16px',overflow:'hidden',border:'1px solid #2A2A2A',minHeight:'500px',aspectRatio:'4/5'}}>
               <div style={{position:'absolute',inset:0,background:'linear-gradient(to top, #0A0A0A, transparent)',zIndex:10}} />
               <img
-                src="/nicholas-milano.jpg"
+                src="/nicholas-milano.jpeg"
                 alt="Nicholas Milano - Founder, The Milano Seal"
                 style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}
               />
