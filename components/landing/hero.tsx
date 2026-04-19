@@ -103,12 +103,14 @@ export function Hero() {
           >
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-[#2A2A2A] gold-glow">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
-              <Image src="/nick.jpg" width={500} height={600} alt="Nicholas Milano" />
-                alt="Nicholas Milano - Certified Florida Notary Public"
-                fill
-                className="object-cover"
-                priority
-              />
+              <Image
+  src="/nicholas-milano.jpg"
+  alt="Nicholas Milano - Founder, The Milano Seal"
+  fill
+  className="object-cover object-top"
+  priority
+/>
+
               {/* Credential badge */}
               <div className="absolute bottom-6 left-6 right-6 z-20">
                 <div className="bg-[#0A0A0A]/90 backdrop-blur-sm border border-[#2A2A2A] rounded-lg p-4">
