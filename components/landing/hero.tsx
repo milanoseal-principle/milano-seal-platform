@@ -115,3 +115,9 @@ export function Hero() {
   )
 }
 <WorldMap />
+import { useEffect } from "react"
+useEffect(() => {
+  Object.values(COUNTRY_MAP).forEach((slug) => {
+    router.prefetch(`/country/${slug}`)
+  })
+}, [])
