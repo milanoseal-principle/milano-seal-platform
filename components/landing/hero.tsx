@@ -11,8 +11,7 @@ export function Hero() {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/30 to-transparent" />
       
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-24 md:py-32">
-        className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -90,9 +89,8 @@ export function Hero() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative block w-full"
-
-
-            <div style={{position:'relative',borderRadius:'16px',overflow:'hidden',border:'1px solid #2A2A2A',minHeight:'500px',aspectRatio:'4/5'}}>
+          >
+            <div style={{position:'relative',borderRadius:'16px',overflow:'hidden',border:'1px solid #2A2A2A',minHeight:'400px',aspectRatio:'4/5'}}>
               <div style={{position:'absolute',inset:0,background:'linear-gradient(to top, #0A0A0A, transparent)',zIndex:10}} />
               <img
                 src="/nicholas-milano.jpeg"
