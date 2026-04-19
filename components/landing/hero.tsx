@@ -101,7 +101,8 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative hidden lg:block"
           >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-[#2A2A2A] gold-glow">
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-[#2A2A2A] gold-glow" style={{minHeight:'400px'}}>
+
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
               <Image
   src="/nicholas-milano.jpg"
