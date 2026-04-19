@@ -83,10 +83,13 @@ export default function WorldMap() {
   fill="#C6A55A"
   className="transition-all hover:fill-white"
   onClick={() => handleClick("IT")}
-/>
-  
-    
-
-    
+/>    
   )
 }
+<svg
+  viewBox="0 0 1000 500"
+  className="w-full max-w-5xl cursor-pointer"
+  style={{ touchAction: "manipulation" }}
+>
+  {/* your paths */}
+</svg>
