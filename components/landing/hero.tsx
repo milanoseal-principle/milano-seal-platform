@@ -88,8 +88,8 @@ export function Hero() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative hidden lg:block"
-          >
+            className="relative block"
+
             <div style={{position:'relative',borderRadius:'16px',overflow:'hidden',border:'1px solid #2A2A2A',minHeight:'500px',aspectRatio:'4/5'}}>
               <div style={{position:'absolute',inset:0,background:'linear-gradient(to top, #0A0A0A, transparent)',zIndex:10}} />
               <img
