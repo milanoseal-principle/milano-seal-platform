@@ -38,10 +38,9 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <span className="font-serif text-xl font-medium text-white">
-                The Milano Seal<span className="text-[#C6A55A]">™</span>
-              </span>
-            </Link>
+  <img src="/logo-dark.png" alt="The Milano Seal™" style={{height: '48px', width: 'auto'}} />
+</Link>
+
             
             {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-8">
