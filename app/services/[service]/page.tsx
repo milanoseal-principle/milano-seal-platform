@@ -30,6 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   
   return {
+    alternates: { canonical: `https://themilanoseal.com/services/${doc.slug}` },
     title: `${doc.name} Notarization & Apostille Services | The Milano Seal™`,
     description: `Professional ${doc.name.toLowerCase()} notarization and apostille services. Remote Online Notarization and international authentication. Executed properly the first time.`,
     keywords: [

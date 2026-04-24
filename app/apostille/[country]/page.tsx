@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   
   return {
+    alternates: { canonical: `https://themilanoseal.com/apostille/${country.slug}` },
     title: `Apostille for ${country.name} | U.S. Document Authentication | The Milano Seal™`,
     description: `Professional apostille services for documents destined for ${country.name}. U.S. document authentication through Florida Secretary of State for Hague Convention compliance. Fast, reliable execution.`,
     keywords: [

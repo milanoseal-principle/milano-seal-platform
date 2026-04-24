@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ArrowRight } from 'lucide-react'
 
@@ -10,6 +11,9 @@ const navLinks = [
   { label: 'Process', href: '/#process' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'Countries', href: '/#countries' },
+  { label: 'Map', href: '/map' },
+  { label: 'About', href: '/about' },
+  { label: 'Founder', href: '/founder' },
 ]
 
 export function Header() {
@@ -37,7 +41,9 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <span className="font-serif text-xl font-medium text-white">The Milano Seal<span className="text-[#C6A55A]">™</span></span>
+            <Link href="/">
+              <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={130} height={40} style={{height:'40px',width:'auto'}} priority />
+            </Link>
 
             {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-8">
