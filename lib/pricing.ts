@@ -1,4 +1,5 @@
 // INTERNAL PRICING ENGINE - DO NOT EXPOSE TO FRONTEND
+import type { MatterData } from '@/lib/validation'
 
 export type ExecutionTier = 'signature' | 'priority' | 'executive'
 export type ServiceType = 'ron' | 'mobile' | 'apostille' | 'international'
@@ -67,6 +68,40 @@ export function calculatePricing(input: PricingInput): PricingResult {
     total: basePrice + addOnsTotal,
     breakdown,
   }
+}
+
+export interface LaneAndPriceResult extends PricingResult {
+  lane: ExecutionTier
+}
+
+export function determineLaneAndPrice(data: MatterData): LaneAndPriceResult {
+  // Determine execution tier from explicit field or infer from complexity
+  let lane: ExecutionTier = 'signature'
+
+  if (data.tier === 'executive' || data.urgency === 'executive') {
+    lane = 'executive'
+  } else if (
+    data.tier === 'priority' ||
+    data.urgency === 'urgent' ||
+    data.multi_country ||
+    data.translation ||
+    (data.signers && data.signers > 2)
+  ) {
+    lane = 'priority'
+  }
+
+  // Build add-ons from matter data
+  const addOns: AddOnType[] = []
+  if (data.apostille) addOns.push('apostille')
+  if (data.urgency === 'urgent') addOns.push('urgent')
+  if (data.urgency === 'expedited') addOns.push('expedited')
+
+  const additionalSigners = data.signers && data.signers > 1 ? data.signers - 1 : 0
+  if (additionalSigners > 0) addOns.push('additional_signer')
+
+  const pricing = calculatePricing({ tier: lane, addOns, additionalSigners })
+
+  return { lane, ...pricing }
 }
 
 function capitalizeFirst(str: string): string {
