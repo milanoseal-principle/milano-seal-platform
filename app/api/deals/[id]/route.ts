@@ -49,7 +49,7 @@ export async function PATCH(
     const supabase = await createClient()
     
     // Validate status if being updated
-    const validStatuses = ['awaiting_payment', 'scheduled', 'in_execution', 'apostille', 'completed', 'lost']
+    const validStatuses = ['new','reviewing','quoted','awaiting_payment','scheduled','in_execution','apostille','shipped','completed','lost']
     if (body.status && !validStatuses.includes(body.status)) {
       return NextResponse.json(
         { error: 'Invalid status' },
@@ -86,11 +86,16 @@ export async function PATCH(
     const allowedFields = [
       'status',
       'payment_status',
+      'payment_method',
+      'payment_reference',
+      'payment_amount_received',
+      'invoice_status',
       'execution_date',
       'completed_at',
       'followup_24h',
       'followup_72h',
-      'wise_transfer_id',
+      'follow_up_active',
+      'decline_risk',
     ]
     
     const updateData: Record<string, unknown> = {}

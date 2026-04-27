@@ -33,17 +33,17 @@ const socialLinks = [
   {
     label: 'TikTok',
     href: 'https://tiktok.com/@themilanoseal',
-    icon: null, // custom SVG
+    icon: null,
   },
   {
     label: 'Pinterest',
     href: 'https://pinterest.com/themilanoseal',
-    icon: null, // custom SVG
+    icon: null,
   },
   {
     label: 'Threads',
     href: 'https://threads.net/@themilanoseal',
-    icon: null, // custom SVG
+    icon: null,
   },
 ]
 
@@ -96,7 +96,7 @@ const serviceLinks = [
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
-  
+
   return (
     <footer className="bg-[#0A0A0A] border-t border-[#2A2A2A]">
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -126,14 +126,14 @@ export function Footer() {
               </div>
             </div>
           </div>
-          
+
           {/* Services column */}
           <div>
             <h4 className="text-white font-medium mb-6">Services</h4>
             <ul className="space-y-3">
               {serviceLinks.map((link) => (
                 <li key={link.href}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
                   >
@@ -143,14 +143,14 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          
+
           {/* Documents column */}
           <div>
             <h4 className="text-white font-medium mb-6">Documents</h4>
             <ul className="space-y-3">
               {documentLinks.map((link) => (
                 <li key={link.href}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
                   >
@@ -160,14 +160,14 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          
+
           {/* Countries column */}
           <div>
             <h4 className="text-white font-medium mb-6">Apostille Services</h4>
             <ul className="space-y-3">
               {countryLinks.map((link) => (
                 <li key={link.href}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
                   >
@@ -178,7 +178,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        
+
         {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t border-[#2A2A2A]">
           {/* Social icons */}
