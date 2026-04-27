@@ -1,10 +1,12 @@
 import { supabaseServer } from '@/lib/supabaseServer'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabaseServer()
       .from('deals')
       .insert([
         {

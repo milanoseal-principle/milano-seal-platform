@@ -33,6 +33,14 @@ interface Deal {
   amount: number
   status: string
   payment_status: string
+  payment_method?: string
+  payment_reference?: string
+  payment_amount_received?: number
+  invoice_status?: string
+  invoice_subtotal?: number
+  invoice_retainer?: number
+  invoice_balance?: number
+  decline_risk?: string
   requires_apostille: boolean
   created_at: string
 }
@@ -50,12 +58,16 @@ interface DashboardClientProps {
 }
 
 const statusColors: Record<string, { bg: string; text: string }> = {
-  awaiting_payment: { bg: 'bg-yellow-500/10', text: 'text-yellow-500' },
-  scheduled: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
-  in_execution: { bg: 'bg-purple-500/10', text: 'text-purple-500' },
-  apostille: { bg: 'bg-orange-500/10', text: 'text-orange-500' },
-  completed: { bg: 'bg-green-500/10', text: 'text-green-500' },
-  lost: { bg: 'bg-red-500/10', text: 'text-red-500' },
+  new:              { bg: 'bg-gray-500/10',   text: 'text-gray-400' },
+  reviewing:        { bg: 'bg-gray-500/10',   text: 'text-gray-300' },
+  quoted:           { bg: 'bg-cyan-500/10',   text: 'text-cyan-400' },
+  awaiting_payment: { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
+  scheduled:        { bg: 'bg-blue-500/10',   text: 'text-blue-400' },
+  in_execution:     { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+  apostille:        { bg: 'bg-orange-500/10', text: 'text-orange-400' },
+  shipped:          { bg: 'bg-teal-500/10',   text: 'text-teal-400' },
+  completed:        { bg: 'bg-green-500/10',  text: 'text-green-400' },
+  lost:             { bg: 'bg-red-500/10',    text: 'text-red-400' },
 }
 
 const statusLabels: Record<string, string> = {
