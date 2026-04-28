@@ -1,7 +1,8 @@
-export function requirePaid(deal: { payment_status: string; id?: string }): void {
+export function requirePaid(deal: { payment_status: string; id?: string }): { ok: boolean; message?: string } {
   if (deal.payment_status !== "paid") {
-    throw new Error("PAYMENT_REQUIRED_BEFORE_EXECUTION")
+    return { ok: false, message: "Payment required before execution can begin." }
   }
+  return { ok: true }
 }
 
 // Status machine — valid forward transitions

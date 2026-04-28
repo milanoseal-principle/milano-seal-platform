@@ -153,11 +153,13 @@ function RadioGroup({
 
 // ── REVIEW ITEM ───────────────────────────────────────────────────────────────
 function ReviewItem({ label, value }: { label: string; value: string | boolean | number }) {
-  const display = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (value || '—')
+  const display = typeof value === 'boolean' 
+    ? (value ? 'Yes' : 'No') 
+    : (value !== undefined && value !== null && value !== '' ? String(value) : '—')
   return (
     <div className="grid grid-cols-[140px_1fr] gap-4 py-2.5 px-4 border-b border-[rgba(198,165,90,0.06)] last:border-0">
       <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#8A7A60] pt-0.5">{label}</span>
-      <span className="text-sm text-white font-light break-words">{String(display)}</span>
+      <span className="text-sm text-white font-light break-words">{display}</span>
     </div>
   )
 }
@@ -642,26 +644,83 @@ export function IntakeWizard({ initialTier = 'priority' }: IntakeWizardProps) {
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">Confirm your matter details before sending.</p>
                   <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
 
-                  {/* Summary table */}
-                  <div className="bg-[rgba(255,255,255,0.5)] border border-[rgba(26,18,8,0.08)] rounded-sm overflow-hidden mb-7">
+                  {/* Matter summary */}
+                  <div className="bg-[rgba(255,255,255,0.5)] border border-[rgba(26,18,8,0.08)] rounded-sm overflow-hidden mb-5">
+                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">Contact</span>
+                    </div>
                     <ReviewItem label="Name" value={data.client_name} />
                     <ReviewItem label="Email" value={data.email} />
-                    <ReviewItem label="Phone" value={data.phone || '—'} />
-                    <ReviewItem label="Organization" value={data.organization || '—'} />
-                    <ReviewItem label="Attorney" value={data.is_attorney} />
+                    {data.phone && <ReviewItem label="Phone" value={data.phone} />}
+                    {data.organization && <ReviewItem label="Organization" value={data.organization} />}
+                    <ReviewItem label="Attorney / Firm" value={data.is_attorney} />
+                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">Document</span>
+                    </div>
                     <ReviewItem label="Document Type" value={data.document_type} />
                     <ReviewItem label="Description" value={data.document_description} />
                     <ReviewItem label="Documents" value={data.document_count} />
                     <ReviewItem label="Signers" value={data.signer_count} />
                     <ReviewItem label="Origin State" value={data.origin_state} />
-                    <ReviewItem label="Destination" value={data.destination_country || '—'} />
-                    <ReviewItem label="Execution" value={data.execution_type} />
-                    <ReviewItem label="Apostille" value={data.apostille_required ? `Yes — ${data.apostille_count}` : 'No'} />
+                    {data.destination_country && <ReviewItem label="Destination Country" value={data.destination_country} />}
+                    <ReviewItem label="Execution Method" value={data.execution_type} />
+                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">Services</span>
+                    </div>
+                    <ReviewItem label="Apostille" value={data.apostille_required ? `Yes — ${data.apostille_count} document${data.apostille_count > 1 ? 's' : ''}` : 'Not required'} />
                     <ReviewItem label="Translation" value={data.translation_needed} />
-                    <ReviewItem label="Timeline" value={data.timeline || '—'} />
-                    <ReviewItem label="Deadline" value={data.deadline_date || '—'} />
-                    <ReviewItem label="Source" value={data.source_detail || '—'} />
+                    <ReviewItem label="Draft Ready" value={data.draft_ready} />
+                    {data.timeline && <ReviewItem label="Timeline" value={data.timeline} />}
+                    {data.deadline_date && <ReviewItem label="Deadline" value={data.deadline_date} />}
+                    <ReviewItem label="Weekend / Holiday" value={data.weekend_holiday} />
                   </div>
+
+                  {/* Pricing estimate block */}
+                  {(() => {
+                    const isIntl = data.destination_country && data.destination_country !== 'United States'
+                    const isUrgent = data.timeline?.includes('Urgent') || data.timeline?.includes('Same Day')
+                    const isExpedited = data.timeline?.includes('Expedited')
+                    const baseLane = (isIntl && data.apostille_required) ? 'Priority' : 'Signature'
+                    const basePrice = baseLane === 'Priority' ? 975 : 750
+                    const items: { label: string; price: number }[] = [
+                      { label: `${baseLane} Lane — ${data.document_type || 'Document execution'}`, price: basePrice },
+                    ]
+                    if (data.document_count > 1) items.push({ label: `Additional documents (${data.document_count - 1} × $75)`, price: (data.document_count - 1) * 75 })
+                    if (data.signer_count > 1) items.push({ label: `Additional signers (${data.signer_count - 1} × $150)`, price: (data.signer_count - 1) * 150 })
+                    if (data.apostille_required) items.push({ label: `Apostille coordination (${data.apostille_count} × $250)`, price: data.apostille_count * 250 })
+                    if (data.translation_needed) items.push({ label: 'Translation coordination', price: 150 })
+                    if (isUrgent) items.push({ label: 'Urgent timeline', price: 400 })
+                    else if (isExpedited) items.push({ label: 'Expedited timeline', price: 200 })
+                    if (data.weekend_holiday) items.push({ label: 'Weekend / Holiday execution', price: 200 })
+                    const total = items.reduce((s, i) => s + i.price, 0)
+                    const retainer = Math.round(total * 0.5)
+                    return (
+                      <div className="bg-[rgba(10,10,10,0.03)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[#C6A55A] rounded-sm mb-5">
+                        <div className="px-4 py-2.5 border-b border-[rgba(198,165,90,0.1)]">
+                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">Estimated Investment</span>
+                        </div>
+                        <div className="px-4 py-3 space-y-2">
+                          {items.map((item, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className="text-[12px] text-[#4A4030] font-light">{item.label}</span>
+                              <span className="text-[12px] text-[#4A4030] font-medium">${item.price.toLocaleString()}</span>
+                            </div>
+                          ))}
+                          <div className="border-t border-[rgba(198,165,90,0.15)] pt-2 mt-2 flex justify-between items-center">
+                            <span className="text-[12px] font-semibold text-[#1A1208]">Estimated Total</span>
+                            <span className="text-[14px] font-semibold text-[#1A1208]">${total.toLocaleString()}+</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[11px] text-[#8A7A60]">Retainer due at confirmation (50%)</span>
+                            <span className="text-[12px] text-[#8A7240] font-medium">${retainer.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="px-4 py-2.5 border-t border-[rgba(198,165,90,0.08)]">
+                          <p className="text-[10px] text-[#8A7A60] italic">Final scope and pricing confirmed by Nicholas Milano after matter review. This is an estimate based on the information provided.</p>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {/* Consent box */}
                   <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[#C6A55A] px-5 py-4 rounded-sm mb-6">
