@@ -21,9 +21,18 @@ interface ComplianceResult {
 }
 
 const JURISDICTIONS = [
-  { key: 'florida',        label: 'Florida, US',       type: 'state',   region: 'US States',     flag: '🇺🇸' },
-  { key: 'colorado',       label: 'Colorado, US',      type: 'state',   region: 'US States',     flag: '🇺🇸' },
-  { key: 'virginia',       label: 'Virginia, US',      type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  // US States
+  { key: 'florida',              label: 'Florida',           type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'colorado',             label: 'Colorado',          type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'virginia',             label: 'Virginia',          type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'texas',                label: 'Texas',             type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'new york',             label: 'New York',          type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'california',           label: 'California',        type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'georgia',              label: 'Georgia',           type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'nevada',               label: 'Nevada',            type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'washington',           label: 'Washington',        type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  { key: 'pennsylvania',         label: 'Pennsylvania',      type: 'state',   region: 'US States',     flag: '🇺🇸' },
+  // Europe
   { key: 'italy',          label: 'Italy',             type: 'country', region: 'Europe',        flag: '🇮🇹' },
   { key: 'spain',          label: 'Spain',             type: 'country', region: 'Europe',        flag: '🇪🇸' },
   { key: 'portugal',       label: 'Portugal',          type: 'country', region: 'Europe',        flag: '🇵🇹' },
@@ -31,15 +40,22 @@ const JURISDICTIONS = [
   { key: 'germany',        label: 'Germany',           type: 'country', region: 'Europe',        flag: '🇩🇪' },
   { key: 'greece',         label: 'Greece',            type: 'country', region: 'Europe',        flag: '🇬🇷' },
   { key: 'united kingdom', label: 'United Kingdom',    type: 'country', region: 'Europe',        flag: '🇬🇧' },
+  // Latin America
   { key: 'brazil',         label: 'Brazil',            type: 'country', region: 'Latin America', flag: '🇧🇷' },
   { key: 'mexico',         label: 'Mexico',            type: 'country', region: 'Latin America', flag: '🇲🇽' },
   { key: 'argentina',      label: 'Argentina',         type: 'country', region: 'Latin America', flag: '🇦🇷' },
+  { key: 'colombia',       label: 'Colombia',          type: 'country', region: 'Latin America', flag: '🇨🇴' },
+  // North America
   { key: 'canada',         label: 'Canada',            type: 'country', region: 'North America', flag: '🇨🇦' },
-  { key: 'united states',  label: 'United States',     type: 'country', region: 'North America', flag: '🇺🇸' },
+  // Middle East
   { key: 'united arab emirates', label: 'UAE',         type: 'country', region: 'Middle East',   flag: '🇦🇪' },
+  { key: 'israel',         label: 'Israel',            type: 'country', region: 'Middle East',   flag: '🇮🇱' },
+  // Asia Pacific
+  { key: 'japan',          label: 'Japan',             type: 'country', region: 'Asia Pacific',  flag: '🇯🇵' },
+  { key: 'australia',      label: 'Australia',         type: 'country', region: 'Asia Pacific',  flag: '🇦🇺' },
 ]
 
-const REGIONS = ['US States', 'Europe', 'Latin America', 'North America', 'Middle East']
+const REGIONS = ['US States', 'Europe', 'Latin America', 'North America', 'Middle East', 'Asia Pacific']
 
 function Badge({ yes }: { yes: boolean }) {
   return (
@@ -254,9 +270,9 @@ export default function MapPage() {
           {/* Info strip */}
           <div className="mt-16 grid md:grid-cols-3 gap-6">
             {[
-              { title: 'RON Authorization', desc: 'Florida and Virginia offer broad RON authorization. Colorado has limited availability. International matters generally require traditional notarization for apostille eligibility.' },
-              { title: 'Hague Convention', desc: 'Italy, Greece, Spain, Portugal, France, Germany, and Brazil are Hague Convention members. US documents for use in these countries require apostille authentication.' },
-              { title: 'Non-Hague Countries', desc: 'Mexico and UAE require the full legalization chain rather than apostille. These matters require premium coordination and additional steps.' },
+              { title: 'RON Authorization by State', desc: 'Florida offers broad Remote Online Notarization (RON) authorization. Colorado and Virginia have active RON programs. Most other states permit traditional notarization for cross-border execution. International matters require in-person execution for apostille eligibility.' },
+              { title: 'Hague Convention Members', desc: 'Italy, Spain, Portugal, France, Germany, Greece, Brazil, Argentina, and more are Hague members. U.S. documents for use in these countries require apostille authentication via the Florida Department of State.' },
+              { title: 'Non-Hague Countries', desc: 'Mexico, UAE, and others require the full consular legalization chain rather than apostille. These matters require premium coordination and additional authentication steps.' },
             ].map(s => (
               <div key={s.title} className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-6">
                 <h3 className="text-[#C6A55A] font-medium mb-3">{s.title}</h3>

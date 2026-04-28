@@ -1,5 +1,17 @@
 'use client'
 
+async function callStep(dealId: string, step: string): Promise<{ ok: boolean; error?: string; code?: string }> {
+  const res = await fetch('/api/runStep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deal_id: dealId, step }),
+  })
+  if (res.status === 402) return { ok: false, error: 'Payment required before execution can begin.', code: 'PAYMENT_REQUIRED' }
+  if (res.status === 409) return { ok: false, error: 'Invalid step sequence — deal may have already advanced.', code: 'INVALID_TRANSITION' }
+  if (!res.ok) { const d = await res.json().catch(() => ({})); return { ok: false, error: d.error || 'Step execution failed.' } }
+  return { ok: true }
+}
+
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'

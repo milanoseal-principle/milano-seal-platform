@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { randomUUID } from 'crypto'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeMatter, validateMatter, riskScore } from '@/lib/validation'
 import { determineLaneAndPrice } from '@/lib/pricing'
 import { generateInvoice } from '@/lib/invoice'
@@ -68,26 +69,34 @@ export async function POST(req: NextRequest) {
         executionType: data.mobile ? 'mobile' : 'ron',
         destinationCountry: country,
       })
-      if (compliance.requiresApostille) data.apostille = true
+      if (compliance.apostille_required) data.apostille = true
     } catch {}
 
-    const pricing = determineLaneAndPrice(data)
+    const pricingInput = {
+      ...data,
+      urgency:      data.urgency      as 'standard' | 'urgent'   | undefined,
+      witness_type: data.witness_type as 'ron'      | 'in_person' | undefined,
+    }
+    const pricing = determineLaneAndPrice(pricingInput)
     const invoice = generateInvoice(pricing.total)
     const decline_risk = riskScore(data)
     const deal_id = genDealId()
+    const access_token = randomUUID()
+    const client_name = data.name || (raw as Record<string, string>).client_name || ''
+    const source = (data as Record<string, unknown>).source_channel as string || (raw as Record<string, string>).source_detail || 'web'
 
     const payment_link = await createStripeLink({
       deal_id,
       lane: pricing.lane,
       total: pricing.total,
-      client_name: data.name || data.client_name || '',
+      client_name,
       document_type: data.document_type || '',
       country,
     })
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data: deal, error } = await supabase.from('deals').insert([{
-      client_name:           data.name || data.client_name || '',
+      client_name,
       email:                 data.email || '',
       phone:                 data.phone || '',
       country,
@@ -109,8 +118,9 @@ export async function POST(req: NextRequest) {
       followup_schedule:     JSON.stringify(['48h', '96h', '7d']),
       requires_apostille:    data.apostille,
       destination_country:   country,
-      source:                data.source_channel || raw.source_detail || 'web',
+      source,
       payment_link,
+      access_token,
     }]).select().single()
 
     if (error) console.error('DB insert error:', error)
@@ -124,6 +134,7 @@ export async function POST(req: NextRequest) {
       payment_options: invoice.payment_options,
       payment_link,
       execution_stage: 'Awaiting Payment',
+      portal_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://themilanoseal.com'}/portal/${access_token}`,
       compliance_result: compliance,
       decline_risk,
       deal,
