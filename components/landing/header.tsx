@@ -42,7 +42,7 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/">
-              <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={160} height={40} style={{height:'40px',width:'auto'}} priority />
+              <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={260} height={65} style={{height:'56px',width:'auto'}} priority />
             </Link>
 
             {/* Desktop navigation */}
