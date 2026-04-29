@@ -12,27 +12,17 @@ const ClientTypes = dynamic(() => import('@/components/landing/client-types'
 const GlobalMap = dynamic(() => import('@/components/landing/global-map'
 const HighTrustClose = dynamic(() => import('@/components/landing/ClientLanding'
 const Footer = dynamic(() => import('@/components/landing/footer'
+import { Header } from '@/components/landing/header'
+import { Hero } from '@/components/landing/hero'
+import ClientLanding from '@/components/landing/ClientLanding'
+import { Footer } from '@/components/landing/footer'
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white">
       <Header />
       <Hero />
-      <TrustStrip />
-      <div id="services">
-        <Services />
-      </div>
-      <div id="process">
-        <HowItWorks />
-      </div>
-      <div id="pricing">
-        <ExecutionTiers />
-      </div>
-      <ClientTypes />
-      <div id="countries">
-        <GlobalMap />
-      </div>
-      <HighTrustClose />
+      <ClientLanding />
       <Footer />
     </main>
   )
