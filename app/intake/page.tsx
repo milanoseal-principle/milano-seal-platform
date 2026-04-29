@@ -11,32 +11,70 @@ export const metadata: Metadata = {
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };
 
-function IntakeContent({ tier }: { tier: string }) {
+function IntakeContent({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    tier?: string;
+    country?: string;
+    document?: string;
+    useCase?: string;
+  }>;
+}) {
   return (
     <Suspense fallback={<div className="h-[600px]" />}>
-      <IntakeWizard initialTier={tier as any} />
+      <IntakeWizardWrapper searchParams={searchParams} />
     </Suspense>
   );
 }
 
-export default function IntakePage({
+async function IntakeWizardWrapper({
   searchParams,
 }: {
-  searchParams: { tier?: string };
+  searchParams: Promise<{
+    tier?: string;
+    country?: string;
+    document?: string;
+    useCase?: string;
+  }>;
 }) {
-  const tier = searchParams?.tier;
+  const params = await searchParams;
+  const prefill = {
+    country: params.country || "",
+    document: params.document || "",
+    useCase: params.useCase || "",
+    tier: params.tier || "",
+  };
+  const tier = params.tier as
+    | "signature"
+    | "priority"
+    | "executive"
+    | undefined;
   const validTier =
     tier && ["signature", "priority", "executive"].includes(tier)
       ? tier
       : "priority";
 
+  return <IntakeWizard initialTier={validTier} />;
+}
+
+export default function IntakePage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    tier?: string;
+    country?: string;
+    document?: string;
+    useCase?: string;
+  }>;
+}) {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <Header />
 
       <section className="pt-32 pb-24 px-6">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {/* Page header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
               <Shield className="w-4 h-4 text-[#C6A55A]" />
@@ -44,19 +82,17 @@ export default function IntakePage({
                 Secure Intake
               </span>
             </div>
-
-            <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4">
+            <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
               Begin Your Execution
             </h1>
-
             <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto">
               Complete the intake process below. Your matter will be structured
               for execution with precision and discretion.
             </p>
           </div>
 
-          {/* Wizard */}
-          <IntakeContent tier={validTier} />
+          {/* Intake wizard */}
+          <IntakeContent searchParams={searchParams} />
         </div>
       </section>
 

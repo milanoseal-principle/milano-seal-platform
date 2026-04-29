@@ -1,146 +1,335 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { randomUUID } from 'crypto'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { normalizeMatter, validateMatter, riskScore } from '@/lib/validation'
-import { determineLaneAndPrice } from '@/lib/pricing'
-import { generateInvoice } from '@/lib/invoice'
-import { validateCompliance } from '@/lib/compliance'
-import { parseIntake } from '@/lib/parseIntake'
+import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
+import { determineLaneAndPrice } from "@/lib/pricing";
+import { generateInvoice } from "@/lib/invoice";
+import { validateCompliance } from "@/lib/compliance";
+import { parseIntake } from "@/lib/parseIntake";
+import { DESTINATIONS } from "@/data/destinations";
 
 function genDealId(): string {
-  return `MS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+  return `MS-${new Date().getFullYear()}-${Math.floor(
+    1000 + Math.random() * 9000
+  )}`;
 }
 
-async function createStripeLink(deal: { deal_id: string; lane: string; total: number; client_name: string; document_type: string; country: string }): Promise<string | null> {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) return null
+// PHASE 2 — Auto lane selection (Trust Engine)
+function autoSelectLane({
+  country,
+  urgency,
+  signerCount,
+  apostilleRequired,
+}: {
+  country: string;
+  urgency?: string;
+  signerCount?: number;
+  apostilleRequired?: boolean;
+}): "Executive" | "Priority" | "Signature" {
+  if (urgency === "urgent") return "Executive";
+  if (apostilleRequired) return "Priority";
+  if ((signerCount || 1) > 1) return "Priority";
+  return "Signature";
+}
+
+// PHASE 3 — Conversion scoring engine
+function calculateScore({
+  country,
+  useCase,
+  urgency,
+}: {
+  country: string;
+  useCase?: string;
+  urgency?: string;
+}): number {
+  let score = 0;
+  const dest = DESTINATIONS.find(
+    (d) =>
+      d.slug === country.toLowerCase().replace(/\s+/g, "-") ||
+      d.name.toLowerCase() === country.toLowerCase()
+  );
+  if (dest) {
+    if (dest.demand >= 80) score += 30;
+    else if (dest.demand >= 50) score += 20;
+    else score += 10;
+  } else score += 10;
+
+  if (useCase === "dual-citizenship") score += 25;
+  if (useCase === "citizenship") score += 20;
+  if (useCase === "real-estate") score += 20;
+  if (useCase === "property-transfer") score += 20;
+  if (useCase === "corporate-expansion") score += 20;
+  if (useCase === "foreign-business-registration") score += 15;
+  if (useCase === "immigration") score += 15;
+  if (useCase === "legal-filings") score += 10;
+  if (urgency === "urgent") score += 25;
+
+  return Math.min(score, 100);
+}
+
+// PHASE 4 — High value routing
+function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
+  if (score >= 70) return "HIGH";
+  if (score >= 40) return "MEDIUM";
+  return "LOW";
+}
+
+// PHASE 6 — Wise payment invoice (primary, Stripe as fallback)
+function generateWiseInvoice({
+  amount,
+  dealId,
+  clientName,
+}: {
+  amount: number;
+  dealId: string;
+  clientName: string;
+}) {
+  return {
+    payment_method: "WISE",
+    amount,
+    reference: dealId,
+    note: `The Milano Seal™ — Document Execution · ${clientName}`,
+    wise_link: "https://wise.com/pay/me/nicholassamm1",
+    status: "AWAITING_PAYMENT",
+  };
+}
+
+async function createStripeLink(deal: {
+  deal_id: string;
+  lane: string;
+  total: number;
+  client_name: string;
+  document_type: string;
+  country: string;
+}): Promise<string | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
   try {
-    const res = await fetch('https://api.stripe.com/v1/payment_links', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    const res = await fetch("https://api.stripe.com/v1/payment_links", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       body: new URLSearchParams({
-        'line_items[0][price_data][currency]': 'usd',
-        'line_items[0][price_data][product_data][name]': `The Milano Seal™ — ${deal.lane} Lane`,
-        'line_items[0][price_data][product_data][description]': `${deal.document_type} · ${deal.country} · Deal ${deal.deal_id}`,
-        'line_items[0][price_data][unit_amount]': String(Math.round(deal.total * 100)),
-        'line_items[0][quantity]': '1',
-        'metadata[deal_id]': deal.deal_id,
-        'metadata[client_name]': deal.client_name,
-        'after_completion[type]': 'redirect',
-        'after_completion[redirect][url]': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://themilanoseal.com'}/intake/confirmation`,
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][product_data][name]": `The Milano Seal™ — ${deal.lane} Lane`,
+        "line_items[0][price_data][product_data][description]": `${deal.document_type} · ${deal.country} · ${deal.deal_id}`,
+        "line_items[0][price_data][unit_amount]": String(
+          Math.round(deal.total * 100)
+        ),
+        "line_items[0][quantity]": "1",
+        "metadata[deal_id]": deal.deal_id,
+        "metadata[client_name]": deal.client_name,
+        "after_completion[type]": "redirect",
+        "after_completion[redirect][url]": `${
+          process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
+        }/intake/confirmation`,
       }).toString(),
-    })
-    const data = await res.json()
-    return data.url || null
-  } catch { return null }
+    });
+    const data = await res.json();
+    return data.url || null;
+  } catch {
+    return null;
+  }
+}
+
+// PHASE 9 — High value operator alert (non-blocking)
+async function notifyHighValue(
+  dealId: string,
+  country: string,
+  value: number,
+  tier: string
+) {
+  if (tier !== "HIGH") return;
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("notifications").insert({
+      message: `HIGH VALUE MATTER — ${country} · $${value} · ${dealId}`,
+      type: "HIGH_VALUE_DEAL",
+      deal_id: dealId,
+      read: false,
+    });
+  } catch {
+    /* non-blocking */
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    let raw = await req.json()
+    let raw = await req.json();
+
+    // PHASE 1 — capture prefill params from SEO routing
+    const useCase = (raw.use_case || raw.useCase || "") as string;
+    const prefillDoc = (raw.document_type || raw.document || "") as string;
+    const prefillCountry = (raw.country ||
+      raw.destination_country ||
+      "") as string;
 
     // If message field present (WhatsApp/IG text), parse it first
     if (raw.message && !raw.document_type) {
-      const parsed = parseIntake(raw.message)
+      const parsed = parseIntake(raw.message);
       raw = {
         ...raw,
-        name: raw.name || parsed.client_name || '',
-        client_name: raw.client_name || parsed.client_name || '',
-        country: raw.country || parsed.country || '',
-        document_type: parsed.document_type,
+        name: raw.name || parsed.client_name || "",
+        client_name: raw.client_name || parsed.client_name || "",
+        country: raw.country || parsed.country || "",
+        document_type: prefillDoc || parsed.document_type,
         signers: raw.signers || parsed.signer_count,
         urgency: raw.urgency || parsed.urgency,
         apostille: raw.apostille ?? parsed.apostille_needed,
-      }
+      };
     }
 
-    const data = normalizeMatter(raw)
+    const data = normalizeMatter(raw);
 
-    try { validateMatter(data) } catch (e: any) {
-      return NextResponse.json({ error: e.message, code: e.message }, { status: 400 })
+    try {
+      validateMatter(data);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message, code: e.message },
+        { status: 400 }
+      );
     }
 
-    const country = data.country || 'United States'
-    let compliance = null
+    const country = data.country || prefillCountry || "United States";
+    let compliance = null;
     try {
       compliance = validateCompliance({
         country,
-        documentType: data.document_type || 'general',
-        executionType: data.mobile ? 'mobile' : 'ron',
+        documentType: data.document_type || prefillDoc || "general",
+        executionType: data.mobile ? "mobile" : "ron",
         destinationCountry: country,
-      })
-      if (compliance.apostille_required) data.apostille = true
+      });
+      if (compliance.apostille_required) data.apostille = true;
     } catch {}
+
+    // PHASE 2 — auto lane (overrides pricing engine when signals are strong)
+    const autoLane = autoSelectLane({
+      country,
+      urgency: data.urgency as string,
+      signerCount: Number(data.signers) || 1,
+      apostilleRequired: compliance?.apostille_required ?? data.apostille,
+    });
 
     const pricingInput = {
       ...data,
-      urgency:      data.urgency      as 'standard' | 'urgent'   | undefined,
-      witness_type: data.witness_type as 'ron'      | 'in_person' | undefined,
-    }
-    const pricing = determineLaneAndPrice(pricingInput)
-    const invoice = generateInvoice(pricing.total)
-    const decline_risk = riskScore(data)
-    const deal_id = genDealId()
-    const access_token = randomUUID()
-    const client_name = data.name || (raw as Record<string, string>).client_name || ''
-    const source = (data as Record<string, unknown>).source_channel as string || (raw as Record<string, string>).source_detail || 'web'
+      urgency: data.urgency as "standard" | "urgent" | undefined,
+      witness_type: data.witness_type as "ron" | "in_person" | undefined,
+    };
+    const pricing = determineLaneAndPrice(pricingInput);
 
+    // Escalate to highest lane between auto-select and pricing engine
+    const laneOrder = ["Signature", "Priority", "Executive"];
+    const finalLane =
+      laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
+        ? autoLane
+        : pricing.lane;
+
+    const invoice = generateInvoice(pricing.total);
+    const decline_risk = riskScore(data);
+    const deal_id = genDealId();
+    const access_token = randomUUID();
+    const client_name =
+      data.name || (raw as Record<string, string>).client_name || "";
+    const source =
+      ((data as Record<string, unknown>).source_channel as string) || "web";
+
+    // PHASE 3 — conversion score
+    const conversion_score = calculateScore({
+      country,
+      useCase,
+      urgency: data.urgency as string,
+    });
+
+    // PHASE 4 — priority tier routing
+    const priority_tier = routeDeal(conversion_score);
+
+    // PHASE 6 — Wise as primary, Stripe as fallback
+    const wise_invoice = generateWiseInvoice({
+      amount: pricing.total,
+      dealId: deal_id,
+      clientName: client_name,
+    });
     const payment_link = await createStripeLink({
       deal_id,
-      lane: pricing.lane,
+      lane: finalLane,
       total: pricing.total,
       client_name,
-      document_type: data.document_type || '',
+      document_type: data.document_type || prefillDoc || "",
       country,
-    })
+    });
 
-    const supabase = createAdminClient()
-    const { data: deal, error } = await supabase.from('deals').insert([{
-      client_name,
-      email:                 data.email || '',
-      phone:                 data.phone || '',
-      country,
-      document:              data.document_type || '',
-      notes:                 data.notes || '',
-      execution_tier:        pricing.lane,
-      amount:                pricing.total,
-      status:                'awaiting_payment',
-      payment_status:        'pending',
-      payment_method:        'stripe',
-      invoice_status:        'proforma',
-      invoice_subtotal:      invoice.subtotal,
-      invoice_retainer:      invoice.retainer,
-      invoice_balance:       invoice.balance,
-      invoice_valid_until:   new Date(invoice.valid_until).toISOString(),
-      compliance_result:     JSON.stringify(compliance),
-      decline_risk,
-      follow_up_active:      true,
-      followup_schedule:     JSON.stringify(['48h', '96h', '7d']),
-      requires_apostille:    data.apostille,
-      destination_country:   country,
-      source,
-      payment_link,
-      access_token,
-    }]).select().single()
+    const supabase = createAdminClient();
+    const { data: deal, error } = await supabase
+      .from("deals")
+      .insert([
+        {
+          deal_id,
+          client_name,
+          email: data.email || "",
+          phone: data.phone || "",
+          country,
+          document: data.document_type || prefillDoc || "",
+          document_type: data.document_type || prefillDoc || "",
+          use_case: useCase || null,
+          notes: data.notes || "",
+          execution_tier: finalLane,
+          amount: pricing.total,
+          status: "awaiting_payment",
+          payment_status: "pending",
+          payment_method: "wise", // Wise primary
+          invoice_status: "proforma",
+          invoice_subtotal: invoice.subtotal,
+          invoice_retainer: invoice.retainer,
+          invoice_balance: invoice.balance,
+          invoice_valid_until: new Date(invoice.valid_until).toISOString(),
+          compliance_result: JSON.stringify(compliance),
+          decline_risk,
+          conversion_score, // PHASE 3
+          priority_tier, // PHASE 4
+          follow_up_active: true,
+          last_contacted: null,
+          followup_schedule: JSON.stringify(["24h", "72h", "7d"]),
+          requires_apostille: compliance?.apostille_required ?? data.apostille,
+          destination_country: country,
+          source,
+          payment_link,
+          access_token,
+        },
+      ])
+      .select()
+      .single();
 
-    if (error) console.error('DB insert error:', error)
+    if (error) console.error("DB insert error:", error);
 
+    // PHASE 9 — high value alert (non-blocking)
+    void notifyHighValue(deal_id, country, pricing.total, priority_tier);
+
+    // PHASE 8 — response includes all scoring fields for dashboard
     return NextResponse.json({
-      success:         true,
-      deal_id:         deal?.id || deal_id,
-      lane:            pricing.lane,
+      success: true,
+      deal_id: deal?.deal_id || deal_id,
+      lane: finalLane,
       estimated_value: pricing.total,
-      invoice,
-      payment_options: invoice.payment_options,
+      conversion_score,
+      priority_tier,
+      payment_method: "WISE",
+      wise_invoice,
       payment_link,
-      execution_stage: 'Awaiting Payment',
-      portal_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://themilanoseal.com'}/portal/${access_token}`,
+      execution_stage: "Awaiting Payment",
+      portal_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
+      }/portal/${access_token}`,
       compliance_result: compliance,
       decline_risk,
-      deal,
-    })
+      invoice,
+    });
   } catch (err: any) {
-    console.error('Intake error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Intake error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
