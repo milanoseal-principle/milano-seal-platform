@@ -252,12 +252,18 @@ export function IntakeWizard({ initialTier = 'priority' }: IntakeWizardProps) {
     }
 
     try {
-      const res = await fetch('/api/intake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const formData = new FormData()
 
+formData.append('data', JSON.stringify(payload))
+
+files.forEach(file => {
+  formData.append('files', file)
+})
+
+const res = await fetch('/api/intake', {
+  method: 'POST',
+  body: formData,
+})
       const json = await res.json()
 
       if (!res.ok) throw new Error(json.error || 'Failed to submit')
