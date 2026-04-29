@@ -1,14 +1,13 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import TrustStrip from '@/components/landing/trust-strip'
+import Services from '@/components/landing/services'
+import HowItWorks from '@/components/landing/how-it-works'
+import ExecutionTiers from '@/components/landing/execution-tiers'
+import ClientTypes from '@/components/landing/client-types'
+import GlobalMap from '@/components/landing/global-map'
+import HighTrustClose from '@/components/landing/high-trust-close'
 
-const TrustStrip = dynamic(() => import('@/components/landing/trust-strip'
-const Services = dynamic(() => import('@/components/landing/services'
-const HowItWorks = dynamic(() => import('@/components/landing/how-it-works'
-const ExecutionTiers = dynamic(() => import('@/components/landing/execution-tiers'
-const ClientTypes = dynamic(() => import('@/components/landing/client-types'
-const GlobalMap = dynamic(() => import('@/components/landing/global-map'
-const HighTrustClose = dynamic(() => import('@/components/landing/high-trust-close'
 export default function ClientLanding() {
   return (
     <>
