@@ -14,12 +14,10 @@ async function callStep(dealId: string, step: string): Promise<{ ok: boolean; er
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { 
+import { createClient } from '@/lib/supabase/client'import Image from 'next/image' ❌
+import Image from 'next/image' (duplicate) ❌
+import { useRouter } from 'next/navigation' (duplicate) ❌
+import { createClient } from '@/lib/supabase/client' (duplicate) ❌
   FileText, 
   Clock, 
   CheckCircle, 
