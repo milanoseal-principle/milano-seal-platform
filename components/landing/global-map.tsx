@@ -1,30 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { DESTINATIONS } from "@/data/destinations";
 
-const destinationCountries = [
-  "Italy",
-  "Spain",
-  "Greece",
-  "Portugal",
-  "France",
-  "Germany",
-  "Brazil",
-  "Mexico",
-  "United Kingdom",
-  "Canada",
-  "Australia",
-  "Netherlands",
-  "Switzerland",
-  "Austria",
-  "Belgium",
-];
+// Top destinations by demand for the homepage teaser
+const TEASER_LIMIT = 8;
 
 export function GlobalMap() {
+  const teaser = [...DESTINATIONS]
+    .sort((a, b) => (b.demand || 0) - (a.demand || 0))
+    .slice(0, TEASER_LIMIT);
+
   return (
     <section className="relative py-24 md:py-32 bg-[#0A0A0A] overflow-hidden">
-      {/* Background map visualization */}
+      {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-10">
         <svg
           viewBox="0 0 1200 600"
@@ -48,70 +39,21 @@ export function GlobalMap() {
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
-          {/* Connection lines from Florida */}
-          <g stroke="#C6A55A" strokeWidth="1" opacity="0.3">
-            <line x1="300" y1="250" x2="550" y2="180" strokeDasharray="5,5">
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-10"
-                dur="2s"
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="300" y1="250" x2="580" y2="200" strokeDasharray="5,5">
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-10"
-                dur="2.5s"
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="300" y1="250" x2="520" y2="220" strokeDasharray="5,5">
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-10"
-                dur="3s"
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="300" y1="250" x2="250" y2="350" strokeDasharray="5,5">
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-10"
-                dur="2.2s"
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="300" y1="250" x2="200" y2="280" strokeDasharray="5,5">
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-10"
-                dur="2.8s"
-                repeatCount="indefinite"
-              />
-            </line>
-          </g>
-          {/* Florida marker */}
-          <circle cx="300" cy="250" r="8" fill="#C6A55A" opacity="0.8">
+          <circle cx="300" cy="250" r="6" fill="#C6A55A" opacity="0.7">
             <animate
               attributeName="r"
-              values="8;12;8"
-              dur="2s"
+              values="6;10;6"
+              dur="2.4s"
               repeatCount="indefinite"
             />
             <animate
               attributeName="opacity"
-              values="0.8;0.4;0.8"
-              dur="2s"
+              values="0.7;0.35;0.7"
+              dur="2.4s"
               repeatCount="indefinite"
             />
           </circle>
-          <circle cx="300" cy="250" r="4" fill="#C6A55A" />
+          <circle cx="300" cy="250" r="3" fill="#C6A55A" />
         </svg>
       </div>
 
@@ -122,7 +64,7 @@ export function GlobalMap() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
             Global Reach
@@ -131,8 +73,9 @@ export function GlobalMap() {
             Cross-Border Execution Authority
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            From Florida to the world. We coordinate U.S. document execution for
-            acceptance in jurisdictions worldwide.
+            From Florida to the world. Select a destination to begin execution
+            — or open the full Global Intel map for compliance details and
+            execution paths.
           </p>
         </motion.div>
 
@@ -141,8 +84,8 @@ export function GlobalMap() {
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex justify-center mb-12"
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="flex justify-center mb-10"
         >
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#111111] border border-[#C6A55A]/30 rounded-full gold-glow">
             <MapPin className="w-5 h-5 text-[#C6A55A]" />
@@ -154,32 +97,67 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
-        {/* Destination countries */}
+        {/* Interactive destination tiles → /intake?country=... */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-center"
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-10"
         >
-          <p className="text-sm text-[#B0B0B0] mb-6">Documents accepted in</p>
-          <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
-            {destinationCountries.map((country, index) => (
-              <motion.span
-                key={country}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
-                className="px-4 py-2 text-sm text-[#B0B0B0] bg-[#111111] border border-[#2A2A2A] rounded-lg hover:border-[#C6A55A]/30 hover:text-white transition-all duration-300 cursor-default"
-              >
-                {country}
-              </motion.span>
-            ))}
-            <span className="px-4 py-2 text-sm text-[#C6A55A] bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-lg">
-              + Many More
-            </span>
-          </div>
+          {teaser.map((d) => (
+            <Link
+              key={d.slug}
+              href={`/intake?country=${encodeURIComponent(d.name)}`}
+              className="group relative bg-[#111111] border border-[#1E1E1E] rounded-xl p-4 transition-all duration-300 hover:border-[#C6A55A]/40 hover:bg-[#141210] hover:-translate-y-0.5"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">{d.flag}</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                    d.hague
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-amber-500/10 text-amber-400"
+                  }`}
+                >
+                  {d.hague ? "Hague" : "Non-Hague"}
+                </span>
+              </div>
+              <p className="text-white text-sm font-medium mb-0.5">{d.name}</p>
+              <p className="text-[#8A8A8A] text-[10px] leading-relaxed mb-3">
+                {d.note}
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-[#8A8A8A] tracking-wider uppercase">
+                  Begin
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C6A55A] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200" />
+              </div>
+            </Link>
+          ))}
+        </motion.div>
+
+        {/* CTAs to full map + intake */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3"
+        >
+          <Link
+            href="/map"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover"
+          >
+            View Full Compliance Map
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/intake"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors"
+          >
+            Begin Execution
+          </Link>
         </motion.div>
       </div>
     </section>

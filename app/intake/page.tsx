@@ -43,7 +43,6 @@ async function IntakeWizardWrapper({
     country: params.country || "",
     document: params.document || "",
     useCase: params.useCase || "",
-    tier: params.tier || "",
   };
   const tier = params.tier as
     | "signature"
@@ -55,7 +54,7 @@ async function IntakeWizardWrapper({
       ? tier
       : "priority";
 
-  return <IntakeWizard initialTier={validTier} />;
+  return <IntakeWizard initialTier={validTier} prefill={prefill} />;
 }
 
 export default function IntakePage({

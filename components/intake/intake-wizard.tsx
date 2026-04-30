@@ -36,8 +36,15 @@ interface IntakeData {
   notes: string;
 }
 
+interface IntakePrefill {
+  country?: string;
+  document?: string;
+  useCase?: string;
+}
+
 interface IntakeWizardProps {
   initialTier?: "signature" | "priority" | "executive";
+  prefill?: IntakePrefill;
 }
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -323,7 +330,7 @@ function ReviewItem({
       <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#8A7A60] pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-white font-light break-words">
+      <span className="text-sm text-[#1A1208] font-light break-words">
         {display}
       </span>
     </div>
@@ -331,10 +338,29 @@ function ReviewItem({
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
-export function IntakeWizard({ initialTier = "priority" }: IntakeWizardProps) {
+export function IntakeWizard({
+  initialTier = "priority",
+  prefill,
+}: IntakeWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<IntakeData>(INITIAL_DATA);
+  // Title-case helper so "italy" from /map?country=italy becomes "Italy"
+  const titleCase = (s: string) =>
+    s
+      .split(/\s+/)
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+      .join(" ");
+  const [data, setData] = useState<IntakeData>({
+    ...INITIAL_DATA,
+    destination_country: prefill?.country
+      ? titleCase(prefill.country)
+      : INITIAL_DATA.destination_country,
+    document_type: prefill?.document || INITIAL_DATA.document_type,
+    notes:
+      prefill?.useCase && !INITIAL_DATA.notes
+        ? `Use case: ${prefill.useCase}`
+        : INITIAL_DATA.notes,
+  });
   const [errors, setErrors] = useState<
     Partial<Record<keyof IntakeData | "consent", string>>
   >({});
@@ -442,6 +468,11 @@ export function IntakeWizard({ initialTier = "priority" }: IntakeWizardProps) {
       if (typeof sessionStorage !== "undefined") {
         if (json.payment_link)
           sessionStorage.setItem("ms_payment_link", json.payment_link);
+        if (json.wise_invoice)
+          sessionStorage.setItem(
+            "ms_wise_invoice",
+            JSON.stringify(json.wise_invoice)
+          );
         sessionStorage.setItem("ms_intake_response", JSON.stringify(json));
       }
 
@@ -1135,6 +1166,12 @@ export function IntakeWizard({ initialTier = "priority" }: IntakeWizardProps) {
                     />
                     <ReviewItem label="Documents" value={data.document_count} />
                     <ReviewItem label="Signers" value={data.signer_count} />
+                    {data.signer_names && (
+                      <ReviewItem
+                        label="Signer Names"
+                        value={data.signer_names}
+                      />
+                    )}
                     <ReviewItem
                       label="Origin State"
                       value={data.origin_state}
@@ -1179,6 +1216,32 @@ export function IntakeWizard({ initialTier = "priority" }: IntakeWizardProps) {
                       label="Weekend / Holiday"
                       value={data.weekend_holiday}
                     />
+                    {(data.source_detail ||
+                      data.attribution ||
+                      data.notes) && (
+                      <>
+                        <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
+                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                            Details
+                          </span>
+                        </div>
+                        {data.source_detail && (
+                          <ReviewItem
+                            label="Source"
+                            value={data.source_detail}
+                          />
+                        )}
+                        {data.attribution && (
+                          <ReviewItem
+                            label="Attribution"
+                            value={data.attribution}
+                          />
+                        )}
+                        {data.notes && (
+                          <ReviewItem label="Notes" value={data.notes} />
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Pricing estimate block */}

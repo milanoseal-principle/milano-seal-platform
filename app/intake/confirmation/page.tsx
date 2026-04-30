@@ -42,11 +42,21 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+interface WiseInvoice {
+  payment_method: string;
+  amount: number;
+  reference: string;
+  note: string;
+  wise_link: string;
+  status: string;
+}
+
 function ConfirmationInner() {
   const params = useSearchParams();
   const dealId = params.get("id") || "";
   const [intakeData, setIntakeData] = useState<any>(null);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [wiseInvoice, setWiseInvoice] = useState<WiseInvoice | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -56,6 +66,8 @@ function ConfirmationInner() {
       if (raw) setIntakeData(JSON.parse(raw));
       const link = sessionStorage.getItem("ms_payment_link");
       if (link) setPaymentLink(link);
+      const wiseRaw = sessionStorage.getItem("ms_wise_invoice");
+      if (wiseRaw) setWiseInvoice(JSON.parse(wiseRaw));
     } catch {}
   }, []);
 
@@ -141,7 +153,7 @@ function ConfirmationInner() {
         <div className="flex items-center gap-2 mb-5">
           <CreditCard className="w-4 h-4 text-[#C6A55A]" />
           <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
-            Secure Payment Options
+            Secure Payment — Wise
           </h2>
         </div>
         <p className="text-[#8A8A8A] text-sm mb-5 font-light leading-relaxed">
@@ -149,7 +161,59 @@ function ConfirmationInner() {
           matter moves to execution immediately.
         </p>
 
-        {paymentLink && (
+        {/* Wise — primary */}
+        {wiseInvoice && wiseInvoice.wise_link && (
+          <>
+            <a
+              href={wiseInvoice.wise_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(198,165,90,0.3)] mb-5"
+            >
+              <CreditCard className="w-4 h-4" />
+              Pay Securely with Wise
+              <ArrowRight className="w-4 h-4" />
+            </a>
+
+            <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4 mb-4">
+              <p className="text-[#C6A55A] text-[10px] font-semibold tracking-[0.2em] uppercase mb-3">
+                Use this reference when paying
+              </p>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[#8A8A8A] text-xs">Amount</span>
+                  <span className="text-white text-sm font-medium">
+                    ${Number(wiseInvoice.amount).toLocaleString()} USD
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[#8A8A8A] text-xs">Reference</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#C6A55A] font-mono text-sm">
+                      {wiseInvoice.reference}
+                    </span>
+                    <CopyButton text={wiseInvoice.reference} />
+                  </div>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[#8A8A8A] text-xs flex-shrink-0">
+                    Note
+                  </span>
+                  <span className="text-[#B0B0B0] text-xs text-right max-w-[60%]">
+                    {wiseInvoice.note}
+                  </span>
+                </div>
+              </div>
+              <p className="text-[#8A8A8A] text-[11px] italic mt-3 leading-relaxed">
+                Add the reference exactly as shown so your matter is matched
+                automatically on receipt.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Stripe — fallback only when Wise is unavailable */}
+        {!wiseInvoice && paymentLink && (
           <a
             href={paymentLink}
             target="_blank"
@@ -162,27 +226,20 @@ function ConfirmationInner() {
           </a>
         )}
 
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {[
-            "Credit / Debit Card",
-            "Wise",
-            "Zelle",
-            "Venmo",
-            "Cash App",
-            "Apple Cash",
-          ].map((method) => (
-            <div
-              key={method}
-              className="flex items-center gap-2 py-2 px-3 bg-[#111111] border border-[#1A1A1A] rounded-lg"
-            >
-              <div className="w-1 h-1 rounded-full bg-[#C6A55A] flex-shrink-0" />
-              <span className="text-[#B0B0B0] text-xs">{method}</span>
-            </div>
-          ))}
-        </div>
+        {/* Fallback message if neither link is present yet */}
+        {!wiseInvoice && !paymentLink && (
+          <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4 mb-4">
+            <p className="text-[#B0B0B0] text-sm leading-relaxed">
+              Nicholas will send your Wise payment link and reference via
+              WhatsApp shortly. Reply to that message to confirm and lock in
+              your scheduling slot.
+            </p>
+          </div>
+        )}
+
         <p className="text-[#8A8A8A] text-xs italic">
-          Additional payment methods available upon request. Payment details
-          sent after invoice confirmation.
+          Wise is the primary payment method. Alternative methods (Zelle, card,
+          ACH) available on request — Nicholas will coordinate directly.
         </p>
       </div>
 
