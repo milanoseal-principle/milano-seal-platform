@@ -7,11 +7,11 @@ export default function HomePage() {
   return (
 <main className="min-h-screen bg-[#0A0A0A] text-white">
   {/* Full Milano Seal Platform */}
-</main>    <main className="min-h-screen bg-[#0A0A0A] text-white">
-      <Header />
-      <Hero />
-      <ClientLanding />
-      <Footer />
-    </main>
+<main className="min-h-screen bg-[#0A0A0A] text-white">
+  {/* Full Milano Seal Platform */}
+  <Header />
+  <Hero />
+  <ClientLanding />
+</main>
   )
 }
