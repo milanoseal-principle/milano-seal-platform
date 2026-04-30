@@ -101,12 +101,20 @@ if (body.status && !validStatuses.includes(body.status)) {
     
     // Build update object with allowed fields only
     const allowedFields = [
-      'stage',
-      'payment_status',
 const allowedFields = [
+  'stage',
+  'payment_status',
   'payment_method',
   'payment_reference',
   'payment_amount_received',
+  'invoice_status',
+  'execution_date',
+  'completed_at',
+  'followup_24h',
+  'followup_72h',
+  'follow_up_active',
+  'decline_risk'
+]      
   'invoice_status',
   'execution_date',
   'completed_at',
