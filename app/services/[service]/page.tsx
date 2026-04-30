@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       'document authentication',
       'RON notarization',
     ],
+    alternates: { canonical: `https://themilanoseal.com/services/${doc.slug}` },
   }
 }
 

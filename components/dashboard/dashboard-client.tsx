@@ -1,8 +1,24 @@
 'use client'
 
+async function callStep(dealId: string, step: string): Promise<{ ok: boolean; error?: string; code?: string }> {
+  const res = await fetch('/api/runStep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deal_id: dealId, step }),
+  })
+  if (res.status === 402) return { ok: false, error: 'Payment required before execution can begin.', code: 'PAYMENT_REQUIRED' }
+  if (res.status === 409) return { ok: false, error: 'Invalid step sequence — deal may have already advanced.', code: 'INVALID_TRANSITION' }
+  if (!res.ok) { const d = await res.json().catch(() => ({})); return { ok: false, error: d.error || 'Step execution failed.' } }
+  return { ok: true }
+}
+
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { 
   FileText, 
   Clock, 
@@ -16,7 +32,7 @@ import {
   Mail,
   Phone,
   Calendar,
-  Building2
+LogOut
 } from 'lucide-react'
 
 interface Deal {
@@ -32,9 +48,30 @@ interface Deal {
   destination_country: string | null
   stage: string
   payment_status: string
-  estimated_value: number | null
+payment_method?: string
+payment_reference?: string
+payment_amount_received?: number
+
+invoice_status?: string
+invoice_subtotal?: number
+invoice_retainer?: number
+invoice_balance?: number
+
+decline_risk?: string
+requires_apostille: boolean
+
+source?: string  estimated_value: number | null
   notes: string | null
   source: string | null
+  payment_method?: string
+  payment_reference?: string
+  payment_amount_received?: number
+  invoice_status?: string
+  invoice_subtotal?: number
+  invoice_retainer?: number
+  invoice_balance?: number
+  decline_risk?: string
+  requires_apostille: boolean
   created_at: string
 }
 
@@ -49,19 +86,17 @@ interface DashboardClientProps {
   initialDeals: Deal[]
   stats: Stats
 }
-
-const stageColors: Record<string, { bg: string; text: string }> = {
-  new_lead: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
-  contacted: { bg: 'bg-cyan-500/10', text: 'text-cyan-500' },
-  quote_sent: { bg: 'bg-yellow-500/10', text: 'text-yellow-500' },
-  negotiating: { bg: 'bg-orange-500/10', text: 'text-orange-500' },
-  documents_received: { bg: 'bg-purple-500/10', text: 'text-purple-500' },
-  in_progress: { bg: 'bg-indigo-500/10', text: 'text-indigo-500' },
-  completed: { bg: 'bg-green-500/10', text: 'text-green-500' },
-  lost: { bg: 'bg-red-500/10', text: 'text-red-500' },
-  on_hold: { bg: 'bg-gray-500/10', text: 'text-gray-500' },
+const statusColors: Record<string, { bg: string; text: string }> = {
+  intake_received:      { bg: 'bg-gray-500/10',   text: 'text-gray-400' },
+  under_review:         { bg: 'bg-gray-500/10',   text: 'text-gray-300' },
+  quoted:               { bg: 'bg-cyan-500/10',   text: 'text-cyan-400' },
+  awaiting_payment:     { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
+  paid:                 { bg: 'bg-green-500/10',  text: 'text-green-400' },
+  scheduled:            { bg: 'bg-blue-500/10',   text: 'text-blue-400' },
+  in_execution:         { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+  apostille_processing: { bg: 'bg-orange-500/10', text: 'text-orange-400' },
+  completed:            { bg: 'bg-emerald-500/10',text: 'text-emerald-400' },
 }
-
 const stageLabels: Record<string, string> = {
   new_lead: 'New Lead',
   contacted: 'Contacted',
@@ -89,6 +124,13 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [stageFilter, setStageFilter] = useState<string>('all')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/operator/login')
+  }
 
   const filteredDeals = deals.filter((deal) => {
     const matchesSearch = 
@@ -180,14 +222,42 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
               </div>
             </div>
             
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white border border-[#2A2A2A] rounded-lg transition-colors hover:border-[#C6A55A]/50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
+<div className="flex items-center gap-2">
+
+  <button
+    onClick={handleRefresh}
+    disabled={isRefreshing}
+    className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white border border-[#2A2A2A] rounded-lg transition-colors hover:border-[#C6A55A]/50"
+  >
+    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+    <span>Refresh</span>
+  </button>
+
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-red-400 border border-[#2A2A2A] rounded-lg transition-colors hover:border-red-400/40"
+  >
+    <LogOut className="w-4 h-4" />
+    <span>Sign Out</span>
+  </button>
+
+</div>            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-red-400 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>

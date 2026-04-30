@@ -1,127 +1,95 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+// FINAL CANONICAL INTAKE — MILANO SEAL OS (LOCKED)
 
-// Valid enum values based on database schema
-const validServiceTypes = ['apostille', 'notary', 'ron', 'signing_agent', 'document_retrieval', 'translation', 'other']
-const validDocumentTypes = ['birth_certificate', 'marriage_certificate', 'death_certificate', 'divorce_decree', 'diploma', 'transcript', 'power_of_attorney', 'affidavit', 'corporate_document', 'fbi_background_check', 'court_document', 'medical_record', 'immigration_document', 'real_estate', 'other']
-const validUrgencyLevels = ['standard', 'rush', 'same_day', 'emergency']
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { calculatePrice } from '@/lib/pricingEngine'
 
-export async function POST(request: Request) {
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+function genDealId() {
+  return `MS-${Date.now()}`
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json()
-    const { 
-      name, 
-      email, 
-      phone, 
-      country, 
-      document, 
-      notes, 
-      tier,
-      company,
-      serviceType,
+    const body = await req.json()
+
+    const {
+      name,
+      email,
+      phone,
+      country,
+      document_type,
       urgency,
-      documentCount,
-      source,
-      utmSource,
-      utmMedium,
-      utmCampaign,
+      apostille_required,
+      client_doc_ready
     } = body
 
-    // Validate required fields
-    if (!name || !email) {
+    // REQUIRED VALIDATION
+    if (!name || !email || !country || !document_type) {
       return NextResponse.json(
-        { error: 'Name and email are required' },
+        { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
+    // PRICING ENGINE
+    const { lane, price } = calculatePrice({
+      country,
+      urgency,
+      apostille_required,
+      client_doc_ready
+    })
 
-    // Map tier to service_type if provided
-    let mappedServiceType = serviceType || 'apostille'
-    if (tier === 'signature') mappedServiceType = 'notary'
-    if (tier === 'priority') mappedServiceType = 'apostille'
-    if (tier === 'executive') mappedServiceType = 'ron'
-    
-    // Ensure service type is valid
-    if (!validServiceTypes.includes(mappedServiceType)) {
-      mappedServiceType = 'other'
-    }
+    const deal_id = genDealId()
 
-    // Map document type
-    let mappedDocType = null
-    if (document) {
-      const docLower = document.toLowerCase().replace(/\s+/g, '_')
-      if (validDocumentTypes.includes(docLower)) {
-        mappedDocType = docLower
-      } else if (document.toLowerCase().includes('affidavit')) {
-        mappedDocType = 'affidavit'
-      } else if (document.toLowerCase().includes('power')) {
-        mappedDocType = 'power_of_attorney'
-      } else {
-        mappedDocType = 'other'
-      }
-    }
-
-    // Map urgency
-    let mappedUrgency = urgency || 'standard'
-    if (!validUrgencyLevels.includes(mappedUrgency)) {
-      mappedUrgency = 'standard'
-    }
-
-    // Debug: Log Supabase URL to verify correct project
-    console.log('[v0] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-    
-    const supabase = await createClient()
-
-    // Insert into deals table with correct column names
     const { data, error } = await supabase
       .from('deals')
-      .insert({
-        full_name: name,
-        email,
-        phone: phone || null,
-        company: company || null,
-        service_type: mappedServiceType,
-        document_type: mappedDocType,
-        document_count: documentCount || 1,
-        urgency: mappedUrgency,
-        destination_country: country || null,
-        stage: 'new_lead',
-        notes: notes || null,
-        source: source || 'website_intake',
-        utm_source: utmSource || null,
-        utm_medium: utmMedium || null,
-        utm_campaign: utmCampaign || null,
-      })
-      .select('id, full_name, email, service_type, stage')
+      .insert([
+        {
+          id: deal_id,
+          client_name: name,
+          email,
+          phone,
+          country,
+          document_type,
+          lane,
+          total_price: price,
+          status: 'awaiting_payment',
+          payment_status: 'pending',
+          payment_method: 'wise',
+          payment_reference: deal_id
+        }
+      ])
+      .select()
       .single()
 
-    if (error) {
-      console.error('[v0] Supabase insert error:', error)
+    if (error || !data) {
+      console.error('Insert failed', error)
       return NextResponse.json(
-        { error: 'Failed to create intake record', details: error.message },
+        { error: 'Insert failed' },
         { status: 500 }
       )
     }
 
+    // WISE PAYMENT URL
+    const payment_url = `${process.env.PAYMENT_PROVIDER_URL}?ref=${deal_id}`
+
     return NextResponse.json({
       success: true,
-      dealId: data.id,
-      deal: data,
-      message: 'Intake submitted successfully. Our team will contact you within 24 hours.',
+      deal_id,
+      lane,
+      price,
+      payment_url
     })
+
   } catch (err) {
-    console.error('[v0] Intake API error:', err)
+    console.error('Intake error:', err)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Server error' },
       { status: 500 }
     )
   }

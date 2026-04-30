@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       'apostille services',
       'Hague Convention',
     ],
+    alternates: { canonical: `https://themilanoseal.com/apostille/${country.slug}` },
     openGraph: {
       title: `Apostille for ${country.name} | The Milano Seal™`,
       description: `Professional apostille services for documents destined for ${country.name}. Hague Convention compliant authentication.`,

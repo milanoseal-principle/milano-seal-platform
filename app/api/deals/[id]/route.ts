@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     
     const { data: deal, error } = await supabase
       .from('deals')
@@ -46,14 +46,28 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     
-    // Valid stages based on database schema
-    const validStages = [
-      'new_lead', 'contacted', 'quote_sent', 'negotiating',
-      'documents_received', 'in_progress', 'completed', 'lost', 'on_hold'
-    ]
-    if (body.stage && !validStages.includes(body.stage)) {
+const validStatuses = [
+  "intake_received",
+  "under_review",
+  "quoted",
+  "awaiting_payment",
+  "paid",
+  "scheduled",
+  "in_execution",
+  "apostille_processing",
+  "completed"
+]
+
+if (body.status && !validStatuses.includes(body.status)) {
+  return NextResponse.json(
+    { error: 'Invalid status' },
+    { status: 400 }
+  )
+}    // Validate status if being updated
+    const validStatuses = ['new','reviewing','quoted','awaiting_payment','scheduled','in_execution','apostille','shipped','completed','lost']
+    if (body.status && !validStatuses.includes(body.status)) {
       return NextResponse.json(
         { error: 'Invalid stage' },
         { status: 400 }
@@ -89,11 +103,27 @@ export async function PATCH(
     const allowedFields = [
       'stage',
       'payment_status',
-      'estimated_value',
-      'actual_value',
-      'notes',
-      'urgency',
-      'assigned_to',
+const allowedFields = [
+  'payment_method',
+  'payment_reference',
+  'payment_amount_received',
+  'invoice_status',
+  'execution_date',
+  'completed_at',
+  'followup_24h',
+  'followup_72h',
+  'follow_up_active',
+  'decline_risk'
+]      'payment_method',
+      'payment_reference',
+      'payment_amount_received',
+      'invoice_status',
+      'execution_date',
+      'completed_at',
+      'followup_24h',
+      'followup_72h',
+      'follow_up_active',
+      'decline_risk',
     ]
     
     const updateData: Record<string, unknown> = {

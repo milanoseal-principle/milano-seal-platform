@@ -50,6 +50,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       'document authentication',
       'apostille services',
     ],
+    alternates: {
+      canonical: `https://themilanoseal.com/documents/${doc.slug}/${country.slug}`,
+    },
   }
 }
 

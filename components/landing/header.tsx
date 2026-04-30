@@ -11,6 +11,9 @@ const navLinks = [
   { label: 'Process', href: '/#process' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'Countries', href: '/#countries' },
+  { label: 'Map', href: '/map' },
+  { label: 'About', href: '/about' },
+  { label: 'Founder', href: '/founder' },
 ]
 
 export function Header() {
@@ -38,19 +41,19 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <Image
-                src="/logo.png"
-                alt="The Milano Seal"
-                width={44}
-                height={44}
-                className="object-contain w-auto h-auto"
-              />
-              <span className="font-serif text-xl font-medium text-white hidden sm:inline">
-                The Milano Seal<span className="text-[#C6A55A]">™</span>
-              </span>
+<Link href="/" className="flex items-center gap-3">
+  <Image
+    src="/milano-seal-gold-transparent-512.png"
+    alt="The Milano Seal"
+    width={260}
+    height={65}
+    className="h-[56px] w-auto object-contain"
+    priority
+  />
+</Link>            <Link href="/">
+              <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={260} height={65} style={{height:'56px',width:'auto'}} priority />
             </Link>
-            
+
             {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
