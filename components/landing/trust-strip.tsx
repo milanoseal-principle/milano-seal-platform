@@ -1,16 +1,20 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { Shield, Clock, Lock, Globe, Scale, Award } from 'lucide-react'
+import { motion } from "framer-motion";
+import { Shield, Clock, Lock, Globe, Scale, Award } from "lucide-react";
 
 const items = [
-  { icon: Shield, label: 'Florida Notary #668288',        sub: 'Licensed & Commissioned' },
-  { icon: Globe,  label: 'Hague Convention',              sub: '21+ Countries' },
-  { icon: Lock,   label: 'Payment-Gated Execution',       sub: 'Zero Exceptions' },
-  { icon: Award,  label: 'RON Certified',                 sub: 'Remote Online Notary' },
-  { icon: Scale,  label: 'Apostille Authority',           sub: 'FL Dept of State' },
-  { icon: Clock,  label: '1-Business-Day Response',       sub: 'Matter Review' },
-]
+  {
+    icon: Shield,
+    label: "Florida Notary #668288",
+    sub: "Licensed & Commissioned",
+  },
+  { icon: Globe, label: "Hague Convention", sub: "21+ Countries" },
+  { icon: Lock, label: "Payment-Gated Execution", sub: "Zero Exceptions" },
+  { icon: Award, label: "RON Certified", sub: "Remote Online Notary" },
+  { icon: Scale, label: "Apostille Authority", sub: "FL Dept of State" },
+  { icon: Clock, label: "1-Business-Day Response", sub: "Matter Review" },
+];
 
 export function TrustStrip() {
   return (
@@ -37,13 +41,17 @@ export function TrustStrip() {
                 <Icon className="w-4 h-4 text-[#C6A55A]" />
               </div>
               <div>
-                <div className="text-xs font-semibold text-[#B0B0B0] group-hover:text-white transition-colors duration-300 leading-tight">{label}</div>
-                <div className="text-[10px] text-[#8A8A8A] leading-tight mt-0.5">{sub}</div>
+                <div className="text-xs font-semibold text-[#B0B0B0] group-hover:text-white transition-colors duration-300 leading-tight">
+                  {label}
+                </div>
+                <div className="text-[10px] text-[#8A8A8A] leading-tight mt-0.5">
+                  {sub}
+                </div>
               </div>
             </motion.div>
           ))}
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

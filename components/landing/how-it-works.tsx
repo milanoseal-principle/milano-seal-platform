@@ -1,39 +1,45 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
+import { motion } from "framer-motion";
 
 const steps = [
   {
-    number: '01',
-    title: 'Submit Your Matter',
-    description: 'Provide document details and destination requirements through our secure intake process.',
+    number: "01",
+    title: "Submit Your Matter",
+    description:
+      "Provide document details and destination requirements through our secure intake process.",
   },
   {
-    number: '02',
-    title: 'Compliance Review',
-    description: 'Our system validates jurisdiction requirements and determines the optimal execution path.',
+    number: "02",
+    title: "Compliance Review",
+    description:
+      "Our system validates jurisdiction requirements and determines the optimal execution path.",
   },
   {
-    number: '03',
-    title: 'Secure Payment',
-    description: 'Complete payment through our secure Wise integration. Execution is blocked until payment is confirmed.',
+    number: "03",
+    title: "Secure Payment",
+    description:
+      "Complete payment through our secure Wise integration. Execution is blocked until payment is confirmed.",
   },
   {
-    number: '04',
-    title: 'Document Execution',
-    description: 'Your documents are executed with precision, recorded, and sealed according to Florida law.',
+    number: "04",
+    title: "Document Execution",
+    description:
+      "Your documents are executed with precision, recorded, and sealed according to Florida law.",
   },
   {
-    number: '05',
-    title: 'Apostille Coordination',
-    description: 'If required, we handle authentication through the Secretary of State for international acceptance.',
+    number: "05",
+    title: "Apostille Coordination",
+    description:
+      "If required, we handle authentication through the Secretary of State for international acceptance.",
   },
   {
-    number: '06',
-    title: 'Delivery',
-    description: 'Receive your executed documents digitally and physically, ready for international use.',
+    number: "06",
+    title: "Delivery",
+    description:
+      "Receive your executed documents digitally and physically, ready for international use.",
   },
-]
+];
 
 export function HowItWorks() {
   return (
@@ -54,10 +60,11 @@ export function HowItWorks() {
             How It Works
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            Executed properly the first time. Cross-border execution with U.S. compliance standards.
+            Executed properly the first time. Cross-border execution with U.S.
+            compliance standards.
           </p>
         </motion.div>
-        
+
         {/* Steps grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {steps.map((step, index) => (
@@ -74,7 +81,7 @@ export function HowItWorks() {
                 <span className="font-serif text-4xl font-medium text-[#C6A55A]/20 group-hover:text-[#C6A55A]/40 transition-colors duration-300">
                   {step.number}
                 </span>
-                
+
                 {/* Content */}
                 <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3">
                   {step.title}
@@ -83,7 +90,7 @@ export function HowItWorks() {
                   {step.description}
                 </p>
               </div>
-              
+
               {/* Connector line (hidden on mobile) */}
               {index < steps.length - 1 && (index + 1) % 3 !== 0 && (
                 <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-px bg-gradient-to-r from-[#2A2A2A] to-transparent" />
@@ -93,5 +100,5 @@ export function HowItWorks() {
         </div>
       </div>
     </section>
-  )
+  );
 }

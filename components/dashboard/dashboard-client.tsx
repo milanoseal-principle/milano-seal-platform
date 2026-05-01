@@ -1,25 +1,41 @@
-'use client'
+"use client";
 
-async function callStep(dealId: string, step: string): Promise<{ ok: boolean; error?: string; code?: string }> {
-  const res = await fetch('/api/runStep', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+async function callStep(
+  dealId: string,
+  step: string
+): Promise<{ ok: boolean; error?: string; code?: string }> {
+  const res = await fetch("/api/runStep", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deal_id: dealId, step }),
-  })
-  if (res.status === 402) return { ok: false, error: 'Payment required before execution can begin.', code: 'PAYMENT_REQUIRED' }
-  if (res.status === 409) return { ok: false, error: 'Invalid step sequence — deal may have already advanced.', code: 'INVALID_TRANSITION' }
-  if (!res.ok) { const d = await res.json().catch(() => ({})); return { ok: false, error: d.error || 'Step execution failed.' } }
-  return { ok: true }
+  });
+  if (res.status === 402)
+    return {
+      ok: false,
+      error: "Payment required before execution can begin.",
+      code: "PAYMENT_REQUIRED",
+    };
+  if (res.status === 409)
+    return {
+      ok: false,
+      error: "Invalid step sequence — deal may have already advanced.",
+      code: "INVALID_TRANSITION",
+    };
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    return { ok: false, error: d.error || "Step execution failed." };
+  }
+  return { ok: true };
 }
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  FileText,
+  Clock,
+  CheckCircle,
   DollarSign,
   Search,
   Filter,
@@ -29,141 +45,144 @@ import {
   Mail,
   Phone,
   Calendar,
-  LogOut
-} from 'lucide-react'
+  LogOut,
+} from "lucide-react";
 
 interface Deal {
-  id: string
-  client_name: string
-  email: string
-  phone: string
-  country: string
-  document: string
-  notes: string | null
-  service_type: string
-  execution_tier: string
-  amount: number
-  status: string
-  payment_status: string
-  payment_method?: string
-  payment_reference?: string
-  payment_amount_received?: number
-  invoice_status?: string
-  invoice_subtotal?: number
-  invoice_retainer?: number
-  invoice_balance?: number
-  decline_risk?: string
-  requires_apostille: boolean
-  created_at: string
+  id: string;
+  client_name: string;
+  email: string;
+  phone: string;
+  country: string;
+  document: string;
+  notes: string | null;
+  service_type: string;
+  execution_tier: string;
+  amount: number;
+  status: string;
+  payment_status: string;
+  payment_method?: string;
+  payment_reference?: string;
+  payment_amount_received?: number;
+  invoice_status?: string;
+  invoice_subtotal?: number;
+  invoice_retainer?: number;
+  invoice_balance?: number;
+  decline_risk?: string;
+  requires_apostille: boolean;
+  created_at: string;
 }
 
 interface Stats {
-  total: number
-  pending: number
-  paid: number
-  revenue: number
+  total: number;
+  pending: number;
+  paid: number;
+  revenue: number;
 }
 
 interface DashboardClientProps {
-  initialDeals: Deal[]
-  stats: Stats
+  initialDeals: Deal[];
+  stats: Stats;
 }
 
 const statusColors: Record<string, { bg: string; text: string }> = {
-  new:              { bg: 'bg-gray-500/10',   text: 'text-gray-400' },
-  reviewing:        { bg: 'bg-gray-500/10',   text: 'text-gray-300' },
-  quoted:           { bg: 'bg-cyan-500/10',   text: 'text-cyan-400' },
-  awaiting_payment: { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
-  scheduled:        { bg: 'bg-blue-500/10',   text: 'text-blue-400' },
-  in_execution:     { bg: 'bg-purple-500/10', text: 'text-purple-400' },
-  apostille:        { bg: 'bg-orange-500/10', text: 'text-orange-400' },
-  shipped:          { bg: 'bg-teal-500/10',   text: 'text-teal-400' },
-  completed:        { bg: 'bg-green-500/10',  text: 'text-green-400' },
-  lost:             { bg: 'bg-red-500/10',    text: 'text-red-400' },
-}
+  new: { bg: "bg-gray-500/10", text: "text-gray-400" },
+  reviewing: { bg: "bg-gray-500/10", text: "text-gray-300" },
+  quoted: { bg: "bg-cyan-500/10", text: "text-cyan-400" },
+  awaiting_payment: { bg: "bg-yellow-500/10", text: "text-yellow-400" },
+  scheduled: { bg: "bg-blue-500/10", text: "text-blue-400" },
+  in_execution: { bg: "bg-purple-500/10", text: "text-purple-400" },
+  apostille: { bg: "bg-orange-500/10", text: "text-orange-400" },
+  shipped: { bg: "bg-teal-500/10", text: "text-teal-400" },
+  completed: { bg: "bg-green-500/10", text: "text-green-400" },
+  lost: { bg: "bg-red-500/10", text: "text-red-400" },
+};
 
 const statusLabels: Record<string, string> = {
-  awaiting_payment: 'Awaiting Payment',
-  scheduled: 'Scheduled',
-  in_execution: 'In Execution',
-  apostille: 'Apostille',
-  completed: 'Completed',
-  lost: 'Lost',
-}
+  awaiting_payment: "Awaiting Payment",
+  scheduled: "Scheduled",
+  in_execution: "In Execution",
+  apostille: "Apostille",
+  completed: "Completed",
+  lost: "Lost",
+};
 
 export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
-  const [deals, setDeals] = useState(initialDeals)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const router = useRouter()
+  const [deals, setDeals] = useState(initialDeals);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const router = useRouter();
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/operator/login')
-  }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/operator/login");
+  };
 
   const filteredDeals = deals.filter((deal) => {
-    const matchesSearch = 
+    const matchesSearch =
       deal.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       deal.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deal.document.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || deal.status === statusFilter
-    
-    return matchesSearch && matchesStatus
-  })
+      deal.document.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || deal.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      const response = await fetch('/api/deals')
-      const data = await response.json()
+      const response = await fetch("/api/deals");
+      const data = await response.json();
       if (data.deals) {
-        setDeals(data.deals)
+        setDeals(data.deals);
       }
     } catch (error) {
-      console.error('Failed to refresh:', error)
+      console.error("Failed to refresh:", error);
     }
-    setIsRefreshing(false)
-  }
+    setIsRefreshing(false);
+  };
 
   const updateDealStatus = async (dealId: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/deals/${dealId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
-      })
-      
+      });
+
       if (response.ok) {
-        setDeals(deals.map(d => 
-          d.id === dealId ? { ...d, status: newStatus } : d
-        ))
+        setDeals(
+          deals.map((d) => (d.id === dealId ? { ...d, status: newStatus } : d))
+        );
       }
     } catch (error) {
-      console.error('Failed to update status:', error)
+      console.error("Failed to update status:", error);
     }
-  }
+  };
 
   const updatePaymentStatus = async (dealId: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/deals/${dealId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payment_status: newStatus }),
-      })
-      
+      });
+
       if (response.ok) {
-        setDeals(deals.map(d => 
-          d.id === dealId ? { ...d, payment_status: newStatus } : d
-        ))
+        setDeals(
+          deals.map((d) =>
+            d.id === dealId ? { ...d, payment_status: newStatus } : d
+          )
+        );
       }
     } catch (error) {
-      console.error('Failed to update payment status:', error)
+      console.error("Failed to update payment status:", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -185,14 +204,16 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
                 <p className="text-sm text-[#B0B0B0]">Matter Management</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-[#B0B0B0] hover:text-white transition-colors"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
                 <span>Refresh</span>
               </button>
               <button
@@ -219,7 +240,7 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
             </div>
             <p className="text-3xl font-medium text-white">{stats.total}</p>
           </div>
-          
+
           <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-[#1A1A1A]">
@@ -229,7 +250,7 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
             </div>
             <p className="text-3xl font-medium text-white">{stats.pending}</p>
           </div>
-          
+
           <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-[#1A1A1A]">
@@ -239,7 +260,7 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
             </div>
             <p className="text-3xl font-medium text-white">{stats.paid}</p>
           </div>
-          
+
           <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-[#1A1A1A]">
@@ -265,7 +286,7 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
               className="w-full pl-10 pr-4 py-3 bg-[#111111] border border-[#2A2A2A] rounded-lg text-white placeholder:text-[#B0B0B0]/50 focus:outline-none focus:border-[#C6A55A] transition-colors"
             />
           </div>
-          
+
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B0B0B0]" />
             <select
@@ -275,7 +296,9 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
             >
               <option value="all">All Statuses</option>
               {Object.entries(statusLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </div>
@@ -287,29 +310,53 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#2A2A2A]">
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Client</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Document</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Country</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Tier</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Amount</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Payment</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">Date</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Client
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Document
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Country
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Tier
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Amount
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Status
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Payment
+                  </th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-[#B0B0B0]">
+                    Date
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDeals.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-[#B0B0B0]">
+                    <td
+                      colSpan={8}
+                      className="px-6 py-12 text-center text-[#B0B0B0]"
+                    >
                       No matters found.
                     </td>
                   </tr>
                 ) : (
                   filteredDeals.map((deal) => (
-                    <tr key={deal.id} className="border-b border-[#2A2A2A] hover:bg-[#1A1A1A] transition-colors">
+                    <tr
+                      key={deal.id}
+                      className="border-b border-[#2A2A2A] hover:bg-[#1A1A1A] transition-colors"
+                    >
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-white font-medium">{deal.client_name}</p>
+                          <p className="text-white font-medium">
+                            {deal.client_name}
+                          </p>
                           <div className="flex items-center gap-3 mt-1">
                             <a
                               href={`mailto:${deal.email}`}
@@ -333,7 +380,9 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-[#C6A55A]" />
-                          <span className="text-white text-sm">{deal.document}</span>
+                          <span className="text-white text-sm">
+                            {deal.document}
+                          </span>
                         </div>
                         {deal.requires_apostille && (
                           <span className="inline-flex items-center gap-1 mt-1 text-xs text-orange-500">
@@ -343,7 +392,9 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-[#B0B0B0] text-sm">{deal.country}</span>
+                        <span className="text-[#B0B0B0] text-sm">
+                          {deal.country}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-2 py-1 text-xs font-medium text-[#C6A55A] bg-[#C6A55A]/10 rounded capitalize">
@@ -358,26 +409,36 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
                       <td className="px-6 py-4">
                         <select
                           value={deal.status}
-                          onChange={(e) => updateDealStatus(deal.id, e.target.value)}
+                          onChange={(e) =>
+                            updateDealStatus(deal.id, e.target.value)
+                          }
                           className={`px-3 py-1.5 text-xs font-medium rounded-lg border-0 cursor-pointer ${
-                            statusColors[deal.status]?.bg || 'bg-gray-500/10'
-                          } ${statusColors[deal.status]?.text || 'text-gray-500'}`}
+                            statusColors[deal.status]?.bg || "bg-gray-500/10"
+                          } ${
+                            statusColors[deal.status]?.text || "text-gray-500"
+                          }`}
                         >
-                          {Object.entries(statusLabels).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
+                          {Object.entries(statusLabels).map(
+                            ([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            )
+                          )}
                         </select>
                       </td>
                       <td className="px-6 py-4">
                         <select
                           value={deal.payment_status}
-                          onChange={(e) => updatePaymentStatus(deal.id, e.target.value)}
+                          onChange={(e) =>
+                            updatePaymentStatus(deal.id, e.target.value)
+                          }
                           className={`px-3 py-1.5 text-xs font-medium rounded-lg border-0 cursor-pointer ${
-                            deal.payment_status === 'paid' 
-                              ? 'bg-green-500/10 text-green-500'
-                              : deal.payment_status === 'failed'
-                              ? 'bg-red-500/10 text-red-500'
-                              : 'bg-yellow-500/10 text-yellow-500'
+                            deal.payment_status === "paid"
+                              ? "bg-green-500/10 text-green-500"
+                              : deal.payment_status === "failed"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-yellow-500/10 text-yellow-500"
                           }`}
                         >
                           <option value="pending">Pending</option>
@@ -389,11 +450,14 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
                         <div className="flex items-center gap-1 text-[#B0B0B0] text-sm">
                           <Calendar className="w-3 h-3" />
                           <span>
-                            {new Date(deal.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            {new Date(deal.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
                           </span>
                         </div>
                       </td>
@@ -411,5 +475,5 @@ export function DashboardClient({ initialDeals, stats }: DashboardClientProps) {
         </p>
       </main>
     </div>
-  )
+  );
 }

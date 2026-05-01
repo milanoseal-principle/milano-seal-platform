@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
 
 const COUNTRY_MAP: Record<string, string> = {
   italy: "italy",
@@ -22,15 +22,15 @@ const COUNTRY_MAP: Record<string, string> = {
   colombia: "colombia",
   peru: "peru",
   chile: "chile",
-  "costa-rica": "costa-rica"
-}
+  "costa-rica": "costa-rica",
+};
 
 export function GlobalMap() {
-  const router = useRouter()
+  const router = useRouter();
 
   const go = (slug: string) => {
-    router.push(`/country/${slug}`)
-  }
+    router.push(`/country/${slug}`);
+  };
 
   return (
     <div className="w-full flex justify-center">
@@ -39,7 +39,6 @@ export function GlobalMap() {
         className="w-full max-w-5xl cursor-pointer"
         style={{ touchAction: "manipulation" }}
       >
-
         {/* ITALY */}
         <path
           d="M540 210 L550 230 L545 260 L520 270 L505 250 L510 230 Z"
@@ -63,8 +62,7 @@ export function GlobalMap() {
           className="transition-all hover:fill-white"
           onClick={() => go("spain")}
         />
-
       </svg>
     </div>
-  )
+  );
 }

@@ -1,46 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createAdminClient()
-    const { searchParams } = new URL(request.url)
-    
-    const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
-    
+    const supabase = createAdminClient();
+    const { searchParams } = new URL(request.url);
+
+    const status = searchParams.get("status");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = parseInt(searchParams.get("offset") || "0");
+
     let query = supabase
-      .from('deals')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-    
+      .from("deals")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
     if (status) {
-      query = query.eq('status', status)
+      query = query.eq("status", status);
     }
-    
-    const { data: deals, error, count } = await query
-    
+
+    const { data: deals, error, count } = await query;
+
     if (error) {
-      console.error('Database error:', error)
+      console.error("Database error:", error);
       return NextResponse.json(
-        { error: 'Failed to fetch deals' },
+        { error: "Failed to fetch deals" },
         { status: 500 }
-      )
+      );
     }
-    
+
     return NextResponse.json({
       deals,
       total: count,
       limit,
       offset,
-    })
+    });
   } catch (error) {
-    console.error('API error:', error)
+    console.error("API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
-    )
+    );
   }
 }

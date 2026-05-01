@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
     return NextResponse.json(
       { error: `Webhook error: ${err.message}` },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

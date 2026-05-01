@@ -1,57 +1,57 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Shield, Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Shield, Eye, EyeOff } from "lucide-react";
 
 export default function OperatorLoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [message, setMessage] = useState<string | null>(null)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [message, setMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-    setMessage(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setMessage(null);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
-    if (mode === 'signup') {
+    if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       if (error) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        setMessage('Check your email to confirm your account, then sign in.')
-        setMode('login')
+        setMessage("Check your email to confirm your account, then sign in.");
+        setMode("login");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
       if (error) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        router.push('/dashboard')
-        router.refresh()
+        router.push("/dashboard");
+        router.refresh();
       }
     }
 
-    setIsLoading(false)
-  }
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
@@ -61,9 +61,13 @@ export default function OperatorLoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#C6A55A]/10 border border-[#C6A55A]/20 mb-4">
             <Shield className="w-8 h-8 text-[#C6A55A]" />
           </div>
-          <h1 className="font-serif text-2xl text-white mb-2">Operator Access</h1>
+          <h1 className="font-serif text-2xl text-white mb-2">
+            Operator Access
+          </h1>
           <p className="text-[#B0B0B0] text-sm">
-            {mode === 'login' ? 'Sign in to access the dashboard' : 'Create your operator account'}
+            {mode === "login"
+              ? "Sign in to access the dashboard"
+              : "Create your operator account"}
           </p>
         </div>
 
@@ -90,7 +94,7 @@ export default function OperatorLoginPage() {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -103,7 +107,11 @@ export default function OperatorLoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#B0B0B0] hover:text-white"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -125,16 +133,26 @@ export default function OperatorLoginPage() {
               disabled={isLoading}
               className="w-full py-3 bg-[#C6A55A] hover:bg-[#D4B56A] disabled:bg-[#C6A55A]/50 text-[#0A0A0A] font-medium rounded-lg transition-colors"
             >
-              {isLoading ? 'Please wait...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
+              {isLoading
+                ? "Please wait..."
+                : mode === "login"
+                ? "Sign In"
+                : "Create Account"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setMessage(null); }}
+              onClick={() => {
+                setMode(mode === "login" ? "signup" : "login");
+                setError(null);
+                setMessage(null);
+              }}
               className="text-sm text-[#C6A55A] hover:underline"
             >
-              {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+              {mode === "login"
+                ? "Need an account? Sign up"
+                : "Already have an account? Sign in"}
             </button>
           </div>
         </div>
@@ -144,5 +162,5 @@ export default function OperatorLoginPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }
