@@ -3,7 +3,21 @@
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { DESTINATIONS } from "@/data/destinations";
+
+const GlobalIntelMapInteractive = dynamic(
+  () =>
+    import("@/components/landing/global-intel-map-interactive").then(
+      (m) => m.GlobalIntelMapInteractive
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[480px] bg-[#0A0A0A] border-y border-[#141414] animate-pulse" />
+    ),
+  }
+);
 
 // Top destinations by demand for the homepage teaser
 const TEASER_LIMIT = 8;
@@ -73,8 +87,8 @@ export function GlobalMap() {
             Cross-Border Execution Authority
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            From Florida to the world. Select a destination to begin execution
-            — or open the full Global Intel map for compliance details and
+            From Florida to the world. Select a destination to begin execution —
+            or open the full Global Intel map for compliance details and
             execution paths.
           </p>
         </motion.div>
@@ -95,6 +109,17 @@ export function GlobalMap() {
             <span className="text-[#B0B0B0]">|</span>
             <span className="text-[#C6A55A]">Execution Origin</span>
           </div>
+        </motion.div>
+
+        {/* Real interactive world map */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-10 rounded-2xl overflow-hidden border border-[#1A1A1A]"
+        >
+          <GlobalIntelMapInteractive />
         </motion.div>
 
         {/* Interactive destination tiles → /intake?country=... */}
