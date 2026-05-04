@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { MilanoShell } from "@/components/dashboard/milano-shell";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Operator OS — The Milano Seal™",
+  title: "Admin — The Milano Seal™",
   robots: { index: false, follow: false },
 };
 
@@ -11,5 +12,22 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <>
+      <MilanoShell>{children}</MilanoShell>
+      <Toaster
+        theme="dark"
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            toast:
+              "bg-card text-card-foreground border border-border rounded-lg shadow-lg",
+            description: "text-muted-foreground",
+            actionButton: "bg-primary text-primary-foreground",
+            cancelButton: "bg-muted text-muted-foreground",
+          },
+        }}
+      />
+    </>
+  );
 }

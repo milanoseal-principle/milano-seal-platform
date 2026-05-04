@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { requirePaid, validateTransition } from "@/lib/gate";
 import { canTransition } from "@/lib/stateMachine";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 
@@ -120,6 +122,27 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  void (async () => {
+    const ssr = await createClient();
+    const {
+      data: { user },
+    } = await ssr.auth.getUser();
+    await logActivity({
+      deal_id,
+      actor: user?.email ?? "admin",
+      action:
+        to === "completed"
+          ? "completed"
+          : to === "apostille"
+          ? "apostille"
+          : to === "in_execution"
+          ? "executed"
+          : "stage_advanced",
+      detail: `${from} → ${to}`,
+      meta: { step, from, to },
+    });
+  })();
 
   return NextResponse.json({
     ok: true,

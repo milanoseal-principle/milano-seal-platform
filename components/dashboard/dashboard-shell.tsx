@@ -39,6 +39,11 @@ import {
   X,
   ChevronRight,
   Funnel,
+  LogOut,
+  FilePlus2,
+  Briefcase,
+  Kanban,
+  ListTodo,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
@@ -69,6 +74,11 @@ const ICONS: Record<string, React.ElementType> = {
   Sparkles,
   FolderOpen,
   Funnel,
+  FilePlus2,
+  Briefcase,
+  Kanban,
+  ListTodo,
+  ShieldAlert: Shield,
 };
 
 function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
@@ -99,7 +109,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const activeModule = pathname.split("/").pop() || "deals";
+  const segments = pathname.split("/").filter(Boolean);
+  const activeModule = segments[1] ?? "deals";
 
   const sidebar = (
     <aside className="w-64 flex-shrink-0 bg-[#080808] border-r border-[#1A1A1A] h-full flex flex-col">
@@ -116,7 +127,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               The Milano Seal™
             </p>
             <p className="text-[#C6A55A] text-[10px] tracking-[0.15em] uppercase">
-              Operator OS
+              Admin OS
             </p>
           </div>
         </Link>
@@ -146,7 +157,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-[#1A1A1A]">
+      <div className="px-4 py-3 border-t border-[#1A1A1A] space-y-3">
+        <form action="/api/auth/signout" method="post">
+          <button
+            type="submit"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8A8A8A] hover:text-white hover:bg-[#1A1A1A] transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign out
+          </button>
+        </form>
         <p className="text-[10px] text-[#4A4A4A]">
           Nicholas Milano · FL #668288
         </p>
@@ -180,7 +200,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <p className="text-white text-sm font-medium">The Milano Seal™ OS</p>
+          <p className="text-white text-sm font-medium">
+            The Milano Seal™ Admin
+          </p>
           <div />
         </div>
         <main className="flex-1 overflow-y-auto">{children}</main>

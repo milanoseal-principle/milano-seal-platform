@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity";
+import { serializeDealMS } from "@/lib/milanoSerialize";
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +12,15 @@ export async function GET(
     const { id } = await params;
     const supabase = createAdminClient();
 
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id
+      );
+
     const { data: deal, error } = await supabase
       .from("deals")
       .select("*")
-      .eq("id", id)
+      .eq(isUuid ? "id" : "deal_id", id)
       .single();
 
     if (error) {
@@ -26,7 +34,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ deal });
+    return NextResponse.json(serializeDealMS(deal));
   } catch (error) {
     console.error("API error:", error);
     return NextResponse.json(
@@ -107,6 +115,15 @@ export async function PATCH(
       "followup_72h",
       "follow_up_active",
       "decline_risk",
+      "assignee",
+      "scheduled_at",
+      "execution_at",
+      "apostille_at",
+      "delivery_at",
+      "shipped_at",
+      "tracking_number",
+      "carrier",
+      "notes",
     ];
 
     const updateData: Record<string, unknown> = {};
@@ -140,6 +157,86 @@ export async function PATCH(
         { status: 500 }
       );
     }
+
+    void (async () => {
+      try {
+        const ssr = await createClient();
+        const {
+          data: { user },
+        } = await ssr.auth.getUser();
+        const actor = user?.email ?? "admin";
+        const dealRef = (deal?.deal_id as string) ?? id;
+
+        if (updateData.assignee !== undefined) {
+          await logActivity({
+            deal_id: dealRef,
+            actor,
+            action: "assignee_changed",
+            detail: `Assigned to ${updateData.assignee || "unassigned"}`,
+            meta: { assignee: updateData.assignee },
+          });
+        }
+        if (updateData.payment_status === "paid") {
+          await logActivity({
+            deal_id: dealRef,
+            actor,
+            action: "payment_confirmed",
+            detail: `Payment confirmed${
+              updateData.payment_amount_received != null
+                ? ` · $${updateData.payment_amount_received}`
+                : ""
+            }${
+              updateData.payment_reference
+                ? ` · ref ${updateData.payment_reference}`
+                : ""
+            }`,
+            meta: {
+              amount: updateData.payment_amount_received ?? null,
+              reference: updateData.payment_reference ?? null,
+              method: updateData.payment_method ?? null,
+            },
+          });
+        } else if (
+          updateData.payment_status &&
+          updateData.payment_status !== "paid"
+        ) {
+          await logActivity({
+            deal_id: dealRef,
+            actor,
+            action: "payment_updated",
+            detail: `Payment status → ${updateData.payment_status}`,
+            meta: { payment_status: updateData.payment_status },
+          });
+        }
+        if (
+          updateData.tracking_number !== undefined ||
+          updateData.carrier !== undefined
+        ) {
+          await logActivity({
+            deal_id: dealRef,
+            actor,
+            action: "tracking_added",
+            detail: `Tracking ${updateData.tracking_number ?? "—"} via ${
+              updateData.carrier ?? "carrier"
+            }`,
+            meta: {
+              tracking_number: updateData.tracking_number,
+              carrier: updateData.carrier,
+            },
+          });
+        }
+        if (updateData.notes !== undefined) {
+          await logActivity({
+            deal_id: dealRef,
+            actor,
+            action: "note_added",
+            detail: "Notes updated",
+          });
+        }
+      } catch (logErr) {
+        console.error("[activity] PATCH log failed:", logErr);
+      }
+    })();
 
     return NextResponse.json({ deal });
   } catch (error) {
