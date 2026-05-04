@@ -138,7 +138,7 @@ export function Hero() {
               <img
                 src="/nicholas-milano.jpeg"
                 alt="Nicholas Milano — Founder, The Milano Seal"
-                className="absolute inset-0 w-full h-full object-cover object-top"
+                className="absolute inset-0 w-full h-full object-cover object-center"
               />
               {/* Credential badge */}
               <div className="absolute bottom-6 left-6 right-6 z-20">

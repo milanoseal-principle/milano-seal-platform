@@ -527,3 +527,14 @@ body {
     padding: 10px 12px;
   }
 }
+
+.leaflet-container {
+  background: #0a0a0a !important;
+}
+.leaflet-grab,
+.leaflet-crosshair {
+  cursor: grab;
+}
+.leaflet-grab:active {
+  cursor: grabbing;
+}
