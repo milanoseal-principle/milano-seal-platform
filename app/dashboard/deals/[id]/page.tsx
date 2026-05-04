@@ -193,7 +193,11 @@ export default function DealDetail() {
   return (
     <div className="space-y-6">
       <Link href="/dashboard/deals">
-        <Button variant="ghost" size="sm" className="text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground mb-4"
+        >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to matters
         </Button>
       </Link>
@@ -528,7 +532,11 @@ export default function DealDetail() {
                   <Copy className="w-4 h-4" />
                 </Button>
                 {deal.payment_link && (
-                  <a href={deal.payment_link} target="_blank" rel="noreferrer">
+                  <a
+                    href={deal.payment_link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <Button size="sm" variant="ghost">
                       <ExternalLink className="w-4 h-4" />
                     </Button>

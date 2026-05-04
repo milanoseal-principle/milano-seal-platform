@@ -31,7 +31,7 @@ function MilanoMark() {
     <Link href="/dashboard">
       <div className="flex items-center gap-3 cursor-pointer group">
         <div
-          className="w-10 h-10 rounded-md flex items-center justify-center font-serif text-xl font-semibold border"
+          className="w-9 h-9 rounded-md flex items-center justify-center font-serif text-lg font-semibold border flex-shrink-0"
           style={{
             background:
               "linear-gradient(135deg, hsl(38 47% 56% / .15), hsl(38 30% 18% / .25))",
@@ -42,12 +42,12 @@ function MilanoMark() {
         >
           M
         </div>
-        <div className="flex flex-col leading-tight">
-          <span className="font-serif text-base text-foreground">
+        <div className="flex flex-col leading-tight min-w-0">
+          <span className="font-serif text-sm text-foreground">
             The Milano Seal
           </span>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            International Document Execution
+          <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground truncate">
+            Intl. Document Execution
           </span>
         </div>
       </div>
@@ -59,90 +59,112 @@ export function MilanoShell({ children }: { children: ReactNode }) {
   const location = usePathname();
 
   return (
-    <div className="min-h-screen w-full text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="max-w-[1480px] mx-auto px-4 md:px-8 h-16 flex items-center gap-6">
+    <div className="min-h-screen flex text-foreground bg-background">
+      {/* ── Sidebar ── */}
+      <aside className="fixed inset-y-0 left-0 z-40 w-56 flex flex-col border-r border-border bg-background">
+        {/* Logo */}
+        <div className="px-4 py-5 border-b border-border">
           <MilanoMark />
-          <nav className="hidden md:flex items-center gap-1 ml-4">
-            {NAV.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? location === "/dashboard"
-                  : location.startsWith(item.href);
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href}>
-                  <div
-                    data-testid={`nav-${item.label
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")}`}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                      isActive
-                        ? "text-primary bg-gold-soft border border-gold"
-                        : "text-foreground/70 hover:text-foreground hover:bg-secondary/60 border border-transparent"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden lg:flex flex-col text-right leading-tight">
-              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                Notary &amp; Apostille Coordinator
-              </span>
-              <span className="text-xs text-foreground/80">
-                Nicholas Milano · FL #668288
-              </span>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {NAV.map((item) => {
+            const isActive =
+              item.href === "/dashboard"
+                ? location === "/dashboard"
+                : location.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href}>
+                <div
+                  data-testid={`nav-${item.label
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                    isActive
+                      ? "text-primary bg-gold-soft border border-gold"
+                      : "text-foreground/60 hover:text-foreground hover:bg-secondary/60 border border-transparent"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* CTA */}
+        <div className="px-3 pb-3">
+          <Link href="/dashboard/intake" className="block">
+            <Button
+              data-testid="cta-begin-execution"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gold-glow font-medium text-sm"
+            >
+              Begin Execution <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Operator info + sign out */}
+        <div className="border-t border-border">
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+              style={{
+                background: "hsl(38 47% 56% / .15)",
+                border: "1px solid hsl(38 47% 56% / .35)",
+                color: "#C6A55A",
+              }}
+            >
+              NM
             </div>
-            <Link href="/dashboard/intake">
-              <Button
-                data-testid="cta-begin-execution"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 gold-glow font-medium"
-              >
-                Begin Execution <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-xs font-medium text-foreground">Nicholas Milano</span>
+              <span className="text-[10px] text-muted-foreground">FL Notary #668288</span>
+            </div>
+          </div>
+          <div className="px-3 pb-3">
             <form action="/api/auth/signout" method="post">
               <Button
                 type="submit"
-                size="icon"
                 variant="ghost"
-                title="Sign out"
-                className="text-muted-foreground hover:text-foreground"
+                size="sm"
+                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground text-xs h-8"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
+                Sign out
               </Button>
             </form>
           </div>
         </div>
-        <div className="gold-rule" />
-      </header>
+      </aside>
 
-      <main className="max-w-[1480px] mx-auto px-4 md:px-8 py-8">
-        {children}
-      </main>
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col min-w-0 ml-56">
+        <main className="flex-1 px-8 md:px-12 py-8 pb-16">
+          {children}
+        </main>
 
-      <footer className="border-t border-border mt-16">
-        <div className="max-w-[1480px] mx-auto px-4 md:px-8 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="text-gold font-serif">The Milano Seal</span>
-            <span>
-              · Milano Seal International LLC · Florida Notary #668288
-            </span>
+        <footer className="border-t border-border ml-0">
+          <div className="px-8 md:px-12 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="text-gold font-serif">The Milano Seal</span>
+              <span>
+                · Milano Seal International LLC · Florida Notary #668288
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>Hague Apostille</span>
+              <span className="text-foreground/40">·</span>
+              <span>RON Approved</span>
+              <span className="text-foreground/40">·</span>
+              <span>Mobile Florida</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span>Hague Apostille</span>
-            <span className="text-foreground/40">·</span>
-            <span>RON Approved</span>
-            <span className="text-foreground/40">·</span>
-            <span>Mobile Florida</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

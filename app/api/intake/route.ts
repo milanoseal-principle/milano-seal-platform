@@ -8,6 +8,7 @@ import { generateInvoice } from "@/lib/invoice";
 import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
 import { logActivity } from "@/lib/activity";
+import { createWisePaymentRequest } from "@/lib/wise";
 import { DESTINATIONS } from "@/data/destinations";
 
 function genDealId(): string {
@@ -76,65 +77,8 @@ function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
   return "LOW";
 }
 
-// PHASE 6 — Wise payment invoice (primary, Stripe as fallback)
-function generateWiseInvoice({
-  amount,
-  dealId,
-  clientName,
-}: {
-  amount: number;
-  dealId: string;
-  clientName: string;
-}) {
-  return {
-    payment_method: "WISE",
-    amount,
-    reference: dealId,
-    note: `The Milano Seal™ — Document Execution · ${clientName}`,
-    wise_link: "https://wise.com/pay/me/nicholassamm1",
-    status: "AWAITING_PAYMENT",
-  };
-}
-
-async function createStripeLink(deal: {
-  deal_id: string;
-  lane: string;
-  total: number;
-  client_name: string;
-  document_type: string;
-  country: string;
-}): Promise<string | null> {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  try {
-    const res = await fetch("https://api.stripe.com/v1/payment_links", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        "line_items[0][price_data][currency]": "usd",
-        "line_items[0][price_data][product_data][name]": `The Milano Seal™ — ${deal.lane} Lane`,
-        "line_items[0][price_data][product_data][description]": `${deal.document_type} · ${deal.country} · ${deal.deal_id}`,
-        "line_items[0][price_data][unit_amount]": String(
-          Math.round(deal.total * 100)
-        ),
-        "line_items[0][quantity]": "1",
-        "metadata[deal_id]": deal.deal_id,
-        "metadata[client_name]": deal.client_name,
-        "after_completion[type]": "redirect",
-        "after_completion[redirect][url]": `${
-          process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
-        }/intake/confirmation`,
-      }).toString(),
-    });
-    const data = await res.json();
-    return data.url || null;
-  } catch {
-    return null;
-  }
-}
+// Stripe integration removed — Wise is now the sole payment provider.
+// See lib/wise.ts for the real Wise API client (test/production mode).
 
 // PHASE 9 — High value operator alert (non-blocking)
 async function notifyHighValue(
@@ -247,20 +191,33 @@ export async function POST(req: NextRequest) {
     // PHASE 4 — priority tier routing
     const priority_tier = routeDeal(conversion_score);
 
-    // PHASE 6 — Wise as primary, Stripe as fallback
-    const wise_invoice = generateWiseInvoice({
-      amount: pricing.total,
+    // PHASE 6 — Wise is the sole payment provider.
+    //
+    // Calls the Wise API (sandbox in test mode, real in production) to
+    // create a payment request and returns the live short URL. If
+    // WISE_API_TOKEN / WISE_PROFILE_ID aren't configured we get a
+    // deterministic fallback URL so dev environments still work.
+    const wiseResult = await createWisePaymentRequest({
       dealId: deal_id,
+      amount: pricing.total,
+      currency: "USD",
+      description: `The Milano Seal™ — ${finalLane} Lane · ${
+        data.document_type || prefillDoc || "Document"
+      } · ${country}`,
       clientName: client_name,
+      clientEmail: data.email || null,
     });
-    const payment_link = await createStripeLink({
-      deal_id,
-      lane: finalLane,
-      total: pricing.total,
-      client_name,
-      document_type: data.document_type || prefillDoc || "",
-      country,
-    });
+    const payment_link = wiseResult.url;
+    const wise_invoice = {
+      payment_method: "WISE",
+      amount: pricing.total,
+      reference: deal_id,
+      note: `The Milano Seal™ — Document Execution · ${client_name}`,
+      wise_link: wiseResult.url,
+      wise_request_id: wiseResult.id,
+      wise_mode: wiseResult.mode,
+      status: "AWAITING_PAYMENT",
+    };
 
     const docType = data.document_type || prefillDoc || "";
     const companyName =
@@ -339,14 +296,8 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("DB insert error:", error);
-
       return NextResponse.json(
-        {
-          error: `Failed to save matter: ${error.message}`,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        },
+        { error: "Failed to save matter. Please try again or contact support." },
         { status: 500 }
       );
     }

@@ -16,6 +16,8 @@ import { CheckCircle2, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface FollowUp {
+  id: string;
+  deal_id: string | null;
   type: string;
   due_at: string;
   status: "pending" | "completed" | "cancelled";

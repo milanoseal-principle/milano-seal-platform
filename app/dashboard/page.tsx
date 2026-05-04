@@ -158,11 +158,12 @@ export default function Dashboard() {
               </Button>
             </Link>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent>
             {data.recent_deals.length === 0 ? (
               <p className="text-muted-foreground text-sm">No matters yet.</p>
             ) : (
-              data.recent_deals.map((d) => (
+              <div className="flex flex-col gap-3">
+              {data.recent_deals.map((d) => (
                 <Link key={d.id} href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
                   <div
                     data-testid={`recent-deal-${d.deal_id ?? d.id}`}
@@ -200,7 +201,8 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </Link>
-              ))
+              ))}
+              </div>
             )}
           </CardContent>
         </Card>
