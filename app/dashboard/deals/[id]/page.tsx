@@ -71,7 +71,13 @@ interface MilanoDeal {
   base_price: number;
   witness_total: number;
   total_price: number;
+  invoice_retainer: number | null;
+  invoice_balance: number | null;
   payment_link: string;
+  balance_payment_link: string | null;
+  balance_payment_status: string | null;
+  balance_paid_at: string | null;
+  balance_amount_received: number | null;
   deal_status: string;
   payment_status: string;
   conversion_score: number;
@@ -119,6 +125,8 @@ export default function DealDetail() {
   const [assigneeName, setAssigneeName] = useState("Nicholas");
   const [payAmt, setPayAmt] = useState("");
   const [payRef, setPayRef] = useState("");
+  const [payBalAmt, setPayBalAmt] = useState("");
+  const [payBalRef, setPayBalRef] = useState("");
 
   async function moveStage(stage: string, successMsg: string) {
     if (!deal) return;
@@ -631,6 +639,108 @@ export default function DealDetail() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              )}
+
+              {/* Balance payment section */}
+              {(deal.balance_payment_link || ["shipped", "completed"].includes(stage)) && (
+                <>
+                  <Separator className="bg-border" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                        Balance (50%)
+                      </span>
+                      {deal.balance_payment_status && (
+                        <Badge
+                          variant="outline"
+                          className={deal.balance_payment_status === "paid" ? "bg-paid" : "bg-await"}
+                        >
+                          {deal.balance_payment_status}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {deal.balance_payment_link ? (
+                      <>
+                        <div className="flex items-center gap-2 p-2 rounded border border-border bg-background">
+                          <code className="flex-1 text-xs break-all">
+                            {deal.balance_payment_link}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              navigator.clipboard.writeText(deal.balance_payment_link!);
+                              toast.success("Copied");
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                          <a href={deal.balance_payment_link} target="_blank" rel="noreferrer">
+                            <Button size="sm" variant="ghost">
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        </div>
+
+                        {deal.balance_paid_at ? (
+                          <p className="text-xs text-muted-foreground">
+                            Received{deal.balance_amount_received ? ` · $${deal.balance_amount_received.toLocaleString()}` : ""} · {new Date(deal.balance_paid_at).toLocaleDateString()}
+                          </p>
+                        ) : (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft"
+                              >
+                                Confirm Balance Payment
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Confirm balance payment</DialogTitle>
+                              </DialogHeader>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder={`Amount (${deal.invoice_balance ?? ""})`}
+                                value={payBalAmt}
+                                onChange={(e) => setPayBalAmt(e.target.value)}
+                              />
+                              <Input
+                                placeholder="Wise reference (optional)"
+                                value={payBalRef}
+                                onChange={(e) => setPayBalRef(e.target.value)}
+                              />
+                              <DialogFooter>
+                                <Button
+                                  onClick={() =>
+                                    patchDeal(
+                                      {
+                                        balance_payment_status: "paid",
+                                        balance_amount_received: Number(payBalAmt),
+                                        ...(payBalRef ? { balance_payment_reference: payBalRef } : {}),
+                                      },
+                                      "Balance confirmed.",
+                                    )
+                                  }
+                                  disabled={!payBalAmt}
+                                >
+                                  Mark balance paid
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Balance invoice generated automatically when matter ships.
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

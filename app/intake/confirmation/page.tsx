@@ -49,7 +49,7 @@ interface WiseInvoice {
   note: string;
   wise_link: string;
   wise_request_id?: string | null;
-  wise_mode?: "test" | "production" | "fallback";
+  wise_mode?: "production" | "fallback";
   status: string;
 }
 
@@ -154,20 +154,12 @@ function ConfirmationInner() {
           <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
             Secure Payment — Wise
           </h2>
-          {wiseInvoice?.wise_mode && wiseInvoice.wise_mode !== "production" && (
+          {wiseInvoice?.wise_mode === "fallback" && (
             <span
-              className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-[0.2em] uppercase border ${
-                wiseInvoice.wise_mode === "test"
-                  ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
-                  : "border-rose-500/40 text-rose-400 bg-rose-500/10"
-              }`}
-              title={
-                wiseInvoice.wise_mode === "test"
-                  ? "This payment was issued against the Wise sandbox. No real funds will move."
-                  : "Wise was unreachable; using a fallback payment link."
-              }
+              className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-[0.2em] uppercase border border-rose-500/40 text-rose-400 bg-rose-500/10"
+              title="Wise was unreachable; using a fallback payment link."
             >
-              {wiseInvoice.wise_mode === "test" ? "Sandbox" : "Fallback"}
+              Fallback
             </span>
           )}
         </div>

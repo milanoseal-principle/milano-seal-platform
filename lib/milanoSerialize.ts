@@ -25,7 +25,13 @@ export interface MilanoDeal {
   base_price: number;
   witness_total: number;
   total_price: number;
+  invoice_retainer: number | null;
+  invoice_balance: number | null;
   payment_link: string | null;
+  balance_payment_link: string | null;
+  balance_payment_status: string | null;
+  balance_paid_at: string | null;
+  balance_amount_received: number | null;
   deal_status: string;
   payment_status: string;
   conversion_score: number;
@@ -81,7 +87,13 @@ export function serializeDealMS(row: Record<string, unknown>): MilanoDeal {
     base_price: Number(row.base_price ?? totalPrice ?? 0),
     witness_total: Number(row.witness_total ?? 0),
     total_price: totalPrice,
+    invoice_retainer: row.invoice_retainer != null ? Number(row.invoice_retainer) : null,
+    invoice_balance: row.invoice_balance != null ? Number(row.invoice_balance) : null,
     payment_link: (row.payment_link as string) ?? null,
+    balance_payment_link: (row.balance_payment_link as string) ?? null,
+    balance_payment_status: (row.balance_payment_status as string) ?? null,
+    balance_paid_at: toIso(row.balance_paid_at),
+    balance_amount_received: row.balance_amount_received != null ? Number(row.balance_amount_received) : null,
     deal_status: ((row.status as string) ??
       (row.deal_status as string) ??
       "new") as string,

@@ -18,7 +18,6 @@ import {
   CreditCard,
   ExternalLink,
   RefreshCw,
-  ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
 
@@ -57,7 +56,6 @@ interface PaymentRow {
 
 interface PaymentsResponse {
   ok: boolean;
-  mode: "test" | "production";
   api_host: string;
   wise_ok: boolean;
   wise_error: string | null;
@@ -82,7 +80,6 @@ export default function AdminPaymentsPage() {
   const { data, isLoading, refetch } = useApi<PaymentsResponse>(
     "/api/admin/wise/payments",
   );
-  const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [showOnly, setShowOnly] = useState<"all" | "paid" | "pending" | "failed">(
     "all",
@@ -106,31 +103,6 @@ export default function AdminPaymentsPage() {
     });
   }, [data, filter, showOnly]);
 
-  const replay = async (
-    dealId: string,
-    leg: "retainer" | "balance",
-    outcome: "paid" | "failed",
-  ) => {
-    setBusy(`${dealId}:${leg}:${outcome}`);
-    try {
-      const res = await fetch("/api/admin/wise/replay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deal_id: dealId, leg, outcome }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `Replay failed (${res.status})`);
-      }
-      await refetch();
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const mode = data?.mode ?? "production";
-  const isSandbox = mode === "test";
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -138,13 +110,8 @@ export default function AdminPaymentsPage() {
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
             Payment Review
           </p>
-          <h1 className="font-serif text-4xl text-foreground flex items-center gap-3">
+          <h1 className="font-serif text-4xl text-foreground">
             Wise Payments
-            {isSandbox && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold tracking-[0.2em] uppercase border border-amber-500/40 text-amber-400 bg-amber-500/10">
-                Sandbox
-              </span>
-            )}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {data?.api_host} · {data?.wise_total ?? 0} live request
@@ -171,7 +138,7 @@ export default function AdminPaymentsPage() {
             <TriangleAlert className="w-4 h-4 text-rose-400 mt-0.5" />
             <div>
               <p className="text-sm text-rose-300 font-medium">
-                Could not reach Wise ({mode})
+                Could not reach Wise
               </p>
               <p className="text-xs text-rose-300/80 mt-1">{data.wise_error}</p>
             </div>
@@ -207,8 +174,8 @@ export default function AdminPaymentsPage() {
             Payment Requests
           </CardTitle>
           <CardDescription>
-            DB row per deal joined to its live Wise{" "}
-            {isSandbox ? "sandbox" : "production"} payment-request by reference.
+            DB row per deal joined to its live Wise production payment-request
+            by reference.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -325,7 +292,7 @@ export default function AdminPaymentsPage() {
                   </div>
                   <div className="rounded border border-border/60 p-2">
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                      Wise {isSandbox ? "(sandbox)" : "(live)"}
+                      Wise (live)
                     </p>
                     {row.wise ? (
                       <div className="space-y-0.5">
@@ -383,87 +350,12 @@ export default function AdminPaymentsPage() {
                       Open pay link
                     </a>
                   )}
-                  {isSandbox && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={
-                          busy === `${row.deal_id}:retainer:paid` ||
-                          dbStatus === "paid"
-                        }
-                        onClick={() => replay(row.deal_id, "retainer", "paid")}
-                      >
-                        <ShieldCheck className="w-3 h-3 mr-1" />
-                        Mark retainer paid
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={busy === `${row.deal_id}:retainer:failed`}
-                        onClick={() =>
-                          replay(row.deal_id, "retainer", "failed")
-                        }
-                      >
-                        <TriangleAlert className="w-3 h-3 mr-1" />
-                        Mark retainer failed
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={
-                          busy === `${row.deal_id}:balance:paid` ||
-                          row.db_balance_status === "paid"
-                        }
-                        onClick={() => replay(row.deal_id, "balance", "paid")}
-                      >
-                        <ShieldCheck className="w-3 h-3 mr-1" />
-                        Mark balance paid
-                      </Button>
-                    </>
-                  )}
                 </div>
               </div>
             );
           })}
         </CardContent>
       </Card>
-
-      {isSandbox && (
-        <Card className="bg-amber-500/5 border-amber-500/30">
-          <CardHeader>
-            <CardTitle className="font-serif text-base text-amber-200">
-              Sandbox flow — how to drive a full test
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-amber-100/90 space-y-2">
-            <p>
-              1. Go to{" "}
-              <Link href="/intake" className="underline">
-                /intake
-              </Link>{" "}
-              and submit a matter. The intake API issues a payment-request
-              against{" "}
-              <code className="text-xs">api.sandbox.transferwise.tech</code>.
-            </p>
-            <p>
-              2. The user lands on the confirmation page with a Wise sandbox pay
-              link and a <em>Sandbox</em> badge.
-            </p>
-            <p>
-              3. Open the pay link and complete it inside the Wise sandbox, or
-              use the <strong>Mark retainer paid</strong> button above to
-              simulate the webhook locally without leaving the dashboard.
-            </p>
-            <p>
-              4. The deal status flips to <code>paid</code> and the activity log
-              records <code>wise-sandbox-replay</code>; the same row updates
-              when a real sandbox webhook arrives at{" "}
-              <code className="text-xs">/api/webhook/wise</code>.
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

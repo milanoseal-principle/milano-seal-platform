@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getWiseBaseUrl, getWiseMode } from "@/lib/wise";
+import { getWiseBaseUrl } from "@/lib/wise";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,13 +17,11 @@ interface WiseProfile {
 
 export async function GET() {
   const base = getWiseBaseUrl();
-  const mode = getWiseMode();
   const token = process.env.WISE_API_TOKEN?.trim();
   const profileId = process.env.WISE_PROFILE_ID?.trim();
 
   const baseReport = {
     ok: false,
-    mode,
     api_host: base,
     token_set: Boolean(token),
     profile_id_set: Boolean(profileId),
@@ -38,9 +36,7 @@ export async function GET() {
     return NextResponse.json({
       ...baseReport,
       hint:
-        mode === "test"
-          ? "Set WISE_API_TOKEN to a sandbox token from sandbox.transferwise.tech → Settings → API tokens."
-          : "Set WISE_API_TOKEN in your .env (live token from wise.com → Settings → API tokens).",
+        "Set WISE_API_TOKEN in your .env (live token from wise.com → Settings → API tokens).",
     });
   }
 
@@ -61,10 +57,7 @@ export async function GET() {
       return NextResponse.json({
         ...baseReport,
         error: "401 Invalid token",
-        hint:
-          mode === "test"
-            ? "Sandbox token rejected — get a fresh one from sandbox.transferwise.tech → Settings → API tokens."
-            : "Your token isn't valid. Live tokens come from wise.com → Settings → API tokens.",
+        hint: "Your token isn't valid. Live tokens come from wise.com → Settings → API tokens.",
       });
     }
 

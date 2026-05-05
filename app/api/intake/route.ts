@@ -9,7 +9,10 @@ import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
 import { logActivity } from "@/lib/activity";
 import { createWisePaymentRequest } from "@/lib/wise";
+import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
 function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
@@ -284,6 +287,19 @@ export async function POST(req: NextRequest) {
     }
 
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);
+
+    if (data.email) {
+      void sendIntakeConfirmation({
+        to: data.email as string,
+        name: client_name,
+        dealId: deal_id,
+        lane: finalLane,
+        total: pricing.total,
+        retainer: invoice.retainer,
+        paymentLink: payment_link,
+        portalUrl: `${SITE}/portal/${access_token}`,
+      });
+    }
 
     void (async () => {
       let actor = source === "admin" ? "admin" : `${source}-intake`;

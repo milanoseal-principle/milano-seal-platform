@@ -302,7 +302,7 @@ function DetailPanel({ code, onClose }: { code: string; onClose: () => void }) {
         </div>
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>

@@ -21,8 +21,6 @@ function AdminLoginInner() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") || "/dashboard";
@@ -35,35 +33,14 @@ function AdminLoginInner() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setMessage(null);
 
     const supabase = createClient();
-
-    if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Check your email to confirm your account, then sign in.");
-        setMode("login");
-      }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push(nextPath);
-        router.refresh();
-      }
+      router.push(nextPath);
+      router.refresh();
     }
 
     setIsLoading(false);
@@ -76,21 +53,15 @@ function AdminLoginInner() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold-soft border-gold border mb-4">
             <Shield className="w-8 h-8 text-gold" />
           </div>
-          <h1 className="font-serif text-2xl text-foreground mb-2">
-            Admin Access
-          </h1>
+          <h1 className="font-serif text-2xl text-foreground mb-2">Admin Access</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "login"
-              ? "Sign in to access the admin dashboard"
-              : "Create your admin account"}
+            Sign in to access the admin dashboard
           </p>
         </div>
 
         <Card className="gold-glow">
           <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg">
-              {mode === "login" ? "Sign In" : "Create Account"}
-            </CardTitle>
+            <CardTitle className="font-serif text-lg">Sign In</CardTitle>
             <CardDescription>Authorized personnel only.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,18 +100,14 @@ function AdminLoginInner() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    autoComplete={
-                      mode === "login" ? "current-password" : "new-password"
-                    }
+                    autoComplete="current-password"
                     className="pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -157,41 +124,15 @@ function AdminLoginInner() {
                 </div>
               )}
 
-              {message && (
-                <div className="px-3 py-2 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-                  <p className="text-sm text-emerald-400">{message}</p>
-                </div>
-              )}
-
               <Button
                 type="submit"
                 disabled={isLoading}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gold-glow"
                 size="lg"
               >
-                {isLoading
-                  ? "Please wait…"
-                  : mode === "login"
-                  ? "Sign In"
-                  : "Create Account"}
+                {isLoading ? "Please wait…" : "Sign In"}
               </Button>
             </form>
-
-            <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode(mode === "login" ? "signup" : "login");
-                  setError(null);
-                  setMessage(null);
-                }}
-                className="text-sm text-gold hover:underline"
-              >
-                {mode === "login"
-                  ? "Need an account? Sign up"
-                  : "Already have an account? Sign in"}
-              </button>
-            </div>
           </CardContent>
         </Card>
 

@@ -70,8 +70,8 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const isActive =
-              item.href === "/dashboard"
-                ? location === "/dashboard"
+              item.href === "/dashboard" || item.href === "/dashboard/admin"
+                ? location === item.href
                 : location.startsWith(item.href);
             const Icon = item.icon;
             return (

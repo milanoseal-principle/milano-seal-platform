@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyWiseSignature, getWiseMode } from "@/lib/wise";
+import { verifyWiseSignature } from "@/lib/wise";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 
@@ -13,7 +13,6 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const raw = await req.text();
   const sig = req.headers.get("x-signature-sha256");
-  const mode = getWiseMode();
 
   const ok = await verifyWiseSignature(raw, sig);
   if (!ok) {
@@ -87,8 +86,8 @@ export async function POST(req: NextRequest) {
       actor: "wise-webhook",
       action: failed ? "payment_updated" : "payment_confirmed",
       detail: failed
-        ? `Wise webhook (${mode}) — balance payment failed`
-        : `Wise webhook (${mode}) confirmed balance payment`,
+        ? `Wise webhook — balance payment failed`
+        : `Wise webhook confirmed balance payment`,
       meta: { event_type: pickEventType(event), leg: "balance" },
     });
 
@@ -99,7 +98,6 @@ export async function POST(req: NextRequest) {
       received: true,
       deal_id: dealId,
       action: failed ? "balance_failed" : "balance_paid",
-      mode,
     });
   }
 
@@ -146,8 +144,8 @@ export async function POST(req: NextRequest) {
     actor: "wise-webhook",
     action: failed ? "payment_updated" : "payment_confirmed",
     detail: failed
-      ? `Wise webhook (${mode}) reported payment failure`
-      : `Wise webhook (${mode}) confirmed payment`,
+      ? `Wise webhook reported payment failure`
+      : `Wise webhook confirmed payment`,
     meta: { event_type: pickEventType(event), leg: "retainer" },
   });
 
@@ -158,7 +156,6 @@ export async function POST(req: NextRequest) {
     received: true,
     deal_id: dealId,
     action: failed ? "marked_failed" : "marked_paid",
-    mode,
   });
 }
 

@@ -12,22 +12,13 @@ export interface WisePaymentRequestInput {
 export interface WisePaymentRequestResult {
   url: string;
   id: string | null;
-  mode: WiseMode | "fallback";
+  mode: "production" | "fallback";
 }
-
-export type WiseMode = "test" | "production";
 
 const PRODUCTION_BASE = "https://api.wise.com";
-const SANDBOX_BASE = "https://api.sandbox.transferwise.tech";
-
-export function getWiseMode(): WiseMode {
-  const flag = (process.env.WISE_MODE ?? "").trim().toLowerCase();
-  if (flag === "test" || flag === "sandbox") return "test";
-  return "production";
-}
 
 export function getWiseBaseUrl(): string {
-  return getWiseMode() === "test" ? SANDBOX_BASE : PRODUCTION_BASE;
+  return PRODUCTION_BASE;
 }
 
 function isConfigured(): boolean {
@@ -57,8 +48,6 @@ export async function createWisePaymentRequest(
     return { url: fallback, id: null, mode: "fallback" };
   }
 
-  const mode = getWiseMode();
-  const base = getWiseBaseUrl();
   const profileId = process.env.WISE_PROFILE_ID!.trim();
   const currency = input.currency ?? "USD";
 
@@ -79,7 +68,7 @@ export async function createWisePaymentRequest(
 
   try {
     const res = await fetch(
-      `${base}/v3/profiles/${profileId}/payment-requests`,
+      `${PRODUCTION_BASE}/v3/profiles/${profileId}/payment-requests`,
       {
         method: "POST",
         headers: authHeaders(),
@@ -90,7 +79,7 @@ export async function createWisePaymentRequest(
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error(
-        `[wise/${mode}] payment-request failed ${res.status} — body sent: ${JSON.stringify(body)} — response: ${detail}`,
+        `[wise] payment-request failed ${res.status} — body sent: ${JSON.stringify(body)} — response: ${detail}`,
       );
       return { url: fallback, id: null, mode: "fallback" };
     }
@@ -112,7 +101,7 @@ export async function createWisePaymentRequest(
       data.payUrl;
     if (!liveUrl) {
       console.error(
-        `[wise/${mode}] response missing payment URL:`,
+        `[wise] response missing payment URL:`,
         JSON.stringify(data),
       );
       return {
@@ -122,9 +111,9 @@ export async function createWisePaymentRequest(
       };
     }
 
-    return { url: liveUrl, id: data.id ?? null, mode };
+    return { url: liveUrl, id: data.id ?? null, mode: "production" };
   } catch (err) {
-    console.error(`[wise/${mode}] network error:`, err);
+    console.error(`[wise] network error:`, err);
     return { url: fallback, id: null, mode: "fallback" };
   }
 }
@@ -185,90 +174,15 @@ function normalizePaymentRequest(
   };
 }
 
-export interface ListWisePaymentRequestsResult {
-  ok: boolean;
-  mode: WiseMode;
-  configured: boolean;
-  status: number;
-  error: string | null;
-  items: WisePaymentRequestRecord[];
-}
-
-/**
- * List payment-requests on the configured Wise profile. Used by the admin
- * payment-review screen so operators can confirm what Wise shows for a deal.
- */
-export async function listWisePaymentRequests(): Promise<ListWisePaymentRequestsResult> {
-  const mode = getWiseMode();
-  if (!isConfigured()) {
-    return {
-      ok: false,
-      mode,
-      configured: false,
-      status: 0,
-      error: "WISE_API_TOKEN or WISE_PROFILE_ID is not set.",
-      items: [],
-    };
-  }
-
-  const base = getWiseBaseUrl();
-  const profileId = process.env.WISE_PROFILE_ID!.trim();
-  try {
-    const res = await fetch(
-      `${base}/v3/profiles/${profileId}/payment-requests?limit=100`,
-      { headers: authHeaders(), cache: "no-store" },
-    );
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      return {
-        ok: false,
-        mode,
-        configured: true,
-        status: res.status,
-        error: `Wise API ${res.status}: ${detail.slice(0, 300) || res.statusText}`,
-        items: [],
-      };
-    }
-
-    const payload = (await res.json()) as
-      | {
-          paymentRequests?: Record<string, unknown>[];
-          results?: Record<string, unknown>[];
-        }
-      | Record<string, unknown>[];
-    const list = Array.isArray(payload)
-      ? payload
-      : (payload.paymentRequests ?? payload.results ?? []);
-    return {
-      ok: true,
-      mode,
-      configured: true,
-      status: res.status,
-      error: null,
-      items: list.map(normalizePaymentRequest),
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      mode,
-      configured: true,
-      status: 0,
-      error: err instanceof Error ? err.message : "Network error",
-      items: [],
-    };
-  }
-}
 
 export async function getWisePaymentRequest(
   id: string,
 ): Promise<WisePaymentRequestRecord | null> {
   if (!isConfigured() || !id) return null;
-  const base = getWiseBaseUrl();
   const profileId = process.env.WISE_PROFILE_ID!.trim();
   try {
     const res = await fetch(
-      `${base}/v3/profiles/${profileId}/payment-requests/${id}`,
+      `${PRODUCTION_BASE}/v3/profiles/${profileId}/payment-requests/${id}`,
       { headers: authHeaders(), cache: "no-store" },
     );
     if (!res.ok) return null;
@@ -289,25 +203,6 @@ Oj3Vos0VdBIs/gAyJ/4yyQFCXYte64I7ssrlbGRaco4nKF3HmaNhxwyKyJafz19e
 HwIDAQAB
 -----END PUBLIC KEY-----`;
 
-const WISE_SANDBOX_PUBLIC_KEY_FALLBACK = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyMrr1VMS9j+czKO8gtrM
-Bzr2vdhHSuX6tvDiPQE7CQ+86JX6/W9mghx8vQck6UdYORGzPAj+rrsLOQjphCpk
-gFnG/qW7/vQgRWuMsNyJ1Yjqdn0r4ZlT+oRSr/F5bxJ3Vp4BCVy1hPFLNsZ/Kj4n
-QdkIfIeBsa/m5kklZ0VC2RFqz7hqRO3iBRFMHHcv4eCH+e1pMM3XPN0zjXGpr0fY
-Ymqx8m8eD68jMc1q7JFK+1Bq14g0+HM4lwQz+ULHVOl7YbYXpdt97oz4wd90MO+E
-Tu1dr5q1V0BQEhjqFSCMD3DtMtxz7P74NWHRuD6QXM7Z0lj5/svW6XmKzYY3rODn
-0wIDAQAB
------END PUBLIC KEY-----`;
-
-function activePublicKeyPem(): string {
-  if (getWiseMode() === "test") {
-    const env = process.env.WISE_SANDBOX_PUBLIC_KEY?.trim();
-    if (env) return env.replace(/\\n/g, "\n");
-    return WISE_SANDBOX_PUBLIC_KEY_FALLBACK;
-  }
-  return WISE_PRODUCTION_PUBLIC_KEY;
-}
-
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const b64 = pem
     .replace(/-----BEGIN PUBLIC KEY-----/g, "")
@@ -319,21 +214,18 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-const keyCache = new Map<string, CryptoKey>();
+let cachedKey: CryptoKey | null = null;
 
 async function getWisePublicKey(): Promise<CryptoKey> {
-  const pem = activePublicKeyPem();
-  const cached = keyCache.get(pem);
-  if (cached) return cached;
-  const key = await crypto.subtle.importKey(
+  if (cachedKey) return cachedKey;
+  cachedKey = await crypto.subtle.importKey(
     "spki",
-    pemToArrayBuffer(pem),
+    pemToArrayBuffer(WISE_PRODUCTION_PUBLIC_KEY),
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["verify"],
   );
-  keyCache.set(pem, key);
-  return key;
+  return cachedKey;
 }
 
 function base64ToBytes(b64: string): Uint8Array {
@@ -348,15 +240,6 @@ export async function verifyWiseSignature(
   signatureHeader: string | null,
 ): Promise<boolean> {
   if (!signatureHeader) return false;
-  // In sandbox we accept "test-skip" so engineers can replay synthetic events
-  // through the webhook without managing key material. Never trips in prod.
-  if (
-    getWiseMode() === "test" &&
-    process.env.WISE_WEBHOOK_TEST_BYPASS === "1" &&
-    signatureHeader === "test-skip"
-  ) {
-    return true;
-  }
   try {
     const key = await getWisePublicKey();
     const sigBytes = base64ToBytes(signatureHeader);

@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  listWisePaymentRequests,
-  getWiseBaseUrl,
-  getWiseMode,
-} from "@/lib/wise";
+import { getWisePaymentRequest, getWiseBaseUrl } from "@/lib/wise";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Combined admin view: every "wise"-method deal joined to whatever Wise (sandbox
-// or production) currently reports for the matching reference. This is what the
+// Combined admin view: every "wise"-method deal joined to whatever Wise
+// production currently reports for the matching reference. This is what the
 // /dashboard/admin/payments screen consumes.
 
 export async function GET() {
-  const mode = getWiseMode();
   const apiHost = getWiseBaseUrl();
 
   const supabase = createAdminClient();
@@ -26,25 +21,24 @@ export async function GET() {
 
   if (error) {
     return NextResponse.json(
-      { ok: false, mode, api_host: apiHost, error: error.message, items: [] },
+      { ok: false, api_host: apiHost, error: error.message, items: [] },
       { status: 500 },
     );
   }
 
-  const wise = await listWisePaymentRequests();
-  const wiseByRef = new Map<string, (typeof wise.items)[number]>();
-  for (const r of wise.items) {
-    if (r.reference) {
-      // Wise truncates reference at 20 chars, so DB deal_id may be longer; keep
-      // the most recent one per reference key.
-      wiseByRef.set(r.reference, r);
-    }
-  }
-
   const rows = (deals ?? []) as Record<string, unknown>[];
-  const items = rows.map((d) => {
-    const ref = String(d.deal_id ?? "").slice(0, 20);
-    const live = wiseByRef.get(ref) ?? null;
+
+  // Look up each deal's Wise payment request individually using the stored ID.
+  // Wise has no list-all endpoint — only GET by ID.
+  const wiseResults = await Promise.all(
+    rows.map((d) => {
+      const id = (d.wise_request_id as string | null) ?? null;
+      return id ? getWisePaymentRequest(id) : Promise.resolve(null);
+    }),
+  );
+
+  const items = rows.map((d, i) => {
+    const live = wiseResults[i];
     return {
       deal_id: d.deal_id ?? null,
       client_name: d.client_name ?? null,
@@ -79,13 +73,14 @@ export async function GET() {
     };
   });
 
+  const liveCount = items.filter((i) => i.wise !== null).length;
+
   return NextResponse.json({
     ok: true,
-    mode,
     api_host: apiHost,
-    wise_ok: wise.ok,
-    wise_error: wise.error,
-    wise_total: wise.items.length,
+    wise_ok: true,
+    wise_error: null,
+    wise_total: liveCount,
     fetched_at: new Date().toISOString(),
     items,
   });

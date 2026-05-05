@@ -1,23 +1,21 @@
 import { NextResponse } from "next/server";
-import { getWiseBaseUrl, getWiseMode } from "@/lib/wise";
+import { getWiseBaseUrl } from "@/lib/wise";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Issues a real payment-request against Wise (sandbox or prod, whichever
- * WISE_MODE is) using a synthetic deal id, and returns the raw HTTP status +
- * response body. This is the fastest way to find out *why* the intake flow is
- * dropping into the fallback link.
+ * Issues a real payment-request against Wise production using a synthetic
+ * deal id, and returns the raw HTTP status + response body. This is the
+ * fastest way to find out *why* the intake flow is dropping into the
+ * fallback link.
  */
 export async function GET() {
-  const mode = getWiseMode();
   const base = getWiseBaseUrl();
   const token = process.env.WISE_API_TOKEN?.trim();
   const profileId = process.env.WISE_PROFILE_ID?.trim();
 
   const report: Record<string, unknown> = {
-    mode,
     api_host: base,
     token_set: Boolean(token),
     token_preview: token ? `${token.slice(0, 8)}…${token.slice(-4)}` : null,
@@ -59,7 +57,7 @@ export async function GET() {
   const body = {
     amount: 1,
     currency: "USD",
-    description: "Milano Seal sandbox diagnostic — ignore",
+    description: "Milano Seal production diagnostic — ignore",
     reference: `MS-DIAG-${Date.now().toString().slice(-6)}`,
   };
   report.payment_request_body = body;

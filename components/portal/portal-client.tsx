@@ -178,7 +178,7 @@ function EmailGate({
               <button
                 onClick={sendOtp}
                 disabled={loading || !email.trim()}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -397,7 +397,7 @@ function DropZone({
             </span>
             <button
               onClick={() => setPreview(null)}
-              className="text-[#8A8A8A] hover:text-white"
+              className="text-[#8A8A8A] hover:text-white cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
