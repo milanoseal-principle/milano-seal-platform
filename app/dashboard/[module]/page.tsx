@@ -89,7 +89,7 @@ export default async function ModulePage({
     const { data: clients } = await supabase
       .from("deals")
       .select(
-        "client_name, email, country, execution_tier, amount, payment_status, created_at"
+        "client_name, email, country, execution_tier, amount, payment_status, created_at",
       )
       .order("created_at", { ascending: false });
     data = { clients: clients || [] };
@@ -98,6 +98,16 @@ export default async function ModulePage({
     const { data: deals } = await supabase
       .from("deals")
       .select("amount, payment_status, status, execution_tier, created_at");
+    data = { deals: deals || [] };
+  }
+  if (module === "financials") {
+    const { data: deals } = await supabase
+      .from("deals")
+      .select(
+        "id, deal_id, client_name, execution_tier, base_price, requires_apostille, urgency, amount, invoice_subtotal, invoice_retainer, invoice_balance, payment_status, payment_amount_received, balance_payment_status, balance_amount_received, refund_amount, status, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
     data = { deals: deals || [] };
   }
 

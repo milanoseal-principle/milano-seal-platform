@@ -65,7 +65,7 @@ export function serializeDealMS(row: Record<string, unknown>): MilanoDeal {
       (row.destination_country as string) ?? (row.country as string) ?? null,
     origin_state: (row.origin_state as string) ?? null,
     apostille_required: Boolean(
-      row.apostille_required ?? row.requires_apostille ?? false
+      row.apostille_required ?? row.requires_apostille ?? false,
     ),
     docs_count: Number(row.docs_count ?? row.docs ?? 1),
     lane: (row.lane as string) ?? (row.execution_tier as string) ?? "Signature",
@@ -82,8 +82,8 @@ export function serializeDealMS(row: Record<string, unknown>): MilanoDeal {
     witness_total: Number(row.witness_total ?? 0),
     total_price: totalPrice,
     payment_link: (row.payment_link as string) ?? null,
-    deal_status: ((row.deal_status as string) ??
-      (row.status as string) ??
+    deal_status: ((row.status as string) ??
+      (row.deal_status as string) ??
       "new") as string,
     payment_status: ((row.payment_status as string) ?? "pending") as string,
     conversion_score: Number(row.conversion_score ?? 0),
@@ -113,7 +113,7 @@ export interface MilanoActivity {
 }
 
 export function serializeActivityMS(
-  row: Record<string, unknown>
+  row: Record<string, unknown>,
 ): MilanoActivity {
   return {
     id: String(row.id),

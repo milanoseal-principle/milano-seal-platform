@@ -79,7 +79,7 @@ export default function Pipeline() {
               </p>
               <div className="gold-rule mt-2" />
             </CardHeader>
-            <CardContent className="flex-1 space-y-2 pt-0">
+            <CardContent className="flex-1 flex flex-col gap-4 pt-3">
               {s.deals.length === 0 ? (
                 <div className="text-xs text-muted-foreground/60 italic py-4 text-center">
                   Empty
@@ -89,7 +89,7 @@ export default function Pipeline() {
                   <Link key={d.deal_id} href={`/dashboard/deals/${d.deal_id}`}>
                     <div
                       data-testid={`pipeline-card-${d.deal_id}`}
-                      className="p-3 rounded-md border border-border bg-background/60 hover-elevate cursor-pointer"
+                      className="p-3 rounded-lg border border-border/80 bg-card shadow-sm hover:border-gold/40 hover:shadow-md transition-all cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-[10px] text-gold">

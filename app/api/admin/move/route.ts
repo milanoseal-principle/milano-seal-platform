@@ -3,6 +3,7 @@ import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
 import { stageLabel } from "@/lib/format";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
       meta: { stage },
     });
   })();
+
+  revalidatePath("/dashboard/deals");
+  revalidatePath(`/dashboard/deals/${deal_id}`);
 
   return NextResponse.json({ ok: true, deal_id, stage });
 }

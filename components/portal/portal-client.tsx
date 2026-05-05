@@ -18,6 +18,7 @@ import {
   File,
   ImageIcon,
   Loader2,
+  CreditCard,
 } from "lucide-react";
 
 // ── STATUS CONFIG ──────────────────────────────────────────────
@@ -44,6 +45,11 @@ interface Deal {
   document: string;
   payment_status: string;
   invoice_status: string;
+  invoice_retainer?: number | null;
+  invoice_balance?: number | null;
+  payment_link?: string | null;
+  balance_payment_link?: string | null;
+  balance_payment_status?: string | null;
   created_at: string;
 }
 interface FileRecord {
@@ -198,7 +204,7 @@ function EmailGate({
                     e.target.value
                       .toUpperCase()
                       .replace(/[^A-Z0-9]/g, "")
-                      .slice(0, 6)
+                      .slice(0, 6),
                   )
                 }
                 onKeyDown={(e) => e.key === "Enter" && confirmOtp()}
@@ -319,7 +325,7 @@ function DropZone({
       const file = e.dataTransfer.files[0];
       if (file) upload(file);
     },
-    [dealId]
+    [dealId],
   );
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -451,6 +457,13 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
   const currentStep = STEPS.findIndex((s) => s.key === deal.status);
   const pctComplete = Math.round(((currentStep + 1) / STEPS.length) * 100);
 
+  const retainerDue =
+    deal.payment_status !== "paid" && Boolean(deal.payment_link);
+  const balanceDue =
+    deal.balance_payment_status !== "paid" &&
+    Boolean(deal.balance_payment_link) &&
+    Number(deal.invoice_balance ?? 0) > 0;
+
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Header */}
@@ -514,6 +527,55 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
           </div>
         </div>
 
+        {(retainerDue || balanceDue) && (
+          <div className="bg-[#0A0A0A] border border-[#C6A55A]/30 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="w-4 h-4 text-[#C6A55A]" />
+              <p className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+                {retainerDue ? "Retainer Due" : "Balance Due"}
+              </p>
+            </div>
+            <p className="text-[#B0B0B0] text-sm mb-4 leading-relaxed">
+              {retainerDue
+                ? "Pay your 50% retainer to release the matter into execution. Reference is matched automatically on receipt."
+                : "Your matter has shipped. Settle the remaining balance to close out the engagement."}
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 p-4 bg-[#111111] border border-[#1A1A1A] rounded-xl">
+              <div>
+                <p className="text-[#8A8A8A] text-[10px] uppercase tracking-[0.15em]">
+                  Amount due
+                </p>
+                <p className="text-white text-xl font-medium">
+                  $
+                  {Number(
+                    retainerDue
+                      ? (deal.invoice_retainer ?? deal.amount)
+                      : deal.invoice_balance,
+                  ).toLocaleString()}{" "}
+                  USD
+                </p>
+              </div>
+              <a
+                href={
+                  (retainerDue
+                    ? deal.payment_link
+                    : deal.balance_payment_link) ?? "#"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all"
+              >
+                Pay with Wise
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+            <p className="text-[#8A8A8A] text-xs italic">
+              Wise is the primary method. Need an alternative (Zelle, ACH,
+              wire)? Reply to Nicholas on WhatsApp.
+            </p>
+          </div>
+        )}
+
         {/* Progress tracker */}
         <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -542,8 +604,8 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                     active
                       ? "border-[#C6A55A] bg-[#C6A55A]/10"
                       : done
-                      ? "border-[#2A2A2A] bg-[#0A0A0A]"
-                      : "border-[#1A1A1A] bg-transparent opacity-40"
+                        ? "border-[#2A2A2A] bg-[#0A0A0A]"
+                        : "border-[#1A1A1A] bg-transparent opacity-40"
                   }`}
                 >
                   {done ? (
@@ -561,8 +623,8 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                       active
                         ? "text-[#C6A55A]"
                         : done
-                        ? "text-[#8A8A8A]"
-                        : "text-[#4A4A4A]"
+                          ? "text-[#8A8A8A]"
+                          : "text-[#4A4A4A]"
                     }`}
                   >
                     {step.label}

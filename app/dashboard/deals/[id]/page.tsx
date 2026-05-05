@@ -111,6 +111,7 @@ export default function DealDetail() {
     void refetchActivity();
   };
 
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [actionNote, setActionNote] = useState("");
   const [carrier, setCarrier] = useState("FedEx International Priority");
@@ -214,8 +215,8 @@ export default function DealDetail() {
                 stageTone(stage) === "paid"
                   ? "bg-paid"
                   : stageTone(stage) === "critical"
-                  ? "bg-critical"
-                  : "bg-await"
+                    ? "bg-critical"
+                    : "bg-await"
               }
             >
               {stageLabel(stage)}
@@ -268,10 +269,10 @@ export default function DealDetail() {
                 Stages gated until payment is cleared.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               {!isPaid && (
-                <div className="flex items-center gap-2 p-3 rounded-md bg-critical">
-                  <AlertCircle className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-critical border border-red-500/20">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span className="text-sm">
                     Payment must be cleared before execution actions become
                     active.
@@ -279,58 +280,79 @@ export default function DealDetail() {
                 </div>
               )}
 
-              <div className="relative pl-6">
-                <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
-                {TIMELINE.map((step) => {
-                  const done = !!step.at;
-                  const Icon = step.icon;
-                  return (
-                    <div key={step.key} className="relative pb-6 last:pb-0">
+              <div className="relative">
+                <div className="absolute left-3 top-3 bottom-3 w-px bg-border" />
+                <div className="space-y-0">
+                  {TIMELINE.map((step) => {
+                    const done = !!step.at;
+                    const Icon = step.icon;
+                    return (
                       <div
-                        className={`absolute -left-[18px] top-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          done
-                            ? "bg-primary border-primary"
-                            : "bg-background border-border"
-                        }`}
+                        key={step.key}
+                        className="relative flex items-start gap-4 pb-5 last:pb-0"
                       >
-                        {done && (
-                          <CheckCircle2 className="w-3 h-3 text-background" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Icon
-                          className={`w-4 h-4 ${
-                            done ? "text-gold" : "text-muted-foreground"
+                        <div
+                          className={`relative z-10 mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            done
+                              ? "bg-primary border-primary"
+                              : "bg-card border-muted-foreground/30"
                           }`}
-                        />
-                        <span className="font-medium text-foreground">
-                          {step.label}
-                        </span>
+                        >
+                          {done ? (
+                            <CheckCircle2 className="w-3 h-3 text-card" />
+                          ) : (
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <div className="flex items-center gap-2">
+                            <Icon
+                              className={`w-4 h-4 ${
+                                done ? "text-gold" : "text-muted-foreground"
+                              }`}
+                            />
+                            <span
+                              className={`text-sm font-medium ${
+                                done
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {step.label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {done ? formatDateTime(step.at) : "Pending"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {done ? formatDateTime(step.at) : "Pending"}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               <Separator className="bg-border" />
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Dialog>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Dialog
+                  open={scheduleDialogOpen}
+                  onOpenChange={setScheduleDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       disabled={!isPaid || stage !== "awaiting_payment"}
                       data-testid="action-schedule"
+                      className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                     >
-                      <CalendarClock className="w-4 h-4 mr-2" /> Schedule
+                      <CalendarClock className="w-4 h-4" /> Schedule
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Schedule execution</DialogTitle>
+                      <DialogTitle className="font-serif">
+                        Schedule execution
+                      </DialogTitle>
                     </DialogHeader>
                     <Input
                       type="datetime-local"
@@ -345,17 +367,33 @@ export default function DealDetail() {
                     <DialogFooter>
                       <Button
                         onClick={async () => {
-                          if (!scheduledAt) return;
-                          await patchDeal(
+                          if (!scheduledAt || !deal) return;
+
+                          const patchRes = await fetch(
+                            `/api/deals/${deal.id}`,
                             {
-                              scheduled_at: new Date(scheduledAt).toISOString(),
-                              ...(actionNote ? { notes: actionNote } : {}),
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                scheduled_at: new Date(
+                                  scheduledAt,
+                                ).toISOString(),
+                                ...(actionNote ? { notes: actionNote } : {}),
+                              }),
                             },
-                            "Scheduled."
                           );
-                          await moveStage("scheduled", "Scheduled.");
+                          if (!patchRes.ok) {
+                            const d = await patchRes.json().catch(() => ({}));
+                            toast.error(d.error ?? "Failed to save schedule.");
+                            return;
+                          }
+                          await moveStage("scheduled", "Scheduled");
+                          setScheduledAt("");
+                          setActionNote("");
+                          setScheduleDialogOpen(false);
                         }}
                         disabled={!scheduledAt}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         Confirm
                       </Button>
@@ -365,38 +403,49 @@ export default function DealDetail() {
 
                 <Button
                   variant="outline"
-                  disabled={!isPaid || stage !== "scheduled"}
-                  data-testid="action-execute"
-                  onClick={() =>
-                    moveStage("in_execution", "Execution started.")
+                  disabled={
+                    !isPaid ||
+                    (stage !== "scheduled" &&
+                      !(stage === "awaiting_payment" && !!deal.scheduled_at))
                   }
+                  data-testid="action-execute"
+                  className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
+                  onClick={async () => {
+                    if (stage === "awaiting_payment" && deal.scheduled_at) {
+                      await moveStage("scheduled", "");
+                    }
+                    await moveStage("in_execution", "Execution started.");
+                  }}
                 >
-                  <ShieldCheck className="w-4 h-4 mr-2" /> Mark Executed
+                  <ShieldCheck className="w-4 h-4" /> Mark Executed
                 </Button>
 
                 <Button
                   variant="outline"
                   disabled={!isPaid || stage !== "in_execution"}
                   data-testid="action-apostille"
+                  className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                   onClick={() => moveStage("apostille", "Sent to apostille.")}
                 >
-                  <Stamp className="w-4 h-4 mr-2" /> Send to Apostille
+                  <Stamp className="w-4 h-4" /> Send to Apostille
                 </Button>
 
-                {/* Ship */}
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       disabled={!isPaid || stage !== "apostille"}
                       data-testid="action-ship"
+                      className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                     >
-                      <Truck className="w-4 h-4 mr-2" /> Ship
+                      <Truck className="w-4 h-4" /> Ship
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Ship documents</DialogTitle>
+                      <DialogTitle className="font-serif">
+                        Ship documents
+                      </DialogTitle>
                     </DialogHeader>
                     <Input
                       placeholder="Carrier"
@@ -423,11 +472,12 @@ export default function DealDetail() {
                               carrier,
                               ...(actionNote ? { notes: actionNote } : {}),
                             },
-                            "Shipped."
+                            "Shipped.",
                           );
                           await moveStage("shipped", "Shipped.");
                         }}
                         disabled={!tracking || !carrier}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         Confirm shipment
                       </Button>
@@ -438,11 +488,11 @@ export default function DealDetail() {
                 <Button
                   variant="outline"
                   disabled={stage !== "shipped"}
-                  className="sm:col-span-2"
+                  className="sm:col-span-2 justify-center gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                   data-testid="action-complete"
                   onClick={() => moveStage("completed", "Matter completed.")}
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Completed
+                  <CheckCircle2 className="w-4 h-4" /> Mark Completed
                 </Button>
               </div>
             </CardContent>
@@ -532,11 +582,7 @@ export default function DealDetail() {
                   <Copy className="w-4 h-4" />
                 </Button>
                 {deal.payment_link && (
-                  <a
-                    href={deal.payment_link}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={deal.payment_link} target="_blank" rel="noreferrer">
                     <Button size="sm" variant="ghost">
                       <ExternalLink className="w-4 h-4" />
                     </Button>
@@ -575,7 +621,7 @@ export default function DealDetail() {
                               payment_amount_received: Number(payAmt),
                               ...(payRef ? { payment_reference: payRef } : {}),
                             },
-                            "Payment confirmed."
+                            "Payment confirmed.",
                           )
                         }
                         disabled={!payAmt}

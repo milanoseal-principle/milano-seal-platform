@@ -13,11 +13,10 @@ import { DESTINATIONS } from "@/data/destinations";
 
 function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
-    1000 + Math.random() * 9000
+    1000 + Math.random() * 9000,
   )}`;
 }
 
-// PHASE 2 — Auto lane selection (Trust Engine)
 function autoSelectLane({
   country,
   urgency,
@@ -35,7 +34,6 @@ function autoSelectLane({
   return "Signature";
 }
 
-// PHASE 3 — Conversion scoring engine
 function calculateScore({
   country,
   useCase,
@@ -49,7 +47,7 @@ function calculateScore({
   const dest = DESTINATIONS.find(
     (d) =>
       d.slug === country.toLowerCase().replace(/\s+/g, "-") ||
-      d.name.toLowerCase() === country.toLowerCase()
+      d.name.toLowerCase() === country.toLowerCase(),
   );
   if (dest) {
     if (dest.demand >= 80) score += 30;
@@ -70,22 +68,17 @@ function calculateScore({
   return Math.min(score, 100);
 }
 
-// PHASE 4 — High value routing
 function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
   if (score >= 70) return "HIGH";
   if (score >= 40) return "MEDIUM";
   return "LOW";
 }
 
-// Stripe integration removed — Wise is now the sole payment provider.
-// See lib/wise.ts for the real Wise API client (test/production mode).
-
-// PHASE 9 — High value operator alert (non-blocking)
 async function notifyHighValue(
   dealId: string,
   country: string,
   value: number,
-  tier: string
+  tier: string,
 ) {
   if (tier !== "HIGH") return;
   try {
@@ -96,23 +89,19 @@ async function notifyHighValue(
       deal_id: dealId,
       read: false,
     });
-  } catch {
-    /* non-blocking */
-  }
+  } catch {}
 }
 
 export async function POST(req: NextRequest) {
   try {
     let raw = await req.json();
 
-    // PHASE 1 — capture prefill params from SEO routing
     const useCase = (raw.use_case || raw.useCase || "") as string;
     const prefillDoc = (raw.document_type || raw.document || "") as string;
     const prefillCountry = (raw.country ||
       raw.destination_country ||
       "") as string;
 
-    // If message field present (WhatsApp/IG text), parse it first
     if (raw.message && !raw.document_type) {
       const parsed = parseIntake(raw.message);
       raw = {
@@ -134,7 +123,7 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
       return NextResponse.json(
         { error: e.message, code: e.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -150,7 +139,6 @@ export async function POST(req: NextRequest) {
       if (compliance.apostille_required) data.apostille = true;
     } catch {}
 
-    // PHASE 2 — auto lane (overrides pricing engine when signals are strong)
     const autoLane = autoSelectLane({
       country,
       urgency: data.urgency as string,
@@ -165,7 +153,6 @@ export async function POST(req: NextRequest) {
     };
     const pricing = determineLaneAndPrice(pricingInput);
 
-    // Escalate to highest lane between auto-select and pricing engine
     const laneOrder = ["Signature", "Priority", "Executive"];
     const finalLane =
       laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
@@ -181,27 +168,19 @@ export async function POST(req: NextRequest) {
     const source =
       ((data as Record<string, unknown>).source_channel as string) || "web";
 
-    // PHASE 3 — conversion score
     const conversion_score = calculateScore({
       country,
       useCase,
       urgency: data.urgency as string,
     });
 
-    // PHASE 4 — priority tier routing
     const priority_tier = routeDeal(conversion_score);
 
-    // PHASE 6 — Wise is the sole payment provider.
-    //
-    // Calls the Wise API (sandbox in test mode, real in production) to
-    // create a payment request and returns the live short URL. If
-    // WISE_API_TOKEN / WISE_PROFILE_ID aren't configured we get a
-    // deterministic fallback URL so dev environments still work.
     const wiseResult = await createWisePaymentRequest({
       dealId: deal_id,
-      amount: pricing.total,
+      amount: invoice.retainer,
       currency: "USD",
-      description: `The Milano Seal™ — ${finalLane} Lane · ${
+      description: `The Milano Seal™ — ${finalLane} Lane Retainer · ${
         data.document_type || prefillDoc || "Document"
       } · ${country}`,
       clientName: client_name,
@@ -210,9 +189,9 @@ export async function POST(req: NextRequest) {
     const payment_link = wiseResult.url;
     const wise_invoice = {
       payment_method: "WISE",
-      amount: pricing.total,
+      amount: invoice.retainer,
       reference: deal_id,
-      note: `The Milano Seal™ — Document Execution · ${client_name}`,
+      note: `The Milano Seal™ — Retainer (50%) · ${client_name}`,
       wise_link: wiseResult.url,
       wise_request_id: wiseResult.id,
       wise_mode: wiseResult.mode,
@@ -297,12 +276,13 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("DB insert error:", error);
       return NextResponse.json(
-        { error: "Failed to save matter. Please try again or contact support." },
-        { status: 500 }
+        {
+          error: "Failed to save matter. Please try again or contact support.",
+        },
+        { status: 500 },
       );
     }
 
-    // PHASE 9 — high value alert (non-blocking)
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);
 
     void (async () => {
@@ -349,7 +329,6 @@ export async function POST(req: NextRequest) {
         "Urgent or multi-country routing — Executive lane handles it end-to-end.",
     };
 
-    // PHASE 8 — response includes all scoring fields for dashboard
     return NextResponse.json({
       success: true,
       deal_id: deal?.deal_id || deal_id,
@@ -380,7 +359,7 @@ export async function POST(req: NextRequest) {
     console.error("Intake error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

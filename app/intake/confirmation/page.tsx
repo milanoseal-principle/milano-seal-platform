@@ -48,6 +48,8 @@ interface WiseInvoice {
   reference: string;
   note: string;
   wise_link: string;
+  wise_request_id?: string | null;
+  wise_mode?: "test" | "production" | "fallback";
   status: string;
 }
 
@@ -55,7 +57,6 @@ function ConfirmationInner() {
   const params = useSearchParams();
   const dealId = params.get("id") || "";
   const [intakeData, setIntakeData] = useState<any>(null);
-  const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [wiseInvoice, setWiseInvoice] = useState<WiseInvoice | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -64,8 +65,6 @@ function ConfirmationInner() {
     try {
       const raw = sessionStorage.getItem("ms_intake_response");
       if (raw) setIntakeData(JSON.parse(raw));
-      const link = sessionStorage.getItem("ms_payment_link");
-      if (link) setPaymentLink(link);
       const wiseRaw = sessionStorage.getItem("ms_wise_invoice");
       if (wiseRaw) setWiseInvoice(JSON.parse(wiseRaw));
     } catch {}
@@ -155,6 +154,22 @@ function ConfirmationInner() {
           <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
             Secure Payment — Wise
           </h2>
+          {wiseInvoice?.wise_mode && wiseInvoice.wise_mode !== "production" && (
+            <span
+              className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-[0.2em] uppercase border ${
+                wiseInvoice.wise_mode === "test"
+                  ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                  : "border-rose-500/40 text-rose-400 bg-rose-500/10"
+              }`}
+              title={
+                wiseInvoice.wise_mode === "test"
+                  ? "This payment was issued against the Wise sandbox. No real funds will move."
+                  : "Wise was unreachable; using a fallback payment link."
+              }
+            >
+              {wiseInvoice.wise_mode === "test" ? "Sandbox" : "Fallback"}
+            </span>
+          )}
         </div>
         <p className="text-[#8A8A8A] text-sm mb-5 font-light leading-relaxed">
           Payment is required before scheduling can begin. Once confirmed, your
@@ -212,22 +227,7 @@ function ConfirmationInner() {
           </>
         )}
 
-        {/* Stripe — fallback only when Wise is unavailable */}
-        {!wiseInvoice && paymentLink && (
-          <a
-            href={paymentLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(198,165,90,0.3)] mb-5"
-          >
-            <CreditCard className="w-4 h-4" />
-            Pay Securely Now
-            <ArrowRight className="w-4 h-4" />
-          </a>
-        )}
-
-        {/* Fallback message if neither link is present yet */}
-        {!wiseInvoice && !paymentLink && (
+        {!wiseInvoice && (
           <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4 mb-4">
             <p className="text-[#B0B0B0] text-sm leading-relaxed">
               Nicholas will send your Wise payment link and reference via
@@ -238,8 +238,8 @@ function ConfirmationInner() {
         )}
 
         <p className="text-[#8A8A8A] text-xs italic">
-          Wise is the primary payment method. Alternative methods (Zelle, card,
-          ACH) available on request — Nicholas will coordinate directly.
+          Wise is the primary payment method. Alternative methods (Zelle, ACH,
+          wire) available on request — Nicholas will coordinate directly.
         </p>
       </div>
 

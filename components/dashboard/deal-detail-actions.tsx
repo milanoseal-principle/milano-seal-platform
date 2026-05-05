@@ -13,6 +13,8 @@ import {
   CircleDollarSign,
   UserPlus,
   XCircle,
+  Undo2,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,13 +76,23 @@ export function DealDetailActions({
   const [payMethod, setPayMethod] = useState("wise");
   const [payRef, setPayRef] = useState("");
 
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundAmt, setRefundAmt] = useState(String(amount));
+  const [refundReason, setRefundReason] = useState("");
+
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
+
   const isPaid = paymentStatus === "paid";
+  const isRefunded = paymentStatus === "refunded";
+  const isDisputed = paymentStatus === "disputed";
+  const isFailed = paymentStatus === "failed";
   const next = NEXT_STAGE[status];
   const isTerminal = status === "completed" || status === "lost";
   const advanceBlockedByPayment =
     next &&
     ["scheduled", "in_execution", "apostille", "shipped", "completed"].includes(
-      next.stage
+      next.stage,
     ) &&
     !isPaid;
 
@@ -122,7 +134,7 @@ export function DealDetailActions({
 
   async function postScheduledAction(
     path: "schedule" | "execute" | "apostille",
-    body: Record<string, unknown> = {}
+    body: Record<string, unknown> = {},
   ): Promise<boolean> {
     const res = await fetch(`/api/deals/${id}/${path}`, {
       method: "POST",
@@ -189,7 +201,7 @@ export function DealDetailActions({
         tracking_number: tracking.trim(),
         carrier: carrier.trim(),
       },
-      "Tracking saved"
+      "Tracking saved",
     );
     if (patched) {
       const moved = await moveStage("shipped", "Marked Shipped");
@@ -213,11 +225,49 @@ export function DealDetailActions({
         payment_amount_received: amt,
         payment_reference: payRef.trim() || undefined,
       },
-      "Payment confirmed"
+      "Payment confirmed",
     );
     if (ok) {
       setPayOpen(false);
       setPayRef("");
+    }
+  }
+
+  async function onRefundConfirm() {
+    const amt = Number(refundAmt);
+    if (!amt || amt <= 0) {
+      toast.error("Enter a valid refund amount.");
+      return;
+    }
+    const ok = await patchDeal(
+      {
+        payment_status: "refunded",
+        refund_amount: amt,
+        notes: refundReason.trim() || undefined,
+      },
+      "Marked refunded",
+    );
+    if (ok) {
+      setRefundOpen(false);
+      setRefundReason("");
+    }
+  }
+
+  async function onDisputeConfirm() {
+    if (!disputeReason.trim()) {
+      toast.error("Add a brief reason so the audit log captures it.");
+      return;
+    }
+    const ok = await patchDeal(
+      {
+        payment_status: "disputed",
+        dispute_reason: disputeReason.trim(),
+      },
+      "Flagged as disputed",
+    );
+    if (ok) {
+      setDisputeOpen(false);
+      setDisputeReason("");
     }
   }
 
@@ -281,7 +331,20 @@ export function DealDetailActions({
         )}
       </div>
 
-      {!isPaid && (
+      {(isRefunded || isDisputed || isFailed) && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/10 border border-red-500/20 text-red-300">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm">
+            Payment status:{" "}
+            <span className="font-medium uppercase tracking-wider">
+              {paymentStatus}
+            </span>{" "}
+            — pipeline progression is halted until resolved.
+          </span>
+        </div>
+      )}
+
+      {!isPaid && !isRefunded && !isDisputed && !isFailed && (
         <Dialog open={payOpen} onOpenChange={setPayOpen}>
           <DialogTrigger asChild>
             <Button
@@ -331,12 +394,14 @@ export function DealDetailActions({
                     className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm focus:outline-none focus:border-primary text-foreground"
                   >
                     {[
-                      "stripe",
                       "wise",
                       "zelle",
                       "venmo",
                       "cash_app",
                       "apple_cash",
+                      "ach",
+                      "wire",
+                      "check",
                     ].map((m) => (
                       <option key={m} value={m} className="bg-card">
                         {m}
@@ -356,7 +421,7 @@ export function DealDetailActions({
                   id="pay-ref"
                   value={payRef}
                   onChange={(e) => setPayRef(e.target.value)}
-                  placeholder="Wise / Stripe transaction ID"
+                  placeholder="Wise transaction ID or wire confirmation"
                 />
               </div>
             </div>
@@ -374,6 +439,131 @@ export function DealDetailActions({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {isPaid && (
+        <div className="grid sm:grid-cols-2 gap-2">
+          <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-red-500/30 text-red-300 hover:bg-red-500/10"
+              >
+                <Undo2 className="w-4 h-4 mr-2" />
+                Mark Refunded
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-serif">Issue refund</DialogTitle>
+                <DialogDescription>
+                  Refunding halts pipeline progression. Process the refund in
+                  Wise (or wherever the original payment landed) before marking
+                  it here.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="refund-amount"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Refund amount
+                  </Label>
+                  <Input
+                    id="refund-amount"
+                    type="number"
+                    step="0.01"
+                    value={refundAmt}
+                    onChange={(e) => setRefundAmt(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="refund-reason"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Reason (saved to notes)
+                  </Label>
+                  <Textarea
+                    id="refund-reason"
+                    rows={3}
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    placeholder="Customer canceled before scheduling…"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setRefundOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={onRefundConfirm}
+                  disabled={isPending}
+                  className="bg-red-500/80 text-white hover:bg-red-500"
+                >
+                  Confirm refund
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Flag Dispute
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-serif">
+                  Flag as disputed
+                </DialogTitle>
+                <DialogDescription>
+                  Use when a chargeback notice arrives or the customer raises a
+                  payment dispute. Pipeline progression is halted until the
+                  status is resolved.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="dispute-reason"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Dispute reason
+                  </Label>
+                  <Textarea
+                    id="dispute-reason"
+                    rows={3}
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
+                    placeholder="Wise dispute case #… / chargeback reason…"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setDisputeOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={onDisputeConfirm}
+                  disabled={isPending || !disputeReason.trim()}
+                  className="bg-amber-500/80 text-[#0A0A0A] hover:bg-amber-500"
+                >
+                  Flag dispute
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
 
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>

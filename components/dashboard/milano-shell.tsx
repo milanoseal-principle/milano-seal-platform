@@ -14,6 +14,7 @@ import {
   ListTodo,
   ArrowRight,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 
 const NAV = [
@@ -23,6 +24,7 @@ const NAV = [
   { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/dashboard/compliance", label: "Compliance Map", icon: Globe2 },
   { href: "/dashboard/admin", label: "Command Center", icon: ShieldAlert },
+  { href: "/dashboard/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
 ];
 
@@ -60,14 +62,11 @@ export function MilanoShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex text-foreground bg-background">
-      {/* ── Sidebar ── */}
       <aside className="fixed inset-y-0 left-0 z-40 w-56 flex flex-col border-r border-border bg-background">
-        {/* Logo */}
         <div className="px-4 py-5 border-b border-border">
           <MilanoMark />
         </div>
 
-        {/* Nav links */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const isActive =
@@ -121,8 +120,12 @@ export function MilanoShell({ children }: { children: ReactNode }) {
               NM
             </div>
             <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-xs font-medium text-foreground">Nicholas Milano</span>
-              <span className="text-[10px] text-muted-foreground">FL Notary #668288</span>
+              <span className="text-xs font-medium text-foreground">
+                Nicholas Milano
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                FL Notary #668288
+              </span>
             </div>
           </div>
           <div className="px-3 pb-3">
@@ -143,9 +146,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
 
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0 ml-56">
-        <main className="flex-1 px-8 md:px-12 py-8 pb-16">
-          {children}
-        </main>
+        <main className="flex-1 px-8 md:px-12 py-8 pb-16">{children}</main>
 
         <footer className="border-t border-border ml-0">
           <div className="px-8 md:px-12 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs text-muted-foreground">

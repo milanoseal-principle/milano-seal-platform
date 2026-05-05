@@ -180,7 +180,7 @@ const StageColumn = memo(function StageColumn({
           {matters.length}
         </span>
       </div>
-      <div className="space-y-2 min-h-[80px]">
+      <div className="space-y-3 min-h-[80px]">
         {matters.length === 0 ? (
           <div className="border border-dashed border-[#1E1E1E] rounded-lg h-14 flex items-center justify-center">
             <span className="text-[#2A2A2A] text-[9px]">empty</span>

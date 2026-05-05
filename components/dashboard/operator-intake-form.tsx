@@ -117,11 +117,23 @@ const INITIAL: FormState = {
   notes: "",
 };
 
+interface WiseInvoice {
+  payment_method: string;
+  amount: number;
+  reference: string;
+  note: string;
+  wise_link: string;
+  wise_request_id?: string | null;
+  wise_mode?: "production" | "fallback";
+  status: string;
+}
+
 interface SuccessData {
   deal_id: string;
   lane: string;
   estimated_value: number;
   payment_link?: string | null;
+  wise_invoice?: WiseInvoice | null;
   conversion_score: number;
   priority_tier: string;
   portal_url?: string;
@@ -260,9 +272,24 @@ export function OperatorIntakeForm() {
 
           {success.payment_link && (
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-                Payment link
-              </p>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Wise payment link (retainer)
+                </p>
+                {success.wise_invoice?.wise_mode && (
+                  <span
+                    className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      success.wise_invoice.wise_mode === "production"
+                        ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                        : "border-red-500/30 text-red-400 bg-red-500/10"
+                    }`}
+                  >
+                    {success.wise_invoice.wise_mode === "fallback"
+                      ? "Fallback (Wise call failed)"
+                      : "Production · LIVE"}
+                  </span>
+                )}
+              </div>
               <a
                 href={success.payment_link}
                 target="_blank"
@@ -271,6 +298,32 @@ export function OperatorIntakeForm() {
               >
                 {success.payment_link}
               </a>
+              {success.wise_invoice && (
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                  <div>
+                    Reference:{" "}
+                    <span className="text-gold font-mono">
+                      {success.wise_invoice.reference}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    Amount:{" "}
+                    <span className="text-foreground">
+                      ${Number(success.wise_invoice.amount).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {success.wise_invoice?.wise_mode === "fallback" && (
+                <p className="mt-2 text-[11px] text-red-400 leading-relaxed">
+                  Wise API call didn't succeed — this URL is the fallback stub
+                  and won't track payments. Check{" "}
+                  <code className="text-foreground">
+                    /api/admin/wise/health
+                  </code>{" "}
+                  to diagnose, then create the matter again.
+                </p>
+              )}
             </div>
           )}
 
@@ -426,7 +479,7 @@ export function OperatorIntakeForm() {
                   onChange={(e) =>
                     update(
                       "witnesses",
-                      Math.max(0, Number(e.target.value) || 0)
+                      Math.max(0, Number(e.target.value) || 0),
                     )
                   }
                 />
@@ -636,10 +689,10 @@ interface SelectOption {
 }
 
 function normalizeOptions(
-  options: ReadonlyArray<string | SelectOption>
+  options: ReadonlyArray<string | SelectOption>,
 ): SelectOption[] {
   return options.map((o) =>
-    typeof o === "string" ? { value: o, label: o } : o
+    typeof o === "string" ? { value: o, label: o } : o,
   );
 }
 
