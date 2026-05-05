@@ -69,7 +69,7 @@ export default function FollowUps() {
               return (
                 <div
                   key={f.id}
-                  className={`p-3 rounded-md border flex items-center justify-between gap-4 ${
+                  className={`p-3 rounded-md border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
                     overdue
                       ? "border-destructive/40 bg-critical"
                       : "border-border"

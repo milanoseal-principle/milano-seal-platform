@@ -80,19 +80,19 @@ export default function Deals() {
 
       <Card className="bg-card border-gold">
         <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row gap-3 md:items-center">
-            <div className="relative flex-1 min-w-[260px]">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center flex-wrap">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by client, email, ref, country…"
-                className="pl-9"
+                className="pl-9 w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search"
               />
             </div>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Stage" />
               </SelectTrigger>
               <SelectContent>
@@ -104,7 +104,7 @@ export default function Deals() {
               </SelectContent>
             </Select>
             <Select value={paid} onValueChange={setPaid}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Payment" />
               </SelectTrigger>
               <SelectContent>
@@ -126,6 +126,7 @@ export default function Deals() {
               No matters found.
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -215,6 +216,7 @@ export default function Deals() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

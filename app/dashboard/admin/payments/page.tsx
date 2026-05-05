@@ -146,14 +146,14 @@ export default function AdminPaymentsPage() {
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter by deal id, client, email, country…"
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {(["all", "pending", "paid", "failed"] as const).map((opt) => (
             <Button
               key={opt}

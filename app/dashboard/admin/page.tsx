@@ -72,20 +72,25 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="alerts" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="alerts" data-testid="tab-alerts">
-            <AlertTriangle className="w-4 h-4 mr-2" /> SLA Alerts
-          </TabsTrigger>
-          <TabsTrigger value="scoring">
-            <TrendingUp className="w-4 h-4 mr-2" /> Conversion
-          </TabsTrigger>
-          <TabsTrigger value="leaderboard">
-            <Trophy className="w-4 h-4 mr-2" /> Leaderboard
-          </TabsTrigger>
-          <TabsTrigger value="activity">
-            <History className="w-4 h-4 mr-2" /> Activity
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="w-max min-w-full sm:w-auto">
+            <TabsTrigger value="alerts" data-testid="tab-alerts">
+              <AlertTriangle className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline">SLA </span>Alerts
+            </TabsTrigger>
+            <TabsTrigger value="scoring">
+              <TrendingUp className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline">Conversion</span>
+              <span className="sm:hidden">Score</span>
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard">
+              <Trophy className="w-4 h-4 mr-1.5" /> Leaderboard
+            </TabsTrigger>
+            <TabsTrigger value="activity">
+              <History className="w-4 h-4 mr-1.5" /> Activity
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="alerts">
           <Card className="bg-card border-gold">
@@ -104,7 +109,7 @@ export default function Admin() {
                 alerts.map((a) => (
                   <Link key={a.deal_id} href={`/dashboard/deals/${a.deal_id}`}>
                     <div
-                      className={`flex items-center justify-between p-3 rounded-md border hover-elevate cursor-pointer ${
+                      className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
                         a.severity === "high"
                           ? "border-destructive/50 bg-critical"
                           : a.severity === "medium"
@@ -112,20 +117,18 @@ export default function Admin() {
                           : "border-border"
                       }`}
                     >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-gold">
-                            {a.deal_id}
-                          </span>
-                          <span className="text-foreground">
-                            {a.client_name}
-                          </span>
-                        </div>
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <span className="font-mono text-xs text-gold truncate">
+                          {a.deal_id}
+                        </span>
+                        <span className="text-foreground truncate">
+                          {a.client_name}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           Stage: {stageLabel(a.deal_status)}
                         </span>
                       </div>
-                      <div className="text-right">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <Badge
                           variant="outline"
                           className={
@@ -138,7 +141,7 @@ export default function Admin() {
                         >
                           {a.severity.toUpperCase()}
                         </Badge>
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground">
                           {a.hours_in_stage}h / {a.sla_hours}h SLA
                         </div>
                       </div>
@@ -168,17 +171,15 @@ export default function Admin() {
               ) : (
                 scoring.map((s) => (
                   <Link key={s.deal_id} href={`/dashboard/deals/${s.deal_id}`}>
-                    <div className="flex items-center justify-between p-3 rounded-md border border-border hover-elevate cursor-pointer">
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-gold">
-                            {s.deal_id}
-                          </span>
-                          <span className="text-foreground truncate">
-                            {s.client_name}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer">
+                      <div className="flex flex-col gap-1 min-w-0 flex-1">
+                        <span className="font-mono text-xs text-gold truncate">
+                          {s.deal_id}
+                        </span>
+                        <span className="text-foreground truncate">
+                          {s.client_name}
+                        </span>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
                           {s.factors.slice(0, 3).map((f, i) => (
                             <Badge
                               key={i}
@@ -190,7 +191,7 @@ export default function Admin() {
                           ))}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-sm text-foreground">
                           {formatCurrency(s.total_price)}
                         </span>
@@ -233,7 +234,7 @@ export default function Admin() {
                       </div>
                       <span className="text-foreground">{row.assignee}</span>
                     </div>
-                    <div className="flex items-center gap-6 text-sm">
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm">
                       <div>
                         <span className="text-muted-foreground">Closed</span>{" "}
                         <span className="text-foreground font-medium">
@@ -267,24 +268,28 @@ export default function Admin() {
                 Recent Activity (system-wide)
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
+            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden">
               {!activity || activity.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No activity.</p>
               ) : (
                 activity.map((a) => (
-                  <div key={a.id} className="border-l-2 border-gold pl-3 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-foreground">{a.action}</span>
-                      {a.deal_id && (
-                        <Link href={`/dashboard/deals/${a.deal_id}`}>
-                          <span className="font-mono text-xs text-gold hover:underline cursor-pointer">
-                            {a.deal_id}
-                          </span>
-                        </Link>
+                  <div key={a.id} className="border-l-2 border-gold pl-3 pb-3 min-w-0">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        <span className="text-foreground text-sm">{a.action}</span>
+                        {a.deal_id && (
+                          <Link href={`/dashboard/deals/${a.deal_id}`}>
+                            <span className="font-mono text-xs text-gold hover:underline cursor-pointer">
+                              {a.deal_id}
+                            </span>
+                          </Link>
+                        )}
+                      </div>
+                      {a.actor && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          {a.actor}
+                        </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        · {a.actor ?? "system"}
-                      </span>
                     </div>
                     {a.detail && (
                       <p className="text-xs text-muted-foreground mt-1">

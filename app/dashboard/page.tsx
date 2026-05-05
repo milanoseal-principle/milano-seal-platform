@@ -78,7 +78,7 @@ function Stat({
 
 export default function Dashboard() {
   const { data, isLoading, isError } = useApi<DashboardSummary>(
-    "/api/dashboard/summary"
+    "/api/dashboard/summary",
   );
 
   if (isLoading)
@@ -163,45 +163,46 @@ export default function Dashboard() {
               <p className="text-muted-foreground text-sm">No matters yet.</p>
             ) : (
               <div className="flex flex-col gap-3">
-              {data.recent_deals.map((d) => (
-                <Link key={d.id} href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
-                  <div
-                    data-testid={`recent-deal-${d.deal_id ?? d.id}`}
-                    className="flex items-center justify-between p-3 rounded-md border border-border hover-elevate cursor-pointer"
+                {data.recent_deals.map((d) => (
+                  <Link
+                    key={d.id}
+                    href={`/dashboard/deals/${d.deal_id ?? d.id}`}
                   >
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                    <div
+                      data-testid={`recent-deal-${d.deal_id ?? d.id}`}
+                      className="flex items-center justify-between gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer"
+                    >
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <span className="font-mono text-xs text-gold">
                           {d.deal_id ?? `${d.id.slice(0, 8)}…`}
                         </span>
-                        <span className="text-foreground truncate">
+                        <span className="text-sm text-foreground truncate">
                           {d.client_name ?? "—"}
                         </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {d.document_type} → {d.destination_country}
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {d.document_type} → {d.destination_country}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="text-sm text-foreground">
+                          {formatCurrency(d.total_price)}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={
+                            stageTone(d.deal_status) === "paid"
+                              ? "bg-paid"
+                              : stageTone(d.deal_status) === "critical"
+                                ? "bg-critical"
+                                : "bg-await"
+                          }
+                        >
+                          {stageLabel(d.deal_status)}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm text-foreground">
-                        {formatCurrency(d.total_price)}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={
-                          stageTone(d.deal_status) === "paid"
-                            ? "bg-paid"
-                            : stageTone(d.deal_status) === "critical"
-                            ? "bg-critical"
-                            : "bg-await"
-                        }
-                      >
-                        {stageLabel(d.deal_status)}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
               </div>
             )}
           </CardContent>
@@ -213,7 +214,7 @@ export default function Dashboard() {
               <Activity className="w-4 h-4 text-gold" /> Activity
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 overflow-hidden">
             {data.recent_activity.length === 0 ? (
               <p className="text-muted-foreground text-sm">
                 No activity recorded.
@@ -224,11 +225,11 @@ export default function Dashboard() {
                   key={a.id}
                   className="flex flex-col gap-0.5 pb-3 border-b border-border last:border-0"
                 >
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-foreground">{a.action}</span>
+                  <div className="flex flex-wrap items-center gap-1.5 text-sm min-w-0">
+                    <span className="text-foreground truncate">{a.action}</span>
                     {a.deal_id ? (
                       <Link href={`/dashboard/deals/${a.deal_id}`}>
-                        <span className="font-mono text-[11px] text-gold hover:underline cursor-pointer">
+                        <span className="font-mono text-[11px] text-gold hover:underline cursor-pointer truncate max-w-[140px] inline-block">
                           {a.deal_id}
                         </span>
                       </Link>
