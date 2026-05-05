@@ -15,6 +15,7 @@ import {
   Globe2,
   Activity,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardSummary {
   total_deals: number;
@@ -83,7 +84,112 @@ export default function Dashboard() {
 
   if (isLoading)
     return (
-      <div className="text-muted-foreground">Loading command surface…</div>
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-44" />
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="bg-card border-gold">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-4 w-4 rounded" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-3 w-36" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2 bg-card border-gold">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-8 w-16" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 p-3 rounded-md border border-border"
+                >
+                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-52" />
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-gold">
+            <CardHeader>
+              <Skeleton className="h-6 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col gap-1 pb-3 border-b border-border last:border-0"
+                >
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2.5 w-16" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="bg-card border-gold">
+            <CardHeader>
+              <Skeleton className="h-6 w-28" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-1.5 w-32 rounded-full" />
+                    <Skeleton className="h-4 w-6" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-gold">
+            <CardHeader>
+              <Skeleton className="h-6 w-28" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-2 border border-border rounded"
+                >
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-5 w-8 rounded-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   if (isError || !data)
     return (

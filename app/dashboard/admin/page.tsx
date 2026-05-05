@@ -18,6 +18,7 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { AlertTriangle, Trophy, TrendingUp, History } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SLAAlert {
   deal_id: string;
@@ -53,12 +54,12 @@ interface ActivityRow {
 }
 
 export default function Admin() {
-  const { data: leaderboard } = useApi<LeaderboardRow[]>(
+  const { data: leaderboard, isLoading: leaderboardLoading } = useApi<LeaderboardRow[]>(
     "/api/admin/leaderboard"
   );
-  const { data: alerts } = useApi<SLAAlert[]>("/api/admin/sla-alerts");
-  const { data: scoring } = useApi<ScoringRow[]>("/api/admin/scoring");
-  const { data: activity } = useApi<ActivityRow[]>("/api/admin/activity");
+  const { data: alerts, isLoading: alertsLoading } = useApi<SLAAlert[]>("/api/admin/sla-alerts");
+  const { data: scoring, isLoading: scoringLoading } = useApi<ScoringRow[]>("/api/admin/scoring");
+  const { data: activity, isLoading: activityLoading } = useApi<ActivityRow[]>("/api/admin/activity");
 
   return (
     <div className="space-y-6">
@@ -101,7 +102,21 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {!alerts || alerts.length === 0 ? (
+              {alertsLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-28" />
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                ))
+              ) : !alerts || alerts.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   All matters within SLA. ✓
                 </p>
@@ -164,7 +179,26 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {!scoring || scoring.length === 0 ? (
+              {scoringLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-40" />
+                      <div className="flex gap-1 mt-0.5">
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-10" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                  </div>
+                ))
+              ) : !scoring || scoring.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No open matters.
                 </p>
@@ -218,7 +252,21 @@ export default function Admin() {
               <CardTitle className="font-serif text-xl">Leaderboard</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {!leaderboard || leaderboard.length === 0 ? (
+              {leaderboardLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-md border border-border">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="flex items-center gap-3 sm:gap-6">
+                      <Skeleton className="h-4 w-14" />
+                      <Skeleton className="h-4 w-14" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                ))
+              ) : !leaderboard || leaderboard.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Assign matters to see the leaderboard.
                 </p>
@@ -269,7 +317,14 @@ export default function Admin() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden">
-              {!activity || activity.length === 0 ? (
+              {activityLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="border-l-2 border-gold pl-3 pb-3 min-w-0">
+                    <Skeleton className="h-4 w-48 mb-1.5" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                ))
+              ) : !activity || activity.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No activity.</p>
               ) : (
                 activity.map((a) => (

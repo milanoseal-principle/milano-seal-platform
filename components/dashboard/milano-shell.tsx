@@ -196,7 +196,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
           <MilanoMark />
         </div>
 
-        <main className="flex-1 px-4 md:px-8 lg:px-12 py-6 lg:py-8 pb-16">
+        <main className="flex-1 px-4 md:px-8 lg:px-12 py-6 lg:py-8 pb-16 overflow-x-hidden">
           {children}
         </main>
 
@@ -204,7 +204,9 @@ export function MilanoShell({ children }: { children: ReactNode }) {
           <div className="px-4 md:px-8 lg:px-12 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-gold font-serif">The Milano Seal</span>
-              <span>· Milano Seal International LLC · Florida Notary #668288</span>
+              <span>
+                · Milano Seal International LLC · Florida Notary #668288
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <span>Hague Apostille</span>

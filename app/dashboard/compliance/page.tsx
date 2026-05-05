@@ -45,7 +45,7 @@ const REGION_ORDER = [
 
 export default function Compliance() {
   const { data: list, isLoading } = useApi<JurisdictionSummary[]>(
-    "/api/compliance/list"
+    "/api/compliance/list",
   );
   const [code, setCode] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -67,7 +67,7 @@ export default function Compliance() {
     const s = search.toLowerCase();
     return rows.filter(
       (r) =>
-        r.name.toLowerCase().includes(s) || r.code.toLowerCase().includes(s)
+        r.name.toLowerCase().includes(s) || r.code.toLowerCase().includes(s),
     );
   };
 
@@ -144,7 +144,7 @@ export default function Compliance() {
                             key={j.code}
                             onClick={() => setCode(j.code)}
                             data-testid={`jurisdiction-${j.code}`}
-                            className={`text-left p-3 rounded-md border transition-colors hover-elevate ${
+                            className={`text-left p-3 rounded-md border transition-colors hover-elevate cursor-pointer ${
                               active
                                 ? "border-gold bg-gold-soft"
                                 : "border-border bg-background/40"
@@ -272,7 +272,7 @@ export default function Compliance() {
 
 function DetailPanel({ code, onClose }: { code: string; onClose: () => void }) {
   const { data } = useApi<JurisdictionDetail>(
-    `/api/compliance/list/${encodeURIComponent(code)}`
+    `/api/compliance/list/${encodeURIComponent(code)}`,
   );
   if (!data) {
     return (

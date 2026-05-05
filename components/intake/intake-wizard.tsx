@@ -266,7 +266,7 @@ function RadioGroup({
   options: { value: string; label: string; sub?: string }[];
 }) {
   return (
-    <div className="border border-[rgba(198,165,90,0.12)] rounded-sm overflow-hidden">
+    <div className="bg-[#0A0A0A] border border-[rgba(198,165,90,0.12)] rounded-sm overflow-hidden">
       {options.map((opt, i) => (
         <label
           key={opt.value}
@@ -275,7 +275,7 @@ function RadioGroup({
               ? "border-b border-[rgba(198,165,90,0.08)]"
               : ""
           } ${
-            value === opt.value ? "bg-[rgba(198,165,90,0.06)]" : "bg-[#0A0A0A]"
+            value === opt.value ? "bg-[rgba(198,165,90,0.06)]" : ""
           }`}
         >
           <div
@@ -516,11 +516,8 @@ export function IntakeWizard({
                   animate={{
                     borderColor:
                       done || active ? "#C6A55A" : "rgba(198,165,90,0.2)",
-                    backgroundColor: active
-                      ? "#C6A55A"
-                      : done
-                      ? "rgba(198,165,90,0.12)"
-                      : "transparent",
+                    backgroundColor:
+                      done || active ? "#C6A55A" : "transparent",
                     boxShadow: active
                       ? "0 0 16px rgba(198,165,90,0.35)"
                       : "none",
@@ -528,7 +525,7 @@ export function IntakeWizard({
                   className="w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-semibold transition-colors"
                 >
                   {done ? (
-                    <Check className="w-3 h-3 text-[#C6A55A]" strokeWidth={3} />
+                    <Check className="w-3 h-3 text-[#0A0A0A]" strokeWidth={3} />
                   ) : (
                     <span
                       className={active ? "text-[#0A0A0A]" : "text-[#8A7A60]"}

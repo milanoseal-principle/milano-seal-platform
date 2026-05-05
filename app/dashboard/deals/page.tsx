@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, stageLabel, stageTone, timeAgo } from "@/lib/format";
 import { Search } from "lucide-react";
 
@@ -118,8 +119,61 @@ export default function Deals() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-muted-foreground text-sm py-8 text-center">
-              Loading…
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Document</TableHead>
+                    <TableHead>Destination</TableHead>
+                    <TableHead>Lane</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead className="text-right">Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-14 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : !data || data.length === 0 ? (
             <div className="text-muted-foreground text-sm py-8 text-center">
@@ -127,95 +181,95 @@ export default function Deals() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Destination</TableHead>
-                  <TableHead>Lane</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead className="text-right">Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((d) => (
-                  <TableRow
-                    key={d.deal_id}
-                    className="cursor-pointer"
-                    data-testid={`row-${d.deal_id}`}
-                  >
-                    <TableCell>
-                      <Link href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
-                        <span className="font-mono text-xs text-gold hover:underline">
-                          {d.deal_id ?? `${d.id.slice(0, 8)}…`}
-                        </span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      <div className="flex flex-col">
-                        <span>{d.client_name ?? "—"}</span>
-                        {d.company_name && (
-                          <span className="text-xs text-muted-foreground">
-                            {d.company_name}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-foreground/80">
-                      {d.document_type}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {d.destination_country}
-                      <div className="text-xs text-muted-foreground">
-                        from {d.origin_state}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="border-gold text-gold bg-gold-soft"
-                      >
-                        {d.lane}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatCurrency(d.total_price)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          d.payment_status === "paid" ? "bg-paid" : "bg-await"
-                        }
-                      >
-                        {d.payment_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          stageTone(d.deal_status) === "paid"
-                            ? "bg-paid"
-                            : stageTone(d.deal_status) === "critical"
-                            ? "bg-critical"
-                            : "bg-await"
-                        }
-                      >
-                        {stageLabel(d.deal_status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {timeAgo(d.created_at)}
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Document</TableHead>
+                    <TableHead>Destination</TableHead>
+                    <TableHead>Lane</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead className="text-right">Created</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.map((d) => (
+                    <TableRow
+                      key={d.deal_id}
+                      className="cursor-pointer"
+                      data-testid={`row-${d.deal_id}`}
+                    >
+                      <TableCell>
+                        <Link href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
+                          <span className="font-mono text-xs text-gold hover:underline">
+                            {d.deal_id ?? `${d.id.slice(0, 8)}…`}
+                          </span>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        <div className="flex flex-col">
+                          <span>{d.client_name ?? "—"}</span>
+                          {d.company_name && (
+                            <span className="text-xs text-muted-foreground">
+                              {d.company_name}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground/80">
+                        {d.document_type}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {d.destination_country}
+                        <div className="text-xs text-muted-foreground">
+                          from {d.origin_state}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="border-gold text-gold bg-gold-soft"
+                        >
+                          {d.lane}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatCurrency(d.total_price)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            d.payment_status === "paid" ? "bg-paid" : "bg-await"
+                          }
+                        >
+                          {d.payment_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            stageTone(d.deal_status) === "paid"
+                              ? "bg-paid"
+                              : stageTone(d.deal_status) === "critical"
+                                ? "bg-critical"
+                                : "bg-await"
+                          }
+                        >
+                          {stageLabel(d.deal_status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {timeAgo(d.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

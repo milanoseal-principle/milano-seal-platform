@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/hooks/useApi";
 import { formatCurrency, formatDateTime, timeAgo } from "@/lib/format";
 import {
@@ -81,9 +82,9 @@ export default function AdminPaymentsPage() {
     "/api/admin/wise/payments",
   );
   const [filter, setFilter] = useState("");
-  const [showOnly, setShowOnly] = useState<"all" | "paid" | "pending" | "failed">(
-    "all",
-  );
+  const [showOnly, setShowOnly] = useState<
+    "all" | "paid" | "pending" | "failed"
+  >("all");
 
   const items = useMemo(() => {
     const list = data?.items ?? [];
@@ -110,9 +111,7 @@ export default function AdminPaymentsPage() {
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
             Payment Review
           </p>
-          <h1 className="font-serif text-4xl text-foreground">
-            Wise Payments
-          </h1>
+          <h1 className="font-serif text-4xl text-foreground">Wise Payments</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {data?.api_host} · {data?.wise_total ?? 0} live request
             {data?.wise_total === 1 ? "" : "s"} · last sync{" "}
@@ -179,9 +178,48 @@ export default function AdminPaymentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {isLoading && (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          )}
+          {isLoading &&
+            Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-background/50 p-4 space-y-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Skeleton className="h-3.5 w-24 rounded" />
+                      <Skeleton className="h-4 w-32 rounded" />
+                      <Skeleton className="h-4 w-16 rounded-full" />
+                      <Skeleton className="h-4 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-56 rounded" />
+                  </div>
+                  <div className="text-right space-y-1.5">
+                    <Skeleton className="h-4 w-20 rounded ml-auto" />
+                    <Skeleton className="h-3 w-28 rounded ml-auto" />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3 text-xs">
+                  <div className="rounded border border-border/60 p-2 space-y-1.5">
+                    <Skeleton className="h-2.5 w-16 rounded" />
+                    <Skeleton className="h-3 w-3/4 rounded" />
+                    <Skeleton className="h-3 w-2/3 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                  </div>
+                  <div className="rounded border border-border/60 p-2 space-y-1.5">
+                    <Skeleton className="h-2.5 w-20 rounded" />
+                    <Skeleton className="h-3 w-3/4 rounded" />
+                    <Skeleton className="h-3 w-2/3 rounded" />
+                    <Skeleton className="h-3 w-full rounded" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-6 w-24 rounded" />
+                </div>
+              </div>
+            ))}
           {!isLoading && items.length === 0 && (
             <p className="text-sm text-muted-foreground">
               No matching payments. Submit an intake at{" "}
@@ -193,9 +231,6 @@ export default function AdminPaymentsPage() {
           )}
           {items.map((row) => {
             const dbStatus = row.db_payment_status ?? "pending";
-            const liveStatus = row.wise?.status ?? null;
-            const drift =
-              liveStatus && dbStatus.toLowerCase() !== liveStatus.toLowerCase();
             return (
               <div
                 key={row.deal_id}
@@ -216,28 +251,12 @@ export default function AdminPaymentsPage() {
                         variant="outline"
                         className={`text-[10px] uppercase tracking-wider ${statusClass(dbStatus)}`}
                       >
-                        DB · {dbStatus}
+                        {dbStatus}
                       </Badge>
-                      {liveStatus && (
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] uppercase tracking-wider ${statusClass(liveStatus)}`}
-                        >
-                          Wise · {liveStatus}
-                        </Badge>
-                      )}
-                      {drift && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] uppercase tracking-wider bg-amber-500/10 text-amber-300 border-amber-500/30"
-                        >
-                          drift
-                        </Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {row.country ?? "—"} · {row.email ?? "no email"} ·
-                      created {formatDateTime(row.created_at)}
+                      {row.country ?? "—"} · {row.email ?? "no email"} · created{" "}
+                      {formatDateTime(row.created_at)}
                     </p>
                   </div>
                   <div className="text-right text-sm">
@@ -252,90 +271,31 @@ export default function AdminPaymentsPage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-3 mt-3 text-xs">
-                  <div className="rounded border border-border/60 p-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                      Database
-                    </p>
-                    <div className="space-y-0.5">
-                      <div>
-                        <span className="text-muted-foreground">Status:</span>{" "}
-                        <span className="text-foreground">{dbStatus}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Balance:</span>{" "}
-                        <span className="text-foreground">
-                          {row.db_balance_status ?? "—"}
-                        </span>
-                      </div>
-                      {row.paid_amount != null && (
-                        <div>
-                          <span className="text-muted-foreground">
-                            Received:
-                          </span>{" "}
-                          <span className="text-foreground">
-                            {formatCurrency(row.paid_amount)}
-                          </span>
-                        </div>
-                      )}
-                      {row.failure_reason && (
-                        <div>
-                          <span className="text-muted-foreground">
-                            Failure:
-                          </span>{" "}
-                          <span className="text-rose-300">
-                            {row.failure_reason}
-                          </span>
-                        </div>
-                      )}
+                <div className="mt-3 text-xs rounded border border-border/60 p-2 space-y-0.5">
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>{" "}
+                    <span className="text-foreground">{dbStatus}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Balance:</span>{" "}
+                    <span className="text-foreground">
+                      {row.db_balance_status ?? "—"}
+                    </span>
+                  </div>
+                  {row.paid_amount != null && (
+                    <div>
+                      <span className="text-muted-foreground">Received:</span>{" "}
+                      <span className="text-foreground">
+                        {formatCurrency(row.paid_amount)}
+                      </span>
                     </div>
-                  </div>
-                  <div className="rounded border border-border/60 p-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                      Wise (live)
-                    </p>
-                    {row.wise ? (
-                      <div className="space-y-0.5">
-                        <div>
-                          <span className="text-muted-foreground">Status:</span>{" "}
-                          <span className="text-foreground">
-                            {row.wise.status ?? "—"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Amount:</span>{" "}
-                          <span className="text-foreground">
-                            {row.wise.amount != null
-                              ? `${row.wise.amount} ${row.wise.currency ?? ""}`
-                              : "—"}
-                          </span>
-                        </div>
-                        <div className="truncate">
-                          <span className="text-muted-foreground">
-                            Request id:
-                          </span>{" "}
-                          <span className="font-mono text-foreground">
-                            {row.wise.id}
-                          </span>
-                        </div>
-                        {row.wise.created_at && (
-                          <div>
-                            <span className="text-muted-foreground">
-                              Issued:
-                            </span>{" "}
-                            <span className="text-foreground">
-                              {formatDateTime(row.wise.created_at)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        No matching Wise request. (Link below uses the fallback
-                        pay URL.)
-                      </p>
-                    )}
-                  </div>
+                  )}
+                  {row.failure_reason && (
+                    <div>
+                      <span className="text-muted-foreground">Failure:</span>{" "}
+                      <span className="text-rose-300">{row.failure_reason}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mt-3">

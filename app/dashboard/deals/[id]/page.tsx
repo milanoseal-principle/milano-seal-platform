@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatCurrencyDetailed,
   formatDateTime,
@@ -160,7 +161,89 @@ export default function DealDetail() {
     refresh();
   }
 
-  if (isLoading) return <div className="text-muted-foreground">Loading…</div>;
+  if (isLoading)
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-36 rounded-md" />
+
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 min-w-0">
+          <div className="flex-1 space-y-3 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+            <Skeleton className="h-10 w-72 rounded" />
+            <Skeleton className="h-4 w-56 rounded" />
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Skeleton className="h-3 w-10 rounded" />
+            <Skeleton className="h-10 w-32 rounded" />
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+          <Card className="bg-card border-gold">
+            <CardHeader>
+              <Skeleton className="h-6 w-48 rounded" />
+              <Skeleton className="h-4 w-64 rounded mt-1" />
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="relative">
+                <div className="absolute left-3 top-3 bottom-3 w-px bg-border" />
+                <div className="space-y-0">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="relative flex items-start gap-4 pb-5 last:pb-0"
+                    >
+                      <Skeleton className="relative z-10 mt-0.5 flex-shrink-0 w-6 h-6 rounded-full" />
+                      <div className="flex-1 min-w-0 pt-0.5 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="w-4 h-4 rounded" />
+                          <Skeleton className="h-4 w-24 rounded" />
+                        </div>
+                        <Skeleton className="h-3 w-32 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            <Card className="bg-card border-gold">
+              <CardHeader>
+                <Skeleton className="h-6 w-20 rounded" />
+                <Skeleton className="h-4 w-28 rounded mt-1" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-4 w-16 rounded" />
+                    <Skeleton className="h-4 w-20 rounded" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-gold">
+              <CardHeader>
+                <Skeleton className="h-6 w-24 rounded" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-full rounded" />
+                ))}
+                <Skeleton className="h-9 w-full rounded" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
   if (!deal) return <div className="text-destructive">Matter not found.</div>;
 
   const isPaid = deal.payment_status === "paid";
@@ -211,9 +294,9 @@ export default function DealDetail() {
         </Button>
       </Link>
 
-      <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 min-w-0">
+        <div className="flex-1 space-y-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-sm text-gold">
               {deal.deal_id ?? `${deal.id.slice(0, 8)}…`}
             </span>
@@ -642,7 +725,8 @@ export default function DealDetail() {
               )}
 
               {/* Balance payment section */}
-              {(deal.balance_payment_link || ["shipped", "completed"].includes(stage)) && (
+              {(deal.balance_payment_link ||
+                ["shipped", "completed"].includes(stage)) && (
                 <>
                   <Separator className="bg-border" />
                   <div className="space-y-2">
@@ -653,7 +737,11 @@ export default function DealDetail() {
                       {deal.balance_payment_status && (
                         <Badge
                           variant="outline"
-                          className={deal.balance_payment_status === "paid" ? "bg-paid" : "bg-await"}
+                          className={
+                            deal.balance_payment_status === "paid"
+                              ? "bg-paid"
+                              : "bg-await"
+                          }
                         >
                           {deal.balance_payment_status}
                         </Badge>
@@ -670,13 +758,19 @@ export default function DealDetail() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              navigator.clipboard.writeText(deal.balance_payment_link!);
+                              navigator.clipboard.writeText(
+                                deal.balance_payment_link!,
+                              );
                               toast.success("Copied");
                             }}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
-                          <a href={deal.balance_payment_link} target="_blank" rel="noreferrer">
+                          <a
+                            href={deal.balance_payment_link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             <Button size="sm" variant="ghost">
                               <ExternalLink className="w-4 h-4" />
                             </Button>
@@ -685,7 +779,14 @@ export default function DealDetail() {
 
                         {deal.balance_paid_at ? (
                           <p className="text-xs text-muted-foreground">
-                            Received{deal.balance_amount_received ? ` · $${deal.balance_amount_received.toLocaleString()}` : ""} · {new Date(deal.balance_paid_at).toLocaleDateString()}
+                            Received
+                            {deal.balance_amount_received
+                              ? ` · $${deal.balance_amount_received.toLocaleString()}`
+                              : ""}{" "}
+                            ·{" "}
+                            {new Date(
+                              deal.balance_paid_at,
+                            ).toLocaleDateString()}
                           </p>
                         ) : (
                           <Dialog>
@@ -699,7 +800,9 @@ export default function DealDetail() {
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Confirm balance payment</DialogTitle>
+                                <DialogTitle>
+                                  Confirm balance payment
+                                </DialogTitle>
                               </DialogHeader>
                               <Input
                                 type="number"
@@ -719,8 +822,14 @@ export default function DealDetail() {
                                     patchDeal(
                                       {
                                         balance_payment_status: "paid",
-                                        balance_amount_received: Number(payBalAmt),
-                                        ...(payBalRef ? { balance_payment_reference: payBalRef } : {}),
+                                        balance_amount_received:
+                                          Number(payBalAmt),
+                                        ...(payBalRef
+                                          ? {
+                                              balance_payment_reference:
+                                                payBalRef,
+                                            }
+                                          : {}),
                                       },
                                       "Balance confirmed.",
                                     )
@@ -736,7 +845,8 @@ export default function DealDetail() {
                       </>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">
-                        Balance invoice generated automatically when matter ships.
+                        Balance invoice generated automatically when matter
+                        ships.
                       </p>
                     )}
                   </div>

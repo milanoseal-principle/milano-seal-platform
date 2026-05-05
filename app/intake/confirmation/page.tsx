@@ -154,14 +154,6 @@ function ConfirmationInner() {
           <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
             Secure Payment — Wise
           </h2>
-          {wiseInvoice?.wise_mode === "fallback" && (
-            <span
-              className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-[0.2em] uppercase border border-rose-500/40 text-rose-400 bg-rose-500/10"
-              title="Wise was unreachable; using a fallback payment link."
-            >
-              Fallback
-            </span>
-          )}
         </div>
         <p className="text-[#8A8A8A] text-sm mb-5 font-light leading-relaxed">
           Payment is required before scheduling can begin. Once confirmed, your

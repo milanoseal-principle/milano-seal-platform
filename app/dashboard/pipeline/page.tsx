@@ -5,6 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, stageLabel, stageTone } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PipelineDeal {
   deal_id: string;
@@ -31,7 +32,54 @@ export default function Pipeline() {
   const { data, isLoading } = useApi<PipelineSummary>("/api/admin/pipeline");
 
   if (isLoading)
-    return <div className="text-muted-foreground">Loading pipeline…</div>;
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+
+        <div className="grid grid-flow-col auto-cols-[minmax(280px,1fr)] gap-4 overflow-x-auto pb-4">
+          {Array.from({ length: 5 }).map((_, col) => (
+            <Card
+              key={col}
+              className="bg-card border-gold min-h-[400px] flex flex-col"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-5 w-8 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-20 mt-1" />
+                <div className="gold-rule mt-2" />
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col gap-4 pt-3">
+                {Array.from({ length: col === 0 ? 3 : col === 1 ? 2 : 1 }).map(
+                  (_, card) => (
+                    <div
+                      key={card}
+                      className="p-3 rounded-lg border border-border/80 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-14" />
+                      </div>
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-32" />
+                      <div className="flex items-center justify-between mt-1">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-14" />
+                      </div>
+                    </div>
+                  ),
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   if (!data) return null;
 
   return (
@@ -67,8 +115,8 @@ export default function Pipeline() {
                     stageTone(s.stage) === "paid"
                       ? "bg-paid"
                       : stageTone(s.stage) === "critical"
-                      ? "bg-critical"
-                      : "bg-await"
+                        ? "bg-critical"
+                        : "bg-await"
                   }
                 >
                   {s.count}
