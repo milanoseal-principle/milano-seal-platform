@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -45,7 +45,18 @@ import {
   CircleDollarSign,
   UserPlus,
   AlertCircle,
+  MessageSquare,
+  Send,
 } from "lucide-react";
+
+interface DealMessage {
+  id: string;
+  direction: "inbound" | "outbound";
+  channel: string;
+  content: string;
+  status: string | null;
+  created_at: string;
+}
 
 interface MilanoDeal {
   id: string;
@@ -117,6 +128,57 @@ export default function DealDetail() {
     void refetchDeal();
     void refetchActivity();
   };
+
+  const [messages, setMessages] = useState<DealMessage[]>([]);
+  const [msgDraft, setMsgDraft] = useState("");
+  const [msgSending, setMsgSending] = useState(false);
+  const threadEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!dealId) return;
+    void (async () => {
+      try {
+        const r = await fetch(`/api/deals/${dealId}/messages`, {
+          cache: "no-store",
+        });
+        if (r.ok) {
+          const body = (await r.json()) as { messages: DealMessage[] };
+          setMessages(body.messages ?? []);
+        }
+      } catch {}
+    })();
+  }, [dealId]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
+  async function sendMessage() {
+    if (!msgDraft.trim() || msgSending) return;
+    setMsgSending(true);
+    try {
+      const r = await fetch(`/api/deals/${dealId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: msgDraft.trim() }),
+      });
+      const body = (await r.json()) as {
+        message?: DealMessage;
+        error?: string;
+      };
+      if (!r.ok) {
+        toast.error(body.error ?? "Failed to send");
+      } else if (body.message) {
+        setMessages((m) => [...m, body.message!]);
+        setMsgDraft("");
+        toast.success("Message sent to client portal");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setMsgSending(false);
+    }
+  }
 
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
@@ -618,6 +680,88 @@ export default function DealDetail() {
                   </div>
                 ))
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-gold">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-gold" /> Client Messages
+              </CardTitle>
+              <CardDescription>
+                Portal thread with {deal.client_name}. Inbound = client sent.
+                Outbound = sent to their portal + WhatsApp.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div
+                className="flex flex-col gap-2 overflow-y-auto mb-4 pr-1"
+                style={{ maxHeight: 340, minHeight: 80 }}
+              >
+                {messages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No messages yet. Send the first one below.
+                  </p>
+                ) : (
+                  messages.map((m) => {
+                    const isClient = m.direction === "inbound";
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex flex-col max-w-[75%] rounded-sm px-3 py-2 text-sm ${
+                          isClient
+                            ? "self-start bg-muted border border-border"
+                            : "self-end bg-gold/10 border border-gold/30"
+                        }`}
+                      >
+                        <span className="text-foreground font-light leading-relaxed">
+                          {m.content}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground mt-1">
+                          {isClient ? deal.client_name : "You (coordinator)"}
+                          {" · "}
+                          {new Date(m.created_at).toLocaleString()}
+                          {m.channel !== "portal" && (
+                            <span className="ml-1 opacity-60">
+                              via {m.channel}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={threadEndRef} />
+              </div>
+              <Separator className="mb-4" />
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Type a message to the client…"
+                  value={msgDraft}
+                  onChange={(e) => setMsgDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendMessage();
+                    }
+                  }}
+                  rows={2}
+                  className="resize-none flex-1"
+                  disabled={msgSending}
+                />
+                <Button
+                  onClick={() => void sendMessage()}
+                  disabled={msgSending || !msgDraft.trim()}
+                  className="self-end"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  {msgSending ? "Sending…" : "Send"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Message appears instantly in the client portal. A WhatsApp
+                notification is also sent if they have a phone number on file.
+              </p>
             </CardContent>
           </Card>
         </div>

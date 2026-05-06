@@ -2,31 +2,33 @@
 
 import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  formatCurrency,
-  formatDateTime,
-  stageLabel,
-  timeAgo,
-} from "@/lib/format";
-import { AlertTriangle, Trophy, TrendingUp, History } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
+import { formatCurrency, stageLabel } from "@/lib/format";
 
-interface SLAAlert {
-  deal_id: string;
-  client_name: string;
+interface PipelineDeal {
+  deal_id: string | null;
+  client_name: string | null;
+  document_type: string | null;
+  destination_country: string | null;
+  country: string | null;
+  total_price: number;
   deal_status: string;
-  hours_in_stage: number;
-  sla_hours: number;
-  severity: "low" | "medium" | "high";
+  payment_status: string;
+  execution_lane: string | null;
+}
+
+interface PipelineStage {
+  stage: string;
+  count: number;
+  total_value: number;
+  deals: PipelineDeal[];
+}
+
+interface PipelineResponse {
+  stages: PipelineStage[];
+  total_open: number;
+  total_value_open: number;
+  total_value_closed: number;
 }
 
 interface ScoringRow {
@@ -37,330 +39,293 @@ interface ScoringRow {
   factors: { label: string; weight: number }[];
 }
 
-interface LeaderboardRow {
-  assignee: string;
-  deals_closed: number;
-  deals_open: number;
-  revenue: number;
-}
+const STATUS_STYLES: Record<
+  string,
+  { bg: string; color: string; border: string }
+> = {
+  new: {
+    bg: "rgba(100,163,216,.10)",
+    color: "#64a3d8",
+    border: "rgba(100,163,216,.25)",
+  },
+  reviewing: {
+    bg: "rgba(155,126,212,.10)",
+    color: "#9b7ed4",
+    border: "rgba(155,126,212,.25)",
+  },
+  quoted: {
+    bg: "rgba(155,126,212,.10)",
+    color: "#9b7ed4",
+    border: "rgba(155,126,212,.25)",
+  },
+  awaiting_payment: {
+    bg: "rgba(200,151,58,.10)",
+    color: "#c8973a",
+    border: "rgba(200,151,58,.25)",
+  },
+  scheduled: {
+    bg: "rgba(155,126,212,.10)",
+    color: "#9b7ed4",
+    border: "rgba(155,126,212,.25)",
+  },
+  in_execution: {
+    bg: "rgba(198,165,90,.12)",
+    color: "#c6a55a",
+    border: "rgba(198,165,90,.28)",
+  },
+  apostille: {
+    bg: "rgba(200,151,58,.10)",
+    color: "#c8973a",
+    border: "rgba(200,151,58,.25)",
+  },
+  shipped: {
+    bg: "rgba(74,158,107,.10)",
+    color: "#4a9e6b",
+    border: "rgba(74,158,107,.25)",
+  },
+  completed: {
+    bg: "rgba(74,158,107,.10)",
+    color: "#4a9e6b",
+    border: "rgba(74,158,107,.28)",
+  },
+  lost: {
+    bg: "rgba(192,80,80,.08)",
+    color: "#c05050",
+    border: "rgba(192,80,80,.18)",
+  },
+};
 
-interface ActivityRow {
-  id: string;
-  deal_id: string | null;
-  actor: string | null;
-  action: string;
-  detail: string | null;
-  created_at: string;
-}
+const STAGES = [
+  "new",
+  "awaiting_payment",
+  "scheduled",
+  "in_execution",
+  "apostille",
+  "shipped",
+  "completed",
+];
 
-export default function Admin() {
-  const { data: leaderboard, isLoading: leaderboardLoading } = useApi<LeaderboardRow[]>(
-    "/api/admin/leaderboard"
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] || STATUS_STYLES.new;
+  return (
+    <span
+      className="ms-status-badge"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+    >
+      {stageLabel(status)}
+    </span>
   );
-  const { data: alerts, isLoading: alertsLoading } = useApi<SLAAlert[]>("/api/admin/sla-alerts");
-  const { data: scoring, isLoading: scoringLoading } = useApi<ScoringRow[]>("/api/admin/scoring");
-  const { data: activity, isLoading: activityLoading } = useApi<ActivityRow[]>("/api/admin/activity");
+}
+
+function fmt$Compact(n: number): { sym: string; val: string } {
+  return { sym: "$", val: Number(n).toLocaleString("en-US") };
+}
+
+const today = () =>
+  new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+export default function OperatorCommandCenter() {
+  const {
+    data: pipeline,
+    isLoading: pipeLoading,
+    refetch: refetchPipeline,
+  } = useApi<PipelineResponse>("/api/admin/pipeline");
+  const { data: scoring, refetch: refetchScoring } =
+    useApi<ScoringRow[]>("/api/admin/scoring");
+
+  useRealtimeRefresh(
+    ["deals", "deal_events", "custody_ledger"],
+    () => {
+      void refetchPipeline();
+      void refetchScoring();
+    },
+    { throttleMs: 5_000 },
+  );
+
+  const totalCollected = pipeline?.total_value_closed ?? 0;
+  const totalOpen = pipeline?.total_value_open ?? 0;
+  const totalActive = pipeline?.total_open ?? 0;
+  const hotLeads = (scoring ?? []).filter((s) => s.score >= 70).length;
+
+  const allDeals: PipelineDeal[] =
+    pipeline?.stages.flatMap((s) => s.deals) ?? [];
+  const seen = new Set<string>();
+  const tableDeals = allDeals
+    .filter((d) => {
+      if (!d.deal_id || seen.has(d.deal_id)) return false;
+      seen.add(d.deal_id);
+      return true;
+    })
+    .slice(0, 12);
+
+  const stats = [
+    {
+      label: "Revenue Collected",
+      ...fmt$Compact(totalCollected),
+      sub: "Closed-won, lifetime",
+    },
+    {
+      label: "Pipeline Value",
+      ...fmt$Compact(totalOpen),
+      sub: "Active + awaiting",
+    },
+    {
+      label: "Hot Leads",
+      sym: "",
+      val: String(hotLeads),
+      sub: "Score ≥ 70",
+    },
+    {
+      label: "Active Matters",
+      sym: "",
+      val: String(totalActive),
+      sub: "In open stages",
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Command Center
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">
-          Operator Command Center
-        </h1>
+    <div className="ms-fade-up">
+      <div className="ms-eyebrow">Command Center · {today()}</div>
+      <h1 className="ms-h1">
+        Welcome back, <em>Nicholas</em>
+      </h1>
+
+      <div className="ms-grid-4">
+        {stats.map((s) => (
+          <div key={s.label} className="ms-stat">
+            <div className="ms-stat-lbl">{s.label}</div>
+            <div className="ms-stat-val">
+              {s.sym && <span>{s.sym}</span>}
+              {pipeLoading ? "—" : s.val}
+            </div>
+            <div className="ms-stat-sub">{s.sub}</div>
+          </div>
+        ))}
       </div>
 
-      <Tabs defaultValue="alerts" className="space-y-4">
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="w-max min-w-full sm:w-auto">
-            <TabsTrigger value="alerts" data-testid="tab-alerts">
-              <AlertTriangle className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">SLA </span>Alerts
-            </TabsTrigger>
-            <TabsTrigger value="scoring">
-              <TrendingUp className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Conversion</span>
-              <span className="sm:hidden">Score</span>
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard">
-              <Trophy className="w-4 h-4 mr-1.5" /> Leaderboard
-            </TabsTrigger>
-            <TabsTrigger value="activity">
-              <History className="w-4 h-4 mr-1.5" /> Activity
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="ms-divg">◇</div>
+      <div className="ms-section-lbl">Pipeline · By Stage</div>
 
-        <TabsContent value="alerts">
-          <Card className="bg-card border-gold">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl">SLA Alerts</CardTitle>
-              <CardDescription>
-                Matters that have spent too long in their current stage.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {alertsLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
-                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-3 w-28" />
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                ))
-              ) : !alerts || alerts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  All matters within SLA. ✓
-                </p>
+      <div className="ms-kanban">
+        {STAGES.map((stage) => {
+          const stageData = pipeline?.stages.find((s) => s.stage === stage);
+          const items = stageData?.deals ?? [];
+          return (
+            <div key={stage} className="ms-kan-col">
+              <div className="ms-kan-hdr">
+                <span className="ms-kan-hdr-l">{stageLabel(stage)}</span>
+                <span className="ms-kan-hdr-c">{stageData?.count ?? 0}</span>
+              </div>
+              {items.length === 0 ? (
+                <div className="ms-kan-empty">— No matters —</div>
               ) : (
-                alerts.map((a) => (
-                  <Link key={a.deal_id} href={`/dashboard/deals/${a.deal_id}`}>
-                    <div
-                      className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
-                        a.severity === "high"
-                          ? "border-destructive/50 bg-critical"
-                          : a.severity === "medium"
-                          ? "border-gold/40 bg-await"
-                          : "border-border"
-                      }`}
-                    >
-                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="font-mono text-xs text-gold truncate">
-                          {a.deal_id}
-                        </span>
-                        <span className="text-foreground truncate">
-                          {a.client_name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Stage: {stageLabel(a.deal_status)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <Badge
-                          variant="outline"
-                          className={
-                            a.severity === "high"
-                              ? "bg-critical"
-                              : a.severity === "medium"
-                              ? "bg-await"
-                              : ""
-                          }
-                        >
-                          {a.severity.toUpperCase()}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground">
-                          {a.hours_in_stage}h / {a.sla_hours}h SLA
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="scoring">
-          <Card className="bg-card border-gold">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl">
-                Conversion Scoring
-              </CardTitle>
-              <CardDescription>
-                Open matters ranked by likelihood to close.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {scoringLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
-                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-4 w-40" />
-                      <div className="flex gap-1 mt-0.5">
-                        <Skeleton className="h-4 w-16 rounded-full" />
-                        <Skeleton className="h-4 w-16 rounded-full" />
-                        <Skeleton className="h-4 w-16 rounded-full" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-8 w-10" />
-                      <Skeleton className="h-3 w-10" />
-                    </div>
-                  </div>
-                ))
-              ) : !scoring || scoring.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No open matters.
-                </p>
-              ) : (
-                scoring.map((s) => (
-                  <Link key={s.deal_id} href={`/dashboard/deals/${s.deal_id}`}>
-                    <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer">
-                      <div className="flex flex-col gap-1 min-w-0 flex-1">
-                        <span className="font-mono text-xs text-gold truncate">
-                          {s.deal_id}
-                        </span>
-                        <span className="text-foreground truncate">
-                          {s.client_name}
-                        </span>
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {s.factors.slice(0, 3).map((f, i) => (
-                            <Badge
-                              key={i}
-                              variant="outline"
-                              className="text-[10px] border-gold/30 text-foreground/80"
-                            >
-                              {f.label} +{f.weight}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-sm text-foreground">
-                          {formatCurrency(s.total_price)}
-                        </span>
-                        <div className="text-right">
-                          <div className="font-serif text-2xl text-gold">
-                            {s.score}
-                          </div>
-                          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                            score
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="leaderboard">
-          <Card className="bg-card border-gold">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl">Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {leaderboardLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-md border border-border">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                    <div className="flex items-center gap-3 sm:gap-6">
-                      <Skeleton className="h-4 w-14" />
-                      <Skeleton className="h-4 w-14" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                  </div>
-                ))
-              ) : !leaderboard || leaderboard.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Assign matters to see the leaderboard.
-                </p>
-              ) : (
-                leaderboard.map((row, i) => (
-                  <div
-                    key={row.assignee}
-                    className="flex items-center justify-between p-3 rounded-md border border-border"
+                items.slice(0, 6).map((d) => (
+                  <Link
+                    key={d.deal_id ?? Math.random()}
+                    href={`/dashboard/deals/${d.deal_id}`}
+                    className="ms-kan-card"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="font-serif text-2xl text-gold w-8 text-center">
-                        {i + 1}
-                      </div>
-                      <span className="text-foreground">{row.assignee}</span>
+                    <div className="ms-kan-id">{d.deal_id}</div>
+                    <div className="ms-kan-name">{d.client_name}</div>
+                    <div className="ms-kan-doc">
+                      {(d.document_type ?? "").slice(0, 38)}
+                      {(d.document_type ?? "").length > 38 ? "…" : ""}
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Closed</span>{" "}
-                        <span className="text-foreground font-medium">
-                          {row.deals_closed}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Open</span>{" "}
-                        <span className="text-foreground font-medium">
-                          {row.deals_open}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Revenue</span>{" "}
-                        <span className="text-gold font-medium">
-                          {formatCurrency(row.revenue)}
-                        </span>
-                      </div>
+                    <div className="ms-kan-footer">
+                      <span className="ms-kan-price">
+                        {formatCurrency(d.total_price)}
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          );
+        })}
+      </div>
 
-        <TabsContent value="activity">
-          <Card className="bg-card border-gold">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl">
-                Recent Activity (system-wide)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden">
-              {activityLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="border-l-2 border-gold pl-3 pb-3 min-w-0">
-                    <Skeleton className="h-4 w-48 mb-1.5" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                ))
-              ) : !activity || activity.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No activity.</p>
-              ) : (
-                activity.map((a) => (
-                  <div key={a.id} className="border-l-2 border-gold pl-3 pb-3 min-w-0">
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="text-foreground text-sm">{a.action}</span>
-                        {a.deal_id && (
-                          <Link href={`/dashboard/deals/${a.deal_id}`}>
-                            <span className="font-mono text-xs text-gold hover:underline cursor-pointer">
-                              {a.deal_id}
-                            </span>
-                          </Link>
-                        )}
+      <div className="ms-divg">◇</div>
+      <div className="ms-section-lbl">All Matters</div>
+
+      <div className="ms-tbl-wrap">
+        <table className="ms-tbl">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Document</th>
+              <th>Country</th>
+              <th>Lane</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableDeals.map((d) => {
+              const sc = (scoring ?? []).find((s) => s.deal_id === d.deal_id);
+              const score = sc?.score ?? 0;
+              const scoreColor =
+                score >= 70 ? "#C6A55A" : score >= 40 ? "#c8973a" : "#888";
+              return (
+                <tr key={d.deal_id}>
+                  <td className="ms-tbl-id">
+                    <Link href={`/dashboard/deals/${d.deal_id}`}>
+                      {d.deal_id}
+                    </Link>
+                  </td>
+                  <td className="ms-tbl-name">{d.client_name}</td>
+                  <td className="ms-tbl-doc">{d.document_type}</td>
+                  <td>{d.destination_country ?? d.country}</td>
+                  <td className="ms-tbl-lane">{d.execution_lane ?? "—"}</td>
+                  <td className="ms-tbl-value">
+                    {formatCurrency(d.total_price)}
+                  </td>
+                  <td>
+                    <StatusBadge status={d.deal_status} />
+                  </td>
+                  <td>
+                    <StatusBadge
+                      status={
+                        d.payment_status === "paid"
+                          ? "completed"
+                          : "awaiting_payment"
+                      }
+                    />
+                  </td>
+                  <td>
+                    <div className="ms-score-cell">
+                      <div className="ms-bar">
+                        <div
+                          style={{
+                            width: `${score}%`,
+                            background: scoreColor,
+                          }}
+                        />
                       </div>
-                      {a.actor && (
-                        <span className="text-xs text-muted-foreground truncate">
-                          {a.actor}
-                        </span>
-                      )}
+                      <span className="ms-score-val" style={{ color: scoreColor }}>
+                        {score}
+                      </span>
                     </div>
-                    {a.detail && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {a.detail}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-muted-foreground/70">
-                      {formatDateTime(a.created_at)} ({timeAgo(a.created_at)})
-                    </p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  </td>
+                </tr>
+              );
+            })}
+            {tableDeals.length === 0 && (
+              <tr>
+                <td colSpan={9} className="ms-tbl-empty">
+                  {pipeLoading ? "Loading…" : "No matters yet."}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

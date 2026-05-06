@@ -17,17 +17,21 @@ import {
   CreditCard,
   Menu,
   X,
+  Terminal,
+  Receipt,
 } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/admin", label: "Command Center", icon: ShieldAlert },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
   { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
   { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/dashboard/compliance", label: "Compliance Map", icon: Globe2 },
-  { href: "/dashboard/admin", label: "Command Center", icon: ShieldAlert },
+  { href: "/dashboard/invoices", label: "Invoice Studio", icon: Receipt },
   { href: "/dashboard/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
+  { href: "/dashboard/terminal", label: "System Terminal", icon: Terminal },
 ];
 
 function MilanoMark() {

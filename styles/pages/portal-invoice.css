@@ -1,0 +1,188 @@
+.ci-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c6a55a;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ci-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: #c6a55a;
+}
+.ci-h1 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 24px;
+}
+.ci-shell {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ci-paper {
+  background: #f9f6f0;
+  padding: 4px;
+}
+.ci-card {
+  background: #f9f6f0;
+  color: #2a2520;
+  padding: 36px 44px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 12px;
+  position: relative;
+}
+.ci-brand {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 11px;
+  color: #c6a55a;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.ci-tag {
+  font-size: 8px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #a8894a;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.ci-hr {
+  border: none;
+  border-top: 0.75px solid #d4c9b0;
+  margin: 12px 0;
+}
+.ci-title {
+  text-align: center;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.ci-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 0.75px solid #d4c9b0;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.ci-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  border-top: 1px solid #c6a55a;
+  margin-top: 6px;
+}
+.ci-stamp {
+  position: absolute;
+  bottom: 36px;
+  right: 36px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #c6a55a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ci-stamp-check {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 17px;
+  color: #f9f6f0;
+}
+.ci-paid-status {
+  color: #4a8e6b;
+}
+.ci-h-block {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #a8894a;
+  margin-bottom: 6px;
+}
+.ci-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+  margin-bottom: 14px;
+}
+.ci-col-bill {
+  border-right: 0.75px solid #d4c9b0;
+  padding-right: 14px;
+}
+.ci-col-name {
+  font-size: 13px;
+}
+.ci-col-sub {
+  font-size: 11px;
+  color: #777;
+}
+.ci-matter-section {
+  margin: 8px 0;
+}
+.ci-footer-note {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 7px;
+  color: #9a8f7a;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Coordinator card */
+.ci-coord {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 18px 20px;
+  margin-top: 18px;
+  border-radius: 2px;
+}
+.ci-coord-label {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.ci-coord-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ci-coord-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid #c6a55a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ci-coord-initial {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 18px;
+  color: #c6a55a;
+}
+.ci-coord-name {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 16px;
+  color: #fff;
+}
+.ci-coord-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}

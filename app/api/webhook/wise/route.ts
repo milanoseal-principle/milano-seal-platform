@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyWiseSignature } from "@/lib/wise";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
+import { sendAdminAlert } from "@/lib/whatsapp";
+import { snapshotDeal } from "@/lib/dealBackup";
 
 export const runtime = "nodejs";
 
@@ -148,6 +150,37 @@ export async function POST(req: NextRequest) {
       : `Wise webhook confirmed payment`,
     meta: { event_type: pickEventType(event), leg: "retainer" },
   });
+
+  if (!failed && deal?.id) {
+    void (async () => {
+      try {
+        const admin = createAdminClient();
+        await admin.from("deal_events").insert({
+          deal_id: deal.id,
+          event: "PAYMENT_RECEIVED",
+          payload: {
+            deal_code: dealId,
+            amount: pickAmount(event),
+            reference: pickRef(event),
+            event_type: pickEventType(event),
+          },
+        });
+      } catch (err) {
+        console.error(
+          "[wise/webhook] deal_events log failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
+    })();
+
+    void sendAdminAlert(`Payment received · ${dealId}`).catch(() => {});
+
+    void snapshotDeal({
+      deal_id: deal.id,
+      trigger: "payment",
+      deal,
+    }).catch(() => {});
+  }
 
   revalidatePath("/dashboard/deals");
   revalidatePath(`/dashboard/deals/${dealId}`);

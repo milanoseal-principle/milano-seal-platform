@@ -7,7 +7,5 @@ export default async function OperatorLoginRedirect({
 }) {
   const params = await searchParams;
   const next = typeof params.next === "string" ? params.next : "";
-  redirect(
-    next ? `/admin/login?next=${encodeURIComponent(next)}` : "/admin/login"
-  );
+  redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
 }

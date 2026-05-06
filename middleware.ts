@@ -3,13 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
+  "/portal",
   "/api/admin",
   "/api/dashboard",
   "/api/follow-ups",
   "/api/compliance/list",
+  "/api/portal/me",
 ];
 
 const PUBLIC_AUTH_PATHS = new Set([
+  "/login",
   "/admin/login",
   "/operator/login",
   "/auth/callback",
@@ -17,7 +20,7 @@ const PUBLIC_AUTH_PATHS = new Set([
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
+    (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 }
 
@@ -44,15 +47,15 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   const {
@@ -65,7 +68,7 @@ export async function middleware(request: NextRequest) {
     }
 
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/admin/login";
+    loginUrl.pathname = "/login";
     loginUrl.search = "";
     loginUrl.searchParams.set("next", pathname + (search || ""));
     return NextResponse.redirect(loginUrl);

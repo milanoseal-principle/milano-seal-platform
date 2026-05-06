@@ -11,6 +11,8 @@ import { logActivity } from "@/lib/activity";
 import { createWisePaymentRequest } from "@/lib/wise";
 import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
+import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { runDealEngine } from "@/lib/core/engine";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -287,6 +289,61 @@ export async function POST(req: NextRequest) {
     }
 
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);
+
+    if (deal?.id) {
+      void (async () => {
+        try {
+          await appendLedger({
+            deal_id: deal.id,
+            event: CUSTODY_EVENTS.DOC_CREATED,
+            actor_type: "system",
+            location: "Milano Seal Intake",
+            method: "intake",
+            status: "created",
+            metadata: {
+              deal_code: deal_id,
+              source,
+              lane: finalLane,
+              country,
+              total: pricing.total,
+            },
+          });
+        } catch (err) {
+          console.error(
+            "[intake] custody ledger failed:",
+            err instanceof Error ? err.message : err,
+          );
+        }
+      })();
+
+      void (async () => {
+        try {
+          await runDealEngine({
+            id: deal.id,
+            deal_id,
+            email: data.email,
+            phone: data.phone as string | undefined,
+            client_name,
+            document_type: data.document_type as string | undefined,
+            destination_country: country,
+            country,
+            status: "awaiting_payment",
+            payment_status: "pending",
+            payment_link,
+            raw_text:
+              ((raw as Record<string, string>).message as string) ?? null,
+            mobile: Boolean(data.mobile ?? false),
+            signers: Number(data.signers ?? 1),
+            witnesses: Number(data.witnesses ?? 0),
+          });
+        } catch (err) {
+          console.error(
+            "[intake] runDealEngine failed:",
+            err instanceof Error ? err.message : err,
+          );
+        }
+      })();
+    }
 
     if (data.email) {
       void sendIntakeConfirmation({
