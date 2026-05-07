@@ -178,7 +178,7 @@ export default function Intake() {
             witnesses: watched.witnesses,
             witness_type:
               watched.witnesses > 0
-                ? watched.witness_type ?? "in_person"
+                ? (watched.witness_type ?? "in_person")
                 : undefined,
             after_hours: watched.after_hours,
             urgency: watched.urgency,
@@ -223,7 +223,7 @@ export default function Intake() {
           apostille: values.apostille_required,
           witness_type:
             values.witnesses > 0
-              ? values.witness_type ?? "in_person"
+              ? (values.witness_type ?? "in_person")
               : undefined,
           source_channel: "admin",
         }),
@@ -309,7 +309,7 @@ export default function Intake() {
                   variant="ghost"
                   onClick={() => {
                     navigator.clipboard.writeText(success.payment_link);
-                    toast.success("Copied");
+                    toast.success("Copied", { id: "clipboard" });
                   }}
                 >
                   <Copy className="w-4 h-4" />

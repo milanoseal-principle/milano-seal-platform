@@ -69,6 +69,10 @@ export async function POST(req: NextRequest) {
         updates.signed_by = signed;
       }
 
+      if (newStatus === "in_transit" && !d.shipped_at) {
+        updates.shipped_at = new Date().toISOString();
+      }
+
       await supabase.from("deals").update(updates).eq("id", d.id);
       summary.updated++;
 
@@ -133,8 +137,8 @@ export async function POST(req: NextRequest) {
 
       if (newStatus === "in_transit") {
         const anchor =
-          (d.delivery_timestamp as string | null) ||
-          (d.updated_at as string | null) ||
+          (updates.shipped_at as string | null) ||
+          (d.shipped_at as string | null) ||
           (d.created_at as string | null);
         if (anchor) {
           const days = (Date.now() - new Date(anchor).getTime()) / MS_PER_DAY;

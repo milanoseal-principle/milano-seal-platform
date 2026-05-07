@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geist = Geist({
@@ -147,6 +148,19 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              toast:
+                "!bg-[#1C1C1C] !text-white !border !border-[#C6A55A]/40 !rounded-xl !shadow-[0_8px_32px_rgba(0,0,0,0.7)]",
+              success: "!bg-[#1C1C1C] !border-[#C6A55A]/40",
+              error: "!bg-[#1C1C1C] !border-red-500/40",
+              description: "!text-[#8A8A8A]",
+            },
+          }}
+        />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

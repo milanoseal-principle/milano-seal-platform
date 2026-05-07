@@ -269,6 +269,7 @@ export default function OperatorCommandCenter() {
           <tbody>
             {tableDeals.map((d) => {
               const sc = (scoring ?? []).find((s) => s.deal_id === d.deal_id);
+              const isClosed = d.deal_status === "completed" || d.deal_status === "lost";
               const score = sc?.score ?? 0;
               const scoreColor =
                 score >= 70 ? "#C6A55A" : score >= 40 ? "#c8973a" : "#888";
@@ -299,19 +300,23 @@ export default function OperatorCommandCenter() {
                     />
                   </td>
                   <td>
-                    <div className="ms-score-cell">
-                      <div className="ms-bar">
-                        <div
-                          style={{
-                            width: `${score}%`,
-                            background: scoreColor,
-                          }}
-                        />
+                    {isClosed ? (
+                      <span style={{ color: "#444", fontSize: 12 }}>—</span>
+                    ) : (
+                      <div className="ms-score-cell">
+                        <div className="ms-bar">
+                          <div
+                            style={{
+                              width: `${score}%`,
+                              background: scoreColor,
+                            }}
+                          />
+                        </div>
+                        <span className="ms-score-val" style={{ color: scoreColor }}>
+                          {score}
+                        </span>
                       </div>
-                      <span className="ms-score-val" style={{ color: scoreColor }}>
-                        {score}
-                      </span>
-                    </div>
+                    )}
                   </td>
                 </tr>
               );

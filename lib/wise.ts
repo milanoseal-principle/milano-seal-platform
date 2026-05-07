@@ -7,6 +7,7 @@ export interface WisePaymentRequestInput {
   description: string;
   clientName?: string | null;
   clientEmail?: string | null;
+  redirectUrl?: string | null;
 }
 
 export interface WisePaymentRequestResult {
@@ -64,6 +65,7 @@ export async function createWisePaymentRequest(
           },
         }
       : {}),
+    ...(input.redirectUrl ? { redirectUrl: input.redirectUrl } : {}),
   };
 
   try {
@@ -173,7 +175,6 @@ function normalizePaymentRequest(
     raw: record,
   };
 }
-
 
 export async function getWisePaymentRequest(
   id: string,

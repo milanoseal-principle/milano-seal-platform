@@ -26,6 +26,8 @@ interface Body {
   urgent?: boolean;
   signature_required?: boolean;
   skip_address_validation?: boolean;
+  skip_sla?: boolean;
+  test_mode?: boolean;
 }
 
 export async function POST(
@@ -68,6 +70,39 @@ export async function POST(
     );
   }
 
+  if (body.test_mode && process.env.NODE_ENV === "development") {
+    const fakeTracking = `TEST-${Date.now()}`;
+    const mockUpdates = {
+      tracking_number: fakeTracking,
+      carrier: "test_carrier",
+      label_url: "https://example.com/test-label.pdf",
+      delivery_status: "in_transit",
+      delivery_eta: new Date(
+        Date.now() + 5 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      ship_from: body.from,
+      ship_to: body.to,
+      status: "shipped",
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from("deals").update(mockUpdates).eq("id", deal_id);
+    await logActivity({
+      deal_id,
+      action: "shipped",
+      detail: `[TEST MODE] Mock label created — ${fakeTracking}`,
+      meta: { test_mode: true },
+    });
+    return NextResponse.json({
+      success: true,
+      tracking_number: fakeTracking,
+      carrier: "test_carrier",
+      label_url: "https://example.com/test-label.pdf",
+      eta: mockUpdates.delivery_eta,
+      pricing: { cost: 0, sell_price: 0, margin: 0, insurance_added: false },
+      test_mode: true,
+    });
+  }
+
   try {
     const validation_warnings: { side: "to" | "from"; messages: string[] }[] =
       [];
@@ -105,7 +140,7 @@ export async function POST(
     }
 
     const shipment = await createShipment({
-      from: body.from,
+      from: { email: "contact@themilanoseal.com", ...body.from },
       to: body.to,
       parcel: parcels[0],
     });
@@ -133,14 +168,21 @@ export async function POST(
       signature_required: body.signature_required,
     });
 
-    try {
-      enforceSLA(decision.chosen, deal);
-    } catch (slaErr) {
-      const msg = slaErr instanceof Error ? slaErr.message : String(slaErr);
-      return NextResponse.json(
-        { error: msg, code: "SLA_VIOLATION", decision },
-        { status: 422 },
-      );
+    if (!body.skip_sla) {
+      try {
+        enforceSLA(decision.chosen, deal);
+      } catch (slaErr) {
+        const msg = slaErr instanceof Error ? slaErr.message : String(slaErr);
+        return NextResponse.json(
+          {
+            error: msg,
+            code: "SLA_VIOLATION",
+            hint: "Pass skip_sla=true to override.",
+            decision,
+          },
+          { status: 422 },
+        );
+      }
     }
 
     const pricing = applyMargin(decision.chosen, {
@@ -170,6 +212,8 @@ export async function POST(
       delivery_status: "in_transit",
       delivery_eta: tx.eta ?? null,
       status: "shipped",
+      deal_status: "shipped",
+      shipped_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
@@ -231,7 +275,7 @@ export async function POST(
     if (deal.phone) {
       void sendWhatsApp(
         deal.phone,
-        `Milano Seal: your shipment has been dispatched.\nCarrier: ${carrier.toUpperCase()}\nTracking: ${tx.tracking_number}\nLabel: ${tx.label_url}`,
+        `Milano Seal: your documents have been shipped!\n\nCarrier: ${carrier.toUpperCase()}\nTracking: ${tx.tracking_number}\n\nYou can track your shipment and view your matter status in your client portal.`,
         { dealId: deal_id },
       ).catch(() => {});
     }

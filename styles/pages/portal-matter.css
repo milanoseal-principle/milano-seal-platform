@@ -180,6 +180,8 @@
   color: #fff;
   font-weight: 300;
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .pp-msg-meta {
   font-size: 9px;

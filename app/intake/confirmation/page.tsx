@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import {
@@ -12,6 +13,7 @@ import {
   CreditCard,
   Copy,
   Check,
+  FlaskConical,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -55,10 +57,63 @@ interface WiseInvoice {
 
 function ConfirmationInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const dealId = params.get("id") || "";
   const [intakeData, setIntakeData] = useState<any>(null);
   const [wiseInvoice, setWiseInvoice] = useState<WiseInvoice | null>(null);
   const [visible, setVisible] = useState(false);
+  const [bypassing, setBypassing] = useState(false);
+
+  const isDev = process.env.NODE_ENV === "development";
+
+  useEffect(() => {
+    if (!dealId) return;
+    if (!dealId.startsWith("MS-")) return;
+
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const r = await fetch(
+          `/api/public/payment-status?deal_id=${encodeURIComponent(dealId)}`,
+          { cache: "no-store" },
+        );
+        if (!r.ok) return;
+        const body = (await r.json()) as { payment_status?: string };
+        if (body.payment_status === "paid" && !stopped) {
+          stopped = true;
+          router.push("/portal");
+        }
+      } catch {}
+    };
+
+    const id = setInterval(() => {
+      void poll();
+    }, 5000);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+    };
+  }, [dealId, router]);
+
+  async function bypassPayment() {
+    if (!dealId) return;
+    setBypassing(true);
+    try {
+      const r = await fetch("/api/test/bypass-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: dealId }),
+      });
+      if (r.ok) {
+        router.push("/portal");
+      } else {
+        const body = (await r.json()) as { error?: string };
+        alert("Bypass failed: " + (body.error ?? r.status));
+      }
+    } finally {
+      setBypassing(false);
+    }
+  }
 
   useEffect(() => {
     setVisible(true);
@@ -165,8 +220,6 @@ function ConfirmationInner() {
           <>
             <a
               href={wiseInvoice.wise_link}
-              target="_blank"
-              rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(198,165,90,0.3)] mb-5"
             >
               <CreditCard className="w-4 h-4" />
@@ -221,6 +274,16 @@ function ConfirmationInner() {
           </div>
         )}
 
+        {dealId?.startsWith("MS-") && (
+          <div className="flex items-center gap-2 mb-4 text-[#8A8A8A] text-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]/60" />
+            </span>
+            Waiting for payment confirmation — you&rsquo;ll be redirected
+            automatically.
+          </div>
+        )}
         <p className="text-[#8A8A8A] text-xs italic">
           Wise is the primary payment method. Alternative methods (Zelle, ACH,
           wire) available on request — Nicholas will coordinate directly.
@@ -260,6 +323,31 @@ function ConfirmationInner() {
           </div>
         ))}
       </div>
+
+      {isDev && dealId && (
+        <div className="mb-6 p-4 border border-dashed border-[#C6A55A]/30 rounded-xl bg-[#C6A55A]/5">
+          <div className="flex items-center gap-2 mb-2">
+            <FlaskConical className="w-3.5 h-3.5 text-[#C6A55A]" />
+            <span className="text-[#C6A55A] text-[10px] font-semibold tracking-[0.18em] uppercase">
+              Dev mode — bypass payment
+            </span>
+          </div>
+          <p className="text-[#8A8A8A] text-xs mb-3">
+            Marks deal{" "}
+            <span className="font-mono text-[#C6A55A]">{dealId}</span> as paid
+            and advances to <strong className="text-white">scheduled</strong>.
+            Redirects to the client portal.
+          </p>
+          <button
+            onClick={bypassPayment}
+            disabled={bypassing}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-[#C6A55A]/15 border border-[#C6A55A]/40 text-[#C6A55A] rounded-lg hover:bg-[#C6A55A]/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            {bypassing ? "Bypassing…" : "Skip Payment → Go to Portal"}
+          </button>
+        </div>
+      )}
 
       <div className="text-center">
         <Link

@@ -100,6 +100,15 @@ export default async function ModulePage({
       .select("amount, payment_status, status, execution_tier, created_at");
     data = { deals: deals || [] };
   }
+  if (module === "forecast") {
+    const { data: deals } = await supabase
+      .from("deals")
+      .select("deal_id, client_name, status, deal_status, amount, created_at")
+      .not("status", "in", '("completed","lost")')
+      .order("created_at", { ascending: false })
+      .limit(200);
+    data = { deals: deals || [] };
+  }
   if (module === "financials") {
     const { data: deals } = await supabase
       .from("deals")

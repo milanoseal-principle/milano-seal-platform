@@ -190,6 +190,7 @@ export async function POST(req: NextRequest) {
       } · ${country}`,
       clientName: client_name,
       clientEmail: data.email || null,
+      redirectUrl: `${SITE}/portal`,
     });
     const payment_link = wiseResult.url;
     const wise_invoice = {

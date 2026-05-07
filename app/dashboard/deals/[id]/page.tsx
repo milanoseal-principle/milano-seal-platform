@@ -47,6 +47,7 @@ import {
   AlertCircle,
   MessageSquare,
   Send,
+  Package,
 } from "lucide-react";
 
 interface DealMessage {
@@ -100,6 +101,8 @@ interface MilanoDeal {
   shipped_at: string | null;
   completed_at: string | null;
   tracking_number: string | null;
+  carrier: string | null;
+  label_url: string | null;
 }
 
 interface ActivityRow {
@@ -190,6 +193,144 @@ export default function DealDetail() {
   const [payRef, setPayRef] = useState("");
   const [payBalAmt, setPayBalAmt] = useState("");
   const [payBalRef, setPayBalRef] = useState("");
+
+  interface ShipAddr {
+    name: string;
+    street1: string;
+    street2: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    phone: string;
+  }
+  const [shipDialogOpen, setShipDialogOpen] = useState(false);
+  const [shipFrom, setShipFrom] = useState<ShipAddr>({
+    name: "The Milano Seal",
+    street1: "",
+    street2: "",
+    city: "Miami",
+    state: "FL",
+    zip: "",
+    country: "US",
+    phone: "",
+  });
+  const [shipTo, setShipTo] = useState<ShipAddr>({
+    name: "",
+    street1: "",
+    street2: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "US",
+    phone: "",
+  });
+  const [shipParcel, setShipParcel] = useState({
+    length: "10",
+    width: "8",
+    height: "4",
+    weight: "1",
+    distance_unit: "in",
+    mass_unit: "lb",
+  });
+  const [shipOpts, setShipOpts] = useState({
+    urgent: false,
+    signature_required: false,
+    declared_value: "",
+    skip_address_validation: false,
+  });
+  const [shipLoading, setShipLoading] = useState(false);
+  const [shipResult, setShipResult] = useState<{
+    tracking_number: string;
+    carrier: string;
+    label_url: string;
+    eta?: string;
+  } | null>(null);
+  const [shipError, setShipError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!deal) return;
+    setShipTo((prev) => ({
+      ...prev,
+      name: prev.name || deal.client_name,
+      phone: prev.phone || deal.phone || "",
+    }));
+    setShipOpts((prev) => ({ ...prev, urgent: deal.urgency === "urgent" }));
+  }, [deal?.id]);
+
+  async function createShipLabel() {
+    if (!deal) return;
+    setShipLoading(true);
+    setShipError(null);
+    try {
+      const r = await fetch(`/api/shipping/create-label/${deal.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: {
+            name: shipFrom.name,
+            street1: shipFrom.street1,
+            ...(shipFrom.street2 ? { street2: shipFrom.street2 } : {}),
+            city: shipFrom.city,
+            state: shipFrom.state,
+            zip: shipFrom.zip,
+            country: shipFrom.country,
+            ...(shipFrom.phone ? { phone: shipFrom.phone } : {}),
+          },
+          to: {
+            name: shipTo.name,
+            street1: shipTo.street1,
+            ...(shipTo.street2 ? { street2: shipTo.street2 } : {}),
+            city: shipTo.city,
+            state: shipTo.state,
+            zip: shipTo.zip,
+            country: shipTo.country,
+            ...(shipTo.phone ? { phone: shipTo.phone } : {}),
+          },
+          parcel: {
+            length: Number(shipParcel.length),
+            width: Number(shipParcel.width),
+            height: Number(shipParcel.height),
+            distance_unit: shipParcel.distance_unit,
+            weight: Number(shipParcel.weight),
+            mass_unit: shipParcel.mass_unit,
+          },
+          ...(shipOpts.urgent ? { urgent: true } : {}),
+          ...(shipOpts.signature_required ? { signature_required: true } : {}),
+          ...(shipOpts.declared_value
+            ? { declared_value: Number(shipOpts.declared_value) }
+            : {}),
+          ...(shipOpts.skip_address_validation
+            ? { skip_address_validation: true }
+            : {}),
+        }),
+      });
+      const body = (await r.json()) as {
+        success?: boolean;
+        tracking_number?: string;
+        carrier?: string;
+        label_url?: string;
+        eta?: string;
+        error?: string;
+      };
+      if (!r.ok || !body.success) {
+        setShipError(body.error ?? "Label creation failed.");
+        return;
+      }
+      setShipResult({
+        tracking_number: body.tracking_number!,
+        carrier: body.carrier!,
+        label_url: body.label_url!,
+        eta: body.eta,
+      });
+      toast.success(`Label created — ${body.carrier}`);
+      refresh();
+    } catch {
+      setShipError("Network error. Please try again.");
+    } finally {
+      setShipLoading(false);
+    }
+  }
 
   async function moveStage(stage: string, successMsg: string) {
     if (!deal) return;
@@ -583,60 +724,24 @@ export default function DealDetail() {
                   <Stamp className="w-4 h-4" /> Send to Apostille
                 </Button>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      disabled={!isPaid || stage !== "apostille"}
-                      data-testid="action-ship"
-                      className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
-                    >
-                      <Truck className="w-4 h-4" /> Ship
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="font-serif">
-                        Ship documents
-                      </DialogTitle>
-                    </DialogHeader>
-                    <Input
-                      placeholder="Carrier"
-                      value={carrier}
-                      onChange={(e) => setCarrier(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Tracking number"
-                      value={tracking}
-                      onChange={(e) => setTracking(e.target.value)}
-                    />
-                    <Textarea
-                      placeholder="Note (optional)"
-                      value={actionNote}
-                      onChange={(e) => setActionNote(e.target.value)}
-                    />
-                    <DialogFooter>
-                      <Button
-                        onClick={async () => {
-                          if (!tracking || !carrier) return;
-                          await patchDeal(
-                            {
-                              tracking_number: tracking,
-                              carrier,
-                              ...(actionNote ? { notes: actionNote } : {}),
-                            },
-                            "Shipped.",
-                          );
-                          await moveStage("shipped", "Shipped.");
-                        }}
-                        disabled={!tracking || !carrier}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        Confirm shipment
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  disabled={
+                    !isPaid ||
+                    !!deal.tracking_number ||
+                    stage === "shipped" ||
+                    stage === "completed"
+                  }
+                  data-testid="action-ship"
+                  className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
+                  onClick={() => {
+                    setShipResult(null);
+                    setShipError(null);
+                    setShipDialogOpen(true);
+                  }}
+                >
+                  <Truck className="w-4 h-4" /> Ship
+                </Button>
 
                 <Button
                   variant="outline"
@@ -714,7 +819,7 @@ export default function DealDetail() {
                             : "self-end bg-gold/10 border border-gold/30"
                         }`}
                       >
-                        <span className="text-foreground font-light leading-relaxed">
+                        <span className="text-foreground font-light leading-relaxed break-all">
                           {m.content}
                         </span>
                         <span className="text-[10px] text-muted-foreground mt-1">
@@ -810,7 +915,7 @@ export default function DealDetail() {
                   onClick={() => {
                     if (deal.payment_link) {
                       navigator.clipboard.writeText(deal.payment_link);
-                      toast.success("Copied");
+                      toast.success("Copied", { id: "clipboard" });
                     }
                   }}
                 >
@@ -905,7 +1010,7 @@ export default function DealDetail() {
                               navigator.clipboard.writeText(
                                 deal.balance_payment_link!,
                               );
-                              toast.success("Copied");
+                              toast.success("Copied", { id: "clipboard" });
                             }}
                           >
                             <Copy className="w-4 h-4" />
@@ -1001,6 +1106,56 @@ export default function DealDetail() {
 
           <Card className="bg-card border-gold">
             <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <Package className="w-4 h-4 text-gold" /> Shipping
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {deal.tracking_number ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Carrier</span>
+                    <span>{deal.carrier ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded border border-border bg-background">
+                    <code className="flex-1 text-xs break-all">
+                      {deal.tracking_number}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(deal.tracking_number!);
+                        toast.success("Copied", { id: "clipboard" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {deal.label_url && (
+                    <a href={deal.label_url} target="_blank" rel="noreferrer">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> View Label
+                      </Button>
+                    </a>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No label yet — use the{" "}
+                  <span className="text-gold font-medium">Ship</span> button in
+                  the timeline above.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-gold">
+            <CardHeader>
               <CardTitle className="font-serif text-xl">Facts</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -1063,6 +1218,361 @@ export default function DealDetail() {
           </Card>
         </div>
       </div>
+
+      <Dialog
+        open={shipDialogOpen}
+        onOpenChange={(o) => {
+          if (!o) {
+            setShipResult(null);
+            setShipError(null);
+          }
+          setShipDialogOpen(o);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif">
+              Create Shipping Label
+            </DialogTitle>
+          </DialogHeader>
+
+          {shipResult ? (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-2 p-3 rounded-md bg-paid border border-green-500/20">
+                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <span className="text-sm font-medium">
+                  Label created successfully
+                </span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Carrier</span>
+                  <span className="font-medium">{shipResult.carrier}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tracking</span>
+                  <code className="text-xs">{shipResult.tracking_number}</code>
+                </div>
+                {shipResult.eta && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">ETA</span>
+                    <span>{shipResult.eta}</span>
+                  </div>
+                )}
+              </div>
+              <a
+                href={shipResult.label_url}
+                target="_blank"
+                rel="noreferrer"
+                className="block"
+              >
+                <Button className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <ExternalLink className="w-4 h-4" /> Download Label
+                </Button>
+              </a>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShipDialogOpen(false)}
+              >
+                Done
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+                  From
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Name"
+                    value={shipFrom.name}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, name: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="Phone"
+                    value={shipFrom.phone}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, phone: e.target.value }))
+                    }
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Street address"
+                    value={shipFrom.street1}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, street1: e.target.value }))
+                    }
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Apt / Suite (optional)"
+                    value={shipFrom.street2}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, street2: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="City"
+                    value={shipFrom.city}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, city: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="State"
+                    value={shipFrom.state}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, state: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="ZIP"
+                    value={shipFrom.zip}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, zip: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="Country"
+                    value={shipFrom.country}
+                    onChange={(e) =>
+                      setShipFrom((f) => ({ ...f, country: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+                  To
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Recipient name"
+                    value={shipTo.name}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, name: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="Phone"
+                    value={shipTo.phone}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, phone: e.target.value }))
+                    }
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Street address"
+                    value={shipTo.street1}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, street1: e.target.value }))
+                    }
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Apt / Suite (optional)"
+                    value={shipTo.street2}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, street2: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="City"
+                    value={shipTo.city}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, city: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="State"
+                    value={shipTo.state}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, state: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="ZIP"
+                    value={shipTo.zip}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, zip: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="Country"
+                    value={shipTo.country}
+                    onChange={(e) =>
+                      setShipTo((f) => ({ ...f, country: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+                  Parcel (inches / lbs)
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Length
+                    </label>
+                    <Input
+                      value={shipParcel.length}
+                      onChange={(e) =>
+                        setShipParcel((p) => ({ ...p, length: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Width
+                    </label>
+                    <Input
+                      value={shipParcel.width}
+                      onChange={(e) =>
+                        setShipParcel((p) => ({ ...p, width: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Height
+                    </label>
+                    <Input
+                      value={shipParcel.height}
+                      onChange={(e) =>
+                        setShipParcel((p) => ({ ...p, height: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Weight (lb)
+                    </label>
+                    <Input
+                      value={shipParcel.weight}
+                      onChange={(e) =>
+                        setShipParcel((p) => ({ ...p, weight: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+                  Options
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={shipOpts.urgent}
+                      onChange={(e) =>
+                        setShipOpts((o) => ({ ...o, urgent: e.target.checked }))
+                      }
+                      className="rounded"
+                    />
+                    Urgent routing
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={shipOpts.signature_required}
+                      onChange={(e) =>
+                        setShipOpts((o) => ({
+                          ...o,
+                          signature_required: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
+                    />
+                    Signature required
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={shipOpts.skip_address_validation}
+                      onChange={(e) =>
+                        setShipOpts((o) => ({
+                          ...o,
+                          skip_address_validation: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
+                    />
+                    Skip address validation
+                    <span className="text-[11px] text-muted-foreground">
+                      (use if Shippo rejects a valid address)
+                    </span>
+                  </label>
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Declared value USD (optional)"
+                  value={shipOpts.declared_value}
+                  onChange={(e) =>
+                    setShipOpts((o) => ({
+                      ...o,
+                      declared_value: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {shipError && (
+                <div className="flex items-center gap-2 p-3 rounded-md bg-critical border border-red-500/20">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm">{shipError}</span>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShipDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void createShipLabel()}
+                  disabled={
+                    shipLoading ||
+                    !shipFrom.street1 ||
+                    !shipFrom.zip ||
+                    !shipTo.name ||
+                    !shipTo.street1 ||
+                    !shipTo.zip
+                  }
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {shipLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Creating…
+                    </>
+                  ) : (
+                    <>
+                      <Package className="w-4 h-4" /> Create Label
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

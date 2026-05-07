@@ -1418,7 +1418,7 @@ export function IntakeWizard({
             {step > 1 && (
               <button
                 onClick={goBack}
-                className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] hover:text-[#4A4030] transition-colors duration-200"
+                className="flex items-center cursor-pointer gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] hover:text-[#4A4030] transition-colors duration-200"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back
@@ -1428,7 +1428,7 @@ export function IntakeWizard({
               {step < TOTAL ? (
                 <button
                   onClick={goNext}
-                  className="group flex items-center gap-2.5 px-9 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-9 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   Continue
                   <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -1437,7 +1437,7 @@ export function IntakeWizard({
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="group flex items-center gap-2.5 px-10 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-10 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   {isSubmitting ? (
                     <>
