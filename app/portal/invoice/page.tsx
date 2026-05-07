@@ -18,10 +18,10 @@ export default function ClientInvoicePage() {
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  @page{size:letter portrait;margin:.55in .65in}
+  @page{size:letter portrait;margin:.75in .85in}
   html,body{background:#f9f6f0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{font-family:'Cormorant Garamond',Georgia,serif;color:#2a2520}
-  .ci-card{background:#f9f6f0;color:#2a2520;padding:36px 44px;font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;position:relative;min-height:600px}
+  .ci-card{background:#f9f6f0;color:#2a2520;padding:52px 60px;font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;position:relative;min-height:640px}
   .ci-brand{font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#c6a55a;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:4px}
   .ci-tag{font-size:8px;letter-spacing:.28em;text-transform:uppercase;color:#a8894a;text-align:center;margin-bottom:14px}
   .ci-hr{border:none;border-top:.75px solid #d4c9b0;margin:12px 0}
@@ -87,18 +87,32 @@ export default function ClientInvoicePage() {
         <button
           onClick={print}
           style={{
-            background: "#C6A55A",
-            color: "#0A0A0A",
-            border: "none",
-            borderRadius: 8,
-            padding: "10px 22px",
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: "0.05em",
+            background: "transparent",
+            color: "#C6A55A",
+            border: "1px solid rgba(198,165,90,0.5)",
+            borderRadius: 6,
+            padding: "9px 20px",
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase" as const,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 7,
+            transition: "border-color 0.15s, background 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor =
+              "#C6A55A";
+            (e.currentTarget as HTMLButtonElement).style.background =
+              "rgba(198,165,90,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor =
+              "rgba(198,165,90,0.5)";
+            (e.currentTarget as HTMLButtonElement).style.background =
+              "transparent";
           }}
         >
           ↓ Download / Print
