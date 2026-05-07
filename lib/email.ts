@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY!);
+}
 const FROM =
   process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const SITE =
@@ -105,7 +107,7 @@ export async function sendIntakeConfirmation({
     ${p("Wise is the primary payment method. If you need an alternative (Zelle, ACH, wire), reply to this email and Nicholas will coordinate directly.")}
   `);
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `Matter Received — ${dealId} · The Milano Seal™`,
@@ -158,7 +160,7 @@ export async function sendScheduledNotification({
     </div>
   `);
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `Appointment Confirmed — ${dealId} · The Milano Seal™`,
@@ -213,7 +215,7 @@ export async function sendShippedNotification({
     </div>
   `);
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `Documents Shipped — ${dealId} · The Milano Seal™`,
@@ -249,7 +251,7 @@ export async function sendCompletedNotification({
     ${p("If you require additional document services in the future, we are here. Reply to this email or visit themilanoseal.com.")}
   `);
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `Matter Complete — ${dealId} · The Milano Seal™`,
