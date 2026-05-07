@@ -7,14 +7,49 @@ export interface DashboardModule {
 }
 
 export const DASHBOARD_MODULES: DashboardModule[] = [
-  // CORE
   {
     name: "Command Center",
-    route: "deals",
-    icon: "LayoutGrid",
-    description: "Every matter, every dollar, every step",
-    group: "Core",
+    route: "admin",
+    icon: "ShieldAlert",
+    description: "SLA alerts, conversion scoring, recent activity",
+    group: "Admin",
   },
+  {
+    name: "New Matter",
+    route: "intake",
+    icon: "FilePlus2",
+    description: "Admin intake with live pricing preview",
+    group: "Admin",
+  },
+  {
+    name: "Matters",
+    route: "deals",
+    icon: "Briefcase",
+    description: "Filterable list of every matter",
+    group: "Admin",
+  },
+  {
+    name: "Pipeline",
+    route: "pipeline",
+    icon: "Kanban",
+    description: "Kanban view by execution stage",
+    group: "Admin",
+  },
+  {
+    name: "Follow-ups",
+    route: "follow-ups",
+    icon: "ListTodo",
+    description: "Auto-scheduled touchpoints",
+    group: "Admin",
+  },
+  {
+    name: "Compliance Map",
+    route: "compliance",
+    icon: "Globe",
+    description: "Hague + RON + witness rules per jurisdiction",
+    group: "Admin",
+  },
+  // CORE
   {
     name: "KPI Dashboard",
     route: "kpi",
@@ -213,6 +248,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
 ];
 
 export const MODULE_GROUPS = [
+  "Admin",
   "Core",
   "Pipeline",
   "Execution",

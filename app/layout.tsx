@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
+import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"] });
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -129,12 +140,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${geist.className} ${playfair.variable} antialiased`}>
+      <body
+        className={`${geist.variable} ${inter.variable} ${playfair.variable} font-sans antialiased`}
+      >
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              toast:
+                "!bg-[#1C1C1C] !text-white !border !border-[#C6A55A]/40 !rounded-xl !shadow-[0_8px_32px_rgba(0,0,0,0.7)]",
+              success: "!bg-[#1C1C1C] !border-[#C6A55A]/40",
+              error: "!bg-[#1C1C1C] !border-red-500/40",
+              description: "!text-[#8A8A8A]",
+            },
+          }}
+        />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

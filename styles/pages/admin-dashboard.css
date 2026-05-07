@@ -1,0 +1,321 @@
+@keyframes msFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes msPulseGold {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ms-fade-up {
+  animation: msFadeUp 0.5s ease both;
+}
+
+.ms-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c6a55a;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ms-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: #c6a55a;
+}
+.ms-h1 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 24px;
+  line-height: 1.1;
+}
+.ms-h1 em {
+  color: #c6a55a;
+  font-style: italic;
+}
+
+.ms-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 11px;
+  margin-bottom: 22px;
+}
+@media (max-width: 900px) {
+  .ms-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.ms-stat {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 18px 16px;
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ms-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c6a55a, transparent);
+  opacity: 0.5;
+}
+.ms-stat-lbl {
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.ms-stat-val {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 28px;
+  font-weight: 300;
+  color: #fff;
+  line-height: 1;
+}
+.ms-stat-val span {
+  font-size: 14px;
+  color: #c6a55a;
+  margin-right: 2px;
+}
+.ms-stat-sub {
+  font-size: 9.5px;
+  color: #c6a55a;
+  margin-top: 8px;
+  letter-spacing: 0.04em;
+}
+
+.ms-divg {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: rgba(198, 165, 90, 0.6);
+  font-size: 10px;
+}
+.ms-divg::before,
+.ms-divg::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(198, 165, 90, 0.18);
+}
+.ms-section-lbl {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* Kanban board */
+.ms-kanban {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.ms-kan-col {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 12px;
+  min-width: 220px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+.ms-kan-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(198, 165, 90, 0.12);
+  margin-bottom: 10px;
+}
+.ms-kan-hdr-l {
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+.ms-kan-hdr-c {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 14px;
+  color: #fff;
+}
+.ms-kan-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 2px;
+}
+.ms-kan-card:hover {
+  border-color: rgba(198, 165, 90, 0.32);
+}
+.ms-kan-id {
+  font-family: monospace;
+  font-size: 9px;
+  color: #a8894a;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+.ms-kan-name {
+  font-size: 12px;
+  color: #fff;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+.ms-kan-doc {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+.ms-kan-price {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 12px;
+  color: #c6a55a;
+}
+.ms-kan-footer {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ms-kan-empty {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.32);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* Matters table */
+.ms-tbl-wrap {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 4px 0;
+  border-radius: 2px;
+  overflow-x: auto;
+}
+.ms-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+.ms-tbl th {
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(198, 165, 90, 0.12);
+}
+.ms-tbl td {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(198, 165, 90, 0.06);
+}
+.ms-tbl tr:hover td {
+  background: rgba(198, 165, 90, 0.03);
+}
+.ms-tbl-id {
+  font-family: monospace;
+  font-size: 10px;
+  color: #a8894a;
+}
+.ms-tbl-id a {
+  color: inherit;
+  text-decoration: none;
+}
+.ms-tbl-name {
+  color: #fff;
+  font-weight: 400;
+}
+.ms-tbl-doc {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ms-tbl-lane {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.ms-tbl-value {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 13px;
+  color: #c6a55a;
+}
+.ms-tbl-empty {
+  text-align: center;
+  padding: 32px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Score bar */
+.ms-bar {
+  height: 4px;
+  width: 50px;
+  background: #242424;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ms-bar > div {
+  height: 100%;
+}
+.ms-score-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ms-score-val {
+  font-size: 10px;
+}
+
+/* Status badge (used inline for dynamic colors) */
+.ms-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: 2px;
+}

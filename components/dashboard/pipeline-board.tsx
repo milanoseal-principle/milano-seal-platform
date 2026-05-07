@@ -128,7 +128,7 @@ const MatterCard = memo(function MatterCard({
             <button
               disabled={advancing}
               onClick={() => onAdvance(matter.deal_id, nextStage.key)}
-              className="w-full text-[9px] tracking-[0.1em] uppercase py-1.5 rounded bg-[#1A1A1A] border border-[#2A2A2A] text-[#8A8A8A] hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-all disabled:opacity-40"
+              className="w-full text-[9px] tracking-[0.1em] uppercase py-1.5 rounded bg-[#1A1A1A] border border-[#2A2A2A] text-[#8A8A8A] hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {advancing ? "Advancing…" : `Advance → ${nextStage.label}`}
             </button>
@@ -180,7 +180,7 @@ const StageColumn = memo(function StageColumn({
           {matters.length}
         </span>
       </div>
-      <div className="space-y-2 min-h-[80px]">
+      <div className="space-y-3 min-h-[80px]">
         {matters.length === 0 ? (
           <div className="border border-dashed border-[#1E1E1E] rounded-lg h-14 flex items-center justify-center">
             <span className="text-[#2A2A2A] text-[9px]">empty</span>
@@ -317,7 +317,7 @@ export function PipelineBoard() {
         <p className="text-red-400 text-sm">{error}</p>
         <button
           onClick={load}
-          className="mt-3 text-[10px] tracking-widest uppercase text-[#C6A55A] hover:underline"
+          className="mt-3 text-[10px] tracking-widest uppercase text-[#C6A55A] hover:underline cursor-pointer"
         >
           Refresh
         </button>
@@ -363,7 +363,7 @@ export function PipelineBoard() {
         </div>
 
         {/* Revenue panel */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             {
               label: "Total Revenue",

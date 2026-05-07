@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
 import { determineLaneAndPrice } from "@/lib/pricing";
 import { generateInvoice } from "@/lib/invoice";
 import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
+import { logActivity } from "@/lib/activity";
+import { createWisePaymentRequest } from "@/lib/wise";
+import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
+import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { runDealEngine } from "@/lib/core/engine";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
 function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
-    1000 + Math.random() * 9000
+    1000 + Math.random() * 9000,
   )}`;
 }
 
-// PHASE 2 — Auto lane selection (Trust Engine)
 function autoSelectLane({
   country,
   urgency,
@@ -32,7 +39,6 @@ function autoSelectLane({
   return "Signature";
 }
 
-// PHASE 3 — Conversion scoring engine
 function calculateScore({
   country,
   useCase,
@@ -46,7 +52,7 @@ function calculateScore({
   const dest = DESTINATIONS.find(
     (d) =>
       d.slug === country.toLowerCase().replace(/\s+/g, "-") ||
-      d.name.toLowerCase() === country.toLowerCase()
+      d.name.toLowerCase() === country.toLowerCase(),
   );
   if (dest) {
     if (dest.demand >= 80) score += 30;
@@ -67,79 +73,17 @@ function calculateScore({
   return Math.min(score, 100);
 }
 
-// PHASE 4 — High value routing
 function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
   if (score >= 70) return "HIGH";
   if (score >= 40) return "MEDIUM";
   return "LOW";
 }
 
-// PHASE 6 — Wise payment invoice (primary, Stripe as fallback)
-function generateWiseInvoice({
-  amount,
-  dealId,
-  clientName,
-}: {
-  amount: number;
-  dealId: string;
-  clientName: string;
-}) {
-  return {
-    payment_method: "WISE",
-    amount,
-    reference: dealId,
-    note: `The Milano Seal™ — Document Execution · ${clientName}`,
-    wise_link: "https://wise.com/pay/me/nicholassamm1",
-    status: "AWAITING_PAYMENT",
-  };
-}
-
-async function createStripeLink(deal: {
-  deal_id: string;
-  lane: string;
-  total: number;
-  client_name: string;
-  document_type: string;
-  country: string;
-}): Promise<string | null> {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  try {
-    const res = await fetch("https://api.stripe.com/v1/payment_links", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        "line_items[0][price_data][currency]": "usd",
-        "line_items[0][price_data][product_data][name]": `The Milano Seal™ — ${deal.lane} Lane`,
-        "line_items[0][price_data][product_data][description]": `${deal.document_type} · ${deal.country} · ${deal.deal_id}`,
-        "line_items[0][price_data][unit_amount]": String(
-          Math.round(deal.total * 100)
-        ),
-        "line_items[0][quantity]": "1",
-        "metadata[deal_id]": deal.deal_id,
-        "metadata[client_name]": deal.client_name,
-        "after_completion[type]": "redirect",
-        "after_completion[redirect][url]": `${
-          process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
-        }/intake/confirmation`,
-      }).toString(),
-    });
-    const data = await res.json();
-    return data.url || null;
-  } catch {
-    return null;
-  }
-}
-
-// PHASE 9 — High value operator alert (non-blocking)
 async function notifyHighValue(
   dealId: string,
   country: string,
   value: number,
-  tier: string
+  tier: string,
 ) {
   if (tier !== "HIGH") return;
   try {
@@ -150,23 +94,19 @@ async function notifyHighValue(
       deal_id: dealId,
       read: false,
     });
-  } catch {
-    /* non-blocking */
-  }
+  } catch {}
 }
 
 export async function POST(req: NextRequest) {
   try {
     let raw = await req.json();
 
-    // PHASE 1 — capture prefill params from SEO routing
     const useCase = (raw.use_case || raw.useCase || "") as string;
     const prefillDoc = (raw.document_type || raw.document || "") as string;
     const prefillCountry = (raw.country ||
       raw.destination_country ||
       "") as string;
 
-    // If message field present (WhatsApp/IG text), parse it first
     if (raw.message && !raw.document_type) {
       const parsed = parseIntake(raw.message);
       raw = {
@@ -188,7 +128,7 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
       return NextResponse.json(
         { error: e.message, code: e.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -204,7 +144,6 @@ export async function POST(req: NextRequest) {
       if (compliance.apostille_required) data.apostille = true;
     } catch {}
 
-    // PHASE 2 — auto lane (overrides pricing engine when signals are strong)
     const autoLane = autoSelectLane({
       country,
       urgency: data.urgency as string,
@@ -219,7 +158,6 @@ export async function POST(req: NextRequest) {
     };
     const pricing = determineLaneAndPrice(pricingInput);
 
-    // Escalate to highest lane between auto-select and pricing engine
     const laneOrder = ["Signature", "Priority", "Executive"];
     const finalLane =
       laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
@@ -235,78 +173,236 @@ export async function POST(req: NextRequest) {
     const source =
       ((data as Record<string, unknown>).source_channel as string) || "web";
 
-    // PHASE 3 — conversion score
     const conversion_score = calculateScore({
       country,
       useCase,
       urgency: data.urgency as string,
     });
 
-    // PHASE 4 — priority tier routing
     const priority_tier = routeDeal(conversion_score);
 
-    // PHASE 6 — Wise as primary, Stripe as fallback
-    const wise_invoice = generateWiseInvoice({
-      amount: pricing.total,
+    const wiseResult = await createWisePaymentRequest({
       dealId: deal_id,
+      amount: invoice.retainer,
+      currency: "USD",
+      description: `The Milano Seal™ — ${finalLane} Lane Retainer · ${
+        data.document_type || prefillDoc || "Document"
+      } · ${country}`,
       clientName: client_name,
+      clientEmail: data.email || null,
+      redirectUrl: `${SITE}/portal`,
     });
-    const payment_link = await createStripeLink({
+    const payment_link = wiseResult.url;
+    const wise_invoice = {
+      payment_method: "WISE",
+      amount: invoice.retainer,
+      reference: deal_id,
+      note: `The Milano Seal™ — Retainer (50%) · ${client_name}`,
+      wise_link: wiseResult.url,
+      wise_request_id: wiseResult.id,
+      wise_mode: wiseResult.mode,
+      status: "AWAITING_PAYMENT",
+    };
+
+    const docType = data.document_type || prefillDoc || "";
+    const companyName =
+      ((raw as Record<string, string>).company_name as string) ||
+      ((raw as Record<string, string>).company as string) ||
+      null;
+    const intakePayload = {
       deal_id,
-      lane: finalLane,
-      total: pricing.total,
+
       client_name,
-      document_type: data.document_type || prefillDoc || "",
+      full_name: client_name,
+      client_type:
+        ((raw as Record<string, string>).client_type as string) ?? "individual",
+      company_name: companyName,
+      company: companyName,
+      email: data.email || "",
+      phone: data.phone || "",
       country,
-    });
+      destination_country: country,
+      origin_state:
+        ((raw as Record<string, string>).origin_state as string) || null,
+      document: docType,
+      document_type: docType,
+      service_type: docType,
+      use_case: useCase || null,
+      notes: data.notes || "",
+      lane: finalLane,
+      execution_tier: finalLane,
+      execution_lane: finalLane,
+      docs_count: Number(data.docs ?? 1),
+      docs: Number(data.docs ?? 1),
+      signers: Number(data.signers ?? 1),
+      witnesses: Number(data.witnesses ?? 0),
+      witness_type: data.witness_type ?? null,
+      after_hours: Boolean(data.after_hours ?? false),
+      urgency: (data.urgency as string) ?? "standard",
+      mobile: Boolean(data.mobile ?? false),
+      miles: Number(data.miles ?? 0),
+      translation: Boolean(data.translation ?? false),
+      multi_country: Boolean(data.multi_country ?? false),
+      apostille_required:
+        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+      requires_apostille:
+        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+      amount: pricing.total,
+      total_price: pricing.total,
+      base_price: pricing.base,
+      witness_total: pricing.witness_total,
+      status: "awaiting_payment",
+      deal_status: "awaiting_payment",
+      payment_status: "pending",
+      payment_method: "wise",
+      invoice_status: "proforma",
+      invoice_subtotal: invoice.subtotal,
+      invoice_retainer: invoice.retainer,
+      invoice_balance: invoice.balance,
+      invoice_valid_until: new Date(invoice.valid_until).toISOString(),
+      compliance_result: JSON.stringify(compliance),
+      decline_risk,
+      conversion_score,
+      priority_tier,
+      follow_up_active: true,
+      last_contacted: null,
+      followup_schedule: JSON.stringify(["24h", "72h", "7d"]),
+      source,
+      payment_link,
+      access_token,
+    };
 
     const supabase = createAdminClient();
     const { data: deal, error } = await supabase
       .from("deals")
-      .insert([
-        {
-          deal_id,
-          client_name,
-          email: data.email || "",
-          phone: data.phone || "",
-          country,
-          document: data.document_type || prefillDoc || "",
-          document_type: data.document_type || prefillDoc || "",
-          use_case: useCase || null,
-          notes: data.notes || "",
-          execution_tier: finalLane,
-          amount: pricing.total,
-          status: "awaiting_payment",
-          payment_status: "pending",
-          payment_method: "wise", // Wise primary
-          invoice_status: "proforma",
-          invoice_subtotal: invoice.subtotal,
-          invoice_retainer: invoice.retainer,
-          invoice_balance: invoice.balance,
-          invoice_valid_until: new Date(invoice.valid_until).toISOString(),
-          compliance_result: JSON.stringify(compliance),
-          decline_risk,
-          conversion_score, // PHASE 3
-          priority_tier, // PHASE 4
-          follow_up_active: true,
-          last_contacted: null,
-          followup_schedule: JSON.stringify(["24h", "72h", "7d"]),
-          requires_apostille: compliance?.apostille_required ?? data.apostille,
-          destination_country: country,
-          source,
-          payment_link,
-          access_token,
-        },
-      ])
+      .insert([intakePayload])
       .select()
       .single();
 
-    if (error) console.error("DB insert error:", error);
+    if (error) {
+      console.error("DB insert error:", error);
+      return NextResponse.json(
+        {
+          error: "Failed to save matter. Please try again or contact support.",
+        },
+        { status: 500 },
+      );
+    }
 
-    // PHASE 9 — high value alert (non-blocking)
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);
 
-    // PHASE 8 — response includes all scoring fields for dashboard
+    if (deal?.id) {
+      void (async () => {
+        try {
+          await appendLedger({
+            deal_id: deal.id,
+            event: CUSTODY_EVENTS.DOC_CREATED,
+            actor_type: "system",
+            location: "Milano Seal Intake",
+            method: "intake",
+            status: "created",
+            metadata: {
+              deal_code: deal_id,
+              source,
+              lane: finalLane,
+              country,
+              total: pricing.total,
+            },
+          });
+        } catch (err) {
+          console.error(
+            "[intake] custody ledger failed:",
+            err instanceof Error ? err.message : err,
+          );
+        }
+      })();
+
+      void (async () => {
+        try {
+          await runDealEngine({
+            id: deal.id,
+            deal_id,
+            email: data.email,
+            phone: data.phone as string | undefined,
+            client_name,
+            document_type: data.document_type as string | undefined,
+            destination_country: country,
+            country,
+            status: "awaiting_payment",
+            payment_status: "pending",
+            payment_link,
+            raw_text:
+              ((raw as Record<string, string>).message as string) ?? null,
+            mobile: Boolean(data.mobile ?? false),
+            signers: Number(data.signers ?? 1),
+            witnesses: Number(data.witnesses ?? 0),
+          });
+        } catch (err) {
+          console.error(
+            "[intake] runDealEngine failed:",
+            err instanceof Error ? err.message : err,
+          );
+        }
+      })();
+    }
+
+    if (data.email) {
+      void sendIntakeConfirmation({
+        to: data.email as string,
+        name: client_name,
+        dealId: deal_id,
+        lane: finalLane,
+        total: pricing.total,
+        retainer: invoice.retainer,
+        paymentLink: payment_link,
+        portalUrl: `${SITE}/portal/${access_token}`,
+      });
+    }
+
+    void (async () => {
+      let actor = source === "admin" ? "admin" : `${source}-intake`;
+      try {
+        const ssr = await createClient();
+        const {
+          data: { user },
+        } = await ssr.auth.getUser();
+        if (user?.email) actor = user.email;
+      } catch {}
+      await logActivity({
+        deal_id,
+        actor,
+        action: "created",
+        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country}`,
+        meta: {
+          source,
+          lane: finalLane,
+          conversion_score,
+          priority_tier,
+        },
+      });
+    })();
+
+    const pricingBreakdown: { label: string; amount: number }[] = [
+      { label: `${finalLane} base`, amount: pricing.base },
+    ];
+    if (pricing.witness_total > 0) {
+      pricingBreakdown.push({
+        label: `Witnesses · ${data.witnesses ?? 0}`,
+        amount: pricing.witness_total,
+      });
+    }
+    for (const addon of pricing.addons) {
+      pricingBreakdown.push({ label: addon.item, amount: addon.amount });
+    }
+    const rationaleByLane: Record<string, string> = {
+      RON_SIMPLE: "Colorado RON-only path — RON Simple lane applies.",
+      MOBILE_STANDARD: "Florida mobile execution + round-trip mileage.",
+      Signature: "Standard international execution path.",
+      Priority: "Multi-signer or translation triggers Priority lane.",
+      Executive:
+        "Urgent or multi-country routing — Executive lane handles it end-to-end.",
+    };
+
     return NextResponse.json({
       success: true,
       deal_id: deal?.deal_id || deal_id,
@@ -317,6 +413,14 @@ export async function POST(req: NextRequest) {
       payment_method: "WISE",
       wise_invoice,
       payment_link,
+      pricing: {
+        lane: finalLane,
+        base: pricing.base,
+        witness_total: pricing.witness_total,
+        total: pricing.total,
+        breakdown: pricingBreakdown,
+        rationale: rationaleByLane[finalLane] ?? "Standard pricing applied.",
+      },
       execution_stage: "Awaiting Payment",
       portal_url: `${
         process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
@@ -329,7 +433,7 @@ export async function POST(req: NextRequest) {
     console.error("Intake error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

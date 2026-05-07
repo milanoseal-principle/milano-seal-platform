@@ -82,7 +82,7 @@ export default async function AnalyticsPage() {
   });
 
   const Card = ({ title, value, sub, gold }: any) => (
-    <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-5">
+    <div className="bg-[#111111] border border-gold rounded-xl p-5">
       <p className="text-[9px] tracking-widest uppercase text-[#6A6A6A] mb-2">
         {title}
       </p>
@@ -214,7 +214,7 @@ export default async function AnalyticsPage() {
         <p className="text-[#C6A55A] text-[10px] tracking-widest uppercase mb-4 font-semibold">
           Destination Demand
         </p>
-        <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-5">
+        <div className="bg-[#111111] border border-gold rounded-xl p-5">
           {topCountries.length === 0 ? (
             <p className="text-[#6A6A6A] text-sm">No destination data yet.</p>
           ) : (
@@ -230,7 +230,7 @@ export default async function AnalyticsPage() {
         <p className="text-[#C6A55A] text-[10px] tracking-widest uppercase mb-4 font-semibold">
           Document Demand
         </p>
-        <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-5">
+        <div className="bg-[#111111] border border-gold rounded-xl p-5">
           {topDocs.length === 0 ? (
             <p className="text-[#6A6A6A] text-sm">No document data yet.</p>
           ) : (
@@ -246,7 +246,7 @@ export default async function AnalyticsPage() {
         <p className="text-[#C6A55A] text-[10px] tracking-widest uppercase mb-4 font-semibold">
           Bundle Intelligence
         </p>
-        <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-5">
+        <div className="bg-[#111111] border border-gold rounded-xl p-5">
           {topBundles.length === 0 ? (
             <p className="text-[#6A6A6A] text-sm">
               Bundle data populates from document intelligence interactions.
@@ -264,7 +264,7 @@ export default async function AnalyticsPage() {
         <p className="text-[#C6A55A] text-[10px] tracking-widest uppercase mb-4 font-semibold">
           Growth Signals
         </p>
-        <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-5">
+        <div className="bg-[#111111] border border-gold rounded-xl p-5">
           {Object.keys(weeks).length === 0 ? (
             <p className="text-[#6A6A6A] text-sm">No intake data yet.</p>
           ) : (

@@ -252,7 +252,7 @@ function CompliancePanel({
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-[#1A1A1A] rounded-lg transition-colors"
+          className="p-1.5 hover:bg-[#1A1A1A] rounded-lg transition-colors cursor-pointer"
         >
           <X className="w-4 h-4 text-[#8A8A8A]" />
         </button>

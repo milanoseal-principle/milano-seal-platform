@@ -1,0 +1,128 @@
+.ct-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c6a55a;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ct-eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: #c6a55a;
+}
+.ct-h1 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 24px;
+}
+.ct-card {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 26px;
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+.ct-card-h {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.ct-kv {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(198, 165, 90, 0.06);
+  align-items: center;
+}
+.ct-kv:last-child {
+  border-bottom: 0;
+}
+.ct-kv-k {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
+}
+.ct-kv-v {
+  font-size: 12.5px;
+  color: #fff;
+  font-weight: 500;
+  max-width: 60%;
+  text-align: right;
+}
+.ct-kv-v.mono {
+  font-family: monospace;
+  font-size: 12px;
+  color: #c6a55a;
+}
+.ct-kv-v.light {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+}
+.ct-status-pill {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+  background: transparent;
+}
+.ct-link {
+  color: #c6a55a;
+  text-decoration: none;
+  font-weight: 500;
+}
+.ct-link:hover {
+  color: #d4b76a;
+  text-decoration: underline;
+}
+.ct-link-btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid #c6a55a;
+  border-radius: 2px;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.ct-label-link {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.ct-empty {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 32px;
+  text-align: center;
+  border-radius: 2px;
+}
+.ct-empty-h {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.ct-empty-p {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+}
+.ct-proof-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}

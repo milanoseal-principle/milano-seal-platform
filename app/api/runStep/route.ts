@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { requirePaid, validateTransition } from "@/lib/gate";
 import { canTransition } from "@/lib/stateMachine";
+import { logActivity } from "@/lib/activity";
+import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { sendAdminAlert } from "@/lib/whatsapp";
+import { enforceRules, RuleViolation } from "@/lib/core/enforceRules";
+import { uploadEvidencePacket } from "@/lib/evidenceStorage";
+import { snapshotDeal } from "@/lib/dealBackup";
 
 export const runtime = "nodejs";
 
@@ -27,14 +34,14 @@ export async function POST(req: NextRequest) {
   if (!deal_id || !step) {
     return NextResponse.json(
       { error: "deal_id and step required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!STEP_TRANSITIONS[step]) {
     return NextResponse.json(
       { error: `Invalid step: ${step}` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -56,7 +63,7 @@ export async function POST(req: NextRequest) {
   if (!paidCheck.ok) {
     return NextResponse.json(
       { error: paidCheck.message, code: "PAYMENT_REQUIRED" },
-      { status: 402 }
+      { status: 402 },
     );
   }
 
@@ -94,8 +101,20 @@ export async function POST(req: NextRequest) {
         error: `Invalid transition: "${deal.status}" → "${to}"`,
         code: "INVALID_TRANSITION",
       },
-      { status: 409 }
+      { status: 409 },
     );
+  }
+
+  try {
+    enforceRules(deal, to);
+  } catch (err) {
+    if (err instanceof RuleViolation) {
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status: 409 },
+      );
+    }
+    throw err;
   }
 
   // Execute transition
@@ -117,9 +136,131 @@ export async function POST(req: NextRequest) {
   if (updateError) {
     return NextResponse.json(
       { error: "Transition failed", detail: updateError.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
+
+  void (async () => {
+    const ssr = await createClient();
+    const {
+      data: { user },
+    } = await ssr.auth.getUser();
+    await logActivity({
+      deal_id,
+      actor: user?.email ?? "admin",
+      action:
+        to === "completed"
+          ? "completed"
+          : to === "apostille"
+            ? "apostille"
+            : to === "in_execution"
+              ? "executed"
+              : "stage_advanced",
+      detail: `${from} → ${to}`,
+      meta: { step, from, to },
+    });
+  })();
+
+  void (async () => {
+    if (!deal?.id) return;
+    try {
+      const actorEmail = await (async () => {
+        try {
+          const ssr = await createClient();
+          const {
+            data: { user },
+          } = await ssr.auth.getUser();
+          return user?.email ?? "operator";
+        } catch {
+          return "operator";
+        }
+      })();
+
+      if (step === "execution") {
+        await appendLedger({
+          deal_id: deal.id,
+          event: CUSTODY_EVENTS.DOC_NOTARIZED,
+          actor_type: "notary",
+          actor_id: actorEmail,
+          location: deal.mobile
+            ? "Mobile Notarization"
+            : "Remote Online Notary",
+          method: "notarization",
+          status: "in_possession",
+          metadata: { deal_code: deal_id },
+        });
+        await appendLedger({
+          deal_id: deal.id,
+          event: CUSTODY_EVENTS.DOC_APOSTILLE_SUBMITTED,
+          actor_type: "operator",
+          actor_id: actorEmail,
+          location: "FL Department of State",
+          method: "handoff",
+          status: "transferred",
+          metadata: { deal_code: deal_id },
+        });
+      }
+
+      if (step === "apostille") {
+        await appendLedger({
+          deal_id: deal.id,
+          event: CUSTODY_EVENTS.DOC_APOSTILLE_RECEIVED,
+          actor_type: "state",
+          location: "FL Department of State",
+          method: "pickup",
+          status: "in_possession",
+          metadata: { deal_code: deal_id },
+        });
+      }
+
+      if (step === "delivery") {
+        await appendLedger({
+          deal_id: deal.id,
+          event: CUSTODY_EVENTS.DOC_RELEASE_CONFIRMED,
+          actor_type: "system",
+          location: "Destination",
+          method: "delivery",
+          status: "released",
+          metadata: { deal_code: deal_id },
+        });
+      }
+    } catch (err) {
+      console.error(
+        "[runStep] custody ledger failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
+    try {
+      if (step === "execution") {
+        await snapshotDeal({
+          deal_id: deal.id,
+          trigger: "shipment",
+          deal,
+        });
+      } else if (step === "apostille") {
+        await snapshotDeal({
+          deal_id: deal.id,
+          trigger: "delivery",
+          deal,
+        });
+      } else if (step === "delivery") {
+        await snapshotDeal({
+          deal_id: deal.id,
+          trigger: "completion",
+          deal,
+        });
+        await uploadEvidencePacket(deal.id);
+      }
+    } catch (err) {
+      console.error(
+        "[runStep] snapshot/evidence failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  })();
+
+  void sendAdminAlert(`Deal ${deal_id} moved to ${to}`).catch(() => {});
 
   return NextResponse.json({
     ok: true,

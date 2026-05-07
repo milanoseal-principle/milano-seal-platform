@@ -1,78 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import Stripe from "stripe";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-});
+/**
+ * Stripe was removed from the platform. Wise is now the sole payment
+ * provider — see /api/webhook/wise.
+ *
+ * This handler stays in place to:
+ *   • Tell anyone still pointing here that the endpoint is intentionally
+ *     retired (HTTP 410 Gone).
+ *   • Avoid silent 404s if a Stripe webhook is still configured upstream
+ *     and you forgot to detach it from your Stripe dashboard.
+ *
+ * If you re-introduce Stripe later, re-implement the verification +
+ * payment confirmation logic here.
+ */
+export async function POST() {
+  return NextResponse.json(
+    {
+      error: "Stripe is no longer supported",
+      message:
+        "Payments are handled exclusively via Wise. Detach this Stripe webhook from your Stripe dashboard.",
+    },
+    { status: 410 }
+  );
+}
 
-export async function POST(req: NextRequest) {
-  const body = await req.text();
-  const sig = req.headers.get("stripe-signature") || "";
-
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: `Webhook error: ${err.message}` },
-      { status: 400 }
-    );
-  }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const dealId = session.metadata?.deal_id || session.client_reference_id;
-
-    if (!dealId)
-      return NextResponse.json({ received: true, skipped: "no deal_id" });
-
-    const supabase = createAdminClient();
-
-    const { error } = await supabase
-      .from("deals")
-      .update({
-        payment_status: "paid",
-        invoice_status: "paid",
-        payment_method: "stripe",
-        payment_reference: session.id,
-        payment_amount_received: (session.amount_total || 0) / 100,
-        status: "scheduled",
-        paid_at: new Date().toISOString(),
-      })
-      .eq("deal_id", dealId)
-      .eq("payment_status", "unpaid"); // idempotent guard
-
-    if (error) {
-      console.error("Stripe webhook DB error:", error);
-      return NextResponse.json({ error: "DB update failed" }, { status: 500 });
-    }
-
-    // Auto-trigger schedule step
-    try {
-      const origin =
-        process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com";
-      await fetch(`${origin}/api/runStep`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deal_id: dealId, step: "schedule" }),
-      });
-    } catch (e) {
-      console.error("Auto runStep failed (non-fatal):", e);
-    }
-
-    return NextResponse.json({
-      received: true,
-      deal_id: dealId,
-      action: "scheduled",
-    });
-  }
-
-  return NextResponse.json({ received: true, skipped: "unhandled event" });
+export async function GET() {
+  return NextResponse.json(
+    { error: "Stripe is no longer supported" },
+    { status: 410 }
+  );
 }

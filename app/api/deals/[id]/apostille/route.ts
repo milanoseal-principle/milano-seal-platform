@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePaid } from "@/lib/gate";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(
   req: NextRequest,
@@ -39,6 +40,18 @@ export async function POST(
       .eq("id", id)
       .select()
       .single();
+
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      await logActivity({
+        deal_id: (updated?.deal_id as string) ?? id,
+        actor: user?.email ?? "admin",
+        action: "apostille",
+        detail: "Sent to apostille",
+      });
+    })();
 
     return NextResponse.json({ success: true, deal: updated });
   } catch {

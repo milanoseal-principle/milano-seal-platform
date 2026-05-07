@@ -266,7 +266,7 @@ function RadioGroup({
   options: { value: string; label: string; sub?: string }[];
 }) {
   return (
-    <div className="border border-[rgba(198,165,90,0.12)] rounded-sm overflow-hidden">
+    <div className="bg-[#0A0A0A] border border-[rgba(198,165,90,0.12)] rounded-sm overflow-hidden">
       {options.map((opt, i) => (
         <label
           key={opt.value}
@@ -274,9 +274,7 @@ function RadioGroup({
             i < options.length - 1
               ? "border-b border-[rgba(198,165,90,0.08)]"
               : ""
-          } ${
-            value === opt.value ? "bg-[rgba(198,165,90,0.06)]" : "bg-[#0A0A0A]"
-          }`}
+          } ${value === opt.value ? "bg-[rgba(198,165,90,0.06)]" : ""}`}
         >
           <div
             className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
@@ -323,8 +321,8 @@ function ReviewItem({
         ? "Yes"
         : "No"
       : value !== undefined && value !== null && value !== ""
-      ? String(value)
-      : "—";
+        ? String(value)
+        : "—";
   return (
     <div className="grid grid-cols-[140px_1fr] gap-4 py-2.5 px-4 border-b border-[rgba(198,165,90,0.06)] last:border-0">
       <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#8A7A60] pt-0.5">
@@ -465,25 +463,33 @@ export function IntakeWizard({
 
       if (!res.ok) throw new Error(json.error || "Failed to submit");
 
+      const dealId = json.deal?.id || json.deal_id;
+      if (files.length > 0 && dealId) {
+        const fd = new FormData();
+        fd.append("deal_id", dealId);
+        for (const f of files) fd.append("files", f);
+        await fetch("/api/intake/upload", { method: "POST", body: fd });
+      }
+
       if (typeof sessionStorage !== "undefined") {
         if (json.payment_link)
           sessionStorage.setItem("ms_payment_link", json.payment_link);
         if (json.wise_invoice)
           sessionStorage.setItem(
             "ms_wise_invoice",
-            JSON.stringify(json.wise_invoice)
+            JSON.stringify(json.wise_invoice),
           );
         sessionStorage.setItem("ms_intake_response", JSON.stringify(json));
       }
 
       router.push(
-        `/intake/confirmation?id=${json.deal?.id || json.deal_id || ""}`
+        `/intake/confirmation?id=${json.deal?.id || json.deal_id || ""}`,
       );
     } catch (e) {
       setSubmitError(
         e instanceof Error
           ? e.message
-          : "Something went wrong. Please try again."
+          : "Something went wrong. Please try again.",
       );
       setIsSubmitting(false);
     }
@@ -516,11 +522,7 @@ export function IntakeWizard({
                   animate={{
                     borderColor:
                       done || active ? "#C6A55A" : "rgba(198,165,90,0.2)",
-                    backgroundColor: active
-                      ? "#C6A55A"
-                      : done
-                      ? "rgba(198,165,90,0.12)"
-                      : "transparent",
+                    backgroundColor: done || active ? "#C6A55A" : "transparent",
                     boxShadow: active
                       ? "0 0 16px rgba(198,165,90,0.35)"
                       : "none",
@@ -528,7 +530,7 @@ export function IntakeWizard({
                   className="w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-semibold transition-colors"
                 >
                   {done ? (
-                    <Check className="w-3 h-3 text-[#C6A55A]" strokeWidth={3} />
+                    <Check className="w-3 h-3 text-[#0A0A0A]" strokeWidth={3} />
                   ) : (
                     <span
                       className={active ? "text-[#0A0A0A]" : "text-[#8A7A60]"}
@@ -542,8 +544,8 @@ export function IntakeWizard({
                     active
                       ? "text-[#C6A55A]"
                       : done
-                      ? "text-[rgba(198,165,90,0.5)]"
-                      : "text-[rgba(244,239,230,0.25)]"
+                        ? "text-[rgba(198,165,90,0.5)]"
+                        : "text-[rgba(244,239,230,0.25)]"
                   }`}
                 >
                   {label}
@@ -884,7 +886,7 @@ export function IntakeWizard({
                             onChange={(e) =>
                               set(
                                 "apostille_count",
-                                parseInt(e.target.value) || 1
+                                parseInt(e.target.value) || 1,
                               )
                             }
                             className={`${inputCls} max-w-[140px]`}
@@ -1037,12 +1039,37 @@ export function IntakeWizard({
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       className="hidden"
                       onChange={(e) => {
-                        if (e.target.files)
-                          setFiles(Array.from(e.target.files));
+                        if (e.target.files) {
+                          const incoming = Array.from(e.target.files);
+                          setFiles((prev) => {
+                            const existing = new Set(prev.map((f) => f.name));
+                            const merged = [
+                              ...prev,
+                              ...incoming.filter((f) => !existing.has(f.name)),
+                            ];
+                            return merged.slice(0, 10);
+                          });
+                          e.target.value = "";
+                        }
                       }}
                     />
                     <div
                       onClick={() => fileRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const dropped = Array.from(e.dataTransfer.files).filter(
+                          (f) => /\.(pdf|doc|docx|jpg|jpeg|png)$/i.test(f.name),
+                        );
+                        setFiles((prev) => {
+                          const existing = new Set(prev.map((f) => f.name));
+                          const merged = [
+                            ...prev,
+                            ...dropped.filter((f) => !existing.has(f.name)),
+                          ];
+                          return merged.slice(0, 10);
+                        });
+                      }}
                       className="border border-dashed border-[rgba(198,165,90,0.3)] bg-[rgba(198,165,90,0.03)] rounded-sm px-6 py-7 text-center cursor-pointer hover:border-[#C6A55A] hover:bg-[rgba(198,165,90,0.06)] transition-all duration-200"
                     >
                       <Upload className="w-5 h-5 text-[#8A7240] mx-auto mb-2" />
@@ -1066,7 +1093,7 @@ export function IntakeWizard({
                             <button
                               onClick={() =>
                                 setFiles((prev) =>
-                                  prev.filter((_, j) => j !== i)
+                                  prev.filter((_, j) => j !== i),
                                 )
                               }
                               className="ml-2 text-[#8A7A60] hover:text-[#4A4030] flex-shrink-0"
@@ -1216,9 +1243,7 @@ export function IntakeWizard({
                       label="Weekend / Holiday"
                       value={data.weekend_holiday}
                     />
-                    {(data.source_detail ||
-                      data.attribution ||
-                      data.notes) && (
+                    {(data.source_detail || data.attribution || data.notes) && (
                       <>
                         <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
                           <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
@@ -1393,7 +1418,7 @@ export function IntakeWizard({
             {step > 1 && (
               <button
                 onClick={goBack}
-                className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] hover:text-[#4A4030] transition-colors duration-200"
+                className="flex items-center cursor-pointer gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] hover:text-[#4A4030] transition-colors duration-200"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back
@@ -1403,7 +1428,7 @@ export function IntakeWizard({
               {step < TOTAL ? (
                 <button
                   onClick={goNext}
-                  className="group flex items-center gap-2.5 px-9 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-9 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   Continue
                   <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -1412,7 +1437,7 @@ export function IntakeWizard({
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="group flex items-center gap-2.5 px-10 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-10 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   {isSubmitting ? (
                     <>

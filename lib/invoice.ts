@@ -22,8 +22,8 @@ export function generateInvoice(total: number): InvoiceResult {
     valid_until: Date.now() + 72 * 60 * 60 * 1000,
     status: "awaiting_payment",
     payment_options: {
-      primary: "stripe",
-      available: ["stripe", "wise", "zelle", "venmo", "cash_app", "apple_cash"],
+      primary: "wise",
+      available: ["wise", "zelle", "venmo", "cash_app", "apple_cash"],
       public_note: "Additional payment methods available upon request.",
     },
   };

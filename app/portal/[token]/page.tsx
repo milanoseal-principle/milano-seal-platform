@@ -22,7 +22,7 @@ export default async function PortalPage({
   const { data: deal } = await supabase
     .from("deals")
     .select(
-      "id, email, client_name, status, execution_tier, amount, country, document, payment_status, invoice_status, created_at"
+      "id, email, client_name, status, execution_tier, amount, country, document, payment_status, invoice_status, invoice_retainer, invoice_balance, payment_link, balance_payment_link, balance_payment_status, created_at",
     )
     .eq("access_token", token)
     .single();

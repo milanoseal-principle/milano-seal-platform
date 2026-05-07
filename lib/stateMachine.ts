@@ -46,3 +46,24 @@ export function getStatusIndex(status: string): number {
 export function isTerminal(status: string): boolean {
   return status === "completed" || status === "lost";
 }
+
+export const DEAL_STAGES = STATUS_ORDER;
+
+export const SLA_HOURS: Record<string, number> = {
+  new: 4,
+  reviewing: 8,
+  quoted: 24,
+  awaiting_payment: 48,
+  scheduled: 24,
+  in_execution: 48,
+  apostille: 96,
+  shipped: 168,
+};
+
+export function isOpenStage(stage: string): boolean {
+  return stage !== "completed" && stage !== "lost";
+}
+
+export function isClosedWon(stage: string): boolean {
+  return stage === "completed";
+}

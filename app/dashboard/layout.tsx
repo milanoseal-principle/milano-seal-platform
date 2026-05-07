@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { MilanoShell } from "@/components/dashboard/milano-shell";
 
 export const metadata: Metadata = {
-  title: "Operator OS — The Milano Seal™",
+  title: "Admin — The Milano Seal™",
   robots: { index: false, follow: false },
 };
 
@@ -11,5 +11,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return <MilanoShell>{children}</MilanoShell>;
 }

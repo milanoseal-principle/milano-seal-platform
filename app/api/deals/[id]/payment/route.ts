@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity";
 
 const VALID_METHODS = [
   "stripe",
@@ -61,6 +62,42 @@ export async function POST(
       .eq("id", id)
       .select()
       .single();
+
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const actor = user?.email ?? "admin";
+      const dealRef = (updated?.deal_id as string) ?? id;
+      await logActivity({
+        deal_id: dealRef,
+        actor,
+        action:
+          payment_status === "paid" ? "payment_confirmed" : "payment_updated",
+        detail:
+          payment_status === "paid"
+            ? `Payment confirmed via ${payment_method}${
+                payment_amount_received ? ` · $${payment_amount_received}` : ""
+              }${payment_reference ? ` · ref ${payment_reference}` : ""}`
+            : `Payment status → ${payment_status}`,
+        meta: {
+          method: payment_method,
+          status: payment_status,
+          amount: payment_amount_received ?? null,
+          reference: payment_reference ?? null,
+        },
+      });
+      if (payment_status === "paid") {
+        await logActivity({
+          deal_id: dealRef,
+          actor,
+          action: "stage_advanced",
+          detail: "Auto-advanced to Scheduled (payment received)",
+          meta: { stage: "scheduled" },
+        });
+      }
+    })();
+
     return NextResponse.json({ success: true, deal: updated });
   } catch {
     return NextResponse.json(
