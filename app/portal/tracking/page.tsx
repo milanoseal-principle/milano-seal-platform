@@ -64,7 +64,9 @@ export default function ClientTrackingPage() {
   }, [deal]);
 
   if (dealLoading || loading) {
-    return <div style={{ color: "rgba(255,255,255,.4)" }}>Loading tracking…</div>;
+    return (
+      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading tracking…</div>
+    );
   }
   if (!deal) {
     return (
@@ -100,9 +102,7 @@ export default function ClientTrackingPage() {
             </div>
             <div className="ct-kv">
               <span className="ct-kv-k">Tracking #</span>
-              <span className="ct-kv-v ct-kv-v mono">
-                {t.tracking_number}
-              </span>
+              <span className="ct-kv-v ct-kv-v mono">{t.tracking_number}</span>
             </div>
             <div className="ct-kv">
               <span className="ct-kv-k">Status</span>
@@ -178,20 +178,6 @@ export default function ClientTrackingPage() {
                 className="ct-link ct-link-btn"
               >
                 Download Evidence Packet (PDF)
-              </a>
-            </div>
-          )}
-
-          {t.label_url && (
-            <div className="ct-label-link">
-              Shipping label:{" "}
-              <a
-                href={t.label_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ct-link"
-              >
-                view PDF
               </a>
             </div>
           )}

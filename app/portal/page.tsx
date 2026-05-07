@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { usePortal } from "@/components/portal/portal-context";
+import { createClient } from "@/lib/supabase/client";
 
 interface Message {
   id: string;
@@ -73,6 +74,7 @@ export default function MyMatterPage() {
 
   useEffect(() => {
     if (!deal) return;
+
     void (async () => {
       try {
         const r = await fetch(`/api/portal/me/messages?deal_id=${deal.id}`, {
@@ -86,7 +88,32 @@ export default function MyMatterPage() {
         /* ignore */
       }
     })();
-  }, [deal]);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`portal-messages-${deal.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `deal_id=eq.${deal.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => {
+            const incoming = payload.new as Message;
+            if (prev.find((m) => m.id === incoming.id)) return prev;
+            return [...prev, incoming];
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [deal?.id]);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,7 +146,9 @@ export default function MyMatterPage() {
   const currentIdx = stageIndex(deal?.status);
 
   if (isLoading) {
-    return <div style={{ color: "rgba(255,255,255,.4)" }}>Loading your matter…</div>;
+    return (
+      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading your matter…</div>
+    );
   }
 
   if (!deal) {
@@ -169,7 +198,9 @@ export default function MyMatterPage() {
                     {done ? "✓" : act ? "●" : i + 1}
                   </div>
                   <div>
-                    <div className={`pp-track-name ${nameClass}`}>{s.label}</div>
+                    <div className={`pp-track-name ${nameClass}`}>
+                      {s.label}
+                    </div>
                     {(done || act) && (
                       <div className="pp-track-desc">{s.desc}</div>
                     )}
@@ -204,9 +235,7 @@ export default function MyMatterPage() {
               )}
               <div ref={threadEndRef} />
             </div>
-            {sendError && (
-              <div className="pp-msg-error">{sendError}</div>
-            )}
+            {sendError && <div className="pp-msg-error">{sendError}</div>}
             <div className="pp-input-row">
               <input
                 className="pp-input"

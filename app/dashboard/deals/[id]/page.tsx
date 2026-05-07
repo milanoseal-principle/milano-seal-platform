@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -139,6 +140,7 @@ export default function DealDetail() {
 
   useEffect(() => {
     if (!dealId) return;
+
     void (async () => {
       try {
         const r = await fetch(`/api/deals/${dealId}/messages`, {
@@ -150,6 +152,31 @@ export default function DealDetail() {
         }
       } catch {}
     })();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`admin-messages-${dealId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `deal_id=eq.${dealId}`,
+        },
+        (payload) => {
+          setMessages((prev) => {
+            const incoming = payload.new as DealMessage;
+            if (prev.find((m) => m.id === incoming.id)) return prev;
+            return [...prev, incoming];
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [dealId]);
 
   useEffect(() => {

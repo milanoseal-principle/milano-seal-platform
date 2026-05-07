@@ -1,13 +1,59 @@
 "use client";
 
+import { useRef } from "react";
 import { usePortal } from "@/components/portal/portal-context";
 import { formatCurrency } from "@/lib/format";
 
 export default function ClientInvoicePage() {
   const { deal, isLoading } = usePortal();
+  const printRef = useRef<HTMLDivElement | null>(null);
+
+  const print = () => {
+    if (!printRef.current) return;
+    const win = window.open("", "_blank", "width=860,height=1120");
+    if (!win) return;
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<title>Invoice — The Milano Seal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{size:letter portrait;margin:.55in .65in}
+  html,body{background:#f9f6f0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-family:'Cormorant Garamond',Georgia,serif;color:#2a2520}
+  .ci-card{background:#f9f6f0;color:#2a2520;padding:36px 44px;font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;position:relative;min-height:600px}
+  .ci-brand{font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#c6a55a;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:4px}
+  .ci-tag{font-size:8px;letter-spacing:.28em;text-transform:uppercase;color:#a8894a;text-align:center;margin-bottom:14px}
+  .ci-hr{border:none;border-top:.75px solid #d4c9b0;margin:12px 0}
+  .ci-title{text-align:center;font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;margin-bottom:16px}
+  .ci-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin-bottom:14px}
+  .ci-col-bill{border-right:.75px solid #d4c9b0;padding-right:14px}
+  .ci-h-block{font-size:7.5px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#a8894a;margin-bottom:6px}
+  .ci-col-name{font-size:13px}
+  .ci-col-sub{font-size:11px;color:#777}
+  .ci-matter-section{margin:8px 0}
+  .ci-row{display:flex;justify-content:space-between;border-bottom:.75px solid #d4c9b0;padding:6px 0;font-size:13px}
+  .ci-total{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:700;border-top:1px solid #c6a55a;margin-top:6px}
+  .ci-paid-status{color:#4a8e6b}
+  .ci-stamp{position:absolute;bottom:36px;right:36px;width:44px;height:44px;border-radius:50%;background:#c6a55a;display:flex;align-items:center;justify-content:center}
+  .ci-stamp-check{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:#f9f6f0}
+  .ci-footer-note{margin-top:22px;text-align:center;font-size:7px;color:#9a8f7a;letter-spacing:.18em;text-transform:uppercase}
+</style></head>
+<body>${printRef.current.innerHTML}
+<script>
+  document.fonts.ready.then(function(){
+    setTimeout(function(){window.print();window.close();},200);
+  });
+</script>
+</body></html>`;
+    win.document.write(html);
+    win.document.close();
+  };
 
   if (isLoading) {
-    return <div style={{ color: "rgba(255,255,255,.4)" }}>Loading invoice…</div>;
+    return (
+      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading invoice…</div>
+    );
   }
   if (!deal) {
     return (
@@ -29,11 +75,39 @@ export default function ClientInvoicePage() {
   return (
     <div>
       <div className="ci-eyebrow">Your Invoice</div>
-      <h1 className="ci-h1">Invoice</h1>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 0,
+        }}
+      >
+        <h1 className="ci-h1">Invoice</h1>
+        <button
+          onClick={print}
+          style={{
+            background: "#C6A55A",
+            color: "#0A0A0A",
+            border: "none",
+            borderRadius: 8,
+            padding: "10px 22px",
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: "0.05em",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          ↓ Download / Print
+        </button>
+      </div>
 
       <div className="ci-shell">
         <div className="ci-paper">
-          <div className="ci-card">
+          <div ref={printRef} className="ci-card">
             <div className="ci-brand">The Milano Seal™</div>
             <div className="ci-tag">Sealing Trust in Every Signature</div>
             <hr className="ci-hr" />
