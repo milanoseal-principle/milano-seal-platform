@@ -67,6 +67,8 @@ export interface ShippoTrack {
 
 function headers() {
   const token = process.env.SHIPPO_API_KEY;
+  console.log("Token>>", token);
+  console.log("Process.env", process.env.SHIPPO_API_KEY);
   if (!token) throw new Error("SHIPPO_API_KEY is not configured");
   return {
     Authorization: `ShippoToken ${token}`,
@@ -301,7 +303,8 @@ export function detectCarrier(
   const t = (tracking || "").trim();
   if (/^1Z/i.test(t)) return "ups";
   if (/^9[24]\d{20,}$/.test(t) || /^9[2345]\d{19,21}$/.test(t)) return "usps";
-  if (/^\d{12}$/.test(t) || /^\d{15}$/.test(t) || /^\d{20,22}$/.test(t)) return "fedex";
+  if (/^\d{12}$/.test(t) || /^\d{15}$/.test(t) || /^\d{20,22}$/.test(t))
+    return "fedex";
   return "dhl";
 }
 
