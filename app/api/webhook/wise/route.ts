@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { sendAdminAlert } from "@/lib/whatsapp";
 import { snapshotDeal } from "@/lib/dealBackup";
+import { isValidPaymentTransition } from "@/lib/payments/state-machine";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const raw = await req.text();
   const sig = req.headers.get("x-signature-sha256");
+  const deliveryId = req.headers.get("x-delivery-id");
 
   const ok = await verifyWiseSignature(raw, sig);
   if (!ok) {
@@ -26,6 +28,29 @@ export async function POST(req: NextRequest) {
     event = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const eventType = pickEventType(event);
+  const eventKey =
+    deliveryId?.trim() ||
+    `${eventType}-${(event as { id?: string }).id ?? ""}-${raw.length}`;
+
+  const supabase = createAdminClient();
+
+  if (eventKey) {
+    const { error: dupError } = await supabase.from("webhook_events").insert({
+      event_id: eventKey,
+      event_type: eventType || "unknown",
+      source: "wise",
+      payload: event,
+    });
+    if (dupError) {
+      const code = (dupError as { code?: string }).code;
+      if (code === "23505") {
+        return NextResponse.json({ received: true, idempotent: true });
+      }
+      console.warn("[wise/webhook] webhook_events insert non-fatal:", dupError);
+    }
   }
 
   const rawDealId = extractDealId(event);
@@ -46,7 +71,8 @@ export async function POST(req: NextRequest) {
   }
 
   const failed = isPaymentFailed(event);
-  const supabase = createAdminClient();
+
+  void syncPaymentRow(supabase, rawDealId, event, failed);
 
   if (isBalance) {
     const balanceUpdate: Record<string, unknown> = failed
@@ -295,4 +321,88 @@ function pickAmount(event: Record<string, unknown>): number | null {
   if (amount && typeof amount === "object" && typeof amount.value === "number")
     return amount.value;
   return null;
+}
+
+function pickPayer(event: Record<string, unknown>): {
+  name: string | null;
+  email: string | null;
+} {
+  const data = event.data as Record<string, unknown> | undefined;
+  const resource = data?.resource as Record<string, unknown> | undefined;
+  const payer = (resource?.payer ?? data?.payer ?? event.payer) as
+    | Record<string, unknown>
+    | undefined;
+  return {
+    name: typeof payer?.name === "string" ? (payer.name as string) : null,
+    email: typeof payer?.email === "string" ? (payer.email as string) : null,
+  };
+}
+
+async function syncPaymentRow(
+  supabase: ReturnType<typeof createAdminClient>,
+  reference: string,
+  event: Record<string, unknown>,
+  failed: boolean,
+): Promise<void> {
+  try {
+    const { data: payment } = await supabase
+      .from("payments")
+      .select("id, payment_status, payment_amount, payment_confirmed")
+      .eq("wise_reference", reference)
+      .maybeSingle();
+
+    if (!payment) return;
+
+    if (payment.payment_confirmed && !failed) return;
+
+    const amountReceived = pickAmount(event);
+    const expected = Number(payment.payment_amount);
+    const isFullPayment =
+      !failed && amountReceived !== null && Number(amountReceived) >= expected;
+
+    const newStatus: "payment_confirmed" | "partially_paid" | "payment_failed" =
+      failed
+        ? "payment_failed"
+        : isFullPayment
+          ? "payment_confirmed"
+          : "partially_paid";
+
+    if (
+      !isValidPaymentTransition(
+        payment.payment_status as
+          | "awaiting_payment"
+          | "payment_pending"
+          | "payment_confirmed"
+          | "payment_failed"
+          | "partially_paid"
+          | "refunded",
+        newStatus,
+      )
+    ) {
+      console.warn(
+        `[wise/webhook] invalid transition ${payment.payment_status} → ${newStatus} for ${reference}`,
+      );
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const payer = pickPayer(event);
+
+    await supabase
+      .from("payments")
+      .update({
+        payment_status: newStatus,
+        payment_confirmed: newStatus === "payment_confirmed",
+        paid_at: failed ? null : now,
+        webhook_received_at: now,
+        webhook_payload: event,
+        webhook_signature: "verified",
+        payer_name: payer.name,
+        payer_email: payer.email,
+        updated_at: now,
+      })
+      .eq("id", payment.id);
+  } catch (err) {
+    console.error("[wise/webhook] syncPaymentRow failed:", err);
+  }
 }

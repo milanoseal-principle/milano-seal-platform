@@ -4,16 +4,15 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Loader2, Check, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
+import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
 
-// ── TYPES ─────────────────────────────────────────────────────────────────────
 interface IntakeData {
-  // Step 1 — Contact
   client_name: string;
   email: string;
   phone: string;
   organization: string;
   is_attorney: boolean;
-  // Step 2 — Document
   document_type: string;
   document_description: string;
   document_count: number;
@@ -22,7 +21,6 @@ interface IntakeData {
   origin_state: string;
   destination_country: string;
   execution_type: "RON" | "Mobile" | "Unsure";
-  // Step 3 — Services
   apostille_required: boolean;
   apostille_count: number;
   translation_needed: boolean;
@@ -30,7 +28,6 @@ interface IntakeData {
   timeline: string;
   deadline_date: string;
   weekend_holiday: boolean;
-  // Step 4 — Attribution
   source_detail: string;
   attribution: string;
   notes: string;
@@ -47,7 +44,6 @@ interface IntakeWizardProps {
   prefill?: IntakePrefill;
 }
 
-// ── DATA ──────────────────────────────────────────────────────────────────────
 const US_STATES = [
   "Alabama",
   "Alaska",
@@ -146,7 +142,13 @@ const COUNTRIES = [
   "Other",
 ];
 
-const STEP_LABELS = ["Contact", "Document", "Services", "Details", "Review"];
+const STEP_LABELS = [
+  "CLIENT",
+  "DOCUMENTS",
+  "EXECUTION",
+  "COMPLIANCE",
+  "CONFIRMATION",
+];
 
 const INITIAL_DATA: IntakeData = {
   client_name: "",
@@ -174,7 +176,6 @@ const INITIAL_DATA: IntakeData = {
   notes: "",
 };
 
-// ── SHARED STYLE PRIMITIVES ───────────────────────────────────────────────────
 const inputCls = `w-full px-4 py-3 bg-[#0A0A0A] border border-[rgba(198,165,90,0.15)]
   rounded-sm text-white text-sm font-light placeholder:text-[#B0B0B0]/40
   focus:outline-none focus:border-[#C6A55A] transition-colors duration-200`;
@@ -186,7 +187,6 @@ const labelCls = `block text-[10px] font-semibold tracking-[0.14em] uppercase te
 const checkRowCls = `flex items-start gap-3 p-3.5 bg-[#0A0A0A] border border-[rgba(198,165,90,0.12)]
   rounded-sm cursor-pointer transition-all duration-200 hover:border-[rgba(198,165,90,0.3)]`;
 
-// ── COMPONENT ATOMS ───────────────────────────────────────────────────────────
 function FieldGroup({
   children,
   className = "",
@@ -307,7 +307,6 @@ function RadioGroup({
   );
 }
 
-// ── REVIEW ITEM ───────────────────────────────────────────────────────────────
 function ReviewItem({
   label,
   value,
@@ -335,14 +334,12 @@ function ReviewItem({
   );
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export function IntakeWizard({
   initialTier = "priority",
   prefill,
 }: IntakeWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  // Title-case helper so "italy" from /map?country=italy becomes "Italy"
   const titleCase = (s: string) =>
     s
       .split(/\s+/)
@@ -367,7 +364,27 @@ export function IntakeWizard({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [analysisNote, setAnalysisNote] = useState<{
+    msg: string;
+    targetStep?: number;
+  } | null>(null);
   const TOTAL = 5;
+
+  const resolveCountry = (raw: string): string => {
+    if (!raw) return "";
+    const norm = raw.trim().toLowerCase();
+    const hit = COUNTRIES.find((c) => c.toLowerCase() === norm);
+    if (hit) return hit;
+    if (norm === "us" || norm === "usa" || norm === "united states of america")
+      return "United States";
+    return "Other";
+  };
+
+  const resolveState = (raw: string): string => {
+    if (!raw) return "";
+    const norm = raw.trim().toLowerCase();
+    return US_STATES.find((s) => s.toLowerCase() === norm) || "";
+  };
 
   const set = <K extends keyof IntakeData>(field: K, value: IntakeData[K]) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -402,11 +419,13 @@ export function IntakeWizard({
   const goNext = () => {
     if (!validate(step)) return;
     setStep((s) => Math.min(s + 1, TOTAL));
+    setAnalysisNote(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
     setStep((s) => Math.max(s - 1, 1));
+    setAnalysisNote(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -495,22 +514,123 @@ export function IntakeWizard({
     }
   };
 
-  // Progress line width
   const progressPct = ((step - 1) / (TOTAL - 1)) * 100;
+
+  const handleAnalysisReady = (x: MatterAnalysis): void => {
+    setData((prev) => {
+      const merged: IntakeData = { ...prev };
+
+      // Contact info — only fill if empty (user may have typed these manually)
+      if (!prev.client_name && x.clientName) merged.client_name = x.clientName;
+      if (!prev.email && x.email) merged.email = x.email;
+      if (!prev.phone && x.phone) merged.phone = x.phone;
+      if (!prev.organization && x.organization)
+        merged.organization = x.organization;
+
+      // Document fields — always overwrite so re-structuring the matter updates all fields
+      if (x.documentType) merged.document_type = x.documentType;
+      if (x.documentDescription)
+        merged.document_description = x.documentDescription;
+      if (x.documentCount > 1 || prev.document_count === 1)
+        merged.document_count = Math.max(1, x.documentCount);
+      if (x.signerCount > 1 || prev.signer_count === 1)
+        merged.signer_count = Math.max(1, x.signerCount);
+      if (x.signerNames) merged.signer_names = x.signerNames;
+
+      const resolvedState = resolveState(x.originState);
+      if (resolvedState) merged.origin_state = resolvedState;
+
+      const resolvedCountry = resolveCountry(x.country);
+      if (resolvedCountry) merged.destination_country = resolvedCountry;
+
+      merged.apostille_required = x.apostilleRequired;
+      merged.translation_needed = x.translationNeeded;
+
+      if (x.urgency === "urgent") merged.timeline = "Urgent (24-48 hours)";
+      else if (x.urgency === "expedited")
+        merged.timeline = "Expedited (within a week)";
+      else if (x.urgency === "standard" && prev.timeline === "")
+        merged.timeline = "";
+
+      return merged;
+    });
+
+    const filledDoc = !!(x.documentType || x.documentDescription || x.country);
+    const filledContact = !!(x.clientName || x.email);
+    if (filledDoc && filledContact) {
+      setAnalysisNote({
+        msg: "Matter structured — contact and document details filled.",
+        targetStep: undefined,
+      });
+    } else if (filledDoc) {
+      setAnalysisNote({
+        msg: "Document details filled. Review them in Step 2.",
+        targetStep: 2,
+      });
+    } else if (filledContact) {
+      setAnalysisNote({
+        msg: "Contact details filled.",
+        targetStep: undefined,
+      });
+    }
+  };
+
+  const handleSmartFilesPicked = (picked: File[]): void => {
+    if (!picked.length) return;
+    setFiles((prev) => {
+      const seen = new Set(prev.map((f) => f.name));
+      return [...prev, ...picked.filter((f) => !seen.has(f.name))].slice(0, 10);
+    });
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* ── PROGRESS BAR ─────────────────────────────────────── */}
+      {step < 5 && (
+        <>
+          <SmartMatterIntake
+            onAnalysisReady={handleAnalysisReady}
+            onFilesPicked={handleSmartFilesPicked}
+          />
+          {analysisNote && (
+            <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
+              <span className="text-[11px] text-[#7A6830] font-medium">
+                ✓ {analysisNote.msg}
+              </span>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {analysisNote.targetStep &&
+                  step !== analysisNote.targetStep && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep(analysisNote.targetStep!);
+                        setAnalysisNote(null);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="text-[11px] text-[#C6A55A] underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
+                    >
+                      Go to Step {analysisNote.targetStep} →
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setAnalysisNote(null)}
+                  className="text-[#9A8A6A] hover:text-[#4A4030] transition-colors cursor-pointer text-[12px] leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       <div className="mb-10 relative">
-        {/* Track */}
         <div className="absolute top-3.5 left-0 right-0 h-px bg-[rgba(198,165,90,0.12)]" />
-        {/* Fill */}
         <motion.div
           className="absolute top-3.5 left-0 h-px bg-gradient-to-r from-[#C6A55A] to-[#D4BB7A]"
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         />
-        {/* Nodes */}
         <div className="relative flex justify-between">
           {STEP_LABELS.map((label, i) => {
             const n = i + 1;
@@ -556,7 +676,6 @@ export function IntakeWizard({
         </div>
       </div>
 
-      {/* ── CARD ─────────────────────────────────────────────── */}
       <div className="relative bg-[#F4EFE6] border border-[rgba(198,165,90,0.18)] rounded-sm shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
         {/* Gold top line */}
         <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#C6A55A] to-transparent opacity-40" />
@@ -570,7 +689,6 @@ export function IntakeWizard({
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
             >
-              {/* ── STEP 1: CONTACT ──────────────────────────── */}
               {step === 1 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
@@ -660,7 +778,6 @@ export function IntakeWizard({
                 </>
               )}
 
-              {/* ── STEP 2: DOCUMENT ─────────────────────────── */}
               {step === 2 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
@@ -847,7 +964,6 @@ export function IntakeWizard({
                 </>
               )}
 
-              {/* ── STEP 3: SERVICES ─────────────────────────── */}
               {step === 3 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
@@ -958,7 +1074,6 @@ export function IntakeWizard({
                 </>
               )}
 
-              {/* ── STEP 4: ADDITIONAL DETAILS ───────────────── */}
               {step === 4 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
@@ -1145,7 +1260,6 @@ export function IntakeWizard({
                 </>
               )}
 
-              {/* ── STEP 5: REVIEW & SUBMIT ──────────────────── */}
               {step === 5 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
@@ -1156,7 +1270,6 @@ export function IntakeWizard({
                   </p>
                   <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
 
-                  {/* Matter summary */}
                   <div className="bg-[rgba(255,255,255,0.5)] border border-[rgba(26,18,8,0.08)] rounded-sm overflow-hidden mb-5">
                     <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)]">
                       <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
@@ -1269,7 +1382,6 @@ export function IntakeWizard({
                     )}
                   </div>
 
-                  {/* Pricing estimate block */}
                   {(() => {
                     const isIntl =
                       data.destination_country &&
@@ -1375,7 +1487,6 @@ export function IntakeWizard({
                     );
                   })()}
 
-                  {/* Consent box */}
                   <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[#C6A55A] px-5 py-4 rounded-sm mb-6">
                     <p className="text-[12px] text-[#4A4030] leading-relaxed font-light">
                       All matters are reviewed by Nicholas Milano before
@@ -1413,7 +1524,6 @@ export function IntakeWizard({
             </motion.div>
           </AnimatePresence>
 
-          {/* ── NAV BUTTONS ──────────────────────────────────── */}
           <div className="flex items-center gap-4 mt-9 pt-7 border-t border-[rgba(26,18,8,0.07)]">
             {step > 1 && (
               <button
@@ -1457,7 +1567,6 @@ export function IntakeWizard({
         </div>
       </div>
 
-      {/* Trust footer */}
       <p className="text-center text-[10px] tracking-[0.08em] uppercase text-[rgba(198,165,90,0.4)] mt-7">
         Florida Notary Public &nbsp;·&nbsp; RON Certified &nbsp;·&nbsp; Hague
         Convention Compliant

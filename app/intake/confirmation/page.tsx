@@ -9,7 +9,6 @@ import {
   Clock,
   MessageCircle,
   Shield,
-  ArrowRight,
   CreditCard,
   Copy,
   Check,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { PaymentGate } from "@/components/payment/PaymentGate";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -44,23 +44,13 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-interface WiseInvoice {
-  payment_method: string;
-  amount: number;
-  reference: string;
-  note: string;
-  wise_link: string;
-  wise_request_id?: string | null;
-  wise_mode?: "production" | "fallback";
-  status: string;
-}
-
 function ConfirmationInner() {
   const params = useSearchParams();
   const router = useRouter();
   const dealId = params.get("id") || "";
-  const [intakeData, setIntakeData] = useState<any>(null);
-  const [wiseInvoice, setWiseInvoice] = useState<WiseInvoice | null>(null);
+  const [intakeData, setIntakeData] = useState<Record<string, unknown> | null>(
+    null,
+  );
   const [visible, setVisible] = useState(false);
   const [bypassing, setBypassing] = useState(false);
 
@@ -119,16 +109,15 @@ function ConfirmationInner() {
     setVisible(true);
     try {
       const raw = sessionStorage.getItem("ms_intake_response");
-      if (raw) setIntakeData(JSON.parse(raw));
-      const wiseRaw = sessionStorage.getItem("ms_wise_invoice");
-      if (wiseRaw) setWiseInvoice(JSON.parse(wiseRaw));
+      if (raw) setIntakeData(JSON.parse(raw) as Record<string, unknown>);
     } catch {}
   }, []);
 
   const displayId = dealId ? dealId.slice(0, 12).toUpperCase() : null;
-  const lane = intakeData?.lane;
-  const amount = intakeData?.estimated_value;
-  const retainer = intakeData?.invoice?.retainer;
+  const lane = intakeData?.lane as string | undefined;
+  const amount = intakeData?.estimated_value as number | undefined;
+  const invoice = intakeData?.invoice as { retainer?: number } | undefined;
+  const retainer = invoice?.retainer;
 
   return (
     <div
@@ -202,93 +191,42 @@ function ConfirmationInner() {
         </div>
       )}
 
-      {/* Payment section */}
-      <div className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl p-6 mb-6">
-        <div className="flex items-center gap-2 mb-5">
-          <CreditCard className="w-4 h-4 text-[#C6A55A]" />
-          <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
-            Secure Payment — Wise
-          </h2>
+      {dealId?.startsWith("MS-") ? (
+        <div className="mb-6">
+          <PaymentGate
+            matterId={dealId}
+            matterReference={dealId}
+            paymentType="retainer"
+          />
         </div>
-        <p className="text-[#8A8A8A] text-sm mb-5 font-light leading-relaxed">
-          Payment is required before scheduling can begin. Once confirmed, your
-          matter moves to execution immediately.
-        </p>
-
-        {/* Wise — primary */}
-        {wiseInvoice && wiseInvoice.wise_link && (
-          <>
-            <a
-              href={wiseInvoice.wise_link}
-              className="flex items-center justify-center gap-2 w-full py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(198,165,90,0.3)] mb-5"
-            >
-              <CreditCard className="w-4 h-4" />
-              Pay Securely with Wise
-              <ArrowRight className="w-4 h-4" />
-            </a>
-
-            <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4 mb-4">
-              <p className="text-[#C6A55A] text-[10px] font-semibold tracking-[0.2em] uppercase mb-3">
-                Use this reference when paying
-              </p>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[#8A8A8A] text-xs">Amount</span>
-                  <span className="text-white text-sm font-medium">
-                    ${Number(wiseInvoice.amount).toLocaleString()} USD
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[#8A8A8A] text-xs">Reference</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#C6A55A] font-mono text-sm">
-                      {wiseInvoice.reference}
-                    </span>
-                    <CopyButton text={wiseInvoice.reference} />
-                  </div>
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[#8A8A8A] text-xs flex-shrink-0">
-                    Note
-                  </span>
-                  <span className="text-[#B0B0B0] text-xs text-right max-w-[60%]">
-                    {wiseInvoice.note}
-                  </span>
-                </div>
-              </div>
-              <p className="text-[#8A8A8A] text-[11px] italic mt-3 leading-relaxed">
-                Add the reference exactly as shown so your matter is matched
-                automatically on receipt.
-              </p>
-            </div>
-          </>
-        )}
-
-        {!wiseInvoice && (
-          <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4 mb-4">
+      ) : (
+        <div className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-5">
+            <CreditCard className="w-4 h-4 text-[#C6A55A]" />
+            <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+              Secure Payment — Wise
+            </h2>
+          </div>
+          <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-4">
             <p className="text-[#B0B0B0] text-sm leading-relaxed">
               Nicholas will send your Wise payment link and reference via
               WhatsApp shortly. Reply to that message to confirm and lock in
               your scheduling slot.
             </p>
           </div>
-        )}
+        </div>
+      )}
 
-        {dealId?.startsWith("MS-") && (
-          <div className="flex items-center gap-2 mb-4 text-[#8A8A8A] text-xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]/60" />
-            </span>
-            Waiting for payment confirmation — you&rsquo;ll be redirected
-            automatically.
-          </div>
-        )}
-        <p className="text-[#8A8A8A] text-xs italic">
-          Wise is the primary payment method. Alternative methods (Zelle, ACH,
-          wire) available on request — Nicholas will coordinate directly.
-        </p>
-      </div>
+      {dealId?.startsWith("MS-") && (
+        <div className="flex items-center justify-center gap-2 mb-6 text-[#8A8A8A] text-xs">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]/60" />
+          </span>
+          Waiting for payment confirmation — you&rsquo;ll be redirected to your
+          portal automatically.
+        </div>
+      )}
 
       {/* Next steps */}
       <div className="grid md:grid-cols-3 gap-4 mb-8">

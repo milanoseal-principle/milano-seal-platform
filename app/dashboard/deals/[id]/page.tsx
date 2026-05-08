@@ -755,9 +755,8 @@ export default function DealDetail() {
                   variant="outline"
                   disabled={
                     !isPaid ||
-                    !!deal.tracking_number ||
-                    stage === "shipped" ||
-                    stage === "completed"
+                    stage !== "apostille" ||
+                    !!deal.tracking_number
                   }
                   data-testid="action-ship"
                   className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
