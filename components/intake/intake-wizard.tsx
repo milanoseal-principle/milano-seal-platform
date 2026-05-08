@@ -364,6 +364,10 @@ export function IntakeWizard({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [analysisNote, setAnalysisNote] = useState<{
+    msg: string;
+    targetStep?: number;
+  } | null>(null);
   const TOTAL = 5;
 
   const resolveCountry = (raw: string): string => {
@@ -415,11 +419,13 @@ export function IntakeWizard({
   const goNext = () => {
     if (!validate(step)) return;
     setStep((s) => Math.min(s + 1, TOTAL));
+    setAnalysisNote(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
     setStep((s) => Math.max(s - 1, 1));
+    setAnalysisNote(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -523,7 +529,8 @@ export function IntakeWizard({
 
       // Document fields — always overwrite so re-structuring the matter updates all fields
       if (x.documentType) merged.document_type = x.documentType;
-      if (x.documentDescription) merged.document_description = x.documentDescription;
+      if (x.documentDescription)
+        merged.document_description = x.documentDescription;
       if (x.documentCount > 1 || prev.document_count === 1)
         merged.document_count = Math.max(1, x.documentCount);
       if (x.signerCount > 1 || prev.signer_count === 1)
@@ -540,11 +547,32 @@ export function IntakeWizard({
       merged.translation_needed = x.translationNeeded;
 
       if (x.urgency === "urgent") merged.timeline = "Urgent (24-48 hours)";
-      else if (x.urgency === "expedited") merged.timeline = "Expedited (within a week)";
-      else if (x.urgency === "standard" && prev.timeline === "") merged.timeline = "";
+      else if (x.urgency === "expedited")
+        merged.timeline = "Expedited (within a week)";
+      else if (x.urgency === "standard" && prev.timeline === "")
+        merged.timeline = "";
 
       return merged;
     });
+
+    const filledDoc = !!(x.documentType || x.documentDescription || x.country);
+    const filledContact = !!(x.clientName || x.email);
+    if (filledDoc && filledContact) {
+      setAnalysisNote({
+        msg: "Matter structured — contact and document details filled.",
+        targetStep: undefined,
+      });
+    } else if (filledDoc) {
+      setAnalysisNote({
+        msg: "Document details filled. Review them in Step 2.",
+        targetStep: 2,
+      });
+    } else if (filledContact) {
+      setAnalysisNote({
+        msg: "Contact details filled.",
+        targetStep: undefined,
+      });
+    }
   };
 
   const handleSmartFilesPicked = (picked: File[]): void => {
@@ -558,10 +586,42 @@ export function IntakeWizard({
   return (
     <div className="w-full max-w-2xl mx-auto">
       {step < 5 && (
-        <SmartMatterIntake
-          onAnalysisReady={handleAnalysisReady}
-          onFilesPicked={handleSmartFilesPicked}
-        />
+        <>
+          <SmartMatterIntake
+            onAnalysisReady={handleAnalysisReady}
+            onFilesPicked={handleSmartFilesPicked}
+          />
+          {analysisNote && (
+            <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
+              <span className="text-[11px] text-[#7A6830] font-medium">
+                ✓ {analysisNote.msg}
+              </span>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {analysisNote.targetStep &&
+                  step !== analysisNote.targetStep && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep(analysisNote.targetStep!);
+                        setAnalysisNote(null);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="text-[11px] text-[#C6A55A] underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
+                    >
+                      Go to Step {analysisNote.targetStep} →
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setAnalysisNote(null)}
+                  className="text-[#9A8A6A] hover:text-[#4A4030] transition-colors cursor-pointer text-[12px] leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div className="mb-10 relative">
