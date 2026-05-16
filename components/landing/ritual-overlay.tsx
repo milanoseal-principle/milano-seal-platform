@@ -54,12 +54,18 @@ function quad(t: number, a: number, b: number, c: number) {
   return (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c;
 }
 
+/* ─── Idle scheduler (Safari compat) ───────────────────────── */
+const idle = (cb: () => void) =>
+  typeof requestIdleCallback !== "undefined"
+    ? requestIdleCallback(cb, { timeout: 2000 })
+    : setTimeout(cb, 100);
+
 /* ─── Component ─────────────────────────────────────────────── */
 export function RitualOverlay() {
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const rafRef     = useRef<number>(0);
-  const t0Ref      = useRef<number>(0);
-  const geoRef     = useRef<any>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null); // pre-baked world map
+  const rafRef       = useRef<number>(0);
+  const t0Ref        = useRef<number>(0);
 
   const [checked,     setChecked]     = useState<number[]>([]);
   const [phase,       setPhase]       = useState<"enter" | "rings" | "active" | "vault" | "exit" | "gone">("enter");
@@ -79,29 +85,14 @@ export function RitualOverlay() {
     const H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    /* World map continents */
-    if (geoRef.current && s > 0.2) {
+    /* World map — single drawImage blit (offscreen pre-rendered, no per-frame path work) */
+    if (offscreenRef.current && s > 0.2) {
       const alpha = Math.min((s - 0.2) / 1.5, 1) * 0.11;
-      ctx.save();
-      ctx.strokeStyle = `rgba(198,165,90,${alpha})`;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      for (const f of geoRef.current.features) {
-        const { type, coordinates } = f.geometry;
-        const polys = type === "Polygon" ? [coordinates] : coordinates;
-        for (const poly of polys) {
-          for (const ring of poly) {
-            let first = true;
-            for (const [lon, lat] of ring) {
-              const [x, y] = project(lon, lat, W, H);
-              first ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-              first = false;
-            }
-          }
-        }
+      if (alpha > 0) {
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(offscreenRef.current, 0, 0, W, H);
+        ctx.globalAlpha = 1;
       }
-      ctx.stroke();
-      ctx.restore();
     }
 
     /* Arc paths — draw progressively */
@@ -193,11 +184,44 @@ export function RitualOverlay() {
       canvas.height = window.innerHeight;
     }
 
-    /* Load world GeoJSON (decorative — fail silently) */
-    fetch("/world.geojson")
-      .then((r) => r.json())
-      .then((d) => { geoRef.current = d; })
-      .catch(() => {});
+    /* Load world GeoJSON during idle — pre-render to offscreen canvas so the
+       render loop only does a single drawImage blit instead of stroking all
+       polygon paths on every frame (eliminates the main-thread blocking). */
+    idle(() => {
+      fetch("/world.geojson")
+        .then((r) => r.json())
+        .then((data) => {
+          idle(() => {
+            const W2 = window.innerWidth;
+            const H2 = window.innerHeight;
+            const oc  = document.createElement("canvas");
+            oc.width  = W2;
+            oc.height = H2;
+            const c   = oc.getContext("2d");
+            if (!c) return;
+            c.strokeStyle = "rgba(198,165,90,1)"; // alpha applied at blit time
+            c.lineWidth   = 0.5;
+            c.beginPath();
+            for (const f of data.features) {
+              const { type, coordinates } = f.geometry;
+              const polys = type === "Polygon" ? [coordinates] : coordinates;
+              for (const poly of polys) {
+                for (const ring of poly) {
+                  let first = true;
+                  for (const [lon, lat] of ring) {
+                    const [x, y] = project(lon, lat, W2, H2);
+                    first ? c.moveTo(x, y) : c.lineTo(x, y);
+                    first = false;
+                  }
+                }
+              }
+            }
+            c.stroke();
+            offscreenRef.current = oc;
+          });
+        })
+        .catch(() => {});
+    });
 
     /* Start render loop */
     rafRef.current = requestAnimationFrame(render);
