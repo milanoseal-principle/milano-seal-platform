@@ -700,7 +700,7 @@ h4 {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  animation: ro-fade-in 0.6s ease both;
+  animation: ro-fade-in 0.5s ease both;
 }
 
 .ritual-overlay--exit {
@@ -708,7 +708,11 @@ h4 {
   pointer-events: none;
 }
 
-/* ── Canvas (world map + arcs + nodes) ───────────────────────── */
+.ritual-overlay--ready {
+  cursor: pointer;
+}
+
+/* ── Canvas ──────────────────────────────────────────────────── */
 .ritual-overlay__canvas {
   position: absolute;
   inset: 0;
@@ -717,7 +721,7 @@ h4 {
   pointer-events: none;
 }
 
-/* ── Atmosphere glow from top ────────────────────────────────── */
+/* ── Atmosphere glow ─────────────────────────────────────────── */
 .ritual-overlay__glow {
   position: absolute;
   top: -10%;
@@ -733,26 +737,50 @@ h4 {
   pointer-events: none;
 }
 
-/* ── Content container ───────────────────────────────────────── */
+/* ── Inner layout container ──────────────────────────────────── */
 .ritual-overlay__inner {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   padding: 32px 24px;
   max-width: 600px;
   width: 100%;
   text-align: center;
+}
+
+/* ── Seal area (rings + disc) — fades in at 1.80s ───────────── */
+.ritual-overlay__seal-area {
   opacity: 0;
-  transform: translateY(12px);
+  transform: scale(0.92);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 24px;
+}
+
+.ritual-overlay__seal-area--show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Text content area — fades in at 2.85s ──────────────────── */
+.ritual-overlay__text-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
   transition:
     opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ritual-overlay__inner--show {
+.ritual-overlay__text-area--show {
   opacity: 1;
   transform: translateY(0);
 }
@@ -766,7 +794,6 @@ h4 {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-bottom: 6px;
 }
 
 .ritual-overlay__ring {
@@ -869,23 +896,68 @@ h4 {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   box-shadow:
     0 0 0 1px rgba(198, 165, 90, 0.07),
     0 0 40px rgba(198, 165, 90, 0.14),
     0 0 90px rgba(198, 165, 90, 0.07),
     inset 0 1px 0 rgba(198, 165, 90, 0.22);
+}
+
+/* Born — blur→sharpen assembly */
+.ritual-overlay__seal-disc.ro-disc-born {
+  animation: ro-seal-assemble 0.6s ease-out both;
+}
+
+/* Breathe — gentle glow pulse */
+.ritual-overlay__seal-disc.ro-disc-breathe {
   animation: ro-seal-breathe 4s ease-in-out infinite;
+}
+
+/* Vault flash — lock-engagement burst */
+.ritual-overlay__seal-disc.vault-flash {
+  animation: vault-seal-flash 0.7s ease-out both !important;
 }
 
 .ritual-overlay__seal-img {
   width: 112px;
   height: 112px;
   object-fit: contain;
+  position: relative;
+  z-index: 1;
 }
 
-/* Vault flash — the lock-engagement moment */
-.vault-flash {
-  animation: vault-seal-flash 0.7s ease-out both !important;
+/* Metallic sweep highlight — spans inside the disc overflow:hidden */
+.ritual-overlay__metallic-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ritual-overlay__metallic-sweep::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 60%;
+  height: 220%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 240, 180, 0.0) 25%,
+    rgba(255, 240, 180, 0.5) 50%,
+    rgba(255, 240, 180, 0.0) 75%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  opacity: 0;
+}
+
+.ro-disc-born .ritual-overlay__metallic-sweep::after {
+  animation: ro-metallic-sweep 0.35s 0.28s ease-out forwards;
 }
 
 /* ── Typography ──────────────────────────────────────────────── */
@@ -936,14 +1008,55 @@ h4 {
   margin: 0;
 }
 
-/* ── Checklist ───────────────────────────────────────────────── */
+/* ── Progress bar — fills left to right at 3.75s ────────────── */
+.ritual-overlay__progress-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 1px;
+  background: rgba(198, 165, 90, 0.13);
+  overflow: visible;
+}
+
+.ritual-overlay__progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(198, 165, 90, 0.7),
+    rgba(220, 185, 110, 1)
+  );
+  animation: ro-progress-fill 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.ritual-overlay__progress-bead {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 220, 130, 1);
+  box-shadow: 0 0 8px rgba(198, 165, 90, 0.9), 0 0 16px rgba(198, 165, 90, 0.4);
+  animation: ro-progress-bead 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* ── Checklist section ───────────────────────────────────────── */
 .ritual-overlay__section {
   width: 100%;
   max-width: 470px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-top: 4px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.ritual-overlay__section--show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .ritual-overlay__hr {
@@ -978,18 +1091,27 @@ h4 {
   text-align: left;
 }
 
+/* Items start invisible; unlock one-by-one via --done class */
 .ritual-overlay__item {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 12.5px;
-  color: rgba(176, 176, 176, 0.28);
+  color: rgba(176, 176, 176, 0.22);
   font-family: ui-monospace, "Courier New", monospace;
   letter-spacing: 0.02em;
-  transition: color 0.5s ease;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    color 0.45s ease;
 }
 
+/* Item unlocks (appears gold) when checked */
 .ritual-overlay__item--done {
+  opacity: 1;
+  transform: translateX(0);
   color: rgba(198, 165, 90, 0.85);
 }
 
@@ -998,7 +1120,7 @@ h4 {
   height: 18px;
   flex-shrink: 0;
   color: rgba(176, 176, 176, 0.22);
-  transition: color 0.5s ease;
+  transition: color 0.45s ease;
 }
 
 .ritual-overlay__item-icon--done {
@@ -1014,20 +1136,30 @@ h4 {
   font-weight: 700;
   letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: rgba(198, 165, 90, 0.4);
-  margin-top: 4px;
-  transition: color 0.5s ease;
+  color: rgba(198, 165, 90, 0.35);
+  transition: color 0.6s ease;
 }
 
 .ritual-overlay__footer--lit {
-  color: rgba(198, 165, 90, 0.75);
+  color: rgba(198, 165, 90, 0.82);
 }
 
 .ritual-overlay__footer-icon {
   width: 16px;
   height: 16px;
-  transition: color 0.5s ease;
+  transition: color 0.6s ease;
   color: inherit;
+}
+
+/* ── Tap hint ────────────────────────────────────────────────── */
+.ritual-overlay__hint {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(198, 165, 90, 0.38);
+  margin: 0;
+  animation: ro-hint-pulse 2s ease-in-out infinite;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1045,7 +1177,52 @@ h4 {
   to   { opacity: 0; }
 }
 
-/* Seal breathing */
+/* Seal assembly — particles → blur → sharpen → ring snap */
+@keyframes ro-seal-assemble {
+  0% {
+    filter: blur(18px) brightness(2.5);
+    opacity: 0.08;
+    transform: scale(0.8);
+    box-shadow:
+      0 0 0 4px rgba(198, 165, 90, 0.45),
+      0 0 70px rgba(198, 165, 90, 0.55);
+  }
+  28% {
+    filter: blur(9px) brightness(1.7);
+    opacity: 0.5;
+    transform: scale(1.04);
+  }
+  58% {
+    filter: blur(2.5px) brightness(1.15);
+    opacity: 0.88;
+    transform: scale(1.01);
+  }
+  80% {
+    filter: blur(0px) brightness(1.0);
+    opacity: 1;
+    transform: scale(1.0);
+    /* ring snap glow */
+    box-shadow:
+      0 0 0 3px rgba(198, 165, 90, 0.55),
+      0 0 70px rgba(198, 165, 90, 0.45),
+      0 0 120px rgba(198, 165, 90, 0.18),
+      inset 0 1px 0 rgba(198, 165, 90, 0.45);
+    border-color: rgba(198, 165, 90, 0.82);
+  }
+  100% {
+    filter: blur(0px) brightness(1.0);
+    opacity: 1;
+    transform: scale(1.0);
+    box-shadow:
+      0 0 0 1px rgba(198, 165, 90, 0.07),
+      0 0 40px rgba(198, 165, 90, 0.14),
+      0 0 90px rgba(198, 165, 90, 0.07),
+      inset 0 1px 0 rgba(198, 165, 90, 0.22);
+    border-color: rgba(198, 165, 90, 0.5);
+  }
+}
+
+/* Seal breathing glow */
 @keyframes ro-seal-breathe {
   0%, 100% {
     box-shadow:
@@ -1063,10 +1240,17 @@ h4 {
   }
 }
 
+/* Metallic light sweep across the seal */
+@keyframes ro-metallic-sweep {
+  0%   { opacity: 0;   transform: rotate(25deg) translateX(-120%); }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { opacity: 0;   transform: rotate(25deg) translateX(300%); }
+}
+
 /*
-  Vault ring spins — all 3 s, cubic-bezier for fast-then-snap.
-  Each ends at ±720 ° (multiples of 360) so the visual alignment
-  is identical to start — i.e. all markers "click" back to 12 o'clock.
+  Vault ring spins — all 3s, cubic-bezier fast-then-snap.
+  Each ends at ±720° (multiple of 360°) so markers "click" to 12 o'clock.
 */
 
 /* Ring A — CCW, medium */
@@ -1089,7 +1273,7 @@ h4 {
   100% { transform: rotate(720deg); }
 }
 
-/* Ring C — CCW, slightly different cadence */
+/* Ring C — CCW, different cadence */
 @keyframes vault-spin-c {
   0%   { transform: rotate(0deg);    }
   40%  { transform: rotate(-420deg); animation-timing-function: ease-out; }
@@ -1109,7 +1293,7 @@ h4 {
   100% { transform: rotate(720deg); }
 }
 
-/* Vault seal flash — lock engagement moment */
+/* Vault seal flash — lock engagement burst */
 @keyframes vault-seal-flash {
   0% {
     box-shadow:
@@ -1117,13 +1301,13 @@ h4 {
       0 0 40px rgba(198, 165, 90, 0.12),
       inset 0 1px 0 rgba(198, 165, 90, 0.22);
   }
-  25% {
+  22% {
     box-shadow:
-      0 0 0 6px rgba(198, 165, 90, 0.35),
-      0 0 80px rgba(198, 165, 90, 0.65),
-      0 0 160px rgba(198, 165, 90, 0.3),
-      inset 0 1px 0 rgba(198, 165, 90, 0.6);
-    border-color: rgba(198, 165, 90, 0.9);
+      0 0 0 6px rgba(198, 165, 90, 0.38),
+      0 0 80px rgba(198, 165, 90, 0.68),
+      0 0 160px rgba(198, 165, 90, 0.32),
+      inset 0 1px 0 rgba(198, 165, 90, 0.62);
+    border-color: rgba(198, 165, 90, 0.92);
   }
   100% {
     box-shadow:
@@ -1132,6 +1316,59 @@ h4 {
       0 0 100px rgba(198, 165, 90, 0.12),
       inset 0 1px 0 rgba(198, 165, 90, 0.35);
     border-color: rgba(198, 165, 90, 0.65);
+  }
+}
+
+/* Progress bar */
+@keyframes ro-progress-fill {
+  0%   { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes ro-progress-bead {
+  0%   { left: 0%; }
+  100% { left: 100%; }
+}
+
+/* Tap hint pulse */
+@keyframes ro-hint-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.72; }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ritual-overlay,
+  .ritual-overlay--exit,
+  .ritual-overlay__seal-area,
+  .ritual-overlay__text-area,
+  .ritual-overlay__section,
+  .ritual-overlay__seal-disc,
+  .ritual-overlay__seal-disc.ro-disc-born,
+  .ritual-overlay__seal-disc.ro-disc-breathe,
+  .ritual-overlay__ring,
+  .ritual-overlay__item,
+  .ritual-overlay__progress-fill,
+  .ritual-overlay__progress-bead,
+  .ritual-overlay__hint {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .ritual-overlay__seal-area--show,
+  .ritual-overlay__text-area--show,
+  .ritual-overlay__section--show {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .rings-active .ritual-overlay__ring {
+    opacity: 1;
+  }
+
+  .ritual-overlay__item--done {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

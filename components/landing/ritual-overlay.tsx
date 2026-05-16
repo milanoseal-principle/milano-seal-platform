@@ -4,26 +4,26 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 
-/* ─── Geographic nodes (key international cities) ──────────── */
+/* ─── Geographic nodes ──────────────────────────────────────── */
 const NODES: [number, number][] = [
-  [-80.19,  25.77],  // Miami — home base
-  [-74.01,  40.71],  // New York
-  [ -0.12,  51.51],  // London
-  [  2.35,  48.86],  // Paris
-  [ 55.30,  25.20],  // Dubai
-  [139.69,  35.69],  // Tokyo
-  [-46.63, -23.55],  // São Paulo
-  [-74.07,   4.71],  // Bogotá
-  [-99.13,  19.43],  // Mexico City
-  [ -3.70,  40.42],  // Madrid
-  [103.82,   1.35],  // Singapore
-  [ 28.98,  41.01],  // Istanbul
-  [151.21, -33.87],  // Sydney
+  [-80.19,  25.77],  // 0  Miami — execution origin
+  [-74.01,  40.71],  // 1  New York
+  [ 12.49,  41.90],  // 2  Rome (Hague)
+  [  2.35,  48.86],  // 3  Paris (Hague)
+  [ 55.30,  25.20],  // 4  Dubai
+  [139.69,  35.69],  // 5  Tokyo
+  [-46.63, -23.55],  // 6  São Paulo
+  [-74.07,   4.71],  // 7  Bogotá
+  [-99.13,  19.43],  // 8  Mexico City
+  [ -3.70,  40.42],  // 9  Madrid (Hague)
+  [103.82,   1.35],  // 10 Singapore
+  [ 28.98,  41.01],  // 11 Istanbul
+  [151.21, -33.87],  // 12 Sydney
 ];
 
 const ARC_PAIRS: [number, number][] = [
-  [0, 1], [0, 2], [0, 3], [0, 6], [0, 7], [0, 8], [0, 9],
-  [2, 4], [2, 11], [4, 10], [3, 9], [1, 5], [5, 12],
+  [0, 1], [0, 3], [0, 2], [0, 6], [0, 7], [0, 8], [0, 9],
+  [3, 4], [2, 11], [4, 10], [3, 9], [1, 5], [5, 12],
 ];
 
 const STEPS = [
@@ -37,12 +37,16 @@ const STEPS = [
 
 /* ─── Timing (ms) ──────────────────────────────────────────── */
 const T = {
-  showRings:   1200,
-  showContent: 1600,
-  checks:      [2000, 2450, 2850, 3200, 3500, 3750],
-  vault:       4200,  // rings lock + flash
-  exit:        4900,
-  gone:        5800,
+  rings:    1800,   // vault rings form
+  seal:     2250,   // M seal assembles (blur→sharpen)
+  brand:    2850,   // wordmark + text resolves
+  progress: 3750,   // progress bar fills
+  section:  4050,   // checklist section label
+  checks:   [4350, 4650, 4950, 5200, 5480, 5720] as number[],
+  vault:    5850,   // rings lock snap + shield flash
+  ready:    6150,   // SECURE WORKSPACE READY lit
+  exit:     7250,   // auto-fade begins
+  gone:     8100,   // unmount
 };
 
 /* ─── Canvas helpers ────────────────────────────────────────── */
@@ -54,22 +58,29 @@ function quad(t: number, a: number, b: number, c: number) {
   return (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c;
 }
 
-/* ─── Idle scheduler (Safari compat) ───────────────────────── */
 const idle = (cb: () => void) =>
   typeof requestIdleCallback !== "undefined"
     ? requestIdleCallback(cb, { timeout: 2000 })
     : setTimeout(cb, 100);
 
 /* ─── Component ─────────────────────────────────────────────── */
+type Phase = "enter" | "rings" | "active" | "vault" | "ready" | "exit" | "gone";
+
 export function RitualOverlay() {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
-  const offscreenRef = useRef<HTMLCanvasElement | null>(null); // pre-baked world map
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef       = useRef<number>(0);
   const t0Ref        = useRef<number>(0);
+  const dismissRef   = useRef<(() => void) | null>(null);
 
-  const [checked,     setChecked]     = useState<number[]>([]);
-  const [phase,       setPhase]       = useState<"enter" | "rings" | "active" | "vault" | "exit" | "gone">("enter");
-  const [showContent, setShowContent] = useState(false);
+  const [checked,      setChecked]      = useState<number[]>([]);
+  const [phase,        setPhase]        = useState<Phase>("enter");
+  const [showSeal,     setShowSeal]     = useState(false);
+  const [discBorn,     setDiscBorn]     = useState(false);
+  const [discBreathe,  setDiscBreathe]  = useState(false);
+  const [showContent,  setShowContent]  = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [showSection,  setShowSection]  = useState(false);
 
   /* ── Canvas render loop ─────────────────────────────────── */
   const render = useCallback((now: number) => {
@@ -85,9 +96,9 @@ export function RitualOverlay() {
     const H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    /* World map — single drawImage blit (offscreen pre-rendered, no per-frame path work) */
-    if (offscreenRef.current && s > 0.2) {
-      const alpha = Math.min((s - 0.2) / 1.5, 1) * 0.11;
+    /* World map — blit from offscreen (pre-rendered during idle) */
+    if (offscreenRef.current && s > 0.35) {
+      const alpha = Math.min((s - 0.35) / 1.2, 1) * 0.11;
       if (alpha > 0) {
         ctx.globalAlpha = alpha;
         ctx.drawImage(offscreenRef.current, 0, 0, W, H);
@@ -95,11 +106,11 @@ export function RitualOverlay() {
       }
     }
 
-    /* Arc paths — draw progressively */
-    if (s > 0.6) {
+    /* Arc lines — draw starting at 1.05s (lines before nodes) */
+    if (s > 1.05) {
       ARC_PAIRS.forEach(([ai, bi], idx) => {
-        const delay    = 0.6 + idx * 0.18;
-        const progress = Math.min(Math.max((s - delay) / 0.9, 0), 1);
+        const delay    = 1.05 + idx * 0.1;
+        const progress = Math.min(Math.max((s - delay) / 0.65, 0), 1);
         if (progress <= 0) return;
 
         const [x1, y1] = project(NODES[ai][0], NODES[ai][1], W, H);
@@ -107,27 +118,25 @@ export function RitualOverlay() {
         const cx = (x1 + x2) / 2;
         const cy = (y1 + y2) / 2 - Math.abs(x2 - x1) * 0.28 - 30;
 
-        const alpha = Math.min(progress, 0.85) * 0.32;
         ctx.save();
-        ctx.strokeStyle = `rgba(198,165,90,${alpha})`;
-        ctx.lineWidth = 0.65;
+        ctx.strokeStyle = `rgba(198,165,90,${Math.min(progress, 0.85) * 0.35})`;
+        ctx.lineWidth = 0.7;
         ctx.setLineDash([3, 6]);
         ctx.beginPath();
         const steps = 60;
-        for (let i = 0; i <= Math.floor(steps * progress); i++) {
-          const t  = i / steps;
+        for (let k = 0; k <= Math.floor(steps * progress); k++) {
+          const t  = k / steps;
           const bx = quad(t, x1, cx, x2);
           const by = quad(t, y1, cy, y2);
-          i === 0 ? ctx.moveTo(bx, by) : ctx.lineTo(bx, by);
+          k === 0 ? ctx.moveTo(bx, by) : ctx.lineTo(bx, by);
         }
         ctx.stroke();
         ctx.setLineDash([]);
 
-        /* Traveling pulse along arc */
+        /* Traveling pulse */
         if (progress < 1) {
-          const t  = progress;
-          const dx = quad(t, x1, cx, x2);
-          const dy = quad(t, y1, cy, y2);
+          const dx = quad(progress, x1, cx, x2);
+          const dy = quad(progress, y1, cy, y2);
           const g  = ctx.createRadialGradient(dx, dy, 0, dx, dy, 5);
           g.addColorStop(0, "rgba(255,220,130,0.95)");
           g.addColorStop(1, "rgba(198,165,90,0)");
@@ -140,53 +149,88 @@ export function RitualOverlay() {
       });
     }
 
-    /* City nodes */
-    if (s > 0.4) {
-      NODES.forEach(([lon, lat], i) => {
-        const delay = 0.4 + i * 0.09;
-        const alpha = Math.min(Math.max((s - delay) / 0.45, 0), 1);
-        if (alpha <= 0) return;
+    /* Miami origin — ignites at 0.75s (before arc lines) */
+    if (s > 0.75) {
+      const [x, y] = project(NODES[0][0], NODES[0][1], W, H);
+      const alpha  = Math.min((s - 0.75) / 0.35, 1);
+      const pulse  = Math.sin(s * 2.5) * 0.5 + 0.5;
 
-        const [x, y] = project(lon, lat, W, H);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 22 + pulse * 8);
+      g.addColorStop(0, `rgba(255,220,130,${0.85 * alpha})`);
+      g.addColorStop(0.3, `rgba(198,165,90,${0.4 * alpha})`);
+      g.addColorStop(1, "rgba(198,165,90,0)");
+      ctx.beginPath();
+      ctx.arc(x, y, 22 + pulse * 8, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,220,130,${alpha})`;
+      ctx.fill();
+    }
+
+    /* Destination nodes — glow at 1.45s (after arc lines start drawing) */
+    if (s > 1.45) {
+      for (let i = 1; i < NODES.length; i++) {
+        const delay = 1.45 + (i - 1) * 0.06;
+        const alpha = Math.min(Math.max((s - delay) / 0.4, 0), 1);
+        if (alpha <= 0) continue;
+
+        const [x, y] = project(NODES[i][0], NODES[i][1], W, H);
         const pulse  = Math.sin(s * 1.8 + i * 0.9) * 0.5 + 0.5;
-        const base   = i === 0 ? 4.5 : 2.5; // Miami bigger
 
-        /* Halo */
-        const gr = ctx.createRadialGradient(x, y, 0, x, y, base * 5 + pulse * 4);
-        gr.addColorStop(0, `rgba(198,165,90,${0.45 * alpha})`);
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, 11 + pulse * 3);
+        gr.addColorStop(0, `rgba(198,165,90,${0.5 * alpha})`);
         gr.addColorStop(1, "rgba(198,165,90,0)");
         ctx.beginPath();
-        ctx.arc(x, y, base * 5 + pulse * 4, 0, Math.PI * 2);
+        ctx.arc(x, y, 11 + pulse * 3, 0, Math.PI * 2);
         ctx.fillStyle = gr;
         ctx.fill();
 
-        /* Core */
         ctx.beginPath();
-        ctx.arc(x, y, base, 0, Math.PI * 2);
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,220,130,${alpha})`;
         ctx.fill();
-      });
+      }
     }
 
     rafRef.current = requestAnimationFrame(render);
   }, []);
 
   useEffect(() => {
+    /* Reduced motion — skip to final state immediately */
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setChecked([0, 1, 2, 3, 4, 5]);
+      setPhase("ready");
+      setShowSeal(true);
+      setDiscBreathe(true);
+      setShowContent(true);
+      setShowProgress(true);
+      setShowSection(true);
+      const t = setTimeout(() => {
+        setPhase("exit");
+        setTimeout(() => {
+          setPhase("gone");
+          sessionStorage.setItem("ms_ritual_seen", "1");
+        }, 700);
+      }, 2000);
+      return () => clearTimeout(t);
+    }
+
     if (sessionStorage.getItem("ms_ritual_seen")) {
       setPhase("gone");
       return;
     }
 
-    /* Size canvas */
+    /* Size canvas to viewport */
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
 
-    /* Load world GeoJSON during idle — pre-render to offscreen canvas so the
-       render loop only does a single drawImage blit instead of stroking all
-       polygon paths on every frame (eliminates the main-thread blocking). */
+    /* Fetch + pre-render world map during idle time */
     idle(() => {
       fetch("/world.geojson")
         .then((r) => r.json())
@@ -199,7 +243,7 @@ export function RitualOverlay() {
             oc.height = H2;
             const c   = oc.getContext("2d");
             if (!c) return;
-            c.strokeStyle = "rgba(198,165,90,1)"; // alpha applied at blit time
+            c.strokeStyle = "rgba(198,165,90,1)";
             c.lineWidth   = 0.5;
             c.beginPath();
             for (const f of data.features) {
@@ -223,26 +267,43 @@ export function RitualOverlay() {
         .catch(() => {});
     });
 
-    /* Start render loop */
     rafRef.current = requestAnimationFrame(render);
 
     const ts: ReturnType<typeof setTimeout>[] = [];
-    ts.push(setTimeout(() => setPhase("rings"),   T.showRings));
+
+    /* Phase / visibility transitions */
+    ts.push(setTimeout(() => { setPhase("rings"); setShowSeal(true); },   T.rings));
+    ts.push(setTimeout(() => setDiscBorn(true),                           T.seal));
     ts.push(setTimeout(() => {
       setPhase("active");
+      setDiscBorn(false);
+      setDiscBreathe(true);
       setShowContent(true);
-    }, T.showContent));
-
+    }, T.brand));
+    ts.push(setTimeout(() => setShowProgress(true),                       T.progress));
+    ts.push(setTimeout(() => setShowSection(true),                        T.section));
     T.checks.forEach((delay, i) => {
       ts.push(setTimeout(() => setChecked((p) => [...p, i]), delay));
     });
-
-    ts.push(setTimeout(() => setPhase("vault"), T.vault));
-    ts.push(setTimeout(() => setPhase("exit"),  T.exit));
+    ts.push(setTimeout(() => setPhase("vault"),                           T.vault));
+    ts.push(setTimeout(() => setPhase("ready"),                           T.ready));
+    ts.push(setTimeout(() => setPhase("exit"),                            T.exit));
     ts.push(setTimeout(() => {
       setPhase("gone");
       sessionStorage.setItem("ms_ritual_seen", "1");
     }, T.gone));
+
+    /* Dismiss — enabled after ready phase */
+    const dismiss = () => {
+      ts.forEach(clearTimeout);
+      cancelAnimationFrame(rafRef.current);
+      setPhase("exit");
+      setTimeout(() => {
+        setPhase("gone");
+        sessionStorage.setItem("ms_ritual_seen", "1");
+      }, 900);
+    };
+    dismissRef.current = dismiss;
 
     return () => {
       ts.forEach(clearTimeout);
@@ -250,99 +311,138 @@ export function RitualOverlay() {
     };
   }, [render]);
 
+  /* Click / Escape dismiss — active only in "ready" phase */
+  useEffect(() => {
+    if (phase !== "ready") return;
+    const onKey   = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current?.(); };
+    const onClick = () => dismissRef.current?.();
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("click",   onClick, { once: true });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("click",   onClick);
+    };
+  }, [phase]);
+
   if (phase === "gone") return null;
 
-  const vaultLocked = phase === "vault" || phase === "exit";
+  const vaultLocked = phase === "vault" || phase === "ready" || phase === "exit";
+  const ringsActive = phase === "rings" || phase === "active" || vaultLocked;
 
   return (
     <div
       className={[
         "ritual-overlay",
-        phase === "exit" ? "ritual-overlay--exit" : "",
-      ].join(" ")}
+        phase === "exit"  ? "ritual-overlay--exit"  : "",
+        phase === "ready" ? "ritual-overlay--ready" : "",
+      ].filter(Boolean).join(" ")}
       aria-hidden="true"
     >
-      {/* Cinematic world map */}
+      {/* Cinematic world map canvas */}
       <canvas ref={canvasRef} className="ritual-overlay__canvas" />
 
       {/* Radial atmosphere glow */}
       <div className="ritual-overlay__glow" />
 
-      {/* ── Content ─────────────────────────────────────────── */}
-      <div className={`ritual-overlay__inner${showContent ? " ritual-overlay__inner--show" : ""}`}>
+      <div className="ritual-overlay__inner">
 
-        {/* Vault rings + seal */}
-        <div className={`ritual-overlay__seal-wrap${vaultLocked ? " vault-locked" : ""}${phase === "rings" || phase === "active" || vaultLocked ? " rings-active" : ""}`}>
-          {/* Ring D — outermost large */}
-          <span className="ritual-overlay__ring ro-ring-d" />
-          {/* Ring C — dashed compass */}
-          <span className="ritual-overlay__ring ro-ring-c" />
-          {/* Ring B — tick-mark dial */}
-          <span className="ritual-overlay__ring ro-ring-b" />
-          {/* Ring A — tight around seal */}
-          <span className="ritual-overlay__ring ro-ring-a" />
+        {/* ── Seal area — appears at 1.80s ───────────────────── */}
+        <div className={`ritual-overlay__seal-area${showSeal ? " ritual-overlay__seal-area--show" : ""}`}>
+          <div className={[
+            "ritual-overlay__seal-wrap",
+            ringsActive  ? "rings-active"  : "",
+            vaultLocked  ? "vault-locked"  : "",
+          ].filter(Boolean).join(" ")}>
 
-          {/* The seal */}
-          <div className={`ritual-overlay__seal-disc${vaultLocked ? " vault-flash" : ""}`}>
-            <Image
-              src="/android-chrome-512x512.png"
-              alt=""
-              width={110}
-              height={110}
-              className="ritual-overlay__seal-img"
-              priority
-            />
+            {/* Rings D → A (outer → inner) */}
+            <span className="ritual-overlay__ring ro-ring-d" />
+            <span className="ritual-overlay__ring ro-ring-c" />
+            <span className="ritual-overlay__ring ro-ring-b" />
+            <span className="ritual-overlay__ring ro-ring-a" />
+
+            {/* Seal disc */}
+            <div className={[
+              "ritual-overlay__seal-disc",
+              discBorn    ? "ro-disc-born"    : "",
+              discBreathe && !vaultLocked ? "ro-disc-breathe" : "",
+              vaultLocked ? "vault-flash"     : "",
+            ].filter(Boolean).join(" ")}>
+              <span className="ritual-overlay__metallic-sweep" aria-hidden="true" />
+              <Image
+                src="/android-chrome-512x512.png"
+                alt=""
+                width={110}
+                height={110}
+                className="ritual-overlay__seal-img"
+                priority
+              />
+            </div>
+
           </div>
         </div>
 
-        {/* Wordmark */}
-        <h1 className="ritual-overlay__wordmark">THE MILANO SEAL™</h1>
+        {/* ── Text content — appears at 2.85s ────────────────── */}
+        <div className={`ritual-overlay__text-area${showContent ? " ritual-overlay__text-area--show" : ""}`}>
 
-        {/* Diamond rule */}
-        <div className="ritual-overlay__rule" aria-hidden="true">
-          <span className="ritual-overlay__rule-line" />
-          <span className="ritual-overlay__rule-gem">◆</span>
-          <span className="ritual-overlay__rule-line" />
-        </div>
+          <h1 className="ritual-overlay__wordmark">THE MILANO SEAL™</h1>
 
-        {/* Tagline */}
-        <p className="ritual-overlay__tagline">Sealing Trust With Every Signature™</p>
+          <div className="ritual-overlay__rule" aria-hidden="true">
+            <span className="ritual-overlay__rule-line" />
+            <span className="ritual-overlay__rule-gem">◆</span>
+            <span className="ritual-overlay__rule-line" />
+          </div>
 
-        {/* Status */}
-        <p className="ritual-overlay__status">
-          Preparing your secure document execution environment.
-        </p>
+          <p className="ritual-overlay__tagline">Sealing Trust With Every Signature™</p>
 
-        {/* Checklist */}
-        <div className="ritual-overlay__section">
-          <hr className="ritual-overlay__hr" />
-          <p className="ritual-overlay__section-label">
-            Structuring Secure Matter Environment
+          <p className="ritual-overlay__status">
+            Preparing your secure document execution environment.
           </p>
-          <ul className="ritual-overlay__list">
-            {STEPS.map((step, i) => {
-              const done = checked.includes(i);
-              return (
-                <li
-                  key={step}
-                  className={`ritual-overlay__item${done ? " ritual-overlay__item--done" : ""}`}
-                >
-                  {done
-                    ? <CheckCircle2 className="ritual-overlay__item-icon ritual-overlay__item-icon--done" />
-                    : <Circle       className="ritual-overlay__item-icon" />
-                  }
-                  <span>{step}</span>
-                </li>
-              );
-            })}
-          </ul>
-          <hr className="ritual-overlay__hr" />
-        </div>
 
-        {/* Footer */}
-        <div className={`ritual-overlay__footer${vaultLocked ? " ritual-overlay__footer--lit" : ""}`}>
-          <ShieldCheck className="ritual-overlay__footer-icon" />
-          <span>Secure Workspace Ready</span>
+          {/* Progress bar — appears at 3.75s */}
+          {showProgress && (
+            <div className="ritual-overlay__progress-wrap" aria-hidden="true">
+              <div className="ritual-overlay__progress-fill" />
+              <span className="ritual-overlay__progress-bead" />
+            </div>
+          )}
+
+          {/* Checklist — section label at 4.05s, items unlock 4.35s+ */}
+          <div className={`ritual-overlay__section${showSection ? " ritual-overlay__section--show" : ""}`}>
+            <hr className="ritual-overlay__hr" />
+            <p className="ritual-overlay__section-label">
+              Structuring Secure Matter Environment
+            </p>
+            <ul className="ritual-overlay__list">
+              {STEPS.map((step, i) => {
+                const done = checked.includes(i);
+                return (
+                  <li
+                    key={step}
+                    className={`ritual-overlay__item${done ? " ritual-overlay__item--done" : ""}`}
+                  >
+                    {done
+                      ? <CheckCircle2 className="ritual-overlay__item-icon ritual-overlay__item-icon--done" />
+                      : <Circle       className="ritual-overlay__item-icon" />
+                    }
+                    <span>{step}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            <hr className="ritual-overlay__hr" />
+          </div>
+
+          {/* Footer — lights up at vault lock */}
+          <div className={`ritual-overlay__footer${vaultLocked ? " ritual-overlay__footer--lit" : ""}`}>
+            <ShieldCheck className="ritual-overlay__footer-icon" />
+            <span>Secure Workspace Ready</span>
+          </div>
+
+          {/* Tap hint — visible during final hold */}
+          {phase === "ready" && (
+            <p className="ritual-overlay__hint">click anywhere to enter</p>
+          )}
+
         </div>
       </div>
     </div>
