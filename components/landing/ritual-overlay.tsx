@@ -396,8 +396,8 @@ export function RitualOverlay() {
               <Image
                 src="/android-chrome-512x512.png"
                 alt=""
-                width={138}
-                height={138}
+                width={200}
+                height={200}
                 className="ritual-overlay__seal-img"
                 priority
               />
@@ -408,14 +408,6 @@ export function RitualOverlay() {
 
         {/* ── Text content — appears at 3.00s ────────────────── */}
         <div className={`ritual-overlay__text-area${showContent ? " ritual-overlay__text-area--show" : ""}`}>
-
-          <h1 className="ritual-overlay__wordmark">THE MILANO SEAL™</h1>
-
-          <div className="ritual-overlay__rule" aria-hidden="true">
-            <span className="ritual-overlay__rule-line" />
-            <span className="ritual-overlay__rule-gem">◆</span>
-            <span className="ritual-overlay__rule-line" />
-          </div>
 
           <p className="ritual-overlay__tagline">Sealing Trust With Every Signature™</p>
 
