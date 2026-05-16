@@ -35,18 +35,18 @@ const STEPS = [
   "Ready for review",
 ] as const;
 
-/* ─── Timing (ms) ──────────────────────────────────────────── */
+/* ─── Timing (ms) — ceremonial cadence ─────────────────────── */
 const T = {
   rings:    1800,   // vault rings form
-  seal:     2250,   // M seal assembles (blur→sharpen)
-  brand:    2850,   // wordmark + text resolves
-  progress: 3750,   // progress bar fills
-  section:  4050,   // checklist section label
-  checks:   [4350, 4650, 4950, 5200, 5480, 5720] as number[],
-  vault:    5850,   // rings lock snap + shield flash
-  ready:    6150,   // SECURE WORKSPACE READY lit
-  exit:     7250,   // auto-fade begins
-  gone:     8100,   // unmount
+  seal:     2250,   // M seal assembly begins (blur → sharpen)
+  brand:    3000,   // wordmark resolves (150ms buffer after assembly)
+  progress: 3900,   // progress bar fills
+  section:  4200,   // checklist section label
+  checks:   [4500, 4780, 5060, 5300, 5560, 5780] as number[],
+  vault:    5950,   // rings click to home + seal flash
+  ready:    6250,   // SECURE WORKSPACE READY lit + click enabled
+  exit:     7550,   // auto-fade (1300ms hold after ready)
+  gone:     8400,   // unmount
 };
 
 /* ─── Canvas helpers ────────────────────────────────────────── */
@@ -73,14 +73,15 @@ export function RitualOverlay() {
   const t0Ref        = useRef<number>(0);
   const dismissRef   = useRef<(() => void) | null>(null);
 
-  const [checked,      setChecked]      = useState<number[]>([]);
-  const [phase,        setPhase]        = useState<Phase>("enter");
-  const [showSeal,     setShowSeal]     = useState(false);
-  const [discBorn,     setDiscBorn]     = useState(false);
-  const [discBreathe,  setDiscBreathe]  = useState(false);
-  const [showContent,  setShowContent]  = useState(false);
-  const [showProgress, setShowProgress] = useState(false);
-  const [showSection,  setShowSection]  = useState(false);
+  const [checked,       setChecked]       = useState<number[]>([]);
+  const [phase,         setPhase]         = useState<Phase>("enter");
+  const [showSeal,      setShowSeal]      = useState(false);
+  const [discBorn,      setDiscBorn]      = useState(false);
+  const [discBreathe,   setDiscBreathe]   = useState(false);
+  const [showContent,   setShowContent]   = useState(false);
+  const [showProgress,  setShowProgress]  = useState(false);
+  const [showSection,   setShowSection]   = useState(false);
+  const [readyForExit,  setReadyForExit]  = useState(false);
 
   /* ── Canvas render loop ─────────────────────────────────── */
   const render = useCallback((now: number) => {
@@ -96,9 +97,10 @@ export function RitualOverlay() {
     const H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    /* World map — blit from offscreen (pre-rendered during idle) */
+    /* World map — fades in 0.35s → 1.35s, max alpha 0.22
+       Offscreen pre-render keeps main thread free (single blit) */
     if (offscreenRef.current && s > 0.35) {
-      const alpha = Math.min((s - 0.35) / 1.2, 1) * 0.11;
+      const alpha = Math.min((s - 0.35) / 1.0, 1) * 0.22;
       if (alpha > 0) {
         ctx.globalAlpha = alpha;
         ctx.drawImage(offscreenRef.current, 0, 0, W, H);
@@ -119,8 +121,8 @@ export function RitualOverlay() {
         const cy = (y1 + y2) / 2 - Math.abs(x2 - x1) * 0.28 - 30;
 
         ctx.save();
-        ctx.strokeStyle = `rgba(198,165,90,${Math.min(progress, 0.85) * 0.35})`;
-        ctx.lineWidth = 0.7;
+        ctx.strokeStyle = `rgba(212,175,55,${Math.min(progress, 0.85) * 0.38})`;
+        ctx.lineWidth = 0.75;
         ctx.setLineDash([3, 6]);
         ctx.beginPath();
         const steps = 60;
@@ -133,13 +135,13 @@ export function RitualOverlay() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        /* Traveling pulse */
+        /* Traveling pulse bead */
         if (progress < 1) {
           const dx = quad(progress, x1, cx, x2);
           const dy = quad(progress, y1, cy, y2);
           const g  = ctx.createRadialGradient(dx, dy, 0, dx, dy, 5);
-          g.addColorStop(0, "rgba(255,220,130,0.95)");
-          g.addColorStop(1, "rgba(198,165,90,0)");
+          g.addColorStop(0, "rgba(244,229,184,0.95)");
+          g.addColorStop(1, "rgba(212,175,55,0)");
           ctx.beginPath();
           ctx.arc(dx, dy, 5, 0, Math.PI * 2);
           ctx.fillStyle = g;
@@ -149,24 +151,40 @@ export function RitualOverlay() {
       });
     }
 
-    /* Miami origin — ignites at 0.75s (before arc lines) */
+    /* Miami origin — ignites at 0.75s with expanding ring burst */
     if (s > 0.75) {
       const [x, y] = project(NODES[0][0], NODES[0][1], W, H);
       const alpha  = Math.min((s - 0.75) / 0.35, 1);
       const pulse  = Math.sin(s * 2.5) * 0.5 + 0.5;
 
-      const g = ctx.createRadialGradient(x, y, 0, x, y, 22 + pulse * 8);
-      g.addColorStop(0, `rgba(255,220,130,${0.85 * alpha})`);
-      g.addColorStop(0.3, `rgba(198,165,90,${0.4 * alpha})`);
-      g.addColorStop(1, "rgba(198,165,90,0)");
+      /* Expanding ignition ring (first 0.5s only) */
+      if (s < 1.25) {
+        const ignProg  = Math.min((s - 0.75) / 0.5, 1);
+        const ignR     = 50 * ignProg;
+        const ignAlpha = (1 - ignProg) * 0.55 * alpha;
+        if (ignAlpha > 0) {
+          ctx.beginPath();
+          ctx.arc(x, y, ignR, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(212,175,55,${ignAlpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+
+      /* Halo */
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 28 + pulse * 10);
+      g.addColorStop(0, `rgba(244,229,184,${0.88 * alpha})`);
+      g.addColorStop(0.3, `rgba(212,175,55,${0.45 * alpha})`);
+      g.addColorStop(1, "rgba(212,175,55,0)");
       ctx.beginPath();
-      ctx.arc(x, y, 22 + pulse * 8, 0, Math.PI * 2);
+      ctx.arc(x, y, 28 + pulse * 10, 0, Math.PI * 2);
       ctx.fillStyle = g;
       ctx.fill();
 
+      /* Core dot */
       ctx.beginPath();
-      ctx.arc(x, y, 5.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,220,130,${alpha})`;
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(244,229,184,${alpha})`;
       ctx.fill();
     }
 
@@ -181,8 +199,8 @@ export function RitualOverlay() {
         const pulse  = Math.sin(s * 1.8 + i * 0.9) * 0.5 + 0.5;
 
         const gr = ctx.createRadialGradient(x, y, 0, x, y, 11 + pulse * 3);
-        gr.addColorStop(0, `rgba(198,165,90,${0.5 * alpha})`);
-        gr.addColorStop(1, "rgba(198,165,90,0)");
+        gr.addColorStop(0, `rgba(212,175,55,${0.5 * alpha})`);
+        gr.addColorStop(1, "rgba(212,175,55,0)");
         ctx.beginPath();
         ctx.arc(x, y, 11 + pulse * 3, 0, Math.PI * 2);
         ctx.fillStyle = gr;
@@ -190,7 +208,7 @@ export function RitualOverlay() {
 
         ctx.beginPath();
         ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,220,130,${alpha})`;
+        ctx.fillStyle = `rgba(244,229,184,${alpha * 0.9})`;
         ctx.fill();
       }
     }
@@ -199,7 +217,7 @@ export function RitualOverlay() {
   }, []);
 
   useEffect(() => {
-    /* Reduced motion — skip to final state immediately */
+    /* Reduced motion — skip to final state, auto-dismiss in 2s */
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setChecked([0, 1, 2, 3, 4, 5]);
       setPhase("ready");
@@ -208,6 +226,7 @@ export function RitualOverlay() {
       setShowContent(true);
       setShowProgress(true);
       setShowSection(true);
+      setReadyForExit(true);
       const t = setTimeout(() => {
         setPhase("exit");
         setTimeout(() => {
@@ -223,14 +242,14 @@ export function RitualOverlay() {
       return;
     }
 
-    /* Size canvas to viewport */
+    /* Size canvas to full viewport */
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
 
-    /* Fetch + pre-render world map during idle time */
+    /* Fetch + pre-render world map during idle — warmer gold stroke */
     idle(() => {
       fetch("/world.geojson")
         .then((r) => r.json())
@@ -243,8 +262,8 @@ export function RitualOverlay() {
             oc.height = H2;
             const c   = oc.getContext("2d");
             if (!c) return;
-            c.strokeStyle = "rgba(198,165,90,1)";
-            c.lineWidth   = 0.5;
+            c.strokeStyle = "rgba(212,175,55,1)";
+            c.lineWidth   = 0.6;
             c.beginPath();
             for (const f of data.features) {
               const { type, coordinates } = f.geometry;
@@ -271,37 +290,39 @@ export function RitualOverlay() {
 
     const ts: ReturnType<typeof setTimeout>[] = [];
 
-    /* Phase / visibility transitions */
-    ts.push(setTimeout(() => { setPhase("rings"); setShowSeal(true); },   T.rings));
-    ts.push(setTimeout(() => setDiscBorn(true),                           T.seal));
+    ts.push(setTimeout(() => { setPhase("rings"); setShowSeal(true); }, T.rings));
+    ts.push(setTimeout(() => setDiscBorn(true),                        T.seal));
     ts.push(setTimeout(() => {
       setPhase("active");
       setDiscBorn(false);
       setDiscBreathe(true);
       setShowContent(true);
     }, T.brand));
-    ts.push(setTimeout(() => setShowProgress(true),                       T.progress));
-    ts.push(setTimeout(() => setShowSection(true),                        T.section));
+    ts.push(setTimeout(() => setShowProgress(true),                    T.progress));
+    ts.push(setTimeout(() => setShowSection(true),                     T.section));
     T.checks.forEach((delay, i) => {
       ts.push(setTimeout(() => setChecked((p) => [...p, i]), delay));
     });
-    ts.push(setTimeout(() => setPhase("vault"),                           T.vault));
-    ts.push(setTimeout(() => setPhase("ready"),                           T.ready));
-    ts.push(setTimeout(() => setPhase("exit"),                            T.exit));
+    ts.push(setTimeout(() => setPhase("vault"),                        T.vault));
+    ts.push(setTimeout(() => {
+      setPhase("ready");
+      setReadyForExit(true);
+    }, T.ready));
+    ts.push(setTimeout(() => setPhase("exit"),                         T.exit));
     ts.push(setTimeout(() => {
       setPhase("gone");
       sessionStorage.setItem("ms_ritual_seen", "1");
     }, T.gone));
 
-    /* Dismiss — enabled after ready phase */
+    /* Dismiss — self-nulling to prevent double-call */
     const dismiss = () => {
+      if (!dismissRef.current) return;
+      dismissRef.current = null;
       ts.forEach(clearTimeout);
       cancelAnimationFrame(rafRef.current);
+      sessionStorage.setItem("ms_ritual_seen", "1");
       setPhase("exit");
-      setTimeout(() => {
-        setPhase("gone");
-        sessionStorage.setItem("ms_ritual_seen", "1");
-      }, 900);
+      setTimeout(() => setPhase("gone"), 900);
     };
     dismissRef.current = dismiss;
 
@@ -311,31 +332,32 @@ export function RitualOverlay() {
     };
   }, [render]);
 
-  /* Click / Escape dismiss — active only in "ready" phase */
+  /* Escape key — active only once readyForExit */
   useEffect(() => {
-    if (phase !== "ready") return;
-    const onKey   = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current?.(); };
-    const onClick = () => dismissRef.current?.();
+    if (!readyForExit) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current?.(); };
     window.addEventListener("keydown", onKey);
-    window.addEventListener("click",   onClick, { once: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("click",   onClick);
-    };
-  }, [phase]);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [readyForExit]);
 
   if (phase === "gone") return null;
 
   const vaultLocked = phase === "vault" || phase === "ready" || phase === "exit";
   const ringsActive = phase === "rings" || phase === "active" || vaultLocked;
 
+  /* Click/tap handler — fires only after readyForExit; ignored before */
+  const handleClick = () => {
+    if (readyForExit) dismissRef.current?.();
+  };
+
   return (
     <div
       className={[
         "ritual-overlay",
         phase === "exit"  ? "ritual-overlay--exit"  : "",
-        phase === "ready" ? "ritual-overlay--ready" : "",
+        readyForExit      ? "ritual-overlay--ready"  : "",
       ].filter(Boolean).join(" ")}
+      onClick={handleClick}
       aria-hidden="true"
     >
       {/* Cinematic world map canvas */}
@@ -350,9 +372,12 @@ export function RitualOverlay() {
         <div className={`ritual-overlay__seal-area${showSeal ? " ritual-overlay__seal-area--show" : ""}`}>
           <div className={[
             "ritual-overlay__seal-wrap",
-            ringsActive  ? "rings-active"  : "",
-            vaultLocked  ? "vault-locked"  : "",
+            ringsActive ? "rings-active" : "",
+            vaultLocked ? "vault-locked" : "",
           ].filter(Boolean).join(" ")}>
+
+            {/* Warm gold bloom behind seal */}
+            <span className="ritual-overlay__seal-bloom" aria-hidden="true" />
 
             {/* Rings D → A (outer → inner) */}
             <span className="ritual-overlay__ring ro-ring-d" />
@@ -363,16 +388,16 @@ export function RitualOverlay() {
             {/* Seal disc */}
             <div className={[
               "ritual-overlay__seal-disc",
-              discBorn    ? "ro-disc-born"    : "",
-              discBreathe && !vaultLocked ? "ro-disc-breathe" : "",
-              vaultLocked ? "vault-flash"     : "",
+              discBorn                        ? "ro-disc-born"    : "",
+              discBreathe && !vaultLocked     ? "ro-disc-breathe" : "",
+              vaultLocked                     ? "vault-flash"     : "",
             ].filter(Boolean).join(" ")}>
               <span className="ritual-overlay__metallic-sweep" aria-hidden="true" />
               <Image
                 src="/android-chrome-512x512.png"
                 alt=""
-                width={110}
-                height={110}
+                width={138}
+                height={138}
                 className="ritual-overlay__seal-img"
                 priority
               />
@@ -381,7 +406,7 @@ export function RitualOverlay() {
           </div>
         </div>
 
-        {/* ── Text content — appears at 2.85s ────────────────── */}
+        {/* ── Text content — appears at 3.00s ────────────────── */}
         <div className={`ritual-overlay__text-area${showContent ? " ritual-overlay__text-area--show" : ""}`}>
 
           <h1 className="ritual-overlay__wordmark">THE MILANO SEAL™</h1>
@@ -398,7 +423,7 @@ export function RitualOverlay() {
             Preparing your secure document execution environment.
           </p>
 
-          {/* Progress bar — appears at 3.75s */}
+          {/* Progress bar — appears at 3.90s */}
           {showProgress && (
             <div className="ritual-overlay__progress-wrap" aria-hidden="true">
               <div className="ritual-overlay__progress-fill" />
@@ -406,7 +431,7 @@ export function RitualOverlay() {
             </div>
           )}
 
-          {/* Checklist — section label at 4.05s, items unlock 4.35s+ */}
+          {/* Checklist — label at 4.20s, items unlock 4.50s+ */}
           <div className={`ritual-overlay__section${showSection ? " ritual-overlay__section--show" : ""}`}>
             <hr className="ritual-overlay__hr" />
             <p className="ritual-overlay__section-label">
@@ -438,9 +463,12 @@ export function RitualOverlay() {
             <span>Secure Workspace Ready</span>
           </div>
 
-          {/* Tap hint — visible during final hold */}
-          {phase === "ready" && (
-            <p className="ritual-overlay__hint">click anywhere to enter</p>
+          {/* Tap/click hint — visible during final hold only */}
+          {readyForExit && (
+            <p className="ritual-overlay__hint" aria-hidden="true">
+              <span className="ritual-overlay__hint-click">Click to enter</span>
+              <span className="ritual-overlay__hint-tap">Tap to enter</span>
+            </p>
           )}
 
         </div>
