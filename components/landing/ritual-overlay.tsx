@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 
 /* ─── Geographic nodes ──────────────────────────────────────── */
@@ -393,14 +392,6 @@ export function RitualOverlay() {
               vaultLocked                     ? "vault-flash"     : "",
             ].filter(Boolean).join(" ")}>
               <span className="ritual-overlay__metallic-sweep" aria-hidden="true" />
-              <Image
-                src="/android-chrome-512x512.png"
-                alt=""
-                width={200}
-                height={200}
-                className="ritual-overlay__seal-img"
-                priority
-              />
             </div>
 
           </div>
