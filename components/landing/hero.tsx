@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Globe, Shield, FileCheck } from "lucide-react";
+import { ArrowRight, Globe, Shield, FileCheck, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
+import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 const TRUST_ITEMS = [
   { icon: Shield, label: "Florida Notary #668288" },
@@ -158,38 +159,14 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right — founder photo */}
+          {/* Right — 3D Global Trust Core globe */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative hidden lg:block"
+            transition={{ duration: 1.1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="relative flex items-center justify-center"
           >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-[#2A2A2A]">
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
-              <img
-                src="/nicholas-milano.jpeg"
-                alt="Nicholas Milano — Founder, The Milano Seal"
-                className="absolute inset-0 w-full h-full object-cover object-center"
-              />
-              {/* Credential badge */}
-              <div className="absolute bottom-6 left-6 right-6 z-20">
-                <div className="bg-[#0A0A0A]/90 backdrop-blur-sm border border-[#2A2A2A] rounded-xl p-5">
-                  <p className="text-[#C6A55A] font-medium mb-1">
-                    Nicholas Milano
-                  </p>
-                  <p className="text-sm text-[#B0B0B0]">
-                    Founder · The Milano Seal™
-                  </p>
-                  <p className="text-xs text-[#8A8A8A] mt-1">
-                    Florida Notary #668288 · RON Specialist
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Decorative glow */}
-            <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-[#C6A55A]/8 rounded-full blur-3xl pointer-events-none" />
+            <GlobalTrustCoreHero />
           </motion.div>
         </div>
       </motion.div>

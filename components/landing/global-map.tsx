@@ -174,7 +174,7 @@ export function GlobalMap() {
             href="/map"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover"
           >
-            View Full Compliance Map
+            Explore Global Document Intelligence
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
