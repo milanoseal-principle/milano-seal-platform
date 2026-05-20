@@ -924,7 +924,7 @@ h4 {
     #000000
     url('/milano-seal-black-1024.png')
     no-repeat
-    center -60px;
+    center -55px;
   background-size: 720px auto;
   /* Push dark warm fabric pixels to pure black; mid-bright gold M survives */
   filter: contrast(1.8) brightness(0.7);
@@ -1190,7 +1190,7 @@ h4 {
     height: 170px;
     /* Ring 310px native → 170px disc + buffer: 580px; center 227×(580/1024)=129 → offset -44 */
     background-size: 580px auto;
-    background-position: center -49px;
+    background-position: center -45px;
   }
 
   /* Recalculate ring insets for 230px wrap / 170px disc */
