@@ -1494,3 +1494,278 @@ h4 {
     transform: translateX(-50%);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   HOMEPAGE CINEMATIC MOTION PASS
+   Scroll-reveal system for hero, sections, and trust architecture
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Base reveal atom ────────────────────────────────────────── */
+.ms-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.ms-reveal.is-visible {
+  animation: ms-reveal-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Variant: fade only (no translate) */
+.ms-reveal-fade {
+  opacity: 0;
+}
+.ms-reveal-fade.is-visible {
+  animation: ms-fade-in 0.8s ease-out forwards;
+}
+
+/* Variant: scale + fade (for cards, founder) */
+.ms-reveal-scale {
+  opacity: 0;
+  transform: scale(0.97) translateY(12px);
+}
+.ms-reveal-scale.is-visible {
+  animation: ms-reveal-scale-in 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Animation delay helpers ─────────────────────────────────── */
+.ms-delay-100  { animation-delay: 100ms;  }
+.ms-delay-150  { animation-delay: 150ms;  }
+.ms-delay-200  { animation-delay: 200ms;  }
+.ms-delay-300  { animation-delay: 300ms;  }
+.ms-delay-400  { animation-delay: 400ms;  }
+.ms-delay-500  { animation-delay: 500ms;  }
+.ms-delay-600  { animation-delay: 600ms;  }
+.ms-delay-700  { animation-delay: 700ms;  }
+.ms-delay-800  { animation-delay: 800ms;  }
+
+/* ── Header cinematic entry ──────────────────────────────────── */
+.ms-header-reveal {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.ms-header-reveal.is-visible {
+  animation: ms-header-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Hero headline line-by-line engraving ────────────────────── */
+.ms-hero-line {
+  opacity: 0;
+  transform: translateY(22px);
+  display: block;
+}
+.ms-hero-line.is-visible {
+  animation: ms-hero-line-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Ticker: delayed start so it feels connected to hero reveal ── */
+.ticker-delayed .ticker-track {
+  animation-delay: 1.2s;
+  animation-fill-mode: both;
+  /* Start invisible, reveal after hero */
+  opacity: 0;
+  animation-name: ticker-scroll-delayed;
+}
+
+@keyframes ticker-scroll-delayed {
+  0%   { opacity: 0; transform: translateX(0); }
+  3%   { opacity: 1; }
+  100% { opacity: 1; transform: translateX(-50%); }
+}
+
+/* ── Global Intel: section entry route-draw ──────────────────── */
+.ms-route-draw {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+}
+.ms-route-draw.is-visible {
+  animation: ms-route-draw-in 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Gold route shimmer line */
+.ms-route-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.ms-route-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(198, 165, 90, 0.25) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+.ms-route-shimmer.is-visible::after {
+  animation: ms-shimmer-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+}
+
+/* ── Founder / payment card gold edge reveal ─────────────────── */
+.ms-gold-edge {
+  position: relative;
+}
+.ms-gold-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(198, 165, 90, 0);
+  pointer-events: none;
+  transition: box-shadow 0.9s ease;
+}
+.ms-gold-edge.is-visible::before {
+  box-shadow: 0 0 28px rgba(198, 165, 90, 0.18), 0 0 1px rgba(198, 165, 90, 0.35);
+}
+
+/* ── Lock glow for payment-gated section ────────────────────── */
+.ms-lock-glow {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.ms-lock-glow.is-visible {
+  animation: ms-lock-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.ms-lock-glow.is-visible .ms-lock-icon {
+  animation: ms-lock-pulse 3s ease-in-out 0.8s infinite;
+}
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes ms-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ms-reveal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ms-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-hero-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-route-draw-in {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ms-shimmer-sweep {
+  from { left: -100%; }
+  to   { left: 150%; }
+}
+
+@keyframes ms-lock-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-lock-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(198, 165, 90, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(198, 165, 90, 0.6));
+  }
+}
+
+/* ── Atmospheric gold route shimmer (very slow, always on) ──── */
+@keyframes ms-atmos-shimmer {
+  0%, 100% { opacity: 0.04; }
+  50%       { opacity: 0.09; }
+}
+
+.ms-atmos-glow {
+  animation: ms-atmos-shimmer 8s ease-in-out infinite;
+}
+
+/* ── Reduced motion: show final state, skip all animation ────── */
+@media (prefers-reduced-motion: reduce) {
+  .ms-reveal,
+  .ms-reveal-fade,
+  .ms-reveal-scale,
+  .ms-header-reveal,
+  .ms-hero-line,
+  .ms-lock-glow {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .ms-reveal.is-visible,
+  .ms-reveal-fade.is-visible,
+  .ms-reveal-scale.is-visible,
+  .ms-header-reveal.is-visible,
+  .ms-hero-line.is-visible,
+  .ms-lock-glow.is-visible {
+    animation: none !important;
+  }
+
+  .ms-gold-edge::before {
+    box-shadow: 0 0 28px rgba(198, 165, 90, 0.18), 0 0 1px rgba(198, 165, 90, 0.35) !important;
+  }
+
+  .ms-route-draw {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+
+  .ms-route-shimmer::after {
+    display: none !important;
+  }
+
+  .ticker-delayed .ticker-track {
+    opacity: 1 !important;
+    animation: ticker-scroll 50s linear infinite !important;
+  }
+
+  .ms-atmos-glow {
+    animation: none !important;
+    opacity: 0.06 !important;
+  }
+}

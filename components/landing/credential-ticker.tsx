@@ -26,7 +26,7 @@ export function CredentialTicker() {
   const doubled = [...ITEMS, ...ITEMS];
 
   return (
-    <div className="ticker-wrap" aria-hidden="true">
+    <div className="ticker-wrap ticker-delayed" aria-hidden="true">
       <div className="ticker-track">
         {doubled.map(({ icon: Icon, label }, i) => (
           <span key={i} className="ticker-item">

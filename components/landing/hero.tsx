@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe, Shield, FileCheck } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 const TRUST_ITEMS = [
   { icon: Shield, label: "Florida Notary #668288" },
@@ -21,6 +21,27 @@ const fadeUp = (delay = 0) => ({
   },
 });
 
+// Staggered hero reveal: lines appear sequentially after mount
+function useHeroReveal(count: number, baseDelay = 400, step = 160) {
+  const [visible, setVisible] = useState<boolean[]>(() => Array(count).fill(false));
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < count; i++) {
+      timers.push(
+        setTimeout(() => {
+          setVisible((prev) => {
+            const next = [...prev];
+            next[i] = true;
+            return next;
+          });
+        }, baseDelay + i * step)
+      );
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [count, baseDelay, step]);
+  return visible;
+}
+
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -29,6 +50,9 @@ export function Hero() {
   });
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  // 8 reveal slots: badge, line1, line2, line3, subtitle, subtext, buttons, trust
+  const heroVisible = useHeroReveal(8, 380, 140);
 
   return (
     <section
@@ -50,9 +74,9 @@ export function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left — copy */}
           <div className="text-center lg:text-left">
-            <motion.div
-              {...fadeUp(0.05)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 mb-8"
+            {/* Badge — slot 0 */}
+            <div
+              className={`ms-hero-line inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 mb-8${heroVisible[0] ? " is-visible" : ""}`}
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
@@ -61,44 +85,52 @@ export function Hero() {
               <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
                 The Milano Seal™
               </span>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              {...fadeUp(0.1)}
-              className="font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6 text-balance"
-            >
-              U.S. Document
-              <br />
-              Execution <span className="text-[#C6A55A] italic">&</span>
-              <br />
-              Apostille Liaison
-            </motion.h1>
+            {/* Headline — 3 lines engraved in sequence, slots 1–3 */}
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6">
+              <span
+                className={`ms-hero-line${heroVisible[1] ? " is-visible" : ""}`}
+              >
+                Sealing Trust
+              </span>
+              <span
+                className={`ms-hero-line${heroVisible[2] ? " is-visible" : ""}`}
+              >
+                Across <span className="text-[#C6A55A] italic">Borders</span>
+              </span>
+              <span
+                className={`ms-hero-line text-[1.8rem] md:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}
+              >
+                Secure International Document Execution
+              </span>
+            </h1>
 
-            <motion.p
-              {...fadeUp(0.18)}
-              className="text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light"
+            {/* Subtitle — slot 4 */}
+            <p
+              className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}
             >
               Coordinate your international documents with precision,
               discretion, and procedural control.
-            </motion.p>
+            </p>
 
-            <motion.p
-              {...fadeUp(0.24)}
-              className="text-sm text-[#8A8A8A] mb-10 max-w-xl mx-auto lg:mx-0 font-light"
+            {/* Subtext — slot 5 */}
+            <p
+              className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl mx-auto lg:mx-0 font-light${heroVisible[5] ? " is-visible" : ""}`}
             >
               Structured for international use. Procedural control across
               jurisdictions.
-            </motion.p>
+            </p>
 
-            <motion.div
-              {...fadeUp(0.3)}
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+            {/* CTA buttons — slot 6 */}
+            <div
+              className={`ms-hero-line flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12${heroVisible[6] ? " is-visible" : ""}`}
             >
               <Link
                 href="/intake"
                 className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg transition-all duration-300 hover:bg-[#D4B76A] hover:shadow-[0_8px_32px_rgba(198,165,90,0.3)] hover:-translate-y-0.5 active:translate-y-0"
               >
-                Begin Execution
+                Begin Secure Intake
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
               <Link
@@ -106,13 +138,13 @@ export function Hero() {
                 className="group inline-flex items-center justify-center gap-2 px-8 py-4 border border-[#2A2A2A] text-[#B0B0B0] font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/30 hover:text-white hover:bg-[#111111]"
               >
                 <Globe className="w-4 h-4" />
-                Compliance Map
+                Explore Global Document Intelligence
               </Link>
-            </motion.div>
+            </div>
 
-            <motion.div
-              {...fadeUp(0.38)}
-              className="flex flex-wrap gap-4 justify-center lg:justify-start"
+            {/* Trust items — slot 7 */}
+            <div
+              className={`ms-hero-line flex flex-wrap gap-4 justify-center lg:justify-start${heroVisible[7] ? " is-visible" : ""}`}
             >
               {TRUST_ITEMS.map(({ icon: Icon, label }) => (
                 <div
@@ -123,7 +155,7 @@ export function Hero() {
                   <span>{label}</span>
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* Right — founder photo */}

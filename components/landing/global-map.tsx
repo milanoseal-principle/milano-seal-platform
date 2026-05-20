@@ -81,15 +81,15 @@ export function GlobalMap() {
           className="text-center mb-12"
         >
           <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Global Reach
+            Execution Path Preview
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
             Cross-Border Execution Authority
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
             From Florida to the world. Select a destination to begin execution —
-            or open the full Global Intel map for compliance details and
-            execution paths.
+            or open the full Global Document Intelligence™ map for compliance
+            details and execution paths.
           </p>
         </motion.div>
 
