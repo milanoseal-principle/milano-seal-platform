@@ -843,7 +843,7 @@ h4 {
 
 /* Ring A — tight solid, CCW vault spin */
 .ro-ring-a {
-  inset: 26px;   /* disc 210px in 290px wrap → ring 238px, just outside 210px */
+  inset: 38px;   /* disc 210px in 290px wrap → ring 214px, inner edge flush with disc */
   border: 1.5px solid rgba(212, 175, 55, 0.55);
 }
 .rings-active .ro-ring-a {
@@ -1195,7 +1195,7 @@ h4 {
   }
 
   /* Recalculate ring insets for 230px wrap / 170px disc */
-  .ro-ring-a { inset: 20px; }  /* ring 190px, disc 170px ✓ */
+  .ro-ring-a { inset: 28px; }  /* ring 174px, inner edge flush with 170px disc */
   .ro-ring-b {
     inset: 6px;
     /* disc 170 / ring 218 = 78% */
