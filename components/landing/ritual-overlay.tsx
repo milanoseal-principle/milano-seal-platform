@@ -307,11 +307,7 @@ export function RitualOverlay() {
       setPhase("ready");
       setReadyForExit(true);
     }, T.ready));
-    ts.push(setTimeout(() => setPhase("exit"),                         T.exit));
-    ts.push(setTimeout(() => {
-      setPhase("gone");
-      sessionStorage.setItem("ms_ritual_seen", "1");
-    }, T.gone));
+    /* No auto-exit — overlay waits for user click or Escape */
 
     /* Dismiss — self-nulling to prevent double-call */
     const dismiss = () => {
