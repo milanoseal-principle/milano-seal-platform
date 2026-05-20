@@ -915,17 +915,16 @@ h4 {
   border-radius: 50%;
   border: none;
   /*
-    Crop milano-seal-black-1024.png (1024×741) to show only the
-    M+feather emblem circle (outer diameter ~310px, center at x=512 y=227).
-    720px overscales ring to 218px (clips 4px/side) to guarantee ring is at disc edge.
-    Vertical offset -54px: ring center display y=227*(720/1024)=159, disc center 105 → offset -54.
+    Push the PNG's gold circle ring outside the disc (clipped by overflow:hidden).
+    At 820px the ring inner edge (~140px native radius) → 112px display > disc radius 105px.
+    Only M+feather fills the black disc. Content center native y≈220 → offset -71px.
   */
   background:
     #000000
     url('/milano-seal-black-1024.png')
     no-repeat
-    center -50px;
-  background-size: 720px auto;
+    center -71px;
+  background-size: 820px auto;
   /* Push dark warm fabric pixels to pure black; mid-bright gold M survives */
   filter: contrast(1.8) brightness(0.7);
   display: flex;
@@ -1189,8 +1188,8 @@ h4 {
     width: 170px;
     height: 170px;
     /* Ring 310px native → 170px disc + buffer: 580px; center 227×(580/1024)=129 → offset -44 */
-    background-size: 580px auto;
-    background-position: center -40px;
+    background-size: 660px auto;
+    background-position: center -57px;
   }
 
   /* Recalculate ring insets for 230px wrap / 170px disc */
