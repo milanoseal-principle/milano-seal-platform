@@ -36,12 +36,12 @@ export function PaymentFounder() {
               onClick={() => setOpen(true)}
               className="ms-founder-chip"
               aria-expanded={open}
-              aria-label="Meet the founder Nicholas Milano"
+              aria-label="Founder Trust Anchor — Meet the Founder Nicholas Milano"
             >
               <span className="ms-founder-chip__dot" aria-hidden="true" />
               <span className="ms-founder-chip__label">
-                Meet the Founder —{" "}
-                <span className="ms-founder-chip__name">Nicholas Milano</span>
+                <span className="ms-founder-chip__eyebrow">Founder Trust Anchor</span>
+                <span className="ms-founder-chip__name">Meet the Founder</span>
               </span>
               <ChevronDown className="ms-founder-chip__chevron" aria-hidden="true" />
             </button>
@@ -67,7 +67,7 @@ export function PaymentFounder() {
                   <div>
                     <p className="ms-founder-card__name">Nicholas Milano</p>
                     <p className="ms-founder-card__title">
-                      Founder · Chief Trust Officer
+                      Founder · The Milano Seal™
                     </p>
                   </div>
                 </div>

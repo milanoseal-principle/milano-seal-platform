@@ -22,12 +22,16 @@ const fadeUp = (delay = 0) => ({
   },
 });
 
-// Staggered hero reveal: lines appear sequentially after mount
-function useHeroReveal(count: number, baseDelay = 400, step = 160) {
-  const [visible, setVisible] = useState<boolean[]>(() => Array(count).fill(false));
+// Staggered hero reveal with explicit per-slot delays (ms from mount)
+// Spec timing: eyebrow 350ms, h1 lines 550/750ms, globe ~950ms (framer-motion),
+// arcs draw 1100–2500ms, CTAs 1950ms, founder 2200ms
+function useHeroReveal(delays: number[]) {
+  const [visible, setVisible] = useState<boolean[]>(() =>
+    Array(delays.length).fill(false)
+  );
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
-    for (let i = 0; i < count; i++) {
+    delays.forEach((delay, i) => {
       timers.push(
         setTimeout(() => {
           setVisible((prev) => {
@@ -35,11 +39,12 @@ function useHeroReveal(count: number, baseDelay = 400, step = 160) {
             next[i] = true;
             return next;
           });
-        }, baseDelay + i * step)
+        }, delay)
       );
-    }
+    });
     return () => timers.forEach(clearTimeout);
-  }, [count, baseDelay, step]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return visible;
 }
 
@@ -52,8 +57,9 @@ export function Hero() {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // 8 reveal slots: badge, line1, line2, line3, subtitle, subtext, buttons, trust
-  const heroVisible = useHeroReveal(8, 380, 140);
+  // 8 reveal slots: badge(0), h1-line1(1), h1-line2(2), support(3),
+  //   subtitle(4), subtext(5), CTAs(6), trust-badges(7)
+  const heroVisible = useHeroReveal([350, 550, 750, 920, 1120, 1320, 1950, 2200]);
 
   return (
     <section
@@ -103,7 +109,7 @@ export function Hero() {
               <span
                 className={`ms-hero-line text-[1.8rem] md:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}
               >
-                Secure International Document Execution
+                Secure International Document Execution & Authentication Infrastructure
               </span>
             </h1>
 

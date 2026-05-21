@@ -181,7 +181,7 @@ export function GlobalMap() {
             href="/intake"
             className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors"
           >
-            Begin Execution
+            Begin Secure Intake
           </Link>
         </motion.div>
       </div>
