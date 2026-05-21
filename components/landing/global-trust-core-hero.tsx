@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Sphere coordinate system: 400×400 viewBox (for arcs/nodes, overlaid)
-// Continents: 800×400 viewBox (200% wide — scrolls for rotation illusion)
-
 const FLORIDA = { x: 75, y: 293 };
 
 const DESTINATIONS = [
-  { id: "italy",  label: "Italy",  x: 268, y: 150, delay: 0   },
-  { id: "spain",  label: "Spain",  x: 208, y: 140, delay: 220 },
-  { id: "brazil", label: "Brazil", x: 122, y: 282, delay: 440 },
-  { id: "uae",    label: "UAE",    x: 334, y: 202, delay: 660 },
+  { id: "italy",  label: "Italy",  x: 268, y: 150, dur: 2.4, startDelay: 0.0 },
+  { id: "spain",  label: "Spain",  x: 208, y: 140, dur: 2.8, startDelay: 0.7 },
+  { id: "brazil", label: "Brazil", x: 122, y: 282, dur: 3.1, startDelay: 1.4 },
+  { id: "uae",    label: "UAE",    x: 334, y: 202, dur: 2.6, startDelay: 0.3 },
 ];
 
 function makeCurvedPath(
@@ -23,51 +20,61 @@ function makeCurvedPath(
   return `M ${from.x} ${from.y} Q ${mx} ${my} ${to.x} ${to.y}`;
 }
 
-// Continent dots: 800×400 viewBox
-// Front face: cx in 0–400, duplicate: cx + 400 for seamless scroll
-const RAW_DOTS = [
-  // North America
-  { cx: 78,  cy: 143, r: 2.5 }, { cx: 93,  cy: 134, r: 2   },
-  { cx: 108, cy: 150, r: 2   }, { cx: 85,  cy: 160, r: 1.5 },
-  { cx: 100, cy: 168, r: 1.5 }, { cx: 72,  cy: 156, r: 1.5 },
-  { cx: 115, cy: 144, r: 1.5 }, { cx: 90,  cy: 150, r: 1   },
-  { cx: 77,  cy: 172, r: 1   }, { cx: 105, cy: 160, r: 1   },
-  { cx: 65,  cy: 148, r: 1   }, { cx: 95,  cy: 172, r: 1   },
-  // Central America
-  { cx: 98,  cy: 218, r: 1.5 }, { cx: 108, cy: 226, r: 1   },
-  // South America
-  { cx: 113, cy: 243, r: 2.5 }, { cx: 127, cy: 256, r: 2   },
-  { cx: 116, cy: 268, r: 2   }, { cx: 134, cy: 248, r: 1.5 },
-  { cx: 120, cy: 277, r: 1.5 }, { cx: 140, cy: 260, r: 1   },
-  { cx: 108, cy: 258, r: 1   }, { cx: 130, cy: 272, r: 1   },
-  // Europe
-  { cx: 212, cy: 128, r: 2   }, { cx: 223, cy: 122, r: 2   },
-  { cx: 236, cy: 130, r: 1.5 }, { cx: 218, cy: 140, r: 1.5 },
-  { cx: 206, cy: 137, r: 1.5 }, { cx: 228, cy: 115, r: 1.5 },
-  { cx: 241, cy: 125, r: 1   }, { cx: 214, cy: 148, r: 1   },
-  { cx: 230, cy: 135, r: 1   }, { cx: 244, cy: 138, r: 1   },
-  // Africa
-  { cx: 218, cy: 192, r: 2.5 }, { cx: 233, cy: 208, r: 2   },
-  { cx: 213, cy: 213, r: 2   }, { cx: 240, cy: 196, r: 1.5 },
-  { cx: 225, cy: 225, r: 1.5 }, { cx: 208, cy: 202, r: 1   },
-  { cx: 236, cy: 220, r: 1   }, { cx: 222, cy: 236, r: 1   },
-  { cx: 228, cy: 215, r: 1   },
-  // Middle East
-  { cx: 272, cy: 164, r: 2   }, { cx: 284, cy: 175, r: 1.5 },
-  { cx: 266, cy: 178, r: 1.5 }, { cx: 276, cy: 184, r: 1   },
-  // Asia
-  { cx: 308, cy: 144, r: 2.5 }, { cx: 324, cy: 136, r: 2   },
-  { cx: 316, cy: 158, r: 2   }, { cx: 334, cy: 152, r: 1.5 },
-  { cx: 299, cy: 155, r: 1.5 }, { cx: 342, cy: 143, r: 1   },
-  { cx: 318, cy: 168, r: 1   }, { cx: 346, cy: 155, r: 1   },
-  // Australia
-  { cx: 330, cy: 256, r: 2.5 }, { cx: 348, cy: 250, r: 2   },
-  { cx: 337, cy: 266, r: 1.5 }, { cx: 354, cy: 258, r: 1   },
+function seededRand(seed: number) {
+  let s = seed;
+  return function () {
+    s = (Math.imul(s, 1664525) + 1013904223) | 0;
+    return (s >>> 0) / 4294967295;
+  };
+}
+
+interface Region {
+  x: number; y: number; w: number; h: number; count: number;
+  minR: number; maxR: number; minO: number; maxO: number;
+}
+
+function generateDots(regions: Region[]) {
+  const dots: { cx: number; cy: number; r: number; opacity: number }[] = [];
+  regions.forEach((reg, ri) => {
+    const rng = seededRand(ri * 7919 + 31337);
+    for (let i = 0; i < reg.count; i++) {
+      dots.push({
+        cx:      reg.x + rng() * reg.w,
+        cy:      reg.y + rng() * reg.h,
+        r:       reg.minR + rng() * (reg.maxR - reg.minR),
+        opacity: reg.minO + rng() * (reg.maxO - reg.minO),
+      });
+    }
+  });
+  return dots;
+}
+
+const CONTINENT_REGIONS: Region[] = [
+  { x: 152, y: 75,  w: 32,  h: 38,  count: 14,  minR: 0.5, maxR: 1.8, minO: 0.12, maxO: 0.32 },
+  { x: 55,  y: 105, w: 78,  h: 52,  count: 48,  minR: 0.5, maxR: 2.5, minO: 0.18, maxO: 0.52 },
+  { x: 112, y: 148, w: 40,  h: 45,  count: 22,  minR: 0.5, maxR: 1.8, minO: 0.15, maxO: 0.45 },
+  { x: 55,  y: 148, w: 30,  h: 50,  count: 18,  minR: 0.5, maxR: 1.5, minO: 0.12, maxO: 0.40 },
+  { x: 88,  y: 205, w: 32,  h: 30,  count: 10,  minR: 0.4, maxR: 1.2, minO: 0.10, maxO: 0.32 },
+  { x: 92,  y: 228, w: 68,  h: 45,  count: 36,  minR: 0.5, maxR: 2.2, minO: 0.15, maxO: 0.48 },
+  { x: 102, y: 268, w: 50,  h: 48,  count: 24,  minR: 0.5, maxR: 1.8, minO: 0.12, maxO: 0.40 },
+  { x: 195, y: 98,  w: 52,  h: 55,  count: 38,  minR: 0.4, maxR: 1.8, minO: 0.18, maxO: 0.52 },
+  { x: 238, y: 112, w: 32,  h: 45,  count: 18,  minR: 0.4, maxR: 1.5, minO: 0.15, maxO: 0.42 },
+  { x: 195, y: 158, w: 72,  h: 48,  count: 38,  minR: 0.5, maxR: 2.0, minO: 0.15, maxO: 0.45 },
+  { x: 198, y: 202, w: 65,  h: 70,  count: 42,  minR: 0.5, maxR: 2.2, minO: 0.15, maxO: 0.48 },
+  { x: 258, y: 142, w: 52,  h: 52,  count: 24,  minR: 0.4, maxR: 1.8, minO: 0.15, maxO: 0.45 },
+  { x: 258, y: 78,  w: 115, h: 72,  count: 58,  minR: 0.4, maxR: 1.8, minO: 0.10, maxO: 0.38 },
+  { x: 270, y: 165, w: 35,  h: 55,  count: 22,  minR: 0.4, maxR: 1.8, minO: 0.15, maxO: 0.45 },
+  { x: 295, y: 118, w: 72,  h: 68,  count: 50,  minR: 0.4, maxR: 2.0, minO: 0.15, maxO: 0.48 },
+  { x: 352, y: 128, w: 22,  h: 45,  count: 14,  minR: 0.4, maxR: 1.4, minO: 0.12, maxO: 0.38 },
+  { x: 305, y: 190, w: 65,  h: 52,  count: 25,  minR: 0.4, maxR: 1.5, minO: 0.12, maxO: 0.38 },
+  { x: 312, y: 235, w: 68,  h: 48,  count: 28,  minR: 0.5, maxR: 2.2, minO: 0.15, maxO: 0.45 },
+  { x: 368, y: 268, w: 14,  h: 22,  count: 6,   minR: 0.4, maxR: 1.2, minO: 0.12, maxO: 0.35 },
 ];
 
+const FRONT_DOTS = generateDots(CONTINENT_REGIONS);
 const ALL_DOTS = [
-  ...RAW_DOTS,
-  ...RAW_DOTS.map(d => ({ ...d, cx: d.cx + 400 })),
+  ...FRONT_DOTS,
+  ...FRONT_DOTS.map(d => ({ ...d, cx: d.cx + 400 })),
 ];
 
 export function GlobalTrustCoreHero() {
@@ -82,21 +89,17 @@ export function GlobalTrustCoreHero() {
     setReducedMotion(reduced);
 
     if (reduced) {
-      // Static final state — no animation
       setPhase("rotating");
       setArcsDone(true);
       return;
     }
 
-    // Sphere settles first (CSS transition handles opacity/scale)
     timers.current.push(setTimeout(() => setPhase("settled"), 80));
-    // Arcs draw after globe is ~90% visible (~1.1s from mount)
     timers.current.push(setTimeout(() => setPhase("arcs"), 1100));
-    // Arcs complete: last arc starts at 660ms delay + 600ms draw = 1260ms after arcs phase
     timers.current.push(setTimeout(() => {
       setArcsDone(true);
       setPhase("rotating");
-    }, 2500));
+    }, 1800));
 
     return () => timers.current.forEach(clearTimeout);
   }, []);
@@ -113,24 +116,21 @@ export function GlobalTrustCoreHero() {
       <div
         className={[
           "ms-globe-sphere",
-          isSettled         && "ms-globe-sphere--visible",
+          isSettled            && "ms-globe-sphere--visible",
           phase === "rotating" && "ms-globe-sphere--rotating",
         ].filter(Boolean).join(" ")}
       >
         {/* Latitude / longitude atmospheric grid */}
         <svg viewBox="0 0 400 400" className="ms-globe-grid-svg" aria-hidden="true">
-          {/* Equator */}
           <ellipse cx="200" cy="200" rx="193" ry="40"  fill="none" stroke="#C6A55A" strokeWidth="0.4" opacity="0.10" />
-          {/* Tropics */}
           <ellipse cx="200" cy="145" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
           <ellipse cx="200" cy="255" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
-          {/* Meridians */}
           <ellipse cx="200" cy="200" rx="40"  ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.08" />
           <ellipse cx="200" cy="200" rx="103" ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.2" opacity="0.05" />
           <ellipse cx="200" cy="200" rx="156" ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.2" opacity="0.04" />
         </svg>
 
-        {/* Continent impression — 200% wide, scrolls for rotation illusion */}
+        {/* Continent molecule dots — 200% wide, animates for rotation illusion */}
         <svg
           viewBox="0 0 800 400"
           className="ms-globe-dots-layer"
@@ -143,19 +143,18 @@ export function GlobalTrustCoreHero() {
               cy={dot.cy}
               r={dot.r}
               fill="#C6A55A"
-              opacity="0.46"
+              opacity={dot.opacity}
             />
           ))}
         </svg>
 
-        {/* Route arcs, nodes, particles */}
+        {/* Route arcs, comet bodies, particles, nodes */}
         <svg
           viewBox="0 0 400 400"
           className="ms-globe-arcs-svg"
           aria-hidden="true"
         >
           <defs>
-            {/* Invisible path defs for animateMotion */}
             {DESTINATIONS.map(dest => (
               <path
                 key={`def-${dest.id}`}
@@ -164,7 +163,7 @@ export function GlobalTrustCoreHero() {
                 fill="none"
               />
             ))}
-            <filter id="gtc-glow-arc"  x="-60%" y="-60%" width="220%" height="220%">
+            <filter id="gtc-glow-arc" x="-60%" y="-60%" width="220%" height="220%">
               <feGaussianBlur stdDeviation="1.8" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -177,6 +176,9 @@ export function GlobalTrustCoreHero() {
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
+            </filter>
+            <filter id="gtc-bloom-node" x="-150%" y="-150%" width="400%" height="400%">
+              <feGaussianBlur stdDeviation="6" />
             </filter>
           </defs>
 
@@ -208,72 +210,115 @@ export function GlobalTrustCoreHero() {
             </text>
           )}
 
-          {/* Visible arc lines */}
-          {DESTINATIONS.map(dest => (
-            <path
-              key={`arc-${dest.id}`}
-              d={makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y })}
-              stroke="#C6A55A"
-              strokeWidth="0.85"
-              fill="none"
-              opacity="0.58"
-              filter="url(#gtc-glow-arc)"
-              className={`ms-globe-arc${showArcs ? " ms-globe-arc--drawn" : ""}`}
-              style={showArcs ? { animationDelay: `${dest.delay}ms` } : undefined}
-            />
-          ))}
+          {/* Per-route: ghost + comet body + comet head + particle + bloom + node */}
+          {DESTINATIONS.map((dest, i) => {
+            const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
+            return (
+              <g key={dest.id}>
+                {/* Ghost base — full path, very faint */}
+                <path
+                  d={path}
+                  stroke="#C6A55A"
+                  strokeWidth="0.6"
+                  fill="none"
+                  opacity={showArcs ? 0.09 : 0}
+                  style={{ transition: "opacity 0.6s ease" }}
+                />
 
-          {/* Travel particles — one per route */}
-          {showArcs && !reducedMotion && DESTINATIONS.map(dest => (
-            <circle key={`ptcl-${dest.id}`} r="1.8" fill="#F4E5B8" opacity="0.88">
-              <animateMotion
-                dur="2.8s"
-                begin={`${(dest.delay / 1000) + 0.65}s`}
-                repeatCount="indefinite"
-              >
-                <mpath href={`#gtc-arc-${dest.id}`} />
-              </animateMotion>
-            </circle>
-          ))}
+                {/* Comet body — flowing 70px dash */}
+                <path
+                  d={path}
+                  stroke="#C6A55A"
+                  strokeWidth="1.3"
+                  fill="none"
+                  filter="url(#gtc-glow-arc)"
+                  className={`ms-globe-arc-body${showArcs ? " ms-globe-arc-body--flowing" : ""}`}
+                  style={{
+                    animationDuration: `${dest.dur}s`,
+                    animationDelay: `${dest.startDelay}s`,
+                  } as React.CSSProperties}
+                />
 
-          {/* Destination nodes */}
-          {DESTINATIONS.map((dest, i) => (
-            <g key={`node-${dest.id}`}>
-              <circle
-                cx={dest.x} cy={dest.y}
-                r="3.5"
-                fill="#D4AF37"
-                filter="url(#gtc-glow-node)"
-                opacity={arcsDone ? 1 : 0}
-                className={arcsDone
-                  ? "ms-globe-dest-node ms-globe-dest-node--pulse"
-                  : "ms-globe-dest-node"}
-                style={{ transitionDelay: `${dest.delay}ms` }}
-              />
-              <circle
-                cx={dest.x} cy={dest.y}
-                r="8.5"
-                fill="none"
-                stroke="#C6A55A"
-                strokeWidth="0.7"
-                opacity={arcsDone ? 0.25 : 0}
-                className="ms-globe-dest-ring"
-                style={{ transitionDelay: `${dest.delay + 120}ms` }}
-              />
-              {arcsDone && (
-                <text
-                  x={dest.x + (dest.x > 200 ? 14 : -14)}
-                  y={dest.y + 3.5}
-                  textAnchor={dest.x > 200 ? "start" : "end"}
-                  className="ms-globe-location-text"
-                  style={{ animationDelay: `${i * 80}ms` }}
-                >
-                  {dest.label.toUpperCase()}
-                </text>
-              )}
-            </g>
-          ))}
+                {/* Comet head — short 10px bright leading tip */}
+                <path
+                  d={path}
+                  stroke="#F4E5B8"
+                  strokeWidth="2.2"
+                  fill="none"
+                  className={`ms-globe-arc-head${showArcs ? " ms-globe-arc-head--flowing" : ""}`}
+                  style={{
+                    animationDuration: `${dest.dur}s`,
+                    animationDelay: `${dest.startDelay}s`,
+                  } as React.CSSProperties}
+                />
+
+                {/* animateMotion particle */}
+                {showArcs && !reducedMotion && (
+                  <circle r="2.2" fill="#F4E5B8" opacity="0.92">
+                    <animateMotion
+                      dur={`${dest.dur}s`}
+                      begin={`${dest.startDelay}s`}
+                      repeatCount="indefinite"
+                    >
+                      <mpath href={`#gtc-arc-${dest.id}`} />
+                    </animateMotion>
+                  </circle>
+                )}
+
+                {/* Destination bloom — large blurred atmospheric pulse */}
+                <circle
+                  cx={dest.x} cy={dest.y}
+                  r="18"
+                  fill="#D4AF37"
+                  filter="url(#gtc-bloom-node)"
+                  opacity={arcsDone ? 1 : 0}
+                  className={arcsDone ? "ms-globe-dest-bloom" : ""}
+                  style={{ transition: "opacity 0.5s ease" }}
+                />
+
+                {/* Destination node */}
+                <circle
+                  cx={dest.x} cy={dest.y}
+                  r="3.5"
+                  fill="#D4AF37"
+                  filter="url(#gtc-glow-node)"
+                  opacity={arcsDone ? 1 : 0}
+                  className={arcsDone
+                    ? "ms-globe-dest-node ms-globe-dest-node--pulse"
+                    : "ms-globe-dest-node"}
+                  style={{ transitionDelay: `${i * 120}ms` }}
+                />
+                <circle
+                  cx={dest.x} cy={dest.y}
+                  r="8.5"
+                  fill="none"
+                  stroke="#C6A55A"
+                  strokeWidth="0.7"
+                  opacity={arcsDone ? 0.25 : 0}
+                  className="ms-globe-dest-ring"
+                  style={{ transitionDelay: `${i * 120 + 120}ms` }}
+                />
+                {arcsDone && (
+                  <text
+                    x={dest.x + (dest.x > 200 ? 14 : -14)}
+                    y={dest.y + 3.5}
+                    textAnchor={dest.x > 200 ? "start" : "end"}
+                    className="ms-globe-location-text"
+                    style={{ animationDelay: `${i * 80}ms` }}
+                  >
+                    {dest.label.toUpperCase()}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </svg>
+
+        {/* Glass specular cap — top-left diagonal highlight */}
+        <div className="ms-globe-glass-cap" />
+
+        {/* Crest glow pulse — sibling to crest, below it in z */}
+        <div className="ms-globe-crest-glow" />
 
         {/* Center crest — official Milano Seal™ mark via CSS */}
         <div className="ms-globe-crest" aria-hidden="true" />

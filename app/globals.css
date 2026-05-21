@@ -1988,6 +1988,7 @@ h4 {
     inset 0 0 8px rgba(0, 0, 0, 0.6);
   /* Same filter as ritual disc — crushes warm pixels to black, M reads gold */
   filter: contrast(1.8) brightness(0.62);
+  z-index: 9;
 }
 
 @media (max-width: 640px) {
@@ -2122,6 +2123,79 @@ h4 {
   font-family: system-ui, -apple-system, sans-serif;
   letter-spacing: 0.06em;
   font-weight: 500;
+}
+
+/* ── Flowing comet arcs ──────────────────────────────────────── */
+.ms-globe-arc-body {
+  stroke-dasharray: 70 430;
+  stroke-dashoffset: 500;
+  opacity: 0;
+}
+
+.ms-globe-arc-body--flowing {
+  opacity: 0.72;
+  animation: ms-arc-comet-flow linear infinite;
+}
+
+.ms-globe-arc-head {
+  stroke-dasharray: 10 490;
+  stroke-dashoffset: 500;
+  opacity: 0;
+}
+
+.ms-globe-arc-head--flowing {
+  opacity: 1;
+  animation: ms-arc-comet-flow linear infinite;
+}
+
+@keyframes ms-arc-comet-flow {
+  0%   { stroke-dashoffset:  500; }
+  100% { stroke-dashoffset: -500; }
+}
+
+/* ── Glass specular cap ──────────────────────────────────────── */
+.ms-globe-glass-cap {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    138deg,
+    rgba(244, 229, 184, 0.09) 0%,
+    rgba(255, 255, 255, 0.035) 22%,
+    transparent 50%
+  );
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ── Crest glow pulse (sibling to crest, z:8 < crest z:9) ───── */
+.ms-globe-crest-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(198, 165, 90, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+  animation: ms-crest-pulse 4s ease-in-out infinite;
+}
+
+@keyframes ms-crest-pulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1);   }
+  50%       { opacity: 0.2; transform: translate(-50%, -50%) scale(1.6); }
+}
+
+/* ── Destination atmospheric bloom ──────────────────────────── */
+.ms-globe-dest-bloom {
+  animation: ms-dest-bloom-pulse 3.5s ease-in-out infinite;
+}
+
+@keyframes ms-dest-bloom-pulse {
+  0%, 100% { opacity: 0.10; }
+  50%       { opacity: 0.26; }
 }
 
 /* ── Founder chip ────────────────────────────────────────────── */
@@ -2348,6 +2422,21 @@ h4 {
   }
 
   .ms-orbit-ring {
+    animation: none !important;
+  }
+
+  .ms-globe-arc-body--flowing,
+  .ms-globe-arc-head--flowing {
+    animation: none !important;
+    opacity: 0.5 !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .ms-globe-dest-bloom {
+    animation: none !important;
+  }
+
+  .ms-globe-crest-glow {
     animation: none !important;
   }
 
