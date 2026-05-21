@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,28 +38,14 @@ const NAV = [
 function MilanoMark() {
   return (
     <Link href="/dashboard">
-      <div className="flex items-center gap-3 cursor-pointer group">
-        <div
-          className="w-9 h-9 rounded-md flex items-center justify-center font-serif text-lg font-semibold border flex-shrink-0"
-          style={{
-            background:
-              "linear-gradient(135deg, hsl(38 47% 56% / .15), hsl(38 30% 18% / .25))",
-            borderColor: "hsl(38 47% 56% / .45)",
-            color: "#C6A55A",
-            boxShadow: "inset 0 0 0 1px hsl(38 47% 56% / .15)",
-          }}
-        >
-          M
-        </div>
-        <div className="flex flex-col leading-tight min-w-0">
-          <span className="font-serif text-sm text-foreground">
-            The Milano Seal
-          </span>
-          <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground truncate">
-            Intl. Document Execution
-          </span>
-        </div>
-      </div>
+      <Image
+        src="/milano-seal-gold-transparent-512.png"
+        alt="The Milano Seal"
+        width={160}
+        height={40}
+        style={{ height: "40px", width: "auto" }}
+        priority
+      />
     </Link>
   );
 }
