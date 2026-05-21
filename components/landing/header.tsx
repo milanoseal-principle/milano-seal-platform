@@ -19,6 +19,7 @@ const navLinks = [
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,13 +27,18 @@ export function Header() {
     };
 
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    // Reveal header 200ms after mount — after ritual overlay fades out
+    const t = setTimeout(() => setMounted(true), 200);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(t);
+    };
   }, []);
 
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ms-header-reveal${mounted ? " is-visible" : ""} ${
           isScrolled
             ? "bg-[#0A0A0A]/95 backdrop-blur-md"
             : "bg-transparent"

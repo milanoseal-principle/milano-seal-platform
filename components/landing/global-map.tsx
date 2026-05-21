@@ -81,15 +81,15 @@ export function GlobalMap() {
           className="text-center mb-12"
         >
           <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Global Reach
+            Execution Path Preview
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
             Cross-Border Execution Authority
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
             From Florida to the world. Select a destination to begin execution —
-            or open the full Global Intel map for compliance details and
-            execution paths.
+            or open the full Global Document Intelligence™ map for compliance
+            details and execution paths.
           </p>
         </motion.div>
 
@@ -174,14 +174,14 @@ export function GlobalMap() {
             href="/map"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover"
           >
-            View Full Compliance Map
+            Explore Global Document Intelligence
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/intake"
             className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors"
           >
-            Begin Execution
+            Begin Secure Intake
           </Link>
         </motion.div>
       </div>
