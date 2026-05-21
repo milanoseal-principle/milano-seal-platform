@@ -75,14 +75,14 @@ export function Hero() {
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center">
 
-            {/* Badge */}
+            {/* Badge — operational status indicator */}
             <div className={`ms-hero-line inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 mb-8${heroVisible[0] ? " is-visible" : ""}`}>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
               </span>
               <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
-                The Milano Seal™
+                Florida · Hague Apostille Authority
               </span>
             </div>
 

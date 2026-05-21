@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 
@@ -46,37 +45,13 @@ export function Header() {
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-              {/* Exact brand M-in-circle — image cropped to mark only */}
-              <div
-                className="flex-shrink-0 rounded-full overflow-hidden"
-                style={{ width: 46, height: 46 }}
+            {/* Wordmark — text-only, no image */}
+            <Link href="/" className="flex-shrink-0 select-none">
+              <span
+                className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]"
               >
-                <Image
-                  src="/android-chrome-512x512.png"
-                  alt="The Milano Seal"
-                  width={74}
-                  height={74}
-                  style={{ display: "block", marginLeft: -14, marginTop: 0 }}
-                  priority
-                />
-              </div>
-              {/* Wordmark */}
-              <div className="hidden sm:flex flex-col leading-none select-none">
-                <span
-                  className="text-[11px] font-semibold uppercase text-[#C6A55A]"
-                  style={{ letterSpacing: "0.26em" }}
-                >
-                  The Milano Seal
-                </span>
-                <span
-                  className="text-[8px] font-normal uppercase mt-[3px]"
-                  style={{ letterSpacing: "0.14em", color: "#6A6A5E" }}
-                >
-                  International · LLC
-                </span>
-              </div>
+                The Milano Seal
+              </span>
             </Link>
 
             {/* Desktop navigation */}
