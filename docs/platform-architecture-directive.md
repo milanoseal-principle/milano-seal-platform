@@ -659,3 +659,75 @@ Do not forget:
 - virtual assistant login
 - operator task queue
 - role-based access
+
+---
+
+## EXECUTION PLAN — WHEN TO BUILD THIS
+
+### Branch name
+
+```bash
+claude/repository-engine-sync-v2026
+```
+
+### Prerequisites — do not start until all three are merged into main
+
+- [ ] PR #19 — overlay + ticker
+- [ ] PR #20 — hero layout + globe XL
+- [ ] PR #21 — forbidden copy cleanup
+
+### Correct execution sequence
+
+1. Merge PR #19
+2. Merge PR #20
+3. Merge PR #21
+4. Pull latest `main`
+5. Create `claude/repository-engine-sync-v2026` from updated `main`
+6. Use this document as the controlling directive
+7. **First output must be an audit plan only — file-by-file against sections 1–16**
+8. Do not write code until the audit plan is approved
+
+### Opening instruction to pass to the build agent
+
+```text
+Use the platform-architecture-directive.md as the controlling build directive.
+
+Do not redesign from scratch.
+Do not touch secrets.
+Do not change backend contracts unless required by existing state-machine alignment.
+Do not invent fake telemetry, fake dashboards, or fake metrics.
+
+Start by auditing current app/, components/, lib/, and app/globals.css
+against the 11-stage homepage sequence and portal/dashboard separation rules.
+
+Return a file-by-file implementation plan first.
+Do not write code until the audit plan is approved.
+```
+
+### Designer handoff message
+
+```text
+The current build direction is not side-by-side SaaS layout.
+
+The Milano Seal homepage must become a progressive cinematic vertical journey:
+Entry Ritual → Hero Globe → Credential Rail → Milano Trust Core → Services →
+Process + Global Intelligence → Document Library → Execution Levels →
+Payment Gate → Founder Trust Anchor → Who We Serve → Final Intake Gate.
+
+Founder card does not belong immediately in the hero as the dominant visual.
+The 3D Global Trust Core / globe owns the hero.
+Founder appears later as a secondary expandable trust anchor.
+
+The ritual overlay must remain separate from the homepage and fully unmount after completion.
+
+The whole site must feel like a luxury international document execution platform,
+not a generic notary SaaS page.
+```
+
+### Do not execute early
+
+Root cause: this directive touches homepage, ritual, globe, portal, dashboard,
+login, globals.css, access control, state-machine language, and brand copy.
+Running it before the PR queue is merged will create conflicts with in-flight changes.
+
+**Hold until merge queue is clear.**
