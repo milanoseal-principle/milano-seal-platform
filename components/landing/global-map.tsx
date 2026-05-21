@@ -55,6 +55,15 @@ export function GlobalMap() {
                 strokeWidth="0.5"
                 opacity="0.3"
               />
+              {/* Slow parallax drift — grid floats on a deeper axis */}
+              <animateTransform
+                attributeName="patternTransform"
+                type="translate"
+                from="0 0"
+                to="40 40"
+                dur="22s"
+                repeatCount="indefinite"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
