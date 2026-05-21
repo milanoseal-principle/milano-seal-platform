@@ -47,15 +47,35 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link href="/">
-              <Image
-                src="/milano-seal-gold-transparent-512.png"
-                alt="The Milano Seal"
-                width={260}
-                height={65}
-                style={{ height: "56px", width: "auto" }}
-                priority
-              />
+            <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+              {/* Seal emblem — cropped to mark only */}
+              <div
+                className="relative overflow-hidden flex-shrink-0"
+                style={{ width: 42, height: 42 }}
+              >
+                <Image
+                  src="/milano-seal-gold-transparent-512.png"
+                  alt="The Milano Seal"
+                  fill
+                  style={{ objectFit: "cover", objectPosition: "left center" }}
+                  priority
+                />
+              </div>
+              {/* Wordmark — shown sm and up */}
+              <div className="hidden sm:flex flex-col leading-none select-none">
+                <span
+                  className="text-[11px] font-semibold uppercase text-[#C6A55A]"
+                  style={{ letterSpacing: "0.26em" }}
+                >
+                  The Milano Seal
+                </span>
+                <span
+                  className="text-[8px] font-normal uppercase mt-[3px]"
+                  style={{ letterSpacing: "0.14em", color: "#6A6A5E" }}
+                >
+                  International · LLC
+                </span>
+              </div>
             </Link>
 
             {/* Desktop navigation */}
