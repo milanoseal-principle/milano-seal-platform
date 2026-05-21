@@ -190,7 +190,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
         {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-[34px] z-30">
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-[114px] z-30">
           <button
             onClick={() => setMobileOpen(true)}
             className="text-muted-foreground hover:text-foreground cursor-pointer"
