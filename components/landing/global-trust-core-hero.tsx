@@ -31,8 +31,10 @@ function makeCurvedPath(
     return `M ${from.x} ${from.y} Q ${mx + 58} ${from.y + dy * 0.5} ${to.x} ${to.y}`;
   }
 
-  // Eastward/north destinations: arc high over North Atlantic
-  const my = Math.min(from.y, to.y) - 94;
+  // Eastward/north destinations: arc height scales with horizontal distance
+  // Prevents hairpin loops — lift proportional to span, not a fixed 94px
+  const lift = 38 + (Math.abs(dx) / 300) * 62;
+  const my = Math.min(from.y, to.y) - lift;
   return `M ${from.x} ${from.y} Q ${mx} ${my} ${to.x} ${to.y}`;
 }
 
@@ -136,8 +138,8 @@ export function GlobalTrustCoreHero() {
           phase === "rotating" && "ms-globe-sphere--rotating",
         ].filter(Boolean).join(" ")}
       >
-        {/* Latitude / longitude atmospheric grid */}
-        <svg viewBox="0 0 400 400" className="ms-globe-grid-svg" aria-hidden="true">
+        {/* Latitude / longitude atmospheric grid — defocused (far hemisphere) */}
+        <svg viewBox="0 0 400 400" className="ms-globe-grid-svg ms-globe-grid-svg--defocus" aria-hidden="true">
           <ellipse cx="200" cy="200" rx="193" ry="40"  fill="none" stroke="#C6A55A" strokeWidth="0.4" opacity="0.10" />
           <ellipse cx="200" cy="145" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
           <ellipse cx="200" cy="255" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
@@ -255,11 +257,11 @@ export function GlobalTrustCoreHero() {
                   } as React.CSSProperties}
                 />
 
-                {/* Comet head — short 10px bright leading tip */}
+                {/* Comet head — short 10px bright leading tip, pin-sharp foreground */}
                 <path
                   d={path}
-                  stroke="#F4E5B8"
-                  strokeWidth="2.2"
+                  stroke="#FFF5DC"
+                  strokeWidth="2.8"
                   fill="none"
                   className={`ms-globe-arc-head${showArcs ? " ms-globe-arc-head--flowing" : ""}`}
                   style={{
