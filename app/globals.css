@@ -1198,13 +1198,13 @@ h4 {
   animation: ro-hint-pulse 2.2s ease-in-out infinite;
 }
 
-/* Desktop: show "Move to enter". Touch: show "Tap to enter". */
-.ritual-overlay__hint-tap  { display: none; }
-.ritual-overlay__hint-move { display: inline; }
+/* Show desktop or mobile copy based on pointer type */
+.ritual-overlay__hint-tap    { display: none; }
+.ritual-overlay__hint-click  { display: inline; }
 
 @media (pointer: coarse) {
-  .ritual-overlay__hint-move { display: none; }
-  .ritual-overlay__hint-tap  { display: inline; }
+  .ritual-overlay__hint-click { display: none; }
+  .ritual-overlay__hint-tap   { display: inline; }
 }
 
 /* ── Mobile scale — phones ≤ 430px ──────────────────────────── */

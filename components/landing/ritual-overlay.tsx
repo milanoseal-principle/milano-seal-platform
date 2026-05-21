@@ -327,25 +327,23 @@ export function RitualOverlay() {
     };
   }, [render]);
 
-  /* Once ready: any mouse movement dismisses (desktop); touch tap dismisses (mobile); Escape as fallback */
+  /* Escape key — active only once readyForExit */
   useEffect(() => {
     if (!readyForExit) return;
-    const dismiss = () => dismissRef.current?.();
-    const onKey   = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); };
-    window.addEventListener("mousemove",  dismiss, { once: true });
-    window.addEventListener("touchstart", dismiss, { once: true, passive: true });
-    window.addEventListener("keydown",    onKey);
-    return () => {
-      window.removeEventListener("mousemove",  dismiss);
-      window.removeEventListener("touchstart", dismiss);
-      window.removeEventListener("keydown",    onKey);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current?.(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [readyForExit]);
 
   if (phase === "gone") return null;
 
   const vaultLocked = phase === "vault" || phase === "ready" || phase === "exit";
   const ringsActive = phase === "rings" || phase === "active" || vaultLocked;
+
+  /* Click/tap handler — fires only after readyForExit */
+  const handleClick = () => {
+    if (readyForExit) dismissRef.current?.();
+  };
 
   return (
     <div
@@ -354,6 +352,7 @@ export function RitualOverlay() {
         phase === "exit"  ? "ritual-overlay--exit"  : "",
         readyForExit      ? "ritual-overlay--ready"  : "",
       ].filter(Boolean).join(" ")}
+      onClick={handleClick}
       aria-hidden="true"
     >
       {/* Cinematic world map canvas */}
@@ -453,10 +452,10 @@ export function RitualOverlay() {
             <span>Secure Workspace Ready</span>
           </div>
 
-          {/* Entry hint — visible during final hold only */}
+          {/* Click/tap hint — visible during final hold only */}
           {readyForExit && (
             <p className="ritual-overlay__hint" aria-hidden="true">
-              <span className="ritual-overlay__hint-move">Move to enter</span>
+              <span className="ritual-overlay__hint-click">Click to enter</span>
               <span className="ritual-overlay__hint-tap">Tap to enter</span>
             </p>
           )}
