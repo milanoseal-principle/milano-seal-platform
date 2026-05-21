@@ -56,7 +56,9 @@ const services = [
 
 export function Services() {
   return (
-    <section className="relative py-24 md:py-32 bg-[#0A0A0A]">
+    <section className="relative py-24 md:py-32 bg-[#050507]">
+      {/* Bottom fade — bleeds into the vault vacuum below */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050507] to-transparent pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6">
         {/* Section header */}
         <motion.div
