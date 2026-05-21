@@ -120,9 +120,12 @@ export function RitualOverlay() {
         const cy = (y1 + y2) / 2 - Math.abs(x2 - x1) * 0.28 - 30;
 
         ctx.save();
-        ctx.strokeStyle = `rgba(212,175,55,${Math.min(progress, 0.85) * 0.38})`;
-        ctx.lineWidth = 0.75;
-        ctx.setLineDash([3, 6]);
+
+        /* Glow pass — wide soft bloom under the arc */
+        ctx.strokeStyle = `rgba(212,175,55,${Math.min(progress, 0.85) * 0.18})`;
+        ctx.lineWidth = 4.5;
+        ctx.shadowColor = "rgba(212,175,55,0.55)";
+        ctx.shadowBlur  = 12;
         ctx.beginPath();
         const steps = 60;
         for (let k = 0; k <= Math.floor(steps * progress); k++) {
@@ -132,19 +135,36 @@ export function RitualOverlay() {
           k === 0 ? ctx.moveTo(bx, by) : ctx.lineTo(bx, by);
         }
         ctx.stroke();
-        ctx.setLineDash([]);
+
+        /* Core arc — solid, luminous */
+        ctx.strokeStyle = `rgba(212,175,55,${Math.min(progress, 0.85) * 0.72})`;
+        ctx.lineWidth = 1.1;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        for (let k = 0; k <= Math.floor(steps * progress); k++) {
+          const t  = k / steps;
+          const bx = quad(t, x1, cx, x2);
+          const by = quad(t, y1, cy, y2);
+          k === 0 ? ctx.moveTo(bx, by) : ctx.lineTo(bx, by);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
 
         /* Traveling pulse bead */
         if (progress < 1) {
           const dx = quad(progress, x1, cx, x2);
           const dy = quad(progress, y1, cy, y2);
-          const g  = ctx.createRadialGradient(dx, dy, 0, dx, dy, 5);
-          g.addColorStop(0, "rgba(244,229,184,0.95)");
+          ctx.shadowColor = "rgba(244,229,184,0.9)";
+          ctx.shadowBlur  = 10;
+          const g  = ctx.createRadialGradient(dx, dy, 0, dx, dy, 6);
+          g.addColorStop(0, "rgba(244,229,184,1)");
+          g.addColorStop(0.5, "rgba(212,175,55,0.6)");
           g.addColorStop(1, "rgba(212,175,55,0)");
           ctx.beginPath();
-          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.arc(dx, dy, 6, 0, Math.PI * 2);
           ctx.fillStyle = g;
           ctx.fill();
+          ctx.shadowBlur = 0;
         }
         ctx.restore();
       });
