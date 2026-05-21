@@ -1685,11 +1685,17 @@ h4 {
 
 /* ── "Borders" metallic gradient text ───────────────────────── */
 .ms-hero-borders-gradient {
-  background: linear-gradient(135deg, #FFFFFF 18%, #D4AF37 58%, #F4E5B8 100%);
+  /* Sharp polished-metal transitions: pearl → champagne → antique gold → warm gold → back to pearl */
+  background: linear-gradient(135deg, #FFFFFF 8%, #F4E5B8 32%, #D4AF37 52%, #C6A65B 68%, #FFFFFF 92%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+}
+
+/* ── Hero h1 drop-shadow — separates text from ambient lighting ── */
+.ms-hero-h1 {
+  filter: drop-shadow(0 2px 10px rgba(5, 5, 7, 0.9));
 }
 
 /* ── Vault CTA button — shimmer sweep + spring hover ─────────── */

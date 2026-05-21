@@ -68,12 +68,15 @@ export function Hero() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
       {/* Background layers */}
-      <div className="absolute inset-0 bg-[#0A0A0A]" />
+      <div className="absolute inset-0 bg-[#050507]" />
+      {/* Vault ambient — ultra-diffused radial from globe side, no hard geometry */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 78% 52%, rgba(212,175,55,0.055) 0%, rgba(16,16,20,0) 58%)" }}
+      />
       <motion.div style={{ y }} className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/4 rounded-full blur-3xl" />
-        {/* Globe light spill — large warm ambient bleed from right into left column */}
-        <div className="absolute top-1/4 right-1/3 w-[40rem] h-[30rem] bg-[#C6A55A]/[0.035] rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/[0.025] rounded-full blur-3xl" />
       </motion.div>
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/30 to-transparent" />
 
@@ -98,7 +101,7 @@ export function Hero() {
             </div>
 
             {/* Headline — 3 lines engraved in sequence, slots 1–3 */}
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6">
+            <h1 className="ms-hero-h1 font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6">
               <span
                 className={`ms-hero-line${heroVisible[1] ? " is-visible" : ""}`}
               >
