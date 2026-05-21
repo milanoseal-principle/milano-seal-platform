@@ -2202,6 +2202,48 @@ h4 {
   }
 }
 
+/* ── XL canvas upgrade — wider viewports, grander vault presence ─ */
+@media (min-width: 1280px) {
+  .ms-globe-container {
+    width: 500px;
+    height: 500px;
+  }
+
+  .ms-globe-sphere {
+    width: 410px;
+    height: 410px;
+  }
+
+  /* Depth-of-field: more defocus on larger sphere so far-hemisphere
+     grid lines recede and the globe reads as a true 3-D volume */
+  .ms-globe-grid-svg--defocus {
+    filter: blur(1.2px);
+    opacity: 0.70;
+  }
+
+  .ms-orbit-ring--main {
+    width: 460px;
+    height: 460px;
+  }
+
+  .ms-orbit-ring--outer {
+    width: 510px;
+    height: 510px;
+  }
+
+  .ms-globe-crest {
+    width: 64px;
+    height: 64px;
+    background-size: 256px auto;
+    background-position: center -25px;
+  }
+
+  .ms-globe-crest-glow {
+    width: 88px;
+    height: 88px;
+  }
+}
+
 /* ── Globe label ─────────────────────────────────────────────── */
 .ms-globe-label {
   position: absolute;
