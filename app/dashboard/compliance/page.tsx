@@ -81,7 +81,7 @@ export default function Compliance() {
     <div className="space-y-8">
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Global Compliance Map
+          Global Document Intelligence
         </p>
         <h1 className="font-serif text-4xl text-foreground">
           Where The Milano Seal Operates

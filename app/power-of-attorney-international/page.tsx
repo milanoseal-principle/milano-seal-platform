@@ -97,7 +97,7 @@ export default function PowerOfAttorneyInternationalPage() {
               href="/map"
               className="px-8 py-3.5 border border-[#2A2A2A] text-[#C6A55A] text-xs font-semibold tracking-[0.15em] uppercase rounded-sm hover:border-[#C6A55A] transition-colors"
             >
-              Compliance Map
+              Global Document Intelligence
             </Link>
           </div>
         </section>
@@ -222,7 +222,7 @@ export default function PowerOfAttorneyInternationalPage() {
               { href: "/apostille/mexico", label: "Apostille for Mexico" },
               {
                 href: "/map",
-                label: "International Compliance Map — All Countries",
+                label: "Global Document Intelligence — All Countries",
               },
             ].map((link) => (
               <Link

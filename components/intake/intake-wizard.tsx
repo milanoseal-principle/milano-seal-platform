@@ -1142,7 +1142,7 @@ export function IntakeWizard({
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Upload Documents{" "}
+                      Controlled Records Upload{" "}
                       <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
                         (optional — for advance review)
                       </span>

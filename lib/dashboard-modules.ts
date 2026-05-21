@@ -43,7 +43,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Admin",
   },
   {
-    name: "Compliance Map",
+    name: "Global Document Intelligence",
     route: "compliance",
     icon: "Globe",
     description: "Hague + RON + witness rules per jurisdiction",
