@@ -233,6 +233,16 @@ export function GlobalTrustCoreHero() {
             const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
             return (
               <g key={dest.id}>
+                {/* Chromatic fringes — glass crystal edge diffraction */}
+                <path d={path} stroke="#F4E5B8" strokeWidth="0.85" fill="none"
+                  opacity={showArcs ? 0.35 : 0}
+                  transform="translate(-1, 0)"
+                  style={{ transition: "opacity 0.9s ease" }} />
+                <path d={path} stroke="#9B9488" strokeWidth="0.85" fill="none"
+                  opacity={showArcs ? 0.22 : 0}
+                  transform="translate(1, 0)"
+                  style={{ transition: "opacity 0.9s ease" }} />
+
                 {/* Ghost base — full path, very faint */}
                 <path
                   d={path}

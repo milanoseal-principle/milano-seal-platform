@@ -59,7 +59,8 @@ export function Hero() {
 
   // 8 reveal slots: badge(0), h1-line1(1), h1-line2(2), support(3),
   //   subtitle(4), subtext(5), CTAs(6), trust-badges(7)
-  const heroVisible = useHeroReveal([350, 550, 750, 920, 1120, 1320, 1950, 2200]);
+  // Tight stagger syncs left column completion (~1.4s) with globe arc phase (~1.1s)
+  const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100, 1350]);
 
   return (
     <section
@@ -69,8 +70,10 @@ export function Hero() {
       {/* Background layers */}
       <div className="absolute inset-0 bg-[#0A0A0A]" />
       <motion.div style={{ y }} className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/4 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/3 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/4 rounded-full blur-3xl" />
+        {/* Globe light spill — large warm ambient bleed from right into left column */}
+        <div className="absolute top-1/4 right-1/3 w-[40rem] h-[30rem] bg-[#C6A55A]/[0.035] rounded-full blur-3xl" />
       </motion.div>
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/30 to-transparent" />
 
@@ -104,7 +107,7 @@ export function Hero() {
               <span
                 className={`ms-hero-line${heroVisible[2] ? " is-visible" : ""}`}
               >
-                Across <span className="text-[#C6A55A] italic">Borders</span>
+                Across <span className="ms-hero-borders-gradient italic">Borders</span>
               </span>
               <span
                 className={`ms-hero-line text-[1.8rem] md:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}
@@ -135,10 +138,10 @@ export function Hero() {
             >
               <Link
                 href="/intake"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg transition-all duration-300 hover:bg-[#D4B76A] hover:shadow-[0_8px_32px_rgba(198,165,90,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
               >
                 Begin Secure Intake
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: 'cubic-bezier(0.16,1,0.3,1)' }} />
               </Link>
               <Link
                 href="/map"
