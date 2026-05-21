@@ -396,6 +396,16 @@ export function RitualOverlay() {
         {/* ── Text content — appears at 3.00s ────────────────── */}
         <div className={`ritual-overlay__text-area${showContent ? " ritual-overlay__text-area--show" : ""}`}>
 
+          {/* Wordmark — "THE MILANO SEAL™" in serif, identical to mobile target */}
+          <p className="ritual-overlay__wordmark">The Milano Seal™</p>
+
+          {/* Decorative gem divider */}
+          <div className="ritual-overlay__gem-divider" aria-hidden="true">
+            <span className="ritual-overlay__gem-line" />
+            <span className="ritual-overlay__gem-diamond">◆</span>
+            <span className="ritual-overlay__gem-line" />
+          </div>
+
           <p className="ritual-overlay__tagline">Sealing Trust With Every Signature™</p>
 
           <p className="ritual-overlay__status">
