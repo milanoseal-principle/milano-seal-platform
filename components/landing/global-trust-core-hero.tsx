@@ -2,20 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const FLORIDA = { x: 75, y: 293 };
+// Florida: southeastern US anchor — upper-left of South America on this projection
+// Continent dot regions place NA body at y:105–157, Central America at y:205–235
+// Florida (25°N) sits between them at x~108 (east coast), y~190
+const FLORIDA = { x: 108, y: 190 };
 
 const DESTINATIONS = [
-  { id: "italy",  label: "Italy",  x: 268, y: 150, dur: 2.4, startDelay: 0.0 },
-  { id: "spain",  label: "Spain",  x: 208, y: 140, dur: 2.8, startDelay: 0.7 },
-  { id: "brazil", label: "Brazil", x: 122, y: 282, dur: 3.1, startDelay: 1.4 },
-  { id: "uae",    label: "UAE",    x: 334, y: 202, dur: 2.6, startDelay: 0.3 },
+  // Europe: upper-right quadrant (Italy right of Spain, both clearly east of Atlantic midline)
+  { id: "italy",  label: "Italy",  x: 255, y: 105, dur: 2.4, startDelay: 0.0 },
+  { id: "spain",  label: "Spain",  x: 208, y: 122, dur: 2.8, startDelay: 0.7 },
+  // Brazil: lower-left — below Florida on the same western longitude band
+  { id: "brazil", label: "Brazil", x: 118, y: 268, dur: 3.1, startDelay: 1.4 },
+  // UAE: far right, Middle East gateway — same latitude as Florida
+  { id: "uae",    label: "UAE",    x: 330, y: 192, dur: 2.6, startDelay: 0.3 },
 ];
 
 function makeCurvedPath(
   from: { x: number; y: number },
   to:   { x: number; y: number }
 ): string {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
   const mx = (from.x + to.x) / 2;
+
+  // Southward destination (Brazil): arc east over Atlantic, then curve to destination
+  // Mirrors actual Florida→South America great-circle route
+  if (dy > 50 && Math.abs(dx) < 70) {
+    return `M ${from.x} ${from.y} Q ${mx + 58} ${from.y + dy * 0.5} ${to.x} ${to.y}`;
+  }
+
+  // Eastward/north destinations: arc high over North Atlantic
   const my = Math.min(from.y, to.y) - 94;
   return `M ${from.x} ${from.y} Q ${mx} ${my} ${to.x} ${to.y}`;
 }
