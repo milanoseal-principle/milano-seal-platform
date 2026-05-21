@@ -706,6 +706,8 @@ h4 {
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
            env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   animation: ro-fade-in 0.5s ease both;
+  touch-action: none; /* prevent browser scroll hijacking during swipe */
+  user-select: none;
 }
 
 .ritual-overlay--exit {
@@ -1186,7 +1188,7 @@ h4 {
   color: inherit;
 }
 
-/* ── Tap / click hint ────────────────────────────────────────── */
+/* ── Swipe hint ──────────────────────────────────────────────── */
 .ritual-overlay__hint {
   font-size: 8.5px;
   font-weight: 500;
@@ -1197,13 +1199,9 @@ h4 {
   animation: ro-hint-pulse 2.2s ease-in-out infinite;
 }
 
-/* Show desktop or mobile copy based on pointer type */
-.ritual-overlay__hint-tap    { display: none; }
-.ritual-overlay__hint-click  { display: inline; }
-
-@media (pointer: coarse) {
-  .ritual-overlay__hint-click { display: none; }
-  .ritual-overlay__hint-tap   { display: inline; }
+.ritual-overlay__hint-arrow {
+  display: inline-block;
+  animation: ro-arrow-float 1.6s ease-in-out infinite;
 }
 
 /* ── Mobile scale — phones ≤ 430px ──────────────────────────── */
@@ -1420,6 +1418,11 @@ h4 {
   50%       { opacity: 0.75; }
 }
 
+@keyframes ro-arrow-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
 /* ── Reduced motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .ritual-overlay,
@@ -1435,7 +1438,8 @@ h4 {
   .ritual-overlay__item,
   .ritual-overlay__progress-fill,
   .ritual-overlay__progress-bead,
-  .ritual-overlay__hint {
+  .ritual-overlay__hint,
+  .ritual-overlay__hint-arrow {
     animation: none !important;
     transition: none !important;
   }
