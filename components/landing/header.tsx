@@ -48,19 +48,15 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-              {/* Seal emblem — cropped to mark only */}
-              <div
-                className="relative overflow-hidden flex-shrink-0"
-                style={{ width: 42, height: 42 }}
-              >
-                <Image
-                  src="/milano-seal-gold-transparent-512.png"
-                  alt="The Milano Seal"
-                  fill
-                  style={{ objectFit: "cover", objectPosition: "left center" }}
-                  priority
-                />
-              </div>
+              {/* M-in-circle seal mark */}
+              <Image
+                src="/android-chrome-512x512.png"
+                alt="The Milano Seal"
+                width={46}
+                height={46}
+                className="flex-shrink-0"
+                priority
+              />
               {/* Wordmark — shown sm and up */}
               <div className="hidden sm:flex flex-col leading-none select-none">
                 <span
