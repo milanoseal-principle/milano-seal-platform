@@ -54,10 +54,10 @@ export function Hero() {
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
-      {/* Vault ambient — centred radial, casts glow on globe below */}
+      {/* Vault ambient — radiates upward from globe core, never behind text */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 62%, rgba(212,175,55,0.055) 0%, rgba(16,16,20,0) 58%)" }}
+        style={{ background: "radial-gradient(ellipse at 50% 78%, rgba(212,175,55,0.075) 0%, rgba(16,16,20,0) 52%)" }}
       />
       <motion.div style={{ y }} className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/[0.03] rounded-full blur-3xl" />
@@ -67,7 +67,7 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-3xl mx-auto px-6 py-16 md:py-24"
+        className="relative z-10 w-full max-w-3xl mx-auto px-6 py-16 md:py-20"
       >
         {/* ── Single centered column — mirrors ritual overlay axis ─── */}
         <div className="flex flex-col items-center text-center">
@@ -126,7 +126,7 @@ export function Hero() {
           </div>
 
           {/* Trust badges */}
-          <div className={`ms-hero-line flex flex-wrap gap-4 justify-center mb-16${heroVisible[7] ? " is-visible" : ""}`}>
+          <div className={`ms-hero-line flex flex-wrap gap-4 justify-center mb-8${heroVisible[7] ? " is-visible" : ""}`}>
             {TRUST_ITEMS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-xs text-[#8A8A8A]">
                 <Icon className="w-3.5 h-3.5 text-[#C6A55A]" />
