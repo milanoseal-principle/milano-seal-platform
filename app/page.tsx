@@ -18,10 +18,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <RitualOverlay />
+      <CredentialTicker />
       <Header />
       <Hero />
       <TrustStrip />
-      <CredentialTicker />
       <div id="services">
         <Services />
       </div>
