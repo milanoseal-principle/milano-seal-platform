@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 
@@ -47,22 +48,19 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-              {/* M-in-circle mark — pure CSS, no image bleed */}
+              {/* Exact brand M-in-circle — image cropped to mark only */}
               <div
-                className="flex-shrink-0 flex items-center justify-center rounded-full"
-                style={{
-                  width: 44,
-                  height: 44,
-                  border: "1.5px solid #C6A55A",
-                  background: "rgba(198,165,90,0.06)",
-                }}
+                className="flex-shrink-0 rounded-full overflow-hidden"
+                style={{ width: 46, height: 46 }}
               >
-                <span
-                  className="text-[#C6A55A] font-serif font-bold"
-                  style={{ fontSize: 22, lineHeight: 1, letterSpacing: "-0.02em" }}
-                >
-                  M
-                </span>
+                <Image
+                  src="/android-chrome-512x512.png"
+                  alt="The Milano Seal"
+                  width={74}
+                  height={74}
+                  style={{ display: "block", marginLeft: -14, marginTop: 0 }}
+                  priority
+                />
               </div>
               {/* Wordmark */}
               <div className="hidden sm:flex flex-col leading-none select-none">
