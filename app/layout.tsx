@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
 import "./globals.css";
 
 const geist = Geist({
@@ -147,6 +148,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <CredentialTicker />
         {children}
         <Toaster
           theme="dark"

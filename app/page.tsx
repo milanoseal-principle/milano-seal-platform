@@ -3,7 +3,6 @@ import { GlobalIntel } from "@/components/landing/global-intel";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
 import { Hero } from "@/components/landing/hero";
 import { TrustStrip } from "@/components/landing/trust-strip";
-import { CredentialTicker } from "@/components/landing/credential-ticker";
 import { RitualOverlay } from "@/components/landing/ritual-overlay";
 import { Services } from "@/components/landing/services";
 import { HowItWorks } from "@/components/landing/how-it-works";
@@ -18,7 +17,6 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <RitualOverlay />
-      <CredentialTicker />
       <Header />
       <Hero />
       <TrustStrip />

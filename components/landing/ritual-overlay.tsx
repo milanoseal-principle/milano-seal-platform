@@ -74,6 +74,7 @@ export function RitualOverlay() {
   const t0Ref        = useRef<number>(0);
   const dismissRef   = useRef<(() => void) | null>(null);
   const startYRef    = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false); // sync ref avoids stale-closure in pointer handlers
 
   const [checked,       setChecked]       = useState<number[]>([]);
   const [phase,         setPhase]         = useState<Phase>("enter");
@@ -349,18 +350,20 @@ export function RitualOverlay() {
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!readyForExit) return;
     startYRef.current = e.clientY;
+    isDraggingRef.current = true;
     setIsDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }, [readyForExit]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
     const delta = e.clientY - startYRef.current;
     setDragY(Math.min(0, delta)); // upward only
-  }, [isDragging]);
+  }, []);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
     setIsDragging(false);
     const delta = e.clientY - startYRef.current;
     if (delta < -SWIPE_THRESHOLD) {
@@ -368,7 +371,7 @@ export function RitualOverlay() {
     } else {
       setDragY(0); // spring back
     }
-  }, [isDragging]);
+  }, []);
 
   return (
     <div
