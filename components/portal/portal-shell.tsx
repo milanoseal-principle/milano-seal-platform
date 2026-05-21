@@ -63,7 +63,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         <LogoMark size={32} />
         <div>
           <div className="ps-brand-name">Milano Seal™</div>
-          <div className="ps-brand-sub">Secure Client Portal</div>
+          <div className="ps-brand-sub">Secure Matter Control Portal</div>
         </div>
       </div>
 
@@ -239,7 +239,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 )?.label ?? "Portal"}
               </div>
               <div className="ps-tb-sub">
-                The Milano Seal™ · Secure Client Portal
+                The Milano Seal™ · Secure Matter Control Portal
               </div>
             </div>
           </div>

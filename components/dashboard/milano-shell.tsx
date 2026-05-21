@@ -27,11 +27,11 @@ const NAV = [
   { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
   { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
   { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
-  { href: "/dashboard/compliance", label: "Compliance Map", icon: Globe2 },
+  { href: "/dashboard/compliance", label: "Global Document Intelligence", icon: Globe2 },
   { href: "/dashboard/invoices", label: "Invoice Studio", icon: Receipt },
   { href: "/dashboard/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
-  { href: "/dashboard/terminal", label: "System Terminal", icon: Terminal },
+  { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
 ];
 
 function MilanoMark() {

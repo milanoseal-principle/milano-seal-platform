@@ -16,7 +16,7 @@ const COLOR: Record<LogTone, string> = {
 };
 
 const HELP_LINES: LogLine[] = [
-  { t: "info", m: "Milano Seal™ OS · System Terminal initialized" },
+  { t: "info", m: "Milano Seal™ OS · Operational Ledger initialized" },
   { t: "ok", m: "Supabase connection: LIVE" },
   { t: "ok", m: "State machine: LOCKED" },
   { t: "ok", m: "Custody ledger: HASH-CHAINED" },
@@ -257,7 +257,7 @@ export default function TerminalPage() {
 
   return (
     <div>
-      <div className="term-eyebrow">System Terminal</div>
+      <div className="term-eyebrow">Operational Ledger</div>
       <h1 className="term-h1">Operator Console</h1>
 
       <div className="term-box">

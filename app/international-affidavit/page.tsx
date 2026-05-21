@@ -169,7 +169,7 @@ export default function InternationalAffidavitPage() {
               },
               {
                 href: "/map",
-                label: "International Compliance Map — All Countries",
+                label: "Global Document Intelligence — All Countries",
               },
             ].map((link) => (
               <Link

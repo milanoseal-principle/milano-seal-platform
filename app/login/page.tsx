@@ -43,7 +43,7 @@ const ROLE_HINTS: Record<
   },
   client: {
     email: "you@example.com",
-    label: "Client Portal",
+    label: "Matter Control Portal",
     sub: "Track your matter",
     method: "magic",
   },

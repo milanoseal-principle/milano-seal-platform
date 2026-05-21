@@ -216,7 +216,7 @@ export default function AffidavitNameDiscrepancyPage() {
                 href: "/apostille/italy",
                 label: "Apostille for Italy — Complete Guide",
               },
-              { href: "/map", label: "International Compliance Map" },
+              { href: "/map", label: "Global Document Intelligence" },
             ].map((link) => (
               <Link
                 key={link.href}
