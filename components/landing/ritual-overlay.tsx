@@ -63,8 +63,6 @@ const idle = (cb: () => void) =>
     : setTimeout(cb, 100);
 
 /* ─── Component ─────────────────────────────────────────────── */
-const SWIPE_THRESHOLD = 72; // px upward to commit dismiss
-
 type Phase = "enter" | "rings" | "active" | "vault" | "ready" | "exit" | "gone";
 
 export function RitualOverlay() {
@@ -73,8 +71,6 @@ export function RitualOverlay() {
   const rafRef       = useRef<number>(0);
   const t0Ref        = useRef<number>(0);
   const dismissRef   = useRef<(() => void) | null>(null);
-  const startYRef    = useRef<number>(0);
-  const isDraggingRef = useRef<boolean>(false); // sync ref avoids stale-closure in pointer handlers
 
   const [checked,       setChecked]       = useState<number[]>([]);
   const [phase,         setPhase]         = useState<Phase>("enter");
@@ -85,8 +81,6 @@ export function RitualOverlay() {
   const [showProgress,  setShowProgress]  = useState(false);
   const [showSection,   setShowSection]   = useState(false);
   const [readyForExit,  setReadyForExit]  = useState(false);
-  const [dragY,         setDragY]         = useState(0);
-  const [isDragging,    setIsDragging]    = useState(false);
 
   /* ── Canvas render loop ─────────────────────────────────── */
   const render = useCallback((now: number) => {
@@ -333,45 +327,25 @@ export function RitualOverlay() {
     };
   }, [render]);
 
-  /* Escape key — active only once readyForExit */
+  /* Once ready: any mouse movement dismisses (desktop); touch tap dismisses (mobile); Escape as fallback */
   useEffect(() => {
     if (!readyForExit) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current?.(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const dismiss = () => dismissRef.current?.();
+    const onKey   = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); };
+    window.addEventListener("mousemove",  dismiss, { once: true });
+    window.addEventListener("touchstart", dismiss, { once: true, passive: true });
+    window.addEventListener("keydown",    onKey);
+    return () => {
+      window.removeEventListener("mousemove",  dismiss);
+      window.removeEventListener("touchstart", dismiss);
+      window.removeEventListener("keydown",    onKey);
+    };
   }, [readyForExit]);
 
   if (phase === "gone") return null;
 
   const vaultLocked = phase === "vault" || phase === "ready" || phase === "exit";
   const ringsActive = phase === "rings" || phase === "active" || vaultLocked;
-
-  /* Swipe-up handlers — active only after readyForExit */
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (!readyForExit) return;
-    startYRef.current = e.clientY;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, [readyForExit]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    const delta = e.clientY - startYRef.current;
-    setDragY(Math.min(0, delta)); // upward only
-  }, []);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    const delta = e.clientY - startYRef.current;
-    if (delta < -SWIPE_THRESHOLD) {
-      dismissRef.current?.();
-    } else {
-      setDragY(0); // spring back
-    }
-  }, []);
 
   return (
     <div
@@ -380,15 +354,6 @@ export function RitualOverlay() {
         phase === "exit"  ? "ritual-overlay--exit"  : "",
         readyForExit      ? "ritual-overlay--ready"  : "",
       ].filter(Boolean).join(" ")}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      style={{
-        transform:  `translateY(${dragY}px)`,
-        opacity:    1 + dragY / 260,
-        transition: isDragging ? "none" : "transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.55s ease",
-        cursor:     readyForExit ? (isDragging ? "grabbing" : "grab") : "default",
-      }}
       aria-hidden="true"
     >
       {/* Cinematic world map canvas */}
@@ -488,11 +453,11 @@ export function RitualOverlay() {
             <span>Secure Workspace Ready</span>
           </div>
 
-          {/* Swipe hint — visible during final hold only */}
+          {/* Entry hint — visible during final hold only */}
           {readyForExit && (
             <p className="ritual-overlay__hint" aria-hidden="true">
-              <span className="ritual-overlay__hint-arrow">↑</span>
-              {" "}Swipe up to enter
+              <span className="ritual-overlay__hint-move">Move to enter</span>
+              <span className="ritual-overlay__hint-tap">Tap to enter</span>
             </p>
           )}
 
