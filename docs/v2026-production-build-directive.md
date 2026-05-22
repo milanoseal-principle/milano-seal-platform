@@ -633,3 +633,132 @@ The first page must feel like three distinct phases:
 3. **Map** = active document intelligence (flat tactical radar, maximum route contrast)
 
 When the Florida → Italy arc finally draws across the Atlantic in the Map section, it must carry maximum impact because the user has seen **zero route arcs** in any section above it.
+
+---
+
+## FOUNDER TRUST ANCHOR — ANIMATION SPEC
+### For v2026 implementation pass only. Do not code before PR #22 merges.
+
+**Target:** `components/landing/payment-founder.tsx` · `app/globals.css`
+
+**Purpose:** Animate the Founder card as a trust credential unlock — not a hero takeover.
+
+### Rules (non-negotiable)
+- Do NOT move Founder card into the hero
+- Do NOT make it dominant on first homepage entry
+- Do NOT use bounce, cartoon motion, flashy particles, or influencer-style profile effects
+- Do NOT add routing arcs here
+- Do NOT compete with the Global Trust Core or Global Document Intelligence Map
+- Founder appears AFTER the platform/system sections, never above the fold
+
+### Animation Sequence
+
+**1. Chip entrance (viewport reveal)**
+```
+opacity: 0 → 1
+translateY: 14px → 0
+blur: 8px → 0
+duration: 700ms
+easing: cubic-bezier(0.16, 1, 0.3, 1)
+```
+
+**2. Gold edge scan**
+- Thin gold line sweeps around the chip/card border once
+- Duration: 900ms
+- No infinite loop — fires once on reveal only
+
+**3. Credential unlock (click/tap)**
+- Card expands from chip state
+- Height + opacity reveal
+- Subtle glass panel opens
+- Credential rows stagger in 80ms apart
+
+**4. Credential rows**
+```
+Nicholas Milano
+Founder · The Milano Seal™
+Florida Notary Public
+Remote Online Notary Specialist
+International Document Execution Liaison
+Florida Notary Commission #668288
+```
+
+**5. Seal confirmation**
+- Small Milano crest glows once on expand
+- No infinite pulsing
+- No fake verification badge
+
+**6. Collapse**
+- Tap/click closes
+- Smooth height collapse
+- No layout jump
+
+### Visual Language
+- Matte black glass panel
+- Thin metallic gold border
+- Parchment/gold microcopy
+- Soft gold edge sweep (once only)
+- Quiet credential unlock feel
+- Premium negative space
+
+### Reduced Motion
+```
+@media (prefers-reduced-motion: reduce):
+  No sweep animation
+  No stagger
+  Instant open/close
+  Content fully accessible
+```
+
+### Validation Checklist
+- [ ] Founder remains secondary in page hierarchy
+- [ ] Founder does not appear as dominant hero card
+- [ ] Animation is credential-unlock style (not cinematic)
+- [ ] No routing arcs added to Founder card
+- [ ] Ritual, Globe, Map untouched
+- [ ] prefers-reduced-motion supported
+- [ ] `npm run build` passes
+
+---
+
+## AUTH & LOGIN MODEL SPEC
+### For v2026 implementation pass only. Do not code before PR #22 merges.
+
+### Login Method (all portals)
+- Google OAuth
+- Microsoft OAuth
+- Email (magic link or password)
+
+No separate username/password creation. Social auth is the primary flow.
+
+### Portal Access Model
+
+| Portal | Login method | Access identifier |
+|--------|-------------|-------------------|
+| Dashboard (operator) | Google / Microsoft / Email | Internal — Nicholas Milano only |
+| Client Portal | Google / Microsoft / Email | Invoice number (ties session to matter) |
+| Alliance Portal | Google / Microsoft / Email | Alliance number (unique per alliance partner) |
+| Virtual Assistant Portal | Google / Microsoft / Email | VA number (unique per VA account) |
+
+### Access Number Format (to be defined in v2026 audit)
+- **Invoice numbers:** existing schema from invoice studio
+- **Alliance numbers:** format TBD — likely `MS-A-XXXXXX`
+- **VA numbers:** format TBD — likely `MS-VA-XXXXXX`
+
+### Rules
+- Do NOT create a fake auth backend
+- Do NOT hard-code credentials
+- Do NOT expose role tokens
+- Do NOT invent fake operators or fake logged-in states
+- Auth backend must integrate with existing `/api/auth/` routes
+- Alliance and VA numbers are issued by the operator, not self-assigned
+
+### Validation Checklist
+- [ ] Google OAuth flow tested
+- [ ] Microsoft OAuth flow tested
+- [ ] Email flow tested
+- [ ] Invoice number gate on client portal
+- [ ] Alliance number gate on alliance portal
+- [ ] VA number gate on VA portal
+- [ ] No fake data, no hard-coded credentials
+- [ ] `npm run build` passes
