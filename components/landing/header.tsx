@@ -41,16 +41,11 @@ const navLinks = [
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
-    const t = setTimeout(() => setMounted(true), 200);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearTimeout(t);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
@@ -64,12 +59,8 @@ export function Header() {
         {/* Row 1 — credential ticker, always visible */}
         <CredentialTicker />
 
-        {/* Row 2 — navigation bar, cinematic reveal after RitualOverlay */}
-        <div
-          className={`ms-header-reveal${mounted ? " is-visible" : ""} ${
-            isScrolled ? "border-b border-white/[0.06] backdrop-blur-md" : ""
-          }`}
-        >
+        {/* Row 2 — navigation bar */}
+        <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
               <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
