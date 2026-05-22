@@ -50,7 +50,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen flex items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen flex items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -67,24 +67,13 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 pt-[128px] pb-16 lg:pt-[80px] lg:pb-8"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-16 lg:py-8"
       >
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
 
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center">
-
-            {/* Badge — operational status indicator */}
-            <div className={`ms-hero-line inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 mb-8${heroVisible[0] ? " is-visible" : ""}`}>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
-              </span>
-              <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
-                Florida · Hague Apostille Authority
-              </span>
-            </div>
 
             {/* Headline */}
             <h1 className="ms-hero-h1 font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6">
