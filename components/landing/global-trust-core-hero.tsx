@@ -357,12 +357,6 @@ export function GlobalTrustCoreHero() {
         {/* Glass specular cap — top-left diagonal highlight */}
         <div className="ms-globe-glass-cap" />
 
-        {/* Crest glow pulse — sibling to crest, below it in z */}
-        <div className="ms-globe-crest-glow" />
-
-        {/* Center crest — official Milano Seal™ mark via CSS */}
-        <div className="ms-globe-crest" aria-hidden="true" />
-
         {/* Top-left spotlight highlight */}
         <div className="ms-globe-spotlight" />
       </div>
