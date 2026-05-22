@@ -28,7 +28,7 @@ const items = [
 
 export function TrustStrip() {
   return (
-    <section className="relative py-12 bg-[#111111] border-y border-[#2A2A2A] overflow-hidden">
+    <section className="relative py-12 bg-[#050507] border-y border-[#1A1A1A] overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] z-10 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6">
         <motion.div

@@ -224,6 +224,9 @@ h4 {
   .ms-cinematic-runway * {
     animation: none !important;
     transition: none !important;
+    /* Force framer-motion initial opacity:0 elements to be visible */
+    opacity: 1 !important;
+    transform: none !important;
   }
   /* Ensure sticky atmospheric layer doesn't trap content at any opacity */
   .ms-cinematic-runway [aria-hidden="true"] {
