@@ -340,7 +340,7 @@ export function RitualOverlay() {
   const vaultLocked = phase === "vault" || phase === "ready" || phase === "exit";
   const ringsActive = phase === "rings" || phase === "active" || vaultLocked;
 
-  /* Click/tap handler — fires only after readyForExit; ignored before */
+  /* Click/tap handler — fires only after readyForExit */
   const handleClick = () => {
     if (readyForExit) dismissRef.current?.();
   };
@@ -452,7 +452,7 @@ export function RitualOverlay() {
             <span>Secure Workspace Ready</span>
           </div>
 
-          {/* Tap/click hint — visible during final hold only */}
+          {/* Click/tap hint — visible during final hold only */}
           {readyForExit && (
             <p className="ritual-overlay__hint" aria-hidden="true">
               <span className="ritual-overlay__hint-click">Click to enter</span>

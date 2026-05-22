@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -34,30 +35,31 @@ const NAV = [
   { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
 ];
 
+function MilanoCrest({ size = 32 }: { size?: number }) {
+  const g = "#C6A55A";
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
+      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" style={{ fill: g, opacity: 0.88 }} />
+      <path d="M22,72 L22,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
+      <path d="M78,72 L78,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
+      <line x1="15" y1="28" x2="29" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="15" y1="72" x2="29" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="71" y1="28" x2="85" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="71" y1="72" x2="85" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
+    </svg>
+  );
+}
+
 function MilanoMark() {
   return (
-    <Link href="/dashboard">
-      <div className="flex items-center gap-3 cursor-pointer group">
-        <div
-          className="w-9 h-9 rounded-md flex items-center justify-center font-serif text-lg font-semibold border flex-shrink-0"
-          style={{
-            background:
-              "linear-gradient(135deg, hsl(38 47% 56% / .15), hsl(38 30% 18% / .25))",
-            borderColor: "hsl(38 47% 56% / .45)",
-            color: "#C6A55A",
-            boxShadow: "inset 0 0 0 1px hsl(38 47% 56% / .15)",
-          }}
-        >
-          M
-        </div>
-        <div className="flex flex-col leading-tight min-w-0">
-          <span className="font-serif text-sm text-foreground">
-            The Milano Seal
-          </span>
-          <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground truncate">
-            Intl. Document Execution
-          </span>
-        </div>
+    <Link href="/dashboard" className="flex items-center gap-2.5">
+      <MilanoCrest size={32} />
+      <div className="flex flex-col leading-tight min-w-0">
+        <span className="font-serif text-sm text-foreground">The Milano Seal</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground truncate">
+          Intl. Document Execution
+        </span>
       </div>
     </Link>
   );
@@ -159,8 +161,12 @@ export function MilanoShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex text-foreground bg-background">
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:fixed lg:flex lg:inset-y-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background">
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <CredentialTicker />
+      </div>
+
+      {/* ── Desktop sidebar — starts below ticker ── */}
+      <aside className="hidden lg:fixed lg:flex lg:top-9 lg:bottom-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background">
         {sidebarContent()}
       </aside>
 
@@ -172,9 +178,9 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* ── Mobile drawer ── */}
+      {/* ── Mobile drawer — starts below ticker ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r border-border bg-background transition-transform duration-300 lg:hidden ${
+        className={`fixed top-9 bottom-0 left-0 z-50 w-64 flex flex-col border-r border-border bg-background transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -187,10 +193,10 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         {sidebarContent(() => setMobileOpen(false))}
       </aside>
 
-      {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
-        {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-0 z-30">
+      {/* ── Main area — offset sidebar width + ticker height ── */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-56 pt-9">
+        {/* Mobile top bar — sticks below global ticker */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-9 z-30">
           <button
             onClick={() => setMobileOpen(true)}
             className="text-muted-foreground hover:text-foreground cursor-pointer"

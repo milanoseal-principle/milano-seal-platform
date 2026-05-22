@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { type Destination } from "@/data/destinations";
 import Link from "next/link";
@@ -26,9 +26,24 @@ const REGION_PRESETS: Record<string, FlyToTarget> = {
 export function GlobalIntelMapInteractive() {
   const [active, setActive] = useState<Destination | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyToTarget | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const el = containerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mouse-x", `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
+    el.style.setProperty("--mouse-y", `${(((e.clientY - r.top)  / r.height) * 100).toFixed(1)}%`);
+  }
 
   return (
-    <div className="relative w-full bg-[#0A0A0A] border-y border-[#141414] overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative w-full bg-[#0A0A0A] border-y border-[#141414] overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Mouse-tracked gold light leak */}
+      <div className="map-vault-glow absolute inset-0 pointer-events-none" style={{ zIndex: 499 }} />
       <div className="absolute top-4 left-4 flex gap-2 z-[1000]">
         {Object.entries(REGION_PRESETS).map(([key, pos]) => (
           <button

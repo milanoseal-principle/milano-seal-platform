@@ -28,7 +28,12 @@ export function GlobalMap() {
     .slice(0, TEASER_LIMIT);
 
   return (
-    <section className="relative py-24 md:py-32 bg-[#0A0A0A] overflow-hidden">
+    <section className="relative py-32 md:py-40 bg-[#050507] overflow-hidden">
+      {/* Ambient vault glow — intensifies as map awakens */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.04) 0%, rgba(5,5,7,0) 70%)" }}
+      />
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-10">
         <svg
@@ -49,6 +54,15 @@ export function GlobalMap() {
                 stroke="#C6A55A"
                 strokeWidth="0.5"
                 opacity="0.3"
+              />
+              {/* Slow parallax drift — grid floats on a deeper axis */}
+              <animateTransform
+                attributeName="patternTransform"
+                type="translate"
+                from="0 0"
+                to="40 40"
+                dur="22s"
+                repeatCount="indefinite"
               />
             </pattern>
           </defs>
@@ -80,16 +94,18 @@ export function GlobalMap() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Execution Path Preview
+          <span className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#6A5520] mb-5 block">
+            THE SYSTEM IN MOTION
           </span>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Cross-Border Execution Authority
+          <h2
+            className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance"
+            style={{ filter: "drop-shadow(0 4px 12px rgba(5,5,7,0.95))" }}
+          >
+            Global Document Intelligence™
           </h2>
-          <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            From Florida to the world. Select a destination to begin execution —
-            or open the full Global Document Intelligence™ map for compliance
-            details and execution paths.
+          <p className="text-[#8A8A8A] text-base max-w-xl mx-auto leading-relaxed font-light">
+            Jurisdiction routing, Hague compliance, and execution paths —
+            from Florida to key international destinations.
           </p>
         </motion.div>
 

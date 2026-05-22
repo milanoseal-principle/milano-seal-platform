@@ -706,6 +706,7 @@ h4 {
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
            env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   animation: ro-fade-in 0.5s ease both;
+  user-select: none;
 }
 
 .ritual-overlay--exit {
@@ -1186,7 +1187,7 @@ h4 {
   color: inherit;
 }
 
-/* ── Tap / click hint ────────────────────────────────────────── */
+/* ── Entry hint ──────────────────────────────────────────────── */
 .ritual-overlay__hint {
   font-size: 8.5px;
   font-weight: 500;
@@ -1467,6 +1468,7 @@ h4 {
   border-bottom: 1px solid var(--border);
   padding: 9px 0;
   position: relative;
+  z-index: 1;
 }
 
 .ticker-wrap::before,
@@ -2584,5 +2586,21 @@ h4 {
   .ms-globe-arc {
     stroke-dashoffset: 0 !important;
     transition: none !important;
+  }
+}
+
+/* ── Map vault glow — mouse-tracked radial light leak ── */
+.map-vault-glow {
+  background: radial-gradient(
+    circle 420px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(212, 175, 55, 0.085) 0%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-vault-glow {
+    display: none;
   }
 }

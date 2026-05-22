@@ -231,6 +231,7 @@ export function GlobalTrustCoreHero() {
           {/* Per-route: ghost + comet body + comet head + particle + bloom + node */}
           {DESTINATIONS.map((dest, i) => {
             const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
+            const intakeHref = `/intake?country=${encodeURIComponent(dest.label)}`;
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes — glass crystal edge diffraction */}
@@ -304,39 +305,50 @@ export function GlobalTrustCoreHero() {
                   style={{ transition: "opacity 0.5s ease" }}
                 />
 
-                {/* Destination node */}
-                <circle
-                  cx={dest.x} cy={dest.y}
-                  r="3.5"
-                  fill="#D4AF37"
-                  filter="url(#gtc-glow-node)"
-                  opacity={arcsDone ? 1 : 0}
-                  className={arcsDone
-                    ? "ms-globe-dest-node ms-globe-dest-node--pulse"
-                    : "ms-globe-dest-node"}
-                  style={{ transitionDelay: `${i * 120}ms` }}
-                />
-                <circle
-                  cx={dest.x} cy={dest.y}
-                  r="8.5"
-                  fill="none"
-                  stroke="#C6A55A"
-                  strokeWidth="0.7"
-                  opacity={arcsDone ? 0.25 : 0}
-                  className="ms-globe-dest-ring"
-                  style={{ transitionDelay: `${i * 120 + 120}ms` }}
-                />
-                {arcsDone && (
-                  <text
-                    x={dest.x + (dest.x > 200 ? 14 : -14)}
-                    y={dest.y + 3.5}
-                    textAnchor={dest.x > 200 ? "start" : "end"}
-                    className="ms-globe-location-text"
-                    style={{ animationDelay: `${i * 80}ms` }}
-                  >
-                    {dest.label.toUpperCase()}
-                  </text>
-                )}
+                {/* Clickable node + ring + label → intake for this country */}
+                <a
+                  href={intakeHref}
+                  style={{ cursor: "pointer" }}
+                  aria-label={`Begin intake for ${dest.label}`}
+                >
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="14"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="3.5"
+                    fill="#D4AF37"
+                    filter="url(#gtc-glow-node)"
+                    opacity={arcsDone ? 1 : 0}
+                    className={arcsDone
+                      ? "ms-globe-dest-node ms-globe-dest-node--pulse"
+                      : "ms-globe-dest-node"}
+                    style={{ transitionDelay: `${i * 120}ms` }}
+                  />
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="8.5"
+                    fill="none"
+                    stroke="#C6A55A"
+                    strokeWidth="0.7"
+                    opacity={arcsDone ? 0.25 : 0}
+                    className="ms-globe-dest-ring"
+                    style={{ transitionDelay: `${i * 120 + 120}ms` }}
+                  />
+                  {arcsDone && (
+                    <text
+                      x={dest.x + (dest.x > 200 ? 14 : -14)}
+                      y={dest.y + 3.5}
+                      textAnchor={dest.x > 200 ? "start" : "end"}
+                      className="ms-globe-location-text"
+                      style={{ animationDelay: `${i * 80}ms` }}
+                    >
+                      {dest.label.toUpperCase()}
+                    </text>
+                  )}
+                </a>
               </g>
             );
           })}
