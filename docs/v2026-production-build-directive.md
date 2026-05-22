@@ -559,3 +559,77 @@ Credentials shown on card:
 Tagline: `SEALING TRUST ACROSS BORDERS`
 
 Style reference: black background · gold typography · institutional credential layout · M crest mark with feather · columned architectural backdrop · trust anchor card (not hero placement — appears at Section 9 of homepage scroll)
+
+---
+
+## FRONTPAGE VISUAL DE-CONFLICT RULE
+### Designer Correction — Locked 2026-05-22
+
+**Root cause:** Ritual → Hero Globe → Trust Strip → Map all use dark space, gold arcs, particles, and routing energy. This creates focal exhaustion. The fix is visual separation by module — not more animation everywhere.
+
+**Critical rule:** Ritual, Hero Globe, and Global Document Intelligence Map must not share the same visual language.
+
+---
+
+### Module Assignments
+
+#### 1. Ritual Overlay
+**Purpose:** System initialization / vault unlock.
+
+**Visual language:**
+- Abstract hyper-velocity particle streams
+- Straight-line light bursts
+- Subtle code-grid or readiness matrix
+- NO geographic route arcs
+- NO Florida-to-country arcs
+- NO map-like routing
+
+#### 2. Hero Global Trust Core Globe
+**Purpose:** Institutional prestige / luxury trust object.
+
+**Visual language:**
+- Heavy glass macro lens
+- Ambient black/gold crystal sphere
+- Low-opacity matrix continents
+- Slow inertial rotation
+- NO long-distance flight arcs
+- NO active route drawing
+- NO pulsing country destinations
+
+#### 3. Global Document Intelligence Map
+**Purpose:** Actual operational routing and conversion engine.
+
+**Visual language — EXCLUSIVE OWNER of:**
+- Florida origin routing
+- Transatlantic arcs
+- Champagne center filaments (`#F4E5B8`)
+- `mix-blend-mode: plus-lighter` / `screen` additive glow
+- Destination ripple pulses
+- Country selection and route draw animations
+
+**Reason:** The user should experience a clear narrative progression:
+
+```
+System Initialization → Institutional Prestige → Active Operational Authority
+```
+
+Not: Gold arcs → Gold arcs → Gold arcs.
+
+---
+
+### Implementation Constraints (v2026)
+
+```
+DO NOT add geographic arcs to the Ritual.
+DO NOT keep active flight paths in the Hero Globe.
+DO NOT make the Map visually similar to the Globe.
+DO NOT start full v2026 coding before PR #22 merges.
+```
+
+### Validation Checkpoint
+The first page must feel like three distinct phases:
+1. **Ritual** = system unlock (abstract speed / particle kinetics)
+2. **Hero Globe** = institutional seal of trust (heavy ambient glass object)
+3. **Map** = active document intelligence (flat tactical radar, maximum route contrast)
+
+When the Florida → Italy arc finally draws across the Atlantic in the Map section, it must carry maximum impact because the user has seen **zero route arcs** in any section above it.
