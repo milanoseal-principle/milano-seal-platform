@@ -4,21 +4,163 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ArrowRight, Globe, X } from "lucide-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { FLORIDA_ORIGIN, DESTINATION_NODES, type InternationalNode } from "./map-data";
 
-const GlobalIntelMapInteractive = dynamic(
-  () =>
-    import("@/components/landing/global-intel-map-interactive").then(
-      (m) => m.GlobalIntelMapInteractive
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[480px] bg-[#07070A] animate-pulse" />
-    ),
+// ── Lightweight SVG execution map — no external map dependency ────────────────
+
+function SvgExecutionMap({
+  selectedDest,
+  onSelect,
+}: {
+  selectedDest: Destination | null;
+  onSelect: (d: Destination | null) => void;
+}) {
+  function handleNodeClick(node: InternationalNode) {
+    const dest = DESTINATIONS.find(
+      (d) => d.name.toLowerCase() === node.name.toLowerCase()
+    ) ?? null;
+    onSelect(selectedDest?.name.toLowerCase() === node.name.toLowerCase() ? null : dest);
   }
-);
+
+  const fl = FLORIDA_ORIGIN.coordinates;
+
+  return (
+    <div className="relative w-full bg-[#07070A] overflow-hidden" style={{ aspectRatio: "16/9" }}>
+      <svg
+        viewBox="0 0 100 56"
+        className="w-full h-full select-none"
+        aria-label="Global execution map — click a destination to preview"
+      >
+        <defs>
+          <pattern id="exec-grid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(198,165,90,0.04)" strokeWidth="0.3" />
+          </pattern>
+          <radialGradient id="origin-glow">
+            <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="node-glow">
+            <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Grid */}
+        <rect width="100" height="56" fill="url(#exec-grid)" />
+
+        {/* Ambient equator / meridian reference lines */}
+        <line x1="0" y1="28" x2="100" y2="28" stroke="rgba(198,165,90,0.03)" strokeWidth="0.5" />
+        <line x1="50" y1="0" x2="50" y2="56" stroke="rgba(198,165,90,0.03)" strokeWidth="0.5" />
+
+        {/* Route arcs from Florida to each destination */}
+        {DESTINATION_NODES.map((node) => {
+          const isActive = selectedDest?.name.toLowerCase() === node.name.toLowerCase();
+          const cx = (fl.x + node.coordinates.x) / 2;
+          const cy = Math.min(fl.y, node.coordinates.y) - 10;
+          return (
+            <path
+              key={`arc-${node.id}`}
+              d={`M ${fl.x} ${fl.y} Q ${cx} ${cy} ${node.coordinates.x} ${node.coordinates.y}`}
+              fill="none"
+              stroke={isActive ? "rgba(198,165,90,0.55)" : "rgba(198,165,90,0.07)"}
+              strokeWidth={isActive ? "0.55" : "0.22"}
+              strokeDasharray={isActive ? undefined : "1.8 1.8"}
+              strokeLinecap="round"
+              className="transition-all duration-500 pointer-events-none"
+            />
+          );
+        })}
+
+        {/* Florida origin node */}
+        <g transform={`translate(${fl.x},${fl.y})`}>
+          <circle r="5" fill="url(#origin-glow)" className="pointer-events-none" />
+          <circle r="1.4" fill="#C6A55A" className="pointer-events-none" />
+          <text
+            y="-4"
+            textAnchor="middle"
+            fill="rgba(198,165,90,0.7)"
+            fontSize="2"
+            fontFamily="monospace"
+            fontWeight="bold"
+            letterSpacing="0.06em"
+            className="pointer-events-none"
+          >
+            FL ORIGIN
+          </text>
+        </g>
+
+        {/* Destination nodes */}
+        {DESTINATION_NODES.map((node) => {
+          const isActive = selectedDest?.name.toLowerCase() === node.name.toLowerCase();
+          const { x, y } = node.coordinates;
+          return (
+            <g
+              key={node.id}
+              transform={`translate(${x},${y})`}
+              onClick={() => handleNodeClick(node)}
+              role="button"
+              aria-label={`Select ${node.name}`}
+              style={{ cursor: "pointer" }}
+            >
+              {/* Hit area */}
+              <circle r="5" fill="transparent" />
+              {/* Glow when active */}
+              {isActive && (
+                <circle r="4.5" fill="url(#node-glow)" className="pointer-events-none" />
+              )}
+              {/* Outer ring */}
+              <circle
+                r="1.8"
+                fill="none"
+                stroke={isActive ? "rgba(198,165,90,0.5)" : "rgba(198,165,90,0.12)"}
+                strokeWidth="0.4"
+                className="transition-all duration-300 pointer-events-none"
+              />
+              {/* Core dot */}
+              <circle
+                r="0.9"
+                fill={isActive ? "#C6A55A" : "rgba(255,255,255,0.25)"}
+                className="transition-all duration-300 pointer-events-none"
+              />
+              {/* Label */}
+              <text
+                y="-4"
+                textAnchor="middle"
+                fill={isActive ? "#C6A55A" : "rgba(255,255,255,0.28)"}
+                fontSize="1.9"
+                fontFamily="monospace"
+                fontWeight={isActive ? "bold" : "normal"}
+                letterSpacing="0.07em"
+                className="pointer-events-none transition-all duration-300"
+              >
+                {node.name.toUpperCase()}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Region buttons */}
+      <div className="absolute top-3 left-3 flex gap-1.5 z-10">
+        {(["Americas", "Europe", "Middle East"] as const).map((region) => (
+          <button
+            key={region}
+            className="px-2 py-1 bg-[#111111] border border-[#2A2A2A] text-[#B0B0B0] text-[8px] tracking-[0.1em] uppercase rounded-md hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-colors duration-200"
+          >
+            {region}
+          </button>
+        ))}
+      </div>
+
+      <div className="absolute top-3 right-3 text-[8px] text-[#2A2A2A] tracking-wider hidden md:block font-mono">
+        Click a node · FL Origin fixed
+      </div>
+    </div>
+  );
+}
+
+// ── Main section ──────────────────────────────────────────────────────────────
 
 const TEASER_LIMIT = 8;
 
@@ -42,7 +184,7 @@ export function GlobalMap() {
         className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.04) 0%, rgba(5,5,7,0) 70%)" }}
       />
-      {/* Animated grid background */}
+      {/* Grid background */}
       <div className="absolute inset-0 opacity-[0.07]">
         <svg viewBox="0 0 1200 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
           <defs>
@@ -81,7 +223,7 @@ export function GlobalMap() {
             Global Document Intelligence™
           </h2>
           <p className="text-[#8A8A8A] text-sm max-w-xl mx-auto leading-relaxed font-light">
-            Jurisdiction routing, Hague compliance, and execution paths —
+            Jurisdiction routing, Hague convention review, and execution paths —
             from Florida to key international destinations.
           </p>
         </motion.div>
@@ -102,7 +244,7 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
-        {/* TWO-COLUMN EXECUTION DECK: map canvas left, dock right */}
+        {/* TWO-COLUMN EXECUTION DECK */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -111,12 +253,9 @@ export function GlobalMap() {
           className="mb-6 border border-white/[0.04] rounded-xl overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12">
-            {/* LEFT: Interactive map canvas */}
+            {/* LEFT: SVG execution map */}
             <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-white/[0.04]">
-              <GlobalIntelMapInteractive
-                onSelect={setSelectedDest}
-                selectedDest={selectedDest}
-              />
+              <SvgExecutionMap selectedDest={selectedDest} onSelect={setSelectedDest} />
             </div>
 
             {/* RIGHT: Execution dock */}
@@ -249,7 +388,6 @@ export function GlobalMap() {
           transition={{ duration: 0.5, delay: 0.25 }}
           className="border border-white/[0.04] rounded-xl overflow-hidden mb-8"
         >
-          {/* Token grid header */}
           <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
             <span className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#444]">
               HIGH-DEMAND DESTINATIONS
@@ -270,7 +408,6 @@ export function GlobalMap() {
                     : "hover:bg-white/[0.02]"
                 }`}
               >
-                {/* Active left accent */}
                 {selectedDest?.slug === d.slug && (
                   <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />
                 )}
