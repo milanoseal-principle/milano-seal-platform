@@ -3,6 +3,28 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 
+/* ─── Geographic nodes ──────────────────────────────────────── */
+const NODES: [number, number][] = [
+  [-80.19,  25.77],  // 0  Miami — execution origin
+  [-74.01,  40.71],  // 1  New York
+  [ 12.49,  41.90],  // 2  Rome (Hague)
+  [  2.35,  48.86],  // 3  Paris (Hague)
+  [ 55.30,  25.20],  // 4  Dubai
+  [139.69,  35.69],  // 5  Tokyo
+  [-46.63, -23.55],  // 6  São Paulo
+  [-74.07,   4.71],  // 7  Bogotá
+  [-99.13,  19.43],  // 8  Mexico City
+  [ -3.70,  40.42],  // 9  Madrid (Hague)
+  [103.82,   1.35],  // 10 Singapore
+  [ 28.98,  41.01],  // 11 Istanbul
+  [151.21, -33.87],  // 12 Sydney
+];
+
+const ARC_PAIRS: [number, number][] = [
+  [0, 1], [0, 3], [0, 2], [0, 6], [0, 7], [0, 8], [0, 9],
+  [3, 4], [2, 11], [4, 10], [3, 9], [1, 5], [5, 12],
+];
+
 const STEPS = [
   "Verifying secure workspace",
   "Preparing Global Document Intelligence",
@@ -26,11 +48,26 @@ const T = {
   gone:     8400,   // unmount
 };
 
+/* ─── Canvas helpers ────────────────────────────────────────── */
+function project(lon: number, lat: number, w: number, h: number): [number, number] {
+  return [(lon + 180) * (w / 360), (90 - lat) * (h / 180)];
+}
+
+function quad(t: number, a: number, b: number, c: number) {
+  return (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c;
+}
+
+const idle = (cb: () => void) =>
+  typeof requestIdleCallback !== "undefined"
+    ? requestIdleCallback(cb, { timeout: 2000 })
+    : setTimeout(cb, 100);
+
 /* ─── Component ─────────────────────────────────────────────── */
 type Phase = "enter" | "rings" | "active" | "vault" | "ready" | "exit" | "gone";
 
 export function RitualOverlay() {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef       = useRef<number>(0);
   const t0Ref        = useRef<number>(0);
   const dismissRef   = useRef<(() => void) | null>(null);
@@ -53,43 +90,125 @@ export function RitualOverlay() {
     if (!ctx) return;
 
     if (!t0Ref.current) t0Ref.current = now;
-    const s = (now - t0Ref.current) / 1000;
+    const s = (now - t0Ref.current) / 1000; // elapsed seconds
 
     const W = canvas.width;
     const H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Horizontal scan beams — linear velocity, no map geometry
-    const BEAMS = [
-      { y: H * 0.22, speed: 0.42, alpha: 0.06, h: 1 },
-      { y: H * 0.48, speed: 0.71, alpha: 0.04, h: 1 },
-      { y: H * 0.68, speed: 0.31, alpha: 0.05, h: 2 },
-      { y: H * 0.85, speed: 0.55, alpha: 0.035, h: 1 },
-    ];
-    BEAMS.forEach((b) => {
-      const period = W * 1.6;
-      const x = ((s * W * b.speed * 0.8) % period) - 160;
-      const g = ctx.createLinearGradient(x - 120, 0, x + 120, 0);
-      g.addColorStop(0,    "rgba(212,175,55,0)");
-      g.addColorStop(0.35, `rgba(212,175,55,${b.alpha})`);
-      g.addColorStop(0.5,  `rgba(244,229,184,${b.alpha * 1.6})`);
-      g.addColorStop(0.65, `rgba(212,175,55,${b.alpha})`);
-      g.addColorStop(1,    "rgba(212,175,55,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(x - 120, b.y - b.h, 240, b.h * 2);
-    });
+    /* World map — fades in 0.35s → 1.35s, max alpha 0.22
+       Offscreen pre-render keeps main thread free (single blit) */
+    if (offscreenRef.current && s > 0.35) {
+      const alpha = Math.min((s - 0.35) / 1.0, 1) * 0.22;
+      if (alpha > 0) {
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(offscreenRef.current, 0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+    }
 
-    // Vertical data streams — sparse column particles, non-geographic
-    const cols = Math.floor(W / 52);
-    for (let c = 0; c < cols; c++) {
-      const cx = c * 52 + 26;
-      for (let p = 0; p < 5; p++) {
-        const phase = ((s * (0.08 + (c % 7) * 0.012) + c * 0.38 + p * 0.22) % 1);
-        const y = phase * H;
-        const alpha = Math.sin(phase * Math.PI) * 0.055;
-        if (alpha <= 0.005) continue;
-        ctx.fillStyle = `rgba(198,165,90,${alpha})`;
-        ctx.fillRect(cx - 0.5, y - 1.5, 1, 3);
+    /* Arc lines — draw starting at 1.05s (lines before nodes) */
+    if (s > 1.05) {
+      ARC_PAIRS.forEach(([ai, bi], idx) => {
+        const delay    = 1.05 + idx * 0.1;
+        const progress = Math.min(Math.max((s - delay) / 0.65, 0), 1);
+        if (progress <= 0) return;
+
+        const [x1, y1] = project(NODES[ai][0], NODES[ai][1], W, H);
+        const [x2, y2] = project(NODES[bi][0], NODES[bi][1], W, H);
+        const cx = (x1 + x2) / 2;
+        const cy = (y1 + y2) / 2 - Math.abs(x2 - x1) * 0.28 - 30;
+
+        ctx.save();
+        ctx.strokeStyle = `rgba(212,175,55,${Math.min(progress, 0.85) * 0.38})`;
+        ctx.lineWidth = 0.75;
+        ctx.setLineDash([3, 6]);
+        ctx.beginPath();
+        const steps = 60;
+        for (let k = 0; k <= Math.floor(steps * progress); k++) {
+          const t  = k / steps;
+          const bx = quad(t, x1, cx, x2);
+          const by = quad(t, y1, cy, y2);
+          k === 0 ? ctx.moveTo(bx, by) : ctx.lineTo(bx, by);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        /* Traveling pulse bead */
+        if (progress < 1) {
+          const dx = quad(progress, x1, cx, x2);
+          const dy = quad(progress, y1, cy, y2);
+          const g  = ctx.createRadialGradient(dx, dy, 0, dx, dy, 5);
+          g.addColorStop(0, "rgba(244,229,184,0.95)");
+          g.addColorStop(1, "rgba(212,175,55,0)");
+          ctx.beginPath();
+          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+    }
+
+    /* Miami origin — ignites at 0.75s with expanding ring burst */
+    if (s > 0.75) {
+      const [x, y] = project(NODES[0][0], NODES[0][1], W, H);
+      const alpha  = Math.min((s - 0.75) / 0.35, 1);
+      const pulse  = Math.sin(s * 2.5) * 0.5 + 0.5;
+
+      /* Expanding ignition ring (first 0.5s only) */
+      if (s < 1.25) {
+        const ignProg  = Math.min((s - 0.75) / 0.5, 1);
+        const ignR     = 50 * ignProg;
+        const ignAlpha = (1 - ignProg) * 0.55 * alpha;
+        if (ignAlpha > 0) {
+          ctx.beginPath();
+          ctx.arc(x, y, ignR, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(212,175,55,${ignAlpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+
+      /* Halo */
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 28 + pulse * 10);
+      g.addColorStop(0, `rgba(244,229,184,${0.88 * alpha})`);
+      g.addColorStop(0.3, `rgba(212,175,55,${0.45 * alpha})`);
+      g.addColorStop(1, "rgba(212,175,55,0)");
+      ctx.beginPath();
+      ctx.arc(x, y, 28 + pulse * 10, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      /* Core dot */
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(244,229,184,${alpha})`;
+      ctx.fill();
+    }
+
+    /* Destination nodes — glow at 1.45s (after arc lines start drawing) */
+    if (s > 1.45) {
+      for (let i = 1; i < NODES.length; i++) {
+        const delay = 1.45 + (i - 1) * 0.06;
+        const alpha = Math.min(Math.max((s - delay) / 0.4, 0), 1);
+        if (alpha <= 0) continue;
+
+        const [x, y] = project(NODES[i][0], NODES[i][1], W, H);
+        const pulse  = Math.sin(s * 1.8 + i * 0.9) * 0.5 + 0.5;
+
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, 11 + pulse * 3);
+        gr.addColorStop(0, `rgba(212,175,55,${0.5 * alpha})`);
+        gr.addColorStop(1, "rgba(212,175,55,0)");
+        ctx.beginPath();
+        ctx.arc(x, y, 11 + pulse * 3, 0, Math.PI * 2);
+        ctx.fillStyle = gr;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(244,229,184,${alpha * 0.9})`;
+        ctx.fill();
       }
     }
 
@@ -128,6 +247,43 @@ export function RitualOverlay() {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+
+    /* Fetch + pre-render world map during idle — warmer gold stroke */
+    idle(() => {
+      fetch("/world.geojson")
+        .then((r) => r.json())
+        .then((data) => {
+          idle(() => {
+            const W2 = window.innerWidth;
+            const H2 = window.innerHeight;
+            const oc  = document.createElement("canvas");
+            oc.width  = W2;
+            oc.height = H2;
+            const c   = oc.getContext("2d");
+            if (!c) return;
+            c.strokeStyle = "rgba(212,175,55,1)";
+            c.lineWidth   = 0.6;
+            c.beginPath();
+            for (const f of data.features) {
+              const { type, coordinates } = f.geometry;
+              const polys = type === "Polygon" ? [coordinates] : coordinates;
+              for (const poly of polys) {
+                for (const ring of poly) {
+                  let first = true;
+                  for (const [lon, lat] of ring) {
+                    const [x, y] = project(lon, lat, W2, H2);
+                    first ? c.moveTo(x, y) : c.lineTo(x, y);
+                    first = false;
+                  }
+                }
+              }
+            }
+            c.stroke();
+            offscreenRef.current = oc;
+          });
+        })
+        .catch(() => {});
+    });
 
     rafRef.current = requestAnimationFrame(render);
 

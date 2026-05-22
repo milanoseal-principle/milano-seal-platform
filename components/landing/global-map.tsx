@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -23,50 +22,13 @@ const GlobalIntelMapInteractive = dynamic(
 // Top destinations by demand for the homepage teaser
 const TEASER_LIMIT = 8;
 
-const MAP_ROUTES = [
-  { id: "italy",  label: "ITALY",  fx: 118, fy: 160, tx: 285, ty:  92 },
-  { id: "spain",  label: "SPAIN",  fx: 118, fy: 160, tx: 232, ty: 108 },
-  { id: "brazil", label: "BRAZIL", fx: 118, fy: 160, tx: 140, ty: 208 },
-  { id: "uae",    label: "UAE",    fx: 118, fy: 160, tx: 358, ty: 158 },
-] as const;
-
-function routeArc(fx: number, fy: number, tx: number, ty: number): string {
-  const dy = ty - fy;
-  const mx = (fx + tx) / 2;
-  if (dy > 40 && Math.abs(tx - fx) < 60) {
-    return `M ${fx} ${fy} Q ${mx + 50} ${fy + dy * 0.5} ${tx} ${ty}`;
-  }
-  const lift = 32 + (Math.abs(tx - fx) / 300) * 55;
-  const my   = Math.min(fy, ty) - lift;
-  return `M ${fx} ${fy} Q ${mx} ${my} ${tx} ${ty}`;
-}
-
 export function GlobalMap() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const glowRef    = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    const glow    = glowRef.current;
-    if (!section || !glow) return;
-    const onMove = (e: PointerEvent) => {
-      const r = section.getBoundingClientRect();
-      glow.style.setProperty("--mouse-x", ((e.clientX - r.left) / r.width  * 100).toFixed(1) + "%");
-      glow.style.setProperty("--mouse-y", ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%");
-    };
-    section.addEventListener("pointermove", onMove, { passive: true });
-    return () => section.removeEventListener("pointermove", onMove);
-  }, []);
-
   const teaser = [...DESTINATIONS]
     .sort((a, b) => (b.demand || 0) - (a.demand || 0))
     .slice(0, TEASER_LIMIT);
 
   return (
-    <section ref={sectionRef} className="relative py-24 md:py-32 bg-[#050507] overflow-hidden">
-      {/* Mouse-tracked ambient light */}
-      <div ref={glowRef} className="cinematic-vault-glow absolute inset-0 z-0" />
-
+    <section className="relative py-24 md:py-32 bg-[#0A0A0A] overflow-hidden">
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-10">
         <svg
@@ -147,74 +109,6 @@ export function GlobalMap() {
             <span className="text-[#B0B0B0]">|</span>
             <span className="text-[#C6A55A]">Execution Origin</span>
           </div>
-        </motion.div>
-
-        {/* 3-layer filament routing arcs — map section is exclusive routing owner */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, delay: 0.1 }}
-          className="mb-8 relative"
-          style={{ height: 220 }}
-        >
-          <svg
-            viewBox="0 0 480 220"
-            width="100%"
-            height="100%"
-            style={{ overflow: "visible", display: "block" }}
-            aria-hidden="true"
-          >
-            <defs>
-              <filter id="map-arc-bloom" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="6" result="blur" />
-              </filter>
-            </defs>
-
-            {MAP_ROUTES.map((r, i) => {
-              const d = routeArc(r.fx, r.fy, r.tx, r.ty);
-              return (
-                <g key={r.id}>
-                  {/* Layer 3: ambient bloom */}
-                  <path d={d} stroke="#D4AF37" strokeWidth="2" fill="none" opacity="0.28" filter="url(#map-arc-bloom)" />
-                  {/* Layer 2: gold diffusion — plus-lighter blend for intersection glow */}
-                  <path d={d} stroke="#D4AF37" strokeWidth="3" fill="none" opacity="0.45"
-                    style={{ mixBlendMode: "plus-lighter" } as React.CSSProperties} />
-                  {/* Layer 1: crisp champagne core */}
-                  <path d={d} stroke="#F4E5B8" strokeWidth="1" fill="none" opacity="0.88" />
-
-                  {/* Hague ripple rings */}
-                  {([0, 0.8, 1.6] as number[]).map((delay, ri) => (
-                    <circle key={ri} cx={r.tx} cy={r.ty} r="6"
-                      fill="none" stroke="#C6A55A" strokeWidth={0.8 - ri * 0.2}
-                      className="hague-ripple"
-                      style={{ animationDelay: `${i * 0.35 + delay}s` } as React.CSSProperties}
-                    />
-                  ))}
-
-                  {/* Destination core */}
-                  <circle cx={r.tx} cy={r.ty} r="3" fill="#D4AF37" opacity="0.92" />
-                  <text
-                    x={r.tx + (r.tx > 240 ? 10 : -10)}
-                    y={r.ty + 4}
-                    textAnchor={r.tx > 240 ? "start" : "end"}
-                    fill="#C6A55A" fontSize="7" letterSpacing="0.14em"
-                    fontFamily="var(--font-geist, system-ui, sans-serif)"
-                  >
-                    {r.label}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Florida origin */}
-            <circle cx="118" cy="160" r="4.5" fill="#D4AF37" opacity="0.9" />
-            <circle cx="118" cy="160" r="11"  fill="none" stroke="#C6A55A" strokeWidth="0.8" opacity="0.35" />
-            <text x="132" y="164" fill="#C6A55A" fontSize="7" letterSpacing="0.14em"
-              fontFamily="var(--font-geist, system-ui, sans-serif)">
-              FLORIDA
-            </text>
-          </svg>
         </motion.div>
 
         {/* Real interactive world map */}
