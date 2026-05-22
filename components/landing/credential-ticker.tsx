@@ -3,13 +3,13 @@
 import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
 
 const ITEMS = [
-  { icon: Shield,     label: "FLORIDA NOTARY #668288 // LICENSED & COMMISSIONED" },
-  { icon: Globe,      label: "HAGUE CONVENTION ROUTING // INTERNATIONAL STANDARDS" },
-  { icon: Video,      label: "REMOTE ONLINE NOTARIZATION // RON CERTIFIED NETWORK" },
-  { icon: FileCheck,  label: "FL DEPT OF STATE PATHWAY // APOSTILLE COORDINATION" },
-  { icon: Users,      label: "USCIS DOCUMENT SUPPORT // CLEARANCE VALIDATION" },
-  { icon: Layers,     label: "MATTER REVIEW SYSTEM // MULTI-GATE EXECUTION" },
-  { icon: Navigation, label: "TALLAHASSEE FIELD DISPATCH // PHYSICAL COURIER · FL DEPT OF STATE" },
+  { icon: Shield,     label: "FLORIDA NOTARY #668288 // COMMISSION ACTIVE" },
+  { icon: Globe,      label: "HAGUE CONVENTION ROUTING // 21+ JURISDICTIONS INDEXED" },
+  { icon: Video,      label: "REMOTE ONLINE NOTARIZATION // SECURE SESSION AVAILABLE" },
+  { icon: FileCheck,  label: "FLORIDA DEPT OF STATE // APOSTILLE ROUTE ACTIVE" },
+  { icon: Users,      label: "USCIS DOCUMENT SUPPORT // PACKAGE REVIEW AVAILABLE" },
+  { icon: Layers,     label: "MATTER REVIEW // 1-BUSINESS-DAY RESPONSE WINDOW" },
+  { icon: Navigation, label: "TALLAHASSEE DISPATCH // FIELD MOBILIZATION AVAILABLE" },
 ];
 
 export function CredentialTicker() {
