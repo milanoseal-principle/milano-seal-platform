@@ -29,11 +29,12 @@ function LogoMark({ size = 44 }: { size?: number }) {
   );
 }
 
-type Role = "operator" | "client";
+type Role = "operator" | "client" | "alliance" | "va";
+type AccessGate = "invoice" | "alliance" | "va" | null;
 
 const ROLE_HINTS: Record<
   Role,
-  { email: string; label: string; sub: string; method: "password" | "magic" }
+  { email: string; label: string; sub: string; method: "password" | "magic" | "oauth"; gate?: AccessGate }
 > = {
   operator: {
     email: "nick@themilanoseal.com",
@@ -45,7 +46,22 @@ const ROLE_HINTS: Record<
     email: "you@example.com",
     label: "Client Portal",
     sub: "Track your matter",
-    method: "magic",
+    method: "oauth",
+    gate: "invoice",
+  },
+  alliance: {
+    email: "alliance@example.com",
+    label: "Alliance Partner",
+    sub: "Manage referrals",
+    method: "oauth",
+    gate: "alliance",
+  },
+  va: {
+    email: "va@example.com",
+    label: "VA/Operator",
+    sub: "Administrative access",
+    method: "oauth",
+    gate: "va",
   },
 };
 
@@ -53,10 +69,12 @@ function LoginInner() {
   const [role, setRole] = useState<Role | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "microsoft" | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,6 +86,8 @@ function LoginInner() {
     rawNext.startsWith("/portal")
       ? rawNext
       : "/dashboard";
+
+  const gateType = role ? ROLE_HINTS[role].gate : null;
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -89,7 +109,38 @@ function LoginInner() {
     setError(null);
     setMagicSent(false);
     setPassword("");
+    setAccessCode("");
   }, [role]);
+
+  const handleOAuth = async (provider: "google" | "microsoft") => {
+    if (!role) {
+      setError("Select your access level.");
+      return;
+    }
+
+    setOauthLoading(provider);
+    setError(null);
+
+    const supabase = createClient();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const redirectTo = `${origin}/auth/callback?role=${role}`;
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+
+    if (oauthError) {
+      setError(oauthError.message);
+      setOauthLoading(null);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,8 +148,27 @@ function LoginInner() {
       setError("Select your access level.");
       return;
     }
+
+    const method = ROLE_HINTS[role].method;
+    if (method === "oauth") {
+      await handleOAuth("google");
+      return;
+    }
+
     if (!email) {
       setError("Email is required.");
+      return;
+    }
+
+    // Access gating check for portal portals
+    if (gateType && !accessCode) {
+      setError(
+        gateType === "invoice"
+          ? "Invoice number is required."
+          : gateType === "alliance"
+            ? "Alliance number is required."
+            : "VA number is required."
+      );
       return;
     }
 
@@ -107,16 +177,20 @@ function LoginInner() {
 
     const supabase = createClient();
 
-    if (ROLE_HINTS[role].method === "magic") {
+    if (method === "magic") {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-      const redirect = `${origin}/auth/callback?role=client`;
+      const redirect = `${origin}/auth/callback?role=${role}`;
 
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: redirect,
           shouldCreateUser: true,
+          data: {
+            role,
+            ...(gateType && { [gateType]: accessCode }),
+          },
         },
       });
 
@@ -287,72 +361,179 @@ function LoginInner() {
                 />
               </div>
 
-              {!isClient && (
-                <div style={{ marginBottom: 14, position: "relative" }}>
-                  <label htmlFor="password" className="ms-flbl">
-                    Password
+              {gateType && (
+                <div style={{ marginBottom: 12 }}>
+                  <label htmlFor="accessCode" className="ms-flbl">
+                    {gateType === "invoice"
+                      ? "Invoice Number"
+                      : gateType === "alliance"
+                        ? "Alliance Number"
+                        : "VA Number"}
                   </label>
                   <input
-                    id="password"
+                    id="accessCode"
                     className="ms-fi"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
+                    type="text"
+                    placeholder={
+                      gateType === "invoice"
+                        ? "INV-00000000"
+                        : gateType === "alliance"
+                          ? "ALLY-00000000"
+                          : "VA-00000000"
+                    }
+                    value={accessCode}
                     onChange={(e) => {
-                      setPassword(e.target.value);
+                      setAccessCode(e.target.value);
                       setError(null);
                     }}
-                    minLength={6}
-                    required={!isClient}
-                    style={{ paddingRight: 56 }}
+                    required
                   />
+                </div>
+              )}
+
+              {!ROLE_HINTS[role].method.includes("oauth") && (
+                <>
+                  {role === "operator" && (
+                    <div style={{ marginBottom: 14, position: "relative" }}>
+                      <label htmlFor="password" className="ms-flbl">
+                        Password
+                      </label>
+                      <input
+                        id="password"
+                        className="ms-fi"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setError(null);
+                        }}
+                        minLength={6}
+                        required
+                        style={{ paddingRight: 56 }}
+                      />
+                      <button
+                        type="button"
+                        className="ms-show-pwd"
+                        style={{ top: "calc(50% + 9px)" }}
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="ms-hint">
+                    {role === "operator" ? (
+                      <>
+                        Operator access — use your <span>Milano Seal</span>{" "}
+                        credentials.
+                      </>
+                    ) : (
+                      <>
+                        Use the email associated with your access. We&rsquo;ll
+                        send a one-time sign-in link — <span>no password required</span>.
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {ROLE_HINTS[role].method === "oauth" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                   <button
                     type="button"
-                    className="ms-show-pwd"
-                    style={{ top: "calc(50% + 9px)" }}
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    onClick={() => handleOAuth("google")}
+                    disabled={oauthLoading === "google" || isLoading}
+                    style={{
+                      width: "100%",
+                      padding: 13,
+                      background: oauthLoading === "google" ? "rgba(198,165,90,.3)" : "rgba(198,165,90,.15)",
+                      color: "#C6A55A",
+                      border: "1px solid rgba(198,165,90,.3)",
+                      borderRadius: 2,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: ".12em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      transition: "all .2s ease",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      opacity: oauthLoading === "google" || isLoading ? 0.6 : 1,
+                    }}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {oauthLoading === "google" ? (
+                      <>
+                        <span style={{ width: 12, height: 12, borderRadius: "50%", border: "1.5px solid rgba(198,165,90,.5)", borderTopColor: "#C6A55A", animation: "ms-spin .8s linear infinite" }} />
+                        Connecting…
+                      </>
+                    ) : (
+                      <>🔐 Sign in with Google</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth("microsoft")}
+                    disabled={oauthLoading === "microsoft" || isLoading}
+                    style={{
+                      width: "100%",
+                      padding: 13,
+                      background: oauthLoading === "microsoft" ? "rgba(198,165,90,.3)" : "rgba(198,165,90,.15)",
+                      color: "#C6A55A",
+                      border: "1px solid rgba(198,165,90,.3)",
+                      borderRadius: 2,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: ".12em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      transition: "all .2s ease",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      opacity: oauthLoading === "microsoft" || isLoading ? 0.6 : 1,
+                    }}
+                  >
+                    {oauthLoading === "microsoft" ? (
+                      <>
+                        <span style={{ width: 12, height: 12, borderRadius: "50%", border: "1.5px solid rgba(198,165,90,.5)", borderTopColor: "#C6A55A", animation: "ms-spin .8s linear infinite" }} />
+                        Connecting…
+                      </>
+                    ) : (
+                      <>☁️ Sign in with Microsoft</>
+                    )}
                   </button>
                 </div>
               )}
 
-              <div className="ms-hint">
-                {isClient ? (
-                  <>
-                    Use the email associated with your matter. We&rsquo;ll send
-                    a one-time sign-in link — <span>no password required</span>.
-                  </>
-                ) : (
-                  <>
-                    Operator access — use your <span>Milano Seal</span>{" "}
-                    credentials.
-                  </>
-                )}
-              </div>
-
               {error && <div className="ms-err">{error}</div>}
 
-              <button
-                type="submit"
-                className="ms-submit-btn"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="ms-spinner" />
-                    {isClient ? "Sending link…" : "Signing in…"}
-                  </>
-                ) : isClient ? (
-                  "Send Magic Link"
-                ) : (
-                  "Continue"
-                )}
-              </button>
+              {ROLE_HINTS[role].method !== "oauth" && (
+                <button
+                  type="submit"
+                  className="ms-submit-btn"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="ms-spinner" />
+                      {role === "operator" ? "Signing in…" : "Sending link…"}
+                    </>
+                  ) : role === "operator" ? (
+                    "Continue"
+                  ) : (
+                    "Send Magic Link"
+                  )}
+                </button>
+              )}
             </form>
           )}
 
