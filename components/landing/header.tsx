@@ -40,7 +40,7 @@ export function Header() {
         className={`fixed top-9 left-0 right-0 z-50 transition-all duration-300 ms-header-reveal${mounted ? " is-visible" : ""} ${
           isScrolled
             ? "bg-[#0A0A0A]/95 backdrop-blur-md"
-            : "bg-transparent"
+            : "bg-[#0A0A0A]/80 backdrop-blur-md"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6">

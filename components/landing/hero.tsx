@@ -50,7 +50,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[120px] lg:pt-0 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[148px] lg:pt-[120px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -87,14 +87,14 @@ export function Hero() {
             </div>
 
             {/* Headline */}
-            <h1 className="ms-hero-h1 font-serif text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-medium leading-[1.1] text-white mb-6">
+            <h1 className="ms-hero-h1 font-serif text-3xl md:text-4xl lg:text-[3.25rem] xl:text-[3.75rem] font-medium leading-[1.1] text-white mb-6">
               <span className={`ms-hero-line${heroVisible[1] ? " is-visible" : ""}`}>
                 Sealing Trust
               </span>
               <span className={`ms-hero-line${heroVisible[2] ? " is-visible" : ""}`}>
                 Across <span className="ms-hero-borders-gradient italic">Borders</span>
               </span>
-              <span className={`ms-hero-line text-[1.6rem] md:text-[1.8rem] lg:text-[2rem] xl:text-[2.2rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
+              <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
                 Secure International Document Execution & Authentication Infrastructure
               </span>
             </h1>
