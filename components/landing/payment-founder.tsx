@@ -12,6 +12,7 @@ const CREDENTIALS = [
 
 export function PaymentFounder() {
   const [open, setOpen] = useState(false);
+  const [credentialsRevealed, setCredentialsRevealed] = useState<boolean[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -24,6 +25,24 @@ export function PaymentFounder() {
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  // Stagger credential reveal on card open
+  useEffect(() => {
+    if (!open) {
+      setCredentialsRevealed([]);
+      return;
+    }
+    const timers = CREDENTIALS.map((_, i) =>
+      setTimeout(() => {
+        setCredentialsRevealed((prev) => {
+          const next = [...prev];
+          next[i] = true;
+          return next;
+        });
+      }, i * 80)
+    );
+    return () => timers.forEach(clearTimeout);
   }, [open]);
 
   return (
@@ -74,8 +93,11 @@ export function PaymentFounder() {
 
                 {/* Credentials list */}
                 <ul className="ms-founder-card__credentials">
-                  {CREDENTIALS.map(({ icon: Icon, text }) => (
-                    <li key={text} className="ms-founder-card__credential">
+                  {CREDENTIALS.map(({ icon: Icon, text }, i) => (
+                    <li
+                      key={text}
+                      className={`ms-founder-card__credential${credentialsRevealed[i] ? " ms-founder-card__credential--visible" : ""}`}
+                    >
                       <Icon className="ms-founder-card__cred-icon" aria-hidden="true" />
                       <span>{text}</span>
                     </li>
