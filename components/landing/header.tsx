@@ -43,7 +43,16 @@ export function Header() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
               <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
-                <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={38} height={38} className="object-contain" />
+                {/* Crop to show only the M crest circle — image includes text below which we hide */}
+                <div className="w-[38px] h-[38px] overflow-hidden relative flex-shrink-0">
+                  <Image
+                    src="/milano-seal-gold-transparent-512.png"
+                    alt="The Milano Seal"
+                    width={512}
+                    height={512}
+                    style={{ width: "70px", height: "70px", position: "absolute", top: "-2px", left: "-16px" }}
+                  />
+                </div>
                 <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
                   The Milano Seal
                 </span>
@@ -64,7 +73,7 @@ export function Header() {
               <div className="hidden md:flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors duration-200 px-3 py-2"
+                  className="inline-flex items-center px-4 py-2 border border-[#C6A55A]/50 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/10 transition-all duration-200"
                 >
                   Login
                 </Link>
