@@ -22,8 +22,8 @@ const fadeUp = {
 };
 
 const fadeIn = {
-  hidden: { opacity: 0, scale: 0.96 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.7 } },
 };
 
 const slideLeft = {
@@ -86,12 +86,8 @@ export function PaymentFounder() {
               <div className="absolute inset-0 md:bg-gradient-to-r from-transparent via-transparent to-[#0D0D0D]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-transparent md:bg-none" />
 
-              {/* Crest overlay: scale + fade reveal */}
-              <motion.div
-                variants={fadeIn}
-                whileHover={{ scale: 1.08, opacity: 1, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }}
-                className="absolute top-5 left-5"
-              >
+              {/* Crest overlay fades in last */}
+              <motion.div variants={fadeIn} className="absolute top-5 left-5">
                 <Image
                   src="/milano-seal-gold-transparent-512.png"
                   alt="Milano Seal Crest"
@@ -130,18 +126,10 @@ export function PaymentFounder() {
 
               <ul className="space-y-3 mb-10">
                 {CREDENTIALS.map(({ icon: Icon, text }) => (
-                  <motion.li
-                    key={text}
-                    variants={slideRow}
-                    whileHover={{ x: 4, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }}
-                    className="flex items-center gap-3 cursor-default"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.15, borderColor: "rgba(198,165,90,0.6)", transition: { duration: 0.2 } }}
-                      className="flex-shrink-0 w-7 h-7 rounded-full bg-[#1A1608] border border-[#C6A55A]/20 flex items-center justify-center"
-                    >
+                  <motion.li key={text} variants={slideRow} className="flex items-center gap-3">
+                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#1A1608] border border-[#C6A55A]/20 flex items-center justify-center">
                       <Icon className="w-3.5 h-3.5 text-[#C6A55A]" />
-                    </motion.span>
+                    </span>
                     <span className="text-[#D0D0D0] text-sm leading-snug">{text}</span>
                   </motion.li>
                 ))}
