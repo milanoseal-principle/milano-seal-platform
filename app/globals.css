@@ -120,13 +120,6 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
-
-  /* Duration scale */
-  --dur-fast: 150ms;
-  --dur-base: 280ms;
-  --dur-slow: 480ms;
-  --dur-xslow: 800ms;
 
   /* Shadows */
   --shadow-gold: 0 0 40px rgba(198, 165, 90, 0.12);
@@ -1503,8 +1496,6 @@ h4 {
   display: flex;
   width: max-content;
   animation: ticker-scroll 50s linear infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 .ticker-track:hover {
@@ -1866,12 +1857,9 @@ h4 {
     display: none !important;
   }
 
-  .ticker-track,
   .ticker-delayed .ticker-track {
     opacity: 1 !important;
-    animation: none !important;
-    transform: none !important;
-    will-change: auto !important;
+    animation: ticker-scroll 50s linear infinite !important;
   }
 
   .ms-atmos-glow {
