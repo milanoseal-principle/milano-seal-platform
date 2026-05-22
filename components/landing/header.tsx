@@ -60,7 +60,13 @@ export function Header() {
                 ))}
               </nav>
 
-              <div className="hidden md:block">
+              <div className="hidden md:flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/60 text-[#C6A55A] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A] hover:bg-[#C6A55A]/8"
+                >
+                  Login
+                </Link>
                 <Link
                   href="/intake"
                   className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
@@ -103,9 +109,16 @@ export function Header() {
                 </Link>
               ))}
               <Link
+                href="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="inline-flex items-center justify-center px-5 py-3 mt-4 border border-[#C6A55A]/60 text-[#C6A55A] font-medium rounded-lg"
+              >
+                Login
+              </Link>
+              <Link
                 href="/intake"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 mt-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
               >
                 <span>Begin Execution</span>
                 <ArrowRight className="w-4 h-4" />
