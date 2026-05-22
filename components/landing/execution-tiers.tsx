@@ -53,7 +53,7 @@ const tiers = [
 
 export function ExecutionTiers() {
   return (
-    <section className="relative py-24 md:py-32 bg-[#0A0A0A]">
+    <section className="relative py-24 md:py-32 bg-[#050507]">
       <div className="max-w-7xl mx-auto px-6">
         {/* Section header */}
         <motion.div
