@@ -78,7 +78,7 @@ export function Hero() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
                 </span>
                 <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase whitespace-nowrap">
-                  Florida · Hague Apostille Authority
+                  Florida Notary #668288 · Apostille Coordination
                 </span>
               </div>
             </div>

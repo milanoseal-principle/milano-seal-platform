@@ -1,28 +1,38 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Zap, Lock, Scale } from "lucide-react";
+import { Shield, Globe, Lock, FileCheck, Clock, Video } from "lucide-react";
 
 const items = [
   {
     icon: Shield,
-    label: "Florida Commissioned",
-    sub: "Statewide Mobile & RON Authority",
+    label: "Florida Notary #668288",
+    sub: "Licensed & Commissioned",
   },
   {
-    icon: Scale,
-    label: "Executive Liaison",
-    sub: "Healthcare & Legal Network Architecture",
+    icon: Globe,
+    label: "Hague Convention Routing",
+    sub: "Destination Review",
   },
   {
     icon: Lock,
-    label: "Structured Review",
-    sub: "Destination-Specific Requirements Apply",
+    label: "Payment-Gated Execution",
+    sub: "Scope Confirmed Before Scheduling",
   },
   {
-    icon: Zap,
-    label: "Express Escalation",
-    sub: "Same-Day Matter Review Intake",
+    icon: Video,
+    label: "RON Certified",
+    sub: "Remote Online Notary",
+  },
+  {
+    icon: FileCheck,
+    label: "Apostille Coordination",
+    sub: "Florida Department of State Route",
+  },
+  {
+    icon: Clock,
+    label: "1-Business-Day Response",
+    sub: "Matter Review",
   },
 ];
 
