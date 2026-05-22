@@ -14,6 +14,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { usePortal } from "./portal-context";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
 
 const NAV = [
   { href: "/portal", label: "My Matter", icon: ClipboardList },
@@ -204,6 +205,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="ps-bg">
+      <div className="ps-ticker-fixed">
+        <CredentialTicker />
+      </div>
       <aside className={`ps-sb ${mobileOpen ? "open" : ""}`}>
         {sidebar(() => setMobileOpen(false))}
         <button

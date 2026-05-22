@@ -1467,11 +1467,8 @@ h4 {
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 9px 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 51; /* above everything — unified top cap */
+  position: relative;
+  z-index: 1;
 }
 
 .ticker-wrap::before,

@@ -50,7 +50,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[148px] lg:pt-[120px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[128px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
