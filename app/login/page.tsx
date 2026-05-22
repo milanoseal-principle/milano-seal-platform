@@ -1,33 +1,9 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-function LogoMark({ size = 44 }: { size?: number }) {
-  return (
-    <svg
-      width={size * 0.55}
-      height={size * 0.55}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M3 20L3 6L12 15L21 6L21 20"
-        stroke="#C6A55A"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z"
-        fill="#C6A55A"
-        opacity="0.88"
-      />
-    </svg>
-  );
-}
 
 type Role = "operator" | "client";
 
@@ -159,26 +135,31 @@ function LoginInner() {
         @keyframes ms-fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
         @keyframes ms-spin { to{transform:rotate(360deg)} }
         @keyframes ms-goldPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
-        .ms-login-bg { position: fixed; inset: 0; background: var(--black, #0a0a0a); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        @keyframes ms-shimmer { 0%{transform:translateX(-120%) skewX(-12deg)} 100%{transform:translateX(320%) skewX(-12deg)} }
+        @keyframes ms-ringBreath { 0%,100%{box-shadow:0 0 28px rgba(198,165,90,.18),0 0 0 0 rgba(198,165,90,0)} 50%{box-shadow:0 0 48px rgba(198,165,90,.32),0 0 0 6px rgba(198,165,90,.06)} }
+        .ms-login-bg { position: fixed; inset: 0; background: #0a0a0a; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .ms-login-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(198,165,90,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(198,165,90,.05) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); opacity: .6; }
         .ms-login-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(198,165,90,.10), transparent 60%); filter: blur(40px); animation: ms-goldPulse 6s ease-in-out infinite; }
-        .ms-login-card { position: relative; width: 100%; max-width: 420px; background: rgba(15,15,15,.92); border: 1px solid rgba(198,165,90,.14); padding: 44px 44px 36px; border-radius: 4px; backdrop-filter: blur(12px); box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: ms-fadeUp .6s cubic-bezier(.25,.46,.45,.94) both; }
+        .ms-login-card { position: relative; width: 100%; max-width: 420px; background: rgba(15,15,15,.96); border: 1px solid rgba(198,165,90,.18); padding: 44px 44px 36px; border-radius: 4px; backdrop-filter: blur(16px); box-shadow: 0 24px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(198,165,90,.06) inset; animation: ms-fadeUp .6s cubic-bezier(.25,.46,.45,.94) both; }
         .ms-login-card::before { content: ''; position: absolute; top: 0; left: 52px; right: 52px; height: 1px; background: linear-gradient(90deg, transparent, #C6A55A, transparent); }
-        .ms-login-ring { width: 80px; height: 80px; border-radius: 50%; border: 1.5px solid #C6A55A; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; animation: ms-goldPulse 3s ease-in-out infinite; box-shadow: 0 0 40px rgba(198,165,90,.18); }
+        .ms-login-ring { width: 84px; height: 84px; border-radius: 50%; border: 1.5px solid rgba(198,165,90,.7); display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; animation: ms-ringBreath 4s ease-in-out infinite; }
         .ms-login-title { font-family: var(--font-playfair, 'Playfair Display'), Georgia, serif; font-size: 13px; letter-spacing: .28em; text-transform: uppercase; color: #fff; text-align: center; margin-bottom: 6px; }
         .ms-login-tag { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.45); text-align: center; margin-bottom: 32px; }
         .ms-flbl { display: block; font-size: 9px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 7px; }
         .ms-fi { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(198,165,90,.14); padding: 11px 12px; color: #fff; font-family: var(--font-geist, system-ui), sans-serif; font-size: 13px; outline: none; transition: all .2s ease; border-radius: 2px; }
         .ms-fi::placeholder { color: rgba(255,255,255,.32); }
-        .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); }
+        .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); box-shadow: 0 0 0 3px rgba(198,165,90,.08); }
         .ms-role-btn { padding: 11px 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(198,165,90,.14); cursor: pointer; text-align: left; transition: all .2s ease; border-radius: 2px; }
         .ms-role-btn:hover { border-color: rgba(198,165,90,.32); background: rgba(198,165,90,.04); }
         .ms-role-btn[data-active="true"] { background: rgba(198,165,90,.10); border-color: #C6A55A; }
         .ms-role-btn-l { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
         .ms-role-btn-s { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-top: 3px; }
-        .ms-submit-btn { width: 100%; padding: 13px; background: #C6A55A; color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: background .2s ease; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-        .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; }
-        .ms-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .ms-submit-btn { position: relative; overflow: hidden; width: 100%; padding: 14px; background: linear-gradient(135deg, #D4B96A 0%, #C6A55A 45%, #B89040 100%); color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; cursor: pointer; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(198,165,90,.30), 0 1px 0 rgba(255,255,255,.15) inset, 0 -1px 0 rgba(0,0,0,.2) inset; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        .ms-submit-btn::after { content: ''; position: absolute; top: 0; left: 0; width: 35%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent); transform: translateX(-120%) skewX(-12deg); pointer-events: none; }
+        .ms-submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(198,165,90,.45), 0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.25) inset; filter: brightness(1.06); }
+        .ms-submit-btn:hover:not(:disabled)::after { animation: ms-shimmer .65s ease forwards; }
+        .ms-submit-btn:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 10px rgba(198,165,90,.25), 0 1px 0 rgba(255,255,255,.1) inset; filter: brightness(.98); transition-duration: .06s; }
+        .ms-submit-btn:disabled { opacity: .45; cursor: not-allowed; }
         .ms-spinner { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); border-top-color: #0a0a0a; animation: ms-spin .8s linear infinite; }
         .ms-show-pwd { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,.45); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 4px 6px; }
         .ms-show-pwd:hover { color: #C6A55A; }
@@ -200,7 +181,7 @@ function LoginInner() {
 
         <div className="ms-login-card">
           <div className="ms-login-ring">
-            <LogoMark size={44} />
+            <Image src="/milano-seal-gold-transparent-512.png" alt="The Milano Seal" width={52} height={52} className="object-contain" />
           </div>
 
           <div className="ms-login-title">The Milano Seal™</div>
