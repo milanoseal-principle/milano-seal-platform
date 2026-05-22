@@ -1,19 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Clock, Lock, Globe, Scale, Award } from "lucide-react";
+import { Shield, Zap, Lock, Scale } from "lucide-react";
 
 const items = [
   {
     icon: Shield,
-    label: "Florida Notary #668288",
-    sub: "Licensed & Commissioned",
+    label: "Florida Commissioned",
+    sub: "Statewide Mobile & RON Authority",
   },
-  { icon: Globe, label: "Hague Convention", sub: "21+ Countries" },
-  { icon: Lock, label: "Payment-Gated Execution", sub: "Zero Exceptions" },
-  { icon: Award, label: "RON Certified", sub: "Remote Online Notary" },
-  { icon: Scale, label: "Apostille Authority", sub: "FL Dept of State" },
-  { icon: Clock, label: "1-Business-Day Response", sub: "Matter Review" },
+  {
+    icon: Scale,
+    label: "Executive Liaison",
+    sub: "Healthcare & Legal Network Architecture",
+  },
+  {
+    icon: Lock,
+    label: "100% Scripted Compliance",
+    sub: "Zero Hague Procedural Exceptions",
+  },
+  {
+    icon: Zap,
+    label: "Express Escalation",
+    sub: "Same-Day Matter Review Intake",
+  },
 ];
 
 export function TrustStrip() {
