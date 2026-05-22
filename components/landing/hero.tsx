@@ -1,16 +1,11 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Globe, Shield, FileCheck } from "lucide-react";
+import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
-const TRUST_ITEMS = [
-  { icon: Shield,    label: "Florida Notary #668288" },
-  { icon: Globe,     label: "Hague Convention Compliant" },
-  { icon: FileCheck, label: "RON Certified" },
-];
 
 function useHeroReveal(delays: number[]) {
   const [visible, setVisible] = useState<boolean[]>(() =>
@@ -44,8 +39,8 @@ export function Hero() {
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6) trust(7)
-  const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100, 1350]);
+  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6)
+  const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100]);
 
   return (
     <section
@@ -128,15 +123,6 @@ export function Hero() {
               </Link>
             </div>
 
-            {/* Trust badges */}
-            <div className={`ms-hero-line flex flex-wrap gap-4 justify-center lg:justify-start${heroVisible[7] ? " is-visible" : ""}`}>
-              {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 text-xs text-[#8A8A8A]">
-                  <Icon className="w-3.5 h-3.5 text-[#C6A55A]" />
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
 
           </div>
 
