@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Globe, Lock, FileCheck, Clock, Video } from "lucide-react";
+import { Shield, Globe, Video, FileCheck, Users, Layers } from "lucide-react";
 
 const items = [
   {
@@ -12,27 +12,27 @@ const items = [
   {
     icon: Globe,
     label: "Hague Convention Routing",
-    sub: "Destination Review",
-  },
-  {
-    icon: Lock,
-    label: "Payment-Gated Execution",
-    sub: "Scope Confirmed Before Scheduling",
+    sub: "International Standards",
   },
   {
     icon: Video,
-    label: "RON Certified",
-    sub: "Remote Online Notary",
+    label: "Remote Online Notarization",
+    sub: "RON Certified Network",
   },
   {
     icon: FileCheck,
-    label: "Apostille Coordination",
-    sub: "Florida Department of State Route",
+    label: "FL Dept of State Pathway",
+    sub: "Apostille Coordination",
   },
   {
-    icon: Clock,
-    label: "1-Business-Day Response",
-    sub: "Matter Review",
+    icon: Users,
+    label: "USCIS Document Support",
+    sub: "Clearance Validation",
+  },
+  {
+    icon: Layers,
+    label: "Matter Review System",
+    sub: "Multi-Gate Execution",
   },
 ];
 
