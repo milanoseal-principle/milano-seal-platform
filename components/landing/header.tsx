@@ -29,16 +29,8 @@ export function Header() {
 
   return (
     <>
-      {/*
-        Unified header: ticker (row 1) + nav (row 2) in one fixed element.
-        Total height: ~36px ticker + 80px nav = 116px.
-        Hero section must clear pt-[116px] minimum.
-      */}
       <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]">
-        {/* Row 1 — credential ticker, always visible */}
         <CredentialTicker />
-
-        {/* Row 2 — navigation bar */}
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
@@ -83,18 +75,13 @@ export function Header() {
                 className="md:hidden p-2 text-white"
                 aria-label="Toggle menu"
               >
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile menu — drops below unified header (116px) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
