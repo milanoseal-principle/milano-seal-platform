@@ -25,30 +25,16 @@ const NAV = [
 
 function LogoMark({ size = 32 }: { size?: number }) {
   return (
-    <div
-      className="ps-logomark"
-      style={{ width: size, height: size }}
-    >
-      <svg
-        width={size * 0.55}
-        height={size * 0.55}
-        viewBox="0 0 24 24"
-        fill="none"
-      >
-        <path
-          d="M3 20L3 6L12 15L21 6L21 20"
-          stroke="#C6A55A"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z"
-          fill="#C6A55A"
-          opacity="0.88"
-        />
-      </svg>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="50" cy="50" r="46" stroke="#C6A55A" strokeWidth="1.8" fill="none" />
+      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" fill="#C6A55A" opacity="0.88" />
+      <path d="M22,72 L22,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      <path d="M78,72 L78,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      <line x1="15" y1="28" x2="29" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="15" y1="72" x2="29" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="28" x2="85" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="72" x2="85" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+    </svg>
   );
 }
 

@@ -6,6 +6,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 
+function MilanoCrest({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" stroke="#C6A55A" strokeWidth="1.8" fill="none" />
+      {/* Feather quill — right side of M */}
+      <path
+        d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z"
+        fill="#C6A55A"
+        opacity="0.88"
+      />
+      {/* Serif M — two mirrored V-paths */}
+      <path d="M22,72 L22,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      <path d="M78,72 L78,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      {/* Serif crossbars */}
+      <line x1="15" y1="28" x2="29" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="15" y1="72" x2="29" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="28" x2="85" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="72" x2="85" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+    </svg>
+  );
+}
+
 const navLinks = [
   { label: "Services", href: "/#services" },
   { label: "Process", href: "/#process" },
@@ -50,7 +72,8 @@ export function Header() {
         >
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex-shrink-0 select-none">
+              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
+                <MilanoCrest size={38} />
                 <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
                   The Milano Seal
                 </span>

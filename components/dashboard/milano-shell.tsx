@@ -3,7 +3,6 @@
 import { ReactNode, useState } from "react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,17 +35,31 @@ const NAV = [
   { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
 ];
 
+function MilanoCrest({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" stroke="#C6A55A" strokeWidth="1.8" fill="none" />
+      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" fill="#C6A55A" opacity="0.88" />
+      <path d="M22,72 L22,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      <path d="M78,72 L78,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
+      <line x1="15" y1="28" x2="29" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="15" y1="72" x2="29" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="28" x2="85" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
+      <line x1="71" y1="72" x2="85" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
+    </svg>
+  );
+}
+
 function MilanoMark() {
   return (
-    <Link href="/dashboard">
-      <Image
-        src="/milano-seal-gold-transparent-512.png"
-        alt="The Milano Seal"
-        width={160}
-        height={40}
-        style={{ height: "40px", width: "auto" }}
-        priority
-      />
+    <Link href="/dashboard" className="flex items-center gap-2.5">
+      <MilanoCrest size={32} />
+      <div className="flex flex-col leading-tight min-w-0">
+        <span className="font-serif text-sm text-foreground">The Milano Seal</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground truncate">
+          Intl. Document Execution
+        </span>
+      </div>
     </Link>
   );
 }
