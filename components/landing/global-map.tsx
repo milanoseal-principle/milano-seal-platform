@@ -28,7 +28,13 @@ export function GlobalMap() {
     .slice(0, TEASER_LIMIT);
 
   return (
-    <section className="relative py-32 md:py-40 bg-[#050507] overflow-hidden">
+    <motion.section
+      className="relative py-32 md:py-40 bg-[#050507] overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.08 }}
+      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+    >
       {/* Ambient vault glow — intensifies as map awakens */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -201,6 +207,6 @@ export function GlobalMap() {
           </Link>
         </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

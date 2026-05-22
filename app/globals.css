@@ -215,6 +215,22 @@ h4 {
   text-wrap: pretty;
 }
 
+/* ── CINEMATIC RUNWAY ────────────────────────────────────────── */
+.ms-cinematic-runway {
+  isolation: isolate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-cinematic-runway * {
+    animation: none !important;
+    transition: none !important;
+  }
+  /* Ensure sticky atmospheric layer doesn't trap content at any opacity */
+  .ms-cinematic-runway [aria-hidden="true"] {
+    display: none !important;
+  }
+}
+
 /* ── GOLD UTILITIES ──────────────────────────────────────────── */
 .gold-glow {
   box-shadow: 0 0 30px rgba(198, 165, 90, 0.15);
