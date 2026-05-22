@@ -16,8 +16,8 @@ const items = [
   },
   {
     icon: Lock,
-    label: "100% Scripted Compliance",
-    sub: "Zero Hague Procedural Exceptions",
+    label: "Structured Review",
+    sub: "Destination-Specific Requirements Apply",
   },
   {
     icon: Zap,
