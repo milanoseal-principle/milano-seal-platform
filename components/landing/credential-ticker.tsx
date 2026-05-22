@@ -1,15 +1,15 @@
 "use client";
 
-import { Activity, Radio, Wifi, Cpu, TerminalSquare, Network, ShieldCheck } from "lucide-react";
+import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
 
 const ITEMS = [
-  { icon: Activity,       label: "SECURE VAULT GATEWAY // ACCESS REVIEW READY" },
-  { icon: Network,        label: "HAGUE CONVENTION ROUTING // DESTINATION MATRIX AVAILABLE" },
-  { icon: TerminalSquare, label: "FLORIDA RON AUTHORITY // EXECUTION PATHWAY SUPPORTED" },
-  { icon: ShieldCheck,    label: "APOSTILLE COORDINATION // REVIEW BEFORE RELEASE" },
-  { icon: Cpu,            label: "DOCUMENT INTELLIGENCE // STRUCTURED INTAKE READY" },
-  { icon: Radio,          label: "PROFESSIONAL LIAISON NETWORK // COORDINATION PATHWAYS AVAILABLE" },
-  { icon: Wifi,           label: "PROTOCOL V2026 // SECURE ACCESS MODEL PREPARED" },
+  { icon: Shield,     label: "FLORIDA NOTARY #668288 // LICENSED & COMMISSIONED" },
+  { icon: Globe,      label: "HAGUE CONVENTION ROUTING // INTERNATIONAL STANDARDS" },
+  { icon: Video,      label: "REMOTE ONLINE NOTARIZATION // RON CERTIFIED NETWORK" },
+  { icon: FileCheck,  label: "FL DEPT OF STATE PATHWAY // APOSTILLE COORDINATION" },
+  { icon: Users,      label: "USCIS DOCUMENT SUPPORT // CLEARANCE VALIDATION" },
+  { icon: Layers,     label: "MATTER REVIEW SYSTEM // MULTI-GATE EXECUTION" },
+  { icon: Navigation, label: "TALLAHASSEE FIELD DISPATCH // PHYSICAL COURIER · FL DEPT OF STATE" },
 ];
 
 export function CredentialTicker() {
