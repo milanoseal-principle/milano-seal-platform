@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Globe, Video, FileCheck, Users, Layers } from "lucide-react";
+import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
 
 const items = [
   {
@@ -33,6 +33,11 @@ const items = [
     icon: Layers,
     label: "Matter Review System",
     sub: "Multi-Gate Execution",
+  },
+  {
+    icon: Navigation,
+    label: "Tallahassee Field Dispatch",
+    sub: "Physical Courier · FL Dept of State",
   },
 ];
 
