@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { CountryComplianceCard } from "@/components/landing/country-compliance-card";
 
 // Florida: southeastern US anchor — upper-left of South America on this projection
 // Continent dot regions place NA body at y:105–157, Central America at y:205–235
@@ -15,6 +16,8 @@ const DESTINATIONS = [
   { id: "brazil", label: "Brazil", x: 118, y: 268, dur: 3.1, startDelay: 1.4 },
   // UAE: far right, Middle East gateway — same latitude as Florida
   { id: "uae",    label: "UAE",    x: 330, y: 192, dur: 2.6, startDelay: 0.3 },
+  // Mexico: southwest of Florida — North America civil law bridge
+  { id: "mexico", label: "Mexico", x:  62, y: 222, dur: 1.8, startDelay: 2.1 },
 ];
 
 function makeCurvedPath(
@@ -99,7 +102,11 @@ export function GlobalTrustCoreHero() {
   const [phase, setPhase] = useState<"idle" | "settled" | "arcs" | "rotating">("idle");
   const [arcsDone, setArcsDone] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const openCard = useCallback((id: string) => setSelectedCountry(id), []);
+  const closeCard = useCallback(() => setSelectedCountry(null), []);
 
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -231,7 +238,6 @@ export function GlobalTrustCoreHero() {
           {/* Per-route: ghost + comet body + comet head + particle + bloom + node */}
           {DESTINATIONS.map((dest, i) => {
             const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
-            const intakeHref = `/intake?country=${encodeURIComponent(dest.label)}`;
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes — glass crystal edge diffraction */}
@@ -305,15 +311,18 @@ export function GlobalTrustCoreHero() {
                   style={{ transition: "opacity 0.5s ease" }}
                 />
 
-                {/* Clickable node + ring + label → intake for this country */}
-                <a
-                  href={intakeHref}
+                {/* Clickable node + ring + label → opens compliance card */}
+                <g
                   style={{ cursor: "pointer" }}
-                  aria-label={`Begin intake for ${dest.label}`}
+                  role="button"
+                  aria-label={`View ${dest.label} compliance details`}
+                  onClick={() => openCard(dest.id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCard(dest.id); }}
                 >
                   <circle
                     cx={dest.x} cy={dest.y}
-                    r="14"
+                    r="18"
                     fill="transparent"
                   />
                   <circle
@@ -348,7 +357,7 @@ export function GlobalTrustCoreHero() {
                       {dest.label.toUpperCase()}
                     </text>
                   )}
-                </a>
+                </g>
               </g>
             );
           })}
@@ -380,6 +389,9 @@ export function GlobalTrustCoreHero() {
             : "Florida Origin · Execution Authority"}
         </span>
       </div>
+
+      {/* Country compliance card — portal-style fixed overlay */}
+      <CountryComplianceCard countryId={selectedCountry} onClose={closeCard} />
     </div>
   );
 }
