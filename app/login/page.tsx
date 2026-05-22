@@ -156,31 +156,31 @@ function LoginInner() {
   return (
     <>
       <style>{`
-        @keyframes ms-fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes ms-fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes ms-spin { to{transform:rotate(360deg)} }
         @keyframes ms-goldPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
         .ms-login-bg { position: fixed; inset: 0; background: var(--black, #0a0a0a); display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .ms-login-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(198,165,90,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(198,165,90,.05) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); opacity: .6; }
         .ms-login-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(198,165,90,.10), transparent 60%); filter: blur(40px); animation: ms-goldPulse 6s ease-in-out infinite; }
-        .ms-login-card { position: relative; width: 100%; max-width: 420px; background: rgba(15,15,15,.92); border: 1px solid rgba(198,165,90,.14); padding: 44px 44px 36px; border-radius: 4px; backdrop-filter: blur(12px); box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: ms-fadeUp .6s cubic-bezier(.25,.46,.45,.94) both; }
+        .ms-login-card { position: relative; width: 100%; max-width: 420px; background: rgba(15,15,15,.92); border: 1px solid rgba(198,165,90,.14); padding: 44px 44px 36px; border-radius: 4px; backdrop-filter: blur(12px); box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: ms-fadeUp .55s cubic-bezier(0.16,1,0.3,1) both; }
         .ms-login-card::before { content: ''; position: absolute; top: 0; left: 52px; right: 52px; height: 1px; background: linear-gradient(90deg, transparent, #C6A55A, transparent); }
         .ms-login-ring { width: 80px; height: 80px; border-radius: 50%; border: 1.5px solid #C6A55A; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; animation: ms-goldPulse 3s ease-in-out infinite; box-shadow: 0 0 40px rgba(198,165,90,.18); }
         .ms-login-title { font-family: var(--font-playfair, 'Playfair Display'), Georgia, serif; font-size: 13px; letter-spacing: .28em; text-transform: uppercase; color: #fff; text-align: center; margin-bottom: 6px; }
         .ms-login-tag { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.45); text-align: center; margin-bottom: 32px; }
         .ms-flbl { display: block; font-size: 9px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 7px; }
-        .ms-fi { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(198,165,90,.14); padding: 11px 12px; color: #fff; font-family: var(--font-geist, system-ui), sans-serif; font-size: 13px; outline: none; transition: all .2s ease; border-radius: 2px; }
+        .ms-fi { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(198,165,90,.14); padding: 11px 12px; color: #fff; font-family: var(--font-geist, system-ui), sans-serif; font-size: 13px; outline: none; transition: border-color .18s cubic-bezier(0.16,1,0.3,1), background .18s cubic-bezier(0.16,1,0.3,1); border-radius: 2px; }
         .ms-fi::placeholder { color: rgba(255,255,255,.32); }
         .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); }
-        .ms-role-btn { padding: 11px 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(198,165,90,.14); cursor: pointer; text-align: left; transition: all .2s ease; border-radius: 2px; }
-        .ms-role-btn:hover { border-color: rgba(198,165,90,.32); background: rgba(198,165,90,.04); }
-        .ms-role-btn[data-active="true"] { background: rgba(198,165,90,.10); border-color: #C6A55A; }
-        .ms-role-btn-l { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+        .ms-role-btn { padding: 11px 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(198,165,90,.14); cursor: pointer; text-align: left; transition: border-color .18s cubic-bezier(0.16,1,0.3,1), background .18s cubic-bezier(0.16,1,0.3,1), box-shadow .18s cubic-bezier(0.16,1,0.3,1); border-radius: 2px; }
+        .ms-role-btn:hover { border-color: rgba(198,165,90,.4); background: rgba(198,165,90,.05); box-shadow: 0 0 12px rgba(198,165,90,.06); }
+        .ms-role-btn[data-active="true"] { background: rgba(198,165,90,.10); border-color: #C6A55A; box-shadow: 0 0 20px rgba(198,165,90,.10); }
+        .ms-role-btn-l { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; transition: color .18s cubic-bezier(0.16,1,0.3,1); }
         .ms-role-btn-s { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-top: 3px; }
-        .ms-submit-btn { width: 100%; padding: 13px; background: #C6A55A; color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: background .2s ease; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-        .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; }
+        .ms-submit-btn { width: 100%; padding: 13px; background: #C6A55A; color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: background .18s cubic-bezier(0.16,1,0.3,1), box-shadow .18s cubic-bezier(0.16,1,0.3,1); border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+        .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; box-shadow: 0 4px 20px rgba(198,165,90,.28); }
         .ms-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
         .ms-spinner { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); border-top-color: #0a0a0a; animation: ms-spin .8s linear infinite; }
-        .ms-show-pwd { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,.45); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 4px 6px; }
+        .ms-show-pwd { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,.45); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 4px 6px; transition: color .15s ease; }
         .ms-show-pwd:hover { color: #C6A55A; }
         .ms-foot { text-align: center; margin-top: 24px; font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: .12em; }
         .ms-err { font-size: 10.5px; color: #f87171; margin-bottom: 12px; padding: 8px 10px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.2); border-radius: 2px; }
@@ -242,7 +242,7 @@ function LoginInner() {
           {role && magicSent && (
             <div
               className="ms-success"
-              style={{ animation: "ms-fadeUp .4s ease both" }}
+              style={{ animation: "ms-fadeUp .38s cubic-bezier(0.16,1,0.3,1) both" }}
             >
               <div className="ms-success-h">Check your email</div>
               <div className="ms-success-p">
@@ -266,7 +266,7 @@ function LoginInner() {
           {role && !magicSent && (
             <form
               onSubmit={submit}
-              style={{ animation: "ms-fadeUp .4s ease both" }}
+              style={{ animation: "ms-fadeUp .38s cubic-bezier(0.16,1,0.3,1) both" }}
             >
               <div style={{ marginBottom: 12 }}>
                 <label htmlFor="email" className="ms-flbl">
