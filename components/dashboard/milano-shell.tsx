@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -159,8 +160,13 @@ export function MilanoShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex text-foreground bg-background">
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:fixed lg:flex lg:inset-y-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background">
+      {/* ── Credential ticker — fixed top cap ── */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <CredentialTicker />
+      </div>
+
+      {/* ── Desktop sidebar — starts below ticker ── */}
+      <aside className="hidden lg:fixed lg:flex lg:top-9 lg:bottom-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background">
         {sidebarContent()}
       </aside>
 
@@ -172,9 +178,9 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* ── Mobile drawer ── */}
+      {/* ── Mobile drawer — starts below ticker ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r border-border bg-background transition-transform duration-300 lg:hidden ${
+        className={`fixed top-9 bottom-0 left-0 z-50 w-64 flex flex-col border-r border-border bg-background transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -187,10 +193,10 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         {sidebarContent(() => setMobileOpen(false))}
       </aside>
 
-      {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
-        {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-0 z-30">
+      {/* ── Main area — offset sidebar width + ticker height ── */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-56 pt-9">
+        {/* Mobile top bar — sticks below global ticker */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky top-9 z-30">
           <button
             onClick={() => setMobileOpen(true)}
             className="text-muted-foreground hover:text-foreground cursor-pointer"
