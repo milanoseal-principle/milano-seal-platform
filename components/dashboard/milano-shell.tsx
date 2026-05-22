@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { CredentialTicker } from "@/components/landing/credential-ticker";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -147,11 +146,6 @@ export function MilanoShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex text-foreground bg-background">
-      {/* ── Credential ticker — fixed top cap ── */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <CredentialTicker />
-      </div>
-
       {/* ── Desktop sidebar — starts below ticker ── */}
       <aside className="hidden lg:fixed lg:flex lg:top-9 lg:bottom-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background">
         {sidebarContent()}

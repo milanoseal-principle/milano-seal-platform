@@ -1468,10 +1468,10 @@ h4 {
   border-bottom: 1px solid var(--border);
   padding: 9px 0;
   position: fixed;
-  top: 80px;   /* sits directly below the 80px (h-20) nav bar */
+  top: 0;
   left: 0;
   right: 0;
-  z-index: 49; /* below header z-50, above page content */
+  z-index: 51; /* above everything — unified top cap */
 }
 
 .ticker-wrap::before,

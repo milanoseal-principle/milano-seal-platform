@@ -37,7 +37,7 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ms-header-reveal${mounted ? " is-visible" : ""} ${
+        className={`fixed top-9 left-0 right-0 z-50 transition-all duration-300 ms-header-reveal${mounted ? " is-visible" : ""} ${
           isScrolled
             ? "bg-[#0A0A0A]/95 backdrop-blur-md"
             : "bg-transparent"
@@ -102,7 +102,7 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-20 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            className="fixed inset-x-0 top-[116px] z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
           >
             <nav className="flex flex-col p-6 space-y-4">
               {navLinks.map((link) => (
