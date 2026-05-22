@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { detectAccessIntent } from "@/lib/access-intent";
 
 function LogoMark({ size = 44 }: { size?: number }) {
   return (
@@ -29,51 +30,32 @@ function LogoMark({ size = 44 }: { size?: number }) {
   );
 }
 
-type Role = "operator" | "client";
-
-const ROLE_HINTS: Record<
-  Role,
-  { email: string; label: string; sub: string; method: "password" | "magic" }
-> = {
-  operator: {
-    email: "nick@themilanoseal.com",
-    label: "Operator",
-    sub: "Nicholas Milano",
-    method: "password",
-  },
-  client: {
-    email: "you@example.com",
-    label: "Matter Control Portal",
-    sub: "Track your matter",
-    method: "magic",
-  },
-};
+type Phase = "input" | "matter-email" | "sent";
 
 function LoginInner() {
-  const [role, setRole] = useState<Role | null>(null);
+  const [phase, setPhase] = useState<Phase>("input");
+  const [identifier, setIdentifier] = useState("");
+  const [matterId, setMatterId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [magicSent, setMagicSent] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const rawNext = searchParams.get("next") || "/dashboard";
+  const rawNext = searchParams.get("next") || "";
   const nextPath =
     rawNext.startsWith("/dashboard") ||
     rawNext.startsWith("/admin") ||
     rawNext.startsWith("/portal")
       ? rawNext
-      : "/dashboard";
+      : "/portal";
 
   useEffect(() => {
     const err = searchParams.get("error");
     if (err === "auth_failed") {
       setError(
-        "That magic link has expired or is invalid. Please request a new one.",
+        "That access link has expired or is invalid. Please request a new one.",
       );
     }
   }, [searchParams]);
@@ -85,73 +67,74 @@ function LoginInner() {
     });
   }, [nextPath, router]);
 
-  useEffect(() => {
-    setError(null);
-    setMagicSent(false);
-    setPassword("");
-  }, [role]);
-
-  const submit = async (e: React.FormEvent) => {
+  const submitIdentifier = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!role) {
-      setError("Select your access level.");
-      return;
-    }
-    if (!email) {
-      setError("Email is required.");
-      return;
-    }
-
-    setIsLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    const intent = detectAccessIntent(identifier);
 
-    if (ROLE_HINTS[role].method === "magic") {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirect = `${origin}/auth/callback?role=client`;
-
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirect,
-          shouldCreateUser: true,
-        },
-      });
-
-      if (otpError) {
-        setError(otpError.message);
-        setIsLoading(false);
-        return;
-      }
-      setMagicSent(true);
-      setIsLoading(false);
+    if (intent.lane === "UNKNOWN") {
+      setError(
+        "Access code not recognized. Enter your email address or matter reference number.",
+      );
       return;
     }
 
-    if (!password) {
-      setError("Password is required.");
-      setIsLoading(false);
+    if (intent.lane === "ALLIANCE") {
+      router.push("/alliance");
       return;
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setIsLoading(false);
+    if (intent.lane === "CLIENT") {
+      setMatterId(intent.matterId);
+      setPhase("matter-email");
       return;
     }
 
-    router.push(nextPath);
-    router.refresh();
+    // EMAIL lane — send magic link
+    await sendMagicLink(intent.email);
   };
 
-  const isClient = role === "client";
+  const submitMatterEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    // TODO: backend must validate email ↔ matter entitlement before granting portal access
+    await sendMagicLink(email, matterId ?? undefined);
+  };
+
+  const sendMagicLink = async (addr: string, matter?: string) => {
+    setIsLoading(true);
+    const supabase = createClient();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+    const callbackParams = new URLSearchParams();
+    if (matter) callbackParams.set("matter", matter);
+    const redirect = `${origin}/auth/callback${callbackParams.toString() ? "?" + callbackParams.toString() : ""}`;
+
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: addr,
+      options: {
+        emailRedirectTo: redirect,
+        shouldCreateUser: false,
+      },
+    });
+
+    setIsLoading(false);
+
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setPhase("sent");
+  };
+
+  const reset = () => {
+    setPhase("input");
+    setIdentifier("");
+    setEmail("");
+    setMatterId(null);
+    setError(null);
+  };
 
   return (
     <>
@@ -171,17 +154,10 @@ function LoginInner() {
         .ms-fi { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(198,165,90,.14); padding: 11px 12px; color: #fff; font-family: var(--font-geist, system-ui), sans-serif; font-size: 13px; outline: none; transition: all .2s ease; border-radius: 2px; }
         .ms-fi::placeholder { color: rgba(255,255,255,.32); }
         .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); }
-        .ms-role-btn { padding: 11px 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(198,165,90,.14); cursor: pointer; text-align: left; transition: all .2s ease; border-radius: 2px; }
-        .ms-role-btn:hover { border-color: rgba(198,165,90,.32); background: rgba(198,165,90,.04); }
-        .ms-role-btn[data-active="true"] { background: rgba(198,165,90,.10); border-color: #C6A55A; }
-        .ms-role-btn-l { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
-        .ms-role-btn-s { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-top: 3px; }
         .ms-submit-btn { width: 100%; padding: 13px; background: #C6A55A; color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: background .2s ease; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
         .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; }
         .ms-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
         .ms-spinner { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); border-top-color: #0a0a0a; animation: ms-spin .8s linear infinite; }
-        .ms-show-pwd { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,.45); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 4px 6px; }
-        .ms-show-pwd:hover { color: #C6A55A; }
         .ms-foot { text-align: center; margin-top: 24px; font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: .12em; }
         .ms-err { font-size: 10.5px; color: #f87171; margin-bottom: 12px; padding: 8px 10px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.2); border-radius: 2px; }
         .ms-hint { font-size: 9px; color: rgba(255,255,255,.35); margin-bottom: 14px; line-height: 1.5; }
@@ -192,6 +168,7 @@ function LoginInner() {
         .ms-success-em { color: #C6A55A; }
         .ms-link-btn { background: none; border: none; color: #C6A55A; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 8px; margin-top: 8px; }
         .ms-link-btn:hover { color: #d4b76a; }
+        .ms-matter-badge { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #C6A55A; background: rgba(198,165,90,.08); border: 1px solid rgba(198,165,90,.2); border-radius: 2px; padding: 6px 10px; margin-bottom: 16px; display: inline-block; }
       `}</style>
 
       <div className="ms-login-bg">
@@ -204,135 +181,59 @@ function LoginInner() {
           </div>
 
           <div className="ms-login-title">The Milano Seal™</div>
-          <div className="ms-login-tag">Sealing Trust in Every Signature</div>
+          <div className="ms-login-tag">Secure Access Gateway</div>
 
-          <div style={{ marginBottom: 18 }}>
-            <div className="ms-flbl">Access Level</div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 8,
-              }}
-            >
-              {(Object.keys(ROLE_HINTS) as Role[]).map((r) => {
-                const o = ROLE_HINTS[r];
-                const active = role === r;
-                return (
-                  <button
-                    type="button"
-                    key={r}
-                    onClick={() => setRole(r)}
-                    className="ms-role-btn"
-                    data-active={active}
-                  >
-                    <div
-                      className="ms-role-btn-l"
-                      style={{ color: active ? "#C6A55A" : "#fff" }}
-                    >
-                      {o.label}
-                    </div>
-                    <div className="ms-role-btn-s">{o.sub}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {role && magicSent && (
+          {phase === "sent" && (
             <div
               className="ms-success"
               style={{ animation: "ms-fadeUp .4s ease both" }}
             >
               <div className="ms-success-h">Check your email</div>
               <div className="ms-success-p">
-                We sent a sign-in link to{" "}
-                <span className="ms-success-em">{email}</span>. Click it to view
-                your matter — no password needed.
+                We sent a one-time access link to{" "}
+                <span className="ms-success-em">{email || identifier}</span>.
+                {matterId && (
+                  <>
+                    {" "}
+                    Once verified, your matter{" "}
+                    <span className="ms-success-em">{matterId}</span> will be
+                    available if entitlement is confirmed.
+                  </>
+                )}
               </div>
-              <button
-                type="button"
-                className="ms-link-btn"
-                onClick={() => {
-                  setMagicSent(false);
-                  setEmail("");
-                }}
-              >
-                Use a different email
+              <button type="button" className="ms-link-btn" onClick={reset}>
+                Use a different address
               </button>
             </div>
           )}
 
-          {role && !magicSent && (
+          {phase === "input" && (
             <form
-              onSubmit={submit}
+              onSubmit={submitIdentifier}
               style={{ animation: "ms-fadeUp .4s ease both" }}
             >
               <div style={{ marginBottom: 12 }}>
-                <label htmlFor="email" className="ms-flbl">
-                  Email
+                <label htmlFor="identifier" className="ms-flbl">
+                  Access Code or Email
                 </label>
                 <input
-                  id="email"
+                  id="identifier"
                   className="ms-fi"
-                  type="email"
-                  autoComplete="email"
-                  placeholder={ROLE_HINTS[role].email}
-                  value={email}
+                  type="text"
+                  autoComplete="off"
+                  placeholder="your@email.com or MS-2024-XXXX"
+                  value={identifier}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    setIdentifier(e.target.value);
                     setError(null);
                   }}
                   required
                 />
               </div>
 
-              {!isClient && (
-                <div style={{ marginBottom: 14, position: "relative" }}>
-                  <label htmlFor="password" className="ms-flbl">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    className="ms-fi"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    minLength={6}
-                    required={!isClient}
-                    style={{ paddingRight: 56 }}
-                  />
-                  <button
-                    type="button"
-                    className="ms-show-pwd"
-                    style={{ top: "calc(50% + 9px)" }}
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              )}
-
               <div className="ms-hint">
-                {isClient ? (
-                  <>
-                    Use the email associated with your matter. We&rsquo;ll send
-                    a one-time sign-in link — <span>no password required</span>.
-                  </>
-                ) : (
-                  <>
-                    Operator access — use your <span>Milano Seal</span>{" "}
-                    credentials.
-                  </>
-                )}
+                Enter your email address, matter reference, or access token. No
+                account creation — <span>access is by invitation only</span>.
               </div>
 
               {error && <div className="ms-err">{error}</div>}
@@ -345,13 +246,75 @@ function LoginInner() {
                 {isLoading ? (
                   <>
                     <span className="ms-spinner" />
-                    {isClient ? "Sending link…" : "Signing in…"}
+                    Verifying…
                   </>
-                ) : isClient ? (
-                  "Send Magic Link"
                 ) : (
                   "Continue"
                 )}
+              </button>
+            </form>
+          )}
+
+          {phase === "matter-email" && (
+            <form
+              onSubmit={submitMatterEmail}
+              style={{ animation: "ms-fadeUp .4s ease both" }}
+            >
+              <div style={{ marginBottom: 14 }}>
+                <span className="ms-matter-badge">{matterId}</span>
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,.55)",
+                    lineHeight: 1.6,
+                    margin: "0 0 16px",
+                    letterSpacing: ".04em",
+                  }}
+                >
+                  Matter reference recognized. Enter the email address
+                  associated with this matter to receive your access link.
+                </p>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="matter-email" className="ms-flbl">
+                  Email Address
+                </label>
+                <input
+                  id="matter-email"
+                  className="ms-fi"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
+                  required
+                />
+              </div>
+
+              {error && <div className="ms-err">{error}</div>}
+
+              <button
+                type="submit"
+                className="ms-submit-btn"
+                disabled={isLoading}
+                style={{ marginBottom: 10 }}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="ms-spinner" />
+                    Sending link…
+                  </>
+                ) : (
+                  "Send Access Link"
+                )}
+              </button>
+
+              <button type="button" className="ms-link-btn" onClick={reset}>
+                Back
               </button>
             </form>
           )}
