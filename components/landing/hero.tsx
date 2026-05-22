@@ -4,51 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe, Shield, FileCheck } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-
-function GoldGlobeAmulet() {
-  return (
-    <div className="relative w-[340px] h-[340px] md:w-[480px] md:h-[480px] rounded-full flex items-center justify-center select-none group">
-
-      {/* Layer 1 — z-10: Deep radial gold light leak backdrop */}
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none z-10"
-        style={{
-          background: "radial-gradient(circle at 50% 55%, rgba(212,175,55,0.09) 0%, rgba(5,5,7,0) 68%)",
-          filter: "blur(28px)",
-          opacity: 0.8,
-        }}
-      />
-
-      {/* Layer 2 — z-20: Core metallic asset, hardware-promoted */}
-      <div
-        className="w-[88%] h-[88%] rounded-full overflow-hidden relative z-20 transition-transform duration-[1200ms] group-hover:scale-[1.02]"
-        style={{
-          mixBlendMode: "screen",
-          opacity: 0.92,
-          transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/gold-globe.gif"
-          alt="Global Trust Core"
-          className="w-full h-full object-contain pointer-events-none will-change-transform"
-          style={{ transform: "translateZ(0)" }}
-        />
-      </div>
-
-      {/* Layer 3 — z-30: Ambient specular rim glare (front glass surface) */}
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none z-30"
-        style={{
-          border: "1px solid rgba(255,255,255,0.04)",
-          boxShadow:
-            "inset 0 16px 32px rgba(255,255,255,0.04), inset 0 -16px 32px rgba(5,5,7,0.80)",
-        }}
-      />
-    </div>
-  );
-}
+import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 const TRUST_ITEMS = [
   { icon: Shield,    label: "Florida Notary #668288" },
@@ -184,15 +140,15 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: Gold Globe Amulet — heavy metallic physical artifact */}
+          {/* RIGHT: Kinetic Core — globe */}
           <div className="w-full lg:w-[48%] flex items-center justify-center relative">
             <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center"
             >
-              <GoldGlobeAmulet />
+              <GlobalTrustCoreHero />
             </motion.div>
           </div>
 

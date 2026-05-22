@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
@@ -43,16 +42,17 @@ export function Header() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
               <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
-                {/* Crop to show only the M crest circle — image includes text below which we hide */}
-                <div className="w-[38px] h-[38px] overflow-hidden relative flex-shrink-0">
-                  <Image
-                    src="/milano-seal-gold-transparent-512.png"
-                    alt="The Milano Seal"
-                    width={512}
-                    height={512}
-                    style={{ width: "70px", height: "70px", position: "absolute", top: "-2px", left: "-16px" }}
-                  />
-                </div>
+                <div
+                  aria-label="The Milano Seal"
+                  style={{
+                    width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+                    backgroundImage: "url('/milano-seal-black-1024.png')",
+                    backgroundSize: "152px auto",
+                    backgroundPosition: "center -15px",
+                    backgroundRepeat: "no-repeat",
+                    mixBlendMode: "screen",
+                  }}
+                />
                 <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
                   The Milano Seal
                 </span>
