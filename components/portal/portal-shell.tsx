@@ -24,17 +24,26 @@ const NAV = [
 ];
 
 function LogoMark({ size = 32 }: { size?: number }) {
+  const imgH = Math.round(size * (383 / 275));
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <circle cx="50" cy="50" r="46" stroke="#C6A55A" strokeWidth="1.8" fill="none" />
-      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" fill="#C6A55A" opacity="0.88" />
-      <path d="M22,72 L22,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
-      <path d="M78,72 L78,28 L50,53" stroke="#C6A55A" strokeWidth="5.5" fill="none" strokeLinecap="butt" strokeLinejoin="miter" />
-      <line x1="15" y1="28" x2="29" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
-      <line x1="15" y1="72" x2="29" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
-      <line x1="71" y1="28" x2="85" y2="28" stroke="#C6A55A" strokeWidth="3.5" />
-      <line x1="71" y1="72" x2="85" y2="72" stroke="#C6A55A" strokeWidth="3.5" />
-    </svg>
+    <div
+      aria-hidden="true"
+      style={{ width: size, height: size, overflow: "hidden", flexShrink: 0, position: "relative" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/milano-seal-gold-transparent-512.png"
+        alt=""
+        style={{
+          height: imgH,
+          width: "auto",
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+        }}
+      />
+    </div>
   );
 }
 
