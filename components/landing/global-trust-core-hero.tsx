@@ -197,23 +197,28 @@ export function GlobalTrustCoreHero() {
 
   const isSettled  = phase !== "idle";
   const showArcs   = phase === "arcs" || phase === "rotating";
-  // Rotation pauses while a node is focused
   const isRotating = phase === "rotating" && !selectedId;
 
   // Subtle camera nudge toward the selected node
   const nudgeX = selectedDest ? ((selectedDest.x - 200) / 200) * 2.5 : 0;
   const nudgeY = selectedDest ? ((selectedDest.y - 200) / 200) * 1.5 : 0;
 
-  // Popover placement — flip to left when node is in right hemisphere
-  const popLeft = selectedDest
-    ? `${Math.min(80, Math.max(5, (selectedDest.x / 400) * 100))}%`
-    : "50%";
-  const popTop = selectedDest
-    ? `${Math.min(82, Math.max(12, (selectedDest.y / 400) * 100))}%`
-    : "50%";
-  const popAnchor = selectedDest && selectedDest.x > 200
-    ? "translate(calc(-100% - 18px), -50%)"
-    : "translate(18px, -50%)";
+  // Popover positioned at CONTAINER level (outside overflow:hidden sphere).
+  // Sphere occupies ~81% of container, centered (~9.5% padding each side).
+  const SRATIO = 0.81;
+  const SPAD   = (1 - SRATIO) / 2 * 100; // ~9.5%
+  const popNodeLeftPct = selectedDest
+    ? SPAD + (selectedDest.x / 400) * SRATIO * 100
+    : 50;
+  const popNodeTopPct = selectedDest
+    ? Math.min(85, Math.max(12, SPAD + (selectedDest.y / 400) * SRATIO * 100))
+    : 50;
+  // Right-hemisphere nodes anchor to the right (popover extends left); left-hemisphere to the right
+  const popoverStyle: React.CSSProperties = selectedDest ? (
+    selectedDest.x > 200
+      ? { position: "absolute", right: `calc(${(100 - popNodeLeftPct).toFixed(1)}% + 16px)`, top: `${popNodeTopPct}%`, transform: "translateY(-50%)", zIndex: 50, pointerEvents: "auto" }
+      : { position: "absolute", left: `calc(${popNodeLeftPct.toFixed(1)}% + 16px)`,           top: `${popNodeTopPct}%`, transform: "translateY(-50%)", zIndex: 50, pointerEvents: "auto" }
+  ) : {};
 
   return (
     <div
@@ -380,7 +385,7 @@ export function GlobalTrustCoreHero() {
 
                 {/* Clickable node — semantic SEO attributes, cinematic focus */}
                 <g
-                  style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all" }}
+                  style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all", outline: "none" }}
                   role={arcsDone ? "button" : undefined}
                   tabIndex={arcsDone ? 0 : undefined}
                   aria-label={`${dest.label} routing information`}
@@ -445,56 +450,6 @@ export function GlobalTrustCoreHero() {
           })}
         </svg>
 
-        {/* Premium floating popover — renders inside sphere for correct z-stacking */}
-        {selectedDest && (
-          <div
-            style={{
-              position: "absolute",
-              left: popLeft,
-              top: popTop,
-              transform: popAnchor,
-              zIndex: 50,
-              pointerEvents: "auto",
-            }}
-            data-seo-intent={selectedDest.seoIntent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="bg-[#050507]/92 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
-              style={{
-                width: "13.5rem",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
-              }}
-            >
-              {/* Dismiss */}
-              <button
-                onClick={() => setSelectedId(null)}
-                className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              {/* Header label */}
-              <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
-                DESTINATION VECTOR
-              </span>
-
-              {/* Scramble text — country // framework */}
-              <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
-                {scrambledText}
-              </p>
-
-              {/* Route vector label */}
-              <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
-                FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Glass specular cap */}
         <div className="ms-globe-glass-cap" />
         {/* Crest glow */}
@@ -508,6 +463,42 @@ export function GlobalTrustCoreHero() {
       {/* Orbit rings */}
       <div className="ms-orbit-ring ms-orbit-ring--main" />
       <div className="ms-orbit-ring ms-orbit-ring--outer" />
+
+      {/* Premium floating popover — at container level, outside overflow:hidden sphere */}
+      {selectedDest && (
+        <div
+          style={popoverStyle}
+          data-seo-intent={selectedDest.seoIntent}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="relative bg-[#050507]/95 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
+            style={{
+              width: "min(13.5rem, calc(100vw - 2rem))",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
+            }}
+          >
+            <button
+              onClick={() => setSelectedId(null)}
+              className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
+              DESTINATION VECTOR
+            </span>
+            <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
+              {scrambledText}
+            </p>
+            <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
+              FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Label row — updates on selection */}
       <div className={`ms-globe-label${isSettled ? " ms-globe-label--visible" : ""}`}>
