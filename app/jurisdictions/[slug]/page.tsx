@@ -196,12 +196,21 @@ export default async function JurisdictionPage({ params }: Props) {
                   >
                     → Global Document Intelligence Map
                   </Link>
-                  <Link
-                    href="/apostille"
-                    className="block text-xs text-[#888] hover:text-[#C6A55A] transition-colors"
-                  >
-                    → Apostille Coordination
-                  </Link>
+                  {isHague ? (
+                    <Link
+                      href="/apostille"
+                      className="block text-xs text-[#888] hover:text-[#C6A55A] transition-colors"
+                    >
+                      → Apostille Coordination
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/consular-authentication"
+                      className="block text-xs text-[#888] hover:text-[#C6A55A] transition-colors"
+                    >
+                      → Consular Authentication Track
+                    </Link>
+                  )}
                   <Link
                     href="/intake"
                     className="block text-xs text-[#888] hover:text-[#C6A55A] transition-colors"

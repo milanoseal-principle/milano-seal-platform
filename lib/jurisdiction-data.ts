@@ -207,6 +207,196 @@ export const JURISDICTION_PROFILES: JurisdictionProfile[] = [
     },
   },
   {
+    slug: "saudi-arabia-consular-authentication",
+    name: "Saudi Arabia",
+    countryCode: "SA",
+    routeType: "Consular Authentication Track",
+    filingChannel: "Embassy / Consular Review",
+    reviewProtocol:
+      "Multi-tiered chain-of-custody coordination through state and federal authentication desks. Destination-specific formatting review applied to corporate and commercial instruments prior to embassy-facing submission.",
+    commonDocuments: [
+      "Power of Attorney",
+      "Corporate Authorization",
+      "Commercial Agreements",
+      "Board Resolutions",
+      "Certificates of Origin",
+    ],
+    executionSequence: [
+      "Document scope review and preparation coordination",
+      "Remote online notarization or in-person execution",
+      "Florida Department of State authentication",
+      "Federal-level authentication review via U.S. Department of State",
+      "Embassy / consular review coordination and destination release to Saudi Arabia",
+    ],
+    disclaimer:
+      "Saudi Arabia requires a multi-tier authentication sequence for Florida-origin documents. Embassy review timelines are determined by the relevant consular authority. Milano Seal coordinates the execution, state, and federal authentication sequence; acceptance by receiving institutions is determined by those institutions.",
+    seo: {
+      title: "Saudi Arabia Consular Authentication Track — Document Execution Coordination",
+      description:
+        "Florida-origin document execution and consular authentication coordination for Saudi Arabia. Multi-tier state, federal, and embassy review sequence. Chain-of-custody control.",
+      keywords: [
+        "Saudi Arabia consular authentication",
+        "Saudi Arabia document authentication",
+        "Florida documents Saudi Arabia",
+        "embassy authentication Saudi Arabia",
+        "consular legalization Saudi Arabia",
+        "international document Saudi Arabia",
+      ],
+    },
+  },
+  {
+    slug: "china-consular-authentication-track",
+    name: "China",
+    countryCode: "CN",
+    routeType: "Consular Authentication Track",
+    filingChannel: "Embassy / Consular Review",
+    reviewProtocol:
+      "Destination-specific formatting review and chain-of-custody coordination for corporate and civil instruments. Federal-level authentication review applied prior to consular submission.",
+    commonDocuments: [
+      "Power of Attorney",
+      "Corporate Bylaws",
+      "Affidavit",
+      "Appointment Letters",
+      "Commercial Contracts",
+    ],
+    executionSequence: [
+      "Document scope review and preparation coordination",
+      "Remote online notarization or in-person execution",
+      "Florida Department of State authentication",
+      "Federal-level authentication review via U.S. Department of State",
+      "Embassy / consular review coordination and destination release to China",
+    ],
+    disclaimer:
+      "China requires a multi-tier authentication sequence for Florida-origin documents. Consular review requirements vary by document type and receiving institution. Milano Seal coordinates the execution, state, and federal authentication sequence; acceptance by receiving institutions is determined by those institutions.",
+    seo: {
+      title: "China Consular Authentication Track — Document Execution Coordination",
+      description:
+        "Florida-origin document execution and consular authentication coordination for China. Multi-tier state, federal, and consular review sequence. Destination-specific review.",
+      keywords: [
+        "China consular authentication",
+        "China document authentication",
+        "Florida documents China",
+        "embassy authentication China",
+        "consular legalization China",
+        "international document China",
+      ],
+    },
+  },
+  {
+    slug: "vietnam-consular-authentication",
+    name: "Vietnam",
+    countryCode: "VN",
+    routeType: "Consular Authentication Track",
+    filingChannel: "Embassy / Consular Review",
+    reviewProtocol:
+      "Consular layout assessment and destination-specific review for civil and commercial instruments. Chain-of-custody coordination through state and federal authentication channels.",
+    commonDocuments: [
+      "Power of Attorney",
+      "Commercial Contracts",
+      "Corporate Authorization",
+      "Personal Civil Records",
+      "Distributor Authorization Letters",
+    ],
+    executionSequence: [
+      "Document scope review and preparation coordination",
+      "Remote online notarization or in-person execution",
+      "Florida Department of State authentication",
+      "Federal-level authentication review via U.S. Department of State",
+      "Embassy / consular review coordination and destination release to Vietnam",
+    ],
+    disclaimer:
+      "Vietnam requires a multi-tier authentication sequence for Florida-origin documents. Consular processing windows vary based on current embassy operation constraints. Milano Seal coordinates the execution, state, and federal authentication sequence; acceptance by receiving institutions is determined by those institutions.",
+    seo: {
+      title: "Vietnam Consular Authentication Track — Document Execution Coordination",
+      description:
+        "Florida-origin document execution and consular authentication coordination for Vietnam. Multi-tier state, federal, and consular review sequence. Civil and commercial instruments.",
+      keywords: [
+        "Vietnam consular authentication",
+        "Vietnam document authentication",
+        "Florida documents Vietnam",
+        "embassy authentication Vietnam",
+        "consular legalization Vietnam",
+        "international document Vietnam",
+      ],
+    },
+  },
+  {
+    slug: "qatar-consular-authentication",
+    name: "Qatar",
+    countryCode: "QA",
+    routeType: "Consular Authentication Track",
+    filingChannel: "Embassy / Consular Review",
+    reviewProtocol:
+      "Chain-of-custody coordination for corporate and commercial instruments. Federal-level authentication review applied prior to embassy-facing submission.",
+    commonDocuments: [
+      "Power of Attorney",
+      "Corporate Authorization",
+      "Commercial Agreements",
+      "Affidavit",
+      "Employment Documents",
+    ],
+    executionSequence: [
+      "Document scope review and preparation coordination",
+      "Remote online notarization or in-person execution",
+      "Florida Department of State authentication",
+      "Federal-level authentication review via U.S. Department of State",
+      "Embassy / consular review coordination and destination release to Qatar",
+    ],
+    disclaimer:
+      "Qatar requires a multi-tier authentication sequence for Florida-origin documents. Embassy review timelines are determined by the relevant consular authority. Milano Seal coordinates the execution, state, and federal authentication sequence; acceptance by receiving institutions is determined by those institutions.",
+    seo: {
+      title: "Qatar Consular Authentication Track — Document Execution Coordination",
+      description:
+        "Florida-origin document execution and consular authentication coordination for Qatar. Multi-tier state, federal, and embassy review sequence. Chain-of-custody control.",
+      keywords: [
+        "Qatar consular authentication",
+        "Qatar document authentication",
+        "Florida documents Qatar",
+        "embassy authentication Qatar",
+        "consular legalization Qatar",
+        "international document Qatar",
+      ],
+    },
+  },
+  {
+    slug: "kuwait-consular-authentication",
+    name: "Kuwait",
+    countryCode: "KW",
+    routeType: "Consular Authentication Track",
+    filingChannel: "Embassy / Consular Review",
+    reviewProtocol:
+      "Destination-specific review and chain-of-custody coordination through state and federal authentication channels. Corporate and civil instruments reviewed prior to embassy-facing submission.",
+    commonDocuments: [
+      "Power of Attorney",
+      "Corporate Authorization",
+      "Commercial Agreements",
+      "Affidavit",
+      "Personal Civil Records",
+    ],
+    executionSequence: [
+      "Document scope review and preparation coordination",
+      "Remote online notarization or in-person execution",
+      "Florida Department of State authentication",
+      "Federal-level authentication review via U.S. Department of State",
+      "Embassy / consular review coordination and destination release to Kuwait",
+    ],
+    disclaimer:
+      "Kuwait requires a multi-tier authentication sequence for Florida-origin documents. Embassy review timelines are determined by the relevant consular authority. Milano Seal coordinates the execution, state, and federal authentication sequence; acceptance by receiving institutions is determined by those institutions.",
+    seo: {
+      title: "Kuwait Consular Authentication Track — Document Execution Coordination",
+      description:
+        "Florida-origin document execution and consular authentication coordination for Kuwait. Multi-tier state, federal, and embassy review sequence. Chain-of-custody control.",
+      keywords: [
+        "Kuwait consular authentication",
+        "Kuwait document authentication",
+        "Florida documents Kuwait",
+        "embassy authentication Kuwait",
+        "consular legalization Kuwait",
+        "international document Kuwait",
+      ],
+    },
+  },
+  {
     slug: "florida-origin-document-execution",
     name: "Florida",
     countryCode: "US-FL",
