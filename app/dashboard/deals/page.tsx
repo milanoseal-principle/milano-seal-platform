@@ -340,6 +340,175 @@ export default function Deals() {
           </div>
         )}
       </div>
+
+      {/* Slide-over matter drawer */}
+      <AnimatePresence>
+        {drawerMatter && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setDrawerMatter(null)}
+              className="fixed inset-0 bg-black z-40"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed inset-y-0 right-0 w-96 bg-[#09090d] border-l border-gray-900 z-50 flex flex-col shadow-2xl"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-gray-900 flex items-start justify-between flex-shrink-0">
+                <div>
+                  <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase">
+                    Matter Reference
+                  </div>
+                  <div className="text-[#D4AF37] font-mono font-bold text-sm mt-0.5">
+                    {drawerMatter.ref ??
+                      drawerMatter.id.slice(0, 8).toUpperCase()}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDrawerMatter(null)}
+                  className="p-1 hover:bg-white/5 rounded-sm transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500 hover:text-white" />
+                </button>
+              </div>
+
+              {/* Body — scrollable */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Client */}
+                <div>
+                  <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                    Client Matter
+                  </div>
+                  <div className="text-white font-serif text-base">
+                    {drawerMatter.client_name ?? drawerMatter.email ?? "—"}
+                  </div>
+                </div>
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                      Document Type
+                    </div>
+                    <div className="text-gray-300">
+                      {drawerMatter.service_type ?? "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                      Destination
+                    </div>
+                    <div className="text-gray-300">
+                      {drawerMatter.destination_country ?? "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                      Payment Status
+                    </div>
+                    <div
+                      className={
+                        drawerMatter.payment_status === "paid"
+                          ? "text-emerald-400 font-mono font-bold text-[10px]"
+                          : "text-amber-400 font-mono font-bold text-[10px]"
+                      }
+                    >
+                      {(drawerMatter.payment_status ?? "unpaid").toUpperCase()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                      Matter Value
+                    </div>
+                    <div className="text-[#D4AF37] font-mono font-bold">
+                      {drawerMatter.total_price
+                        ? `$${drawerMatter.total_price.toLocaleString()}`
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Execution Timeline */}
+                <div>
+                  <div className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-3">
+                    Active Execution Timeline
+                  </div>
+                  <ExecutionTimeline
+                    currentStatus={drawerMatter.status ?? "new"}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 border-t border-gray-900 flex-shrink-0">
+                <a
+                  href={`/dashboard/deals/${drawerMatter.id}`}
+                  className="block w-full bg-gradient-to-b from-[#D4AF37] to-[#B8960A] text-black text-center py-2.5 text-xs font-bold rounded-sm uppercase tracking-wider hover:brightness-110 transition-all"
+                >
+                  Open Full Matter →
+                </a>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+const STAGE_SEQUENCE = [
+  { key: "new", label: "INTAKE" },
+  { key: "reviewing", label: "REVIEW" },
+  { key: "quoted", label: "QUOTED" },
+  { key: "awaiting_payment", label: "AWAITING PAYMENT" },
+  { key: "scheduled", label: "SCHEDULED" },
+  { key: "in_execution", label: "EXECUTION" },
+  { key: "apostille", label: "APOSTILLE" },
+  { key: "shipped", label: "SHIPPED" },
+  { key: "completed", label: "COMPLETED" },
+];
+
+function ExecutionTimeline({ currentStatus }: { currentStatus: string }) {
+  const currentIdx = STAGE_SEQUENCE.findIndex((s) => s.key === currentStatus);
+  return (
+    <div className="border-l border-gray-800 pl-4 ml-1 space-y-2.5 py-1">
+      {STAGE_SEQUENCE.map((stage, idx) => {
+        const isPast = idx < currentIdx;
+        const isCurrent = idx === currentIdx;
+        return (
+          <div key={stage.key} className="relative flex items-center gap-2">
+            <div
+              className={`absolute -left-[21px] w-2.5 h-2.5 rounded-full border border-[#09090d] flex-shrink-0 ${
+                isPast
+                  ? "bg-emerald-500"
+                  : isCurrent
+                    ? "bg-[#D4AF37] shadow-[0_0_6px_rgba(212,175,55,0.5)] animate-pulse"
+                    : "bg-gray-800"
+              }`}
+            />
+            <span
+              className={`font-mono text-[10px] ${
+                isCurrent
+                  ? "text-[#D4AF37] font-bold"
+                  : isPast
+                    ? "text-gray-500"
+                    : "text-gray-700"
+              }`}
+            >
+              {stage.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

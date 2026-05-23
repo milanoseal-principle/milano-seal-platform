@@ -34,6 +34,7 @@ import {
   stageTone,
   timeAgo,
 } from "@/lib/format";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   CalendarClock,
@@ -547,7 +548,12 @@ export default function DealDetail() {
     stage === "shipped" || stage === "apostille";
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-6"
+    >
       <Link href="/dashboard/deals">
         <Button
           variant="ghost"
@@ -559,19 +565,27 @@ export default function DealDetail() {
       </Link>
 
       {/* Paid & Released banner */}
-      {isPaidAndCompleted && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-sm border border-[#D4AF37]/30 bg-[#D4AF37]/5">
-          <CheckCircle2 className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-[#D4AF37]">
-              Paid &amp; Released
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This matter is Paid &amp; Released. All obligations fulfilled.
-            </p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isPaidAndCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-3 px-4 py-3 rounded-sm border border-[#D4AF37]/30 bg-[#D4AF37]/5"
+          >
+            <CheckCircle2 className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[#D4AF37]">
+                Paid &amp; Released
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This matter is Paid &amp; Released. All obligations fulfilled.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Balance due warning */}
       {isBalanceDue && (
@@ -1306,54 +1320,63 @@ export default function DealDetail() {
           </Card>
 
           {/* Document Release */}
-          {showDocRelease && (
-            <Card className="bg-[#0c0c12] border border-[#D4AF37]/15 rounded-sm">
-              <CardHeader className="p-4 pb-3">
-                <div>
-                  <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
-                    Document Release
-                  </p>
-                  <CardTitle className="font-serif text-lg flex items-center gap-2">
-                    <FileCheck className="w-4 h-4 text-[#D4AF37]" /> Release
-                    Confirmation
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Confirm that documents have been released to the recipient.
-                  This records a custody ledger event.
-                </p>
-                {releaseSuccess ? (
-                  <div className="flex items-center gap-2 p-2.5 rounded-sm border border-[#D4AF37]/20 bg-[#D4AF37]/5">
-                    <CheckCircle2 className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
-                    <span className="text-xs text-[#D4AF37]">
-                      Release confirmed and recorded.
-                    </span>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 border-[#D4AF37]/20 hover:border-[#D4AF37]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/5 text-sm disabled:opacity-40"
-                    disabled={releaseLoading}
-                    onClick={() => void confirmDocRelease()}
-                  >
-                    {releaseLoading ? (
-                      <>
-                        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Confirming...
-                      </>
+          <AnimatePresence>
+            {showDocRelease && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="bg-[#0c0c12] border border-[#D4AF37]/15 rounded-sm">
+                  <CardHeader className="p-4 pb-3">
+                    <div>
+                      <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                        Document Release
+                      </p>
+                      <CardTitle className="font-serif text-lg flex items-center gap-2">
+                        <FileCheck className="w-4 h-4 text-[#D4AF37]" /> Release
+                        Confirmation
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Confirm that documents have been released to the recipient.
+                      This records a custody ledger event.
+                    </p>
+                    {releaseSuccess ? (
+                      <div className="flex items-center gap-2 p-2.5 rounded-sm border border-[#D4AF37]/20 bg-[#D4AF37]/5">
+                        <CheckCircle2 className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
+                        <span className="text-xs text-[#D4AF37]">
+                          Release confirmed and recorded.
+                        </span>
+                      </div>
                     ) : (
-                      <>
-                        <FileCheck className="w-4 h-4" /> Confirm Document
-                        Release
-                      </>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 border-[#D4AF37]/20 hover:border-[#D4AF37]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/5 text-sm disabled:opacity-40"
+                        disabled={releaseLoading}
+                        onClick={() => void confirmDocRelease()}
+                      >
+                        {releaseLoading ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            Confirming...
+                          </>
+                        ) : (
+                          <>
+                            <FileCheck className="w-4 h-4" /> Confirm Document
+                            Release
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -1711,7 +1734,7 @@ export default function DealDetail() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
 
