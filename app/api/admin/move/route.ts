@@ -10,12 +10,16 @@ import {
   sendShippedNotification,
   sendCompletedNotification,
 } from "@/lib/email";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const { deal_id, stage } = await req.json();
   if (!deal_id || !stage)
     return NextResponse.json(

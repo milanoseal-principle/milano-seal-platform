@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createCommission, getCommissionSummary } from "@/lib/commissionEngine";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const partner_id = req.nextUrl.searchParams.get("partner_id") || undefined;
   const summary = await getCommissionSummary(partner_id);
   return NextResponse.json(summary);
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const { deal_id, partner_id, partner_name, partner_type } = await req.json();
   if (!deal_id || !partner_id || !partner_name) {
     return NextResponse.json(

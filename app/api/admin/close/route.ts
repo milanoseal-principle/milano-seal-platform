@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSMS } from "@/lib/twilio";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,9 @@ const CLOSE_MESSAGES: Record<string, (name: string, amount: number) => string> =
   };
 
 export async function POST(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const { deal_id, message_type = "payment" } = await req.json();
   if (!deal_id)
     return NextResponse.json({ error: "deal_id required" }, { status: 400 });

@@ -3,10 +3,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { scoreDeal, scoreAllDeals } from "@/lib/scoringEngine";
 import { isOpenStage } from "@/lib/stateMachine";
 import { serializeDealMS } from "@/lib/milanoSerialize";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const body = await req.json().catch(() => ({}));
 
   if (!body.deal_id) {
@@ -33,6 +37,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("deals")

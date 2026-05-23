@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWisePaymentRequest, getWiseBaseUrl } from "@/lib/wise";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
 // /dashboard/admin/payments screen consumes.
 
 export async function GET() {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   const apiHost = getWiseBaseUrl();
 
   const supabase = createAdminClient();

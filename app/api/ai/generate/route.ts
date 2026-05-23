@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireOperator, isGuardFailure } from "@/lib/auth-guards";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   dm: `You are The Milano Seal™ outreach specialist. Write concise, authoritative DMs for Instagram, WhatsApp, LinkedIn, Facebook.
@@ -15,6 +16,9 @@ Be precise, professional, actionable. Focus on deals, client communication, exec
 };
 
 export async function POST(req: NextRequest) {
+  const guard = await requireOperator();
+  if (isGuardFailure(guard)) return guard.response;
+
   try {
     const { prompt, system, type = "general" } = await req.json();
     const key = process.env.ANTHROPIC_API_KEY;
