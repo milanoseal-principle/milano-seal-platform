@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { useApi } from "@/hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
 
 interface DashboardSummary {
   total_deals: number;
@@ -108,13 +111,42 @@ function formatEventLabel(event: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+const cardVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
+
 export default function Dashboard() {
+  const [entryComplete, setEntryComplete] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("ms-operator-entry")) {
+      setEntryComplete(true);
+    }
+  }, []);
+
+  function handleEntryComplete() {
+    sessionStorage.setItem("ms-operator-entry", "1");
+    setEntryComplete(true);
+  }
+
   const { data, isLoading, isError } = useApi<DashboardSummary>(
     "/api/dashboard/summary",
   );
 
   if (isLoading)
     return (
+      <>
+        <AnimatePresence mode="wait">
+          {!entryComplete && (
+            <MilanoSealEntryRitual onComplete={handleEntryComplete} />
+          )}
+        </AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: entryComplete ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+        >
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div className="space-y-2">
@@ -246,6 +278,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+        </motion.div>
+      </>
     );
   if (isError || !data)
     return (
@@ -258,6 +292,17 @@ export default function Dashboard() {
       : 1;
 
   return (
+    <>
+      <AnimatePresence mode="wait">
+        {!entryComplete && (
+          <MilanoSealEntryRitual onComplete={handleEntryComplete} />
+        )}
+      </AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: entryComplete ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+      >
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -281,44 +326,63 @@ export default function Dashboard() {
       </div>
 
       {/* Status strip — 6 cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-        <Stat
-          label="Matters in Review"
-          value={String(data.reviewing_count)}
-          hint="Intake & review"
-          icon={FileText}
-        />
-        <Stat
-          label="Awaiting Payment"
-          value={String(data.awaiting_payment)}
-          hint="Gated until cleared"
-          icon={Clock}
-        />
-        <Stat
-          label="Scheduled Execution"
-          value={String(data.scheduled_count)}
-          hint="Confirmed & queued"
-          icon={CalendarClock}
-        />
-        <Stat
-          label="Apostille / Authentication"
-          value={String(data.apostille_count)}
-          hint="In authentication"
-          icon={Stamp}
-        />
-        <Stat
-          label="Ready for Release"
-          value={String(data.shipped_count)}
-          hint="Pending delivery"
-          icon={Package}
-        />
-        <Stat
-          label="Security Events"
-          value={String(data.security_events_count)}
-          hint="Recent audit entries"
-          icon={ShieldAlert}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
+        initial="hidden"
+        animate={entryComplete ? "visible" : "hidden"}
+        variants={{
+          visible: { transition: { staggerChildren: 0.08 } },
+        }}
+      >
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Matters in Review"
+            value={String(data.reviewing_count)}
+            hint="Intake & review"
+            icon={FileText}
+          />
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Awaiting Payment"
+            value={String(data.awaiting_payment)}
+            hint="Gated until cleared"
+            icon={Clock}
+          />
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Scheduled Execution"
+            value={String(data.scheduled_count)}
+            hint="Confirmed & queued"
+            icon={CalendarClock}
+          />
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Apostille / Authentication"
+            value={String(data.apostille_count)}
+            hint="In authentication"
+            icon={Stamp}
+          />
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Ready for Release"
+            value={String(data.shipped_count)}
+            hint="Pending delivery"
+            icon={Package}
+          />
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Stat
+            label="Security Events"
+            value={String(data.security_events_count)}
+            hint="Recent audit entries"
+            icon={ShieldAlert}
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Recent Matters + Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -428,7 +492,15 @@ export default function Dashboard() {
       </div>
 
       {/* Finance Snapshot + Destinations */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <motion.div
+        className="grid gap-6 md:grid-cols-2"
+        initial="hidden"
+        animate={entryComplete ? "visible" : "hidden"}
+        variants={{
+          visible: { transition: { staggerChildren: 0.1, delayChildren: 0.48 } },
+        }}
+      >
+        <motion.div variants={cardVariants}>
         <Card className="bg-card border-gold">
           <CardHeader>
             <CardTitle className="font-serif text-xl flex items-center gap-2">
@@ -462,7 +534,9 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
 
+        <motion.div variants={cardVariants}>
         <Card className="bg-card border-gold">
           <CardHeader>
             <CardTitle className="font-serif text-xl flex items-center gap-2">
@@ -495,7 +569,8 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Audit Ledger */}
       <Card className="bg-card border-gold">
@@ -583,5 +658,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
+      </motion.div>
+    </>
   );
 }

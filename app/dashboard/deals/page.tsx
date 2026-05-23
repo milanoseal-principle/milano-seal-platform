@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { useApi } from "@/hooks/useApi";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ import {
   paymentBadgeClasses,
   timeAgo,
 } from "@/lib/format";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 interface DealRow {
   id: string;
@@ -58,6 +59,17 @@ export default function Deals() {
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [paid, setPaid] = useState<string>("all");
+  const [drawerMatter, setDrawerMatter] = useState<{
+    id: string;
+    ref?: string;
+    client_name?: string;
+    email?: string;
+    status?: string;
+    payment_status?: string;
+    service_type?: string;
+    destination_country?: string;
+    total_price?: number;
+  } | null>(null);
 
   const { data: pipeline } = useApi<PipelineResponse>("/api/admin/pipeline");
 
@@ -247,9 +259,24 @@ export default function Deals() {
                     key={d.deal_id}
                     className="border-gray-900/50 hover:bg-white/[0.01] transition-colors cursor-pointer"
                     data-testid={`row-${d.deal_id}`}
+                    onClick={() =>
+                      setDrawerMatter({
+                        id: d.deal_id ?? d.id,
+                        ref: d.deal_id ?? undefined,
+                        client_name: d.client_name ?? undefined,
+                        status: d.deal_status,
+                        payment_status: d.payment_status,
+                        service_type: d.document_type,
+                        destination_country: d.destination_country,
+                        total_price: d.total_price,
+                      })
+                    }
                   >
                     <TableCell className="p-3">
-                      <Link href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
+                      <Link
+                        href={`/dashboard/deals/${d.deal_id ?? d.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <span className="font-mono text-xs text-[#D4AF37] hover:underline">
                           {d.deal_id ?? `${d.id.slice(0, 8)}...`}
                         </span>
