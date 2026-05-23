@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { countries, documents } from "@/lib/seo-data";
+import { JURISDICTION_PROFILES } from "@/lib/jurisdiction-data";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://themilanoseal.com";
@@ -79,8 +80,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   }
 
+  // Jurisdiction entity pages
+  const jurisdictionPages: MetadataRoute.Sitemap = JURISDICTION_PROFILES.map((p) => ({
+    url: `${baseUrl}/jurisdictions/${p.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.85,
+  }));
+
   return [
     ...staticPages,
+    ...jurisdictionPages,
     ...apostillePages,
     ...servicePages,
     ...documentCountryPages,
