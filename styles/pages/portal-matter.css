@@ -52,7 +52,12 @@
   }
 }
 .pp-card {
-  background: #141414;
+  background: radial-gradient(
+      100% 100% at 50% 0%,
+      rgba(212, 175, 55, 0.03) 0%,
+      rgba(0, 0, 0, 0) 100%
+    ),
+    #141414;
   border: 1px solid rgba(198, 165, 90, 0.14);
   padding: 22px;
   margin-bottom: 16px;
