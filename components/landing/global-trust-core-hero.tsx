@@ -565,7 +565,11 @@ export function GlobalTrustCoreHero() {
 
               {/* Scramble header */}
               <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2">
-                {selectedNode.id === "florida" ? "ORIGIN NODE" : "DESTINATION VECTOR"}
+                {selectedNode.id === "florida"
+                  ? "ORIGIN NODE"
+                  : selectedNode.framework === "HAGUE CONVENTION ROUTING"
+                    ? "HAGUE RELEASE NODE"
+                    : "CONSULAR RELEASE NODE"}
               </span>
               <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-6 mb-3.5 min-h-[2em]">
                 {scrambledText}
