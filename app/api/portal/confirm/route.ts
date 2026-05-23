@@ -44,15 +44,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid code" }, { status: 403 });
     }
 
-    // Mark OTP as used
+    // Mark OTP as used (prevents replay — single-use enforcement)
     await supabase
       .from("portal_otps")
       .update({ used: true })
       .eq("id", record.id);
 
-    // Issue a session token (simple JWT-style — base64 deal_id + timestamp)
+    // TODO SECURITY-06: portal OTP rotation and hashing
+    // TODO SECURITY-06: replace base64 session with HMAC-signed JWT so
+    //   session tokens cannot be forged by base64-encoding arbitrary deal_ids.
+
+    // SECURITY-05: include email in session so resource guards can verify
+    // the actor identity without re-querying the DB on every request.
+    const normalizedEmail = email.toLowerCase().trim();
     const session = Buffer.from(
-      JSON.stringify({ deal_id: deal.id, ts: Date.now() })
+      JSON.stringify({ deal_id: deal.id, email: normalizedEmail, ts: Date.now() })
     ).toString("base64");
 
     return NextResponse.json({ success: true, session });
