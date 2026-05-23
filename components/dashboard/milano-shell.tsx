@@ -20,6 +20,7 @@ import {
   X,
   Terminal,
   Receipt,
+  Scale,
 } from "lucide-react";
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/dashboard/compliance", label: "Global Document Intelligence", icon: Globe2 },
   { href: "/dashboard/invoices", label: "Invoice Studio", icon: Receipt },
   { href: "/dashboard/admin/payments", label: "Payment Gate", icon: CreditCard },
+  { href: "/dashboard/admin/reconciliation", label: "Finance Reconciliation", icon: Scale },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
   { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
 ];

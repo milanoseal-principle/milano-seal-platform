@@ -49,6 +49,7 @@ import {
   MessageSquare,
   Send,
   Package,
+  FileCheck,
 } from "lucide-react";
 
 interface DealMessage {
@@ -210,6 +211,8 @@ export default function DealDetail() {
     }
   }
 
+  const [releaseLoading, setReleaseLoading] = useState(false);
+  const [releaseSuccess, setReleaseSuccess] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [actionNote, setActionNote] = useState("");
@@ -479,6 +482,28 @@ export default function DealDetail() {
   const isPaid = deal.payment_status === "paid";
   const stage = deal.deal_status;
 
+  async function confirmDocRelease() {
+    if (!deal || releaseLoading) return;
+    setReleaseLoading(true);
+    try {
+      const r = await fetch(`/api/deals/${deal.id}/release`, {
+        method: "POST",
+      });
+      const body = (await r.json()) as { ok?: boolean; error?: string };
+      if (!r.ok) {
+        toast.error(body.error ?? "Release confirmation failed.");
+      } else {
+        setReleaseSuccess(true);
+        toast.success("Document release confirmed and recorded.");
+        refresh();
+      }
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setReleaseLoading(false);
+    }
+  }
+
   const TIMELINE: {
     key: string;
     label: string;
@@ -512,6 +537,15 @@ export default function DealDetail() {
     },
   ];
 
+  const isPaidAndCompleted =
+    stage === "completed" && deal.payment_status === "paid";
+  const isShippedOrCompleted =
+    stage === "shipped" || stage === "completed";
+  const isBalanceDue =
+    isShippedOrCompleted && deal.payment_status !== "paid";
+  const showDocRelease =
+    stage === "shipped" || stage === "apostille";
+
   return (
     <div className="space-y-6">
       <Link href="/dashboard/deals">
@@ -523,6 +557,34 @@ export default function DealDetail() {
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to matters
         </Button>
       </Link>
+
+      {/* Paid & Released banner */}
+      {isPaidAndCompleted && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-sm border border-[#D4AF37]/30 bg-[#D4AF37]/5">
+          <CheckCircle2 className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-[#D4AF37]">
+              Paid &amp; Released
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This matter is Paid &amp; Released. All obligations fulfilled.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Balance due warning */}
+      {isBalanceDue && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-sm border border-amber-500/30 bg-amber-500/5">
+          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-amber-400">Balance Due</p>
+            <p className="text-xs text-muted-foreground">
+              Payment has not been confirmed. Balance must be cleared.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 min-w-0">
         <div className="flex-1 space-y-1 min-w-0">
@@ -1242,6 +1304,56 @@ export default function DealDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Document Release */}
+          {showDocRelease && (
+            <Card className="bg-[#0c0c12] border border-[#D4AF37]/15 rounded-sm">
+              <CardHeader className="p-4 pb-3">
+                <div>
+                  <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-1">
+                    Document Release
+                  </p>
+                  <CardTitle className="font-serif text-lg flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-[#D4AF37]" /> Release
+                    Confirmation
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Confirm that documents have been released to the recipient.
+                  This records a custody ledger event.
+                </p>
+                {releaseSuccess ? (
+                  <div className="flex items-center gap-2 p-2.5 rounded-sm border border-[#D4AF37]/20 bg-[#D4AF37]/5">
+                    <CheckCircle2 className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
+                    <span className="text-xs text-[#D4AF37]">
+                      Release confirmed and recorded.
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-[#D4AF37]/20 hover:border-[#D4AF37]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/5 text-sm disabled:opacity-40"
+                    disabled={releaseLoading}
+                    onClick={() => void confirmDocRelease()}
+                  >
+                    {releaseLoading ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="w-4 h-4" /> Confirm Document
+                        Release
+                      </>
+                    )}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
