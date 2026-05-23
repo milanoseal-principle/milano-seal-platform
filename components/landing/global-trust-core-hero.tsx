@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { CountryComplianceCard } from "@/components/landing/country-compliance-card";
+import { useEffect, useRef, useState } from "react";
 
 // Florida: southeastern US anchor — upper-left of South America on this projection
 // Continent dot regions place NA body at y:105–157, Central America at y:205–235
@@ -102,11 +101,7 @@ export function GlobalTrustCoreHero() {
   const [phase, setPhase] = useState<"idle" | "settled" | "arcs" | "rotating">("idle");
   const [arcsDone, setArcsDone] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const openCard = useCallback((id: string) => setSelectedCountry(id), []);
-  const closeCard = useCallback(() => setSelectedCountry(null), []);
 
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -311,20 +306,8 @@ export function GlobalTrustCoreHero() {
                   style={{ transition: "opacity 0.5s ease" }}
                 />
 
-                {/* Clickable node + ring + label → opens compliance card */}
-                <g
-                  style={{ cursor: "pointer" }}
-                  role="button"
-                  aria-label={`View ${dest.label} compliance details`}
-                  onClick={() => openCard(dest.id)}
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCard(dest.id); }}
-                >
-                  <circle
-                    cx={dest.x} cy={dest.y}
-                    r="18"
-                    fill="transparent"
-                  />
+                {/* Destination node + ring + label — passive prestige visual */}
+                <g>
                   <circle
                     cx={dest.x} cy={dest.y}
                     r="3.5"
@@ -390,8 +373,6 @@ export function GlobalTrustCoreHero() {
         </span>
       </div>
 
-      {/* Country compliance card — portal-style fixed overlay */}
-      <CountryComplianceCard countryId={selectedCountry} onClose={closeCard} />
     </div>
   );
 }
