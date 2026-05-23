@@ -572,7 +572,12 @@ export default function DealDetail() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-center gap-3 px-4 py-3 rounded-sm border border-[#D4AF37]/30 bg-[#D4AF37]/5"
+            className="flex items-center gap-3 px-4 py-3 rounded-sm border"
+            style={{
+              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(212, 175, 55, 0.05) 100%)",
+              borderColor: "rgba(212, 175, 55, 0.2)",
+              boxShadow: "0 0 12px rgba(212, 175, 55, 0.05)"
+            }}
           >
             <CheckCircle2 className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
             <div>

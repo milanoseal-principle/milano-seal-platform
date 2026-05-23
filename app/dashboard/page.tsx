@@ -308,7 +308,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-            Sovereign Execution Core
+            Execution Center
           </p>
           <h1 className="font-serif text-4xl text-foreground">
             Today at the Seal

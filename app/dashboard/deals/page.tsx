@@ -255,9 +255,9 @@ export default function Deals() {
               </TableHeader>
               <TableBody>
                 {data.map((d) => (
-                  <TableRow
+                  <motion.tr
                     key={d.deal_id}
-                    className="border-gray-900/50 hover:bg-white/[0.01] transition-colors cursor-pointer"
+                    className="border-b border-gray-900/50 cursor-pointer"
                     data-testid={`row-${d.deal_id}`}
                     onClick={() =>
                       setDrawerMatter({
@@ -271,6 +271,11 @@ export default function Deals() {
                         total_price: d.total_price,
                       })
                     }
+                    whileHover={{
+                      backgroundColor: "rgba(255, 255, 255, 0.015)",
+                      x: 2,
+                      transition: { duration: 0.15, ease: "easeOut" }
+                    }}
                   >
                     <TableCell className="p-3">
                       <Link
@@ -333,7 +338,7 @@ export default function Deals() {
                     <TableCell className="p-3 text-right text-xs text-muted-foreground font-mono">
                       {timeAgo(d.created_at)}
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))}
               </TableBody>
             </Table>
@@ -359,7 +364,7 @@ export default function Deals() {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.3 }}
+              transition={{ type: "spring", damping: 30, stiffness: 180 }}
               className="fixed inset-y-0 right-0 w-96 bg-[#09090d] border-l border-gray-900 z-50 flex flex-col shadow-2xl"
             >
               {/* Header */}
