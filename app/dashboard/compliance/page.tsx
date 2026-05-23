@@ -84,11 +84,12 @@ export default function Compliance() {
           Global Document Intelligence
         </p>
         <h1 className="font-serif text-4xl text-foreground">
-          Where The Milano Seal Operates
+          Internal Routing &amp; Compliance Workspace
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
-          Authentication paths, RON eligibility, witness rules, and typical
-          documents for every jurisdiction we serve.
+          Country routing, apostille logic, RON eligibility, witness rules,
+          translation requirements, and execution path validation for every
+          active jurisdiction.
         </p>
       </div>
 

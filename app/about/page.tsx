@@ -94,7 +94,7 @@ export default function AboutPage() {
                   href="/intake"
                   className="inline-flex items-center gap-2 mt-8 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-sm hover:bg-[#D4BB7A] transition-colors"
                 >
-                  Begin Execution
+                  Begin Secure Intake
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -208,7 +208,7 @@ export default function AboutPage() {
               href="/intake"
               className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-sm hover:bg-[#D4BB7A] transition-all hover:shadow-[0_8px_30px_rgba(198,165,90,0.3)]"
             >
-              Begin Execution
+              Begin Secure Intake
               <ArrowRight className="w-5 h-5" />
             </Link>
             <p className="text-[#8A8A8A] text-sm mt-6">

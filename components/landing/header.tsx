@@ -71,7 +71,7 @@ export function Header() {
                   href="/intake"
                   className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
                 >
-                  <span>Begin Execution</span>
+                  <span>Begin Secure Intake</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </Link>
               </div>
@@ -120,7 +120,7 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
               >
-                <span>Begin Execution</span>
+                <span>Begin Secure Intake</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </nav>
