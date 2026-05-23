@@ -380,7 +380,7 @@ export function GlobalTrustCoreHero() {
 
                 {/* Clickable node — semantic SEO attributes, cinematic focus */}
                 <g
-                  style={{ cursor: arcsDone ? "pointer" : "default" }}
+                  style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all" }}
                   role={arcsDone ? "button" : undefined}
                   tabIndex={arcsDone ? 0 : undefined}
                   aria-label={`${dest.label} routing information`}
