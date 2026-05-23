@@ -11,7 +11,8 @@ const FLORIDA_NODE = {
   label: "Florida",
   x: 108, y: 190,
   framework: "EXECUTION ORIGIN",
-  channel: "Florida Department of State Route",
+  channel: "Florida Dept. of State Route",
+  protocol: "RON or in-person execution · Apostille issuance",
   docs: ["Power of Attorney", "Affidavit", "Name Discrepancy Affidavit"],
   seoIntent: "/jurisdictions/florida-origin-document-execution",
   isoCode: "JURISDICTION_ISO_FL",
@@ -24,7 +25,8 @@ const DESTINATIONS = [
     x: 255, y: 105,
     dur: 2.4, startDelay: 0.0,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "Florida Dept. of State Route",
+    channel: "FL Dept. of State → International Release",
+    protocol: "Liaison monitoring · Destination-specific review",
     docs: ["Power of Attorney", "Corporate Authorization", "Diploma Authentication"],
     seoIntent: "/jurisdictions/italy-apostille-coordination",
     isoCode: "JURISDICTION_ISO_IT",
@@ -35,8 +37,9 @@ const DESTINATIONS = [
     x: 208, y: 122,
     dur: 2.8, startDelay: 0.7,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "Florida Dept. of State Route",
-    docs: ["Power of Attorney", "Marriage Certificate Apostille", "Academic Credentials"],
+    channel: "FL Dept. of State → International Release",
+    protocol: "Civil registry verification · Release coordination",
+    docs: ["Power of Attorney", "Marriage Certificate", "Academic Credentials"],
     seoIntent: "/jurisdictions/spain-international-release-coordination",
     isoCode: "JURISDICTION_ISO_ES",
   },
@@ -46,7 +49,8 @@ const DESTINATIONS = [
     x: 118, y: 268,
     dur: 3.1, startDelay: 1.4,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "Florida Dept. of State Route",
+    channel: "FL Dept. of State Route",
+    protocol: "Notary seal validation · Accession 2016",
     docs: ["Power of Attorney", "Corporate Documents", "Birth Certificate"],
     seoIntent: "/jurisdictions/brazil-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_BR",
@@ -58,6 +62,7 @@ const DESTINATIONS = [
     dur: 2.6, startDelay: 0.3,
     framework: "CONSULAR AUTHENTICATION TRACK",
     channel: "Embassy / Consular Review",
+    protocol: "Chain-of-custody control · Accession 2021",
     docs: ["Power of Attorney", "Commercial Agreements", "Corporate Documents"],
     seoIntent: "/jurisdictions/uae-consular-authentication-track",
     isoCode: "JURISDICTION_ISO_AE",
@@ -69,6 +74,7 @@ const DESTINATIONS = [
     dur: 1.8, startDelay: 2.1,
     framework: "HAGUE CONVENTION ROUTING",
     channel: "State Authentication Channel",
+    protocol: "Destination-specific review · Multi-page instruments",
     docs: ["Power of Attorney", "Corporate Authorization", "Birth Certificate"],
     seoIntent: "/jurisdictions/mexico-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_MX",
@@ -568,12 +574,16 @@ export function GlobalTrustCoreHero() {
               {/* Useful data rows */}
               <div className="space-y-2 border-t border-white/[0.05] pt-3">
                 <div className="flex gap-2.5 items-start">
-                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#3A3A3A] w-12 flex-shrink-0 mt-0.5">ROUTE</span>
-                  <span className="font-mono text-[9px] text-[#777] leading-snug">{"channel" in selectedNode ? selectedNode.channel : "—"}</span>
+                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">CHANNEL</span>
+                  <span className="font-mono text-[9px] text-[#999] leading-snug">{"channel" in selectedNode ? selectedNode.channel : "—"}</span>
                 </div>
                 <div className="flex gap-2.5 items-start">
-                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#3A3A3A] w-12 flex-shrink-0 mt-0.5">DOCS</span>
-                  <span className="font-mono text-[9px] text-[#777] leading-snug">
+                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">PROTOCOL</span>
+                  <span className="font-mono text-[9px] text-[#999] leading-snug">{"protocol" in selectedNode ? selectedNode.protocol : "—"}</span>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">DOCS</span>
+                  <span className="font-mono text-[9px] text-[#999] leading-snug">
                     {"docs" in selectedNode ? selectedNode.docs.slice(0, 2).join(" · ") : "—"}
                   </span>
                 </div>
