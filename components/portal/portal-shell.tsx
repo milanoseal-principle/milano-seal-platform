@@ -102,16 +102,16 @@ export function PortalShell({ children }: { children: ReactNode }) {
                     {d.document_type ?? "Matter"}
                   </span>
                   <span className="ps-switcher-item-meta">
-                    {d.destination_country ?? d.country ?? "—"} ·{" "}
-                    {d.id.slice(0, 8).toUpperCase()}
+                    {d.destination_country ?? "—"} ·{" "}
+                    {d.display_id?.slice(0, 8).toUpperCase() ?? d.id.slice(0, 8).toUpperCase()}
                   </span>
                   <span
                     className="ps-switcher-item-status"
                     style={{
-                      color: d.status === "completed" ? "#4a9e6b" : "#C6A55A",
+                      color: d.matter_status === "completed" ? "#4a9e6b" : "#C6A55A",
                     }}
                   >
-                    {(d.status ?? "").replace(/_/g, " ")}
+                    {(d.matter_status ?? "").replace(/_/g, " ")}
                   </span>
                 </button>
               ))}
@@ -138,7 +138,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           );
         })}
 
-        {deal?.status && (
+        {deal?.matter_status && (
           <>
             <div className="ps-nav-sec" style={{ marginTop: 18 }}>
               Live Status
@@ -148,7 +148,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 <div className="ps-status-row">
                   <div className="ps-notif" />
                   <span className="ps-status-l">
-                    {deal.status.replace(/_/g, " ")}
+                    {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
                   </span>
                 </div>
                 {deal.payment_status && (
@@ -165,14 +165,14 @@ export function PortalShell({ children }: { children: ReactNode }) {
       <div className="ps-foot">
         <div className="ps-foot-user">
           <div className="ps-avatar">
-            {(deal?.client_name ?? deal?.email ?? "?").charAt(0).toUpperCase()}
+            {(deal?.client_name ?? "C").charAt(0).toUpperCase()}
           </div>
           <div style={{ minWidth: 0 }}>
             <div className="ps-foot-name">
               {deal?.client_name ?? "Client"}
             </div>
             <div className="ps-foot-email">
-              {deal?.email ?? ""}
+              {deal?.display_id ? `#${deal.display_id.slice(0, 8).toUpperCase()}` : ""}
             </div>
           </div>
         </div>
@@ -234,10 +234,10 @@ export function PortalShell({ children }: { children: ReactNode }) {
               </div>
             </div>
           </div>
-          {deal?.status && (
+          {deal?.matter_status && (
             <div className="ps-topbar-status">
               <span className="ps-topbar-badge">
-                {deal.status.replace(/_/g, " ")}
+                {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
               </span>
               {deal.payment_status === "paid" && (
                 <span className="ps-topbar-badge-paid">Paid</span>
