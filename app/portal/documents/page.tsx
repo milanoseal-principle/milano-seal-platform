@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
 
 interface FileRow {
@@ -57,7 +58,11 @@ export default function ClientDocumentsPage() {
   }
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
       <div className="cd-eyebrow">Your Documents</div>
       <h1 className="cd-h1">Files &amp; Uploads</h1>
 
@@ -68,10 +73,16 @@ export default function ClientDocumentsPage() {
             (notarized PDF, apostille certificate) will appear here.
           </div>
         ) : (
-          files.map((f) => {
+          files.map((f, fileIndex) => {
             const name = f.name ?? f.filename ?? "Document";
             return (
-              <div key={f.id} className="cd-row">
+              <motion.div
+                key={f.id}
+                className="cd-row"
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.28, delay: fileIndex * 0.05, ease: "easeOut" }}
+              >
                 <div>
                   <div className="cd-name">{name}</div>
                   {f.category && (
@@ -96,11 +107,11 @@ export default function ClientDocumentsPage() {
                     <span className="cd-link-na">—</span>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

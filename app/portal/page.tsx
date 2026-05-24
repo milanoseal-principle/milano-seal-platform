@@ -379,24 +379,41 @@ export default function MyMatterPage() {
             {ledger.length > 0 && (
               <div className="pp-card">
                 <div className="pp-card-h">Recent Activity</div>
-                {ledger
-                  .slice(-5)
-                  .reverse()
-                  .map((l) => (
-                    <div key={l.id} className="pp-activity-row">
-                      <div className="pp-activity-event">
-                        {l.event.replace("DOC_", "").replace(/_/g, " ")}
+                {(() => {
+                  const items = ledger.slice(-5).reverse();
+                  return items.map((l, i) => (
+                    <motion.div
+                      key={l.id}
+                      className="pp-timeline-item"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.35, delay: i * 0.07, ease: "easeOut" }}
+                    >
+                      <div className="pp-timeline-col">
+                        <div className="pp-timeline-dot" />
+                        {i < items.length - 1 && (
+                          <motion.div
+                            className="pp-timeline-line"
+                            initial={{ scaleY: 0 }}
+                            animate={{ scaleY: 1 }}
+                            transition={{ duration: 0.3, delay: i * 0.07 + 0.15 }}
+                          />
+                        )}
                       </div>
-                      {l.location && (
-                        <div className="pp-activity-location">
-                          {l.location}
+                      <div className="pp-timeline-content">
+                        <div className="pp-activity-event">
+                          {l.event.replace("DOC_", "").replace(/_/g, " ")}
                         </div>
-                      )}
-                      <div className="pp-activity-time">
-                        {new Date(l.created_at).toLocaleString()}
+                        {l.location && (
+                          <div className="pp-activity-location">{l.location}</div>
+                        )}
+                        <div className="pp-activity-time">
+                          {new Date(l.created_at).toLocaleString()}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    </motion.div>
+                  ));
+                })()}
               </div>
             )}
           </motion.div>
