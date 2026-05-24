@@ -19,6 +19,9 @@ const PUBLIC_AUTH_PATHS = new Set([
   "/auth/callback",
 ]);
 
+// Prefix-match for auth paths that have dynamic suffixes
+const PUBLIC_AUTH_PREFIXES = ["/auth/", "/api/auth/"];
+
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
@@ -29,6 +32,10 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (PUBLIC_AUTH_PATHS.has(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (PUBLIC_AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
