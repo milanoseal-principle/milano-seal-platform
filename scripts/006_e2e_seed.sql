@@ -367,6 +367,13 @@ INSERT INTO operator_availability_log (
 );
 
 -- ────────────────────────────────────────────────────────────────────────────
+-- 7. STORAGE BUCKET — documents (private, required for signed URL vault)
+-- ────────────────────────────────────────────────────────────────────────────
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
+
+-- ────────────────────────────────────────────────────────────────────────────
 -- STATUS
 -- ────────────────────────────────────────────────────────────────────────────
 SELECT
@@ -375,4 +382,5 @@ SELECT
   (SELECT count(*) FROM matter_events WHERE matter_id IN (
     SELECT id FROM deals WHERE email LIKE '%@test.milanoseal.local'
   )) AS test_events,
-  (SELECT count(*) FROM operator_profiles WHERE email LIKE '%@test.milanoseal.local') AS test_operators;
+  (SELECT count(*) FROM operator_profiles WHERE email LIKE '%@test.milanoseal.local') AS test_operators,
+  (SELECT public FROM storage.buckets WHERE id = 'documents') AS documents_bucket_public;
