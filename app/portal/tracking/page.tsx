@@ -12,8 +12,6 @@ interface TrackingResponse {
     delivery_eta: string | null;
     delivery_timestamp: string | null;
     signed_by: string | null;
-    label_url: string | null;
-    ship_to: Record<string, unknown> | null;
     evidence_url?: string | null;
     evidence_generated_at?: string | null;
     live: {
