@@ -7,6 +7,52 @@ import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
 import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { createClient } from "@/lib/supabase/client";
 
+const EVENT_LABELS: Record<string, string> = {
+  // State transitions
+  intake_received: "Matter received and secured",
+  under_review: "Document under procedural review",
+  compliance_review: "Compliance review initiated",
+  quoted: "Execution proposal issued",
+  awaiting_payment: "Payment required before scheduling",
+  payment_confirmed: "Payment confirmed — scheduling unlocked",
+  scheduled: "Execution session scheduled",
+  in_execution: "Execution in progress",
+  apostille_processing: "Apostille processing initiated",
+  courier_ready: "Document packaged for release",
+  shipped: "Released to courier",
+  delivered: "Delivery confirmed",
+  completed: "Matter closed",
+  // Custody ledger events
+  DOC_SIGNED: "Notarization completed",
+  DOC_APOSTILLED: "Apostille issued",
+  DOC_SHIPPED: "Released to courier",
+  DOC_DELIVERED: "Delivery confirmed",
+  DOC_RELEASED: "Document released",
+  PAYMENT_RECEIVED: "Payment received",
+  REVIEW_STARTED: "Procedural review initiated",
+  OPERATOR_ASSIGNED: "Execution coordinator assigned",
+  MATTER_CREATED: "Matter created",
+  MATTER_UPDATED: "Status updated",
+};
+
+function formatEventLabel(raw: string): string {
+  if (EVENT_LABELS[raw]) return EVENT_LABELS[raw];
+  return raw
+    .replace(/^DOC_/, "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  paid: "Payment Confirmed",
+  confirmed: "Payment Confirmed",
+  pending: "Payment Pending",
+  awaiting: "Payment Required",
+  unpaid: "Payment Required",
+  failed: "Payment Failed",
+};
+
 interface Message {
   id: string;
   direction: "inbound" | "outbound";
@@ -117,7 +163,23 @@ export default function MyMatterPage() {
 
   if (isLoading) {
     return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading your matter…</div>
+      <div style={{ paddingTop: 8 }}>
+        {[55, 36, 80, 55].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: i === 0 ? 28 : i === 1 ? 18 : 52,
+              borderRadius: 2,
+              marginBottom: 12,
+              background: "rgba(198,165,90,0.05)",
+              border: "1px solid rgba(198,165,90,0.08)",
+              animation: "ppSkeleton 2s ease-in-out infinite",
+              animationDelay: `${i * 0.15}s`,
+              width: `${w}%`,
+            }}
+          />
+        ))}
+      </div>
     );
   }
 
@@ -220,7 +282,7 @@ export default function MyMatterPage() {
           >
             {/* Premium status rail — PORTAL-MOTION-01 */}
             <div className="pp-card">
-              <div className="pp-card-h">Progress</div>
+              <div className="pp-card-h">Execution Progress</div>
               <PortalStatusRail
                 matterStatus={deal.matter_status}
                 paymentStatus={deal.payment_status}
@@ -343,7 +405,7 @@ export default function MyMatterPage() {
 
             {ledger.length > 0 && (
               <div className="pp-card">
-                <div className="pp-card-h">Recent Activity</div>
+                <div className="pp-card-h">Execution Timeline</div>
                 {(() => {
                   const items = ledger.slice(-5).reverse();
                   return items.map((l, i) => (
@@ -367,7 +429,7 @@ export default function MyMatterPage() {
                       </div>
                       <div className="pp-timeline-content">
                         <div className="pp-activity-event">
-                          {l.event.replace("DOC_", "").replace(/_/g, " ")}
+                          {formatEventLabel(l.event)}
                         </div>
                         {l.location && (
                           <div className="pp-activity-location">{l.location}</div>

@@ -16,6 +16,36 @@ import {
 import { usePortal } from "./portal-context";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 
+const PAYMENT_LABELS: Record<string, string> = {
+  paid: "Payment Confirmed",
+  confirmed: "Payment Confirmed",
+  pending: "Payment Pending",
+  awaiting: "Payment Required",
+  unpaid: "Payment Required",
+  failed: "Payment Failed",
+};
+
+const MATTER_STATUS_LABELS: Record<string, string> = {
+  new: "Intake Received",
+  intake_received: "Intake Received",
+  under_review: "Under Review",
+  compliance_review: "Under Review",
+  quoted: "Invoice Issued",
+  awaiting_payment: "Awaiting Payment",
+  payment_confirmed: "Payment Confirmed",
+  scheduled: "Scheduled",
+  in_execution: "In Execution",
+  apostille_processing: "Apostille Processing",
+  courier_ready: "Courier Ready",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  completed: "Matter Closed",
+  closed: "Matter Closed",
+  needs_info: "Information Needed",
+  compliance_blocked: "Under Review",
+  dormant: "Paused",
+};
+
 const NAV = [
   { href: "/portal", label: "My Matter", icon: ClipboardList },
   { href: "/portal/invoice", label: "Invoice", icon: Receipt },
@@ -111,7 +141,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                       color: d.matter_status === "completed" ? "#4a9e6b" : "#C6A55A",
                     }}
                   >
-                    {(d.matter_status ?? "").replace(/_/g, " ")}
+                    {MATTER_STATUS_LABELS[d.matter_status ?? ""] ?? (d.matter_status ?? "").replace(/_/g, " ")}
                   </span>
                 </button>
               ))}
@@ -153,7 +183,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 </div>
                 {deal.payment_status && (
                   <div className="ps-status-sub">
-                    Payment · {deal.payment_status}
+                    {PAYMENT_LABELS[deal.payment_status] ?? "Payment Pending"}
                   </div>
                 )}
               </div>

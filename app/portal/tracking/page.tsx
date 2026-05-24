@@ -283,7 +283,23 @@ export default function ClientTrackingPage() {
 
   if (dealLoading || loading) {
     return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading tracking…</div>
+      <div style={{ paddingTop: 8 }}>
+        {[55, 100, 78].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: i === 0 ? 20 : i === 1 ? 96 : 64,
+              borderRadius: 2,
+              marginBottom: 14,
+              background: "rgba(198,165,90,0.05)",
+              border: "1px solid rgba(198,165,90,0.08)",
+              animation: "ppSkeleton 2s ease-in-out infinite",
+              animationDelay: `${i * 0.18}s`,
+              width: `${w}%`,
+            }}
+          />
+        ))}
+      </div>
     );
   }
   if (!deal) {

@@ -1,3 +1,8 @@
+@keyframes ppSkeleton {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 @keyframes ppPulse {
   0%,
   100% {
