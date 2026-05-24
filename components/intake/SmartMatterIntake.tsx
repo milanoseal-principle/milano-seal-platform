@@ -337,6 +337,7 @@ function StructuringPanel({ current }: { current: StructuringState }) {
 }
 
 function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
+  const lr = analysis.languageRouting;
   return (
     <div className="bg-[rgba(255,255,255,0.46)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5">
       <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-4">
@@ -364,6 +365,49 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
           {analysis.hagueMember ? "YES" : "NO"}
         </div>
       </div>
+
+      {lr && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Official Language{lr.officialLanguages.length > 1 ? "s" : ""}
+          </div>
+          <div className="text-[13px] text-[#2C261F] font-light">
+            {lr.officialLanguages.join(", ")}
+          </div>
+        </div>
+      )}
+
+      {lr && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Translation
+          </div>
+          <div
+            className={`text-[12px] font-semibold ${
+              lr.translationLikely ? "text-[#8A5A2B]" : "text-[#3C6B46]"
+            }`}
+          >
+            {lr.translationLikely ? "Typically required" : "Not typically required"}
+          </div>
+          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+            {lr.translationNote}
+          </div>
+        </div>
+      )}
+
+      {!lr && analysis.country && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Translation
+          </div>
+          <div className="text-[12px] text-[#8A5A2B] font-semibold">
+            Manual review required
+          </div>
+          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+            Translation and language requirements for this jurisdiction will be confirmed by our team before execution.
+          </div>
+        </div>
+      )}
 
       {analysis.executionPath.length > 0 && (
         <div>
