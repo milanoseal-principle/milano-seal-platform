@@ -84,10 +84,11 @@ export async function POST(req: NextRequest) {
         file_size: file.size,
         uploaded_by: uploaded_by || "client",
       })
-      .select()
+      .select("id, deal_id, filename, file_type, file_size, uploaded_by, created_at")
       .single();
 
-    return NextResponse.json({ success: true, file: fileRecord });
+    // STORAGE-VAULT-01: return signed URL but never storage_path or file_path
+    return NextResponse.json({ success: true, file: { ...fileRecord, url: fileUrl } });
   } catch (err: unknown) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
