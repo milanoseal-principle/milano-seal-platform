@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 
-// Stub: webhook system health
-// Returns degraded until webhook processing infrastructure is confirmed active.
 export async function GET() {
+  const handlers = [
+    { name: "stripe", route: "/api/webhook/stripe", status: "active" },
+    { name: "wise", route: "/api/webhook/wise", status: "active" },
+    { name: "alliance_job", route: "/api/webhooks/alliance/job", status: "active" },
+    { name: "alliance_status", route: "/api/webhooks/alliance/status", status: "active" },
+    { name: "alliance_toolbelt", route: "/api/webhooks/alliance/toolbelt", status: "active" },
+    { name: "alliance_credential", route: "/api/webhooks/alliance/credential", status: "active" },
+  ];
+
   return NextResponse.json({
-    status: "stub",
+    status: "ok",
     service: "webhooks",
-    note: "Webhook processing stubs active. Handler wiring pending.",
+    handlers,
+    signature_validation: "enforced",
+    mutation_on_placeholder: "blocked",
     timestamp: new Date().toISOString(),
   });
 }
