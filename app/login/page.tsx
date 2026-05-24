@@ -124,7 +124,8 @@ function LoginInner() {
         });
 
         if (otpError) {
-          setError(otpError.message || "Failed to send sign-in link. Please try again.");
+          // Never display raw Supabase error messages — they contain internals
+          setError("Unable to send sign-in link. Please try again.");
           return;
         }
         setMagicSent(true);
@@ -142,36 +143,22 @@ function LoginInner() {
       });
 
       if (authError) {
-        // Return a clean message — never expose raw Supabase internals
-        if (
-          authError.message.toLowerCase().includes("invalid") ||
-          authError.message.toLowerCase().includes("credentials") ||
-          authError.message.toLowerCase().includes("password") ||
-          authError.status === 400
-        ) {
+        // Map all auth errors to clean, non-technical messages.
+        // Never expose raw Supabase error text (can contain "token", "JWT", "fetch").
+        if (authError.status === 400 || authError.status === 401 || authError.status === 422) {
           setError("Invalid credentials. Please check your email and password.");
         } else {
-          setError(authError.message || "Sign-in failed. Please try again.");
+          setError("Sign-in unavailable. Please try again in a moment.");
         }
         return;
       }
 
       router.push(nextPath);
       router.refresh();
-    } catch (err: unknown) {
-      // Catches network errors (Failed to fetch), env-var misconfiguration, etc.
-      const msg = err instanceof Error ? err.message : "";
-      if (
-        msg.toLowerCase().includes("fetch") ||
-        msg.toLowerCase().includes("network") ||
-        msg.toLowerCase().includes("failed to fetch")
-      ) {
-        setError(
-          "Unable to reach the authentication server. Check your internet connection and try again.",
-        );
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+    } catch {
+      // Catches thrown network errors, SDK failures, undefined env vars.
+      // Never display exception messages — they contain raw internals.
+      setError("Sign-in unavailable. Please try again in a moment.");
     } finally {
       setIsLoading(false);
     }
