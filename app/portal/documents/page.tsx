@@ -5,23 +5,14 @@ import { motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
 
 interface FileRow {
-  id: string;
-  name?: string;
-  filename?: string;
-  url?: string;
-  storage_path?: string;
-  size?: number;
-  mime?: string;
-  category?: string;
-  created_at: string;
+  document_id: string;
+  matter_id: string;
+  document_label: string;
+  uploaded_at: string;
+  verification_status: "released" | "processing" | "pending";
+  signed_url: string | null;
 }
 
-function fmtSize(b?: number): string {
-  if (b == null) return "—";
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / 1024 / 1024).toFixed(1)} MB`;
-}
 
 export default function ClientDocumentsPage() {
   const { deal, isLoading: dealLoading } = usePortal();
@@ -37,7 +28,7 @@ export default function ClientDocumentsPage() {
           cache: "no-store",
         });
         if (r.ok) {
-          const body = (await r.json()) as { files: FileRow[] };
+          const body = (await r.json()) as { files?: FileRow[] };
           setFiles(body.files ?? []);
         }
       } finally {
@@ -73,30 +64,25 @@ export default function ClientDocumentsPage() {
             (notarized PDF, apostille certificate) will appear here.
           </div>
         ) : (
-          files.map((f, fileIndex) => {
-            const name = f.name ?? f.filename ?? "Document";
-            return (
+          files.map((f, fileIndex) => (
               <motion.div
-                key={f.id}
+                key={f.document_id}
                 className="cd-row"
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.28, delay: fileIndex * 0.05, ease: "easeOut" }}
               >
                 <div>
-                  <div className="cd-name">{name}</div>
-                  {f.category && (
-                    <span className="cd-tag">{f.category}</span>
-                  )}
+                  <div className="cd-name">{f.document_label}</div>
+                  <span className="cd-tag">{f.verification_status}</span>
                 </div>
-                <div className="cd-meta cd-meta-hide">{fmtSize(f.size)}</div>
                 <div className="cd-meta cd-meta-hide">
-                  {new Date(f.created_at).toLocaleDateString()}
+                  {new Date(f.uploaded_at).toLocaleDateString()}
                 </div>
                 <div>
-                  {f.url ? (
+                  {f.signed_url ? (
                     <a
-                      href={f.url}
+                      href={f.signed_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="cd-link"
@@ -108,8 +94,7 @@ export default function ClientDocumentsPage() {
                   )}
                 </div>
               </motion.div>
-            );
-          })
+            ))
         )}
       </div>
     </motion.div>

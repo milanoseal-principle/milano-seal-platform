@@ -296,16 +296,15 @@ INSERT INTO custody_ledger (deal_id, event, actor_type, actor_id, location, stat
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 6. TEST OPERATOR (for alliance dispatch testing)
--- Column names match script 004 schema exactly.
+-- Upserted by email — no hardcoded UUID.
 -- ────────────────────────────────────────────────────────────────────────────
 INSERT INTO operator_profiles (
-  id, full_name, email, phone, firm_name,
+  full_name, email, phone, firm_name,
   onboarding_status, identity_verified, admin_approved,
   state, secondary_states,
   notary_commission_number, notary_commission_expires,
   created_at, updated_at
 ) VALUES (
-  'op100000-0000-0000-0000-000000000001',
   'Test Operator — Fully Eligible',
   'test+operator@test.milanoseal.local',
   '+1-305-000-0010',
@@ -315,27 +314,30 @@ INSERT INTO operator_profiles (
   'FL-NTY-TEST-001',
   NOW() + INTERVAL '2 years',
   NOW() - INTERVAL '30 days', NOW()
-) ON CONFLICT (id) DO UPDATE SET
+) ON CONFLICT (email) DO UPDATE SET
   onboarding_status = 'approved',
   identity_verified = TRUE,
   admin_approved    = TRUE,
   updated_at        = NOW();
 
--- Compliance record for test operator (separate table from operator_profiles)
+-- Compliance record for test operator
 INSERT INTO operator_compliance_status (
   operator_id,
   compliance_ready, e_o_insurance_verified, background_check_passed,
   notary_commission_verified, nna_certified, state_license_verified,
   data_handling_agreement, brand_guidelines_accepted
-) VALUES (
-  'op100000-0000-0000-0000-000000000001',
+)
+SELECT
+  id,
   TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE
-) ON CONFLICT (operator_id) DO UPDATE SET
+FROM operator_profiles WHERE email = 'test+operator@test.milanoseal.local'
+ON CONFLICT (operator_id) DO UPDATE SET
   compliance_ready = TRUE,
   updated_at       = NOW();
 
 -- Provision toolbelt for test operator
-SELECT provision_operator_toolbelt('op100000-0000-0000-0000-000000000001');
+SELECT provision_operator_toolbelt(id)
+FROM operator_profiles WHERE email = 'test+operator@test.milanoseal.local';
 
 -- Mark all tools verified for the test operator
 UPDATE operator_toolbelt_status SET
@@ -343,15 +345,18 @@ UPDATE operator_toolbelt_status SET
   completion_pct = 100,
   verified_at    = NOW() - INTERVAL '5 days',
   updated_at     = NOW()
-WHERE operator_id = 'op100000-0000-0000-0000-000000000001';
+WHERE operator_id = (
+  SELECT id FROM operator_profiles WHERE email = 'test+operator@test.milanoseal.local'
+);
 
--- Set eligibility for test operator (column names match script 004 exactly)
+-- Set eligibility for test operator
 INSERT INTO operator_routing_eligibility (
   operator_id, eligible, toolbelt_score, blockers, last_evaluated_at, updated_at
-) VALUES (
-  'op100000-0000-0000-0000-000000000001',
-  TRUE, 100, ARRAY[]::TEXT[], NOW(), NOW()
-) ON CONFLICT (operator_id) DO UPDATE SET
+)
+SELECT
+  id, TRUE, 100, ARRAY[]::TEXT[], NOW(), NOW()
+FROM operator_profiles WHERE email = 'test+operator@test.milanoseal.local'
+ON CONFLICT (operator_id) DO UPDATE SET
   eligible          = TRUE,
   toolbelt_score    = 100,
   blockers          = ARRAY[]::TEXT[],
@@ -359,12 +364,9 @@ INSERT INTO operator_routing_eligibility (
   updated_at        = NOW();
 
 -- Set availability for test operator
-INSERT INTO operator_availability_log (
-  operator_id, availability, set_by, reason
-) VALUES (
-  'op100000-0000-0000-0000-000000000001',
-  'AVAILABLE', 'seed', 'Seeded for testing'
-);
+INSERT INTO operator_availability_log (operator_id, availability, set_by, reason)
+SELECT id, 'AVAILABLE', 'seed', 'Seeded for testing'
+FROM operator_profiles WHERE email = 'test+operator@test.milanoseal.local';
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 7. STORAGE BUCKET — documents (private, required for signed URL vault)
