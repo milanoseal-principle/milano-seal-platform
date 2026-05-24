@@ -62,26 +62,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadErr.message }, { status: 500 });
     }
 
-    const { data: urlData } = supabase.storage
+    // SECURITY-05: Use signed URL instead of public URL to avoid leaking
+    // permanent public CDN links for client documents.
+    // TODO SECURITY-06: switch documents bucket from public CDN to signed URLs
+    //   (migrate bucket to private, then all access must go through signed URLs)
+    const { data: signedData } = await supabase.storage
       .from("documents")
-      .getPublicUrl(path);
+      .createSignedUrl(path, 60 * 60 * 24 * 7); // 7-day signed URL
+
+    const fileUrl = signedData?.signedUrl ?? null;
 
     const { data: fileRecord } = await supabase
       .from("files")
       .insert({
         deal_id,
         filename: file.name,
-        file_url: urlData.publicUrl,
+        file_url: fileUrl,
         file_path: path,
+        storage_path: path,
         file_type: file.type,
         file_size: file.size,
         uploaded_by: uploaded_by || "client",
       })
-      .select()
+      .select("id, deal_id, filename, file_type, file_size, uploaded_by, created_at")
       .single();
 
-    return NextResponse.json({ success: true, file: fileRecord });
-  } catch (err: any) {
+    // STORAGE-VAULT-01: return signed URL but never storage_path or file_path
+    return NextResponse.json({ success: true, file: { ...fileRecord, url: fileUrl } });
+  } catch (err: unknown) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

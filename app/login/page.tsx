@@ -105,50 +105,63 @@ function LoginInner() {
     setIsLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    if (ROLE_HINTS[role].method === "magic") {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirect = `${origin}/auth/callback?role=client`;
+      if (ROLE_HINTS[role].method === "magic") {
+        // Use NEXT_PUBLIC_SITE_URL for reliable production redirect
+        const base =
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (typeof window !== "undefined" ? window.location.origin : "");
+        const redirect = `${base}/auth/callback?role=client`;
 
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirect,
-          shouldCreateUser: true,
-        },
-      });
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: redirect,
+            shouldCreateUser: true,
+          },
+        });
 
-      if (otpError) {
-        setError(otpError.message);
-        setIsLoading(false);
+        if (otpError) {
+          // Never display raw Supabase error messages — they contain internals
+          setError("Unable to send sign-in link. Please try again.");
+          return;
+        }
+        setMagicSent(true);
         return;
       }
-      setMagicSent(true);
+
+      if (!password) {
+        setError("Password is required.");
+        return;
+      }
+
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        // Map all auth errors to clean, non-technical messages.
+        // Never expose raw Supabase error text (can contain "token", "JWT", "fetch").
+        if (authError.status === 400 || authError.status === 401 || authError.status === 422) {
+          setError("Invalid credentials. Please check your email and password.");
+        } else {
+          setError("Sign-in unavailable. Please try again in a moment.");
+        }
+        return;
+      }
+
+      router.push(nextPath);
+      router.refresh();
+    } catch {
+      // Catches thrown network errors, SDK failures, undefined env vars.
+      // Never display exception messages — they contain raw internals.
+      setError("Sign-in unavailable. Please try again in a moment.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    if (!password) {
-      setError("Password is required.");
-      setIsLoading(false);
-      return;
-    }
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    router.push(nextPath);
-    router.refresh();
   };
 
   const isClient = role === "client";
