@@ -59,9 +59,10 @@ WEBHOOK_SECRET=                      # 32+ random chars
 
 ## Supabase Storage Setup
 
-1. Create bucket: `documents` — **Private** (not public)
-2. Enable RLS on the bucket: service role may read/write; no public access
-3. Verify: `VAULT_BUCKET = "documents"` in `lib/vault.ts` matches bucket name
+Bucket creation is automated in `scripts/006_e2e_seed.sql` (step 7).
+After running script 006, confirm in Supabase Dashboard → Storage → Buckets:
+- Bucket `documents` exists and **Public** is **OFF**
+- If Public shows ON, go to bucket Settings → Visibility → Private → Save
 
 ---
 
