@@ -1,57 +1,17 @@
 -- THE MILANO SEAL™ — FINAL-E2E-SEED-01
 -- End-to-end test seed data for portal, alliance, and timeline testing.
--- Safe to run repeatedly — all inserts use ON CONFLICT DO NOTHING or DO UPDATE.
+-- Schema tables (files, matter_events) and deals column patches are in script 005.
+-- This script is safe to run repeatedly — deals/operator use ON CONFLICT DO UPDATE;
+-- matter_events and custody_ledger are deleted and re-inserted for idempotency.
 -- Run AFTER scripts 001–005 in Supabase SQL Editor.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 0. SCHEMA PATCHES — ensure all columns exist on deals table
+-- 1. REMAINING SCHEMA TABLES not needed by the script 005 views
 -- ────────────────────────────────────────────────────────────────────────────
-ALTER TABLE public.deals
-  ADD COLUMN IF NOT EXISTS total_price           NUMERIC,
-  ADD COLUMN IF NOT EXISTS tracking_number       TEXT,
-  ADD COLUMN IF NOT EXISTS carrier               TEXT,
-  ADD COLUMN IF NOT EXISTS delivery_status       TEXT,
-  ADD COLUMN IF NOT EXISTS delivery_eta          TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS delivery_timestamp    TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS is_paid_and_released  BOOLEAN DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS internal_notes        TEXT,
-  ADD COLUMN IF NOT EXISTS assignee              TEXT,
-  ADD COLUMN IF NOT EXISTS wise_reference        TEXT,
-  ADD COLUMN IF NOT EXISTS wise_transfer_id      TEXT,
-  ADD COLUMN IF NOT EXISTS signed_by             TEXT,
-  ADD COLUMN IF NOT EXISTS ship_to               JSONB,
-  ADD COLUMN IF NOT EXISTS evidence_url          TEXT,
-  ADD COLUMN IF NOT EXISTS evidence_path         TEXT,
-  ADD COLUMN IF NOT EXISTS evidence_generated_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS label_url             TEXT;
 
--- ────────────────────────────────────────────────────────────────────────────
--- 1. MATTER EVENTS TABLE (for portal timeline + admin audit trail)
--- ────────────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS matter_events (
-  id               UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  matter_id        UUID REFERENCES deals(id) ON DELETE CASCADE NOT NULL,
-  event_type       TEXT NOT NULL,
-  notes            TEXT,
-  actor            TEXT,
-  client_visible   BOOLEAN DEFAULT FALSE,
-  metadata         JSONB DEFAULT '{}',
-  created_at       TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_matter_events_matter ON matter_events(matter_id);
-CREATE INDEX IF NOT EXISTS idx_matter_events_visible ON matter_events(matter_id, client_visible);
-CREATE INDEX IF NOT EXISTS idx_matter_events_created ON matter_events(created_at DESC);
-
--- RLS: service role only for writes, API layer scopes reads
-ALTER TABLE matter_events ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "svc_matter_events" ON matter_events;
-CREATE POLICY "svc_matter_events" ON matter_events FOR ALL USING (auth.role() = 'service_role');
-
--- ────────────────────────────────────────────────────────────────────────────
--- 2. CUSTODY LEDGER TABLE (for document custody chain)
--- ────────────────────────────────────────────────────────────────────────────
+-- Custody ledger (chain-of-custody for documents)
 CREATE TABLE IF NOT EXISTS custody_ledger (
   id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   deal_id      UUID REFERENCES deals(id) ON DELETE CASCADE NOT NULL,
@@ -69,37 +29,11 @@ CREATE TABLE IF NOT EXISTS custody_ledger (
 );
 CREATE INDEX IF NOT EXISTS idx_custody_deal ON custody_ledger(deal_id);
 CREATE INDEX IF NOT EXISTS idx_custody_created ON custody_ledger(deal_id, created_at ASC);
-
 ALTER TABLE custody_ledger ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "svc_custody" ON custody_ledger;
-CREATE POLICY "svc_custody" ON custody_ledger FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "svc_custody" ON custody_ledger FOR ALL TO service_role USING (true);
 
--- ────────────────────────────────────────────────────────────────────────────
--- 3. FILES TABLE (for document vault)
--- ────────────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS files (
-  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  deal_id      UUID REFERENCES deals(id) ON DELETE CASCADE NOT NULL,
-  name         TEXT,
-  filename     TEXT,
-  file_url     TEXT,
-  file_path    TEXT,
-  storage_path TEXT,
-  file_type    TEXT,
-  file_size    BIGINT,
-  uploaded_by  TEXT DEFAULT 'client',
-  is_internal  BOOLEAN DEFAULT FALSE,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_files_deal ON files(deal_id);
-
-ALTER TABLE files ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "svc_files" ON files;
-CREATE POLICY "svc_files" ON files FOR ALL USING (auth.role() = 'service_role');
-
--- ────────────────────────────────────────────────────────────────────────────
--- 4. AUDIT LOGS TABLE (for admin override + access audit trail)
--- ────────────────────────────────────────────────────────────────────────────
+-- Audit logs (admin override + access audit trail)
 CREATE TABLE IF NOT EXISTS audit_logs (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   actor      TEXT DEFAULT 'system',
@@ -110,14 +44,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_event ON audit_logs(event);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC);
-
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "svc_audit" ON audit_logs;
-CREATE POLICY "svc_audit" ON audit_logs FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "svc_audit" ON audit_logs FOR ALL TO service_role USING (true);
 
--- ────────────────────────────────────────────────────────────────────────────
--- 5. PORTAL OTPs TABLE (for email-based portal auth)
--- ────────────────────────────────────────────────────────────────────────────
+-- Portal OTPs (email-based portal auth)
 CREATE TABLE IF NOT EXISTS portal_otps (
   id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   email      TEXT NOT NULL,
@@ -127,13 +58,12 @@ CREATE TABLE IF NOT EXISTS portal_otps (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_portal_otps_email ON portal_otps(email);
-
 ALTER TABLE portal_otps ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "svc_portal_otps" ON portal_otps;
-CREATE POLICY "svc_portal_otps" ON portal_otps FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "svc_portal_otps" ON portal_otps FOR ALL TO service_role USING (true);
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 6. FIX MEXICO (compliance correction — also done in 004, idempotent)
+-- 2. FIX MEXICO (compliance correction — also done in 004, idempotent)
 -- ────────────────────────────────────────────────────────────────────────────
 UPDATE compliance_rules SET
   hague_member        = TRUE,
@@ -154,7 +84,7 @@ UPDATE compliance_rules SET
 WHERE jurisdiction = 'mexico';
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 7. TEST DEALS (5 representative matters across the state machine)
+-- 3. TEST DEALS (5 representative matters across the state machine)
 -- email domain: test.milanoseal.local — never a real client address
 -- ────────────────────────────────────────────────────────────────────────────
 
@@ -175,9 +105,9 @@ INSERT INTO deals (
   'SEED: Power of Attorney for Italy, awaiting payment.',
   NOW() - INTERVAL '3 days', NOW()
 ) ON CONFLICT (id) DO UPDATE SET
-  status = 'awaiting_payment',
+  status         = 'awaiting_payment',
   payment_status = 'pending',
-  updated_at = NOW();
+  updated_at     = NOW();
 
 -- Scenario B: Payment confirmed, scheduled — portal shows scheduling unlocked
 INSERT INTO deals (
@@ -196,9 +126,9 @@ INSERT INTO deals (
   'SEED: Affidavit of Support for Spain, payment confirmed and scheduled.',
   NOW() - INTERVAL '6 days', NOW()
 ) ON CONFLICT (id) DO UPDATE SET
-  status = 'scheduled',
+  status         = 'scheduled',
   payment_status = 'paid',
-  updated_at = NOW();
+  updated_at     = NOW();
 
 -- Scenario C: In execution / apostille processing
 INSERT INTO deals (
@@ -217,9 +147,9 @@ INSERT INTO deals (
   'SEED: Birth certificate for Germany, apostille in progress.',
   NOW() - INTERVAL '10 days', NOW()
 ) ON CONFLICT (id) DO UPDATE SET
-  status = 'apostille_processing',
+  status         = 'apostille_processing',
   payment_status = 'paid',
-  updated_at = NOW();
+  updated_at     = NOW();
 
 -- Scenario D: Shipped with tracking
 INSERT INTO deals (
@@ -240,9 +170,9 @@ INSERT INTO deals (
   'SEED: Corporate resolution for Portugal, shipped via DHL.',
   NOW() - INTERVAL '14 days', NOW()
 ) ON CONFLICT (id) DO UPDATE SET
-  status = 'shipped',
+  status          = 'shipped',
   tracking_number = 'MS-TEST-TRACK-001',
-  updated_at = NOW();
+  updated_at      = NOW();
 
 -- Scenario E: Completed + paid and released (full happy path)
 INSERT INTO deals (
@@ -264,22 +194,28 @@ INSERT INTO deals (
   'SEED: Executive Power of Attorney for France, completed and released.',
   NOW() - INTERVAL '20 days', NOW() - INTERVAL '2 days'
 ) ON CONFLICT (id) DO UPDATE SET
-  status = 'completed',
+  status               = 'completed',
   is_paid_and_released = TRUE,
-  updated_at = NOW() - INTERVAL '2 days';
+  updated_at           = NOW() - INTERVAL '2 days';
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 8. MATTER EVENTS (timeline events for portal testing)
---    client_visible = TRUE means they appear in the portal timeline
+-- 4. MATTER EVENTS (portal timeline)
+-- Delete-then-insert ensures idempotency across repeated seed runs.
 -- ────────────────────────────────────────────────────────────────────────────
+DELETE FROM matter_events WHERE matter_id IN (
+  'a1000000-0000-0000-0000-000000000001',
+  'b2000000-0000-0000-0000-000000000002',
+  'c3000000-0000-0000-0000-000000000003',
+  'd4000000-0000-0000-0000-000000000004',
+  'e5000000-0000-0000-0000-000000000005'
+);
 
 -- Scenario A events
 INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, created_at) VALUES
   ('a1000000-0000-0000-0000-000000000001', 'matter_received',
    'Your matter has been received and is being structured for review.', 'system', TRUE, NOW() - INTERVAL '3 days'),
   ('a1000000-0000-0000-0000-000000000001', 'invoice_issued',
-   'Your execution proposal is ready. Please review and submit payment.', 'coordinator', TRUE, NOW() - INTERVAL '2 days 12 hours')
-ON CONFLICT DO NOTHING;
+   'Your execution proposal is ready. Please review and submit payment.', 'coordinator', TRUE, NOW() - INTERVAL '2 days 12 hours');
 
 -- Scenario B events
 INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, created_at) VALUES
@@ -288,8 +224,7 @@ INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, 
   ('b2000000-0000-0000-0000-000000000002', 'invoice_issued',
    'Your execution proposal is ready.', 'coordinator', TRUE, NOW() - INTERVAL '5 days'),
   ('b2000000-0000-0000-0000-000000000002', 'payment_confirmed',
-   'Payment has been confirmed. Your matter has been scheduled for execution.', 'system', TRUE, NOW() - INTERVAL '4 days')
-ON CONFLICT DO NOTHING;
+   'Payment has been confirmed. Your matter has been scheduled for execution.', 'system', TRUE, NOW() - INTERVAL '4 days');
 
 -- Scenario C events
 INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, created_at) VALUES
@@ -300,8 +235,7 @@ INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, 
   ('c3000000-0000-0000-0000-000000000003', 'execution_complete',
    'Your document has been notarized and is moving into apostille processing.', 'coordinator', TRUE, NOW() - INTERVAL '5 days'),
   ('c3000000-0000-0000-0000-000000000003', 'apostille_submitted',
-   'Your document has been submitted to the Florida Department of State for apostille.', 'coordinator', TRUE, NOW() - INTERVAL '2 days')
-ON CONFLICT DO NOTHING;
+   'Your document has been submitted to the Florida Department of State for apostille.', 'coordinator', TRUE, NOW() - INTERVAL '2 days');
 
 -- Scenario D events
 INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, created_at) VALUES
@@ -312,8 +246,7 @@ INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, 
   ('d4000000-0000-0000-0000-000000000004', 'apostille_complete',
    'Apostille received. Document packaged for courier.', 'coordinator', TRUE, NOW() - INTERVAL '4 days'),
   ('d4000000-0000-0000-0000-000000000004', 'shipment_released',
-   'Your document has been released for courier delivery via DHL Express. Tracking: MS-TEST-TRACK-001', 'system', TRUE, NOW() - INTERVAL '2 days')
-ON CONFLICT DO NOTHING;
+   'Your document has been released for courier delivery via DHL Express. Tracking: MS-TEST-TRACK-001', 'system', TRUE, NOW() - INTERVAL '2 days');
 
 -- Scenario E events
 INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, created_at) VALUES
@@ -328,42 +261,47 @@ INSERT INTO matter_events (matter_id, event_type, notes, actor, client_visible, 
   ('e5000000-0000-0000-0000-000000000005', 'shipment_released',
    'Document released for international courier delivery via FedEx International.', 'system', TRUE, NOW() - INTERVAL '5 days'),
   ('e5000000-0000-0000-0000-000000000005', 'matter_closed',
-   'Your matter has been completed. Documents delivered and all obligations fulfilled.', 'system', TRUE, NOW() - INTERVAL '2 days')
-ON CONFLICT DO NOTHING;
+   'Your matter has been completed. Documents delivered and all obligations fulfilled.', 'system', TRUE, NOW() - INTERVAL '2 days');
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 9. CUSTODY LEDGER ENTRIES (genesis entries for test deals)
+-- 5. CUSTODY LEDGER (genesis entries — delete-then-insert for idempotency)
+-- Uses md5() which is built-in; no pgcrypto extension required.
 -- ────────────────────────────────────────────────────────────────────────────
+DELETE FROM custody_ledger WHERE deal_id IN (
+  'a1000000-0000-0000-0000-000000000001',
+  'e5000000-0000-0000-0000-000000000005'
+);
+
 INSERT INTO custody_ledger (deal_id, event, actor_type, actor_id, location, status, notes, prev_hash, hash, created_at) VALUES
   ('a1000000-0000-0000-0000-000000000001',
    'DOC_CREATED', 'system', 'seed', 'Milano Seal HQ', 'received',
    'Matter created via intake', 'GENESIS',
-   encode(sha256('{"deal":"a1000000","event":"DOC_CREATED","ts":"seed"}'), 'hex'),
+   md5('{"deal":"a1000000","event":"DOC_CREATED","ts":"seed"}'),
    NOW() - INTERVAL '3 days'),
   ('e5000000-0000-0000-0000-000000000005',
    'DOC_CREATED', 'system', 'seed', 'Milano Seal HQ', 'received',
    'Matter created via intake', 'GENESIS',
-   encode(sha256('{"deal":"e5000000","event":"DOC_CREATED","ts":"seed"}'), 'hex'),
+   md5('{"deal":"e5000000","event":"DOC_CREATED","ts":"seed"}'),
    NOW() - INTERVAL '20 days'),
   ('e5000000-0000-0000-0000-000000000005',
    'DOC_NOTARIZED', 'notary', 'Nicholas Milano', 'Miami, FL', 'complete',
    'Executive in-person session complete', 'GENESIS_2',
-   encode(sha256('{"deal":"e5000000","event":"DOC_NOTARIZED","ts":"seed2"}'), 'hex'),
+   md5('{"deal":"e5000000","event":"DOC_NOTARIZED","ts":"seed2"}'),
    NOW() - INTERVAL '15 days'),
   ('e5000000-0000-0000-0000-000000000005',
    'DOC_DELIVERED', 'courier', 'FedEx International', 'Paris, France', 'delivered',
    'Matter complete. Documents received by client.', 'GENESIS_3',
-   encode(sha256('{"deal":"e5000000","event":"DOC_DELIVERED","ts":"seed3"}'), 'hex'),
-   NOW() - INTERVAL '2 days')
-ON CONFLICT DO NOTHING;
+   md5('{"deal":"e5000000","event":"DOC_DELIVERED","ts":"seed3"}'),
+   NOW() - INTERVAL '2 days');
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 10. TEST OPERATOR (for alliance dispatch testing)
+-- 6. TEST OPERATOR (for alliance dispatch testing)
+-- Column names match script 004 schema exactly.
 -- ────────────────────────────────────────────────────────────────────────────
 INSERT INTO operator_profiles (
-  id, full_name, email, phone, business_name,
-  onboarding_status, identity_verified, compliance_ready, admin_approved,
-  primary_state, secondary_states,
+  id, full_name, email, phone, firm_name,
+  onboarding_status, identity_verified, admin_approved,
+  state, secondary_states,
   notary_commission_number, notary_commission_expires,
   created_at, updated_at
 ) VALUES (
@@ -372,7 +310,7 @@ INSERT INTO operator_profiles (
   'test+operator@test.milanoseal.local',
   '+1-305-000-0010',
   'Milano Seal Alliance Test Operator LLC',
-  'approved', TRUE, TRUE, TRUE,
+  'approved', TRUE, TRUE,
   'florida', ARRAY['texas', 'new_york'],
   'FL-NTY-TEST-001',
   NOW() + INTERVAL '2 years',
@@ -380,33 +318,45 @@ INSERT INTO operator_profiles (
 ) ON CONFLICT (id) DO UPDATE SET
   onboarding_status = 'approved',
   identity_verified = TRUE,
+  admin_approved    = TRUE,
+  updated_at        = NOW();
+
+-- Compliance record for test operator (separate table from operator_profiles)
+INSERT INTO operator_compliance_status (
+  operator_id,
+  compliance_ready, e_o_insurance_verified, background_check_passed,
+  notary_commission_verified, nna_certified, state_license_verified,
+  data_handling_agreement, brand_guidelines_accepted
+) VALUES (
+  'op100000-0000-0000-0000-000000000001',
+  TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE
+) ON CONFLICT (operator_id) DO UPDATE SET
   compliance_ready = TRUE,
-  admin_approved = TRUE,
-  updated_at = NOW();
+  updated_at       = NOW();
 
 -- Provision toolbelt for test operator
 SELECT provision_operator_toolbelt('op100000-0000-0000-0000-000000000001');
 
 -- Mark all tools verified for the test operator
 UPDATE operator_toolbelt_status SET
-  status = 'verified',
+  status         = 'verified',
   completion_pct = 100,
-  verified_at = NOW() - INTERVAL '5 days',
-  updated_at = NOW()
+  verified_at    = NOW() - INTERVAL '5 days',
+  updated_at     = NOW()
 WHERE operator_id = 'op100000-0000-0000-0000-000000000001';
 
--- Set eligibility for test operator
+-- Set eligibility for test operator (column names match script 004 exactly)
 INSERT INTO operator_routing_eligibility (
-  operator_id, is_eligible, toolbelt_completion_pct, blockers,
-  last_evaluated_at
+  operator_id, eligible, toolbelt_score, blockers, last_evaluated_at, updated_at
 ) VALUES (
   'op100000-0000-0000-0000-000000000001',
-  TRUE, 100, '[]'::JSONB, NOW()
+  TRUE, 100, ARRAY[]::TEXT[], NOW(), NOW()
 ) ON CONFLICT (operator_id) DO UPDATE SET
-  is_eligible = TRUE,
-  toolbelt_completion_pct = 100,
-  blockers = '[]'::JSONB,
-  last_evaluated_at = NOW();
+  eligible          = TRUE,
+  toolbelt_score    = 100,
+  blockers          = ARRAY[]::TEXT[],
+  last_evaluated_at = NOW(),
+  updated_at        = NOW();
 
 -- Set availability for test operator
 INSERT INTO operator_availability_log (
@@ -414,7 +364,7 @@ INSERT INTO operator_availability_log (
 ) VALUES (
   'op100000-0000-0000-0000-000000000001',
   'AVAILABLE', 'seed', 'Seeded for testing'
-) ON CONFLICT DO NOTHING;
+);
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- STATUS

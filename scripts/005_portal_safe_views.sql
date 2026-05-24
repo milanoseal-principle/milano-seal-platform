@@ -4,6 +4,67 @@
 -- Structural guarantee: no internal cost, margin, operator notes, or raw paths.
 
 -- ────────────────────────────────────────────────────────────────────────────
+-- 0. SCHEMA PATCHES — columns required by the views below.
+--    Idempotent: IF NOT EXISTS guards prevent errors on re-run.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE public.deals
+  ADD COLUMN IF NOT EXISTS total_price           NUMERIC,
+  ADD COLUMN IF NOT EXISTS tracking_number       TEXT,
+  ADD COLUMN IF NOT EXISTS carrier               TEXT,
+  ADD COLUMN IF NOT EXISTS delivery_status       TEXT,
+  ADD COLUMN IF NOT EXISTS delivery_eta          TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS delivery_timestamp    TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS is_paid_and_released  BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS internal_notes        TEXT,
+  ADD COLUMN IF NOT EXISTS assignee              TEXT,
+  ADD COLUMN IF NOT EXISTS wise_reference        TEXT,
+  ADD COLUMN IF NOT EXISTS wise_transfer_id      TEXT,
+  ADD COLUMN IF NOT EXISTS signed_by             TEXT,
+  ADD COLUMN IF NOT EXISTS ship_to               JSONB,
+  ADD COLUMN IF NOT EXISTS evidence_url          TEXT,
+  ADD COLUMN IF NOT EXISTS evidence_path         TEXT,
+  ADD COLUMN IF NOT EXISTS evidence_generated_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS label_url             TEXT;
+
+-- Files table — needed by client_safe_documents_view
+CREATE TABLE IF NOT EXISTS files (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  deal_id      UUID REFERENCES deals(id) ON DELETE CASCADE NOT NULL,
+  name         TEXT,
+  filename     TEXT,
+  file_url     TEXT,
+  file_path    TEXT,
+  storage_path TEXT,
+  file_type    TEXT,
+  file_size    BIGINT,
+  uploaded_by  TEXT DEFAULT 'client',
+  is_internal  BOOLEAN DEFAULT FALSE,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_files_deal ON files(deal_id);
+ALTER TABLE files ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "svc_files" ON files;
+CREATE POLICY "svc_files" ON files FOR ALL TO service_role USING (true);
+
+-- Matter events table — needed by client_safe_timeline_view
+CREATE TABLE IF NOT EXISTS matter_events (
+  id               UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  matter_id        UUID REFERENCES deals(id) ON DELETE CASCADE NOT NULL,
+  event_type       TEXT NOT NULL,
+  notes            TEXT,
+  actor            TEXT,
+  client_visible   BOOLEAN DEFAULT FALSE,
+  metadata         JSONB DEFAULT '{}',
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_matter_events_matter ON matter_events(matter_id);
+CREATE INDEX IF NOT EXISTS idx_matter_events_visible ON matter_events(matter_id, client_visible);
+CREATE INDEX IF NOT EXISTS idx_matter_events_created ON matter_events(created_at DESC);
+ALTER TABLE matter_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "svc_matter_events" ON matter_events;
+CREATE POLICY "svc_matter_events" ON matter_events FOR ALL TO service_role USING (true);
+
+-- ────────────────────────────────────────────────────────────────────────────
 -- 1. CLIENT SAFE MATTER VIEW
 -- Maps public-facing status language. Blocks all internal financial fields.
 -- ────────────────────────────────────────────────────────────────────────────
@@ -111,4 +172,4 @@ ORDER BY e.created_at DESC;
 -- Client reads via these views are scoped by the API layer (email match)
 -- ────────────────────────────────────────────────────────────────────────────
 
-SELECT 'Portal-03 client-safe views installed.' AS status;
+SELECT 'Portal-03 client-safe views + schema patches installed.' AS status;
