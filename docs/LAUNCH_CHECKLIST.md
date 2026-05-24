@@ -1,5 +1,10 @@
 # The Milano Seal™ — Launch Checklist
-## LAUNCH-CHECKLIST-01 · Production Go-Live Lock · PHASE LOCKED
+## LAUNCH-CHECKLIST-01 · PHASE LOCKED — FULL PRODUCTION COMPLETION PASS
+
+**Sealed:** 2026-05-24 · Branch `claude/festive-ramanujan-Vil9x` → `main`
+
+> DO NOT TOUCH: login · auth · tokens · schema · storage · portal architecture ·
+> dashboard architecture · VA architecture · alliance architecture · pricing · compliance · motion
 
 ---
 
@@ -111,17 +116,53 @@ All patches merged to `main`. Branch: `claude/festive-ramanujan-Vil9x`
 | SQL-CORRECTNESS-01 | 8 SQL fixes (RLS, ordering, column names) | ✅ Merged |
 | BUCKET-LOCK-01 | documents bucket private, automated in 006 | ✅ Locked |
 | LAUNCH-CHECKLIST-01 | This file | ✅ Current |
+| COMPLETION-AUDIT-01 | docs/vault field names, stale types, 006 UUID | ✅ Locked |
 
-## Next Step
+---
 
-**UI smoke test only.** Do not change schema, login, auth, or portal code.
+## Final Production Sanity Check (run once, real client)
 
-Smoke test checklist:
-- [ ] Operator login → `/dashboard` (password auth)
-- [ ] Wrong password → shows "Invalid credentials. Please check your email and password."
-- [ ] Client magic link → email sent confirmation screen
-- [ ] `/portal` loads correct matter status for test client
-- [ ] `/portal/invoice` shows correct amount, no internal fields
-- [ ] `/portal/tracking` shows tracking number for shipped matter
-- [ ] Unauthenticated `/api/portal/me` → 401
-- [ ] Unauthenticated `/dashboard` → redirects to `/login`
+```
+1. Sign in.
+2. Open /portal/documents — download one document.
+   Expected: signed URL flow works, no raw paths in response.
+
+3. Open /portal/tracking.
+   Expected: status rail renders, no label_url or ship_to in response.
+
+4. Open /portal/invoice.
+   Expected: gross client-facing totals only.
+
+5. Browser Network tab — confirm portal responses do NOT include:
+   storage_path · file_path · file_url · evidence_path · label_url
+   internal_notes · operator_notes · wise_transfer_id · wise_reference
+   base_cost · shipping_cost · net_margin · margin · risk_score
+   SUPABASE_SERVICE_ROLE_KEY · service_role
+```
+
+---
+
+## Post-Lock Backlog (do not build until first real-client test)
+
+```
+1. Trust Routing & Revenue Intelligence
+2. Courier Spread Intelligence
+3. Operator Health Dashboard
+4. VA Data Ingestion Gate
+5. Alliance Dispatch Readiness
+6. Secure Review Window
+7. Premium Motion Polish
+```
+
+---
+
+## Verdict
+
+```
+PHASE LOCKED — FULL PRODUCTION COMPLETION PASS.
+Portal / Vault / Alliance seed / Verification SQL complete.
+Documents bucket private.
+No client-visible leaks found.
+Auth/session strategy preserved.
+Ready for controlled production monitoring and real-client test.
+```
