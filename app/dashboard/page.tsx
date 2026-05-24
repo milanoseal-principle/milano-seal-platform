@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
+import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
 
 interface DashboardSummary {
   total_deals: number;
@@ -383,6 +384,18 @@ export default function Dashboard() {
           />
         </motion.div>
       </motion.div>
+
+      {/* Pipeline Load Matrix */}
+      <StatusGlowMatrix
+        counts={{
+          reviewing_count: data.reviewing_count,
+          awaiting_payment: data.awaiting_payment,
+          scheduled_count: data.scheduled_count,
+          in_execution: data.in_execution,
+          apostille_count: data.apostille_count,
+          shipped_count: data.shipped_count,
+        }}
+      />
 
       {/* Recent Matters + Activity */}
       <div className="grid gap-6 lg:grid-cols-3">

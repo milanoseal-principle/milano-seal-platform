@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { PhantomGraphIndicator } from "@/components/alliance/phantom-graph-indicator";
 import {
   evaluateRoutingEligibility,
   type PartnerProfile,
@@ -112,6 +113,9 @@ export default function AllianceDashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Referral volume trend */}
+      <PhantomGraphIndicator weeks={[0, 0, 0, 0, 0, 0, 0, 0]} label="Referral Volume — 8 Week Trend" />
 
       {/* Quick actions + Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
