@@ -1,99 +1,69 @@
 # The Milano Seal™ — Launch Checklist
-## LAUNCH-CHECKLIST-01 · Production Go-Live Lock
+## LAUNCH-CHECKLIST-01 · Production Go-Live Lock · PHASE LOCKED
 
 ---
 
-## Pre-Launch SQL — Run in Order
+## SQL Phase — COMPLETE ✅
 
-Run each script in Supabase SQL Editor → SQL Editor → New Query.
+All scripts have been run and verified. Do not re-run unless rebuilding from scratch.
 
 | # | Script | Purpose | Status |
 |---|--------|---------|--------|
-| 1 | `scripts/001_create_deals_table.sql` | Deals table + base indexes | Run once |
-| 2 | `scripts/002_os_migration.sql` | Deals column additions (invoice fields) | Run once |
-| 3 | `scripts/003_trust_engine_schema.sql` | Compliance rules, messages, RLS | Run once |
-| 4 | `scripts/004_alliance_operator_schema.sql` | Operator schema, eligibility gate, Mexico fix | Run once |
-| 5 | `scripts/005_portal_safe_views.sql` | Client-safe views (portal data boundary) | Run once |
-| 6 | `scripts/006_e2e_seed.sql` | Schema patches + test data | Run once (dev/staging) |
+| 1 | `scripts/001_create_deals_table.sql` | Deals table + base indexes | ✅ Done |
+| 2 | `scripts/002_os_migration.sql` | Deals column additions (invoice fields) | ✅ Done |
+| 3 | `scripts/003_trust_engine_schema.sql` | Compliance rules, messages, RLS | ✅ Done |
+| 4 | `scripts/004_alliance_operator_schema.sql` | Operator schema, eligibility gate, Mexico fix | ✅ Done |
+| 5 | `scripts/005_portal_safe_views.sql` | Schema patches + client-safe views | ✅ Done |
+| 6 | `scripts/006_e2e_seed.sql` | Test data + documents bucket lock | ✅ Done |
 
-> Script 006 adds missing columns to deals and creates matter_events, custody_ledger,
-> files, audit_logs, and portal_otps tables. Run it before deploying the application
-> even in production — the schema patches (`ADD COLUMN IF NOT EXISTS`) are idempotent.
-> The test deals (email: `@test.milanoseal.local`) should be deleted before go-live.
+> Script 006 creates matter_events, custody_ledger, files, audit_logs, portal_otps,
+> and the `documents` storage bucket (private). Test deals use `@test.milanoseal.local`
+> and must be deleted before go-live.
 
 ---
 
-## Environment Variables
+## Storage Bucket — LOCKED ✅
 
-All required. Set in Vercel / hosting provider.
+`documents` bucket confirmed private via SQL verification:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=           # server-only, never in browser
-NEXT_PUBLIC_SITE_URL=
-
-RESEND_API_KEY=
-RESEND_FROM=
-
-WISE_API_TOKEN=
-WISE_PROFILE_ID=
-PAYMENT_BASE_URL=
-
-ANTHROPIC_API_KEY=
-GROQ_API_KEY=
-
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_FROM_NUMBER=
-TWILIO_WHATSAPP_NUMBER=
-ADMIN_WHATSAPP=
-
-SHIPPO_API_KEY=
-
-CRON_SECRET=                         # 32+ random chars
-WEBHOOK_SECRET=                      # 32+ random chars
+id: documents  |  name: documents  |  public: false
 ```
 
----
-
-## Supabase Storage Setup
-
-Bucket creation is automated in `scripts/006_e2e_seed.sql` (step 7).
-After running script 006, confirm in Supabase Dashboard → Storage → Buckets:
-- Bucket `documents` exists and **Public** is **OFF**
-- If Public shows ON, go to bucket Settings → Visibility → Private → Save
+Bucket creation is automated in `scripts/006_e2e_seed.sql` step 7. If public ever
+shows ON, fix in Supabase Dashboard → Storage → Buckets → documents → Settings →
+Visibility → Private → Save.
 
 ---
 
-## Security Gates — Verify Before Go-Live
+## Security Gates — LOCKED ✅
 
 | Gate | File | Status |
 |------|------|--------|
-| Service role key server-only | `lib/supabase/admin.ts` | Enforced |
-| Portal safe fields allowlist | `app/api/portal/me/route.ts` | Enforced |
-| Portal blocked fields denylist | `lib/portalProjection.ts` (30+ fields) | Enforced |
-| No raw storage paths in responses | `lib/vault.ts`, portal routes | Enforced |
-| Operator eligibility 7-gate | `lib/alliance/operatorEligibilityGate.ts` | Enforced |
-| Toolbelt ≥80% required for routing | `evaluateEligibilityGate()` | Enforced |
-| Payment confirmed before scheduled | State machine guard | Enforced |
-| Admin override audited | `app/api/admin/override/route.ts` | Enforced |
-| Signed URLs only (15 min expiry) | `lib/vault.ts` | Enforced |
-| Idempotency on dispatch assign | `app/api/dispatch/assign/route.ts` | Enforced |
-| Phantom data guard | `lib/alliance/phantomDataGuard.ts` | Active |
-| Mexico: Hague/apostille correct | `lib/compliance.ts` + `scripts/004` | Fixed |
-| Pricing: Signature $750, Priority $975, Executive $1,850 | `lib/lib/pricingEngine.ts` | Locked |
+| Service role key server-only | `lib/supabase/admin.ts` | ✅ Enforced |
+| Portal safe fields allowlist | `app/api/portal/me/route.ts` | ✅ Enforced |
+| Portal blocked fields denylist | `lib/portalProjection.ts` (30+ fields) | ✅ Enforced |
+| No raw storage paths in responses | `lib/vault.ts`, portal routes | ✅ Enforced |
+| Operator eligibility 7-gate | `lib/alliance/operatorEligibilityGate.ts` | ✅ Enforced |
+| Toolbelt ≥80% required for routing | `evaluateEligibilityGate()` | ✅ Enforced |
+| Payment confirmed before scheduled | State machine guard | ✅ Enforced |
+| Admin override audited | `app/api/admin/override/route.ts` | ✅ Enforced |
+| Signed URLs only (15 min expiry) | `lib/vault.ts` | ✅ Enforced |
+| Idempotency on dispatch assign | `app/api/dispatch/assign/route.ts` | ✅ Enforced |
+| Phantom data guard | `lib/alliance/phantomDataGuard.ts` | ✅ Active |
+| Mexico: Hague/apostille correct | `lib/compliance.ts` + `scripts/004` | ✅ Fixed |
+| Pricing: Signature $750, Priority $975, Executive $1,850 | `lib/lib/pricingEngine.ts` | ✅ Locked |
+| documents bucket private | `storage.buckets` | ✅ Locked |
+| RLS on all sensitive tables | `scripts/001–006` | ✅ Enforced |
 
 ---
 
-## Pre-Launch Cleanup
+## Pre-Launch Cleanup — Remaining
 
 - [ ] Delete test deals: `DELETE FROM deals WHERE email LIKE '%@test.milanoseal.local';`
 - [ ] Delete test operator: `DELETE FROM operator_profiles WHERE email LIKE '%@test.milanoseal.local';`
 - [ ] Rotate `CRON_SECRET` and `WEBHOOK_SECRET` to production values
 - [ ] Confirm `SUPABASE_SERVICE_ROLE_KEY` is not exposed in any `NEXT_PUBLIC_` variable
-- [ ] Set `documents` bucket to **Private** in Supabase Storage dashboard
-- [ ] Confirm Supabase RLS is enabled on: deals, files, audit_logs, matter_events, custody_ledger, portal_otps, operator_profiles, operator_assignments
 
 ---
 
@@ -126,16 +96,32 @@ The following phrases must never appear in client-facing content:
 
 ---
 
-## Branch Status
+## Branch Status — PHASE LOCKED
 
-All patches on branch: `claude/festive-ramanujan-Vil9x`
+All patches merged to `main`. Branch: `claude/festive-ramanujan-Vil9x`
 
-| Patch | Description | Commit |
+| Patch | Description | Status |
 |-------|-------------|--------|
-| ALLIANCE-03 | Operator gate + Tool Belt compliance | 59a3c42 |
-| PORTAL-03 | Client-safe data boundary | 59a3c42 |
-| STORAGE-VAULT-01 | Signed document access | f5b615e |
-| PORTAL-MOTION-01 | Premium status rail | 6f161e2 |
-| FINAL-E2E-SEED-01 | Test matters + schema patches | fd670ff |
-| QA-01 | Production audit fixes | 469d5a5 |
-| LAUNCH-CHECKLIST-01 | This file | current |
+| ALLIANCE-03 | Operator gate + Tool Belt compliance | ✅ Merged |
+| PORTAL-03 | Client-safe data boundary | ✅ Merged |
+| STORAGE-VAULT-01 | Signed document access | ✅ Merged |
+| PORTAL-MOTION-01 | Premium status rail | ✅ Merged |
+| FINAL-E2E-SEED-01 | Test matters + schema patches | ✅ Merged |
+| QA-01 | Production audit fixes | ✅ Merged |
+| SQL-CORRECTNESS-01 | 8 SQL fixes (RLS, ordering, column names) | ✅ Merged |
+| BUCKET-LOCK-01 | documents bucket private, automated in 006 | ✅ Locked |
+| LAUNCH-CHECKLIST-01 | This file | ✅ Current |
+
+## Next Step
+
+**UI smoke test only.** Do not change schema, login, auth, or portal code.
+
+Smoke test checklist:
+- [ ] Operator login → `/dashboard` (password auth)
+- [ ] Wrong password → shows "Invalid credentials. Please check your email and password."
+- [ ] Client magic link → email sent confirmation screen
+- [ ] `/portal` loads correct matter status for test client
+- [ ] `/portal/invoice` shows correct amount, no internal fields
+- [ ] `/portal/tracking` shows tracking number for shipped matter
+- [ ] Unauthenticated `/api/portal/me` → 401
+- [ ] Unauthenticated `/dashboard` → redirects to `/login`
