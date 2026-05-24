@@ -72,6 +72,46 @@ export async function GET() {
     .limit(15);
   const recent_activity = (activityRows ?? []).map(serializeActivityMS);
 
+  // New computed fields
+  const reviewing_count = deals.filter(
+    (d) => d.deal_status === "new" || d.deal_status === "reviewing"
+  ).length;
+  const scheduled_count = deals.filter(
+    (d) => d.deal_status === "scheduled"
+  ).length;
+  const apostille_count = deals.filter(
+    (d) => d.deal_status === "apostille"
+  ).length;
+  const shipped_count = deals.filter(
+    (d) => d.deal_status === "shipped"
+  ).length;
+  const confirmed_payments = deals.filter(
+    (d) => d.payment_status === "paid"
+  ).length;
+  const pending_payments = deals.filter(
+    (d) => isOpenStage(d.deal_status) && d.payment_status !== "paid" && d.payment_status !== "failed"
+  ).length;
+  const failed_payments = deals.filter(
+    (d) => d.payment_status === "failed"
+  ).length;
+  const balance_due = deals
+    .filter((d) => isOpenStage(d.deal_status) && d.payment_status !== "paid")
+    .reduce((s, d) => s + d.total_price, 0);
+
+  // Audit logs — gracefully handle missing table
+  let security_events: { id: string; event: string; actor: string | null; resource: string | null; created_at: string }[] = [];
+  try {
+    const { data: auditRows } = await supabase
+      .from("audit_logs")
+      .select("id, event, actor, resource, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12);
+    security_events = auditRows ?? [];
+  } catch {
+    security_events = [];
+  }
+  const security_events_count = security_events.length;
+
   return NextResponse.json({
     total_deals: total,
     open_deals: open,
@@ -87,5 +127,15 @@ export async function GET() {
     lanes,
     recent_deals,
     recent_activity,
+    reviewing_count,
+    scheduled_count,
+    apostille_count,
+    shipped_count,
+    confirmed_payments,
+    pending_payments,
+    failed_payments,
+    balance_due,
+    security_events,
+    security_events_count,
   });
 }

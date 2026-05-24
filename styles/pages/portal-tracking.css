@@ -126,3 +126,37 @@
   line-height: 1.6;
   margin-bottom: 14px;
 }
+.ct-viz-card {
+  background: #141414;
+  border: 1px solid rgba(198, 165, 90, 0.14);
+  padding: 22px 26px 16px;
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+.ct-viz-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.ct-viz-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.ct-viz-pct {
+  color: #C6A55A;
+  font-weight: 600;
+  font-family: monospace;
+}
+.ct-viz-divider {
+  color: rgba(255, 255, 255, 0.2);
+}
+.ct-viz-status {
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}

@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
     } catch {}
   }
 
+  // STORAGE-VAULT-01: label_url (carrier packing slip) is internal-only.
+  // evidence_url returned as a signed URL only; evidence_path never exposed.
   return NextResponse.json({
     tracking: {
       carrier: d.carrier,
@@ -50,8 +52,6 @@ export async function GET(req: NextRequest) {
       delivery_eta: d.delivery_eta,
       delivery_timestamp: d.delivery_timestamp,
       signed_by: d.signed_by,
-      ship_to: d.ship_to,
-      label_url: d.label_url,
       evidence_url: evidence_signed_url,
       evidence_generated_at: d.evidence_generated_at,
       live,
