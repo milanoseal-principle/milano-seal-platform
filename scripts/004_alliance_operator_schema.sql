@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS operator_profiles (
   state                       TEXT,
   city                        TEXT,
   coverage_radius_miles       INTEGER DEFAULT 50,
+  secondary_states            TEXT[],
+  notary_commission_number    TEXT,
+  notary_commission_expires   TIMESTAMPTZ,
   onboarding_status           TEXT NOT NULL DEFAULT 'invited'
     CHECK (onboarding_status IN (
       'invited','profile_started','documents_pending','training_pending',
@@ -271,6 +274,27 @@ BEGIN
         updated_at          = EXCLUDED.updated_at;
 
   RETURN v_eligible;
+END;
+$$;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- RLS — all operator tables: service role only
+-- ────────────────────────────────────────────────────────────────────────────
+DO $$
+DECLARE
+  t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'operator_profiles','operator_capabilities','operator_toolbelt_status',
+    'operator_compliance_status','operator_availability_log',
+    'operator_routing_eligibility','operator_assignments','toolbelt_item_definitions'
+  ] LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('DROP POLICY IF EXISTS svc_%I ON %I', t, t);
+    EXECUTE format(
+      'CREATE POLICY svc_%I ON %I FOR ALL TO service_role USING (true)', t, t
+    );
+  END LOOP;
 END;
 $$;
 
