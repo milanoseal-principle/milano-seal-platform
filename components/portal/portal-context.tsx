@@ -11,33 +11,31 @@ import {
 } from "react";
 import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
 
-export interface PortalDeal {
-  id: string;
+// Safe portal fields — mirrors PORTAL_SAFE_FIELDS from app/api/portal/me/route.ts
+export interface PortalClientMatter {
+  id: string;              // normalized: matter_id ?? id
+  matter_id: string;
+  display_id: string;
   client_name: string | null;
-  email: string | null;
-  phone: string | null;
   document_type: string | null;
   destination_country: string | null;
-  country: string | null;
-  status: string | null;
+  assigned_lane: string | null;
+  matter_status: string | null;       // raw internal status (for logic/state machine)
+  client_facing_status: string | null; // human-readable status copy
   payment_status: string | null;
-  amount: number | null;
-  invoice_subtotal: number | null;
-  invoice_retainer: number | null;
-  invoice_balance: number | null;
-  tracking_number: string | null;
-  carrier: string | null;
-  label_url: string | null;
+  payment_amount_due: number | null;
+  courier_tracking_id: string | null;
+  courier_carrier: string | null;
   delivery_status: string | null;
   delivery_eta: string | null;
   delivery_timestamp: string | null;
-  signed_by: string | null;
-  ship_to: Record<string, unknown> | null;
-  evidence_url: string | null;
-  evidence_path: string | null;
-  evidence_generated_at: string | null;
+  is_paid_and_released: boolean;
   created_at: string | null;
+  updated_at: string | null;
 }
+
+// @deprecated — kept for shell compat during transition
+export type PortalDeal = PortalClientMatter;
 
 export interface LedgerRow {
   id: string;
@@ -49,12 +47,40 @@ export interface LedgerRow {
   metadata: Record<string, unknown> | null;
 }
 
+type RawMatter = Record<string, unknown>;
+
+function normalizeMatter(raw: RawMatter): PortalClientMatter {
+  const matterId = (raw.matter_id ?? raw.id ?? "") as string;
+  return {
+    id: matterId,
+    matter_id: matterId,
+    display_id: (raw.display_id ?? matterId) as string,
+    client_name: (raw.client_name as string | null) ?? null,
+    document_type: (raw.document_type as string | null) ?? null,
+    destination_country: (raw.destination_country as string | null) ?? null,
+    assigned_lane: (raw.assigned_lane as string | null) ?? null,
+    matter_status: (raw.matter_status as string | null) ?? (raw.status as string | null) ?? null,
+    client_facing_status: (raw.client_facing_status as string | null) ?? null,
+    payment_status: (raw.payment_status as string | null) ?? null,
+    payment_amount_due: (raw.payment_amount_due as number | null) ?? null,
+    courier_tracking_id: (raw.courier_tracking_id as string | null) ?? (raw.tracking_number as string | null) ?? null,
+    courier_carrier: (raw.courier_carrier as string | null) ?? (raw.carrier as string | null) ?? null,
+    delivery_status: (raw.delivery_status as string | null) ?? null,
+    delivery_eta: (raw.delivery_eta as string | null) ?? null,
+    delivery_timestamp: (raw.delivery_timestamp as string | null) ?? null,
+    is_paid_and_released: (raw.is_paid_and_released as boolean) ?? false,
+    created_at: (raw.created_at as string | null) ?? null,
+    updated_at: (raw.updated_at as string | null) ?? null,
+  };
+}
+
 interface PortalState {
-  deals: PortalDeal[];
-  deal: PortalDeal | null;
+  deals: PortalClientMatter[];
+  deal: PortalClientMatter | null;
   activeDealId: string | null;
   setActiveDealId: (id: string) => void;
   ledger: LedgerRow[];
+  timeline: Array<{ event_id: string; event_label: string; public_description: string; timestamp_recorded: string }>;
   isLoading: boolean;
   error: string | null;
   message: string | null;
@@ -70,9 +96,10 @@ export function usePortal(): PortalState {
 }
 
 export function PortalProvider({ children }: { children: ReactNode }) {
-  const [deals, setDeals] = useState<PortalDeal[]>([]);
+  const [deals, setDeals] = useState<PortalClientMatter[]>([]);
   const [activeDealId, setActiveDealIdState] = useState<string | null>(null);
   const [ledger, setLedger] = useState<LedgerRow[]>([]);
+  const [timeline, setTimeline] = useState<PortalState["timeline"]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -93,19 +120,29 @@ export function PortalProvider({ children }: { children: ReactNode }) {
         throw new Error(`HTTP ${res.status}`);
       }
       const body = (await res.json()) as {
-        deals?: PortalDeal[];
-        deal?: PortalDeal | null;
+        matters?: RawMatter[];
+        deals?: RawMatter[];         // legacy fallback
+        deal?: RawMatter | null;
         ledger?: LedgerRow[];
+        timeline?: PortalState["timeline"];
         message?: string;
       };
-      const allDeals = body.deals ?? (body.deal ? [body.deal] : []);
-      setDeals(allDeals);
+
+      // Normalize: prefer matters[], fall back to deals[], last resort single deal
+      const rawList: RawMatter[] =
+        body.matters ??
+        body.deals ??
+        (body.deal ? [body.deal] : []);
+
+      const normalized = rawList.map(normalizeMatter);
+      setDeals(normalized);
       setLedger(body.ledger ?? []);
+      setTimeline(body.timeline ?? []);
       setMessage(body.message ?? null);
 
-      if (!activeDealIdRef.current && body.deal) {
-        activeDealIdRef.current = body.deal.id;
-        setActiveDealIdState(body.deal.id);
+      if (!activeDealIdRef.current && normalized.length > 0) {
+        activeDealIdRef.current = normalized[0].id;
+        setActiveDealIdState(normalized[0].id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -141,6 +178,7 @@ export function PortalProvider({ children }: { children: ReactNode }) {
         activeDealId,
         setActiveDealId,
         ledger,
+        timeline,
         isLoading,
         error,
         message,

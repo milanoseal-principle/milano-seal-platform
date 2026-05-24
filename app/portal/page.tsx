@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
 import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
+import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { createClient } from "@/lib/supabase/client";
 
 interface Message {
@@ -13,49 +14,6 @@ interface Message {
   content: string;
   status: string | null;
   created_at: string;
-}
-
-const TRACK_STEPS = [
-  {
-    keys: ["new", "reviewing"],
-    label: "Intake Received",
-    desc: "Your matter has been received and is under review by our team.",
-  },
-  {
-    keys: ["quoted", "awaiting_payment"],
-    label: "Reviewed · Invoice Issued",
-    desc: "Your matter has been structured and a quote prepared. Payment unlocks scheduling.",
-  },
-  {
-    keys: ["scheduled"],
-    label: "Payment Confirmed",
-    desc: "Retainer received. Matter scheduled for execution.",
-  },
-  {
-    keys: ["in_execution"],
-    label: "In Execution",
-    desc: "Active notarization session in progress.",
-  },
-  {
-    keys: ["apostille"],
-    label: "Apostille Coordination",
-    desc: "Documents submitted to the Florida Department of State.",
-  },
-  {
-    keys: ["shipped"],
-    label: "Delivery",
-    desc: "Authenticated documents shipped to your destination.",
-  },
-  {
-    keys: ["completed"],
-    label: "Matter Closed",
-    desc: "Documents delivered and matter closed. Paid & released.",
-  },
-];
-
-function stageIndex(status: string | null | undefined): number {
-  if (!status) return -1;
-  return TRACK_STEPS.findIndex((s) => s.keys.includes(status));
 }
 
 const CHECKLIST_ITEMS = [
@@ -78,7 +36,7 @@ export default function MyMatterPage() {
     if (typeof window !== "undefined") {
       return !!sessionStorage.getItem("ms-portal-entry");
     }
-    return true; // SSR: skip ritual
+    return true;
   });
 
   function handleEntryDone() {
@@ -157,8 +115,6 @@ export default function MyMatterPage() {
     }
   };
 
-  const currentIdx = stageIndex(deal?.status);
-
   if (isLoading) {
     return (
       <div style={{ color: "rgba(255,255,255,.4)" }}>Loading your matter…</div>
@@ -171,11 +127,16 @@ export default function MyMatterPage() {
         <div className="pp-no-deal-title">No matter linked yet</div>
         <div className="pp-no-deal-body">
           {message ??
-            "We couldn't find a matter associated with this email. Please contact your coordinator."}
+            "We couldn't find a matter associated with this account. Please contact your coordinator."}
         </div>
       </div>
     );
   }
+
+  const paymentConfirmed =
+    deal.payment_status === "paid" ||
+    deal.payment_status === "confirmed" ||
+    deal.matter_status === "payment_confirmed";
 
   return (
     <>
@@ -195,12 +156,12 @@ export default function MyMatterPage() {
         </h1>
         <div className="pp-sub">
           {deal.document_type ?? "Document execution"} ·{" "}
-          <em>{deal.destination_country ?? deal.country ?? "—"}</em>
+          <em>{deal.destination_country ?? "—"}</em>
         </div>
 
-        {/* Paid & Released banner — only when completed + paid */}
+        {/* Paid & Released banner */}
         <AnimatePresence>
-          {deal.status === "completed" && deal.payment_status === "paid" && (
+          {deal.is_paid_and_released && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -228,6 +189,28 @@ export default function MyMatterPage() {
           )}
         </AnimatePresence>
 
+        {/* Payment confirmed reveal */}
+        <AnimatePresence>
+          {paymentConfirmed && !deal.is_paid_and_released && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }}
+              className="mb-4 border rounded-sm px-4 py-3 flex items-center gap-3"
+              style={{
+                background: "rgba(198,165,90,0.05)",
+                borderColor: "rgba(198,165,90,0.18)",
+              }}
+            >
+              <span style={{ color: "#C6A55A", fontSize: 13 }}>✓</span>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                Payment confirmed — scheduling is now unlocked.
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="pp-grid">
           {/* Left column */}
           <motion.div
@@ -235,40 +218,13 @@ export default function MyMatterPage() {
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{ duration: 0.4, ease: "easeInOut", delay: 0.1 }}
           >
-            {/* Progress tracker */}
+            {/* Premium status rail — PORTAL-MOTION-01 */}
             <div className="pp-card">
               <div className="pp-card-h">Progress</div>
-              {TRACK_STEPS.map((s, i) => {
-                const done = currentIdx > i;
-                const act = currentIdx === i;
-                const dotClass = done ? "done" : act ? "act" : "pend";
-                const nameClass = done ? "done" : act ? "act" : "pend";
-                return (
-                  <div key={s.label} className="pp-track-step">
-                    {i < TRACK_STEPS.length - 1 && (
-                      <div
-                        className="pp-track-line"
-                        style={{
-                          background: done
-                            ? "#C6A55A"
-                            : "rgba(198,165,90,.18)",
-                        }}
-                      />
-                    )}
-                    <div className={`pp-track-dot ${dotClass}`}>
-                      {done ? "✓" : act ? "●" : i + 1}
-                    </div>
-                    <div>
-                      <div className={`pp-track-name ${nameClass}`}>
-                        {s.label}
-                      </div>
-                      {(done || act) && (
-                        <div className="pp-track-desc">{s.desc}</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              <PortalStatusRail
+                matterStatus={deal.matter_status}
+                paymentStatus={deal.payment_status}
+              />
             </div>
 
             {/* Messages */}
@@ -328,7 +284,7 @@ export default function MyMatterPage() {
               <div className="pp-kv">
                 <span className="pp-kv-k">Matter ID</span>
                 <span className="pp-kv-v pp-kv-v mono">
-                  {deal.id.slice(0, 8)}…
+                  {(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}…
                 </span>
               </div>
               <div className="pp-kv">
@@ -338,29 +294,38 @@ export default function MyMatterPage() {
               <div className="pp-kv">
                 <span className="pp-kv-k">Destination</span>
                 <span className="pp-kv-v">
-                  {deal.destination_country ?? deal.country ?? "—"}
+                  {deal.destination_country ?? "—"}
                 </span>
               </div>
               <div className="pp-kv">
                 <span className="pp-kv-k">Status</span>
                 <span className="pp-kv-v pp-kv-v gold">
-                  {(deal.status ?? "").replace(/_/g, " ")}
+                  {deal.client_facing_status ??
+                    (deal.matter_status ?? "").replace(/_/g, " ")}
                 </span>
               </div>
               <div className="pp-kv">
                 <span className="pp-kv-k">Payment</span>
                 <span
-                  className={`pp-kv-v ${deal.payment_status === "paid" ? "pp-kv-v paid" : "pp-kv-v pending"}`}
+                  className={`pp-kv-v ${paymentConfirmed ? "pp-kv-v paid" : "pp-kv-v pending"}`}
                 >
-                  {deal.payment_status === "paid" ? "Paid" : "Pending"}
+                  {paymentConfirmed ? "Paid" : "Pending"}
                 </span>
               </div>
+              {deal.payment_amount_due != null && !paymentConfirmed && (
+                <div className="pp-kv">
+                  <span className="pp-kv-k">Amount Due</span>
+                  <span className="pp-kv-v gold">
+                    ${deal.payment_amount_due.toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="pp-card">
               <div className="pp-card-h">Pre-flight checklist</div>
               {CHECKLIST_ITEMS.map((item, i) => {
-                const done = currentIdx >= 2 && i < 2;
+                const done = paymentConfirmed && i < 2;
                 return (
                   <div key={item} className="pp-check-row">
                     <span className={`pp-check-box ${done ? "done" : "todo"}`}>
