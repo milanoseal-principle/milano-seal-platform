@@ -101,11 +101,15 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS idx_messages_deal ON messages(deal_id);
 
+ALTER TABLE IF EXISTS messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "svc_messages" ON messages;
+CREATE POLICY "svc_messages" ON messages FOR ALL TO service_role USING (true);
+
 -- RLS
 ALTER TABLE IF EXISTS compliance_rules ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "svc_compliance" ON compliance_rules;
 DROP POLICY IF EXISTS "pub_compliance" ON compliance_rules;
-CREATE POLICY "svc_compliance" ON compliance_rules FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "svc_compliance" ON compliance_rules FOR ALL TO service_role USING (true);
 CREATE POLICY "pub_compliance" ON compliance_rules FOR SELECT USING (TRUE);
 
 SELECT 'Trust Engine schema installed.' AS status;
