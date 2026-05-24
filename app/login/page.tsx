@@ -105,50 +105,76 @@ function LoginInner() {
     setIsLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    if (ROLE_HINTS[role].method === "magic") {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirect = `${origin}/auth/callback?role=client`;
+      if (ROLE_HINTS[role].method === "magic") {
+        // Use NEXT_PUBLIC_SITE_URL for reliable production redirect
+        const base =
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (typeof window !== "undefined" ? window.location.origin : "");
+        const redirect = `${base}/auth/callback?role=client`;
 
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirect,
-          shouldCreateUser: true,
-        },
-      });
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: redirect,
+            shouldCreateUser: true,
+          },
+        });
 
-      if (otpError) {
-        setError(otpError.message);
-        setIsLoading(false);
+        if (otpError) {
+          setError(otpError.message || "Failed to send sign-in link. Please try again.");
+          return;
+        }
+        setMagicSent(true);
         return;
       }
-      setMagicSent(true);
+
+      if (!password) {
+        setError("Password is required.");
+        return;
+      }
+
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        // Return a clean message — never expose raw Supabase internals
+        if (
+          authError.message.toLowerCase().includes("invalid") ||
+          authError.message.toLowerCase().includes("credentials") ||
+          authError.message.toLowerCase().includes("password") ||
+          authError.status === 400
+        ) {
+          setError("Invalid credentials. Please check your email and password.");
+        } else {
+          setError(authError.message || "Sign-in failed. Please try again.");
+        }
+        return;
+      }
+
+      router.push(nextPath);
+      router.refresh();
+    } catch (err: unknown) {
+      // Catches network errors (Failed to fetch), env-var misconfiguration, etc.
+      const msg = err instanceof Error ? err.message : "";
+      if (
+        msg.toLowerCase().includes("fetch") ||
+        msg.toLowerCase().includes("network") ||
+        msg.toLowerCase().includes("failed to fetch")
+      ) {
+        setError(
+          "Unable to reach the authentication server. Check your internet connection and try again.",
+        );
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    if (!password) {
-      setError("Password is required.");
-      setIsLoading(false);
-      return;
-    }
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    router.push(nextPath);
-    router.refresh();
   };
 
   const isClient = role === "client";
