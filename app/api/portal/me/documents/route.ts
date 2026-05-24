@@ -1,34 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentClientDeal } from "@/lib/portalAuth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAllClientDeals } from "@/lib/portalAuth";
+import { getVaultDocumentsForMatter } from "@/lib/vault";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const dealId = req.nextUrl.searchParams.get("deal_id");
-  const ctx = await getCurrentClientDeal(dealId);
-  if (!ctx)
+  const ctx = await getAllClientDeals();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!ctx.deal) return NextResponse.json({ files: [] });
+  }
 
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("files")
-    .select("*")
-    .eq("deal_id", ctx.deal.id)
-    .order("created_at", { ascending: false });
+  if (!ctx.deals.length) {
+    return NextResponse.json({ files: [] });
+  }
 
-  if (!data?.length) return NextResponse.json({ files: [] });
+  const dealId = req.nextUrl.searchParams.get("deal_id");
+  const deal = (dealId ? ctx.deals.find((d) => d.id === dealId) : null) ?? ctx.deals[0];
 
-  const files = await Promise.all(
-    data.map(async (f) => {
-      if (!f.storage_path) return f;
-      const { data: signed } = await admin.storage
-        .from("deal-documents")
-        .createSignedUrl(f.storage_path, 3600);
-      return { ...f, url: signed?.signedUrl ?? null };
-    }),
-  );
+  if (!deal) {
+    return NextResponse.json({ error: "Matter not found" }, { status: 404 });
+  }
 
-  return NextResponse.json({ files });
+  // STORAGE-VAULT-01: all document access goes through vault — signed URLs only,
+  // storage_path is never returned to the client.
+  const documents = await getVaultDocumentsForMatter(deal.id, ctx.email);
+
+  return NextResponse.json({ files: documents });
 }
