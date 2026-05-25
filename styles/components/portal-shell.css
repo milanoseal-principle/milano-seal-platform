@@ -147,6 +147,7 @@
   flex: 1;
   padding: 10px 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .ps-nav-sec {
   font-size: 7.5px;
