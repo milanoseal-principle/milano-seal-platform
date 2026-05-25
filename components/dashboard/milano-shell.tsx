@@ -21,6 +21,9 @@ import {
   Terminal,
   Receipt,
   Scale,
+  Target,
+  TrendingUp,
+  ShieldCheck,
 } from "lucide-react";
 
 const NAV = [
@@ -35,6 +38,9 @@ const NAV = [
   { href: "/dashboard/admin/reconciliation", label: "Finance Reconciliation", icon: Scale },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
   { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
+  { href: "/dashboard/intelligence/acquisition", label: "Acquisition Intel", icon: Target },
+  { href: "/dashboard/intelligence/revenue", label: "Revenue Intel", icon: TrendingUp },
+  { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
