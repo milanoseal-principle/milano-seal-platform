@@ -7,6 +7,164 @@ import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
 import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { createClient } from "@/lib/supabase/client";
 
+// ─── Portal Assistant ────────────────────────────────────────────────────────
+
+const ASSISTANT_CHIPS = [
+  "What is apostille?",
+  "What happens next?",
+  "How do I prepare for my session?",
+  "What documents do I need?",
+  "How long does this take?",
+  "What is the Hague Convention?",
+];
+
+interface AssistantMsg {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+}
+
+function PortalAssistant() {
+  const [msgs, setMsgs] = useState<AssistantMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    threadRef.current?.scrollTo({
+      top: threadRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [msgs, loading]);
+
+  async function ask(text?: string) {
+    const prompt = (text ?? input).trim();
+    if (!prompt || loading) return;
+    setInput("");
+    setMsgs((m) => [
+      ...m,
+      { id: `u${Date.now()}`, role: "user", text: prompt },
+    ]);
+    setLoading(true);
+    try {
+      const r = await fetch("/api/portal/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = (await r.json()) as { text?: string; error?: string };
+      const reply =
+        data.text ??
+        "Your coordinator will be in touch with more information.";
+      setMsgs((m) => [
+        ...m,
+        { id: `a${Date.now()}`, role: "assistant", text: reply },
+      ]);
+    } catch {
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `a${Date.now()}`,
+          role: "assistant",
+          text: "We're unable to answer right now. Please reach out to your coordinator directly.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="pp-card pa-card">
+      <div className="pp-card-h">Questions about your matter</div>
+
+      {/* Thread */}
+      <div className="pa-thread" ref={threadRef}>
+        {msgs.length === 0 && !loading && (
+          <div className="pa-welcome">
+            Ask anything about your document journey — apostille, what to
+            expect, how to prepare, or what happens next.
+          </div>
+        )}
+        <AnimatePresence initial={false}>
+          {msgs.map((m) =>
+            m.role === "user" ? (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="pa-user-bubble"
+              >
+                {m.text}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="pa-ai-bubble"
+              >
+                <span className="pa-ai-mark">✦</span>
+                {m.text}
+              </motion.div>
+            ),
+          )}
+        </AnimatePresence>
+        {loading && (
+          <div className="pa-thinking">
+            {[0, 140, 280].map((d) => (
+              <span
+                key={d}
+                className="pa-dot"
+                style={{ animationDelay: `${d}ms` }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick prompts */}
+      {msgs.length === 0 && (
+        <div className="pa-chips">
+          {ASSISTANT_CHIPS.map((c) => (
+            <button
+              key={c}
+              className="pa-chip"
+              disabled={loading}
+              onClick={() => void ask(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Composer */}
+      <div className="pa-composer">
+        <input
+          className="pa-input"
+          placeholder="Ask a question…"
+          value={input}
+          disabled={loading}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void ask();
+          }}
+        />
+        <button
+          className="pa-send"
+          disabled={loading || !input.trim()}
+          onClick={() => void ask()}
+        >
+          {loading ? "…" : "Ask"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const EVENT_LABELS: Record<string, string> = {
   // State transitions
   intake_received: "Matter received and secured",
@@ -333,6 +491,9 @@ export default function MyMatterPage() {
                 </button>
               </div>
             </div>
+
+            {/* Client matter guide assistant */}
+            <PortalAssistant />
           </motion.div>
 
           {/* Right column */}
