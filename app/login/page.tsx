@@ -110,7 +110,8 @@ function LoginInner() {
   const nextPath =
     rawNext.startsWith("/dashboard") ||
     rawNext.startsWith("/admin") ||
-    rawNext.startsWith("/portal")
+    rawNext.startsWith("/portal") ||
+    rawNext.startsWith("/alliance")
       ? rawNext
       : "/dashboard";
 
