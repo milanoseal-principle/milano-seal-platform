@@ -74,32 +74,51 @@ interface DashboardSummary {
   }[];
 }
 
+interface SlaAlert {
+  deal_id: string;
+  client_name: string | null;
+  deal_status: string;
+  hours_in_stage: number;
+  sla_hours: number;
+  severity: "low" | "medium" | "high";
+}
+
+function slaAlertLabel(alert: SlaAlert): string {
+  const over = Math.round(alert.hours_in_stage - alert.sla_hours);
+  if (over <= 0) return `Within SLA (${Math.round(alert.hours_in_stage)}h / ${alert.sla_hours}h)`;
+  return `${over}h over SLA — ${stageLabel(alert.deal_status)}`;
+}
+
 function Stat({
   label,
   value,
   hint,
   icon: Icon,
+  critical,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon: typeof Briefcase;
+  critical?: boolean;
 }) {
   return (
-    <Card className="bg-card border-gold">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
-          {label}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-gold" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-serif text-foreground">{value}</div>
-        {hint ? (
-          <p className="text-xs text-muted-foreground mt-1">{hint}</p>
-        ) : null}
-      </CardContent>
-    </Card>
+    <motion.div whileHover={{ y: -1 }}>
+      <Card className={`bg-card ${critical ? "border-destructive/60" : "border-gold"}`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            {label}
+          </CardTitle>
+          <Icon className={`h-4 w-4 ${critical ? "text-destructive" : "text-gold"}`} />
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-serif text-foreground">{value}</div>
+          {hint ? (
+            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+          ) : null}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -134,6 +153,7 @@ export default function Dashboard() {
   const { data, isLoading, isError } = useApi<DashboardSummary>(
     "/api/dashboard/summary",
   );
+  const { data: slaAlerts } = useApi<SlaAlert[]>("/api/admin/sla-alerts");
 
   if (isLoading)
     return (
@@ -349,6 +369,7 @@ export default function Dashboard() {
             value={String(data.awaiting_payment)}
             hint="Gated until cleared"
             icon={Clock}
+            critical={data.awaiting_payment > 0}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
@@ -384,6 +405,55 @@ export default function Dashboard() {
           />
         </motion.div>
       </motion.div>
+
+      {/* SLA Alerts */}
+      {slaAlerts && slaAlerts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
+            SLA Alerts
+          </p>
+          {slaAlerts.map((alert) => (
+            <Link key={alert.deal_id} href={`/dashboard/deals/${alert.deal_id}`}>
+              <div className={`flex items-center justify-between gap-3 p-3 rounded-md border cursor-pointer hover-elevate ${
+                alert.severity === "high"
+                  ? "border-destructive/60 bg-destructive/5"
+                  : alert.severity === "medium"
+                    ? "border-amber-500/40 bg-amber-500/5"
+                    : "border-border"
+              }`}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <ShieldAlert className={`w-4 h-4 flex-shrink-0 ${
+                    alert.severity === "high" ? "text-destructive" : "text-amber-500"
+                  }`} />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm text-foreground truncate">{alert.client_name ?? alert.deal_id}</span>
+                    <span className="text-xs text-muted-foreground">{slaAlertLabel(alert)}</span>
+                  </div>
+                </div>
+                <Badge variant="outline" className={
+                  alert.severity === "high" ? "bg-critical" : "bg-await"
+                }>
+                  {alert.severity.toUpperCase()}
+                </Badge>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Execution Pipeline */}
+      <div className="flex items-center overflow-x-auto gap-0">
+        {(["INTAKE", "PAYMENT", "SCHEDULE", "EXECUTION", "APOSTILLE", "DELIVERY"] as const).map((stage, i, arr) => (
+          <div key={stage} className="flex items-center">
+            <div className="px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] font-semibold text-muted-foreground border border-border rounded-sm bg-card whitespace-nowrap">
+              {stage}
+            </div>
+            {i < arr.length - 1 && (
+              <div className="w-5 h-px bg-border flex-shrink-0" />
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Pipeline Load Matrix */}
       <StatusGlowMatrix
@@ -544,6 +614,14 @@ export default function Dashboard() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Revenue Collected</span>
               <span className="text-foreground">{formatCurrency(data.revenue_closed)}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-border pt-2 mt-1">
+              <span className="text-muted-foreground">Completion Rate</span>
+              <span className="text-gold">
+                {(data.confirmed_payments + data.pending_payments + data.failed_payments) > 0
+                  ? `${Math.round((data.confirmed_payments / (data.confirmed_payments + data.pending_payments + data.failed_payments)) * 100)}%`
+                  : "—"}
+              </span>
             </div>
           </CardContent>
         </Card>
