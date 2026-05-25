@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard/admin", label: "Command Center", icon: ShieldAlert },
+  { href: "/dashboard/admin", label: "Execution Intelligence", icon: ShieldAlert },
   { href: "/dashboard", label: "Matter Control", icon: LayoutDashboard },
   { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
   { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
@@ -99,6 +99,19 @@ function NavLinks({ onNav }: { onNav?: () => void }) {
 
 export function MilanoShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [utcTime, setUtcTime] = useState("");
+
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      setUtcTime(
+        now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }) + " UTC"
+      );
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const sidebarContent = (onNav?: () => void) => (
     <>
@@ -234,12 +247,18 @@ export function MilanoShell({ children }: { children: ReactNode }) {
                 · Milano Seal International LLC · Florida Notary #668288
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-mono text-[10px]" style={{ color: "rgba(212,175,55,0.5)" }}>
+                {utcTime}
+              </span>
+              <span className="text-foreground/20">·</span>
               <span>Hague Apostille</span>
               <span className="text-foreground/40">·</span>
-              <span>RON Approved</span>
+              <span>RON Active</span>
               <span className="text-foreground/40">·</span>
-              <span>Mobile Florida</span>
+              <span>Courier Ready</span>
+              <span className="text-foreground/40">·</span>
+              <span>Custody Verified</span>
             </div>
           </div>
         </footer>

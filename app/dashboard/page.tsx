@@ -26,6 +26,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
 import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
+import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
+import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
+import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
+import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
 
 interface DashboardSummary {
   total_deals: number;
@@ -159,10 +163,6 @@ const alertRowVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
 };
 
-const chipVariants = {
-  hidden: { opacity: 0, y: 6 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
-};
 
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
@@ -482,23 +482,17 @@ export default function Dashboard() {
       )}
 
       {/* Execution Pipeline */}
-      <motion.div
-        className="flex items-center overflow-x-auto gap-0"
-        initial="hidden"
-        animate={entryComplete ? "visible" : "hidden"}
-        variants={{ visible: { transition: { staggerChildren: 0.05, delayChildren: 0.2 } } }}
-      >
-        {(["INTAKE", "PAYMENT", "SCHEDULE", "EXECUTION", "APOSTILLE", "DELIVERY"] as const).map((stage, i, arr) => (
-          <motion.div key={stage} className="flex items-center" variants={chipVariants}>
-            <div className="px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] font-semibold text-muted-foreground border border-border rounded-sm bg-card whitespace-nowrap">
-              {stage}
-            </div>
-            {i < arr.length - 1 && (
-              <div className="w-5 h-px bg-border flex-shrink-0" />
-            )}
-          </motion.div>
-        ))}
-      </motion.div>
+      <ExecutionOrchestrationPipeline
+        counts={{
+          reviewing_count: data.reviewing_count,
+          awaiting_payment: data.awaiting_payment,
+          scheduled_count: data.scheduled_count,
+          in_execution: data.in_execution,
+          apostille_count: data.apostille_count,
+          shipped_count: data.shipped_count,
+        }}
+        slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
+      />
 
       {/* Pipeline Load Matrix */}
       <StatusGlowMatrix
@@ -758,28 +752,14 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* Live Event Bus */}
+      <LiveEventBusStream />
+
       {/* Document Custody */}
-      <Card className="bg-card border-gold">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <Package className="w-4 h-4 text-gold" /> Document Custody — Chain-of-Custody
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm">
-            Open a matter from the Execution Queue to view its chain-of-custody timeline.
-          </p>
-          <Link href="/dashboard/deals">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft text-xs"
-            >
-              Open Execution Queue
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <ChainOfCustodyIntelligence />
+
+      {/* Courier Release Intelligence */}
+      <CourierIntelligencePanel />
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
