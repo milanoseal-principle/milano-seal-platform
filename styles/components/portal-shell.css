@@ -4,12 +4,16 @@
   left: 0;
   right: 0;
   z-index: 50;
+  /* Push ticker content below the notch / Dynamic Island */
+  padding-top: var(--sa-top);
 }
 
 .ps-bg {
   display: flex;
   min-height: 100vh;
-  padding-top: 36px;
+  min-height: 100svh;
+  /* Offset for fixed ticker (36px) + notch/Dynamic Island safe area */
+  padding-top: calc(36px + var(--sa-top));
   background:
     radial-gradient(ellipse 90% 45% at 50% 0%, rgba(198, 165, 90, 0.04) 0%, transparent 55%),
     #0a0a0a;
@@ -24,7 +28,8 @@
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 36px;
+  /* Align sidebar top with bottom edge of ticker (ticker grows with safe-area) */
+  top: calc(36px + var(--sa-top));
   bottom: 0;
   left: 0;
   right: auto;
@@ -370,7 +375,8 @@
 }
 .ps-content {
   flex: 1;
-  padding: 24px 28px 48px;
+  /* bottom: stay clear of iOS home indicator / browser toolbar */
+  padding: 24px 28px max(48px, calc(var(--sa-bottom) + 24px));
   overflow-x: hidden;
 }
 .ps-mobile-trigger {

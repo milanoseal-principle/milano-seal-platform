@@ -74,11 +74,13 @@ export function PortalEntryRitual({ onComplete }: Props) {
   return (
     <motion.div
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center"
       style={{
         background:
           "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(198,165,90,0.05) 0%, #060608 55%)",
+        paddingTop: "var(--sa-top)",
+        paddingBottom: "var(--sa-bottom)",
       }}
     >
       <div className="flex flex-col items-center w-full max-w-[320px] px-8 select-none">
