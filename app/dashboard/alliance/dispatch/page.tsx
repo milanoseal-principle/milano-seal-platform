@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { AdminDispatchQueue, type AdminAssignment } from "@/components/alliance/AdminDispatchQueue";
 
 const STAGE_LABELS: Record<string, string> = {
@@ -79,6 +80,7 @@ async function getAllAssignments(): Promise<AdminAssignment[]> {
 }
 
 export default async function AllianceDispatchPage() {
+  await requireDashboardAccess();
   const assignments = await getAllAssignments();
 
   const offered = assignments.filter((a) => a.assignment_status === "offered").length;

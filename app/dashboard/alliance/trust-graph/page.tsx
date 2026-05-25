@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { TrustGraphConstellation, type TrustNode } from "@/components/alliance/TrustGraphConstellation";
 
 function computeRole(p: {
@@ -114,6 +115,7 @@ async function getTrustNodes(): Promise<TrustNode[]> {
 }
 
 export default async function TrustGraphPage() {
+  await requireDashboardAccess();
   const nodes = await getTrustNodes();
 
   const approvedCount = nodes.filter((n) => n.approved).length;
