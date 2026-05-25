@@ -15,6 +15,11 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const role = ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  if (!["admin", "ops_manager", "finance"].includes(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const db = createAdminClient();
 
   const { data } = await db
