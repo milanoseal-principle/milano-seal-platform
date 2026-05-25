@@ -105,6 +105,18 @@ function LoginInner() {
     setIsLoading(true);
     setError(null);
 
+    // Safe env presence check — never logs values
+    const urlPresent = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const keyPresent = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const sitePresent = !!process.env.NEXT_PUBLIC_SITE_URL;
+    if (!urlPresent || !keyPresent) {
+      console.error("[milano/login] Supabase env missing:", {
+        NEXT_PUBLIC_SUPABASE_URL: urlPresent,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: keyPresent,
+        NEXT_PUBLIC_SITE_URL: sitePresent,
+      });
+    }
+
     try {
       const supabase = createClient();
 
@@ -124,7 +136,13 @@ function LoginInner() {
         });
 
         if (otpError) {
-          // Never display raw Supabase error messages — they contain internals
+          // UI message stays clean — log safe diagnostic info for operator review
+          console.error("[milano/login] OTP error:", {
+            method: "magic",
+            code: otpError.code,
+            status: otpError.status,
+            name: otpError.name,
+          });
           setError("Unable to send sign-in link. Please try again.");
           return;
         }
@@ -143,8 +161,13 @@ function LoginInner() {
       });
 
       if (authError) {
-        // Map all auth errors to clean, non-technical messages.
-        // Never expose raw Supabase error text (can contain "token", "JWT", "fetch").
+        // UI message stays clean — log safe diagnostic info for operator review
+        console.error("[milano/login] Password auth error:", {
+          method: "password",
+          code: authError.code,
+          status: authError.status,
+          name: authError.name,
+        });
         if (authError.status === 400 || authError.status === 401 || authError.status === 422) {
           setError("Invalid credentials. Please check your email and password.");
         } else {
@@ -155,9 +178,14 @@ function LoginInner() {
 
       router.push(nextPath);
       router.refresh();
-    } catch {
+    } catch (err) {
       // Catches thrown network errors, SDK failures, undefined env vars.
-      // Never display exception messages — they contain raw internals.
+      // Log safe info only — never log passwords or key values.
+      console.error("[milano/login] Caught exception:", {
+        name: err instanceof Error ? err.name : typeof err,
+        message: err instanceof Error ? err.message : String(err),
+        envPresent: { url: urlPresent, key: keyPresent, site: sitePresent },
+      });
       setError("Sign-in unavailable. Please try again in a moment.");
     } finally {
       setIsLoading(false);
