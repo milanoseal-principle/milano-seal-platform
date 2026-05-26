@@ -111,7 +111,8 @@ function LoginInner() {
     rawNext.startsWith("/dashboard") ||
     rawNext.startsWith("/admin") ||
     rawNext.startsWith("/portal") ||
-    rawNext.startsWith("/alliance")
+    rawNext.startsWith("/alliance") ||
+    rawNext.startsWith("/va")
       ? rawNext
       : "/dashboard";
 

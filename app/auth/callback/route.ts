@@ -24,6 +24,18 @@ export async function GET(request: Request) {
   const actualRole =
     ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
+  // Virtual assistants → VA portal
+  if (
+    actualRole === "virtual_assistant" ||
+    [
+      "intake_assistant", "scheduling_assistant", "document_coordinator",
+      "translation_coordinator", "courier_assistant", "followup_coordinator",
+      "alliance_support_assistant", "escalation_assistant",
+    ].includes(actualRole)
+  ) {
+    return NextResponse.redirect(`${origin}/va/dashboard`);
+  }
+
   // Alliance partners and field operators → alliance portal
   if (actualRole === "alliance_partner" || actualRole === "operator") {
     return NextResponse.redirect(`${origin}/alliance/dashboard`);
