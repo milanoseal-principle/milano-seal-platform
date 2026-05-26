@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   ClipboardList,
   Truck,
+  Wrench,
 } from "lucide-react";
 
 const NAV = [
@@ -45,6 +46,7 @@ const NAV = [
   { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
   { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
   { href: "/dashboard/courier", label: "Courier", icon: Truck },
+  { href: "/dashboard/tools", label: "Tools", icon: Wrench },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
