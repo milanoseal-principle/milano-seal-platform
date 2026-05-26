@@ -27,12 +27,12 @@ export async function GET() {
     const { data: tasks, error } = await admin
       .from("va_tasks")
       .select(
-        "id, deal_id, task_type, priority, status, assigned_to, due_at, notes, created_at, updated_at"
+        "id, matter_id, task_type, urgency, status, assigned_to, due_at, notes_public, next_action, completed_at, escalated_at, created_at, updated_at"
       )
       .eq("assigned_to", user.id)
       .neq("status", "completed")
-      .order("priority", { ascending: false })
-      .order("due_at", { ascending: true });
+      .order("urgency", { ascending: false })
+      .order("due_at", { ascending: true, nullsFirst: false });
 
     if (error) {
       if (

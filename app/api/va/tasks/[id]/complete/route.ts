@@ -32,7 +32,7 @@ export async function POST(
 
     const { data: task, error: fetchError } = await admin
       .from("va_tasks")
-      .select("id, assigned_to, status")
+      .select("id, assigned_to, status, matter_id")
       .eq("id", id)
       .maybeSingle();
 
@@ -60,12 +60,24 @@ export async function POST(
       );
     }
 
+    const now = new Date().toISOString();
+
     const { error: updateError } = await admin
       .from("va_tasks")
-      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .update({ status: "completed", completed_at: now, updated_at: now })
       .eq("id", id);
 
     if (updateError) throw updateError;
+
+    await admin.from("va_task_events").insert({
+      task_id: id,
+      matter_id: (task as { matter_id?: string | null }).matter_id ?? null,
+      actor_id: user.id,
+      event_type: "VA_TASK_COMPLETED",
+      description: "Task marked complete by VA",
+      severity: "info",
+      created_at: now,
+    });
 
     return NextResponse.json({ success: true });
   } catch {

@@ -5,6 +5,8 @@ import { VATaskQueue } from "@/components/va/VATaskQueue";
 import { VALiveEventStream } from "@/components/va/VALiveEventStream";
 import { VAExecutionPipeline } from "@/components/va/VAExecutionPipeline";
 import { VAAssistant } from "@/components/va/VAAssistant";
+import { VADailyCompletionTracker } from "@/components/va/VADailyCompletionTracker";
+import { VAEscalationQueue } from "@/components/va/VAEscalationQueue";
 
 export default async function VADashboardPage() {
   const { role } = await requireVAAccess();
@@ -30,6 +32,9 @@ export default async function VADashboardPage() {
         </h1>
       </div>
 
+      {/* Daily completion tracker */}
+      <VADailyCompletionTracker />
+
       {/* Pipeline overview */}
       <VAExecutionPipeline />
 
@@ -38,6 +43,9 @@ export default async function VADashboardPage() {
         <VATaskQueue />
         <VALiveEventStream />
       </div>
+
+      {/* Escalation queue */}
+      <VAEscalationQueue />
 
       {/* Assistant */}
       <VAAssistant />
