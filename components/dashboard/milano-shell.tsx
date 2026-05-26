@@ -25,6 +25,7 @@ import {
   TrendingUp,
   ShieldCheck,
   ClipboardList,
+  Truck,
 } from "lucide-react";
 
 const NAV = [
@@ -43,6 +44,7 @@ const NAV = [
   { href: "/dashboard/intelligence/revenue", label: "Revenue Intel", icon: TrendingUp },
   { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
   { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
+  { href: "/dashboard/courier", label: "Courier", icon: Truck },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
