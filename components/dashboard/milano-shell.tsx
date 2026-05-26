@@ -27,6 +27,7 @@ import {
   ClipboardList,
   Truck,
   Wrench,
+  BookOpen,
 } from "lucide-react";
 
 const NAV = [
@@ -47,6 +48,7 @@ const NAV = [
   { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
   { href: "/dashboard/courier", label: "Courier", icon: Truck },
   { href: "/dashboard/tools", label: "Tools", icon: Wrench },
+  { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {

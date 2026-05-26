@@ -7,6 +7,7 @@ import { VAExecutionPipeline } from "@/components/va/VAExecutionPipeline";
 import { VAAssistant } from "@/components/va/VAAssistant";
 import { VADailyCompletionTracker } from "@/components/va/VADailyCompletionTracker";
 import { VAEscalationQueue } from "@/components/va/VAEscalationQueue";
+import { VASOPReference } from "@/components/va/VASOPReference";
 
 export default async function VADashboardPage() {
   const { role } = await requireVAAccess();
@@ -46,6 +47,9 @@ export default async function VADashboardPage() {
 
       {/* Escalation queue */}
       <VAEscalationQueue />
+
+      {/* SOP Reference */}
+      <VASOPReference />
 
       {/* Assistant */}
       <VAAssistant />
