@@ -1,113 +1,256 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   onComplete: () => void;
 }
 
-export function PortalEntryRitual({ onComplete }: Props) {
-  const [step, setStep] = useState(0);
+const STEPS = [
+  "Verifying matter access",
+  "Loading execution status",
+  "Confirming payment and scheduling state",
+  "Preparing document vault",
+  "Ready",
+];
 
-  const items = [
-    { label: "Verifying matter access", ms: 350 },
-    { label: "Loading document status", ms: 350 },
-    { label: "Reviewing payment and scheduling status", ms: 350 },
-    { label: "Preparing document vault", ms: 300 },
-    { label: "Ready", ms: 200 },
-  ];
+const STEP_MS = [380, 380, 400, 340, 220];
+
+function SealMark() {
+  const g = "#C6A55A";
+  return (
+    <svg width={48} height={48} viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" stroke={g} strokeWidth="1.5" fill="none" opacity={0.6} />
+      <path
+        d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z"
+        fill={g}
+        opacity={0.85}
+      />
+      <path
+        d="M22,72 L22,28 L50,53"
+        stroke={g}
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="square"
+      />
+      <path
+        d="M78,72 L78,28 L50,53"
+        stroke={g}
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="square"
+      />
+      <line x1="15" y1="28" x2="29" y2="28" stroke={g} strokeWidth="3" />
+      <line x1="15" y1="72" x2="29" y2="72" stroke={g} strokeWidth="3" />
+      <line x1="71" y1="28" x2="85" y2="28" stroke={g} strokeWidth="3" />
+      <line x1="71" y1="72" x2="85" y2="72" stroke={g} strokeWidth="3" />
+    </svg>
+  );
+}
+
+export function PortalEntryRitual({ onComplete }: Props) {
+  const [reached, setReached] = useState(0);
 
   useEffect(() => {
     let i = 0;
-    function next() {
-      if (i < items.length) {
-        setTimeout(() => {
-          setStep((s) => s + 1);
-          i++;
-          next();
-        }, items[i].ms);
-      } else {
-        setTimeout(onComplete, 350);
+    function advance() {
+      if (i >= STEPS.length) {
+        setTimeout(onComplete, 420);
+        return;
       }
+      setTimeout(() => {
+        setReached(i + 1);
+        i++;
+        advance();
+      }, STEP_MS[i] ?? 340);
     }
-    next();
+    advance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const allDone = reached >= STEPS.length;
 
   return (
     <motion.div
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#060608]"
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
       style={{
         background:
-          "radial-gradient(100% 100% at 50% 0%, rgba(212,175,55,0.04) 0%, #060608 70%)",
+          "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(198,165,90,0.05) 0%, #060608 55%)",
+        paddingTop: "var(--sa-top)",
+        paddingBottom: "var(--sa-bottom)",
       }}
     >
-      <div className="flex flex-col items-center max-w-xs w-full px-6 text-center select-none">
-        {/* Logomark — subtle gold glow */}
-        <div className="relative mb-7 flex items-center justify-center w-16 h-16">
+      <div className="flex flex-col items-center w-full max-w-[320px] px-8 select-none">
+        {/* Seal logomark */}
+        <motion.div
+          className="mb-8 relative flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 border border-[#D4AF37]/10 rounded-full border-dashed"
-          />
-          <div
-            className="absolute inset-0 rounded-full"
+            transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+            className="absolute"
             style={{
-              background:
-                "radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%)",
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              border: "1px dashed rgba(198,165,90,0.12)",
             }}
           />
-          <span className="relative z-10 text-[#D4AF37] text-xl font-serif">
-            ⚜️
-          </span>
-        </div>
+          <SealMark />
+        </motion.div>
 
-        <h1 className="font-serif text-xl font-medium text-white tracking-wide mb-1">
-          Secure Matter Access
-        </h1>
-        <p className="text-[9px] uppercase tracking-[0.22em] text-gray-500 mb-6">
-          Preparing your private document workspace
-        </p>
+        {/* Heading */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center mb-8"
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-playfair, Georgia), serif",
+              fontSize: 17,
+              fontWeight: 400,
+              color: "#fff",
+              letterSpacing: "0.03em",
+              marginBottom: 5,
+            }}
+          >
+            Secure Matter Access
+          </div>
+          <div
+            style={{
+              fontSize: 8,
+              letterSpacing: "0.26em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.3)",
+            }}
+          >
+            Preparing private workspace
+          </div>
+        </motion.div>
 
-        {/* Checklist */}
-        <div className="w-full bg-[#0c0c12] border border-gray-900 rounded-sm p-4 text-left font-mono space-y-2">
-          {items.map((item, idx) => {
-            const isDone = step > idx;
-            const isCurrent = step === idx;
+        {/* Procedural steps — refined list, no terminal */}
+        <div className="w-full space-y-0">
+          {STEPS.map((label, idx) => {
+            const isDone = reached > idx;
+            const isCurrent = reached === idx;
+            const isPending = reached < idx;
+
             return (
-              <div
+              <motion.div
                 key={idx}
-                className={`text-xs flex items-center gap-2.5 transition-all duration-300 ${
-                  isDone
-                    ? "text-gray-400"
-                    : isCurrent
-                      ? "text-[#D4AF37]"
-                      : "text-gray-700"
-                }`}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: isPending ? 0.12 : 1,
+                }}
+                transition={{ duration: 0.3, delay: idx * 0.04 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "8px 0",
+                  borderBottom:
+                    idx < STEPS.length - 1
+                      ? "1px solid rgba(198,165,90,0.06)"
+                      : "none",
+                }}
               >
-                <span className="w-3 text-[10px] flex-shrink-0 text-center font-bold">
-                  {isDone ? (
-                    <span className="text-emerald-500">✓</span>
-                  ) : isCurrent ? (
-                    <span className="animate-ping inline-block text-[8px]">
-                      ○
-                    </span>
-                  ) : (
-                    <span>·</span>
-                  )}
-                </span>
-                <span
-                  className={`font-sans text-[11px] ${isCurrent ? "font-medium text-white" : ""}`}
+                {/* State indicator */}
+                <div
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: isDone
+                      ? "rgba(198,165,90,0.14)"
+                      : isCurrent
+                      ? "transparent"
+                      : "transparent",
+                    border: isDone
+                      ? "1px solid rgba(198,165,90,0.4)"
+                      : isCurrent
+                      ? "1px solid rgba(198,165,90,0.55)"
+                      : "1px solid rgba(255,255,255,0.06)",
+                  }}
                 >
-                  {item.label}
+                  {isDone && (
+                    <span
+                      style={{
+                        color: "#C6A55A",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✓
+                    </span>
+                  )}
+                  {isCurrent && (
+                    <motion.div
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: "50%",
+                        background: "#C6A55A",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Label */}
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: isCurrent ? 500 : 400,
+                    color: isDone
+                      ? "rgba(255,255,255,0.5)"
+                      : isCurrent
+                      ? "#fff"
+                      : "rgba(255,255,255,0.25)",
+                    letterSpacing: "0.02em",
+                    transition: "color 0.25s ease",
+                  }}
+                >
+                  {label}
                 </span>
-              </div>
+              </motion.div>
             );
           })}
         </div>
+
+        {/* Completion fade */}
+        <AnimatePresence>
+          {allDone && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                marginTop: 24,
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "rgba(198,165,90,0.7)",
+                textAlign: "center",
+              }}
+            >
+              Access Granted
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

@@ -38,7 +38,25 @@ export default function ClientDocumentsPage() {
   }, [deal]);
 
   if (dealLoading || loading) {
-    return <div style={{ color: "rgba(255,255,255,.4)" }}>Loading documents…</div>;
+    return (
+      <div style={{ paddingTop: 8 }}>
+        {[80, 62, 72].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: 48,
+              borderRadius: 2,
+              marginBottom: 10,
+              background: "rgba(198,165,90,0.05)",
+              border: "1px solid rgba(198,165,90,0.08)",
+              animation: "cdSkeleton 2s ease-in-out infinite",
+              animationDelay: `${i * 0.18}s`,
+              width: `${w}%`,
+            }}
+          />
+        ))}
+      </div>
+    );
   }
   if (!deal) {
     return (
@@ -74,7 +92,13 @@ export default function ClientDocumentsPage() {
               >
                 <div>
                   <div className="cd-name">{f.document_label}</div>
-                  <span className="cd-tag">{f.verification_status}</span>
+                  <span className={`cd-tag ${f.verification_status}`}>
+                    {f.verification_status === "released"
+                      ? "Released"
+                      : f.verification_status === "processing"
+                      ? "Processing"
+                      : "Pending Review"}
+                  </span>
                 </div>
                 <div className="cd-meta cd-meta-hide">
                   {new Date(f.uploaded_at).toLocaleDateString()}

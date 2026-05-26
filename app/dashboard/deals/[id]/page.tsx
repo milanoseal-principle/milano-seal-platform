@@ -35,6 +35,7 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { motion, AnimatePresence } from "framer-motion";
+import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
 import {
   ArrowLeft,
   CalendarClock,
@@ -979,6 +980,16 @@ export default function DealDetail() {
         </div>
 
         <div className="space-y-6">
+          <TrustModeGuide
+            destinationCountry={deal.destination_country ?? null}
+            apostilleRequired={deal.apostille_required ?? false}
+            translationRequired={deal.translation ?? false}
+            signerCount={deal.signers ?? 0}
+            originState={deal.origin_state ?? null}
+            dealStatus={deal.deal_status ?? ""}
+            paymentStatus={deal.payment_status ?? ""}
+          />
+
           <Card className="bg-card border-gold">
             <CardHeader>
               <CardTitle className="font-serif text-xl">Pricing</CardTitle>

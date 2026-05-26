@@ -5,11 +5,13 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/portal",
   "/alliance",
+  "/va",
   "/api/admin",
   "/api/dashboard",
   "/api/follow-ups",
   "/api/compliance/list",
   "/api/portal/me",
+  "/api/va",
 ];
 
 const PUBLIC_AUTH_PATHS = new Set([

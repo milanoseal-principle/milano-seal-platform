@@ -1,6 +1,10 @@
 import { buildExecutionPath } from "./executionPath";
 import { isHagueMember } from "./hagueMembers";
 import { quickTagParse } from "./quickTags";
+import {
+  getLanguageRouting,
+  type CountryLanguageRouting,
+} from "@/lib/hague-countries";
 
 export type StructuringState =
   | "IDLE"
@@ -66,6 +70,8 @@ export interface MatterAnalysis {
   wasTranslated: boolean;
   aiNotes: string;
 
+  languageRouting: CountryLanguageRouting | null;
+
   source: "idle" | "typing" | "ai" | "heuristic";
   structuringState: StructuringState;
 }
@@ -100,6 +106,7 @@ export function emptyAnalysis(): MatterAnalysis {
     translation: "",
     wasTranslated: false,
     aiNotes: "",
+    languageRouting: null,
     source: "idle",
     structuringState: "IDLE",
   };
@@ -111,6 +118,7 @@ export function mergeAnalysis(
 ): MatterAnalysis {
   const next: MatterAnalysis = { ...base, ...patch };
   next.hagueMember = isHagueMember(next.country);
+  next.languageRouting = getLanguageRouting(next.country);
   const path = buildExecutionPath({
     country: next.country,
     apostilleRequired: next.apostilleRequired,

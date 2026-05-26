@@ -261,6 +261,151 @@ function CourierViz({ status }: { status: string | null | undefined }) {
   );
 }
 
+const READINESS_STEPS = [
+  {
+    key: "identity",
+    label: "Identity Verified",
+    activeStatuses: [] as string[],
+    doneStatuses: ["intake_received", "under_review", "compliance_review", "quoted", "awaiting_payment", "payment_confirmed", "scheduled", "in_execution", "apostille_processing", "courier_ready", "shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "authorized",
+    label: "Execution Authorized",
+    activeStatuses: ["quoted", "awaiting_payment"],
+    doneStatuses: ["payment_confirmed", "scheduled", "in_execution", "apostille_processing", "courier_ready", "shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "apostille",
+    label: "Apostille Eligible",
+    activeStatuses: ["payment_confirmed", "scheduled"],
+    doneStatuses: ["in_execution", "apostille_processing", "courier_ready", "shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "execution",
+    label: "Documents Executed",
+    activeStatuses: ["in_execution"],
+    doneStatuses: ["apostille_processing", "courier_ready", "shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "courier",
+    label: "Courier Prepared",
+    activeStatuses: ["apostille_processing"],
+    doneStatuses: ["courier_ready", "shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "release",
+    label: "Awaiting Release",
+    activeStatuses: ["courier_ready"],
+    doneStatuses: ["shipped", "delivered", "completed", "closed"],
+  },
+  {
+    key: "released",
+    label: "Released",
+    activeStatuses: ["shipped", "delivered"],
+    doneStatuses: ["completed", "closed"],
+  },
+];
+
+function ExecutionReadiness({ matterStatus }: { matterStatus: string }) {
+  const doneCount = READINESS_STEPS.filter((s) =>
+    s.doneStatuses.includes(matterStatus)
+  ).length;
+  const total = READINESS_STEPS.length;
+  const pct = Math.round((doneCount / total) * 100);
+
+  return (
+    <div
+      style={{
+        background: "#141414",
+        border: "1px solid rgba(198,165,90,0.14)",
+        borderRadius: 2,
+        padding: "18px 20px",
+        marginBottom: 16,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.55)",
+          fontWeight: 600,
+          marginBottom: 14,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span>Execution Readiness</span>
+        <span style={{ color: "#C6A55A", fontFamily: "monospace", fontSize: 10 }}>{pct}%</span>
+      </div>
+
+      {/* Progress bar */}
+      <div
+        style={{
+          height: 2,
+          background: "rgba(198,165,90,0.12)",
+          borderRadius: 1,
+          marginBottom: 16,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: pct === 100 ? "#4a9e6b" : "#C6A55A",
+            borderRadius: 1,
+            transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)",
+          }}
+        />
+      </div>
+
+      {READINESS_STEPS.map((step) => {
+        const done = step.doneStatuses.includes(matterStatus);
+        const active = step.activeStatuses.includes(matterStatus);
+        const color = done ? "#4a9e6b" : active ? "#C6A55A" : "rgba(255,255,255,0.22)";
+        const icon = done ? "✓" : active ? "●" : "○";
+
+        return (
+          <div
+            key={step.key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "6px 0",
+              borderBottom: "1px solid rgba(198,165,90,0.05)",
+            }}
+          >
+            <span
+              style={{
+                color,
+                fontSize: 9,
+                fontWeight: 700,
+                width: 12,
+                textAlign: "center",
+                flexShrink: 0,
+              }}
+            >
+              {icon}
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                color: done ? "#fff" : active ? "#C6A55A" : "rgba(255,255,255,0.32)",
+                fontWeight: done || active ? 500 : 400,
+              }}
+            >
+              {step.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ClientTrackingPage() {
   const { deal, isLoading: dealLoading } = usePortal();
   const [data, setData] = useState<TrackingResponse | null>(null);
@@ -283,7 +428,23 @@ export default function ClientTrackingPage() {
 
   if (dealLoading || loading) {
     return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading tracking…</div>
+      <div style={{ paddingTop: 8 }}>
+        {[55, 100, 78].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: i === 0 ? 20 : i === 1 ? 96 : 64,
+              borderRadius: 2,
+              marginBottom: 14,
+              background: "rgba(198,165,90,0.05)",
+              border: "1px solid rgba(198,165,90,0.08)",
+              animation: "ppSkeleton 2s ease-in-out infinite",
+              animationDelay: `${i * 0.18}s`,
+              width: `${w}%`,
+            }}
+          />
+        ))}
+      </div>
     );
   }
   if (!deal) {
@@ -304,6 +465,8 @@ export default function ClientTrackingPage() {
     >
       <div className="ct-eyebrow">Shipment Tracking</div>
       <h1 className="ct-h1">Carrier &amp; Delivery</h1>
+
+      <ExecutionReadiness matterStatus={deal.matter_status ?? ""} />
 
       {!t ? (
         <div className="ct-empty">
