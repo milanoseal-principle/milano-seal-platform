@@ -67,8 +67,6 @@ export interface ShippoTrack {
 
 function headers() {
   const token = process.env.SHIPPO_API_KEY;
-  console.log("Token>>", token);
-  console.log("Process.env", process.env.SHIPPO_API_KEY);
   if (!token) throw new Error("SHIPPO_API_KEY is not configured");
   return {
     Authorization: `ShippoToken ${token}`,

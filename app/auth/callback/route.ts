@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const role = searchParams.get("role");
+  const roleHint = searchParams.get("role"); // "client" | "operator" — UI hint only
   const nextOverride = searchParams.get("next");
 
   if (!code) {
@@ -20,24 +20,47 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=auth_failed`);
   }
 
-  if (role === "client") {
-    return NextResponse.redirect(`${origin}/portal`);
+  const user = sessionData.user;
+  const actualRole =
+    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+
+  // Virtual assistants → VA portal
+  if (
+    actualRole === "virtual_assistant" ||
+    [
+      "intake_assistant", "scheduling_assistant", "document_coordinator",
+      "translation_coordinator", "courier_assistant", "followup_coordinator",
+      "alliance_support_assistant", "escalation_assistant",
+    ].includes(actualRole)
+  ) {
+    return NextResponse.redirect(`${origin}/va/dashboard`);
   }
-  if (role === "operator") {
+
+  // Alliance partners and field operators → alliance portal
+  if (actualRole === "alliance_partner" || actualRole === "operator") {
+    return NextResponse.redirect(`${origin}/alliance/dashboard`);
+  }
+
+  // Admin roles → dashboard (respect a safe next= override)
+  if (["admin", "ops_manager", "finance"].includes(actualRole)) {
+    if (nextOverride) {
+      const safe =
+        nextOverride.startsWith("/dashboard") ||
+        nextOverride.startsWith("/portal") ||
+        nextOverride.startsWith("/admin") ||
+        nextOverride.startsWith("/alliance");
+      if (safe) return NextResponse.redirect(`${origin}${nextOverride}`);
+    }
     return NextResponse.redirect(`${origin}/dashboard`);
   }
 
-  if (nextOverride) {
-    const safe =
-      nextOverride.startsWith("/dashboard") ||
-      nextOverride.startsWith("/portal") ||
-      nextOverride.startsWith("/admin");
-    if (safe) {
-      return NextResponse.redirect(`${origin}${nextOverride}`);
-    }
+  // Explicit client hint (magic link) or client role → portal
+  if (roleHint === "client" || actualRole === "client") {
+    return NextResponse.redirect(`${origin}/portal`);
   }
 
-  const userEmail = sessionData.user.email?.toLowerCase();
+  // Fallback: check email against deals (new client with no role metadata yet)
+  const userEmail = user.email?.toLowerCase();
   if (userEmail) {
     try {
       const admin = createAdminClient();

@@ -1,8 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import "./globals.css";
+
+// viewport-fit=cover is required for env(safe-area-inset-*) to have
+// non-zero values on iOS Safari (notch, Dynamic Island, home indicator).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 const geist = Geist({
   subsets: ["latin"],

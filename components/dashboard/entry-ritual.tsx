@@ -34,6 +34,7 @@ export function MilanoSealEntryRitual({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
       className="fixed inset-0 z-50 bg-[#060608] flex flex-col items-center justify-center gap-6"
+      style={{ paddingTop: "var(--sa-top)", paddingBottom: "var(--sa-bottom)" }}
     >
       {/* Gold halo ring */}
       <div className="relative w-20 h-20 flex items-center justify-center">
