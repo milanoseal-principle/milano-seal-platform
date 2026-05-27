@@ -29,23 +29,47 @@ function LogoMark({ size = 44 }: { size?: number }) {
   );
 }
 
-type Role = "operator" | "client";
+type Role = "operator" | "client" | "alliance" | "va";
 
-const ROLE_HINTS: Record<
-  Role,
-  { email: string; label: string; sub: string; method: "password" | "magic" }
-> = {
+const ROLE_HINTS: Record<Role, {
+  email: string;
+  label: string;
+  sub: string;
+  method: "password" | "magic";
+  cta: string;
+  hint: string;
+}> = {
   operator: {
     email: "nick@themilanoseal.com",
     label: "Operator",
-    sub: "Nicholas Milano",
+    sub: "Nicholas Milano / Authorized Staff",
     method: "password",
+    cta: "Continue Securely",
+    hint: "Operator access — use your Milano Seal credentials.",
   },
   client: {
     email: "you@example.com",
     label: "Matter Control Portal",
-    sub: "Track your matter",
+    sub: "Track Your Matter",
     method: "magic",
+    cta: "Send Access Link",
+    hint: "Use the email associated with your matter. We'll send a one-time access link — no password required.",
+  },
+  alliance: {
+    email: "partner@example.com",
+    label: "Alliance Portal",
+    sub: "Assigned Execution Network",
+    method: "password",
+    cta: "Continue to Alliance Portal",
+    hint: "Alliance partner access — use your assigned execution network credentials.",
+  },
+  va: {
+    email: "assistant@example.com",
+    label: "Virtual Assistant",
+    sub: "Restricted Task Workspace",
+    method: "password",
+    cta: "Continue to VA Workspace",
+    hint: "Virtual Assistant access — use your assigned workspace credentials.",
   },
 };
 
@@ -118,10 +142,14 @@ function LoginInner() {
 
   useEffect(() => {
     const err = searchParams.get("error");
-    if (err === "auth_failed") {
-      setError(
-        "That magic link has expired or is invalid. Please request a new one.",
-      );
+    if (err === "auth_failed" || err === "otp_expired") {
+      setError("That access link has expired or was already used. Please request a new one.");
+    }
+    if (err === "invalid_role") {
+      setError("Your account role is not authorized for this workspace. Contact your administrator.");
+    }
+    if (err === "access_denied") {
+      setError("Access denied. Your session may have expired — please sign in again.");
     }
   }, [searchParams]);
 
@@ -548,6 +576,11 @@ function LoginInner() {
                 <span className="ms-success-em">{email}</span>. Click it to
                 enter your matter workspace — no password required.
               </div>
+              {role === "client" && (
+                <div className="ms-success-p" style={{ marginTop: 10, fontSize: 10, color: "rgba(255,255,255,.38)" }}>
+                  If the link doesn&rsquo;t open — try opening it in Safari or your default browser.
+                </div>
+              )}
               <button
                 type="button"
                 className="ms-link-btn"
@@ -619,20 +652,25 @@ function LoginInner() {
               )}
 
               <div className="ms-hint">
-                {isClient ? (
-                  <>
-                    Use the email associated with your matter. We&rsquo;ll send
-                    a one-time access link — <span>no password required</span>.
-                  </>
-                ) : (
-                  <>
-                    Operator access — use your <span>Milano Seal</span>{" "}
-                    credentials.
-                  </>
-                )}
+                {ROLE_HINTS[role].hint}
               </div>
 
               {error && <div className="ms-err">{error}</div>}
+
+              {isClient && error && (
+                <button
+                  type="button"
+                  className="ms-link-btn"
+                  style={{ display: "block", marginBottom: 8 }}
+                  onClick={() => {
+                    setError(null);
+                    setEmail("");
+                    setMagicSent(false);
+                  }}
+                >
+                  Request new access link
+                </button>
+              )}
 
               <button
                 type="submit"
@@ -644,10 +682,8 @@ function LoginInner() {
                     <span className="ms-spinner" />
                     {isClient ? "Sending link…" : "Verifying…"}
                   </>
-                ) : isClient ? (
-                  "Send Access Link"
                 ) : (
-                  "Continue Securely"
+                  ROLE_HINTS[role].cta
                 )}
               </button>
             </form>
