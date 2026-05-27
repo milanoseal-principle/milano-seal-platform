@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 const VA_ROLES = new Set([
   "virtual_assistant",
+  "va_manager",
   "intake_assistant",
   "scheduling_assistant",
   "document_coordinator",
