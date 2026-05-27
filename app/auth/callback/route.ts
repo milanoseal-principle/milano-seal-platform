@@ -25,19 +25,19 @@ export async function GET(request: Request) {
     ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   // Virtual assistants → VA portal
-  if (
-    actualRole === "virtual_assistant" ||
-    [
-      "intake_assistant", "scheduling_assistant", "document_coordinator",
-      "translation_coordinator", "courier_assistant", "followup_coordinator",
-      "alliance_support_assistant", "escalation_assistant",
-    ].includes(actualRole)
-  ) {
+  if ([
+    "virtual_assistant", "va_manager",
+    "intake_assistant", "scheduling_assistant", "document_coordinator",
+    "translation_coordinator", "courier_assistant", "followup_coordinator",
+    "alliance_support_assistant", "escalation_assistant",
+  ].includes(actualRole)) {
     return NextResponse.redirect(`${origin}/va/dashboard`);
   }
 
-  // Alliance partners and field operators → alliance portal
-  if (actualRole === "alliance_partner" || actualRole === "operator") {
+  // Alliance roles → alliance portal
+  if ([
+    "alliance", "alliance_partner", "alliance_member", "operator"
+  ].includes(actualRole)) {
     return NextResponse.redirect(`${origin}/alliance/dashboard`);
   }
 
@@ -48,7 +48,8 @@ export async function GET(request: Request) {
         nextOverride.startsWith("/dashboard") ||
         nextOverride.startsWith("/portal") ||
         nextOverride.startsWith("/admin") ||
-        nextOverride.startsWith("/alliance");
+        nextOverride.startsWith("/alliance") ||
+        nextOverride.startsWith("/va");
       if (safe) return NextResponse.redirect(`${origin}${nextOverride}`);
     }
     return NextResponse.redirect(`${origin}/dashboard`);
@@ -76,5 +77,6 @@ export async function GET(request: Request) {
     } catch {}
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  // No matching role — reject with invalid_role
+  return NextResponse.redirect(`${origin}/login?error=invalid_role`);
 }
