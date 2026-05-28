@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import Link from "next/link";
+import { Lock, ArrowRight } from "lucide-react";
 
 const steps = [
   {
@@ -9,12 +10,14 @@ const steps = [
     title: "Submit Your Matter",
     description:
       "Provide document details and destination requirements through our secure intake process.",
+    href: "/intake",
   },
   {
     number: "02",
     title: "Compliance Review",
     description:
       "Jurisdiction requirements are validated and the optimal execution path is determined.",
+    href: "/process#compliance-review",
   },
   {
     number: "03",
@@ -22,24 +25,28 @@ const steps = [
     description:
       "No matter is scheduled or executed until scope is confirmed and payment is complete.",
     highlight: true,
+    href: "/process#payment-gate",
   },
   {
     number: "04",
     title: "Document Execution",
     description:
       "Your documents are executed with precision, recorded, and sealed according to Florida law.",
+    href: "/process#execution",
   },
   {
     number: "05",
     title: "Chain-of-Custody Visibility",
     description:
       "Apostille coordination and structured international release handled through proper authority channels.",
+    href: "/process#custody",
   },
   {
     number: "06",
     title: "Structured International Release",
     description:
       "Receive your executed documents digitally and physically, ready for international use.",
+    href: "/process#release",
   },
 ];
 
@@ -78,25 +85,29 @@ export function HowItWorks() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative group"
             >
-              <div className={`bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover${(step as { highlight?: boolean }).highlight ? " border-[#C6A55A]/25 bg-[#0D0B08]" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}>
-                {/* Step number + optional lock icon for payment gate */}
+              <Link
+                href={step.href}
+                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover${step.highlight ? " border-[#C6A55A]/25 bg-[#0D0B08] hover:border-[#C6A55A]/50" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}
+              >
                 <div className="flex items-start justify-between">
                   <span className="font-serif text-4xl font-medium text-[#C6A55A]/20 group-hover:text-[#C6A55A]/40 transition-colors duration-300">
                     {step.number}
                   </span>
-                  {(step as { highlight?: boolean }).highlight && (
-                    <Lock className="ms-lock-icon w-4 h-4 text-[#C6A55A] mt-2 opacity-70" />
-                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    {step.highlight && (
+                      <Lock className="ms-lock-icon w-4 h-4 text-[#C6A55A] opacity-70" />
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5 text-[#C6A55A]/20 group-hover:text-[#C6A55A]/60 transition-all duration-300 group-hover:translate-x-0.5" />
+                  </div>
                 </div>
 
-                {/* Content */}
-                <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3">
+                <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3 group-hover:text-[#C6A55A] transition-colors duration-300">
                   {step.title}
                 </h3>
                 <p className="text-[#B0B0B0] text-sm leading-relaxed">
                   {step.description}
                 </p>
-              </div>
+              </Link>
 
               {/* Connector line (hidden on mobile) */}
               {index < steps.length - 1 && (index + 1) % 3 !== 0 && (
