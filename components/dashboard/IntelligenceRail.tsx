@@ -9,12 +9,12 @@ const STRATEGIC_CORRIDORS = [
   { origin: "Florida", destination: "Italy",           workflow: "Hague Route Validated",                    proceduralState: "Apostille Active" },
   { origin: "Florida", destination: "United Arab Emirates", workflow: "Consular Authentication Workflow",    proceduralState: "Embassy Processing" },
   { origin: "Florida", destination: "Brazil",          workflow: "Document Authentication Sequence",         proceduralState: "Registry Alignment" },
-  { origin: "Florida", destination: "United Kingdom",  workflow: "Hague Apostille Track",                    proceduralState: "Solicitor Sign-Off" },
-  { origin: "Florida", destination: "Spain",           workflow: "Bilateral Protocol Verification",          proceduralState: "Abogado Liaison Active" },
+  { origin: "Florida", destination: "United Kingdom",  workflow: "Hague Apostille Track",                    proceduralState: "UK Receiving Authority Review" },
+  { origin: "Florida", destination: "Spain",           workflow: "Bilateral Protocol Verification",          proceduralState: "Spanish Authority Review" },
   { origin: "Florida", destination: "Japan",           workflow: "Ministry of Foreign Affairs Track",        proceduralState: "Authentication Confirmed" },
-  { origin: "Florida", destination: "Portugal",        workflow: "Sovereign Legalization Track",             proceduralState: "Advogado Validation" },
-  { origin: "Florida", destination: "France",          workflow: "European Civil Code Alignment",            proceduralState: "Avocat Verification" },
-  { origin: "Florida", destination: "Germany",         workflow: "Federal Authority Attestation",            proceduralState: "Rechtsanwalt Clearance" },
+  { origin: "Florida", destination: "Portugal",        workflow: "Sovereign Legalization Track",             proceduralState: "Portuguese Authority Review" },
+  { origin: "Florida", destination: "France",          workflow: "European Civil Code Alignment",            proceduralState: "French Authority Review" },
+  { origin: "Florida", destination: "Germany",         workflow: "Federal Authority Attestation",            proceduralState: "German Authority Review" },
   { origin: "Florida", destination: "Greece",          workflow: "Hague Consular Validation",                proceduralState: "Protocol Instantiated" },
   { origin: "Florida", destination: "Mexico",          workflow: "Notarial Protocol Integration",            proceduralState: "Apostille Validated" },
   { origin: "Florida", destination: "Canada",          workflow: "Global Affairs Authentication",            proceduralState: "Federal Attestation" },
@@ -104,7 +104,7 @@ export function IntelligenceRail() {
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-          <span>Intel</span>
+          <span>Global Document Intel</span>
         </div>
         <div className="flex items-center gap-1 text-[#888]">
           <span>FL</span>

@@ -13,12 +13,14 @@ import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
+import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <RitualOverlay />
       <Header />
+      <IntelligenceRail />
       <CinematicStage>
         <Hero />
         <TrustStrip />
