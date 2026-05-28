@@ -27,7 +27,9 @@ export function OperatorPaymentBadge({ matterId }: { matterId: string }) {
     const supabase = createClient();
     const { data } = await supabase
       .from("payments")
-      .select("*")
+      .select(
+        "id, matter_id, wise_reference, payment_type, payment_amount, payment_currency, payment_status, payment_confirmed, payer_name, paid_at, created_at",
+      )
       .eq("matter_id", matterId)
       .order("created_at", { ascending: false });
     setPayments((data ?? []) as PaymentRow[]);
