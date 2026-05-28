@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Shield, Circle } from "lucide-react";
@@ -20,6 +20,15 @@ const VA_NAV = [
   { href: "/va/dashboard?tab=sops", label: "SOP Library", group: "SUPPORT" },
   { href: "/va/dashboard?tab=escalations", label: "Escalations", group: "SUPPORT" },
 ];
+
+const VA_RITUAL_STEPS = [
+  "Preparing Coordination Workspace...",
+  "Loading Assigned Task Queue...",
+  "Syncing Follow-Up Operations...",
+  "Reviewing Pending Intake Actions...",
+  "Preparing Restricted Task Workspace...",
+];
+const VA_RITUAL_KEY = "ms_va_ritual_seen";
 
 const NAV_GROUPS = Array.from(
   VA_NAV.reduce((map, item) => {
@@ -47,6 +56,28 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
+  const [ritualDone, setRitualDone] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return !!sessionStorage.getItem(VA_RITUAL_KEY);
+  });
+  const [ritualStep, setRitualStep] = useState(0);
+
+  useEffect(() => {
+    if (ritualDone) return;
+    let i = 0;
+    const advance = () => {
+      if (i >= VA_RITUAL_STEPS.length) {
+        sessionStorage.setItem(VA_RITUAL_KEY, "1");
+        setTimeout(() => setRitualDone(true), 300);
+        return;
+      }
+      setRitualStep(i + 1);
+      i++;
+      setTimeout(advance, 380);
+    };
+    setTimeout(advance, 200);
+  }, [ritualDone]);
+
   const isActive = (href: string) => {
     const url = new URL(href, "http://x");
     const tab = url.searchParams.get("tab");
@@ -62,6 +93,79 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
       className="min-h-screen flex flex-col"
       style={{ background: "rgba(8,5,1,0.99)" }}
     >
+      {/* VA Entry Ritual — session-once */}
+      <AnimatePresence>
+        {!ritualDone && (
+          <motion.div
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
+            style={{
+              background: "rgba(8,5,1,0.98)",
+              paddingTop: "var(--sa-top, 0px)",
+              paddingBottom: "var(--sa-bottom, 0px)",
+            }}
+          >
+            <div className="flex flex-col items-center w-full max-w-[280px] px-6 select-none">
+              <div
+                className="mb-6 text-center"
+                style={{ fontFamily: "var(--font-playfair),Georgia,serif", fontSize: 15, color: "rgba(255,255,255,0.75)", letterSpacing: "0.03em" }}
+              >
+                The Milano Seal™
+              </div>
+              <div
+                className="mb-6 text-center font-mono text-[8px] tracking-[0.26em] uppercase"
+                style={{ color: "rgba(212,175,55,0.35)" }}
+              >
+                VA ENVIRONMENT
+              </div>
+              <div className="w-full space-y-0">
+                {VA_RITUAL_STEPS.map((label, idx) => {
+                  const isDone = ritualStep > idx;
+                  const isCurrent = ritualStep === idx;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3"
+                      style={{
+                        padding: "7px 0",
+                        borderBottom: idx < VA_RITUAL_STEPS.length - 1 ? "1px solid rgba(212,175,55,0.05)" : "none",
+                        opacity: idx > ritualStep ? 0.12 : 1,
+                        transition: "opacity 0.25s ease",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          border: isDone ? "1px solid rgba(212,175,55,0.4)" : isCurrent ? "1px solid rgba(212,175,55,0.55)" : "1px solid rgba(255,255,255,0.06)",
+                          background: isDone ? "rgba(212,175,55,0.1)" : "transparent",
+                        }}
+                      >
+                        {isDone && <span style={{ color: "#C6A55A", fontSize: 8, fontWeight: 700 }}>✓</span>}
+                        {isCurrent && (
+                          <motion.div
+                            animate={{ opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                            style={{ width: 4, height: 4, borderRadius: "50%", background: "#C6A55A" }}
+                          />
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 11, color: isDone ? "rgba(255,255,255,0.4)" : isCurrent ? "#fff" : "rgba(255,255,255,0.2)",
+                        letterSpacing: "0.015em",
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Topbar */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-6 py-3"

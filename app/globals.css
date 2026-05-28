@@ -1288,6 +1288,39 @@ h4 {
   }
 }
 
+/* ── Ritual overlay — mobile fixes ─────────────────────────── */
+@media (max-width: 640px) {
+  .ritual-overlay__inner {
+    padding: 16px;
+    gap: 16px;
+  }
+  .ritual-overlay__seal-wrap {
+    transform: scale(0.70);
+  }
+  .ritual-overlay__seal-area {
+    margin-bottom: -12px;
+  }
+  .ritual-overlay__wordmark {
+    font-size: 18px;
+  }
+  .ritual-overlay__tagline {
+    font-size: 10px;
+  }
+  .ritual-overlay__status {
+    font-size: 11px;
+  }
+  .ritual-overlay__section {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .ritual-overlay__list {
+    gap: 6px;
+  }
+  .ritual-overlay__item {
+    font-size: 10px;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════
    KEYFRAMES — vault lock sequence
    ══════════════════════════════════════════════════════════════ */

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { AllianceEntryRitual } from "@/components/alliance/AllianceEntryRitual";
 import { PhantomGraphIndicator } from "@/components/alliance/phantom-graph-indicator";
 import {
   evaluateRoutingEligibility,
@@ -117,6 +118,7 @@ export default async function AllianceDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <AllianceEntryRitual />
       {/* Welcome + Eligibility */}
       <div className="ap-card ap-card-body flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
