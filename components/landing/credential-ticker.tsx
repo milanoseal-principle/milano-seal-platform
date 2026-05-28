@@ -1,15 +1,16 @@
 "use client";
 
-import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
+import { Shield, Globe, FileCheck, Layers, Navigation, MapPin, Compass } from "lucide-react";
 
 const ITEMS = [
-  { icon: Shield,     label: "FLORIDA NOTARY #668288 // COMMISSION ACTIVE" },
-  { icon: Globe,      label: "HAGUE CONVENTION ROUTING // 21+ JURISDICTIONS INDEXED" },
-  { icon: Video,      label: "REMOTE ONLINE NOTARIZATION // SECURE SESSION AVAILABLE" },
-  { icon: FileCheck,  label: "FLORIDA DEPT OF STATE // APOSTILLE ROUTE ACTIVE" },
-  { icon: Users,      label: "USCIS DOCUMENT SUPPORT // PACKAGE REVIEW AVAILABLE" },
-  { icon: Layers,     label: "MATTER REVIEW // 1-BUSINESS-DAY RESPONSE WINDOW" },
-  { icon: Navigation, label: "TALLAHASSEE DISPATCH // FIELD MOBILIZATION AVAILABLE" },
+  { icon: Globe,      label: "FLORIDA → ITALY // APOSTILLE VALIDATION ACTIVE" },
+  { icon: Navigation, label: "FLORIDA → SPAIN // HAGUE ROUTE REVIEW" },
+  { icon: Compass,    label: "FLORIDA → UAE // CONSULAR AUTHENTICATION WORKFLOW" },
+  { icon: MapPin,     label: "FLORIDA → BRAZIL // DOCUMENT AUTHENTICATION SEQUENCE" },
+  { icon: Globe,      label: "FLORIDA → GREECE // STRUCTURED RELEASE PATH" },
+  { icon: Shield,     label: "PAYMENT-GATED EXECUTION // CHAIN-OF-CUSTODY VISIBILITY" },
+  { icon: FileCheck,  label: "DESTINATION VALIDATION ACTIVE // HAGUE ROUTE REVIEW" },
+  { icon: Layers,     label: "STRUCTURED RELEASE WORKFLOW // CROSS-BORDER COORDINATION" },
 ];
 
 export function CredentialTicker() {
