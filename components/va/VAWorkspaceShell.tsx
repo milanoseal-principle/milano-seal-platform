@@ -3,15 +3,36 @@
 import { ReactNode, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Shield, Search, Circle } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Shield, Circle } from "lucide-react";
 
 const VA_NAV = [
-  { href: "/va/dashboard", label: "Workspace" },
+  // TASKS
+  { href: "/va/dashboard", label: "My Tasks", group: "TASKS" },
+  { href: "/va/dashboard?tab=follow-ups", label: "Follow-Ups", group: "TASKS" },
+  { href: "/va/dashboard?tab=intake", label: "Intake Support", group: "TASKS" },
+  // COORDINATION
+  { href: "/va/dashboard?tab=scheduling", label: "Scheduling", group: "COORDINATION" },
+  { href: "/va/dashboard?tab=documents", label: "Documents", group: "COORDINATION" },
+  { href: "/va/dashboard?tab=translation", label: "Translation Flags", group: "COORDINATION" },
+  { href: "/va/dashboard?tab=courier", label: "Courier Follow-Up", group: "COORDINATION" },
+  // SUPPORT
+  { href: "/va/dashboard?tab=sops", label: "SOP Library", group: "SUPPORT" },
+  { href: "/va/dashboard?tab=escalations", label: "Escalations", group: "SUPPORT" },
 ];
+
+const NAV_GROUPS = Array.from(
+  VA_NAV.reduce((map, item) => {
+    if (!map.has(item.group)) map.set(item.group, []);
+    map.get(item.group)!.push(item);
+    return map;
+  }, new Map<string, typeof VA_NAV>())
+);
 
 export function VAWorkspaceShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const [utcTime, setUtcTime] = useState("");
 
   useEffect(() => {
@@ -25,6 +46,16 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  const isActive = (href: string) => {
+    const url = new URL(href, "http://x");
+    const tab = url.searchParams.get("tab");
+    if (tab) {
+      return pathname === url.pathname && currentTab === tab;
+    }
+    // Base dashboard link is active only when no tab is selected
+    return pathname === url.pathname && !currentTab;
+  };
 
   return (
     <div
@@ -66,16 +97,53 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        {/* Desktop Nav — grouped */}
+        <nav className="hidden md:flex items-center gap-4">
+          {NAV_GROUPS.map(([groupLabel, items]) => (
+            <div key={groupLabel} className="flex items-center gap-1">
+              {/* Group label separator */}
+              <span
+                className="text-[8px] font-mono tracking-[0.2em] mr-1"
+                style={{ color: "rgba(212,175,55,0.3)" }}
+              >
+                {groupLabel}
+              </span>
+              {items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="px-3 py-1.5 rounded-sm text-[11px] font-mono tracking-wider transition-colors"
+                    style={{
+                      color: active
+                        ? "rgba(212,175,55,0.85)"
+                        : "rgba(255,255,255,0.35)",
+                      background: active
+                        ? "rgba(212,175,55,0.06)"
+                        : "transparent",
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Mobile Nav — horizontal scrollable strip (no group headers) */}
+        <nav
+          className="flex md:hidden items-center gap-1 overflow-x-auto"
+          style={{ maxWidth: "60vw" }}
+        >
           {VA_NAV.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-3 py-1.5 rounded-sm text-[11px] font-mono tracking-wider transition-colors"
+                className="px-3 py-1.5 rounded-sm text-[11px] font-mono tracking-wider transition-colors whitespace-nowrap flex-shrink-0"
                 style={{
                   color: active
                     ? "rgba(212,175,55,0.85)"
