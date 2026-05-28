@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const { data: record } = await supabase
       .from("portal_otps")
-      .select("*")
+      .select("id, deal_id, email, otp, expires_at, used")
       .eq("deal_id", deal.id)
       .eq("email", email.toLowerCase().trim())
       .eq("used", false)

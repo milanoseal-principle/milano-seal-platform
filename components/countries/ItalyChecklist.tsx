@@ -139,6 +139,12 @@ export function ItalyChecklist({
             </p>
           </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-[#1E1E1E]">
+          <p className="text-[9px] text-gray-600 leading-relaxed">
+            I am not an attorney. Legal services are provided by Demesmin &amp; Dover PLLC.
+          </p>
+        </div>
       </div>
     </div>
   );

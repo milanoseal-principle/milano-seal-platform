@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("messages")
-    .select("*")
+    .select("id, deal_id, content, sender_role, sender_name, direction, channel, created_at")
     .eq("deal_id", ctx.deal.id)
     .order("created_at", { ascending: true });
 
