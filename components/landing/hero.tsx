@@ -7,6 +7,50 @@ import { useRef, useEffect, useState } from "react";
 import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 
+const INIT_PHRASES = [
+  "Initializing International Execution Environment...",
+  "Reviewing Cross-Border Routing Requirements...",
+  "Preparing Protected Matter Coordination...",
+];
+
+function HomepageMicroInit() {
+  const [phraseIdx, setPhraseIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    timers.push(setTimeout(() => setPhraseIdx(1), 1400));
+    timers.push(setTimeout(() => setPhraseIdx(2), 2300));
+    timers.push(setTimeout(() => setVisible(false), 3200));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: visible ? 1 : 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6 }}
+      className="absolute top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+      style={{ whiteSpace: "nowrap" }}
+    >
+      <motion.span
+        key={phraseIdx}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 0.45, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
+        className="font-mono text-[9px] tracking-[0.22em] uppercase"
+        style={{ color: "rgba(212,175,55,0.55)" }}
+      >
+        {INIT_PHRASES[phraseIdx]}
+      </motion.span>
+    </motion.div>
+  );
+}
+
 function useHeroReveal(delays: number[]) {
   const [visible, setVisible] = useState<boolean[]>(() =>
     Array(delays.length).fill(false)
@@ -59,6 +103,7 @@ export function Hero() {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/[0.025] rounded-full blur-3xl" />
       </motion.div>
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/30 to-transparent" />
+      <HomepageMicroInit />
 
       <motion.div
         style={{ opacity }}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, ArrowRight, Globe, X } from "lucide-react";
+import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
@@ -22,12 +22,54 @@ const GlobalIntelMapInteractive = dynamic(
 
 const TEASER_LIMIT = 8;
 
+type AudienceKey = "Attorneys" | "Businesses" | "Real Estate" | "Medical Providers" | "International Clients" | "Private Clients";
+
+const AUDIENCE_CONFIG: Record<AudienceKey, { Icon: React.ElementType; label: string }> = {
+  "Attorneys":            { Icon: Scale,       label: "Attorneys" },
+  "Businesses":           { Icon: Building2,   label: "Businesses" },
+  "Real Estate":          { Icon: Home,         label: "Real Estate" },
+  "Medical Providers":    { Icon: HeartPulse,   label: "Medical Providers" },
+  "International Clients":{ Icon: Globe2,       label: "International Clients" },
+  "Private Clients":      { Icon: UserRound,    label: "Private Clients" },
+};
+
+const DESTINATION_REGIONS: Record<string, string> = {
+  italy: "Europe", spain: "Europe", greece: "Europe", germany: "Europe",
+  portugal: "Europe", france: "Europe", "united-kingdom": "Europe",
+  netherlands: "Europe", belgium: "Europe", switzerland: "Europe",
+  austria: "Europe", poland: "Europe", romania: "Europe",
+  sweden: "Europe", norway: "Europe", turkey: "Europe",
+  brazil: "Americas", mexico: "Americas", argentina: "Americas",
+  colombia: "Americas", chile: "Americas", peru: "Americas",
+  uruguay: "Americas", ecuador: "Americas", panama: "Americas",
+  "dominican-republic": "Americas", venezuela: "Americas",
+  uae: "Middle East", israel: "Middle East", "saudi-arabia": "Middle East",
+  morocco: "Africa", "south-africa": "Africa", senegal: "Africa",
+  mauritius: "Africa",
+  japan: "Asia Pacific", australia: "Asia Pacific", "south-korea": "Asia Pacific",
+  india: "Asia Pacific", singapore: "Asia Pacific", philippines: "Asia Pacific",
+  "new-zealand": "Asia Pacific",
+};
+
+const REGION_TABS = ["All", "Europe", "Americas", "Middle East", "Asia Pacific"] as const;
+type RegionTab = typeof REGION_TABS[number];
+
+const REGION_FLY_TARGETS: Partial<Record<RegionTab, { lat: number; lng: number; zoom: number }>> = {
+  "Europe":       { lat: 50, lng: 15, zoom: 4 },
+  "Americas":     { lat: 5, lng: -75, zoom: 3 },
+  "Middle East":  { lat: 26, lng: 50, zoom: 4 },
+  "Asia Pacific": { lat: 20, lng: 115, zoom: 4 },
+};
+
 export function GlobalMap() {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
+  const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
+  const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
 
-  const teaser = [...DESTINATIONS]
-    .sort((a, b) => (b.demand || 0) - (a.demand || 0))
-    .slice(0, TEASER_LIMIT);
+  const allSorted = [...DESTINATIONS].sort((a, b) => (b.demand || 0) - (a.demand || 0));
+  const teaser = activeRegion === "All"
+    ? allSorted.slice(0, TEASER_LIMIT)
+    : allSorted.filter(d => DESTINATION_REGIONS[d.slug] === activeRegion).slice(0, TEASER_LIMIT);
 
   return (
     <motion.section
@@ -116,6 +158,7 @@ export function GlobalMap() {
               <GlobalIntelMapInteractive
                 onSelect={setSelectedDest}
                 selectedDest={selectedDest}
+                externalFlyTarget={mapFlyTarget}
               />
             </div>
 
@@ -212,6 +255,32 @@ export function GlobalMap() {
                       </div>
                     )}
 
+                    {/* Common use cases */}
+                    {selectedDest.audiences && selectedDest.audiences.length > 0 && (
+                      <div className="mb-4">
+                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2.5">
+                          COMMON USE CASES
+                        </span>
+                        <div className="flex flex-wrap gap-x-3 gap-y-2">
+                          {selectedDest.audiences.map((aud) => {
+                            const cfg = AUDIENCE_CONFIG[aud as AudienceKey];
+                            if (!cfg) return null;
+                            const { Icon, label } = cfg;
+                            return (
+                              <div key={aud} className="flex items-center gap-1.5">
+                                <Icon size={10} style={{ color: "rgba(198,165,90,0.5)", flexShrink: 0 }} />
+                                <span className="font-mono text-[9px] text-[#555] tracking-wide">{label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {/* Disclaimer */}
+                    <p className="font-mono text-[8px] text-[#333] leading-relaxed mb-4">
+                      Procedural guidance only. Requirements confirmed with receiving authority before execution.
+                    </p>
+
                     {/* Execution CTA */}
                     <Link
                       href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
@@ -241,6 +310,34 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
+        {/* Region filter tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="flex items-center gap-2 mb-4 overflow-x-auto pb-1"
+        >
+          {REGION_TABS.map((region) => (
+            <button
+              key={region}
+              onClick={() => {
+                setActiveRegion(region);
+                if (region !== "All" && REGION_FLY_TARGETS[region]) {
+                  setMapFlyTarget(REGION_FLY_TARGETS[region]!);
+                }
+              }}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-sm font-mono text-[9px] tracking-[0.18em] uppercase transition-all duration-200 border ${
+                activeRegion === region
+                  ? "border-[#C6A55A]/40 text-[#C6A55A] bg-[#C6A55A]/[0.06]"
+                  : "border-white/[0.05] text-[#444] hover:border-white/[0.1] hover:text-[#666]"
+              }`}
+            >
+              {region}
+            </button>
+          ))}
+        </motion.div>
+
         {/* Dense destination token grid */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -263,7 +360,13 @@ export function GlobalMap() {
             {teaser.map((d) => (
               <button
                 key={d.slug}
-                onClick={() => setSelectedDest(selectedDest?.slug === d.slug ? null : d)}
+                onClick={() => {
+                  const next = selectedDest?.slug === d.slug ? null : d;
+                  setSelectedDest(next);
+                  if (next?.lat && next?.lng) {
+                    setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 });
+                  }
+                }}
                 className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-200 focus:outline-none ${
                   selectedDest?.slug === d.slug
                     ? "bg-[#C6A55A]/[0.05]"
