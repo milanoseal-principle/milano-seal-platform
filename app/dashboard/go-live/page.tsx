@@ -407,9 +407,9 @@ export default function GoLivePage() {
             <div className="divide-y divide-[#1A1A1A]">
               {[
                 {
-                  label: "Migrations 001–007 applied in sequence",
+                  label: "Migrations 001–008 applied in sequence",
                   detail:
-                    "001_initial_schema → 002_rls → 003_va_tasks → 004_sops → 005_audit_events → 006_operational → 007_loss_relationship",
+                    "001_initial_schema → 002_rls → 003_va_tasks → 004_sops → 005_audit_events → 006_operational → 007_loss_relationship → 008_missing_views_and_tables",
                 },
                 {
                   label: "client_safe_matter_view exists and is queryable",
@@ -552,7 +552,7 @@ export default function GoLivePage() {
             <ul className="space-y-1.5 ml-7">
               {[
                 "Vercel environment variables set in Production",
-                "Supabase migrations 001–007 applied in sequence",
+                "Supabase migrations 001–008 applied in sequence",
                 "client_safe_matter_view and client_safe_timeline_view exist",
                 "Wise webhook registered at production URL",
                 "Shippo webhook registered at production URL",
@@ -565,6 +565,98 @@ export default function GoLivePage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* F: Final Deployment Order */}
+          <div className="bg-[#0D0D0D] border border-[#C6A55A]/20 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1E1E1E]">
+              <span className="inline-flex p-1.5 rounded bg-[#1A1A1A]">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A55A]" />
+              </span>
+              <span className="text-xs font-mono tracking-widest uppercase text-[#8A8A8A]">
+                F — Final Deployment Order
+              </span>
+              <span className="ml-auto text-[8px] font-mono text-[#C6A55A] tracking-widest">
+                EXECUTE IN SEQUENCE
+              </span>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-[10px] text-gray-600 mb-4 font-mono leading-relaxed">
+                Complete every step in order. Do not advance to the next step
+                until the current step is confirmed. Env var changes do not apply
+                to the live deployment until Vercel redeploys.
+              </p>
+              <ol className="space-y-3">
+                {[
+                  {
+                    step: "1",
+                    action: "Vercel → set CRON_SECRET",
+                    note: "Project Settings → Environment Variables → Production",
+                  },
+                  {
+                    step: "2",
+                    action: "Supabase → run migrations 001–008 in order",
+                    note: "SQL Editor → New Query → paste and run each file in sequence",
+                  },
+                  {
+                    step: "3",
+                    action: "Supabase → confirm the following exist",
+                    note: null,
+                    checks: [
+                      "webhook_events table",
+                      "client_safe_matter_view",
+                      "client_safe_timeline_view",
+                      "deals.carrier column",
+                      "deals.delivery_status column",
+                      "deals.delivery_eta column",
+                    ],
+                  },
+                  {
+                    step: "4",
+                    action: "Vercel → trigger production redeploy",
+                    note: "Required — env var changes are not live until the project redeploys",
+                  },
+                  {
+                    step: "5",
+                    action: "Re-run 13-route smoke test",
+                    note: "Use the route list in Section D above",
+                  },
+                  {
+                    step: "6",
+                    action: "Return only failures in structured format",
+                    note: null,
+                    code: "ROUTE:\nEXPECTED:\nACTUAL:",
+                  },
+                ].map((item) => (
+                  <li key={item.step} className="flex items-start gap-4">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#C6A55A]/10 border border-[#C6A55A]/30 flex items-center justify-center text-[9px] font-mono font-bold text-[#C6A55A]">
+                      {item.step}
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <p className="text-sm text-white font-medium">{item.action}</p>
+                      {item.note && (
+                        <p className="text-xs text-gray-600 mt-0.5">{item.note}</p>
+                      )}
+                      {"checks" in item && item.checks && (
+                        <ul className="mt-2 space-y-1">
+                          {item.checks.map((check) => (
+                            <li key={check} className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
+                              <span className="w-1 h-1 rounded-full bg-[#C6A55A]/50 flex-shrink-0" />
+                              {check}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {"code" in item && item.code && (
+                        <pre className="mt-2 text-[10px] font-mono text-gray-500 bg-[#0A0A0A] border border-[#1A1A1A] rounded px-3 py-2 leading-relaxed whitespace-pre">
+                          {item.code}
+                        </pre>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
 
         </div>
