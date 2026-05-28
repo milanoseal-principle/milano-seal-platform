@@ -5,6 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Shield, Globe, FileCheck } from "lucide-react";
 
+const PRIMARY_SOCIALS = [
+  { label: "View LinkedIn",       url: "https://www.linkedin.com/in/mr-nickmilano/" },
+  { label: "Follow on Instagram", url: "https://www.instagram.com/mr.nickmilano" },
+  { label: "Read Google Reviews", url: "https://share.google/IzX9DLwBp0bZTd09I" },
+];
+const SECONDARY_SOCIALS = [
+  { label: "Facebook", url: "https://www.facebook.com/share/1JRqXU984M/?mibextid=wwXIfr" },
+];
+
 export const metadata: Metadata = {
   title: "Nicholas Milano — U.S. International Document Execution Liaison",
   description:
@@ -64,6 +73,33 @@ export default function FounderPage() {
                     >
                       {c}
                     </span>
+                  ))}
+                </div>
+
+                {/* Social trust chips */}
+                <div className="flex flex-wrap gap-2 mt-6">
+                  {PRIMARY_SOCIALS.map((chip) => (
+                    <a
+                      key={chip.url}
+                      href={chip.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] hover:border-[#D4AF37]/40 transition-all duration-300"
+                    >
+                      <span className="h-1 w-1 rounded-full bg-[#C6A55A]/70" />
+                      {chip.label}
+                    </a>
+                  ))}
+                  {SECONDARY_SOCIALS.map((chip) => (
+                    <a
+                      key={chip.url}
+                      href={chip.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#4A4A4A] hover:text-[#7A7A7A] transition-colors duration-300"
+                    >
+                      {chip.label}
+                    </a>
                   ))}
                 </div>
               </div>

@@ -11,6 +11,16 @@ const CREDENTIALS = [
   { icon: Landmark,    text: "Florida Notary Commission #668288" },
 ];
 
+const PRIMARY_SOCIALS = [
+  { label: "View LinkedIn",       url: "https://www.linkedin.com/in/mr-nickmilano/" },
+  { label: "Follow on Instagram", url: "https://www.instagram.com/mr.nickmilano" },
+  { label: "Read Google Reviews", url: "https://share.google/IzX9DLwBp0bZTd09I" },
+];
+
+const SECONDARY_SOCIALS = [
+  { label: "Facebook", url: "https://www.facebook.com/share/1JRqXU984M/?mibextid=wwXIfr" },
+];
+
 const section = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
@@ -64,10 +74,18 @@ export function PaymentFounder() {
         {/* Card */}
         <motion.div
           variants={fadeUp}
-          className="relative rounded-2xl overflow-hidden border border-[#C6A55A]/25"
+          className="relative rounded-2xl overflow-hidden border border-[#C6A55A]/25 group"
           style={{ background: "linear-gradient(145deg, #0D0D0D 0%, #080806 60%, #0A0908 100%)" }}
         >
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/60 to-transparent" />
+          {/* Single-pass gold border sweep on viewport entry */}
+          <motion.div
+            initial={{ x: "-100%" }}
+            whileInView={{ x: "100%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] as const, delay: 0.3 }}
+            className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent pointer-events-none z-10"
+          />
 
           <div className="flex flex-col md:flex-row">
             {/* Photo — slides in from left */}
@@ -134,6 +152,54 @@ export function PaymentFounder() {
                   </motion.li>
                 ))}
               </ul>
+
+              {/* Founder-Led Execution trust copy */}
+              <motion.div variants={fadeUp} className="mb-3">
+                <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
+                  Founder-Led Execution // Personally Overseen
+                </span>
+                <p className="text-[#B0B0B0] text-sm font-light leading-relaxed mb-2">
+                  Nicholas Milano leads The Milano Seal™ with a focus on precision, privacy, and
+                  international success. He personally oversees apostille coordination, international
+                  document execution, mobile notary requests, witness coordination, and secure release
+                  workflows.
+                </p>
+                <p className="text-[#6A6A6A] text-xs font-light leading-relaxed">
+                  Serving clients, attorneys, businesses, real estate professionals, healthcare
+                  providers, and private clients worldwide.
+                </p>
+              </motion.div>
+
+              {/* Social trust chips */}
+              <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-8">
+                {PRIMARY_SOCIALS.map((chip) => (
+                  <motion.a
+                    key={chip.url}
+                    href={chip.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ y: -2, borderColor: "rgba(212,175,55,0.45)" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] transition-colors duration-300"
+                  >
+                    <span className="h-1 w-1 rounded-full bg-[#C6A55A]/70 flex-shrink-0" />
+                    {chip.label}
+                  </motion.a>
+                ))}
+                {SECONDARY_SOCIALS.map((chip) => (
+                  <motion.a
+                    key={chip.url}
+                    href={chip.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ y: -1, borderColor: "rgba(255,255,255,0.15)" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#4A4A4A] hover:text-[#7A7A7A] transition-colors duration-300"
+                  >
+                    {chip.label}
+                  </motion.a>
+                ))}
+              </motion.div>
 
               <motion.div variants={fadeIn} className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#C6A55A]/20" />
