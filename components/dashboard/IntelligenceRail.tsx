@@ -2,26 +2,34 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+// Countries with dedicated /countries/[slug] authority pages
+const COUNTRY_PAGES = new Set(["italy", "spain", "germany", "portugal", "uae", "mexico"]);
+
+function countryPath(slug: string) {
+  return COUNTRY_PAGES.has(slug) ? `/countries/${slug}` : `/apostille/${slug}`;
+}
+
 const STRATEGIC_CORRIDORS = [
-  { origin: "Florida", destination: "Italy",           workflow: "Hague Route Validated",                    proceduralState: "Apostille Active" },
-  { origin: "Florida", destination: "United Arab Emirates", workflow: "Consular Authentication Workflow",    proceduralState: "Embassy Processing" },
-  { origin: "Florida", destination: "Brazil",          workflow: "Document Authentication Sequence",         proceduralState: "Registry Alignment" },
-  { origin: "Florida", destination: "United Kingdom",  workflow: "Hague Apostille Track",                    proceduralState: "UK Receiving Authority Review" },
-  { origin: "Florida", destination: "Spain",           workflow: "Bilateral Protocol Verification",          proceduralState: "Spanish Authority Review" },
-  { origin: "Florida", destination: "Japan",           workflow: "Ministry of Foreign Affairs Track",        proceduralState: "Authentication Confirmed" },
-  { origin: "Florida", destination: "Portugal",        workflow: "Sovereign Legalization Track",             proceduralState: "Portuguese Authority Review" },
-  { origin: "Florida", destination: "France",          workflow: "European Civil Code Alignment",            proceduralState: "French Authority Review" },
-  { origin: "Florida", destination: "Germany",         workflow: "Federal Authority Attestation",            proceduralState: "German Authority Review" },
-  { origin: "Florida", destination: "Greece",          workflow: "Hague Consular Validation",                proceduralState: "Protocol Instantiated" },
-  { origin: "Florida", destination: "Mexico",          workflow: "Notarial Protocol Integration",            proceduralState: "Apostille Validated" },
-  { origin: "Florida", destination: "Canada",          workflow: "Global Affairs Authentication",            proceduralState: "Federal Attestation" },
-  { origin: "Florida", destination: "Argentina",       workflow: "Ministry of Foreign Affairs Verification", proceduralState: "Escribano Verification" },
-  { origin: "Florida", destination: "Saudi Arabia",    workflow: "Consular Legalization Protocol",           proceduralState: "Ministry Clearance" },
-  { origin: "Florida", destination: "Australia",       workflow: "DFAT Apostille Verification",              proceduralState: "International Release" },
-  { origin: "Florida", destination: "Philippines",     workflow: "DFA Departmental Authentication",          proceduralState: "Authentication Complete" },
+  { origin: "Florida", destination: "Italy",               slug: "italy",         workflow: "Hague Route Validated",                    proceduralState: "Apostille Active" },
+  { origin: "Florida", destination: "United Arab Emirates", slug: "uae",          workflow: "Consular Authentication Workflow",          proceduralState: "Embassy Processing" },
+  { origin: "Florida", destination: "Brazil",              slug: "brazil",        workflow: "Document Authentication Sequence",          proceduralState: "Registry Alignment" },
+  { origin: "Florida", destination: "United Kingdom",      slug: "united-kingdom", workflow: "Hague Apostille Track",                   proceduralState: "UK Receiving Authority Review" },
+  { origin: "Florida", destination: "Spain",               slug: "spain",         workflow: "Bilateral Protocol Verification",           proceduralState: "Spanish Authority Review" },
+  { origin: "Florida", destination: "Japan",               slug: "japan",         workflow: "Ministry of Foreign Affairs Track",         proceduralState: "Authentication Confirmed" },
+  { origin: "Florida", destination: "Portugal",            slug: "portugal",      workflow: "Sovereign Legalization Track",              proceduralState: "Portuguese Authority Review" },
+  { origin: "Florida", destination: "France",              slug: "france",        workflow: "European Civil Code Alignment",             proceduralState: "French Authority Review" },
+  { origin: "Florida", destination: "Germany",             slug: "germany",       workflow: "Federal Authority Attestation",             proceduralState: "German Authority Review" },
+  { origin: "Florida", destination: "Greece",              slug: "greece",        workflow: "Hague Consular Validation",                 proceduralState: "Protocol Instantiated" },
+  { origin: "Florida", destination: "Mexico",              slug: "mexico",        workflow: "Notarial Protocol Integration",             proceduralState: "Apostille Validated" },
+  { origin: "Florida", destination: "Canada",              slug: "canada",        workflow: "Global Affairs Authentication",             proceduralState: "Federal Attestation" },
+  { origin: "Florida", destination: "Argentina",           slug: "argentina",     workflow: "Ministry of Foreign Affairs Verification",  proceduralState: "Escribano Verification" },
+  { origin: "Florida", destination: "Saudi Arabia",        slug: "saudi-arabia",  workflow: "Consular Legalization Protocol",            proceduralState: "Ministry Clearance" },
+  { origin: "Florida", destination: "Australia",           slug: "australia",     workflow: "DFAT Apostille Verification",               proceduralState: "International Release" },
+  { origin: "Florida", destination: "Philippines",         slug: "philippines",   workflow: "DFA Departmental Authentication",           proceduralState: "Authentication Complete" },
 ];
 
 export function IntelligenceRail() {
@@ -76,9 +84,14 @@ export function IntelligenceRail() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -4 }}
               transition={{ duration: 0.52, ease: EASE }}
-              className="text-[#D0D0D0]"
             >
-              {current.destination}
+              <Link
+                href={countryPath(current.slug)}
+                className="text-[#D0D0D0] hover:text-[#C6A55A] transition-colors duration-300"
+                prefetch={false}
+              >
+                {current.destination}
+              </Link>
             </motion.span>
           </AnimatePresence>
           <AnimatePresence mode="wait">
@@ -116,9 +129,14 @@ export function IntelligenceRail() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="text-white"
             >
-              {current.destination}
+              <Link
+                href={countryPath(current.slug)}
+                className="text-white hover:text-[#C6A55A] transition-colors duration-300"
+                prefetch={false}
+              >
+                {current.destination}
+              </Link>
             </motion.span>
           </AnimatePresence>
         </div>
