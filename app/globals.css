@@ -2044,6 +2044,35 @@ h4 {
   .ms-globe-sphere {
     width: 220px;
     height: 220px;
+    overflow: hidden; /* keep sphere artwork clipped */
+  }
+}
+
+/* ── Destination popover — stage-level overlay (not clipped by sphere) ── */
+.ms-destination-popover {
+  position: absolute;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+  .ms-globe-container {
+    overflow: visible; /* allow popover to extend beyond stage bounds */
+  }
+  .ms-destination-popover {
+    left: 50% !important;
+    right: auto !important;
+    top: 46% !important;
+    transform: translateX(-50%) !important;
+    width: min(78vw, 280px) !important;
+    max-width: calc(100vw - 48px) !important;
+    z-index: 5;
+  }
+  .ms-destination-popover p,
+  .ms-destination-popover span {
+    white-space: normal;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
   }
 }
 
