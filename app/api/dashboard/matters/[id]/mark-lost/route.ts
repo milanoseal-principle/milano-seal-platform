@@ -8,9 +8,9 @@ export const runtime = "nodejs";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const dealId = params.id;
+  const { id: dealId } = await params;
   if (!dealId) {
     return NextResponse.json({ error: "deal_id required" }, { status: 400 });
   }

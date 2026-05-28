@@ -61,7 +61,8 @@ async function getAllAssignments(): Promise<AdminAssignment[]> {
   };
 
   return assignments.map((a) => {
-    const deal = (a.deals as DealJoin) ?? null;
+    const dealRaw = Array.isArray(a.deals) ? a.deals[0] : a.deals;
+    const deal = (dealRaw as DealJoin) ?? null;
     const raw = a as typeof a & { operator_id?: string };
     return {
       assignment_id: a.id,

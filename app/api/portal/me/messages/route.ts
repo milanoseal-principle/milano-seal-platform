@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendAdminAlert } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const dealId = req.nextUrl.searchParams.get("deal_id");
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       content,
       status: "received",
     })
-    .select()
+    .select("id, deal_id, content, sender_role, sender_name, created_at")
     .single();
 
   if (error) {
