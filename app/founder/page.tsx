@@ -42,23 +42,25 @@ export default function FounderPage() {
                 <div className="w-12 h-px bg-[#C6A55A] mb-8 opacity-60" />
                 <div className="space-y-5 text-[#B0B0B0] font-light leading-relaxed">
                   <p>
-                    I built The Milano Seal™ because the international document
-                    market has a structural problem: the gap between basic
-                    notarization and full legal coordination is where most
-                    matters break down.
+                    Nicholas Milano has built his practice at the intersection of international
+                    document execution, procedural compliance, and cross-border coordination — a
+                    space most professionals never operate within directly. Specializing in
+                    international execution workflows and destination-aware document handling, he
+                    has developed a methodology that combines the rigor of Florida notarial
+                    standards with the operational precision demanded by global transactions.
                   </p>
                   <p>
-                    Attorneys working across borders need a reliable U.S.
-                    execution partner. Private clients navigating citizenship,
-                    property, or estate matters need someone who understands
-                    both the procedural requirements and the human stakes
-                    involved.
+                    His approach is singular: treat every matter as a high-stakes engagement,
+                    regardless of apparent complexity. Clients who retain The Milano Seal receive
+                    not merely a service, but a structured execution partner focused on clarity,
+                    discretion, procedural control, and international readiness.
                   </p>
                   <p>
-                    My role is precise coordination — not just a signature. I
-                    manage the full execution chain from intake through
-                    apostille delivery, with the same standard on every
-                    engagement.
+                    What distinguishes the practice is its architecture — a vertically integrated
+                    execution environment designed for international attorneys, private clients,
+                    real estate professionals, healthcare providers, businesses, and cross-border
+                    operators who require document coordination without unnecessary friction,
+                    delay, or operational ambiguity.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-8">

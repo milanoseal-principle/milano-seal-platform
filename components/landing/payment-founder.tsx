@@ -158,15 +158,13 @@ export function PaymentFounder() {
                 <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
                   Founder-Led Execution // Personally Overseen
                 </span>
-                <p className="text-[#B0B0B0] text-sm font-light leading-relaxed mb-2">
-                  Nicholas Milano leads The Milano Seal™ with a focus on precision, privacy, and
-                  international success. He personally oversees apostille coordination, international
-                  document execution, mobile notary requests, witness coordination, and secure release
-                  workflows.
-                </p>
-                <p className="text-[#6A6A6A] text-xs font-light leading-relaxed">
-                  Serving clients, attorneys, businesses, real estate professionals, healthcare
-                  providers, and private clients worldwide.
+                <p className="text-[#B0B0B0] text-sm font-light leading-relaxed">
+                  Nicholas Milano has built his practice at the intersection of international document
+                  execution, procedural compliance, and cross-border coordination — a space most
+                  professionals never operate within directly. Specializing in international execution
+                  workflows and destination-aware document handling, he has developed a methodology
+                  that combines the rigor of Florida notarial standards with the operational precision
+                  demanded by global transactions.
                 </p>
               </motion.div>
 
