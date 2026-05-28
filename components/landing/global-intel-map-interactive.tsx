@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { type Destination } from "@/data/destinations";
 import Link from "next/link";
@@ -26,12 +26,17 @@ const REGION_PRESETS: Record<string, FlyToTarget> = {
 interface Props {
   onSelect?: (dest: Destination | null) => void;
   selectedDest?: Destination | null;
+  externalFlyTarget?: FlyToTarget | null;
 }
 
-export function GlobalIntelMapInteractive({ onSelect, selectedDest }: Props = {}) {
+export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyTarget }: Props = {}) {
   const [internalActive, setInternalActive] = useState<Destination | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyToTarget | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (externalFlyTarget) setFlyTarget({ ...externalFlyTarget });
+  }, [externalFlyTarget]);
 
   // When parent provides onSelect, use parent's state; otherwise manage internally
   const active = onSelect ? (selectedDest ?? null) : internalActive;

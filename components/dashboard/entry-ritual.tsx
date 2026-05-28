@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 const CHECKLIST = [
-  "Verifying secure workspace",
-  "Preparing Global Document Intelligence",
-  "Reviewing execution status",
-  "Checking payment-gated scheduling",
-  "Preparing chain-of-custody view",
-  "Ready for review",
+  "Verifying Operational Access...",
+  "Reviewing Active International Matters...",
+  "Syncing Apostille Coordination Queue...",
+  "Verifying Courier Release Controls...",
+  "Loading Execution Infrastructure...",
+  "Workspace Ready",
 ];
 
 export function MilanoSealEntryRitual({
@@ -51,14 +51,14 @@ export function MilanoSealEntryRitual({
       <div className="text-center space-y-1">
         <h1 className="font-serif text-2xl text-white">The Milano Seal™</h1>
         <p className="text-[9px] uppercase tracking-[0.25em] text-gray-500">
-          Preparing secure operator workspace
+          Initializing Operational Intelligence
         </p>
       </div>
 
       {/* Checklist card */}
       <div className="bg-[#0c0c12] border border-gray-900 rounded-sm p-4 font-mono w-72">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] text-gray-400">Pre-Flight Review</span>
+          <span className="text-[10px] text-gray-400">Operational Pre-Flight</span>
           <span className="text-[8px] uppercase tracking-wider text-[#D4AF37]">
             PREPARING WORKSPACE
           </span>
