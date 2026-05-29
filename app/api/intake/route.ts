@@ -202,23 +202,37 @@ export async function POST(req: NextRequest) {
 
     const priority_tier = routeDeal(conversion_score);
 
+    // Payment reference is always matterReference-R for retainer reconciliation
+    const payment_reference = `${deal_id}-R`;
+    const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
+
     const wiseResult = await createWisePaymentRequest({
-      dealId: deal_id,
+      dealId: payment_reference,
       amount: invoice.retainer,
       currency: "USD",
-      description: `The Milano Seal™ — ${finalLane} Lane Retainer · ${
-        data.document_type || prefillDoc || "Document"
-      } · ${country}`,
+      description: payment_description,
       clientName: client_name,
       clientEmail: data.email || null,
       redirectUrl: `${SITE}/portal`,
     });
     const payment_link = wiseResult.url;
+
+    // P1/P2: promote payment metadata to dedicated columns after registry migrations approved.
+    const payment_metadata = {
+      provider: "wise",
+      amount_due: invoice.retainer,
+      currency: "USD",
+      payment_reference,
+      description: payment_description,
+      is_prefilled: wiseResult.mode === "production",
+      manual_fallback_required: wiseResult.mode !== "production",
+    };
+
     const wise_invoice = {
       payment_method: "WISE",
       amount: invoice.retainer,
-      reference: deal_id,
-      note: `The Milano Seal™ — Retainer (50%) · ${client_name}`,
+      reference: payment_reference,
+      note: payment_description,
       wise_link: wiseResult.url,
       wise_request_id: wiseResult.id,
       wise_mode: wiseResult.mode,
@@ -257,6 +271,7 @@ export async function POST(req: NextRequest) {
         routingWarnings.length > 0
           ? `[routing_warnings] ${routingWarnings.join(" | ")}`
           : "",
+        `[payment_metadata:${JSON.stringify(payment_metadata)}]`,
       ]
         .filter(Boolean)
         .join("\n"),
