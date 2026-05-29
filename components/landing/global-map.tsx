@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
 import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -65,6 +66,11 @@ export function GlobalMap() {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+  const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveRouteId(selectedDest?.slug ?? null);
+  }, [selectedDest]);
 
   const allSorted = [...DESTINATIONS].sort((a, b) => (b.demand || 0) - (a.demand || 0));
   const teaser = activeRegion === "All"
@@ -166,11 +172,15 @@ export function GlobalMap() {
         >
           <div className="grid grid-cols-1 lg:grid-cols-12">
             {/* LEFT: Interactive map canvas */}
-            <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-white/[0.04]">
+            <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-white/[0.04] relative">
               <GlobalIntelMapInteractive
                 onSelect={setSelectedDest}
                 selectedDest={selectedDest}
                 externalFlyTarget={mapFlyTarget}
+              />
+              <GlobalRouteAnimation
+                activeRouteId={activeRouteId}
+                onRouteActivate={setActiveRouteId}
               />
             </div>
 
