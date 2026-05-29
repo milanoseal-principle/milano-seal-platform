@@ -458,7 +458,7 @@ export function GlobalTrustCoreHero() {
       {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
       {selectedDest && (
         <div
-          className="ms-destination-popover"
+          className="ms-destination-popover hidden md:block"
           style={{
             position: "absolute",
             left: popLeft,
