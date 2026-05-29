@@ -1,6 +1,37 @@
 # milano-seal-platform       
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app). 
+This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+
+---
+
+## THE MILANO SEAL™ LAUNCH LOCK
+
+The production codebase has completed P0 hardening in-repo.
+
+The platform is **not** considered live-cleared until remote infrastructure confirms:
+
+| Item | Required |
+|---|---|
+| Migration `009_notifications_table.sql` applied | YES |
+| Migration `010_operator_file_isolation.sql` applied | YES |
+| Migration `011_alliance_tracking_schema.sql` applied | **NO — P1 gated** |
+| Migration `012_country_registry.sql` applied | **NO — P1 gated** |
+| `documents` Supabase storage bucket set to Private | YES |
+| `PORTAL_SESSION_SECRET` seeded in Vercel | YES |
+| Vercel production build passed | YES |
+| `scripts/smoke-test.sh` passed | YES |
+| Manual intake test passed | YES |
+| Portal OTP + HMAC session test passed | YES |
+
+No P1 or P2 system may be activated until this checklist is clean.
+
+**Launch runbook:** `docs/REMOTE_P0_CLEARANCE.md`  
+**Go-live checklist:** `docs/go-live-checklist.md`  
+**Final launch report:** `docs/final-launch-report-template.md`  
+**Vercel env reference:** `docs/vercel-env-production.md`  
+**Supabase clearance steps:** `docs/supabase-remote-clearance.md`
+
+---
 
 ## Built with v0
 
