@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Private Matter Access | The Milano Seal™",
+  robots: { index: false, follow: false },
 };
 
 const DASHBOARD_ROLES = new Set(["admin", "ops_manager", "finance"]);

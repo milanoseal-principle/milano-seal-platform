@@ -30,6 +30,7 @@ import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
 import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
 import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
 import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
+import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecutionIntelligence";
 
 interface DashboardSummary {
   total_deals: number;
@@ -760,6 +761,9 @@ export default function Dashboard() {
 
       {/* Courier Release Intelligence */}
       <CourierIntelligencePanel />
+
+      {/* Global Execution Intelligence */}
+      <GlobalExecutionIntelligence />
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">

@@ -103,32 +103,25 @@ export function VALiveEventStream() {
         style={{ maxHeight: 380, scrollbarWidth: "none" }}
       >
         {isLoading ? (
-          <div className="p-4 space-y-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-10 rounded-sm animate-pulse"
-                style={{ background: "rgba(255,255,255,0.025)" }}
-              />
-            ))}
+          <div style={{ padding: "24px 0", textAlign: "center" }}>
+            <span className="font-mono text-[9px] tracking-[0.2em] uppercase" style={{ color: "rgba(212,175,55,0.2)" }}>
+              SYNCING OPERATIONAL FEED...
+            </span>
           </div>
         ) : events.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.52, ease: EASE }}
-            className="py-10 flex flex-col items-center gap-3"
           >
-            <Activity size={24} style={{ color: "rgba(212,175,55,0.15)" }} />
-            <p
-              className="text-[10px] font-mono tracking-widest text-center"
-              style={{ color: "rgba(255,255,255,0.18)" }}
-            >
-              NO EVENTS IN STREAM
-            </p>
+            <div style={{ padding: "32px 0", textAlign: "center" }}>
+              <span className="font-mono text-[9px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.12)" }}>
+                NO ACTIVE EVENTS · STREAM MONITORING
+              </span>
+            </div>
             {data?.migration_needed && (
               <p
-                className="text-[9px] font-mono tracking-wider text-center"
+                className="text-[9px] font-mono tracking-wider text-center pb-4"
                 style={{ color: "rgba(255,255,255,0.1)" }}
               >
                 EVENT TABLE PENDING MIGRATION
@@ -136,57 +129,73 @@ export function VALiveEventStream() {
             )}
           </motion.div>
         ) : (
-          <div className="p-3 space-y-px">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {events.map((ev, i) => {
-                const color =
-                  EVENT_COLORS[ev.event_type] ?? "rgba(255,255,255,0.3)";
-                return (
-                  <motion.div
-                    key={ev.id}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      duration: 0.52,
-                      ease: EASE,
-                      delay: i * 0.025,
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 rounded-sm"
-                    style={{
-                      background: i === 0
-                        ? "rgba(212,175,55,0.03)"
-                        : "transparent",
-                    }}
-                  >
-                    <div
-                      className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                      style={{ background: color }}
-                    />
-                    <span
-                      className="text-[9px] font-mono tracking-wider flex-1 truncate"
-                      style={{ color }}
+          <div className="p-3">
+            {/* Operational stream header */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-mono text-[8px] tracking-[0.28em] uppercase" style={{ color: "rgba(212,175,55,0.35)" }}>
+                OPERATIONAL STREAM
+              </span>
+              <div className="flex items-center gap-1.5">
+                <motion.div
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(212,175,55,0.5)", flexShrink: 0 }}
+                />
+                <span className="font-mono text-[8px]" style={{ color: "rgba(255,255,255,0.15)" }}>LIVE</span>
+              </div>
+            </div>
+            <div className="space-y-px">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {events.map((ev, i) => {
+                  const color =
+                    EVENT_COLORS[ev.event_type] ?? "rgba(255,255,255,0.3)";
+                  return (
+                    <motion.div
+                      key={ev.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 0.52,
+                        ease: EASE,
+                        delay: i * 0.025,
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-sm"
+                      style={{
+                        background: i === 0
+                          ? "rgba(212,175,55,0.03)"
+                          : "transparent",
+                      }}
                     >
-                      {eventLabel(ev.event_type)}
-                    </span>
-                    {ev.task_id && (
+                      <div
+                        className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                        style={{ background: color }}
+                      />
                       <span
-                        className="text-[9px] font-mono truncate max-w-[80px]"
-                        style={{ color: "rgba(255,255,255,0.2)" }}
+                        className="text-[9px] font-mono tracking-wider flex-1 truncate"
+                        style={{ color }}
                       >
-                        {ev.task_id.slice(0, 8)}
+                        {eventLabel(ev.event_type)}
                       </span>
-                    )}
-                    <span
-                      className="text-[9px] font-mono flex-shrink-0"
-                      style={{ color: "rgba(255,255,255,0.18)" }}
-                    >
-                      {formatRelative(ev.created_at)}
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                      {ev.task_id && (
+                        <span
+                          className="text-[9px] font-mono truncate max-w-[80px]"
+                          style={{ color: "rgba(255,255,255,0.2)" }}
+                        >
+                          {ev.task_id.slice(0, 8)}
+                        </span>
+                      )}
+                      <span
+                        className="text-[9px] font-mono flex-shrink-0"
+                        style={{ color: "rgba(255,255,255,0.18)" }}
+                      >
+                        {formatRelative(ev.created_at)}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </div>

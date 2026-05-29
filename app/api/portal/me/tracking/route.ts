@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   let evidence_signed_url: string | null = null;
-  if (d.evidence_path) {
+  if (d.evidence_generated_at) {
     try {
       evidence_signed_url = await refreshEvidenceSignedUrl(d.id);
     } catch {}

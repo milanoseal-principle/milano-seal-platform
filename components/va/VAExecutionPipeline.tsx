@@ -71,14 +71,20 @@ export function VAExecutionPipeline() {
       </div>
 
       <div className="p-5">
+        {/* Inner section header */}
+        <div className="flex items-center justify-between mb-5">
+          <span className="font-mono text-[8px] tracking-[0.28em] uppercase" style={{ color: "rgba(212,175,55,0.35)" }}>
+            EXECUTION PIPELINE
+          </span>
+          <span className="font-mono text-[8px]" style={{ color: "rgba(255,255,255,0.15)" }}>
+            {isLoading ? "—" : `${total} ASSIGNED`}
+          </span>
+        </div>
+
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-16 rounded-sm animate-pulse"
-                style={{ background: "rgba(255,255,255,0.03)" }}
-              />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 rounded-sm animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
             ))}
           </div>
         ) : total === 0 ? (
@@ -104,11 +110,18 @@ export function VAExecutionPipeline() {
             {stageCounts.map((stage, i) => {
               const pct = total > 0 ? (stage.count / total) * 100 : 0;
               const isEscalated = stage.key === "escalated";
+              const isInProgress = stage.key === "in_progress";
+              const countColor =
+                isEscalated && stage.count > 0
+                  ? "rgba(239,68,68,0.7)"
+                  : isInProgress && stage.count > 0
+                  ? "rgba(212,175,55,0.7)"
+                  : "rgba(255,255,255,0.3)";
               return (
                 <motion.div
                   key={stage.key}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{
                     duration: 0.52,
                     ease: EASE,
@@ -127,13 +140,11 @@ export function VAExecutionPipeline() {
                   <div
                     className="text-[20px] font-light mb-1"
                     style={{
-                      color: isEscalated && stage.count > 0
-                        ? "rgba(239,68,68,0.8)"
-                        : "rgba(255,255,255,0.7)",
+                      color: countColor,
                       fontFamily: "var(--font-playfair),Georgia,serif",
                     }}
                   >
-                    {stage.count}
+                    {stage.count === 0 ? "—" : stage.count}
                   </div>
                   <div
                     className="text-[9px] font-mono tracking-wider mb-2"

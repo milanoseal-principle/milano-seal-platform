@@ -896,17 +896,39 @@ export function IntakeWizard({
                   <FieldRow>
                     <FieldGroup>
                       <label className={labelCls}>
-                        Origin State <span className="text-[#8A7240]">*</span>
+                        Origin Authority <span className="text-[#8A7240]">*</span>
                       </label>
+                      {/* Contextual origin authority selector — backward-compatible with origin_state field */}
                       <select
                         value={data.origin_state}
                         onChange={(e) => set("origin_state", e.target.value)}
                         className={selectCls}
                       >
-                        <option value="">— State —</option>
-                        {US_STATES.map((s) => (
-                          <option key={s}>{s}</option>
-                        ))}
+                        <option value="">— Select Origin Authority —</option>
+                        <optgroup label="RON / Florida">
+                          <option value="Florida RON Notarial Act">Florida RON Notarial Act</option>
+                        </optgroup>
+                        <optgroup label="Federal Agencies">
+                          <option value="Federal (FBI)">Federal — FBI Background Check</option>
+                          <option value="Federal (U.S. Department of State)">Federal — U.S. Department of State</option>
+                          <option value="Federal (USCIS)">Federal — USCIS</option>
+                          <option value="Federal (IRS)">Federal — IRS</option>
+                          <option value="Federal (Social Security Administration)">Federal — Social Security Administration</option>
+                          <option value="Federal (U.S. Federal Court)">Federal — U.S. Federal Court</option>
+                          <option value="Federal (USPTO)">Federal — USPTO</option>
+                        </optgroup>
+                        <optgroup label="U.S. States — Vital Records / Notarial Acts">
+                          {US_STATES.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Corporate / Secretary of State">
+                          <option value="Corporate / Secretary of State">Corporate / Secretary of State Record</option>
+                        </optgroup>
+                        <optgroup label="Foreign">
+                          <option value="Foreign Issuing Authority">Foreign Issuing Authority</option>
+                        </optgroup>
+                        <option value="Other / Not Sure">Other / Not Sure — Operator Review</option>
                       </select>
                       {errors.origin_state && (
                         <p className="text-[10.5px] text-red-800 mt-1">
@@ -1313,7 +1335,7 @@ export function IntakeWizard({
                       />
                     )}
                     <ReviewItem
-                      label="Origin State"
+                      label="Origin Authority"
                       value={data.origin_state}
                     />
                     {data.destination_country && (
