@@ -14,6 +14,37 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { usePortal } from "./portal-context";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
+
+const PAYMENT_LABELS: Record<string, string> = {
+  paid: "Payment Confirmed",
+  confirmed: "Payment Confirmed",
+  pending: "Payment Pending",
+  awaiting: "Payment Required",
+  unpaid: "Payment Required",
+  failed: "Payment Failed",
+};
+
+const MATTER_STATUS_LABELS: Record<string, string> = {
+  new: "Intake Received",
+  intake_received: "Intake Received",
+  under_review: "Under Review",
+  compliance_review: "Under Review",
+  quoted: "Invoice Issued",
+  awaiting_payment: "Awaiting Payment",
+  payment_confirmed: "Payment Confirmed",
+  scheduled: "Scheduled",
+  in_execution: "In Execution",
+  apostille_processing: "Apostille Processing",
+  courier_ready: "Courier Ready",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  completed: "Matter Closed",
+  closed: "Matter Closed",
+  needs_info: "Information Needed",
+  compliance_blocked: "Under Review",
+  dormant: "Paused",
+};
 
 const NAV = [
   { href: "/portal", label: "My Matter", icon: ClipboardList },
@@ -23,31 +54,18 @@ const NAV = [
 ];
 
 function LogoMark({ size = 32 }: { size?: number }) {
+  const g = "#C6A55A";
   return (
-    <div
-      className="ps-logomark"
-      style={{ width: size, height: size }}
-    >
-      <svg
-        width={size * 0.55}
-        height={size * 0.55}
-        viewBox="0 0 24 24"
-        fill="none"
-      >
-        <path
-          d="M3 20L3 6L12 15L21 6L21 20"
-          stroke="#C6A55A"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z"
-          fill="#C6A55A"
-          opacity="0.88"
-        />
-      </svg>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
+      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" style={{ fill: g, opacity: 0.88 }} />
+      <path d="M22,72 L22,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
+      <path d="M78,72 L78,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
+      <line x1="15" y1="28" x2="29" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="15" y1="72" x2="29" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="71" y1="28" x2="85" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
+      <line x1="71" y1="72" x2="85" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
+    </svg>
   );
 }
 
@@ -63,7 +81,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         <LogoMark size={32} />
         <div>
           <div className="ps-brand-name">Milano Seal™</div>
-          <div className="ps-brand-sub">Secure Matter Control Portal</div>
+          <div className="ps-brand-sub">Private Matter Access</div>
         </div>
       </div>
 
@@ -114,16 +132,16 @@ export function PortalShell({ children }: { children: ReactNode }) {
                     {d.document_type ?? "Matter"}
                   </span>
                   <span className="ps-switcher-item-meta">
-                    {d.destination_country ?? d.country ?? "—"} ·{" "}
-                    {d.id.slice(0, 8).toUpperCase()}
+                    {d.destination_country ?? "—"} ·{" "}
+                    {d.display_id?.slice(0, 8).toUpperCase() ?? d.id.slice(0, 8).toUpperCase()}
                   </span>
                   <span
                     className="ps-switcher-item-status"
                     style={{
-                      color: d.status === "completed" ? "#4a9e6b" : "#C6A55A",
+                      color: d.matter_status === "completed" ? "#4a9e6b" : "#C6A55A",
                     }}
                   >
-                    {(d.status ?? "").replace(/_/g, " ")}
+                    {MATTER_STATUS_LABELS[d.matter_status ?? ""] ?? (d.matter_status ?? "").replace(/_/g, " ")}
                   </span>
                 </button>
               ))}
@@ -150,7 +168,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           );
         })}
 
-        {deal?.status && (
+        {deal?.matter_status && (
           <>
             <div className="ps-nav-sec" style={{ marginTop: 18 }}>
               Live Status
@@ -160,12 +178,12 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 <div className="ps-status-row">
                   <div className="ps-notif" />
                   <span className="ps-status-l">
-                    {deal.status.replace(/_/g, " ")}
+                    {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
                   </span>
                 </div>
                 {deal.payment_status && (
                   <div className="ps-status-sub">
-                    Payment · {deal.payment_status}
+                    {PAYMENT_LABELS[deal.payment_status] ?? "Payment Pending"}
                   </div>
                 )}
               </div>
@@ -177,14 +195,14 @@ export function PortalShell({ children }: { children: ReactNode }) {
       <div className="ps-foot">
         <div className="ps-foot-user">
           <div className="ps-avatar">
-            {(deal?.client_name ?? deal?.email ?? "?").charAt(0).toUpperCase()}
+            {(deal?.client_name ?? "C").charAt(0).toUpperCase()}
           </div>
           <div style={{ minWidth: 0 }}>
             <div className="ps-foot-name">
               {deal?.client_name ?? "Client"}
             </div>
             <div className="ps-foot-email">
-              {deal?.email ?? ""}
+              {deal?.display_id ? `#${deal.display_id.slice(0, 8).toUpperCase()}` : ""}
             </div>
           </div>
         </div>
@@ -204,6 +222,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="ps-bg">
+      <div className="ps-ticker-fixed">
+        <CredentialTicker />
+      </div>
       <aside className={`ps-sb ${mobileOpen ? "open" : ""}`}>
         {sidebar(() => setMobileOpen(false))}
         <button
@@ -239,14 +260,14 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 )?.label ?? "Portal"}
               </div>
               <div className="ps-tb-sub">
-                The Milano Seal™ · Secure Matter Control Portal
+                The Milano Seal™ · Private Matter Access
               </div>
             </div>
           </div>
-          {deal?.status && (
+          {deal?.matter_status && (
             <div className="ps-topbar-status">
               <span className="ps-topbar-badge">
-                {deal.status.replace(/_/g, " ")}
+                {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
               </span>
               {deal.payment_status === "paid" && (
                 <span className="ps-topbar-badge-paid">Paid</span>

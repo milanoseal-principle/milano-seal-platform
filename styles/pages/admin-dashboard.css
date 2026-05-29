@@ -63,6 +63,18 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+@media (max-width: 480px) {
+  /* KPI cards stay 2-col but stat values scale down to prevent overflow */
+  .ms-stat-val {
+    font-size: clamp(20px, 7vw, 28px);
+  }
+  .ms-h1 {
+    font-size: clamp(20px, 5.5vw, 28px);
+  }
+  .ms-stat {
+    padding: 14px 12px;
+  }
+}
 .ms-stat {
   background: #141414;
   border: 1px solid rgba(198, 165, 90, 0.14);

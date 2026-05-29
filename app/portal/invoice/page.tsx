@@ -63,14 +63,9 @@ export default function ClientInvoicePage() {
     );
   }
 
-  const retainer = Number(deal.invoice_retainer ?? 0);
-  const subtotal = Number(
-    deal.invoice_subtotal ||
-      deal.amount ||
-      (retainer > 0 ? Math.round(retainer * 2 * 100) / 100 : 0),
-  );
-  const balance = Number(deal.invoice_balance ?? subtotal - retainer);
-  const paid = deal.payment_status === "paid";
+  // Use payment_amount_due from the safe API — no internal cost/margin fields
+  const subtotal = Number(deal.payment_amount_due ?? 0);
+  const paid = deal.payment_status === "paid" || deal.payment_status === "confirmed" || deal.is_paid_and_released;
 
   return (
     <div>
@@ -133,15 +128,14 @@ export default function ClientInvoicePage() {
               <div className="ci-col-bill">
                 <div className="ci-h-block">Bill To</div>
                 <div className="ci-col-name">{deal.client_name ?? "—"}</div>
-                <div className="ci-col-sub">{deal.email}</div>
                 <div className="ci-col-sub">
-                  {deal.destination_country ?? deal.country}
+                  {deal.destination_country ?? "—"}
                 </div>
               </div>
               <div>
                 <div className="ci-h-block">Invoice</div>
                 <div className="ci-col-sub">
-                  # {deal.id.slice(0, 8).toUpperCase()}
+                  # {(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}
                 </div>
                 <div className="ci-col-sub">
                   Issued{" "}
@@ -162,17 +156,11 @@ export default function ClientInvoicePage() {
               </div>
             </div>
 
-            {!paid && (
-              <>
-                <div className="ci-row">
-                  <span>Retainer Received</span>
-                  <span>−{formatCurrency(retainer)}</span>
-                </div>
-                <div className="ci-total">
-                  <span>Balance Due</span>
-                  <span>{formatCurrency(balance)}</span>
-                </div>
-              </>
+            {!paid && subtotal > 0 && (
+              <div className="ci-total">
+                <span>Amount Due</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
             )}
 
             {paid && (

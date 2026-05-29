@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
+import { CredentialTicker } from "@/components/landing/credential-ticker";
 
 const navLinks = [
   { label: "Services", href: "/#services" },
@@ -19,86 +20,79 @@ const navLinks = [
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
-    // Reveal header 200ms after mount — after ritual overlay fades out
-    const t = setTimeout(() => setMounted(true), 200);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearTimeout(t);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <>
+      {/* paddingTop: var(--sa-top) keeps header content below the notch/Dynamic Island.
+          Requires viewport-fit=cover (set in app/layout.tsx). */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ms-header-reveal${mounted ? " is-visible" : ""} ${
-          isScrolled
-            ? "bg-[#0A0A0A]/95 backdrop-blur-md"
-            : "bg-transparent"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]"
+        style={{ paddingTop: "var(--sa-top)" }}
       >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link href="/">
-              <Image
-                src="/milano-seal-gold-transparent-512.png"
-                alt="The Milano Seal"
-                width={260}
-                height={65}
-                style={{ height: "56px", width: "auto" }}
-                priority
-              />
-            </Link>
-
-            {/* Desktop navigation */}
-            <nav className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-[#B0B0B0] hover:text-white transition-colors duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Desktop CTA */}
-            <div className="hidden md:block">
-              <Link
-                href="/intake"
-                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-              >
-                <span>Begin Execution</span>
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+        <CredentialTicker />
+        <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-20">
+              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
+                <Image
+                  src="/milano-seal-gold-transparent-512.png"
+                  alt="The Milano Seal"
+                  width={38}
+                  height={38}
+                  className="object-contain"
+                  priority
+                />
+                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
+                  The Milano Seal
+                </span>
               </Link>
-            </div>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-white"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
+              <nav className="hidden md:flex items-center gap-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-sm text-[#B0B0B0] hover:text-white transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="hidden md:flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/60 text-[#C6A55A] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A] hover:bg-[#C6A55A]/8"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/intake"
+                  className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
+                >
+                  <span>Begin Execution</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 text-white"
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -106,7 +100,8 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-20 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            className="fixed inset-x-0 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            style={{ top: "calc(124px + var(--sa-top))" }}
           >
             <nav className="flex flex-col p-6 space-y-4">
               {navLinks.map((link) => (
@@ -120,9 +115,16 @@ export function Header() {
                 </Link>
               ))}
               <Link
+                href="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="inline-flex items-center justify-center px-5 py-3 mt-4 border border-[#C6A55A]/60 text-[#C6A55A] font-medium rounded-lg"
+              >
+                Login
+              </Link>
+              <Link
                 href="/intake"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 mt-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
               >
                 <span>Begin Execution</span>
                 <ArrowRight className="w-4 h-4" />

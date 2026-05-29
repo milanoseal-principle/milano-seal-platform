@@ -1,17 +1,38 @@
+.ps-ticker-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  /* Push ticker content below the notch / Dynamic Island */
+  padding-top: var(--sa-top);
+}
+
 .ps-bg {
   display: flex;
   min-height: 100vh;
-  background: #0a0a0a;
+  min-height: 100svh;
+  /* Offset for fixed ticker (36px) + notch/Dynamic Island safe area */
+  padding-top: calc(36px + var(--sa-top));
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 0%, rgba(198, 165, 90, 0.04) 0%, transparent 55%),
+    #0a0a0a;
   color: #fff;
 }
 .ps-sb {
   width: 240px;
-  background: #0f0f0f;
+  background:
+    linear-gradient(180deg, rgba(198, 165, 90, 0.025) 0%, transparent 28%),
+    #0f0f0f;
   border-right: 1px solid rgba(198, 165, 90, 0.14);
   display: flex;
   flex-direction: column;
   position: fixed;
-  inset: 0 auto 0 0;
+  /* Align sidebar top with bottom edge of ticker (ticker grows with safe-area) */
+  top: calc(36px + var(--sa-top));
+  bottom: 0;
+  left: 0;
+  right: auto;
   z-index: 30;
 }
 .ps-brand {
@@ -126,6 +147,7 @@
   flex: 1;
   padding: 10px 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .ps-nav-sec {
   font-size: 7.5px;
@@ -354,7 +376,8 @@
 }
 .ps-content {
   flex: 1;
-  padding: 24px 28px 48px;
+  /* bottom: stay clear of iOS home indicator / browser toolbar */
+  padding: 24px 28px max(48px, calc(var(--sa-bottom) + 24px));
   overflow-x: hidden;
 }
 .ps-mobile-trigger {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes } from "crypto";
 
+export const dynamic = "force-dynamic";
+
 // Step 1: Client submits email → we check it matches the deal → send OTP
 export async function POST(req: NextRequest) {
   try {
