@@ -1,5 +1,16 @@
 "use client";
 
+import { Shield, Globe, FileCheck, Layers, Navigation, MapPin, Compass } from "lucide-react";
+
+const ITEMS = [
+  { icon: Globe,      label: "FLORIDA → ITALY // APOSTILLE VALIDATION ACTIVE" },
+  { icon: Navigation, label: "FLORIDA → SPAIN // HAGUE ROUTE REVIEW" },
+  { icon: Compass,    label: "FLORIDA → UAE // CONSULAR AUTHENTICATION WORKFLOW" },
+  { icon: MapPin,     label: "FLORIDA → BRAZIL // DOCUMENT AUTHENTICATION SEQUENCE" },
+  { icon: Globe,      label: "FLORIDA → GREECE // STRUCTURED RELEASE PATH" },
+  { icon: Shield,     label: "PAYMENT-GATED EXECUTION // CHAIN-OF-CUSTODY VISIBILITY" },
+  { icon: FileCheck,  label: "DESTINATION VALIDATION ACTIVE // HAGUE ROUTE REVIEW" },
+  { icon: Layers,     label: "STRUCTURED RELEASE WORKFLOW // CROSS-BORDER COORDINATION" },
 const RAIL_A = [
   { label: "GLOBAL DOCUMENT INTELLIGENCE", tone: "gold" },
   { label: "HAGUE ROUTE REVIEW",            tone: "gold" },
