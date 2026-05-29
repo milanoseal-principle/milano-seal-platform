@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
 
 const steps = [
   {
@@ -20,6 +21,7 @@ const steps = [
       "Jurisdiction requirements are validated and the optimal execution path is determined.",
     href: "/intake",
     highlight: false,
+    href: "/process#compliance-review",
   },
   {
     number: "03",
@@ -28,6 +30,7 @@ const steps = [
       "No matter is scheduled or executed until scope is confirmed and payment is complete.",
     href: "/intake",
     highlight: true,
+    href: "/process#payment-gate",
   },
   {
     number: "04",
@@ -36,6 +39,7 @@ const steps = [
       "Your documents are executed with precision, recorded, and sealed according to Florida law.",
     href: "/intake",
     highlight: false,
+    href: "/process#execution",
   },
   {
     number: "05",
@@ -44,6 +48,7 @@ const steps = [
       "Apostille coordination and structured international release handled through proper authority channels.",
     href: "/portal",
     highlight: false,
+    href: "/process#custody",
   },
   {
     number: "06",
@@ -52,6 +57,7 @@ const steps = [
       "Receive your executed documents digitally and physically, ready for international use.",
     href: "/intake",
     highlight: false,
+    href: "/process#release",
   },
 ];
 
@@ -116,6 +122,28 @@ export function HowItWorks() {
                     {step.description}
                   </p>
                 </div>
+              <Link
+                href={step.href}
+                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover${step.highlight ? " border-[#C6A55A]/25 bg-[#0D0B08] hover:border-[#C6A55A]/50" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="font-serif text-4xl font-medium text-[#C6A55A]/20 group-hover:text-[#C6A55A]/40 transition-colors duration-300">
+                    {step.number}
+                  </span>
+                  <div className="flex items-center gap-2 mt-2">
+                    {step.highlight && (
+                      <Lock className="ms-lock-icon w-4 h-4 text-[#C6A55A] opacity-70" />
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5 text-[#C6A55A]/20 group-hover:text-[#C6A55A]/60 transition-all duration-300 group-hover:translate-x-0.5" />
+                  </div>
+                </div>
+
+                <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3 group-hover:text-[#C6A55A] transition-colors duration-300">
+                  {step.title}
+                </h3>
+                <p className="text-[#B0B0B0] text-sm leading-relaxed">
+                  {step.description}
+                </p>
               </Link>
 
               {/* Connector line (hidden on mobile) */}

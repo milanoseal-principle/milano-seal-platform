@@ -459,6 +459,7 @@ export function GlobalTrustCoreHero() {
       {selectedDest && (
         <div
           className="ms-destination-popover"
+          className="ms-destination-popover hidden md:block"
           style={{
             position: "absolute",
             left: popLeft,

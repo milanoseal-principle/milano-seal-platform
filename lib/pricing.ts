@@ -509,6 +509,28 @@ export interface PricingData {
   witnesses?: number;
   witness_type?: "ron" | "in_person";
   after_hours?: boolean;
+  /** Normalized origin authority type — supplied by routing-normalizer */
+  origin_authority_type?: string;
+  /** Raw document type — used in pricing guards */
+  document_type?: string;
+}
+
+/**
+ * P0 Pricing guard: if document_type is an affidavit AND origin_authority_type
+ * resolved to federal_document, do NOT auto-price as federal — flag for operator review.
+ * Returns true if pricing should be blocked pending operator review.
+ */
+export function shouldBlockFederalAffidaviitPricing(data: PricingData): boolean {
+  const docType = (data.document_type || "").toLowerCase();
+  const isAffidavit = docType.includes("affidavit");
+  const isFederal = data.origin_authority_type === "federal_document";
+  if (isAffidavit && isFederal) {
+    // Only allow if document explicitly indicates federal origin
+    const isExplicitlyFederal =
+      docType.includes("fbi") || docType.includes("federal");
+    return !isExplicitlyFederal;
+  }
+  return false;
 }
 
 export interface PricingResult {

@@ -48,15 +48,15 @@ const ROLE_HINTS: Record<Role, {
     hint: "Operator access — use your Milano Seal credentials.",
   },
   client: {
-    email: "you@example.com",
+    email: "",
     label: "Matter Control Portal",
     sub: "Track Your Matter",
     method: "magic",
     cta: "Send Access Link",
-    hint: "Use the email associated with your matter. We'll send a one-time access link — no password required.",
+    hint: "Enter the email address associated with your matter. We'll send a one-time access link — no password required.",
   },
   alliance: {
-    email: "partner@example.com",
+    email: "",
     label: "Alliance Portal",
     sub: "Assigned Execution Network",
     method: "password",
@@ -64,7 +64,7 @@ const ROLE_HINTS: Record<Role, {
     hint: "Alliance partner access — use your assigned execution network credentials.",
   },
   va: {
-    email: "assistant@example.com",
+    email: "",
     label: "Virtual Assistant",
     sub: "Restricted Task Workspace",
     method: "password",
