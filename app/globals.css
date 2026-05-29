@@ -1592,6 +1592,33 @@ h4 {
   opacity: 0.8;
 }
 
+/* ── Dual-rail operational ticker animations ─────────────────── */
+@keyframes ticker-fwd {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-anim { animation: ticker-fwd 80s linear infinite; will-change: transform; }
+
+@keyframes ticker-rev {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.ticker-anim-reverse { animation: ticker-rev 90s linear infinite; will-change: transform; }
+
+@keyframes rail-sweep-kf {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(530%); opacity: 0; }
+}
+.rail-sweep { animation: rail-sweep-kf 7s cubic-bezier(0.4, 0, 0.6, 1) infinite; will-change: transform, opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-anim,
+  .ticker-anim-reverse,
+  .rail-sweep { animation: none !important; }
+}
+
 @keyframes ticker-scroll {
   0% {
     transform: translateX(0);

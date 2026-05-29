@@ -103,7 +103,7 @@ export function Header() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-x-0 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
-            style={{ top: "calc(152px + var(--sa-top))" }}
+            style={{ top: "calc(180px + var(--sa-top))" }}
           >
             <nav className="flex flex-col p-6 space-y-4">
               {navLinks.map((link) => (
