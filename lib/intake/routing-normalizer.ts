@@ -178,6 +178,28 @@ export function normalizeIntakeRouting(
     };
   }
 
+  // ── Rule 8 (early): Foreign-issued documents — must precede all document-type rules ─
+  // so that e.g. a Mexican birth certificate is foreign_issued, not state_issued.
+  if (
+    originCountry &&
+    !contains(originCountry, "united states") &&
+    originCountry.toUpperCase() !== "US" &&
+    originCountry.toUpperCase() !== "USA"
+  ) {
+    warnings.push(
+      `Document appears to be foreign-issued (origin country: ${originCountry}). Operator review required.`,
+    );
+    return {
+      ...ctx,
+      origin_authority_type: "foreign_issued_document",
+      origin_authority_label: `${originCountry} Issuing Authority`,
+      origin_country: originCountry,
+      apostille_path: "operator_review",
+      requires_operator_review: true,
+      warnings,
+    };
+  }
+
   // ── Rule 3: Vital Records ─────────────────────────────────────────────────
   const isVitalRecord =
     contains(documentType, "birth certificate") ||
@@ -298,29 +320,7 @@ export function normalizeIntakeRouting(
     };
   }
 
-  // ── Rule 8: Foreign-issued documents ─────────────────────────────────────
-  // (checked before Rule 7 so foreign docs always resolve to operator_review)
-  if (
-    originCountry &&
-    !contains(originCountry, "united states") &&
-    originCountry.toUpperCase() !== "US" &&
-    originCountry.toUpperCase() !== "USA"
-  ) {
-    warnings.push(
-      `Document appears to be foreign-issued (origin country: ${originCountry}). Operator review required.`,
-    );
-    return {
-      ...ctx,
-      origin_authority_type: "foreign_issued_document",
-      origin_authority_label: `${originCountry} Issuing Authority`,
-      origin_country: originCountry,
-      apostille_path: "operator_review",
-      requires_operator_review: true,
-      warnings,
-    };
-  }
-
-  // ── Rule 7: UAE destination ───────────────────────────────────────────────
+  // ── Rule 7: UAE destination / state doc catch-all ────────────────────────
   // Applied on top of resolved path — also acts as catch-all for state docs
   if (rawOriginState && !isFederalOrigin) {
     // Plain state-issued document (Power of Attorney, etc.)
