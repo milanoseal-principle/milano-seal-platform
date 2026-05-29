@@ -6,6 +6,11 @@ import { type Destination } from "@/data/destinations";
 import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
 
+const COUNTRY_PAGES = new Set(["italy", "spain", "germany", "portugal", "uae", "mexico"]);
+function countryPath(slug: string) {
+  return COUNTRY_PAGES.has(slug) ? `/countries/${slug}` : `/apostille/${slug}`;
+}
+
 const MapInner = dynamic(() => import("./global-intel-map-inner"), {
   ssr: false,
   loading: () => <div style={{ height: "480px" }} className="bg-[#0A0A0A]" />,
@@ -124,13 +129,21 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
             </div>
           </div>
 
-          <Link
-            href={`/intake?country=${encodeURIComponent(active.name)}`}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
-          >
-            Begin Execution for {active.name}
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link
+              href={`/intake?country=${encodeURIComponent(active.name)}`}
+              className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
+            >
+              Begin Execution for {active.name}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href={countryPath(active.slug)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#2A2A2A] text-[#8A8A8A] text-xs rounded-xl hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-all duration-300"
+            >
+              View {active.name} Requirements
+            </Link>
+          </div>
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { requireAllianceAccess } from "@/lib/allianceAuth";
 
 export const metadata = {
   title: "Alliance Partner Portal | The Milano Seal™",
+  robots: { index: false, follow: false },
 };
 
 const NAV_GROUPS = [

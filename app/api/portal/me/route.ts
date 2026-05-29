@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data: safeView } = await admin
     .from("client_safe_matter_view")
-    .select("*")
+    .select("matter_id, display_id, client_name, document_type, destination_country, assigned_lane, matter_status, client_facing_status, payment_status, payment_amount_due, courier_tracking_id, courier_carrier, delivery_status, delivery_eta, delivery_timestamp, is_paid_and_released, created_at, updated_at")
     .eq("matter_id", activeDeal.id)
     .single();
 

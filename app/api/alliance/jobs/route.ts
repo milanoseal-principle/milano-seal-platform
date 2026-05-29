@@ -73,7 +73,8 @@ export async function GET() {
   };
 
   const jobs = (assignments ?? []).map((a) => {
-    const deal = (a.deals as DealJoin) ?? null;
+    const dealRaw = Array.isArray(a.deals) ? a.deals[0] : a.deals;
+    const deal = (dealRaw as DealJoin) ?? null;
     return {
       assignment_id: a.id,
       deal_ref: deal?.deal_id ?? null,

@@ -107,6 +107,7 @@ interface MilanoDeal {
   tracking_number: string | null;
   carrier: string | null;
   label_url: string | null;
+  notes: string | null;
 }
 
 interface ActivityRow {
@@ -647,8 +648,17 @@ export default function DealDetail() {
             )}
           </h1>
           <p className="text-muted-foreground">
-            {deal.document_type} → {deal.destination_country} (from{" "}
-            {deal.origin_state})
+            {deal.document_type} → {deal.destination_country}
+            {deal.origin_state && (
+              <span>
+                {" "}(Origin Authority:{" "}
+                {/* Display origin_authority_label parsed from notes, or fall back to origin_state */}
+                {(() => {
+                  const labelLine = (deal.notes || "").split("\n").find((l: string) => l.startsWith("[routing] origin_authority_label="));
+                  return labelLine ? labelLine.replace("[routing] origin_authority_label=", "") : deal.origin_state;
+                })()})
+              </span>
+            )}
           </p>
         </div>
         <div className="text-right">

@@ -42,7 +42,7 @@ export async function createWisePaymentRequest(
   const fallback = fallbackPaymentLink(
     input.dealId,
     input.amount,
-    input.currency,
+    input.currency ?? "USD",
   );
 
   if (!isConfigured()) {

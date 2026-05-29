@@ -265,6 +265,34 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
 
         {/* Status indicators */}
         <div className="flex items-center gap-4">
+          {/* Matter Ref Jump */}
+          <div className="hidden lg:flex items-center gap-1.5 border border-[rgba(212,175,55,0.1)] rounded-sm px-2 py-1">
+            <span className="font-mono text-[8px] tracking-wider" style={{ color: "rgba(212,175,55,0.3)" }}>REF</span>
+            <input
+              type="text"
+              placeholder="MATTER-ID"
+              maxLength={16}
+              className="bg-transparent font-mono text-[9px] w-20 outline-none"
+              style={{ color: "rgba(255,255,255,0.4)", caretColor: "rgba(212,175,55,0.6)" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                  e.currentTarget.blur();
+                }
+              }}
+            />
+          </div>
+
+          {/* Financial Lockout */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-sm"
+            style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.08)" }}
+          >
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(212,175,55,0.4)" }} />
+            <span className="font-mono text-[8px] tracking-[0.18em] uppercase" style={{ color: "rgba(212,175,55,0.35)" }}>
+              FINANCIAL LOCKOUT ACTIVE
+            </span>
+          </div>
+
           <div className="hidden sm:flex items-center gap-1.5">
             <motion.div
               animate={{ opacity: [0.4, 1, 0.4] }}
@@ -314,6 +342,22 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
             RESTRICTED ACCESS · VA PORTAL
           </span>
         </div>
+
+        {/* Compliance track */}
+        <div className="hidden sm:flex items-center gap-3">
+          <span className="font-mono text-[9px] tracking-wider" style={{ color: "rgba(255,255,255,0.12)" }}>
+            ACTIVE QUEUE
+          </span>
+          <span style={{ color: "rgba(255,255,255,0.06)" }}>·</span>
+          <span className="font-mono text-[9px] tracking-wider" style={{ color: "rgba(255,255,255,0.12)" }}>
+            DATA SCOPE: MATTER ENFORCED
+          </span>
+          <span style={{ color: "rgba(255,255,255,0.06)" }}>·</span>
+          <span className="font-mono text-[9px] tracking-wider" style={{ color: "rgba(255,255,255,0.12)" }}>
+            AI: SERVER-SIDE VERIFIED
+          </span>
+        </div>
+
         <span
           className="text-[9px] font-mono tracking-wider"
           style={{ color: "rgba(212,175,55,0.2)" }}

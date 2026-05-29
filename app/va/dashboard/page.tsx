@@ -31,6 +31,12 @@ export default async function VADashboardPage() {
         >
           VA Workspace
         </h1>
+        <p
+          className="text-[10px] font-mono mt-1"
+          style={{ color: "rgba(255,255,255,0.25)" }}
+        >
+          Assigned coordination tasks and execution queue.
+        </p>
       </div>
 
       {/* Daily completion tracker */}
