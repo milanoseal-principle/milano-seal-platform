@@ -51,6 +51,14 @@ This reference is documentation-only. It does not override the Master Reconcilia
 
 **Location:** `docs/architecture/LAYER_1_7_MASTER_EXPANSION_REFERENCE.md`
 
+### Destination Intelligence Registry
+
+Future architecture note for all Hague and non-Hague destination routing, country localities, translation languages, certified translation expectations, and document routing rules. Source authority: HCCH (129 Hague Apostille Convention contracting states — verify before production import).
+
+This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
+
+**Location:** `docs/architecture/DESTINATION_INTELLIGENCE_REGISTRY.md`
+
 ### Ultra CTO Handoff Reference
 
 The Ultra CTO Handoff System Spec is retained as a future architecture validation layer covering API schemas, relational schema planning, field mapping, state machine rules, event engine behavior, failure escalation, command center wiring, backend architecture, and alliance system planning.
