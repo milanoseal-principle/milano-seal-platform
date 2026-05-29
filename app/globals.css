@@ -245,6 +245,38 @@ h4 {
 }
 
 /* ── GOLD UTILITIES ──────────────────────────────────────────── */
+/* Scanning line — fires once on card entry, never loops aggressively */
+@keyframes terminal-scan {
+  0%   { top: 0%; opacity: 0; }
+  8%   { opacity: 0.22; }
+  92%  { opacity: 0.18; }
+  100% { top: 100%; opacity: 0; }
+}
+.terminal-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,244,210,0.6) 50%, transparent 100%);
+  animation: terminal-scan 0.9s cubic-bezier(0.4, 0, 0.6, 1) both;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Destination node radial pulse — active state only */
+@keyframes node-radial-pulse {
+  0%   { transform: scale(1); opacity: 0.12; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.node-radial-pulse {
+  animation: node-radial-pulse 2.5s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-scan-line { animation: none !important; opacity: 0 !important; }
+  .node-radial-pulse  { animation: none !important; }
+}
+
 .gold-glow {
   box-shadow: 0 0 30px rgba(198, 165, 90, 0.15);
 }

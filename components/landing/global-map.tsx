@@ -88,6 +88,18 @@ export function GlobalMap() {
       <div className="absolute inset-0 opacity-[0.07]">
         <svg viewBox="0 0 1200 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
           <defs>
+            <linearGradient id="goldCorridorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1A1A1A" />
+              <stop offset="50%" stopColor="#D4AF37" stopOpacity="1" />
+              <stop offset="100%" stopColor="#0A0A0A" />
+            </linearGradient>
+            <filter id="softGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
             <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.3" />
               <animateTransform
@@ -162,8 +174,15 @@ export function GlobalMap() {
               />
             </div>
 
-            {/* RIGHT: Execution dock */}
-            <div className="lg:col-span-4 relative bg-[#07070A] min-h-[340px] lg:min-h-0 flex flex-col">
+            {/* RIGHT: Execution dock — glass terminal surface */}
+            <div className="lg:col-span-4 relative min-h-[340px] lg:min-h-0 flex flex-col"
+              style={{
+                background: "rgba(3,3,5,0.82)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                boxShadow: "inset 0 0 0 1px rgba(212,175,55,0.08), 0 0 40px rgba(0,0,0,0.6)",
+              }}
+            >
               {/* Corner crosshairs */}
               <div className="absolute top-3 left-3 w-4 h-4 border-l border-t border-[#C6A55A]/15 pointer-events-none" />
               <div className="absolute top-3 right-3 w-4 h-4 border-r border-t border-[#C6A55A]/15 pointer-events-none" />
@@ -178,13 +197,16 @@ export function GlobalMap() {
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 8, scale: 0.99 }}
                     transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col h-full p-5 lg:p-6"
+                    className="flex flex-col h-full p-5 lg:p-6 relative overflow-hidden"
                   >
+                    {/* Single-pass scanning line on entry */}
+                    <div className="terminal-scan-line" key={`scan-${selectedDest.slug}`} />
+
                     {/* Dock header */}
                     <div className="flex items-start justify-between mb-5">
                       <div>
-                        <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#6A5520] block mb-2">
-                          DESTINATION VECTOR
+                        <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#D4AF37]/40 block mb-2">
+                          TRACKED CORRIDOR
                         </span>
                         <div className="flex items-center gap-2.5 mb-1">
                           <span className="text-xl leading-none">{selectedDest.flag}</span>
@@ -204,7 +226,9 @@ export function GlobalMap() {
                     </div>
 
                     {/* Jurisdictional framework */}
-                    <div className="bg-black/50 border border-white/[0.04] rounded-lg p-3.5 mb-4">
+                    <div className="bg-black/60 border border-[#D4AF37]/10 rounded-lg p-3.5 mb-4"
+                      style={{ boxShadow: "0 0 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(212,175,55,0.05)" }}
+                    >
                       <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2">
                         JURISDICTIONAL FRAMEWORK
                       </span>
@@ -367,11 +391,16 @@ export function GlobalMap() {
                     setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 });
                   }
                 }}
-                className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-200 focus:outline-none ${
+                className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${
                   selectedDest?.slug === d.slug
-                    ? "bg-[#C6A55A]/[0.05]"
-                    : "hover:bg-white/[0.02]"
+                    ? "bg-[#C6A55A]/[0.06]"
+                    : selectedDest
+                      ? "opacity-40 hover:opacity-70 hover:bg-white/[0.02]"
+                      : "hover:bg-white/[0.02]"
                 }`}
+                style={selectedDest?.slug === d.slug ? {
+                  boxShadow: "inset 0 0 24px rgba(212,175,55,0.04)",
+                } : undefined}
               >
                 {/* Active left accent */}
                 {selectedDest?.slug === d.slug && (
