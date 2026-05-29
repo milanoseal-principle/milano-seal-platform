@@ -33,6 +33,24 @@ No P1 or P2 system may be activated until this checklist is clean.
 
 ---
 
+## Architecture References
+
+### Ultra CTO Handoff Reference
+
+The Ultra CTO Handoff System Spec is retained as a future architecture validation layer covering API schemas, relational schema planning, field mapping, state machine rules, event engine behavior, failure escalation, command center wiring, backend architecture, and alliance system planning.
+
+This reference is documentation-only. It does not override the Master Reconciliation Matrix, the P0 launch lock, remote P0 clearance requirements, or active repository reality.
+
+**Location:** `docs/architecture/ULTRA_CTO_HANDOFF_REFERENCE.md`
+
+### P1/P2 Architecture Notes
+
+Acquisition entry flow, smart intake parser, portal terminal UX, health latency targets, logger security rules, and shipping 501 guard specifications.
+
+**Location:** `docs/p1-p2-architecture-notes.md`
+
+---
+
 ## Built with v0
 
 This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
