@@ -1,5 +1,35 @@
 "use client";
 
+const RAIL_A = [
+  { label: "GLOBAL DOCUMENT INTELLIGENCE", tone: "gold" },
+  { label: "HAGUE ROUTE REVIEW",            tone: "gold" },
+  { label: "PAYMENT-GATED EXECUTION",       tone: "emerald" },
+  { label: "CHAIN-OF-CUSTODY VISIBILITY",   tone: "emerald" },
+  { label: "WISE PAYMENT REFERENCE",        tone: "gold" },
+  { label: "COURIER RELEASE TRACKING",      tone: "gold" },
+  { label: "PRE-FLIGHT REVIEW",             tone: "gold" },
+  { label: "DOCUMENT VAULT",                tone: "emerald" },
+  { label: "PAID & RELEASED",               tone: "emerald" },
+  { label: "APOSTILLE COORDINATION",        tone: "gold" },
+  { label: "INTERNATIONAL COORDINATION",    tone: "gold" },
+  { label: "COORDINATOR VISIBILITY",        tone: "gold" },
+];
+
+const RAIL_B = [
+  "FLORIDA -> ITALY",
+  "FLORIDA -> SPAIN",
+  "FLORIDA -> GREECE",
+  "FLORIDA -> PORTUGAL",
+  "FLORIDA -> BRAZIL",
+  "FLORIDA -> UAE",
+  "FLORIDA -> GERMANY",
+  "FLORIDA -> FRANCE",
+  "FLORIDA -> MEXICO",
+  "FLORIDA -> UNITED KINGDOM",
+  "FLORIDA -> ARGENTINA",
+  "FLORIDA -> AUSTRALIA",
+];
+
 import { Shield, Globe, FileCheck, Layers, Navigation, MapPin, Compass } from "lucide-react";
 
 const ITEMS = [
