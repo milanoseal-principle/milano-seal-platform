@@ -9,6 +9,7 @@ import { HowItWorks } from "@/components/landing/how-it-works";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { ClientTypes } from "@/components/landing/client-types";
 import { GlobalMap } from "@/components/landing/global-map";
+import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
 import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { Footer } from "@/components/landing/footer";
@@ -32,6 +33,7 @@ export default function HomePage() {
         </div>
         <ClientTypes />
         <div id="countries">
+          <RoutingIntelligenceSection />
           <GlobalMap />
         </div>
       </CinematicStage>
