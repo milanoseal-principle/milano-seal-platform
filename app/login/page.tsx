@@ -143,10 +143,6 @@ function LoginInner() {
 
   useEffect(() => {
     const err = searchParams.get("error");
-    if (err === "auth_failed") {
-      setError(
-        "That access link has expired or is invalid. Please request a new one.",
-      );
     if (err === "auth_failed" || err === "otp_expired") {
       setError("That access link has expired or was already used. Please request a new one.");
     }
@@ -224,98 +220,6 @@ function LoginInner() {
       return;
     }
     setPhase("sent");
-    setIsLoading(true);
-    setError(null);
-
-    // Safe env presence check — never logs values
-    const urlPresent = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const keyPresent = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const sitePresent = !!process.env.NEXT_PUBLIC_SITE_URL;
-    if (!urlPresent || !keyPresent) {
-      console.error("[milano/login] Supabase env missing:", {
-        NEXT_PUBLIC_SUPABASE_URL: urlPresent,
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: keyPresent,
-        NEXT_PUBLIC_SITE_URL: sitePresent,
-      });
-    }
-
-    try {
-      const supabase = createClient();
-
-      if (ROLE_HINTS[role].method === "magic") {
-        // Use NEXT_PUBLIC_SITE_URL for reliable production redirect
-        const base =
-          process.env.NEXT_PUBLIC_SITE_URL ||
-          (typeof window !== "undefined" ? window.location.origin : "");
-        const redirect = `${base}/auth/callback?role=client`;
-
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: redirect,
-            shouldCreateUser: true,
-          },
-        });
-
-        if (otpError) {
-          // UI message stays clean — log safe diagnostic info for operator review
-          console.error("[milano/login] OTP error:", {
-            method: "magic",
-            code: otpError.code,
-            status: otpError.status,
-            name: otpError.name,
-          });
-          setError("Unable to send sign-in link. Please try again.");
-          return;
-        }
-        setMagicSent(true);
-        return;
-      }
-
-      if (!password) {
-        setError("Password is required.");
-        return;
-      }
-
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-        // UI message stays clean — log safe diagnostic info for operator review
-        console.error("[milano/login] Password auth error:", {
-          method: "password",
-          code: authError.code,
-          status: authError.status,
-          name: authError.name,
-        });
-        if (
-          authError.status === 400 ||
-          authError.status === 401 ||
-          authError.status === 422
-        ) {
-          setError("Invalid credentials. Please check your email and password.");
-        } else {
-          setError("Sign-in unavailable. Please try again in a moment.");
-        }
-        return;
-      }
-
-      router.push(nextPath);
-      router.refresh();
-    } catch (err) {
-      // Catches thrown network errors, SDK failures, undefined env vars.
-      // Log safe info only — never log passwords or key values.
-      console.error("[milano/login] Caught exception:", {
-        name: err instanceof Error ? err.name : typeof err,
-        message: err instanceof Error ? err.message : String(err),
-        envPresent: { url: urlPresent, key: keyPresent, site: sitePresent },
-      });
-      setError("Sign-in unavailable. Please try again in a moment.");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const reset = () => {
@@ -329,36 +233,6 @@ function LoginInner() {
   return (
     <>
       <style>{`
-        @keyframes ms-fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes ms-spin { to{transform:rotate(360deg)} }
-        @keyframes ms-goldPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
-        .ms-login-bg { position: fixed; inset: 0; background: var(--black, #0a0a0a); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .ms-login-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(198,165,90,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(198,165,90,.05) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); opacity: .6; }
-        .ms-login-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(198,165,90,.10), transparent 60%); filter: blur(40px); animation: ms-goldPulse 6s ease-in-out infinite; }
-        .ms-login-card { position: relative; width: 100%; max-width: 420px; background: rgba(15,15,15,.92); border: 1px solid rgba(198,165,90,.14); padding: 44px 44px 36px; border-radius: 4px; backdrop-filter: blur(12px); box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: ms-fadeUp .6s cubic-bezier(.25,.46,.45,.94) both; }
-        .ms-login-card::before { content: ''; position: absolute; top: 0; left: 52px; right: 52px; height: 1px; background: linear-gradient(90deg, transparent, #C6A55A, transparent); }
-        .ms-login-ring { width: 80px; height: 80px; border-radius: 50%; border: 1.5px solid #C6A55A; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; animation: ms-goldPulse 3s ease-in-out infinite; box-shadow: 0 0 40px rgba(198,165,90,.18); }
-        .ms-login-title { font-family: var(--font-playfair, 'Playfair Display'), Georgia, serif; font-size: 13px; letter-spacing: .28em; text-transform: uppercase; color: #fff; text-align: center; margin-bottom: 6px; }
-        .ms-login-tag { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.45); text-align: center; margin-bottom: 32px; }
-        .ms-flbl { display: block; font-size: 9px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 7px; }
-        .ms-fi { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(198,165,90,.14); padding: 11px 12px; color: #fff; font-family: var(--font-geist, system-ui), sans-serif; font-size: 13px; outline: none; transition: all .2s ease; border-radius: 2px; }
-        .ms-fi::placeholder { color: rgba(255,255,255,.32); }
-        .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); }
-        .ms-submit-btn { width: 100%; padding: 13px; background: #C6A55A; color: #0a0a0a; border: none; font-family: var(--font-geist, system-ui), sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: background .2s ease; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-        .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; }
-        .ms-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
-        .ms-spinner { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); border-top-color: #0a0a0a; animation: ms-spin .8s linear infinite; }
-        .ms-foot { text-align: center; margin-top: 24px; font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: .12em; }
-        .ms-err { font-size: 10.5px; color: #f87171; margin-bottom: 12px; padding: 8px 10px; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.2); border-radius: 2px; }
-        .ms-hint { font-size: 9px; color: rgba(255,255,255,.35); margin-bottom: 14px; line-height: 1.5; }
-        .ms-hint span { color: #C6A55A; }
-        .ms-success { padding: 16px; background: rgba(74,158,107,.08); border: 1px solid rgba(74,158,107,.28); border-radius: 2px; text-align: center; }
-        .ms-success-h { font-family: var(--font-playfair), Georgia, serif; font-size: 16px; color: #fff; margin-bottom: 6px; }
-        .ms-success-p { font-size: 11px; color: rgba(255,255,255,.65); line-height: 1.6; }
-        .ms-success-em { color: #C6A55A; }
-        .ms-link-btn { background: none; border: none; color: #C6A55A; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 8px; margin-top: 8px; }
-        .ms-link-btn:hover { color: #d4b76a; }
-        .ms-matter-badge { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #C6A55A; background: rgba(198,165,90,.08); border: 1px solid rgba(198,165,90,.2); border-radius: 2px; padding: 6px 10px; margin-bottom: 16px; display: inline-block; }
         @keyframes ms-fadeUp {
           from { opacity: 0; transform: translateY(22px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -442,142 +316,79 @@ function LoginInner() {
         }
 
         /* Header */
-        .ms-eyebrow {
-          font-size: 9px; font-family: var(--font-geist-mono, monospace);
-          letter-spacing: .28em; text-transform: uppercase;
-          color: rgba(198,165,90,.55); text-align: center; margin-bottom: 4px;
-        }
-        .ms-title {
+        .ms-login-title {
           font-family: var(--font-playfair, 'Playfair Display'), Georgia, serif;
-          font-size: 20px; letter-spacing: .04em;
-          color: rgba(255,255,255,.92); text-align: center; margin-bottom: 6px;
-          font-weight: 400;
+          font-size: 13px; letter-spacing: .28em; text-transform: uppercase;
+          color: #fff; text-align: center; margin-bottom: 6px;
         }
-        .ms-subtitle {
-          font-size: 10.5px; color: rgba(255,255,255,.32);
-          text-align: center; line-height: 1.6; margin-bottom: 6px;
-          letter-spacing: .01em;
-        }
-        .ms-badge {
-          display: flex; align-items: center; justify-content: center;
-          margin-bottom: 28px;
-        }
-        .ms-badge span {
-          font-size: 8.5px; font-family: var(--font-geist-mono, monospace);
-          letter-spacing: .2em; text-transform: uppercase;
-          color: rgba(198,165,90,.45);
-          border: 1px solid rgba(198,165,90,.14);
-          padding: 3px 10px; border-radius: 2px;
-          background: rgba(198,165,90,.03);
-        }
-
-        /* Role selector */
-        .ms-lbl {
-          display: block; font-size: 9px; font-weight: 600;
-          letter-spacing: .18em; text-transform: uppercase;
-          color: rgba(255,255,255,.4); margin-bottom: 7px;
-        }
-        .ms-role {
-          padding: 11px 14px;
-          background: rgba(255,255,255,.02);
-          border: 1px solid rgba(198,165,90,.12);
-          cursor: pointer; text-align: left; border-radius: 2px;
-          transition: border-color .2s ease, background .2s ease;
-        }
-        .ms-role:hover { border-color: rgba(198,165,90,.3); background: rgba(198,165,90,.04); }
-        .ms-role[data-active="true"] {
-          background: rgba(198,165,90,.08);
-          border-color: rgba(198,165,90,.55);
-        }
-        .ms-role-l {
-          font-size: 11px; font-weight: 600; letter-spacing: .12em;
-          text-transform: uppercase;
-        }
-        .ms-role-s {
-          font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-          color: rgba(255,255,255,.3); margin-top: 3px;
+        .ms-login-tag {
+          font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase;
+          color: rgba(255,255,255,.45); text-align: center; margin-bottom: 32px;
         }
 
         /* Inputs */
+        .ms-flbl {
+          display: block; font-size: 9px; font-weight: 600;
+          letter-spacing: .18em; text-transform: uppercase;
+          color: rgba(255,255,255,.55); margin-bottom: 7px;
+        }
         .ms-fi {
           width: 100%;
-          background: rgba(255,255,255,.03);
-          border: 1px solid rgba(198,165,90,.12);
-          padding: 11px 13px;
-          color: rgba(255,255,255,.9);
+          background: rgba(255,255,255,.04);
+          border: 1px solid rgba(198,165,90,.14);
+          padding: 11px 12px;
+          color: #fff;
           font-family: var(--font-geist, system-ui), sans-serif;
           font-size: 13px; outline: none;
-          transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+          transition: all .2s ease;
           border-radius: 2px;
         }
-        .ms-fi::placeholder { color: rgba(255,255,255,.28); }
-        .ms-fi:focus {
-          border-color: rgba(198,165,90,.6);
-          background: rgba(198,165,90,.03);
-          box-shadow: 0 0 0 3px rgba(198,165,90,.07);
-        }
+        .ms-fi::placeholder { color: rgba(255,255,255,.32); }
+        .ms-fi:focus { border-color: #C6A55A; background: rgba(198,165,90,.04); }
 
         /* Submit */
-        .ms-btn {
+        .ms-submit-btn {
           width: 100%; padding: 13px;
-          background: linear-gradient(135deg, #C6A55A 0%, #d4b76a 50%, #C6A55A 100%);
-          background-size: 200% auto;
-          color: #06040200;
-          border: none; border-radius: 2px;
+          background: #C6A55A; color: #0a0a0a;
+          border: none;
           font-family: var(--font-geist, system-ui), sans-serif;
-          font-size: 9.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
-          cursor: pointer;
-          transition: transform .25s cubic-bezier(0.16,1,0.3,1), box-shadow .25s ease, background-position .4s ease;
+          font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+          cursor: pointer; transition: background .2s ease; border-radius: 2px;
           display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-          color: rgba(6,4,2,0.88);
         }
-        .ms-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 28px rgba(198,165,90,.28);
-          background-position: right center;
-        }
-        .ms-btn:active:not(:disabled) { transform: translateY(0); }
-        .ms-btn:disabled { opacity: .45; cursor: not-allowed; }
+        .ms-submit-btn:hover:not(:disabled) { background: #d4b76a; }
+        .ms-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
 
         .ms-spinner {
           width: 12px; height: 12px; border-radius: 50%;
-          border: 1.5px solid rgba(0,0,0,.2);
-          border-top-color: rgba(6,4,2,0.7);
-          animation: ms-spin .75s linear infinite;
+          border: 1.5px solid rgba(0,0,0,.25);
+          border-top-color: #0a0a0a;
+          animation: ms-spin .8s linear infinite;
         }
-        .ms-show-pwd {
-          position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
-          background: none; border: none;
-          color: rgba(255,255,255,.35); font-size: 9px; letter-spacing: .14em;
-          text-transform: uppercase; cursor: pointer; padding: 4px 6px;
-          transition: color .15s ease;
-        }
-        .ms-show-pwd:hover { color: rgba(198,165,90,.8); }
 
         /* Messages */
         .ms-err {
           font-size: 10.5px; color: #f87171; margin-bottom: 12px;
           padding: 8px 10px;
-          background: rgba(248,113,113,.05);
-          border: 1px solid rgba(248,113,113,.18); border-radius: 2px;
+          background: rgba(248,113,113,.06);
+          border: 1px solid rgba(248,113,113,.2); border-radius: 2px;
         }
         .ms-hint {
-          font-size: 9.5px; color: rgba(255,255,255,.28); margin-bottom: 14px; line-height: 1.55;
+          font-size: 9px; color: rgba(255,255,255,.35); margin-bottom: 14px; line-height: 1.5;
         }
-        .ms-hint span { color: rgba(198,165,90,.75); }
+        .ms-hint span { color: #C6A55A; }
 
         .ms-success {
-          padding: 18px; border-radius: 2px; text-align: center;
-          background: rgba(52,211,153,.06);
-          border: 1px solid rgba(52,211,153,.22);
-          animation: ms-fadeUp .4s cubic-bezier(0.16,1,0.3,1) both;
+          padding: 16px; border-radius: 2px; text-align: center;
+          background: rgba(74,158,107,.08);
+          border: 1px solid rgba(74,158,107,.28);
         }
         .ms-success-h {
           font-family: var(--font-playfair), Georgia, serif;
-          font-size: 16px; color: rgba(255,255,255,.9); margin-bottom: 6px;
+          font-size: 16px; color: #fff; margin-bottom: 6px;
         }
-        .ms-success-p { font-size: 11px; color: rgba(255,255,255,.55); line-height: 1.65; }
-        .ms-success-em { color: rgba(198,165,90,.85); }
+        .ms-success-p { font-size: 11px; color: rgba(255,255,255,.65); line-height: 1.6; }
+        .ms-success-em { color: #C6A55A; }
         .ms-link-btn {
           background: none; border: none;
           color: rgba(198,165,90,.65); font-size: 9.5px; letter-spacing: .14em;
@@ -585,6 +396,13 @@ function LoginInner() {
           transition: color .15s ease;
         }
         .ms-link-btn:hover { color: rgba(198,165,90,1); }
+
+        .ms-matter-badge {
+          font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+          color: #C6A55A; background: rgba(198,165,90,.08);
+          border: 1px solid rgba(198,165,90,.2); border-radius: 2px;
+          padding: 6px 10px; margin-bottom: 16px; display: inline-block;
+        }
 
         /* Footer */
         .ms-foot {
@@ -634,68 +452,6 @@ function LoginInner() {
               </div>
               <button type="button" className="ms-link-btn" onClick={reset}>
                 Use a different address
-          {/* Header */}
-          <div className="ms-eyebrow">The Milano Seal™</div>
-          <h1 className="ms-title">Secure Workspace Access</h1>
-          <p className="ms-subtitle">
-            Private access for international document execution,
-            Hague routing, and protected matter coordination.
-          </p>
-          <div className="ms-badge">
-            <span>Hague-aware document coordination</span>
-          </div>
-
-          {/* Role selector */}
-          <div style={{ marginBottom: 18 }}>
-            <div className="ms-lbl">Access Level</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {(Object.keys(ROLE_HINTS) as Role[]).map((r) => {
-                const o = ROLE_HINTS[r];
-                const active = role === r;
-                return (
-                  <button
-                    type="button"
-                    key={r}
-                    onClick={() => setRole(r)}
-                    className="ms-role"
-                    data-active={active}
-                  >
-                    <div
-                      className="ms-role-l"
-                      style={{ color: active ? "#C6A55A" : "rgba(255,255,255,.75)" }}
-                    >
-                      {o.label}
-                    </div>
-                    <div className="ms-role-s">{o.sub}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Magic link success */}
-          {role && magicSent && (
-            <div className="ms-success">
-              <div className="ms-success-h">Check your email</div>
-              <div className="ms-success-p">
-                We sent a secure access link to{" "}
-                <span className="ms-success-em">{email}</span>. Click it to
-                enter your matter workspace — no password required.
-              </div>
-              {role === "client" && (
-                <div className="ms-success-p" style={{ marginTop: 10, fontSize: 10, color: "rgba(255,255,255,.38)" }}>
-                  If the link doesn&rsquo;t open — try opening it in Safari or your default browser.
-                </div>
-              )}
-              <button
-                type="button"
-                className="ms-link-btn"
-                onClick={() => {
-                  setMagicSent(false);
-                  setEmail("");
-                }}
-              >
-                Use a different email
               </button>
             </div>
           )}
@@ -711,18 +467,6 @@ function LoginInner() {
                 </label>
                 <input
                   id="identifier"
-          {/* Form */}
-          {role && !magicSent && (
-            <form
-              onSubmit={submit}
-              style={{ animation: "ms-fadeUp .4s cubic-bezier(0.16,1,0.3,1) both" }}
-            >
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="ms-email" className="ms-lbl">
-                  Email
-                </label>
-                <input
-                  id="ms-email"
                   className="ms-fi"
                   type="text"
                   autoComplete="off"
@@ -798,62 +542,13 @@ function LoginInner() {
                   }}
                   required
                 />
-              {!isClient && (
-                <div style={{ marginBottom: 14, position: "relative" }}>
-                  <label htmlFor="ms-password" className="ms-lbl">
-                    Password
-                  </label>
-                  <input
-                    id="ms-password"
-                    className="ms-fi"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    minLength={6}
-                    required={!isClient}
-                    style={{ paddingRight: 56 }}
-                  />
-                  <button
-                    type="button"
-                    className="ms-show-pwd"
-                    style={{ top: "calc(50% + 9px)" }}
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              )}
-
-              <div className="ms-hint">
-                {ROLE_HINTS[role].hint}
               </div>
 
               {error && <div className="ms-err">{error}</div>}
 
-              {isClient && error && (
-                <button
-                  type="button"
-                  className="ms-link-btn"
-                  style={{ display: "block", marginBottom: 8 }}
-                  onClick={() => {
-                    setError(null);
-                    setEmail("");
-                    setMagicSent(false);
-                  }}
-                >
-                  Request new access link
-                </button>
-              )}
-
               <button
                 type="submit"
-                className="ms-btn"
+                className="ms-submit-btn"
                 disabled={isLoading}
                 style={{ marginBottom: 10 }}
               >
@@ -864,10 +559,6 @@ function LoginInner() {
                   </>
                 ) : (
                   "Send Access Link"
-                    {isClient ? "Sending link…" : "Verifying…"}
-                  </>
-                ) : (
-                  ROLE_HINTS[role].cta
                 )}
               </button>
 
