@@ -49,7 +49,7 @@ const CHECKPOINTS = [
   { label: "Delivered", pct: 1.0 },
 ];
 
-const PATH_D = "M 30 55 Q 150 22 270 55 Q 390 88 510 55";
+const PATH_D = "M 50 110 C 120 30, 360 20, 590 110";
 
 function statusToProgress(status: string | null | undefined): number {
   if (!status || status === "unknown") return 8;
