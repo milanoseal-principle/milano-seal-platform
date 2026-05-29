@@ -8,6 +8,7 @@ import { snapshotDeal } from "@/lib/dealBackup";
 import { isValidPaymentTransition } from "@/lib/payments/state-machine";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({ ok: true }, { status: 200 });

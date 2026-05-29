@@ -70,37 +70,21 @@ export async function POST(
     );
   }
 
-  if (body.test_mode && process.env.NODE_ENV === "development") {
-    const fakeTracking = `TEST-${Date.now()}`;
-    const mockUpdates = {
-      tracking_number: fakeTracking,
-      carrier: "test_carrier",
-      label_url: "https://example.com/test-label.pdf",
-      delivery_status: "in_transit",
-      delivery_eta: new Date(
-        Date.now() + 5 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      ship_from: body.from,
-      ship_to: body.to,
-      status: "shipped",
-      updated_at: new Date().toISOString(),
-    };
-    await supabase.from("deals").update(mockUpdates).eq("id", deal_id);
-    await logActivity({
-      deal_id,
-      action: "shipped",
-      detail: `[TEST MODE] Mock label created — ${fakeTracking}`,
-      meta: { test_mode: true },
-    });
+  // test_mode is explicitly rejected in production.
+  // In development only, it returns a safe stub without mutating deal state.
+  if (body.test_mode) {
+    if (process.env.NODE_ENV !== "development") {
+      return NextResponse.json(
+        { error: "Live shipping provider is not configured." },
+        { status: 501 }
+      );
+    }
+    // Development stub — no deal state mutation, no fake tracking persistence
     return NextResponse.json({
-      success: true,
-      tracking_number: fakeTracking,
-      carrier: "test_carrier",
-      label_url: "https://example.com/test-label.pdf",
-      eta: mockUpdates.delivery_eta,
-      pricing: { cost: 0, sell_price: 0, margin: 0, insurance_added: false },
+      success: false,
+      error: "test_mode is available in development only. Configure SHIPPO_API_KEY for live labels.",
       test_mode: true,
-    });
+    }, { status: 501 });
   }
 
   try {
