@@ -33,7 +33,23 @@ No P1 or P2 system may be activated until this checklist is clean.
 
 ---
 
+## Current Project Status
+
+See: `docs/PROJECT_STATUS_INDEX.md`
+
+This file is the current operator index for completed repo work, staged systems, and required remote launch clearance steps.
+
+---
+
 ## Architecture References
+
+### Layer 1.7 Master Expansion Reference
+
+The Layer 1.7 Master True Full Expansion is retained as a future architecture validation layer covering system flow expansion, API contracts, field behavior, decision engine logic, chained events, failure and edge cases, strict state transitions, SOP branching logic, data relationships, automation, payment, document generation, and deployment planning.
+
+This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
+
+**Location:** `docs/architecture/LAYER_1_7_MASTER_EXPANSION_REFERENCE.md`
 
 ### Ultra CTO Handoff Reference
 
@@ -48,6 +64,14 @@ This reference is documentation-only. It does not override the Master Reconcilia
 Acquisition entry flow, smart intake parser, portal terminal UX, health latency targets, logger security rules, and shipping 501 guard specifications.
 
 **Location:** `docs/p1-p2-architecture-notes.md`
+
+### Final SOP + Command Center Runbook
+
+The Final SOP + Deployment + Command Center Runbook is retained as an operator governance layer covering phase-lock workflow, Command Center tab architecture, Strategic tab requirements, Alliance Onboarding, Alliance Tool Belt qualification, compliance gates, backend mapping, testing protocol, and deployment reference logic.
+
+This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
+
+**Location:** `docs/operations/FINAL_SOP_COMMAND_CENTER_RUNBOOK.md`
 
 ---
 
