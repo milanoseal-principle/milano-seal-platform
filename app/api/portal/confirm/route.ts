@@ -26,6 +26,8 @@ function buildSession(
   return `${encodedPayload}.${sig}`;
 }
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { token, email, otp } = await req.json();
