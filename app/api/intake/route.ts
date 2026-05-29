@@ -13,6 +13,11 @@ import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { runDealEngine } from "@/lib/core/engine";
+import {
+  normalizeIntakeRouting,
+  checkAffidavitFederalConflict,
+  formatApostillePath,
+} from "@/lib/intake/routing-normalizer";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -123,6 +128,22 @@ export async function POST(req: NextRequest) {
 
     const data = normalizeMatter(raw);
 
+    // ── Routing normalizer (P0 correctness fix) ───────────────────────────
+    // Converts raw origin_state overload into a deterministic NormalizedRoutingContext.
+    // origin_authority_label is used in review summaries and notifications instead of
+    // raw origin_state so that RON affidavits are never misrouted as federal documents.
+    // P1/P2: promote normalized routing fields to dedicated columns after registry migrations are approved.
+    let normalizedRouting = normalizeIntakeRouting({
+      ...raw,
+      ...data,
+    });
+    normalizedRouting = checkAffidavitFederalConflict(
+      normalizedRouting,
+      data.document_type as string || "",
+    );
+    const originAuthorityLabel = normalizedRouting.origin_authority_label;
+    const routingWarnings = normalizedRouting.warnings;
+
     try {
       validateMatter(data);
     } catch (e: any) {
@@ -228,7 +249,17 @@ export async function POST(req: NextRequest) {
       document_type: docType,
       service_type: docType,
       use_case: useCase || null,
-      notes: data.notes || "",
+      notes: [
+        data.notes || "",
+        `[routing] origin_authority_type=${normalizedRouting.origin_authority_type}`,
+        `[routing] origin_authority_label=${originAuthorityLabel}`,
+        `[routing] apostille_path=${normalizedRouting.apostille_path}`,
+        routingWarnings.length > 0
+          ? `[routing_warnings] ${routingWarnings.join(" | ")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
       lane: finalLane,
       execution_tier: finalLane,
       execution_lane: finalLane,
@@ -372,7 +403,7 @@ export async function POST(req: NextRequest) {
         deal_id,
         actor,
         action: "created",
-        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country}`,
+        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country} · ${originAuthorityLabel}`,
         meta: {
           source,
           lane: finalLane,
