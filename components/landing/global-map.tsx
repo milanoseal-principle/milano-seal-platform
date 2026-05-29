@@ -401,6 +401,7 @@ export function GlobalMap() {
                     setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 });
                   }
                 }}
+                className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-200 focus:outline-none ${
                 className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${
                   selectedDest?.slug === d.slug
                     ? "bg-[#C6A55A]/[0.06]"
