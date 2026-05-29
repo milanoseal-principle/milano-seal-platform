@@ -1597,13 +1597,13 @@ h4 {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-.ticker-anim { animation: ticker-fwd 80s linear infinite; will-change: transform; }
+.ticker-anim { animation: ticker-fwd 110s linear infinite; will-change: transform; }
 
 @keyframes ticker-rev {
   0%   { transform: translateX(-50%); }
   100% { transform: translateX(0); }
 }
-.ticker-anim-reverse { animation: ticker-rev 90s linear infinite; will-change: transform; }
+.ticker-anim-reverse { animation: ticker-rev 110s linear infinite; will-change: transform; }
 
 @keyframes rail-sweep-kf {
   0%   { transform: translateX(-30%); opacity: 0; }
