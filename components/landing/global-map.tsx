@@ -169,7 +169,7 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
-        {/* TWO-COLUMN EXECUTION DECK: map canvas left, dock right */}
+        {/* THREE-COLUMN EXECUTION DECK: How It Works | map canvas | dock */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -178,8 +178,75 @@ export function GlobalMap() {
           className="mb-6 border border-white/[0.04] rounded-xl overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12">
-            {/* LEFT: Interactive map canvas */}
-            <div className="lg:col-span-8 lg:border-r border-white/[0.04] relative">
+
+            {/* LEFT: How It Works steps — desktop only */}
+            <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/[0.04]"
+              style={{
+                background: "rgba(3,3,5,0.75)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+              }}
+            >
+              {/* Corner crosshairs */}
+              <div className="absolute top-3 left-3 w-4 h-4 border-l border-t border-[#C6A55A]/10 pointer-events-none" />
+
+              <div className="p-5 flex flex-col h-full">
+                <div className="mb-5">
+                  <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40 block mb-1">
+                    HOW IT WORKS
+                  </span>
+                  <div className="w-8 h-px bg-[#C6A55A]/20 mt-2" />
+                </div>
+
+                <div className="flex flex-col gap-0 flex-1">
+                  {[
+                    { n: "1", title: "Submit Your Matter", desc: "Verified identity & document upload." },
+                    { n: "2", title: "Execution Review", desc: "We review scope, destination & requirements." },
+                    { n: "3", title: "Secure Payment", desc: "Confirm scope and complete payment." },
+                    { n: "4", title: "Document Execution", desc: "We execute your documents securely." },
+                    { n: "5", title: "Apostille Coordination", desc: "We coordinate authentication & Apostille." },
+                    { n: "6", title: "International Release", desc: "Secure release via approved method." },
+                  ].map((step, i) => (
+                    <div key={step.n} className="relative group flex items-start gap-3 py-3.5 border-b border-white/[0.04] last:border-0">
+                      {/* Vertical connector line */}
+                      {i < 5 && (
+                        <div className="absolute left-[18px] top-[34px] bottom-0 w-px bg-[#C6A55A]/08 pointer-events-none" />
+                      )}
+                      <div
+                        className="flex-shrink-0 w-6 h-6 rounded-full border border-[#C6A55A]/25 flex items-center justify-center mt-0.5 group-hover:border-[#C6A55A]/50 transition-colors"
+                        style={{ background: "rgba(198,165,90,0.04)" }}
+                      >
+                        <span className="font-mono text-[8px] text-[#C6A55A]/60 group-hover:text-[#C6A55A]/90 transition-colors leading-none">
+                          {step.n}
+                        </span>
+                      </div>
+                      <div className="min-w-0 pt-0.5">
+                        <div className="text-white/80 text-[11px] font-medium leading-snug mb-0.5 group-hover:text-white transition-colors">
+                          {step.title}
+                        </div>
+                        <div className="text-[#4A4A4A] text-[10px] leading-snug group-hover:text-[#5A5A5A] transition-colors">
+                          {step.desc}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA at bottom */}
+                <div className="mt-4 pt-4 border-t border-white/[0.04]">
+                  <Link
+                    href="/intake"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/25 text-[#C6A55A]/80 hover:text-[#C6A55A] hover:border-[#C6A55A]/45 hover:bg-[#C6A55A]/[0.04] rounded-lg transition-all duration-200"
+                  >
+                    <span className="font-mono text-[9px] tracking-[0.18em] uppercase">Begin Intake</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* CENTER: Interactive map canvas */}
+            <div className="lg:col-span-6 lg:border-r border-white/[0.04] relative">
               <GlobalIntelMapInteractive
                 onSelect={setSelectedDest}
                 selectedDest={selectedDest}
@@ -258,7 +325,7 @@ export function GlobalMap() {
             </div>
 
             {/* RIGHT: Execution dock — desktop only */}
-            <div className="hidden lg:flex lg:col-span-4 relative flex-col"
+            <div className="hidden lg:flex lg:col-span-3 relative flex-col"
               style={{
                 background: "rgba(3,3,5,0.82)",
                 backdropFilter: "blur(12px)",
