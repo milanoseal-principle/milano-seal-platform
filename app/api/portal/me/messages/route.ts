@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendAdminAlert } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const dealId = req.nextUrl.searchParams.get("deal_id");
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("messages")
-    .select("*")
+    .select("id, deal_id, content, sender_role, sender_name, direction, channel, created_at")
     .eq("deal_id", ctx.deal.id)
     .order("created_at", { ascending: true });
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       content,
       status: "received",
     })
-    .select()
+    .select("id, deal_id, content, sender_role, sender_name, created_at")
     .single();
 
   if (error) {

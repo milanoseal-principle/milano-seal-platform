@@ -16,3 +16,7 @@ node_modules
 .DS_Store
 .vercel
 config.bat
+
+# Planning documents (not code)
+*.xlsx
+.claude/

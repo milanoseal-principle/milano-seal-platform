@@ -7,43 +7,45 @@ import Link from "next/link";
 const tiers = [
   {
     name: "Signature",
-    tagline: "Standard Execution",
+    tagline: "Standard Bureau Filing & International Release",
+    timeline: "Standard State Processing + Selected International Transit",
     description:
-      "For standard document matters with defined execution timelines and full procedural documentation.",
+      "Designed for non-urgent international documents where standard state processing is appropriate. The matter is reviewed, prepared, submitted through the applicable state route, and released internationally once authentication is complete.",
     features: [
       "Remote Online Notarization",
-      "Standard processing (5–7 business days)",
+      "State authentication channel routing",
       "Digital document delivery",
-      "Matter coordination via email",
+      "International release coordination",
       "Document scope review",
     ],
     highlight: false,
   },
   {
     name: "Priority",
-    tagline: "Expedited Handling",
-    description: "For time-sensitive matters requiring accelerated review and faster execution windows.",
+    tagline: "Capital Desk Coordination // Priority International Release",
+    timeline: "Accelerated State Handoff + Selected Express Transit",
+    description:
+      "Designed for matters requiring faster movement into the state authentication channel. Documents are prepared, reviewed, and coordinated for accelerated state-facing submission, followed by priority international release once the authenticated document is returned.",
     features: [
       "Everything in Signature",
-      "Priority processing (2–3 business days)",
-      "Physical & digital delivery",
-      "Phone & WhatsApp coordination",
-      "Destination compliance review",
+      "Accelerated state-facing submission",
+      "Selected express transit",
+      "Priority international release",
       "Matter status updates",
     ],
     highlight: true,
   },
   {
     name: "Executive",
-    tagline: "Dedicated Liaison",
+    tagline: "Executive State Handling // Priority Global Release",
+    timeline: "Highest-Touch State Coordination + Priority International Transit",
     description:
-      "For complex, high-value matters requiring a dedicated coordinator and multi-jurisdiction routing.",
+      "Designed for urgent or high-liability international matters requiring founder-level oversight, direct coordination, and heightened chain-of-custody control. This lane prioritizes the preparation, submission, monitoring, and release sequence while preserving destination-specific review requirements.",
     features: [
       "Everything in Priority",
-      "Expedited scheduling available",
-      "Dedicated liaison assigned",
-      "Multi-document coordination",
-      "Multi-jurisdiction routing",
+      "Founder-level oversight",
+      "Chain-of-custody control",
+      "Destination-specific review",
       "Direct mobile access",
       "After-hours availability",
     ],
@@ -70,8 +72,7 @@ export function ExecutionTiers() {
             Choose Your Execution Level
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            Select the service tier that matches your timeline and complexity
-            requirements.
+            Select the lane that matches your matter's timeline and handling requirements.
           </p>
         </motion.div>
 
@@ -92,7 +93,7 @@ export function ExecutionTiers() {
               {tier.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                   <span className="px-4 py-1 text-xs font-medium text-[#0A0A0A] bg-[#C6A55A] rounded-full">
-                    Most Popular
+                    Most Requested
                   </span>
                 </div>
               )}
@@ -105,15 +106,25 @@ export function ExecutionTiers() {
                 }`}
               >
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-5">
                   <h3 className="font-serif text-2xl font-medium text-white mb-1">
                     {tier.name}
                   </h3>
-                  <p className="text-sm text-[#C6A55A]">{tier.tagline}</p>
+                  <p className="text-sm text-[#C6A55A] leading-snug">{tier.tagline}</p>
+                </div>
+
+                {/* Timeline anchor */}
+                <div className="mb-5 px-3 py-2 bg-black/40 border border-white/[0.05] rounded-lg">
+                  <span className="font-mono text-[9px] tracking-[0.22em] uppercase text-[#555] block mb-1">
+                    Timeline Anchor
+                  </span>
+                  <span className="font-mono text-[10px] text-[#888] leading-snug">
+                    {tier.timeline}
+                  </span>
                 </div>
 
                 {/* Description */}
-                <p className="text-[#B0B0B0] text-sm leading-relaxed mb-8">
+                <p className="text-[#B0B0B0] text-sm leading-relaxed mb-7">
                   {tier.description}
                 </p>
 

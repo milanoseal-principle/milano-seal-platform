@@ -17,14 +17,12 @@ export interface PortalDeal {
   invoice_balance: number | null;
   tracking_number: string | null;
   carrier: string | null;
-  label_url: string | null;
   delivery_status: string | null;
   delivery_eta: string | null;
   delivery_timestamp: string | null;
   signed_by: string | null;
   ship_to: Record<string, unknown> | null;
   evidence_url: string | null;
-  evidence_path: string | null;
   evidence_generated_at: string | null;
   created_at: string | null;
 }
@@ -43,7 +41,7 @@ export async function getAllClientDeals(): Promise<{
   const admin = createAdminClient();
   const { data } = await admin
     .from("deals")
-    .select("*")
+    .select("id, client_name, email, phone, document_type, destination_country, country, status, payment_status, amount, invoice_subtotal, invoice_retainer, invoice_balance, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at")
     .ilike("email", email)
     .order("created_at", { ascending: false });
 
