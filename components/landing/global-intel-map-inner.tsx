@@ -146,16 +146,8 @@ const ROUTE_DESTS = [
   { name: "Mauritius",          lat: -20.1609, lng:  57.4992 },
 ];
 
-const N = ROUTE_DESTS.length;
-
-// Opacity based on how recently a route was "lit" in the sweep
-function sweepOpacity(age: number): number {
-  if (age === 0) return 0.92;
-  if (age === 1) return 0.62;
-  if (age === 2) return 0.34;
-  if (age === 3) return 0.16;
-  return 0.055; // persistent ghost
-}
+const IDLE_ARC_OPACITY = 0.055;
+const IDLE_NODE_OPACITY = 0.18;
 
 function arcD(ox: number, oy: number, dx: number, dy: number, i: number): string {
   const mx = (ox + dx) / 2;
@@ -167,8 +159,7 @@ function arcD(ox: number, oy: number, dx: number, dy: number, i: number): string
 
 function MapSVGRoutes({ active }: { active: Destination | null }) {
   const map = useMap();
-  const [, mapBump]  = useState(0);
-  const [spotIdx, setSpotIdx] = useState(0);
+  const [, mapBump] = useState(0);
 
   // Reproject SVG on map pan / zoom
   useEffect(() => {
@@ -177,19 +168,12 @@ function MapSVGRoutes({ active }: { active: Destination | null }) {
     return () => { map.off("move", tick); map.off("zoom", tick); map.off("resize", tick); };
   }, [map]);
 
-  // Radar sweep — advance one node every 480ms
-  useEffect(() => {
-    const t = setInterval(() => setSpotIdx((s) => (s + 1) % N), 480);
-    return () => clearInterval(t);
-  }, []);
-
   const sz = map.getSize();
   const op = map.latLngToContainerPoint(ORIGIN_LL);
 
   const routes = ROUTE_DESTS.map((d, i) => ({
     ...d,
-    pt:  map.latLngToContainerPoint([d.lat, d.lng]),
-    age: (i - spotIdx + N) % N,
+    pt: map.latLngToContainerPoint([d.lat, d.lng]),
     i,
   }));
 
@@ -252,58 +236,33 @@ function MapSVGRoutes({ active }: { active: Destination | null }) {
         );
       })()}
 
-      {/* ── Arc filaments — drawn back-to-front (ghosts first, active on top) ── */}
-      {[...routes].sort((a, b) => b.age - a.age).map((r) => {
-        const d    = arcD(op.x, op.y, r.pt.x, r.pt.y, r.i);
-        const opa  = sweepOpacity(r.age);
-        const isHot = r.age <= 1;
+      {/* ── Idle arc filaments — always visible, always quiet ────────────── */}
+      {routes.map((r) => {
+        const d = arcD(op.x, op.y, r.pt.x, r.pt.y, r.i);
+        const isSelected = active?.name === r.name;
+        if (isSelected) return null; // featured arc renders separately above
         return (
-          <g key={`arc-${r.name}`} style={{ opacity: opa, transition: "opacity 0.45s ease", willChange: "opacity" }}>
-            {/* Outer atmospheric bloom */}
-            <path d={d} fill="none" stroke="#D4AF37" strokeWidth={isHot ? 9 : 5} opacity="0.15"
+          <g key={`arc-${r.name}`} style={{ opacity: IDLE_ARC_OPACITY }}>
+            <path d={d} fill="none" stroke="#D4AF37" strokeWidth="4" opacity="0.4"
               filter="url(#ms-bloom-soft)" />
-            {/* Inner glow */}
-            <path d={d} fill="none" stroke="#D4AF37" strokeWidth={isHot ? 3.5 : 2} opacity="0.50"
-              style={{ mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"] }} />
-            {/* Core champagne filament */}
-            <path d={d} fill="none" stroke="#F4E5B8" strokeWidth="1" strokeDasharray={isHot ? "10 4" : "6 6"}>
-              {isHot && (
-                <animate attributeName="stroke-dashoffset" from="0" to="-28"
-                  dur="1.8s" repeatCount="indefinite" />
-              )}
-            </path>
+            <path d={d} fill="none" stroke="#F4E5B8" strokeWidth="0.8" strokeDasharray="5 8" />
           </g>
         );
       })}
 
-      {/* ── Destination nodes ─────────────────────────────────────────────── */}
+      {/* ── Destination nodes — slow single pulse, no sweep ───────────────── */}
       {routes.map((r) => {
-        const opa  = sweepOpacity(r.age);
-        const isHot = r.age === 0;
-        const ripRad = isHot ? 26 : 18;
-        const ripDur = isHot ? "2.4s" : "3.2s";
+        const isSelected = active?.name === r.name;
         return (
-          <g key={`node-${r.name}`} style={{ opacity: opa, transition: "opacity 0.45s ease", willChange: "opacity" }}>
-            {/* Ripple ring 1 */}
-            <circle cx={r.pt.x} cy={r.pt.y} r="4" fill="none" stroke="#C6A55A" strokeWidth={isHot ? 1.2 : 0.8}>
-              <animate attributeName="r" values={`4;${ripRad}`} dur={ripDur}
+          <g key={`node-${r.name}`} style={{ opacity: isSelected ? 0 : IDLE_NODE_OPACITY }}>
+            {/* Slow ripple — 5s cycle, very subtle */}
+            <circle cx={r.pt.x} cy={r.pt.y} r="3" fill="none" stroke="#C6A55A" strokeWidth="0.7">
+              <animate attributeName="r" values="3;16" dur="5s"
                 calcMode="spline" keySplines="0.16 1 0.3 1" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.8;0" dur={ripDur} repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.6;0" dur="5s" repeatCount="indefinite" />
             </circle>
-            {/* Ripple ring 2 — offset phase */}
-            {isHot && (
-              <circle cx={r.pt.x} cy={r.pt.y} r="4" fill="none" stroke="#C6A55A" strokeWidth="0.7">
-                <animate attributeName="r" values="4;20" dur="1.9s" begin="0.7s"
-                  calcMode="spline" keySplines="0.16 1 0.3 1" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.55;0" dur="1.9s" begin="0.7s" repeatCount="indefinite" />
-              </circle>
-            )}
             {/* Core dot */}
-            <circle cx={r.pt.x} cy={r.pt.y} r={isHot ? 4 : 2.5}
-              fill={isHot ? "#F4E5B8" : "#D4AF37"}
-              filter="url(#ms-dot-glow)"
-              style={{ transition: "r 0.3s ease" }}
-            />
+            <circle cx={r.pt.x} cy={r.pt.y} r="2.5" fill="#D4AF37" filter="url(#ms-dot-glow)" />
           </g>
         );
       })}
