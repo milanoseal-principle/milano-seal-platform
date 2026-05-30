@@ -48,36 +48,6 @@ export function Header() {
                 </span>
               </Link>
 
-      {/*
-        Unified header: ticker (row 1) + nav (row 2) in one fixed element.
-        Total height: ~36px ticker + 80px nav = 116px.
-        Hero section must clear pt-[116px] minimum.
-      */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]">
-        {/* Row 1 — credential ticker, always visible */}
-        <CredentialTicker />
-
-        {/* Row 2 — navigation bar */}
-        <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
-                <div
-                  aria-label="The Milano Seal"
-                  style={{
-                    width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                    backgroundImage: "url('/milano-seal-black-1024.png')",
-                    backgroundSize: "152px auto",
-                    backgroundPosition: "center -15px",
-                    backgroundRepeat: "no-repeat",
-                    mixBlendMode: "screen",
-                  }}
-                />
-                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
-                  The Milano Seal
-                </span>
-              </Link>
-
               <nav className="hidden md:flex items-center gap-8">
                 {navLinks.map((link) => (
                   <Link
@@ -94,7 +64,6 @@ export function Header() {
                 <Link
                   href="/login"
                   className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/60 text-[#C6A55A] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A] hover:bg-[#C6A55A]/8"
-                  className="inline-flex items-center px-4 py-2 border border-[#C6A55A]/50 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/10 transition-all duration-200"
                 >
                   Login
                 </Link>
@@ -103,7 +72,6 @@ export function Header() {
                   className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
                 >
                   <span>Begin Secure Intake</span>
-                  <span>Begin Execution</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </Link>
               </div>
@@ -114,18 +82,12 @@ export function Header() {
                 aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile menu — drops below unified header (116px) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -150,14 +112,12 @@ export function Header() {
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="inline-flex items-center justify-center px-5 py-3 mt-4 border border-[#C6A55A]/60 text-[#C6A55A] font-medium rounded-lg"
-                className="text-lg text-[#C6A55A] hover:text-white transition-colors"
               >
                 Login
               </Link>
               <Link
                 href="/intake"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 mt-2 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
               >
                 <span>Begin Secure Intake</span>
