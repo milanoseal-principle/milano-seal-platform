@@ -36,13 +36,13 @@ export async function GET(request: Request) {
 
   // Alliance roles → alliance portal
   if ([
-    "alliance", "alliance_partner", "alliance_member", "operator"
+    "alliance", "alliance_partner", "alliance_member",
   ].includes(actualRole)) {
     return NextResponse.redirect(`${origin}/alliance/dashboard`);
   }
 
-  // Admin roles → dashboard (respect a safe next= override)
-  if (["admin", "ops_manager", "finance"].includes(actualRole)) {
+  // Admin/operator roles → dashboard (respect a safe next= override)
+  if (["admin", "ops_manager", "finance", "operator", "founder_admin", "admin_operator", "execution_coordinator", "apostille_coordinator", "finance_operator", "client_support"].includes(actualRole)) {
     if (nextOverride) {
       const safe =
         nextOverride.startsWith("/dashboard") ||

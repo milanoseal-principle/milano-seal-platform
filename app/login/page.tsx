@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 type Role = "operator" | "client" | "alliance" | "va";
 
 const ROLES: { id: Role; label: string; sub: string; dest: string }[] = [
-  { id: "operator", label: "Operator", sub: "Nicholas Milano / Authorized Staff", dest: "/admin" },
+  { id: "operator", label: "Operator", sub: "Nicholas Milano / Authorized Staff", dest: "/dashboard" },
   { id: "client",   label: "Matter Control Portal", sub: "Track Your Matter", dest: "/portal" },
   { id: "alliance", label: "Alliance Portal", sub: "Assigned Execution Network", dest: "/alliance" },
   { id: "va",       label: "Virtual Assistant", sub: "Restricted Task Workspace", dest: "/va" },
