@@ -32,6 +32,8 @@ import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustod
 import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
 import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecutionIntelligence";
 import { DestinationIntelligenceWidget } from "@/components/dashboard/destination-intelligence-widget";
+import { CountryHealthMatrix } from "@/components/dashboard/country-health-matrix";
+import { OperatorEventTimeline } from "@/components/dashboard/operator-event-timeline";
 
 interface DashboardSummary {
   total_deals: number;
@@ -768,6 +770,12 @@ export default function Dashboard() {
 
       {/* Destination Intelligence — per-corridor matter/revenue breakdown */}
       <DestinationIntelligenceWidget />
+
+      {/* Country Health Matrix + Operator Event Timeline — side by side on lg */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CountryHealthMatrix />
+        <OperatorEventTimeline />
+      </div>
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
