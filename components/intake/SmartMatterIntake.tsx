@@ -37,6 +37,7 @@ export function SmartMatterIntake({
   const [collapsed, setCollapsed] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -160,10 +161,23 @@ export function SmartMatterIntake({
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-[#0D0D0D] border border-[rgba(198,165,90,0.22)] rounded-sm p-5 mb-5">
+              <div
+                className="bg-[#0D0D0D] rounded-sm p-5 mb-5"
+                style={{
+                  border: inputFocused
+                    ? "1px solid rgba(198,165,90,0.48)"
+                    : "1px solid rgba(198,165,90,0.22)",
+                  transition: "border-color 0.28s ease, box-shadow 0.28s ease",
+                  boxShadow: inputFocused
+                    ? "0 0 0 3px rgba(198,165,90,0.07)"
+                    : "none",
+                }}
+              >
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
                   placeholder="Describe your international document matter…"
                   rows={4}
                   className="w-full bg-transparent border-none outline-none resize-none text-[#F5F1E8] text-base leading-relaxed font-light placeholder:text-[#888]/40"
@@ -172,14 +186,20 @@ export function SmartMatterIntake({
 
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1.5 rounded-full border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.08)] text-[#D8C08A] text-[10px] uppercase tracking-[0.14em] font-semibold"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {tags.map((tag, i) => (
+                        <motion.span
+                          key={tag}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.22, delay: i * 0.05, ease: "easeOut" }}
+                          className="px-3 py-1.5 rounded-full border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.08)] text-[#D8C08A] text-[10px] uppercase tracking-[0.14em] font-semibold"
+                        >
+                          {tag}
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
 
@@ -337,6 +357,7 @@ function StructuringPanel({ current }: { current: StructuringState }) {
 }
 
 function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
+  const lr = analysis.languageRouting;
   return (
     <div className="bg-[rgba(255,255,255,0.46)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5">
       <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-4">
@@ -364,6 +385,49 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
           {analysis.hagueMember ? "YES" : "NO"}
         </div>
       </div>
+
+      {lr && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Official Language{lr.officialLanguages.length > 1 ? "s" : ""}
+          </div>
+          <div className="text-[13px] text-[#2C261F] font-light">
+            {lr.officialLanguages.join(", ")}
+          </div>
+        </div>
+      )}
+
+      {lr && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Translation
+          </div>
+          <div
+            className={`text-[12px] font-semibold ${
+              lr.translationLikely ? "text-[#8A5A2B]" : "text-[#3C6B46]"
+            }`}
+          >
+            {lr.translationLikely ? "Typically required" : "Not typically required"}
+          </div>
+          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+            {lr.translationNote}
+          </div>
+        </div>
+      )}
+
+      {!lr && analysis.country && (
+        <div className="mb-4">
+          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+            Translation
+          </div>
+          <div className="text-[12px] text-[#8A5A2B] font-semibold">
+            Manual review required
+          </div>
+          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+            Translation and language requirements for this jurisdiction will be confirmed by our team before execution.
+          </div>
+        </div>
+      )}
 
       {analysis.executionPath.length > 0 && (
         <div>

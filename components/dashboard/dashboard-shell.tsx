@@ -8,6 +8,8 @@ import {
   MODULE_GROUPS,
   type DashboardModule,
 } from "@/lib/dashboard-modules";
+import { IntelligenceRail } from "@/components/dashboard/IntelligenceRail";
+import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 import {
   LayoutGrid,
   BarChart3,
@@ -108,6 +110,7 @@ function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [actionPanelOpen, setActionPanelOpen] = useState(false);
 
   const segments = pathname.split("/").filter(Boolean);
   const activeModule = segments[1] ?? "deals";
@@ -203,10 +206,41 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <p className="text-white text-sm font-medium">
             The Milano Seal™ Admin
           </p>
-          <div />
+          <button
+            onClick={() => setActionPanelOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0D0D0D] border border-[#252525] rounded text-[9px] font-mono tracking-[0.2em] uppercase text-[#C6A55A] hover:border-[#C6A55A]/40 transition-colors"
+          >
+            <Zap className="w-3 h-3" />
+            <span className="hidden sm:inline">Actions</span>
+          </button>
         </div>
+
+        {/* Desktop intelligence rail + quick actions button */}
+        <div className="hidden lg:flex items-center justify-between border-b border-[#1A1A1A] flex-shrink-0">
+          <div className="flex-1">
+            <IntelligenceRail />
+          </div>
+          <button
+            onClick={() => setActionPanelOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 border-l border-[#1A1A1A] text-[9px] font-mono tracking-[0.2em] uppercase text-[#6A5520] hover:text-[#C6A55A] hover:bg-[#0D0D0D] transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            <Zap className="w-3 h-3" />
+            Quick Actions
+          </button>
+        </div>
+
+        {/* Mobile intelligence rail */}
+        <div className="lg:hidden">
+          <IntelligenceRail />
+        </div>
+
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+
+      <OperatorActionPanel
+        isOpen={actionPanelOpen}
+        onClose={() => setActionPanelOpen(false)}
+      />
     </div>
   );
 }

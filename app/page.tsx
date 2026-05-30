@@ -9,16 +9,20 @@ import { HowItWorks } from "@/components/landing/how-it-works";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { ClientTypes } from "@/components/landing/client-types";
 import { GlobalMap } from "@/components/landing/global-map";
+import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
+import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
+import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <RitualOverlay />
       <Header />
+      <IntelligenceRail />
       <CinematicStage>
         <Hero />
         <TrustStrip />
@@ -33,24 +37,11 @@ export default function HomePage() {
         </div>
         <ClientTypes />
         <div id="countries">
+          <RoutingIntelligenceSection />
+          <CorridorTimeStrip />
           <GlobalMap />
         </div>
       </CinematicStage>
-      <Hero />
-      <TrustStrip />
-      <div id="services">
-        <Services />
-      </div>
-      <div id="process">
-        <HowItWorks />
-      </div>
-      <div id="pricing">
-        <ExecutionTiers />
-      </div>
-      <ClientTypes />
-      <div id="countries">
-        <GlobalMap />
-      </div>
       <GlobalIntel />
       <DocumentIntelligence />
       <HighTrustClose />

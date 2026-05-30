@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Globe2, Search, Stamp, ShieldCheck, X } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface JurisdictionSummary {
   code: string;
@@ -81,15 +83,14 @@ export default function Compliance() {
     <div className="space-y-8">
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Global Document Intelligence
+          Document Intelligence
         </p>
         <h1 className="font-serif text-4xl text-foreground">
-          Internal Routing &amp; Compliance Workspace
+          Global Document Intelligence
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
-          Country routing, apostille logic, RON eligibility, witness rules,
-          translation requirements, and execution path validation for every
-          active jurisdiction.
+          Authentication paths, RON eligibility, witness rules, and typical
+          documents for every jurisdiction we serve.
         </p>
       </div>
 
@@ -388,6 +389,39 @@ function DetailPanel({ code, onClose }: { code: string; onClose: () => void }) {
             </ul>
           </div>
         )}
+
+        <Separator className="bg-border" />
+
+        <div className="space-y-2">
+          <h4 className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Operator Actions
+          </h4>
+          <Link href="/dashboard/deals">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start text-xs border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft"
+            >
+              Apply to Matter
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="w-full justify-start text-xs border-border/40 opacity-50"
+          >
+            Assign Execution Lane
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="w-full justify-start text-xs border-border/40 opacity-50"
+          >
+            Create Ledger Event
+          </Button>
+        </div>
       </CardContent>
     </>
   );

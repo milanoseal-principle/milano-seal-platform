@@ -1,6 +1,17 @@
+export type NodeType =
+  | "HAGUE"
+  | "CONSULAR"
+  | "RON_ORIGIN"
+  | "APOSTILLE"
+  | "CITIZENSHIP"
+  | "CORPORATE"
+  | "PRIVATE_CLIENT"
+  | "REAL_ESTATE";
+
 export interface InternationalNode {
   id: string;
   name: string;
+  nodeType: NodeType;
   coordinates: { x: number; y: number }; // percentage position in SVG viewBox 0-100 × 0-56
   seoTarget: string;
   schemaContext: {
@@ -17,6 +28,7 @@ export interface InternationalNode {
 export const FLORIDA_ORIGIN: InternationalNode = {
   id: "florida",
   name: "Florida",
+  nodeType: "RON_ORIGIN",
   coordinates: { x: 24, y: 28 },
   seoTarget: "/",
   schemaContext: {
@@ -34,8 +46,9 @@ export const DESTINATION_NODES: InternationalNode[] = [
   {
     id: "mexico",
     name: "Mexico",
+    nodeType: "HAGUE",
     coordinates: { x: 18, y: 34 },
-    seoTarget: "/jurisdictions/mexico-hague-convention-routing",
+    seoTarget: "/countries/mexico",
     schemaContext: {
       destinationCountry: "MX",
       legalFramework: "Hague Apostille Convention · Accession 1995",
@@ -49,8 +62,9 @@ export const DESTINATION_NODES: InternationalNode[] = [
   {
     id: "brazil",
     name: "Brazil",
+    nodeType: "HAGUE",
     coordinates: { x: 33, y: 47 },
-    seoTarget: "/jurisdictions/brazil-hague-convention-routing",
+    seoTarget: "/countries/brazil",
     schemaContext: {
       destinationCountry: "BR",
       legalFramework: "Hague Apostille Convention · Accession 2016",
@@ -64,8 +78,9 @@ export const DESTINATION_NODES: InternationalNode[] = [
   {
     id: "spain",
     name: "Spain",
+    nodeType: "HAGUE",
     coordinates: { x: 48, y: 22 },
-    seoTarget: "/jurisdictions/spain-international-release-coordination",
+    seoTarget: "/countries/spain",
     schemaContext: {
       destinationCountry: "ES",
       legalFramework: "Hague Apostille Convention · EU Direct Recognition",
@@ -79,8 +94,9 @@ export const DESTINATION_NODES: InternationalNode[] = [
   {
     id: "italy",
     name: "Italy",
+    nodeType: "HAGUE",
     coordinates: { x: 54, y: 21 },
-    seoTarget: "/jurisdictions/italy-apostille-coordination",
+    seoTarget: "/countries/italy",
     schemaContext: {
       destinationCountry: "IT",
       legalFramework: "Hague Apostille Convention · EU Direct Recognition",
@@ -94,8 +110,9 @@ export const DESTINATION_NODES: InternationalNode[] = [
   {
     id: "uae",
     name: "UAE",
+    nodeType: "HAGUE",
     coordinates: { x: 70, y: 31 },
-    seoTarget: "/jurisdictions/uae-consular-authentication-track",
+    seoTarget: "/countries/uae",
     schemaContext: {
       destinationCountry: "AE",
       legalFramework: "Hague Apostille Convention · Accession 2021",
@@ -104,6 +121,38 @@ export const DESTINATION_NODES: InternationalNode[] = [
       title: "Consular Authentication Track",
       channel: "Embassy / Consular Review",
       reviewProtocol: "Heightened chain-of-custody coordination for consular destination review.",
+    },
+  },
+  {
+    id: "portugal",
+    name: "Portugal",
+    nodeType: "HAGUE",
+    coordinates: { x: 45, y: 23 },
+    seoTarget: "/countries/portugal",
+    schemaContext: {
+      destinationCountry: "PT",
+      legalFramework: "Hague Apostille Convention · Original Member 1968",
+    },
+    laneContext: {
+      title: "Hague Convention Routing",
+      channel: "State Authentication Channel",
+      reviewProtocol: "Lusophone bridge route — Portugal IRN registry coordination.",
+    },
+  },
+  {
+    id: "greece",
+    name: "Greece",
+    nodeType: "CITIZENSHIP",
+    coordinates: { x: 57, y: 24 },
+    seoTarget: "/countries/greece",
+    schemaContext: {
+      destinationCountry: "GR",
+      legalFramework: "Hague Apostille Convention · Member 1985",
+    },
+    laneContext: {
+      title: "Hague Convention Routing",
+      channel: "Hellenic Ministry Coordination",
+      reviewProtocol: "Diaspora citizenship restoration — Hellenic Ministry of Interior registry.",
     },
   },
 ];

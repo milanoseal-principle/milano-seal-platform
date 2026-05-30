@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAllClientDeals } from "@/lib/portalAuth";
+import { getVaultDocumentsForMatter } from "@/lib/vault";
 
+export const runtime = "nodejs";
+
+// STORAGE-VAULT-01: Portal files endpoint — authenticates via Supabase session,
+// returns documents with expiring signed URLs only. No raw storage paths returned.
 export async function GET(req: NextRequest) {
-  const dealId = req.nextUrl.searchParams.get("deal_id");
-  if (!dealId)
-    return NextResponse.json({ error: "Missing deal_id" }, { status: 400 });
+  const ctx = await getAllClientDeals();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const supabase = createAdminClient();
-  const { data: files } = await supabase
-    .from("files")
-    .select("*")
-    .eq("deal_id", dealId)
-    .order("created_at", { ascending: false });
+  if (!ctx.deals.length) {
+    return NextResponse.json({ files: [] });
+  }
 
-  return NextResponse.json({ files: files || [] });
+  const requestedDealId = req.nextUrl.searchParams.get("deal_id");
+  const deal =
+    (requestedDealId ? ctx.deals.find((d) => d.id === requestedDealId) : null) ??
+    ctx.deals[0];
+
+  if (!deal) {
+    return NextResponse.json({ error: "Matter not found" }, { status: 404 });
+  }
+
+  const documents = await getVaultDocumentsForMatter(deal.id, ctx.email);
+
+  return NextResponse.json({ files: documents });
 }

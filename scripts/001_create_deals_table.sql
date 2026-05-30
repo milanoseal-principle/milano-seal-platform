@@ -32,9 +32,10 @@ create index if not exists idx_deals_email on public.deals(email);
 -- Enable RLS
 alter table public.deals enable row level security;
 
--- Allow service role full access (for API routes)
+-- Allow service role full access (for API routes only — anon/authenticated have no direct access)
 create policy "Service role full access" on public.deals
   for all
+  to service_role
   using (true)
   with check (true);
 

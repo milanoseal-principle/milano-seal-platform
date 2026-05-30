@@ -4,11 +4,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/portal",
+  "/alliance",
+  "/va",
   "/api/admin",
   "/api/dashboard",
   "/api/follow-ups",
   "/api/compliance/list",
   "/api/portal/me",
+  "/api/va",
 ];
 
 const PUBLIC_AUTH_PATHS = new Set([
@@ -17,6 +20,9 @@ const PUBLIC_AUTH_PATHS = new Set([
   "/operator/login",
   "/auth/callback",
 ]);
+
+// Prefix-match for auth paths that have dynamic suffixes
+const PUBLIC_AUTH_PREFIXES = ["/auth/", "/api/auth/"];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
@@ -28,6 +34,10 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (PUBLIC_AUTH_PATHS.has(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (PUBLIC_AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 

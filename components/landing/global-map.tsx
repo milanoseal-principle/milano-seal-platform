@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
-import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound } from "lucide-react";
+import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
 
 const GlobalIntelMapInteractive = dynamic(
   () =>
@@ -67,6 +68,12 @@ export function GlobalMap() {
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+  const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
+
+  const openCompliance = useCallback((slug: string) => {
+    if (COUNTRY_COMPLIANCE_DATA[slug]) setComplianceCountryId(slug);
+  }, []);
+  const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
 
   useEffect(() => {
     setActiveRouteId(selectedDest?.slug ?? null);
@@ -172,7 +179,7 @@ export function GlobalMap() {
         >
           <div className="grid grid-cols-1 lg:grid-cols-12">
             {/* LEFT: Interactive map canvas */}
-            <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-white/[0.04] relative">
+            <div className="lg:col-span-8 lg:border-r border-white/[0.04] relative">
               <GlobalIntelMapInteractive
                 onSelect={setSelectedDest}
                 selectedDest={selectedDest}
@@ -182,10 +189,76 @@ export function GlobalMap() {
                 activeRouteId={activeRouteId}
                 onRouteActivate={setActiveRouteId}
               />
+
+              {/* Mobile bottom-sheet: slides up inside the map when a destination is selected */}
+              <AnimatePresence>
+                {selectedDest && (
+                  <motion.div
+                    key={`mobile-sheet-${selectedDest.slug}`}
+                    initial={{ y: "100%", opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: "100%", opacity: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute bottom-0 left-0 right-0 z-[600] lg:hidden"
+                    style={{
+                      background: "rgba(3,3,5,0.92)",
+                      backdropFilter: "blur(16px)",
+                      WebkitBackdropFilter: "blur(16px)",
+                      borderTop: "1px solid rgba(212,175,55,0.18)",
+                      boxShadow: "0 -8px 40px rgba(0,0,0,0.7)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span>
+                            <span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${
+                              selectedDest.hague
+                                ? "border-green-500/30 text-green-400/70"
+                                : "border-amber-500/30 text-amber-400/70"
+                            }`}>
+                              {selectedDest.hague ? "HAGUE" : "NON-HAGUE"}
+                            </span>
+                          </div>
+                          <span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">
+                            FL ORIGIN → {selectedDest.name.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
+                          <button
+                            onClick={() => openCompliance(selectedDest.slug)}
+                            className="p-1.5 rounded border border-[#C6A55A]/25 text-[#C6A55A]/60 hover:text-[#C6A55A] hover:border-[#C6A55A]/50 transition-colors"
+                            aria-label="View compliance details"
+                          >
+                            <Shield className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <Link
+                          href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
+                          className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg"
+                        >
+                          Begin Intake
+                        </Link>
+                        <button
+                          onClick={() => setSelectedDest(null)}
+                          className="p-1.5 rounded hover:bg-white/[0.08] text-[#555] hover:text-[#888] transition-colors"
+                          aria-label="Clear selection"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* RIGHT: Execution dock — glass terminal surface */}
-            <div className="lg:col-span-4 relative min-h-[340px] lg:min-h-0 flex flex-col"
+            {/* RIGHT: Execution dock — desktop only */}
+            <div className="hidden lg:flex lg:col-span-4 relative flex-col"
               style={{
                 background: "rgba(3,3,5,0.82)",
                 backdropFilter: "blur(12px)",
@@ -310,6 +383,20 @@ export function GlobalMap() {
                         </div>
                       </div>
                     )}
+                    {/* Compliance Intelligence link — only for PRIMARY_ROUTES countries */}
+                    {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
+                      <button
+                        onClick={() => openCompliance(selectedDest.slug)}
+                        className="flex items-center gap-2 w-full px-3 py-2 mb-3 rounded-lg border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] text-[#C6A55A]/70 hover:text-[#C6A55A] hover:border-[#C6A55A]/30 hover:bg-[#C6A55A]/[0.07] transition-all duration-200 group"
+                      >
+                        <Shield className="w-3 h-3 flex-shrink-0" />
+                        <span className="font-mono text-[9px] tracking-[0.18em] uppercase">
+                          Hague Compliance Intelligence
+                        </span>
+                        <ArrowRight className="w-2.5 h-2.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    )}
+
                     {/* Disclaimer */}
                     <p className="font-mono text-[8px] text-[#333] leading-relaxed mb-4">
                       Procedural guidance only. Requirements confirmed with receiving authority before execution.
@@ -330,13 +417,67 @@ export function GlobalMap() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col items-center justify-center flex-1 h-full p-8 text-center"
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col items-center justify-center flex-1 h-full p-8 text-center relative overflow-hidden"
                   >
-                    <Globe className="w-7 h-7 text-[#242424] mb-4" />
-                    <span className="font-mono text-[9px] tracking-[0.22em] uppercase text-[#333] max-w-[190px] leading-relaxed">
-                      Select a destination on the map to preview the execution vector
+                    {/* Ambient radial bloom */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(198,165,90,0.045) 0%, transparent 70%)" }}
+                    />
+
+                    {/* Animated crosshair globe */}
+                    <div className="relative mb-6 flex-shrink-0">
+                      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" className="opacity-60">
+                        {/* Outer ring — slow pulse */}
+                        <circle cx="36" cy="36" r="32" stroke="#C6A55A" strokeWidth="0.5" opacity="0.25">
+                          <animate attributeName="r" values="32;35;32" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" />
+                          <animate attributeName="opacity" values="0.25;0.08;0.25" dur="4s" repeatCount="indefinite" />
+                        </circle>
+                        {/* Inner ring */}
+                        <circle cx="36" cy="36" r="20" stroke="#C6A55A" strokeWidth="0.6" opacity="0.35" />
+                        {/* Core dot */}
+                        <circle cx="36" cy="36" r="3.5" fill="#C6A55A" opacity="0.7">
+                          <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.8s" repeatCount="indefinite" />
+                        </circle>
+                        {/* Crosshair lines */}
+                        <line x1="36" y1="4" x2="36" y2="16" stroke="#C6A55A" strokeWidth="0.8" opacity="0.4" />
+                        <line x1="36" y1="56" x2="36" y2="68" stroke="#C6A55A" strokeWidth="0.8" opacity="0.4" />
+                        <line x1="4" y1="36" x2="16" y2="36" stroke="#C6A55A" strokeWidth="0.8" opacity="0.4" />
+                        <line x1="56" y1="36" x2="68" y2="36" stroke="#C6A55A" strokeWidth="0.8" opacity="0.4" />
+                        {/* Sweeping arc */}
+                        <path d="M 36 16 A 20 20 0 0 1 56 36" stroke="#C6A55A" strokeWidth="1.2" opacity="0.55" strokeLinecap="round">
+                          <animateTransform attributeName="transform" type="rotate" from="0 36 36" to="360 36 36" dur="6s" repeatCount="indefinite" />
+                        </path>
+                        {/* Corner ticks */}
+                        <path d="M 10 10 L 10 16 M 10 10 L 16 10" stroke="#C6A55A" strokeWidth="0.7" opacity="0.3" />
+                        <path d="M 62 10 L 62 16 M 62 10 L 56 10" stroke="#C6A55A" strokeWidth="0.7" opacity="0.3" />
+                        <path d="M 10 62 L 10 56 M 10 62 L 16 62" stroke="#C6A55A" strokeWidth="0.7" opacity="0.3" />
+                        <path d="M 62 62 L 62 56 M 62 62 L 56 62" stroke="#C6A55A" strokeWidth="0.7" opacity="0.3" />
+                      </svg>
+                    </div>
+
+                    {/* Label */}
+                    <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/30 block mb-3">
+                      EXECUTION VECTOR
                     </span>
+                    <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#3A3A3A] max-w-[180px] leading-[1.8] block mb-6">
+                      Select a destination on the map to preview the execution path
+                    </span>
+
+                    {/* Live status indicators */}
+                    <div className="flex flex-col gap-2 w-full max-w-[200px]">
+                      {[
+                        { label: "HAGUE ROUTES", value: "38 ACTIVE" },
+                        { label: "CORRIDORS", value: "LIVE" },
+                        { label: "ORIGIN", value: "FL · CLEARED" },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex items-center justify-between px-3 py-1.5 border border-white/[0.04] rounded bg-white/[0.015]">
+                          <span className="font-mono text-[8px] tracking-[0.2em] text-[#333]">{label}</span>
+                          <span className="font-mono text-[8px] tracking-[0.15em] text-[#C6A55A]/50">{value}</span>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -464,6 +605,8 @@ export function GlobalMap() {
           </Link>
         </motion.div>
       </div>
+      {/* Country compliance modal — available for all 5 PRIMARY_ROUTES */}
+      <CountryComplianceCard countryId={complianceCountryId} onClose={closeCompliance} />
     </motion.section>
   );
 }
