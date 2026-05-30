@@ -81,6 +81,16 @@ This reference is documentation-only. It does not override the Master Reconcilia
 
 **Location:** `docs/operations/FINAL_SOP_COMMAND_CENTER_RUNBOOK.md`
 
+### Avvocato Sovereign Intelligence Backlog
+
+The complete staged backlog for The Milano Seal™ platform intelligence expansion. Contains 21 sections across 13 backlog categories (A–M) plus 8 numbered artifacts covering full system architecture, test sequences, upgrade paths, intelligence surface design, governance interlock, SOP taxonomy, sovereign operational interlock (P0 clearance), and the client communication tone matrix.
+
+**Status:** STAGED BACKLOG ONLY — no production behavior changes, no code, no migrations, no auth, no payment touched.
+
+**Build gate:** POST P0 LIVE VERIFICATION COMPLETE.
+
+**Location:** `docs/architecture/AVVOCATO_SOVEREIGN_INTELLIGENCE_BACKLOG.md`
+
 ---
 
 ## Built with v0
