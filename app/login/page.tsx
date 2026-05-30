@@ -47,7 +47,7 @@ function LoginInner() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace(safeNext || "/admin");
+      if (data.session) router.replace(safeNext || "/dashboard");
     });
   }, [router, safeNext]);
 
@@ -60,7 +60,7 @@ function LoginInner() {
     }
   }, [searchParams]);
 
-  const dest = role ? (ROLES.find((r) => r.id === role)?.dest ?? "/admin") : "/admin";
+  const dest = role ? (ROLES.find((r) => r.id === role)?.dest ?? "/dashboard") : "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
