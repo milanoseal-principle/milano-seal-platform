@@ -69,9 +69,9 @@ export function CredentialTicker() {
         {[...RAIL_B, ...RAIL_B].map((label, i) => (
           <span
             key={`b-${i}`}
-            className="text-[8px] font-mono text-[#D4AF37]/40 tracking-[0.35em] mx-8 flex items-center gap-2.5"
+            className="text-[8px] font-mono text-[#D4AF37]/70 tracking-[0.35em] mx-8 flex items-center gap-2.5"
           >
-            <span className="w-2 h-px bg-[#D4AF37]/40 flex-shrink-0" />
+            <span className="w-2 h-px bg-[#D4AF37]/70 flex-shrink-0" />
             {label}
           </span>
         ))}
