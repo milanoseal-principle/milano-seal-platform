@@ -43,12 +43,15 @@ export async function POST(
     return NextResponse.json({ error: "Deal not found" }, { status: 404 });
   }
 
+  const previousStatus = deal.deal_status;
+  const newStatus = "released";
+
   const result = await appendLedger({
     deal_id: deal.id,
     event: CUSTODY_EVENTS.DOC_RELEASE_CONFIRMED,
     actor_type: "operator",
     actor_id: user.email ?? user.id,
-    notes: "Document release confirmed by operator",
+    notes: `Document release confirmed by operator | previous_status=${previousStatus} | new_status=${newStatus} | release_action=DOC_RELEASE_CONFIRMED | operator=${user.email ?? user.id}`,
   });
 
   if (!result) {
@@ -58,5 +61,31 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ ok: true, hash: result.hash });
+  // Attempt durable audit log entry
+  let auditFailed = false;
+  try {
+    const { error: auditErr } = await adminClient.from("audit_logs").insert({
+      event: "DOC_RELEASE_CONFIRMED",
+      actor: user.email ?? user.id,
+      resource: deal.deal_id ?? deal.id,
+      detail: `previous_status=${previousStatus} new_status=${newStatus}`,
+      created_at: new Date().toISOString(),
+    });
+    if (auditErr) auditFailed = true;
+  } catch {
+    auditFailed = true;
+  }
+
+  // If audit insert failed, append AUDIT_PENDING_SYNC to custody chain — do NOT silently continue
+  if (auditFailed) {
+    await appendLedger({
+      deal_id: deal.id,
+      event: "AUDIT_PENDING_SYNC",
+      actor_type: "system",
+      actor_id: "system",
+      notes: `audit_logs insert failed for DOC_RELEASE_CONFIRMED by ${user.email ?? user.id} — chain requires manual reconciliation`,
+    });
+  }
+
+  return NextResponse.json({ ok: true, hash: result.hash, audit_ok: !auditFailed });
 }

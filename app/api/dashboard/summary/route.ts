@@ -10,8 +10,11 @@ export async function GET() {
 
   const { data: rows } = await supabase
     .from("deals")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select(
+      "id,deal_id,client_name,client_type,company_name,email,document_type,destination_country,origin_state,lane,urgency,deal_status,payment_status,total_price,invoice_retainer,invoice_balance,base_price,witness_total,conversion_score,assignee,scheduled_at,executed_at,apostille_at,shipped_at,completed_at,tracking_number,created_at,updated_at,balance_payment_status,balance_paid_at,balance_amount_received"
+    )
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   const deals = (rows ?? []).map(serializeDealMS);
 
@@ -63,7 +66,7 @@ export async function GET() {
     .map(([lane, count]) => ({ lane, count }))
     .sort((a, b) => b.count - a.count);
 
-  const recent_deals = deals.slice(0, 8);
+  const recent_deals = deals.slice(0, 8).map(({ notes: _n, payment_link: _pl, balance_payment_link: _bpl, ...safe }) => safe);
 
   const { data: activityRows } = await supabase
     .from("activity_logs")

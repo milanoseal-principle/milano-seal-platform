@@ -74,12 +74,16 @@ export async function GET() {
   });
 
   const liveCount = items.filter((i) => i.wise !== null).length;
+  const wiseAttempted = rows.filter((d) => d.wise_request_id).length;
+  // If we attempted Wise lookups but got zero results, treat as API unavailable
+  const wiseOk = wiseAttempted === 0 || liveCount > 0;
+  const wiseError = !wiseOk ? "Wise API returned no results — service may be unavailable" : null;
 
   return NextResponse.json({
     ok: true,
     api_host: apiHost,
-    wise_ok: true,
-    wise_error: null,
+    wise_ok: wiseOk,
+    wise_error: wiseError,
     wise_total: liveCount,
     fetched_at: new Date().toISOString(),
     items,
