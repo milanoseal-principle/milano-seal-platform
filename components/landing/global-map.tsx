@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
-import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound } from "lucide-react";
+import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
 
 const GlobalIntelMapInteractive = dynamic(
   () =>
@@ -67,6 +68,12 @@ export function GlobalMap() {
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+  const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
+
+  const openCompliance = useCallback((slug: string) => {
+    if (COUNTRY_COMPLIANCE_DATA[slug]) setComplianceCountryId(slug);
+  }, []);
+  const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
 
   useEffect(() => {
     setActiveRouteId(selectedDest?.slug ?? null);
@@ -221,6 +228,15 @@ export function GlobalMap() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
+                          <button
+                            onClick={() => openCompliance(selectedDest.slug)}
+                            className="p-1.5 rounded border border-[#C6A55A]/25 text-[#C6A55A]/60 hover:text-[#C6A55A] hover:border-[#C6A55A]/50 transition-colors"
+                            aria-label="View compliance details"
+                          >
+                            <Shield className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <Link
                           href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
                           className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg"
@@ -367,6 +383,20 @@ export function GlobalMap() {
                         </div>
                       </div>
                     )}
+                    {/* Compliance Intelligence link — only for PRIMARY_ROUTES countries */}
+                    {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
+                      <button
+                        onClick={() => openCompliance(selectedDest.slug)}
+                        className="flex items-center gap-2 w-full px-3 py-2 mb-3 rounded-lg border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] text-[#C6A55A]/70 hover:text-[#C6A55A] hover:border-[#C6A55A]/30 hover:bg-[#C6A55A]/[0.07] transition-all duration-200 group"
+                      >
+                        <Shield className="w-3 h-3 flex-shrink-0" />
+                        <span className="font-mono text-[9px] tracking-[0.18em] uppercase">
+                          Hague Compliance Intelligence
+                        </span>
+                        <ArrowRight className="w-2.5 h-2.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    )}
+
                     {/* Disclaimer */}
                     <p className="font-mono text-[8px] text-[#333] leading-relaxed mb-4">
                       Procedural guidance only. Requirements confirmed with receiving authority before execution.
@@ -575,6 +605,8 @@ export function GlobalMap() {
           </Link>
         </motion.div>
       </div>
+      {/* Country compliance modal — available for all 5 PRIMARY_ROUTES */}
+      <CountryComplianceCard countryId={complianceCountryId} onClose={closeCompliance} />
     </motion.section>
   );
 }
