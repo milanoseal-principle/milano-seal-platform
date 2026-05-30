@@ -91,6 +91,9 @@ export function PaymentFounder() {
                 <Image
                   src="/milano-seal-gold-transparent-512.png"
                   alt="Milano Seal Crest"
+                  width={52}
+                  height={52}
+                  className="opacity-90 drop-shadow-lg"
                   width={80}
                   height={80}
                   className="opacity-95 drop-shadow-lg"

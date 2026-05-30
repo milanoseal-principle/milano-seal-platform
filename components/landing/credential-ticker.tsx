@@ -1,25 +1,15 @@
 "use client";
 
-import {
-  Shield,
-  Globe,
-  Lock,
-  Award,
-  Scale,
-  Clock,
-  FileCheck,
-  Star,
-} from "lucide-react";
+import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
 
 const ITEMS = [
-  { icon: Shield, label: "Florida Notary #668288" },
-  { icon: Globe, label: "Hague Convention — 21+ Countries" },
-  { icon: Lock, label: "Payment-Gated Execution" },
-  { icon: Award, label: "RON Certified" },
-  { icon: Scale, label: "Apostille Authority — FL Dept of State" },
-  { icon: Clock, label: "1-Business-Day Response" },
-  { icon: FileCheck, label: "USCIS-Ready Document Packages" },
-  { icon: Star, label: "Procedural Control Across Jurisdictions" },
+  { icon: Shield,     label: "FLORIDA NOTARY #668288 // COMMISSION ACTIVE" },
+  { icon: Globe,      label: "HAGUE CONVENTION ROUTING // 21+ JURISDICTIONS INDEXED" },
+  { icon: Video,      label: "REMOTE ONLINE NOTARIZATION // SECURE SESSION AVAILABLE" },
+  { icon: FileCheck,  label: "FLORIDA DEPT OF STATE // APOSTILLE ROUTE ACTIVE" },
+  { icon: Users,      label: "USCIS DOCUMENT SUPPORT // PACKAGE REVIEW AVAILABLE" },
+  { icon: Layers,     label: "MATTER REVIEW // 1-BUSINESS-DAY RESPONSE WINDOW" },
+  { icon: Navigation, label: "TALLAHASSEE DISPATCH // FIELD MOBILIZATION AVAILABLE" },
 ];
 
 export function CredentialTicker() {

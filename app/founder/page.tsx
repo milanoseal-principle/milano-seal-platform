@@ -195,7 +195,7 @@ export default function FounderPage() {
               href="/intake"
               className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-sm hover:bg-[#D4BB7A] transition-all"
             >
-              Begin Execution
+              Begin Secure Intake
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

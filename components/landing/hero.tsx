@@ -1,16 +1,11 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Globe, Shield, FileCheck } from "lucide-react";
+import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
-const TRUST_ITEMS = [
-  { icon: Shield,    label: "Florida Notary #668288" },
-  { icon: Globe,     label: "Hague Convention Compliant" },
-  { icon: FileCheck, label: "RON Certified" },
-];
 
 function useHeroReveal(delays: number[]) {
   const [visible, setVisible] = useState<boolean[]>(() =>
@@ -44,12 +39,13 @@ export function Hero() {
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6) trust(7)
-  const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100, 1350]);
+  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6)
+  const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100]);
 
   return (
     <section
       ref={ref}
+      className="relative min-h-screen lg:h-screen pt-[136px] md:pt-[148px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
       className="relative min-h-screen lg:h-screen pt-[128px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
@@ -73,6 +69,19 @@ export function Hero() {
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
 
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
+          <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
+
+            {/* Credential badge — animation wrapper is block, visual badge is inline-flex */}
+            <div className={`ms-hero-line mb-8${heroVisible[0] ? " is-visible" : ""}`}>
+              <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 max-w-fit [isolation:isolate]">
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
+                </span>
+                <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase whitespace-nowrap">
+                  Florida Notary #668288 · Hague Convention Routing
+                </span>
+              </div>
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center">
 
             {/* Credential badge — below ticker, above headline */}
@@ -127,6 +136,22 @@ export function Hero() {
                 Explore Global Document Intelligence
               </Link>
             </div>
+
+
+          </div>
+
+          {/* RIGHT: Kinetic Core — globe */}
+          <div className="w-full lg:w-[48%] flex items-center justify-center relative">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex items-center justify-center"
+            >
+              <GlobalTrustCoreHero />
+            </motion.div>
+          </div>
+
 
             {/* Trust badges */}
             <div className={`ms-hero-line flex flex-wrap gap-4 justify-center lg:justify-start${heroVisible[7] ? " is-visible" : ""}`}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Clock, Lock, Globe, Scale, Award } from "lucide-react";
+import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
 
 const items = [
   {
@@ -9,16 +9,41 @@ const items = [
     label: "Florida Notary #668288",
     sub: "Licensed & Commissioned",
   },
-  { icon: Globe, label: "Hague Convention", sub: "21+ Countries" },
-  { icon: Lock, label: "Payment-Gated Execution", sub: "Zero Exceptions" },
-  { icon: Award, label: "RON Certified", sub: "Remote Online Notary" },
-  { icon: Scale, label: "Apostille Authority", sub: "FL Dept of State" },
-  { icon: Clock, label: "1-Business-Day Response", sub: "Matter Review" },
+  {
+    icon: Globe,
+    label: "Hague Convention Routing",
+    sub: "International Standards",
+  },
+  {
+    icon: Video,
+    label: "Remote Online Notarization",
+    sub: "RON Certified Network",
+  },
+  {
+    icon: FileCheck,
+    label: "FL Dept of State Pathway",
+    sub: "Apostille Coordination",
+  },
+  {
+    icon: Users,
+    label: "USCIS Document Support",
+    sub: "Clearance Validation",
+  },
+  {
+    icon: Layers,
+    label: "Matter Review System",
+    sub: "Multi-Gate Execution",
+  },
+  {
+    icon: Navigation,
+    label: "Tallahassee Field Dispatch",
+    sub: "Physical Courier · FL Dept of State",
+  },
 ];
 
 export function TrustStrip() {
   return (
-    <section className="relative py-12 bg-[#111111] border-y border-[#2A2A2A] overflow-hidden">
+    <section className="relative py-12 bg-[#050507] border-y border-[#1A1A1A] overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] z-10 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6">
         <motion.div
