@@ -3,715 +3,284 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ArrowRight, Shield, Clock, FileCheck, CheckCircle, ChevronRight } from "lucide-react";
+import { COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
+import { DESTINATIONS } from "@/data/destinations";
+import { buildCountryJsonLd, COUNTRY_FAQS } from "@/lib/country-jsonld";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+const COUNTRY_SLUGS = [
+  "italy", "spain", "uae", "brazil", "mexico", "portugal", "greece", "germany",
+] as const;
+type CountrySlug = typeof COUNTRY_SLUGS[number];
 
-interface CountryProfile {
-  name: string;
-  slug: string;
-  hague_member: boolean;
-  apostille_note: string;
-  translation_note: string;
-  common_documents: string[];
-  execution_path: string;
-  courier_note: string;
-  legalization_note: string;
-  overview: string;
+export function generateStaticParams() {
+  return COUNTRY_SLUGS.map((country) => ({ country }));
 }
 
-// ---------------------------------------------------------------------------
-// Country Registry — procedural guidance only, no legal guarantees
-// ---------------------------------------------------------------------------
-
-const COUNTRY_REGISTRY: Record<string, CountryProfile> = {
-  italy: {
-    name: "Italy",
-    slug: "italy",
-    hague_member: true,
-    overview:
-      "Italy is a Hague Convention member. US documents submitted to Italian authorities typically require an apostille and often a sworn Italian translation.",
-    apostille_note:
-      "US apostille from the issuing state is the standard authentication path for Italy.",
-    translation_note:
-      "Italian translation is typically required. Translation requirements are confirmed with the receiving authority.",
-    common_documents: [
-      "Power of Attorney",
-      "Affidavit",
-      "Birth Certificate",
-      "Marriage Certificate",
-      "Diploma",
-    ],
-    execution_path:
-      "Notarization → State apostille → Italian translation (if required) → International courier",
-    courier_note:
-      "DHL Express and FedEx International are standard carriers for Italy.",
-    legalization_note: "",
-  },
-  spain: {
-    name: "Spain",
-    slug: "spain",
-    hague_member: true,
-    overview:
-      "Spain is a Hague Convention member. Documents for use in Spain generally require a US apostille.",
-    apostille_note:
-      "US apostille from the issuing state is the standard authentication path.",
-    translation_note:
-      "Spanish translation is typically required. Requirements confirmed with receiving authority.",
-    common_documents: [
-      "Power of Attorney",
-      "Affidavit",
-      "Birth Certificate",
-      "Corporate Documents",
-    ],
-    execution_path:
-      "Notarization → State apostille → Spanish translation (if required) → International courier",
-    courier_note:
-      "DHL Express and FedEx International are standard carriers for Spain.",
-    legalization_note: "",
-  },
-  germany: {
-    name: "Germany",
-    slug: "germany",
-    hague_member: true,
-    overview:
-      "Germany is a Hague Convention member. German authorities typically require a US apostille and German translation.",
-    apostille_note:
-      "US apostille is the standard authentication path for Germany.",
-    translation_note:
-      "German translation is typically required. Confirm with receiving authority.",
-    common_documents: [
-      "Power of Attorney",
-      "Affidavit",
-      "Birth Certificate",
-      "Corporate Documents",
-      "Citizenship Documents",
-    ],
-    execution_path:
-      "Notarization → State apostille → German translation (if required) → International courier",
-    courier_note: "DHL Express is the preferred carrier for Germany.",
-    legalization_note: "",
-  },
-  portugal: {
-    name: "Portugal",
-    slug: "portugal",
-    hague_member: true,
-    overview:
-      "Portugal is a Hague Convention member. Documents for Portuguese authorities typically require a US apostille.",
-    apostille_note: "US apostille is the standard authentication path.",
-    translation_note:
-      "Portuguese translation is typically required. Requirements confirmed with receiving authority.",
-    common_documents: [
-      "Power of Attorney",
-      "Affidavit",
-      "Birth Certificate",
-    ],
-    execution_path:
-      "Notarization → State apostille → Portuguese translation (if required) → International courier",
-    courier_note:
-      "DHL Express and FedEx International are standard carriers.",
-    legalization_note: "",
-  },
-  uae: {
-    name: "UAE",
-    slug: "uae",
-    hague_member: false,
-    overview:
-      "The UAE is not a member of the Hague Apostille Convention. Documents for UAE use typically require a different authentication chain.",
-    apostille_note:
-      "Apostille does not apply for UAE. Documents may require state-level authentication, US Department of State legalization, and UAE embassy attestation.",
-    translation_note:
-      "Arabic translation may be required depending on the document and receiving authority. Requirements confirmed before submission.",
-    common_documents: [
-      "Power of Attorney",
-      "Corporate Documents",
-      "Affidavit",
-      "Marriage Certificate",
-    ],
-    execution_path:
-      "Notarization → State authentication → US Dept of State legalization → UAE Embassy attestation",
-    courier_note: "DHL Express is the standard carrier for UAE.",
-    legalization_note:
-      "Authentication chain: State-level notarization → State-level authentication → US Dept of State legalization → UAE Embassy attestation. This chain may vary — confirm current requirements before execution.",
-  },
-  mexico: {
-    name: "Mexico",
-    slug: "mexico",
-    hague_member: true,
-    overview:
-      "Mexico is a Hague Convention member. US documents for use in Mexico typically require a US apostille.",
-    apostille_note:
-      "US apostille from the issuing state is the standard authentication path for Mexico.",
-    translation_note:
-      "Spanish translation is typically required for Mexican authorities. Requirements confirmed with receiving authority.",
-    common_documents: [
-      "Power of Attorney",
-      "Affidavit",
-      "Birth Certificate",
-      "Corporate Documents",
-    ],
-    execution_path:
-      "Notarization → State apostille → Spanish translation (if required) → International courier",
-    courier_note:
-      "DHL Express and FedEx International are standard carriers for Mexico.",
-    legalization_note: "",
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Motion constants (restrained)
-// ---------------------------------------------------------------------------
-
-const EASE = [0.16, 1, 0.3, 1] as const;
-
-// ---------------------------------------------------------------------------
-// Static params — 6 priority slugs
-// ---------------------------------------------------------------------------
-
-export async function generateStaticParams() {
-  return [
-    { country: "italy" },
-    { country: "spain" },
-    { country: "germany" },
-    { country: "portugal" },
-    { country: "uae" },
-    { country: "mexico" },
-  ];
-}
-
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
-
-interface PageProps {
-  params: Promise<{ country: string }>;
-}
+interface PageProps { params: Promise<{ country: string }> }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { country: slug } = await params;
-  const profile = COUNTRY_REGISTRY[slug];
+  const compliance = COUNTRY_COMPLIANCE_DATA[slug];
+  const dest = DESTINATIONS.find((d) => d.slug === slug);
 
-  if (!profile) {
-    return { title: "Not Found" };
-  }
+  if (!dest) return { title: "Not Found" };
 
   const canonical = `https://themilanoseal.com/countries/${slug}`;
+  const title = `Florida to ${dest.name} Apostille & Document Authentication | The Milano Seal™`;
+  const description = compliance?.seoFact ??
+    `Professional apostille and document authentication services for ${dest.name}. Notarization, apostille, and international courier. Executed properly the first time.`;
 
   return {
-    title: `${profile.name} Document Authentication | The Milano Seal™`,
-    description: `Professional apostille and document authentication services for ${profile.name}. Notarization, apostille, translation, and international courier. Executed properly the first time.`,
+    title,
+    description,
     alternates: { canonical },
-    openGraph: {
-      title: `${profile.name} Document Authentication | The Milano Seal™`,
-      description: `Professional apostille and document authentication services for ${profile.name}. Executed properly the first time.`,
-      url: canonical,
-    },
+    openGraph: { title, description, url: canonical, siteName: "The Milano Seal™", type: "website" },
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
-
-function parseExecutionSteps(path: string): string[] {
-  return path.split("→").map((s) => s.trim());
-}
-
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
-
 export default async function CountryPage({ params }: PageProps) {
   const { country: slug } = await params;
-  const profile = COUNTRY_REGISTRY[slug];
 
-  if (!profile) {
-    notFound();
-  }
+  const dest = DESTINATIONS.find((d) => d.slug === slug);
+  if (!dest) notFound();
 
-  const steps = parseExecutionSteps(profile.execution_path);
-  const canonical = `https://themilanoseal.com/countries/${slug}`;
+  const compliance = COUNTRY_COMPLIANCE_DATA[slug];
+  const faqs = COUNTRY_FAQS[slug] ?? [];
+
+  // JSON-LD — only for countries with full compliance data
+  const jsonld = compliance ? buildCountryJsonLd(slug, compliance, dest) : null;
 
   return (
     <>
-      <Header />
-      <main
-        style={{ background: "rgba(8,5,1,0.97)", minHeight: "100vh" }}
-        className="pt-[116px] overflow-x-hidden"
-      >
-        {/* ── Hero ──────────────────────────────────────────────────── */}
-        <section className="px-6 pt-16 pb-10 max-w-4xl mx-auto">
-          {/* Gold chip */}
-          <div
-            style={{
-              fontFamily: "monospace",
-              fontSize: "9px",
-              letterSpacing: "0.3em",
-              color: "rgba(212,175,55,0.8)",
-              marginBottom: "1.25rem",
-              textTransform: "uppercase",
-            }}
-          >
-            {profile.name} Document Services
-          </div>
-
-          {/* H1 */}
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', 'Playfair', Georgia, serif",
-              fontSize: "clamp(2rem, 5vw, 3.25rem)",
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.75)",
-              lineHeight: 1.15,
-              marginBottom: "1rem",
-            }}
-          >
-            {profile.name} Document Authentication
-          </h1>
-
-          {/* Subtitle */}
-          <p
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontWeight: 300,
-              fontSize: "1.0625rem",
-              lineHeight: 1.65,
-              maxWidth: "620px",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {profile.overview}
-          </p>
-
-          {/* Hague badge */}
-          {profile.hague_member ? (
-            <span
-              style={{
-                display: "inline-block",
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                padding: "4px 12px",
-                borderRadius: "4px",
-                border: "1px solid rgba(52,211,153,0.45)",
-                color: "rgba(52,211,153,0.85)",
-                background: "rgba(52,211,153,0.06)",
-              }}
-            >
-              Hague Member
-            </span>
-          ) : (
-            <span
-              style={{
-                display: "inline-block",
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                padding: "4px 12px",
-                borderRadius: "4px",
-                border: "1px solid rgba(251,191,36,0.45)",
-                color: "rgba(251,191,36,0.85)",
-                background: "rgba(251,191,36,0.06)",
-              }}
-            >
-              Non-Hague
-            </span>
+      {/* JSON-LD */}
+      {jsonld && (
+        <>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld.service) }} />
+          {faqs.length > 0 && (
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld.faqPage) }} />
           )}
-        </section>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld.breadcrumb) }} />
+        </>
+      )}
 
-        {/* ── Authentication Path ───────────────────────────────────── */}
-        <section className="px-6 pb-6 max-w-4xl mx-auto">
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "10px",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.7)",
-                marginBottom: "1rem",
-              }}
-            >
-              Authentication Path
-            </div>
+      <Header />
+      <main className="min-h-screen bg-[#050507] text-white pt-[116px]">
 
-            <p
-              style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: "0.9375rem",
-                lineHeight: 1.7,
-                marginBottom: profile.hague_member ? 0 : "1.5rem",
-              }}
-            >
-              {profile.hague_member
-                ? profile.apostille_note
-                : profile.apostille_note}
-            </p>
+        {/* Breadcrumb */}
+        <nav className="max-w-5xl mx-auto px-6 pt-8 flex items-center gap-2" aria-label="Breadcrumb">
+          <Link href="/" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Home</Link>
+          <ChevronRight className="w-3 h-3 text-[#2A2A2A]" />
+          <Link href="/map" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Countries</Link>
+          <ChevronRight className="w-3 h-3 text-[#2A2A2A]" />
+          <span className="font-mono text-[10px] text-[#C6A55A]/70 tracking-widest uppercase">{dest.name}</span>
+        </nav>
 
-            {/* UAE legalization chain */}
-            {!profile.hague_member && profile.legalization_note && (
-              <>
-                <div
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "9px",
-                    letterSpacing: "0.28em",
-                    textTransform: "uppercase",
-                    color: "rgba(251,191,36,0.65)",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  Legalization Chain
+        {/* Hero */}
+        <section className="max-w-5xl mx-auto px-6 pt-12 pb-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-5xl leading-none select-none" role="img" aria-label={dest.name}>{dest.flag}</span>
+                <div>
+                  <p className="font-mono text-[9px] tracking-[0.3em] uppercase text-[#C6A55A]/50 mb-1">
+                    Florida → {dest.name.toUpperCase()}
+                  </p>
+                  <h1 className="font-serif text-4xl md:text-5xl text-white font-medium leading-tight">
+                    {dest.name}
+                  </h1>
                 </div>
-                <ol
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                  }}
-                >
-                  {profile.legalization_note
-                    .split("→")
-                    .map((step) => step.replace(/^Authentication chain:\s*/i, "").trim())
-                    .filter(Boolean)
-                    .map((step, i) => (
-                      <li
-                        key={i}
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: "0.75rem",
-                          color: "rgba(255,255,255,0.6)",
-                          fontSize: "0.875rem",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        <span
-                          style={{
-                            flexShrink: 0,
-                            width: "20px",
-                            height: "20px",
-                            borderRadius: "50%",
-                            background: "rgba(251,191,36,0.12)",
-                            border: "1px solid rgba(251,191,36,0.3)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontFamily: "monospace",
-                            fontSize: "9px",
-                            color: "rgba(251,191,36,0.8)",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                        {step.replace(/\.$/, "")}
-                      </li>
+              </div>
+              {compliance && (
+                <p className="text-[#C6A55A] text-sm font-medium tracking-wide">{compliance.tagline}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className={`inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full border font-mono text-[9px] tracking-[0.15em] uppercase ${
+                dest.hague
+                  ? "border-green-500/30 text-green-400/80 bg-green-500/[0.06]"
+                  : "border-amber-500/30 text-amber-400/80 bg-amber-500/[0.06]"
+              }`}>
+                <Shield className="w-3 h-3" />
+                {dest.hague ? "Hague Convention Member" : "Consular Authentication Required"}
+              </span>
+              {dest.hague && compliance && (
+                <span className="font-mono text-[8px] text-[#3A3A3A] pl-1">Member since {compliance.hagueSince}</span>
+              )}
+            </div>
+          </div>
+          <div className="h-px bg-gradient-to-r from-transparent via-[#C6A55A]/25 to-transparent" />
+        </section>
+
+        {/* Content grid */}
+        <section className="max-w-5xl mx-auto px-6 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Main column */}
+            <div className="lg:col-span-2 space-y-8">
+
+              {/* Compliance intelligence (primary countries only) */}
+              {compliance && (
+                <div className="rounded-xl border border-[#C6A55A]/12 bg-[#C6A55A]/[0.04] p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-[#C6A55A]" />
+                    <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]">
+                      Hague Compliance Intelligence
+                    </span>
+                  </div>
+                  <p className="text-[#C0C0C0] leading-relaxed">{compliance.seoFact}</p>
+                </div>
+              )}
+
+              {/* Stats row */}
+              {compliance && (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { Icon: Shield,    label: "Hague Since",  value: compliance.hagueSince },
+                    { Icon: Clock,     label: "Processing",   value: `${compliance.processingDays} days` },
+                    { Icon: FileCheck, label: "Jurisdiction", value: compliance.jurisdiction },
+                  ].map(({ Icon, label, value }) => (
+                    <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
+                      <Icon className="w-4 h-4 text-[#C6A55A] mx-auto mb-2" />
+                      <div className="font-mono text-[8px] text-[#555] uppercase tracking-widest mb-1">{label}</div>
+                      <div className="text-sm font-medium text-white leading-tight">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Execution Path */}
+              <div>
+                <h2 className="font-serif text-xl text-white mb-5">Execution Path</h2>
+                <div className="space-y-3.5">
+                  {dest.executionPath.map((step, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                      <span className="font-mono text-[#C6A55A]/40 text-[10px] mt-1 w-6 flex-shrink-0 text-right">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <p className="text-[#909090] leading-relaxed">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FAQ */}
+              {faqs.length > 0 && (
+                <div>
+                  <h2 className="font-serif text-xl text-white mb-5">Frequently Asked Questions</h2>
+                  <div className="space-y-4">
+                    {faqs.map(({ q, a }, i) => (
+                      <div key={i} className="border border-white/[0.05] rounded-xl p-5 bg-white/[0.01]">
+                        <h3 className="text-white font-medium mb-2 leading-snug">{q}</h3>
+                        <p className="text-[#888] text-sm leading-relaxed">{a}</p>
+                      </div>
                     ))}
-                </ol>
-              </>
-            )}
-          </div>
-        </section>
+                  </div>
+                </div>
+              )}
 
-        {/* ── Translation Guidance ──────────────────────────────────── */}
-        <section className="px-6 pb-6 max-w-4xl mx-auto">
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "10px",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.7)",
-                marginBottom: "1rem",
-              }}
-            >
-              Translation Guidance
+              {/* Disclaimer */}
+              <p className="font-mono text-[8px] text-[#2A2A2A] leading-relaxed">
+                Procedural guidance only. Not legal advice. Requirements confirmed with receiving authority before execution.
+              </p>
             </div>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: "0.9375rem",
-                lineHeight: 1.7,
-              }}
-            >
-              {profile.translation_note}
-            </p>
-          </div>
-        </section>
 
-        {/* ── Common Documents ──────────────────────────────────────── */}
-        <section className="px-6 pb-6 max-w-4xl mx-auto">
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "10px",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.7)",
-                marginBottom: "1.25rem",
-              }}
-            >
-              Common Documents
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "0.5rem",
-              }}
-            >
-              {profile.common_documents.map((doc) => (
+            {/* Sidebar */}
+            <div className="space-y-5">
+
+              {/* CTA card */}
+              <div className="relative rounded-xl border border-[#C6A55A]/20 bg-[#0A0A0A] p-5 sticky top-6"
+                style={{ boxShadow: "0 0 0 1px rgba(198,165,90,0.06), 0 24px 48px rgba(0,0,0,0.6)" }}>
+                <div className="absolute top-0 left-0 right-0 h-px rounded-t-xl bg-gradient-to-r from-transparent via-[#C6A55A]/50 to-transparent" />
+                <p className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#C6A55A]/40 mb-3">Begin Execution</p>
+                <p className="text-white font-serif text-lg leading-snug mb-4">{dest.name} Document Authentication</p>
                 <Link
-                  key={doc}
-                  href={`/intake?country=${profile.slug}&document=${slugify(doc)}`}
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "10px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    padding: "6px 14px",
-                    borderRadius: "5px",
-                    border: "1px solid rgba(212,175,55,0.25)",
-                    color: "rgba(212,175,55,0.75)",
-                    background: "rgba(212,175,55,0.04)",
-                    textDecoration: "none",
-                    transition: "border-color 0.2s, color 0.2s",
-                    display: "inline-block",
-                  }}
+                  href={`/intake?country=${encodeURIComponent(dest.name)}`}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.12em] text-[11px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors mb-3"
                 >
-                  {doc}
+                  Begin {dest.name} Intake <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Execution Path ────────────────────────────────────────── */}
-        <section className="px-6 pb-6 max-w-4xl mx-auto">
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "10px",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.7)",
-                marginBottom: "1.25rem",
-              }}
-            >
-              Execution Path
-            </div>
-            <ol
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.625rem",
-              }}
-            >
-              {steps.map((step, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "0.875rem",
-                    color: "rgba(255,255,255,0.65)",
-                    fontSize: "0.9rem",
-                    lineHeight: 1.6,
-                  }}
+                <Link
+                  href="/services/apostille"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 border border-white/[0.08] text-[#666] text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:border-[#C6A55A]/20 hover:text-[#888] transition-colors"
                 >
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      width: "22px",
-                      height: "22px",
-                      borderRadius: "50%",
-                      background: "rgba(212,175,55,0.1)",
-                      border: "1px solid rgba(212,175,55,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: "monospace",
-                      fontSize: "9px",
-                      color: "rgba(212,175,55,0.8)",
-                      marginTop: "2px",
-                    }}
-                  >
-                    {i + 1}
-                  </span>
-                  {step}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+                  View Apostille Services
+                </Link>
+              </div>
 
-        {/* ── Courier & Release ─────────────────────────────────────── */}
-        <section className="px-6 pb-6 max-w-4xl mx-auto">
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "10px",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.7)",
-                marginBottom: "1rem",
-              }}
-            >
-              Courier &amp; Release
+              {/* Compliance badges */}
+              {compliance && (
+                <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
+                  <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Compliance Clearances</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {compliance.complianceBadges.map((badge) => (
+                      <span key={badge} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/[0.05] text-[11px] text-[#C6A55A]">
+                        <CheckCircle className="w-2.5 h-2.5 flex-shrink-0" />
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Documents */}
+              <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
+                <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Documents Handled</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(compliance?.documentTypes ?? dest.commonDocuments).map((doc) => (
+                    <Link
+                      key={doc}
+                      href={`/intake?country=${encodeURIComponent(dest.name)}&document=${encodeURIComponent(doc)}`}
+                      className="px-2.5 py-1 rounded-full border border-white/[0.07] bg-white/[0.02] text-[11px] text-[#666] hover:text-[#888] hover:border-white/[0.12] transition-colors"
+                    >
+                      {doc}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Internal links */}
+              <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
+                <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Related Services</p>
+                <nav className="space-y-2">
+                  {[
+                    { label: "Apostille Coordination",         href: "/services/apostille" },
+                    { label: "Mobile Notary Service",           href: "/services/mobile-notary" },
+                    { label: "Remote Online Notarization",     href: "/services/ron" },
+                    { label: "Document Authentication",         href: "/services" },
+                    { label: "International Process Overview", href: "/process" },
+                  ].map(({ label, href }) => (
+                    <Link key={href} href={href} className="flex items-center justify-between py-1.5 text-[#555] hover:text-[#888] text-sm transition-colors group">
+                      <span>{label}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  ))}
+                </nav>
+              </div>
             </div>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: "0.9375rem",
-                lineHeight: 1.7,
-              }}
-            >
-              {profile.courier_note}
-            </p>
           </div>
         </section>
 
-        {/* ── Smart Intake CTA ──────────────────────────────────────── */}
-        <section className="px-6 pb-16 max-w-4xl mx-auto">
-          <div
-            style={{
-              border: "1px solid rgba(212,175,55,0.3)",
-              borderRadius: "12px",
-              padding: "2.25rem",
-              textAlign: "center",
-              background: "rgba(212,175,55,0.03)",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.6)",
-                marginBottom: "0.75rem",
-              }}
-            >
-              Begin Your Matter
+        {/* Bottom CTA strip */}
+        <section className="border-t border-white/[0.04] bg-[#070709]">
+          <div className="max-w-5xl mx-auto px-6 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]/40 mb-1">The Milano Seal™</p>
+              <p className="text-white font-serif text-lg">Florida notarization. Global authentication. Delivered.</p>
             </div>
-            <h2
-              style={{
-                fontFamily: "'Playfair Display', 'Playfair', Georgia, serif",
-                fontSize: "clamp(1.375rem, 3vw, 1.875rem)",
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.75)",
-                marginBottom: "1rem",
-              }}
-            >
-              Begin your {profile.name} matter
-            </h2>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.45)",
-                fontSize: "0.9rem",
-                marginBottom: "1.75rem",
-                lineHeight: 1.6,
-              }}
-            >
-              Submit your document details and we will confirm the correct
-              authentication path for your {profile.name} matter.
-            </p>
-            <Link
-              href={`/intake?country=${profile.slug}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.75rem 2rem",
-                background: "rgba(212,175,55,0.9)",
-                color: "rgba(8,5,1,0.97)",
-                borderRadius: "8px",
-                fontWeight: 600,
-                fontSize: "0.875rem",
-                textDecoration: "none",
-                letterSpacing: "0.05em",
-              }}
-            >
-              Begin {profile.name} Execution
-              <span aria-hidden="true">→</span>
-            </Link>
-
-            {/* Disclaimer */}
-            <p
-              style={{
-                marginTop: "2rem",
-                fontSize: "0.6875rem",
-                color: "rgba(255,255,255,0.25)",
-                lineHeight: 1.6,
-                maxWidth: "480px",
-                marginLeft: "auto",
-                marginRight: "auto",
-              }}
-            >
-              Procedural guidance only. Not legal advice. Requirements confirmed
-              with receiving authority before execution.
-            </p>
+            <div className="flex gap-3 flex-shrink-0">
+              <Link href={`/intake?country=${encodeURIComponent(dest.name)}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#050507] font-bold text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-[#D4B76A] transition-colors">
+                Begin Intake <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link href="/map"
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase tracking-[0.1em] rounded-lg hover:border-[#C6A55A] transition-colors">
+                All Countries
+              </Link>
+            </div>
           </div>
         </section>
-
-        {/* Canonical link hint (for structured data crawlers) */}
-        <link rel="canonical" href={canonical} />
       </main>
       <Footer />
     </>
