@@ -50,6 +50,21 @@ export async function POST(
     );
   }
 
+  // Payment gate: courier label creation requires confirmed payment.
+  // balance_due > 0 or payment_status !== payment_confirmed blocks label purchase.
+  const balanceDue = Number(deal.balance_due ?? deal.amount_due ?? 0);
+  if (deal.payment_status !== "payment_confirmed" || balanceDue > 0) {
+    return NextResponse.json(
+      {
+        error: "Courier release blocked: payment not confirmed.",
+        payment_status: deal.payment_status ?? "unknown",
+        balance_due: balanceDue,
+        code: "PAYMENT_GATE_BLOCKED",
+      },
+      { status: 402 },
+    );
+  }
+
   let body: Body;
   try {
     body = (await req.json()) as Body;
