@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import { ArrowRight, FileCheck, Globe, Shield, MapPin } from "lucide-react";
-import { FileCheck, Globe, CheckCircle, ArrowRight, Navigation } from "lucide-react";
+import { ArrowRight, FileCheck, Globe, Shield, MapPin, Navigation } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Apostille Coordination | The Milano Seal™",
@@ -21,31 +20,21 @@ export const metadata: Metadata = {
 };
 
 const FEATURES = [
-  { icon: Shield,    label: "State Authentication",         detail: "Document sequencing verified directly with the Florida Department of State division." },
-  { icon: Globe,     label: "Hague Convention Compliance",   detail: "Destination-country routing reviewed against Hague Convention authentication requirements." },
-  { icon: MapPin,    label: "Tracking Provided",             detail: "Real-time visibility and transit monitoring maintained through the client portal." },
-  { icon: FileCheck, label: "Global Recognition",            detail: "Apostille accepted by all 125+ Hague Convention member countries when properly issued." },
+  { icon: Shield,    label: "State Authentication",        detail: "Document sequencing verified directly with the Florida Department of State division." },
+  { icon: Globe,     label: "Hague Convention Compliance", detail: "Destination-country routing reviewed against Hague Convention authentication requirements." },
+  { icon: MapPin,    label: "Tracking Provided",           detail: "Real-time visibility and transit monitoring maintained through the client portal." },
+  { icon: FileCheck, label: "Global Recognition",          detail: "Apostille accepted by all 125+ Hague Convention member countries when properly issued." },
 ];
 
 const PROCESS = [
-  "Submit document details and destination country through secure intake.",
-  "Document is reviewed for apostille eligibility and notarization requirements.",
-  "Florida-commissioned notarization completed (RON or mobile).",
-  "Document submitted to the Florida Secretary of State for apostille.",
-  "Apostille attached and document dispatched via international courier to your destination.",
-    "End-to-end apostille coordination through the Florida Department of State. Hague Convention compliance, document sequencing, tracking, and international delivery for cross-border document authentication.",
-  alternates: { canonical: "https://themilanoseal.com/services/apostille" },
-};
-
-const steps = [
-  { title: "Document Assessment", body: "Incoming documents are reviewed for completeness and notarial compliance before submission to the Department of State." },
-  { title: "State Authentication", body: "Documents are submitted to the Florida Department of State for apostille issuance. Processing timelines depend on the current state queue." },
+  { title: "Document Assessment",     body: "Incoming documents are reviewed for completeness and notarial compliance before submission to the Department of State." },
+  { title: "State Authentication",    body: "Documents are submitted to the Florida Department of State for apostille issuance. Processing timelines depend on the current state queue." },
   { title: "Hague Convention Routing", body: "Destination-country requirements are validated against Hague Convention member status. Non-member countries require consular legalization instead." },
-  { title: "Tracking & Status", body: "Real-time status visibility maintained through the client portal from submission through return. Transit and courier tracking included." },
-  { title: "Delivery Coordination", body: "Apostilled documents delivered digitally and/or physically per destination authority requirements. Expedited courier available for urgent matters." },
+  { title: "Tracking & Status",       body: "Real-time status visibility maintained through the client portal from submission through return. Transit and courier tracking included." },
+  { title: "Delivery Coordination",   body: "Apostilled documents delivered digitally and/or physically per destination authority requirements. Expedited courier available for urgent matters." },
 ];
 
-const haagueMemberExamples = [
+const HAGUE_EXAMPLES = [
   "Italy", "Spain", "Germany", "France", "Portugal", "Greece",
   "Mexico", "Brazil", "Australia", "United Kingdom",
 ];
@@ -109,16 +98,64 @@ export default function ApostillePage() {
         <section className="py-16 px-6 border-b border-[#1A1A1A]">
           <div className="max-w-4xl mx-auto">
             <h2 className="font-serif text-2xl font-medium text-white mb-8">Authentication Sequence</h2>
-            <ol className="space-y-4">
+            <div className="space-y-4">
               {PROCESS.map((step, i) => (
-                <li key={i} className="flex items-start gap-4">
-                  <span className="font-serif text-2xl font-medium text-[#C6A55A]/30 flex-shrink-0 w-8">
+                <div key={step.title} className="flex gap-5 p-6 bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl">
+                  <span className="font-serif text-2xl font-medium text-[#C6A55A]/30 flex-shrink-0 w-8 leading-none mt-0.5">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-[#B0B0B0] text-sm leading-relaxed pt-1">{step}</span>
-                </li>
+                  <div>
+                    <h3 className="text-white font-medium text-sm mb-1">{step.title}</h3>
+                    <p className="text-[#8A8A8A] text-xs leading-relaxed">{step.body}</p>
+                  </div>
+                </div>
               ))}
-            </ol>
+            </div>
+          </div>
+        </section>
+
+        {/* Hague member examples */}
+        <section className="py-16 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-serif text-2xl font-medium text-white mb-4">Common Destination Countries</h2>
+            <p className="text-[#8A8A8A] text-sm mb-8">
+              Hague Convention members accept apostilles directly. Non-members require consular legalization.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+              {HAGUE_EXAMPLES.map((country) => (
+                <Link
+                  key={country}
+                  href={`/countries/${country.toLowerCase().replace(/ /g, "-")}`}
+                  prefetch={false}
+                  className="flex items-center gap-2 p-3 bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl hover:border-[#C6A55A]/30 transition-colors group"
+                >
+                  <Globe className="w-3.5 h-3.5 text-[#C6A55A] flex-shrink-0" />
+                  <span className="text-xs text-[#B0B0B0] group-hover:text-white transition-colors">{country}</span>
+                </Link>
+              ))}
+            </div>
+            <p className="text-sm text-[#555]">
+              <Link href="/countries" className="text-[#C6A55A] hover:underline">View full country directory →</Link>
+            </p>
+          </div>
+        </section>
+
+        {/* Trust signals */}
+        <section className="py-16 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-5">
+            {[
+              { icon: FileCheck,  title: "FL Dept of State",  body: "Direct submission and coordination with the Florida Secretary of State apostille division." },
+              { icon: Globe,      title: "Hague Compliance",  body: "Destination-country routing reviewed against current Hague Convention member status." },
+              { icon: Navigation, title: "Tracking Provided", body: "Matter status and transit monitoring through the client portal from start to delivery." },
+            ].map(({ icon: Icon, title, body }) => (
+              <div key={title} className="bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl p-6 text-center">
+                <div className="inline-flex p-2.5 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] mb-4">
+                  <Icon className="w-5 h-5 text-[#C6A55A]" />
+                </div>
+                <h3 className="text-white font-medium text-sm mb-2">{title}</h3>
+                <p className="text-[#8A8A8A] text-xs leading-relaxed">{body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -136,137 +173,13 @@ export default function ApostillePage() {
               Start Your Matter
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <p className="mt-8 text-xs text-[#444] leading-relaxed max-w-lg mx-auto">
+              I am not an attorney. Legal services are provided by Demesmin &amp; Dover PLLC. Final document acceptance and cross-border validation reliability rest explicitly with the receiving foreign authority.
+            </p>
           </div>
         </section>
       </main>
       <Footer />
     </>
-    <main className="min-h-screen bg-[#0A0A0A]">
-      <Header />
-
-      {/* Hero */}
-      <section className="pt-32 pb-16 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
-            <FileCheck className="w-4 h-4 text-[#C6A55A]" />
-            <span className="text-sm text-[#C6A55A] font-medium">Apostille Coordination</span>
-          </div>
-          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Department of State Workflow &amp; Timelines
-          </h1>
-          <p className="text-lg text-[#B0B0B0] mb-8 max-w-2xl mx-auto leading-relaxed">
-            End-to-end apostille handling from document review through international delivery. Florida Department of State coordination with Hague Convention compliance verification.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/intake"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-            >
-              <span>Start Apostille Matter</span>
-              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/countries"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-transparent text-[#C6A55A] border border-[#C6A55A]/30 font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60"
-            >
-              <Globe className="w-5 h-5" />
-              <span>View Countries</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Process */}
-      <section className="py-16 px-6 bg-[#111111]">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-10 text-center">
-            Authentication Sequence
-          </h2>
-          <div className="space-y-4">
-            {steps.map((step, i) => (
-              <div key={step.title} className="flex gap-5 p-6 bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl">
-                <span className="font-serif text-3xl font-medium text-[#C6A55A]/20 flex-shrink-0 leading-none mt-1">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3 className="font-medium text-white mb-1">{step.title}</h3>
-                  <p className="text-[#B0B0B0] text-sm leading-relaxed">{step.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Hague Members */}
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4 text-center">
-            Common Destination Countries
-          </h2>
-          <p className="text-[#B0B0B0] text-center mb-8 text-sm">
-            Hague Convention members accept apostilles directly. Non-members require consular legalization.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {haagueMemberExamples.map((country) => (
-              <Link
-                key={country}
-                href={`/countries/${country.toLowerCase().replace(/ /g, "-")}`}
-                className="flex items-center gap-2 p-3 bg-[#111111] border border-[#2A2A2A] rounded-lg hover:border-[#C6A55A]/30 transition-colors group"
-              >
-                <Globe className="w-3.5 h-3.5 text-[#C6A55A] flex-shrink-0" />
-                <span className="text-sm text-[#B0B0B0] group-hover:text-white transition-colors">{country}</span>
-              </Link>
-            ))}
-          </div>
-          <p className="text-center mt-6 text-sm text-[#B0B0B0]/60">
-            <Link href="/countries" className="text-[#C6A55A] hover:underline">View full country directory →</Link>
-          </p>
-        </div>
-      </section>
-
-      {/* Trust Signals */}
-      <section className="py-16 px-6 bg-[#111111]">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
-          {[
-            { icon: FileCheck, title: "FL Dept of State", body: "Direct submission and coordination with the Florida Secretary of State apostille division." },
-            { icon: Globe, title: "Hague Compliance", body: "Destination-country routing reviewed against current Hague Convention member status." },
-            { icon: Navigation, title: "Tracking Provided", body: "Matter status and transit monitoring through the client portal from start to delivery." },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-6 text-center">
-              <div className="inline-flex p-3 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] mb-4">
-                <Icon className="w-6 h-6 text-[#C6A55A]" />
-              </div>
-              <h3 className="font-medium text-white mb-2">{title}</h3>
-              <p className="text-sm text-[#B0B0B0]">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4">
-            Begin Your Apostille Process
-          </h2>
-          <p className="text-[#B0B0B0] mb-8">
-            Submit your document details and destination country. We will confirm requirements, timelines, and pricing.
-          </p>
-          <Link
-            href="/intake"
-            className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-          >
-            <span>Start Apostille Intake</span>
-            <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-          <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-            I am not an attorney. Legal services are provided by Demesmin &amp; Dover PLLC. Final document acceptance and cross-border validation reliability rest explicitly with the receiving foreign authority.
-          </p>
-        </div>
-      </section>
-
-      <Footer />
-    </main>
   );
 }

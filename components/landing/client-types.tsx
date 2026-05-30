@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Scale, Building, Heart, Globe, User } from "lucide-react";
 import { Scale, Building, Heart, Globe, User, ArrowRight } from "lucide-react";
 
 const clientTypes = [
@@ -12,7 +11,6 @@ const clientTypes = [
     href: "/partners/attorneys",
     description:
       "Reliable execution for client matters requiring notarization and apostille services. We handle the procedural requirements so you can focus on legal strategy.",
-    href: "/partners/attorneys",
   },
   {
     icon: Building,
@@ -20,7 +18,6 @@ const clientTypes = [
     href: "/partners/real-estate",
     description:
       "Closing documents, powers of attorney, and property-related executions with precision timing and location flexibility.",
-    href: "/partners/real-estate",
   },
   {
     icon: Heart,
@@ -28,7 +25,6 @@ const clientTypes = [
     href: "/partners/medical",
     description:
       "Healthcare directives, consent forms, and sensitive medical documents handled with discretion and HIPAA awareness.",
-    href: "/partners/medical",
   },
   {
     icon: Globe,
@@ -36,7 +32,6 @@ const clientTypes = [
     href: "/partners/international-clients",
     description:
       "Cross-border document coordination for individuals and businesses operating between the U.S. and foreign jurisdictions.",
-    href: "/partners/international-clients",
   },
   {
     icon: User,
@@ -44,7 +39,6 @@ const clientTypes = [
     href: "/partners/private-clients",
     description:
       "Estate planning, personal legal documents, and family matters executed with the highest level of discretion and care.",
-    href: "/partners/private-clients",
   },
 ];
 
@@ -72,9 +66,7 @@ export function ClientTypes() {
           </p>
         </motion.div>
 
-        {/* Client types — single-column on mobile, 2-col on md, 3-col on lg */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Desktop: grid */}
+        {/* Desktop: 2-col / 3-col grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {clientTypes.map((type, index) => (
             <motion.div
@@ -85,25 +77,10 @@ export function ClientTypes() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={index === clientTypes.length - 1 ? "lg:col-start-2" : ""}
             >
-              <Link href={type.href} prefetch={false} className="block h-full">
-                <div className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 h-full transition-all duration-300 md:hover:border-[#C6A55A]/30 gold-glow-hover min-h-[48px]">
-                  {/* Icon */}
-                  <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 md:group-hover:border-[#C6A55A]/30 md:group-hover:bg-[#C6A55A]/5">
-                    <type.icon className="w-6 h-6 text-[#C6A55A]" />
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="font-serif text-xl font-medium text-white mb-3 md:group-hover:text-[#C6A55A] transition-colors duration-300">
-                    {type.title}
-                  </h3>
-                  <p className="text-[#B0B0B0] text-sm leading-relaxed">
-                    {type.description}
-                  </p>
-                </div>
-              </Link>
               <Link
                 href={type.href}
-                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[#C6A55A]/30 gold-glow-hover block"
+                prefetch={false}
+                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[#C6A55A]/30 gold-glow-hover"
               >
                 <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 self-start">
                   <type.icon className="w-6 h-6 text-[#C6A55A]" />
@@ -137,6 +114,7 @@ export function ClientTypes() {
             >
               <Link
                 href={type.href}
+                prefetch={false}
                 className="flex items-center justify-between w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-5 active:bg-[#111] transition-colors duration-150 min-h-[64px]"
               >
                 <div className="flex items-center gap-4">
