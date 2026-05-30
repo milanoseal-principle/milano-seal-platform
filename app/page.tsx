@@ -4,7 +4,6 @@ import { TrustStrip } from "@/components/landing/trust-strip";
 import { RitualOverlay } from "@/components/landing/ritual-overlay";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { Services } from "@/components/landing/services";
-import { HowItWorks } from "@/components/landing/how-it-works";
 import { GlobalMap } from "@/components/landing/global-map";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
@@ -38,10 +37,7 @@ export default function HomePage() {
           <Services />
         </div>
 
-        {/* 5. How It Works + Global Document Intelligence map */}
-        <div id="process">
-          <HowItWorks />
-        </div>
+        {/* 5. How It Works + Global Document Intelligence map (combined) */}
         <div id="countries">
           <RoutingIntelligenceSection />
           <CorridorTimeStrip />
