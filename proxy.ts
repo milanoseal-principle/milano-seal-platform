@@ -6,6 +6,7 @@ const PROTECTED_PREFIXES = [
   "/portal",
   "/alliance",
   "/va",
+  "/sovereignos",
   "/api/admin",
   "/api/dashboard",
   "/api/follow-ups",
