@@ -30,16 +30,20 @@ async function getPartnerProfile(userId: string): Promise<PartnerProfile> {
       )
       .eq("id", userId)
       .single(),
+    // operator_toolbelt_summary is a gated view (migration 011) — graceful fallback
     admin
       .from("operator_toolbelt_summary")
       .select("completion_pct")
       .eq("operator_id", userId)
-      .single(),
+      .single()
+      .then((r) => r.error ? { data: null } : r),
+    // operator_compliance_status is a gated view (migration 011) — graceful fallback
     admin
       .from("operator_compliance_status")
       .select("compliance_ready")
       .eq("operator_id", userId)
-      .single(),
+      .single()
+      .then((r) => r.error ? { data: null } : r),
   ]);
 
   const profile = profileRes.data;
