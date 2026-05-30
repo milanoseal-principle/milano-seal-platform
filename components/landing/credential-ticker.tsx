@@ -41,13 +41,16 @@ export function CredentialTicker() {
         {[...RAIL_A, ...RAIL_A].map((item, i) => (
           <span
             key={`a-${i}`}
-            className="text-[9px] font-mono text-[#D4AF37]/60 tracking-[0.3em] mx-8 flex items-center gap-2.5"
+            className="text-[9px] font-mono tracking-[0.3em] mx-8 flex items-center gap-2.5"
+            style={{ color: "rgba(220, 195, 120, 0.92)" }}
           >
             <span
-              className={`w-1 h-1 rounded-full flex-shrink-0 ${
-                item.tone === "emerald" ? "bg-emerald-400/70" : "bg-[#D4AF37]/60"
-              }`}
+              className="w-1 h-1 rounded-full flex-shrink-0"
               style={{
+                background:
+                  item.tone === "emerald"
+                    ? "rgba(52,211,153,0.85)"
+                    : "rgba(212,175,55,0.85)",
                 boxShadow:
                   item.tone === "emerald"
                     ? "0 0 6px rgba(16,185,129,0.5)"
@@ -69,9 +72,13 @@ export function CredentialTicker() {
         {[...RAIL_B, ...RAIL_B].map((label, i) => (
           <span
             key={`b-${i}`}
-            className="text-[8px] font-mono text-[#D4AF37]/40 tracking-[0.35em] mx-8 flex items-center gap-2.5"
+            className="text-[8px] font-mono tracking-[0.35em] mx-8 flex items-center gap-2.5"
+            style={{ color: "rgba(210, 185, 110, 0.75)" }}
           >
-            <span className="w-2 h-px bg-[#D4AF37]/40 flex-shrink-0" />
+            <span
+              className="w-2 h-px flex-shrink-0"
+              style={{ background: "rgba(212,175,55,0.6)" }}
+            />
             {label}
           </span>
         ))}

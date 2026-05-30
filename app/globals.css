@@ -1606,7 +1606,7 @@ h4 {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: rgba(220, 200, 155, 0.92);
 }
 
 .ticker-item__dot {
@@ -1615,13 +1615,13 @@ h4 {
   border-radius: 50%;
   background: var(--gold);
   flex-shrink: 0;
-  opacity: 0.5;
+  opacity: 0.85;
 }
 
 .ticker-item__icon {
   color: var(--gold);
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 1;
 }
 
 /* ── Dual-rail operational ticker animations ─────────────────── */

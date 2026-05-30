@@ -22,53 +22,32 @@ export type WisePaymentRequestResult = {
  * Build a Wise payment request for a given matter.
  *
  * Prefill priority:
- *  1. NEXT_PUBLIC_WISE_BUSINESS_URL → https://wise.com/pay/business/<slug>?amount=X&currency=USD&reference=REF
- *  2. NEXT_PUBLIC_WISE_HANDLE       → https://wise.com/pay/r/<handle>?amount=X&currency=USD&reference=REF
- *  3. WISE_PROFILE_URL (server-side) → appends query params to any base URL
- *  4. No env var → manualFallbackRequired = true, wiseUrl = https://wise.com
+ *  1. NEXT_PUBLIC_WISE_HANDLE  → https://wise.com/pay/r/<handle>?amount=X&currency=USD&reference=REF
+ *  2. WISE_PROFILE_URL (server-side) → appends query params if possible
+ *  3. No env var → manualFallbackRequired = true, wiseUrl = https://wise.com
  */
 export function buildWisePaymentRequest(
   input: WisePaymentRequestInput,
 ): WisePaymentRequestResult {
   const { amountDue, currency, paymentReference, description } = input;
 
-  const params = new URLSearchParams({
-    amount: amountDue.toFixed(2),
-    currency,
-    reference: paymentReference,
-  });
-
-  // Priority 1: full business pay URL (https://wise.com/pay/business/<slug>)
-  const wiseBusinessUrl =
-    (typeof process !== "undefined" &&
-      process.env.NEXT_PUBLIC_WISE_BUSINESS_URL?.trim()) ||
-    null;
-  if (wiseBusinessUrl) {
-    try {
-      const url = new URL(wiseBusinessUrl);
-      url.searchParams.set("amount", amountDue.toFixed(2));
-      url.searchParams.set("currency", currency);
-      url.searchParams.set("reference", paymentReference);
-      return {
-        amountDue,
-        currency,
-        paymentReference,
-        description,
-        wiseUrl: url.toString(),
-        isPrefilled: true,
-        manualFallbackRequired: false,
-      };
-    } catch {
-      // fall through
-    }
-  }
-
-  // Priority 2: legacy handle → /pay/r/<handle>
+  // Attempt to get handle or profile URL
   const wiseHandle =
     (typeof process !== "undefined" &&
       process.env.NEXT_PUBLIC_WISE_HANDLE?.trim()) ||
     null;
+  const wiseProfileUrl =
+    (typeof process !== "undefined" &&
+      process.env.WISE_PROFILE_URL?.trim()) ||
+    null;
+
+  // Build prefilled URL if handle is available
   if (wiseHandle) {
+    const params = new URLSearchParams({
+      amount: amountDue.toFixed(2),
+      currency,
+      reference: paymentReference,
+    });
     const wiseUrl = `https://wise.com/pay/r/${encodeURIComponent(wiseHandle)}?${params.toString()}`;
     return {
       amountDue,
@@ -81,11 +60,7 @@ export function buildWisePaymentRequest(
     };
   }
 
-  // Priority 3: server-side WISE_PROFILE_URL
-  const wiseProfileUrl =
-    (typeof process !== "undefined" &&
-      process.env.WISE_PROFILE_URL?.trim()) ||
-    null;
+  // Attempt to append params to WISE_PROFILE_URL if available
   if (wiseProfileUrl) {
     try {
       const url = new URL(wiseProfileUrl);
@@ -102,11 +77,11 @@ export function buildWisePaymentRequest(
         manualFallbackRequired: false,
       };
     } catch {
-      // fall through
+      // Invalid URL — fall through to manual fallback
     }
   }
 
-  // No env var — manual fallback
+  // No env var configured — manual fallback required
   return {
     amountDue,
     currency,
