@@ -474,7 +474,68 @@ Do not build now:
 
 ---
 
-## 19. Final Control
+## 19. Artifact 7 — Sovereign Operational Interlock (P0 Clearance Governance)
+
+### Emergency Bypass Protocol
+If the Sovereign Execution Core experiences catastrophic downtime, the Manual Fallback is:
+- Physical notary hand-off protocol activates
+- Operator contacts client directly via secure channel
+- Matter state is preserved in last known Supabase record
+- Document custody is transferred to physical chain-of-custody log
+- Digital system resumes from last confirmed custody event on restoration
+
+### Data Sovereignty Lock
+- Supabase instance must be confirmed geographically pinned to US region to satisfy Florida data residency requirements
+- Italian data residency concerns: no client PII to be stored outside the US instance without explicit operator authorization
+- Confirm region setting before P0 go-live sign-off
+
+### Compliance Audit Frequency
+- Bi-weekly Integrity Export of entire Custody Ledger (CSV / JSON / Signed PDF) to off-site cold-storage vault
+- Export must be operator-initiated and operator-signed
+- Export does not expose client PII to unauthorized parties
+- Failure to export does not block live operations but triggers operator alert
+
+---
+
+## 20. Artifact 8 — Client Communication Tone Matrix
+
+### Tone Standard
+Sovereign, precise, and devoid of tech-support jargon.
+
+### Required Language Replacements
+
+| Forbidden | Required |
+|-----------|----------|
+| "Your support ticket is open" | "Operational dossier under review: [Case ID]" |
+| "We'll get back to you soon" | "Operational status update: Estimated clearance of stage [X] revised to [Timestamp]" |
+| "Sorry for the delay" | "Matter coordination in progress. Current stage: [Stage]. Next update: [Timestamp]" |
+| "Error occurred" | "Execution review required. Operator has been notified. Reference: [Case ID]" |
+| "Processing" | "Coordination active" |
+| "Submitted" | "Matter received and under intake review" |
+| "Checkout" | (forbidden entirely — never use) |
+| "Order" | (forbidden entirely — never use) |
+
+### No-Fly Zones
+- No apology language for normal processing windows
+- No "soon" or "shortly" without an actual timestamp
+- No generic SaaS confirmation copy
+- No language that implies the platform is guessing or uncertain
+- No language that implies automatic legal acceptance or embassy verification
+
+### Approved Status Language
+- Intake Received
+- Compliance Review Active
+- Payment-Gated — Scheduling Locked
+- Scheduling Unlocked
+- Execution Coordination Active
+- Apostille Coordination In Progress
+- Courier Release Authorized
+- Paid and Released
+- Dossier Closed
+
+---
+
+## 21. Final Control
 
 This is documentation only.
 
