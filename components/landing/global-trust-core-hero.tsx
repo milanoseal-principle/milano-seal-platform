@@ -1,22 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 
 const FLORIDA = { x: 108, y: 190 };
-
-// Florida as a clickable origin node
-const FLORIDA_NODE = {
-  id: "florida",
-  label: "Florida",
-  x: 108, y: 190,
-  framework: "EXECUTION ORIGIN",
-  channel: "Florida Dept. of State Route",
-  protocol: "RON or in-person execution · Apostille issuance",
-  docs: ["Power of Attorney", "Affidavit", "Name Discrepancy Affidavit"],
-  seoIntent: "/jurisdictions/florida-origin-document-execution",
-  isoCode: "JURISDICTION_ISO_FL",
-};
 
 const DESTINATIONS = [
   {
@@ -25,9 +11,6 @@ const DESTINATIONS = [
     x: 255, y: 105,
     dur: 2.4, startDelay: 0.0,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "FL Dept. of State → International Release",
-    protocol: "Liaison monitoring · Destination-specific review",
-    docs: ["Power of Attorney", "Corporate Authorization", "Diploma Authentication"],
     seoIntent: "/jurisdictions/italy-apostille-coordination",
     isoCode: "JURISDICTION_ISO_IT",
   },
@@ -37,9 +20,6 @@ const DESTINATIONS = [
     x: 208, y: 122,
     dur: 2.8, startDelay: 0.7,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "FL Dept. of State → International Release",
-    protocol: "Civil registry verification · Release coordination",
-    docs: ["Power of Attorney", "Marriage Certificate", "Academic Credentials"],
     seoIntent: "/jurisdictions/spain-international-release-coordination",
     isoCode: "JURISDICTION_ISO_ES",
   },
@@ -49,9 +29,6 @@ const DESTINATIONS = [
     x: 118, y: 268,
     dur: 3.1, startDelay: 1.4,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "FL Dept. of State Route",
-    protocol: "Notary seal validation · Accession 2016",
-    docs: ["Power of Attorney", "Corporate Documents", "Birth Certificate"],
     seoIntent: "/jurisdictions/brazil-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_BR",
   },
@@ -61,9 +38,6 @@ const DESTINATIONS = [
     x: 330, y: 192,
     dur: 2.6, startDelay: 0.3,
     framework: "CONSULAR AUTHENTICATION TRACK",
-    channel: "Embassy / Consular Review",
-    protocol: "Chain-of-custody control · Accession 2021",
-    docs: ["Power of Attorney", "Commercial Agreements", "Corporate Documents"],
     seoIntent: "/jurisdictions/uae-consular-authentication-track",
     isoCode: "JURISDICTION_ISO_AE",
   },
@@ -73,15 +47,10 @@ const DESTINATIONS = [
     x: 62, y: 222,
     dur: 1.8, startDelay: 2.1,
     framework: "HAGUE CONVENTION ROUTING",
-    channel: "State Authentication Channel",
-    protocol: "Destination-specific review · Multi-page instruments",
-    docs: ["Power of Attorney", "Corporate Authorization", "Birth Certificate"],
     seoIntent: "/jurisdictions/mexico-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_MX",
   },
 ];
-
-type AnyNode = typeof FLORIDA_NODE | typeof DESTINATIONS[0];
 
 // Typography scramble — characters cycle before settling on final text
 function useScramble(text: string, active: boolean, tick: number): string {
@@ -187,45 +156,21 @@ export function GlobalTrustCoreHero() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scrambleTick, setScrambleTick] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const [popFixed, setPopFixed] = useState<{ x: number; y: number; rightHemi: boolean } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
-
-  const allNodes: AnyNode[] = [FLORIDA_NODE, ...DESTINATIONS];
-  const selectedNode = allNodes.find(d => d.id === selectedId) ?? null;
-  const scrambleText = selectedNode
-    ? `${selectedNode.label.toUpperCase()} // ${selectedNode.framework}`
+  const selectedDest = DESTINATIONS.find(d => d.id === selectedId) ?? null;
+  const scrambleText = selectedDest
+    ? `${selectedDest.label.toUpperCase()} // ${selectedDest.framework}`
     : "";
-  const scrambledText = useScramble(scrambleText, !!selectedNode, scrambleTick);
+  const scrambledText = useScramble(scrambleText, !!selectedDest, scrambleTick);
 
-  // Compute viewport-absolute position for portal popover (bypasses overflow:hidden ancestors)
-  const computePopPos = useCallback((node: AnyNode) => {
-    if (!containerRef.current) return;
-    const SRATIO = 0.81;
-    const rect = containerRef.current.getBoundingClientRect();
-    const sw = rect.width * SRATIO;
-    const sh = rect.height * SRATIO;
-    const sl = rect.left + (rect.width - sw) / 2;
-    const st = rect.top + (rect.height - sh) / 2;
-    setPopFixed({
-      x: sl + (node.x / 400) * sw,
-      y: st + (node.y / 400) * sh,
-      rightHemi: node.x > 200,
-    });
-  }, []);
-
-  const handleSelect = (node: AnyNode) => {
+  const handleSelect = (id: string) => {
     if (!arcsDone) return;
-    if (selectedId === node.id) {
+    if (selectedId === id) {
       setSelectedId(null);
-      setPopFixed(null);
     } else {
-      setSelectedId(node.id);
+      setSelectedId(id);
       setScrambleTick(t => t + 1);
-      computePopPos(node);
     }
   };
 
@@ -250,31 +195,31 @@ export function GlobalTrustCoreHero() {
     return () => timers.current.forEach(clearTimeout);
   }, []);
 
-  // Update popover position on scroll/resize while open
-  useEffect(() => {
-    if (!selectedNode) { setPopFixed(null); return; }
-    const update = () => computePopPos(selectedNode);
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [selectedNode, computePopPos]);
-
   const isSettled  = phase !== "idle";
   const showArcs   = phase === "arcs" || phase === "rotating";
+  // Rotation pauses while a node is focused
   const isRotating = phase === "rotating" && !selectedId;
 
-  const nudgeX = selectedNode ? ((selectedNode.x - 200) / 200) * 2.5 : 0;
-  const nudgeY = selectedNode ? ((selectedNode.y - 200) / 200) * 1.5 : 0;
+  // Subtle camera nudge toward the selected node
+  const nudgeX = selectedDest ? ((selectedDest.x - 200) / 200) * 2.5 : 0;
+  const nudgeY = selectedDest ? ((selectedDest.y - 200) / 200) * 1.5 : 0;
+
+  // Popover placement — flip to left when node is in right hemisphere
+  const popLeft = selectedDest
+    ? `${Math.min(80, Math.max(5, (selectedDest.x / 400) * 100))}%`
+    : "50%";
+  const popTop = selectedDest
+    ? `${Math.min(82, Math.max(12, (selectedDest.y / 400) * 100))}%`
+    : "50%";
+  const popAnchor = selectedDest && selectedDest.x > 200
+    ? "translate(calc(-100% - 18px), -50%)"
+    : "translate(18px, -50%)";
 
   return (
     <div
-      ref={containerRef}
       className="ms-globe-container"
       aria-label="Global document execution network"
-      onClick={() => { setSelectedId(null); setPopFixed(null); }}
+      onClick={() => setSelectedId(null)}
     >
       {/* Gold bloom behind sphere */}
       <div className="ms-globe-bloom" />
@@ -337,43 +282,30 @@ export function GlobalTrustCoreHero() {
             </filter>
           </defs>
 
-          {/* Florida origin — clickable */}
-          <g
-            style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all", outline: "none" }}
-            role={arcsDone ? "button" : undefined}
-            tabIndex={arcsDone ? 0 : undefined}
-            aria-label="Florida origin — document execution"
-            data-auth-node="FLORIDA_ORIGIN"
-            data-target-vector={FLORIDA_NODE.isoCode}
-            onClick={(e) => { e.stopPropagation(); handleSelect(FLORIDA_NODE); }}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelect(FLORIDA_NODE); }}
-          >
-            <circle cx={FLORIDA.x} cy={FLORIDA.y} r="22" fill="transparent" />
-            <circle
-              cx={FLORIDA.x} cy={FLORIDA.y} r="5"
-              fill={selectedId === "florida" ? "#F0C84A" : "#D4AF37"}
-              filter="url(#gtc-glow-node)"
-              opacity={isSettled ? 1 : 0}
-              className={`ms-globe-origin${isSettled ? " ms-globe-origin--glow" : ""}`}
-            />
-            <circle
-              cx={FLORIDA.x} cy={FLORIDA.y} r="13"
-              fill="none" stroke="#C6A55A" strokeWidth="0.8"
-              opacity={isSettled ? 0.28 : 0}
-              className="ms-globe-origin-ring"
-            />
-            {isSettled && (
-              <text x={FLORIDA.x + 19} y={FLORIDA.y + 3} className="ms-globe-location-text">
-                FLORIDA ORIGIN
-              </text>
-            )}
-          </g>
+          {/* Florida origin */}
+          <circle
+            cx={FLORIDA.x} cy={FLORIDA.y} r="5"
+            fill="#D4AF37"
+            filter="url(#gtc-glow-node)"
+            opacity={isSettled ? 1 : 0}
+            className={`ms-globe-origin${isSettled ? " ms-globe-origin--glow" : ""}`}
+          />
+          <circle
+            cx={FLORIDA.x} cy={FLORIDA.y} r="13"
+            fill="none" stroke="#C6A55A" strokeWidth="0.8"
+            opacity={isSettled ? 0.28 : 0}
+            className="ms-globe-origin-ring"
+          />
+          {isSettled && (
+            <text x={FLORIDA.x + 19} y={FLORIDA.y + 3} className="ms-globe-location-text">
+              FLORIDA ORIGIN
+            </text>
+          )}
 
           {/* Per-route */}
           {DESTINATIONS.map((dest, i) => {
             const path      = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
             const isSelected = selectedId === dest.id;
-            // Dim when any node (including Florida) is selected and this arc isn't
             const isDimmed   = !!selectedId && !isSelected;
 
             const ghostOpacity  = isDimmed ? 0.015 : (showArcs ? 0.09 : 0);
@@ -384,8 +316,6 @@ export function GlobalTrustCoreHero() {
             const bodyFilter    = isSelected ? "url(#gtc-glow-arc-bright)" : "url(#gtc-glow-arc)";
             const bloomOpacity  = arcsDone ? (isDimmed ? 0.2 : 1) : 0;
 
-            const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
-            const intakeHref = `/intake?country=${encodeURIComponent(dest.label)}`;
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes */}
@@ -450,14 +380,14 @@ export function GlobalTrustCoreHero() {
 
                 {/* Clickable node — semantic SEO attributes, cinematic focus */}
                 <g
-                  style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all", outline: "none" }}
+                  style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all" }}
                   role={arcsDone ? "button" : undefined}
                   tabIndex={arcsDone ? 0 : undefined}
                   aria-label={`${dest.label} routing information`}
                   data-auth-node="FLORIDA_ORIGIN"
                   data-target-vector={dest.isoCode}
-                  onClick={(e) => { e.stopPropagation(); handleSelect(dest); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelect(dest); }}
+                  onClick={(e) => { e.stopPropagation(); handleSelect(dest.id); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelect(dest.id); }}
                 >
                   {/* Expanded hit area */}
                   <circle cx={dest.x} cy={dest.y} r="18" fill="transparent" />
@@ -467,21 +397,6 @@ export function GlobalTrustCoreHero() {
                     cx={dest.x} cy={dest.y}
                     r={isSelected ? 5 : 3.5}
                     fill={isSelected ? "#F0C84A" : "#D4AF37"}
-                {/* Clickable node + ring + label → intake for this country */}
-                <a
-                  href={intakeHref}
-                  style={{ cursor: "pointer" }}
-                  aria-label={`Begin intake for ${dest.label}`}
-                >
-                  <circle
-                    cx={dest.x} cy={dest.y}
-                    r="14"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx={dest.x} cy={dest.y}
-                    r="3.5"
-                    fill="#D4AF37"
                     filter="url(#gtc-glow-node)"
                     opacity={arcsDone ? 1 : 0}
                     className={arcsDone
@@ -509,18 +424,6 @@ export function GlobalTrustCoreHero() {
                   />
 
                   {/* Label */}
-                    style={{ transitionDelay: `${i * 120}ms` }}
-                  />
-                  <circle
-                    cx={dest.x} cy={dest.y}
-                    r="8.5"
-                    fill="none"
-                    stroke="#C6A55A"
-                    strokeWidth="0.7"
-                    opacity={arcsDone ? 0.25 : 0}
-                    className="ms-globe-dest-ring"
-                    style={{ transitionDelay: `${i * 120 + 120}ms` }}
-                  />
                   {arcsDone && (
                     <text
                       x={dest.x + (dest.x > 200 ? 14 : -14)}
@@ -532,13 +435,11 @@ export function GlobalTrustCoreHero() {
                         opacity: isDimmed ? 0.15 : 1,
                         transition: "opacity 0.35s ease",
                       }}
-                      style={{ animationDelay: `${i * 80}ms` }}
                     >
                       {dest.label.toUpperCase()}
                     </text>
                   )}
                 </g>
-                </a>
               </g>
             );
           })}
@@ -554,95 +455,60 @@ export function GlobalTrustCoreHero() {
         <div className="ms-globe-spotlight" />
       </div>
 
-      {/* Orbit rings */}
-      <div className="ms-orbit-ring ms-orbit-ring--main" />
-      <div className="ms-orbit-ring ms-orbit-ring--outer" />
-
-      {/* Portal popover — rendered at document.body to escape overflow:hidden hero */}
-      {mounted && selectedNode && popFixed && createPortal(
+      {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
+      {selectedDest && (
         <div
+          className="ms-destination-popover hidden md:block"
           style={{
-            position: "fixed",
-            left: popFixed.rightHemi ? `${popFixed.x - 16}px` : `${popFixed.x + 16}px`,
-            top: `${popFixed.y}px`,
-            transform: popFixed.rightHemi ? "translate(-100%, -50%)" : "translateY(-50%)",
-            zIndex: 9999,
+            position: "absolute",
+            left: popLeft,
+            top: popTop,
+            transform: popAnchor,
+            zIndex: 50,
             pointerEvents: "auto",
-            width: "min(15rem, calc(100vw - 2.5rem))",
           }}
-          data-seo-intent={selectedNode.seoIntent}
+          data-seo-intent={selectedDest.seoIntent}
           onClick={(e) => e.stopPropagation()}
         >
           <div
-            className="relative bg-[#050507] border border-[#D4AF37]/30 rounded-xl shadow-2xl overflow-hidden"
+            className="bg-[#050507]/92 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
             style={{
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              animation: "gtc-popover-in 0.22s cubic-bezier(0.16,1,0.3,1) both",
+              width: "13.5rem",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
             }}
           >
-            {/* Gold top accent line */}
-            <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
-
-            <div className="px-4 pt-3.5 pb-4">
-              {/* Dismiss */}
-              <button
-                onClick={() => { setSelectedId(null); setPopFixed(null); }}
-                className="absolute top-3 right-3.5 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-sm leading-none"
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              {/* Scramble header */}
-              <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2">
-                {selectedNode.id === "florida"
-                  ? "ORIGIN NODE"
-                  : selectedNode.framework === "HAGUE CONVENTION ROUTING"
-                    ? "HAGUE RELEASE NODE"
-                    : "CONSULAR RELEASE NODE"}
-              </span>
-              <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-6 mb-3.5 min-h-[2em]">
-                {scrambledText}
-              </p>
-
-              {/* Useful data rows */}
-              <div className="space-y-2 border-t border-white/[0.05] pt-3">
-                <div className="flex gap-2.5 items-start">
-                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">CHANNEL</span>
-                  <span className="font-mono text-[9px] text-[#999] leading-snug">{"channel" in selectedNode ? selectedNode.channel : "—"}</span>
-                </div>
-                <div className="flex gap-2.5 items-start">
-                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">PROTOCOL</span>
-                  <span className="font-mono text-[9px] text-[#999] leading-snug">{"protocol" in selectedNode ? selectedNode.protocol : "—"}</span>
-                </div>
-                <div className="flex gap-2.5 items-start">
-                  <span className="font-mono text-[7px] uppercase tracking-wider text-[#555] w-14 flex-shrink-0 mt-0.5">DOCS</span>
-                  <span className="font-mono text-[9px] text-[#999] leading-snug">
-                    {"docs" in selectedNode ? selectedNode.docs.slice(0, 2).join(" · ") : "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* CTA link to jurisdiction profile */}
-              <a
-                href={selectedNode.seoIntent}
-                className="flex items-center gap-1.5 mt-3.5 font-mono text-[9px] text-[#C6A55A] hover:text-[#D4B76A] transition-colors tracking-wider"
-              >
-                <span>→ VIEW ROUTING PROFILE</span>
-              </a>
-            </div>
+            <button
+              onClick={() => setSelectedId(null)}
+              className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
+              DESTINATION VECTOR
+            </span>
+            <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
+              {scrambledText}
+            </p>
+            <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
+              FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
+            </p>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
+
+      {/* Orbit rings */}
+      <div className="ms-orbit-ring ms-orbit-ring--main" />
+      <div className="ms-orbit-ring ms-orbit-ring--outer" />
 
       {/* Label row — updates on selection */}
       <div className={`ms-globe-label${isSettled ? " ms-globe-label--visible" : ""}`}>
         <span className="ms-globe-label-text">Global Trust Core™</span>
         <span className="ms-globe-label-sub">
-          {selectedNode
-            ? `${selectedNode.label} · ${selectedNode.framework}`
+          {selectedDest
+            ? `${selectedDest.label} · ${selectedDest.framework}`
             : arcsDone
               ? "Hague Route Reviewed · Structured International Release"
               : "Florida Origin · Execution Authority"}
