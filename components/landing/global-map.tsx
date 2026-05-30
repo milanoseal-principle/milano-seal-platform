@@ -172,7 +172,7 @@ export function GlobalMap() {
         >
           <div className="grid grid-cols-1 lg:grid-cols-12">
             {/* LEFT: Interactive map canvas */}
-            <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-white/[0.04] relative">
+            <div className="lg:col-span-8 lg:border-r border-white/[0.04] relative">
               <GlobalIntelMapInteractive
                 onSelect={setSelectedDest}
                 selectedDest={selectedDest}
@@ -182,10 +182,67 @@ export function GlobalMap() {
                 activeRouteId={activeRouteId}
                 onRouteActivate={setActiveRouteId}
               />
+
+              {/* Mobile bottom-sheet: slides up inside the map when a destination is selected */}
+              <AnimatePresence>
+                {selectedDest && (
+                  <motion.div
+                    key={`mobile-sheet-${selectedDest.slug}`}
+                    initial={{ y: "100%", opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: "100%", opacity: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute bottom-0 left-0 right-0 z-[600] lg:hidden"
+                    style={{
+                      background: "rgba(3,3,5,0.92)",
+                      backdropFilter: "blur(16px)",
+                      WebkitBackdropFilter: "blur(16px)",
+                      borderTop: "1px solid rgba(212,175,55,0.18)",
+                      boxShadow: "0 -8px 40px rgba(0,0,0,0.7)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span>
+                            <span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${
+                              selectedDest.hague
+                                ? "border-green-500/30 text-green-400/70"
+                                : "border-amber-500/30 text-amber-400/70"
+                            }`}>
+                              {selectedDest.hague ? "HAGUE" : "NON-HAGUE"}
+                            </span>
+                          </div>
+                          <span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">
+                            FL ORIGIN → {selectedDest.name.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <Link
+                          href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
+                          className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg"
+                        >
+                          Begin Intake
+                        </Link>
+                        <button
+                          onClick={() => setSelectedDest(null)}
+                          className="p-1.5 rounded hover:bg-white/[0.08] text-[#555] hover:text-[#888] transition-colors"
+                          aria-label="Clear selection"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* RIGHT: Execution dock — glass terminal surface */}
-            <div className="lg:col-span-4 relative min-h-[340px] lg:min-h-0 flex flex-col"
+            {/* RIGHT: Execution dock — desktop only */}
+            <div className="hidden lg:flex lg:col-span-4 relative flex-col"
               style={{
                 background: "rgba(3,3,5,0.82)",
                 backdropFilter: "blur(12px)",
