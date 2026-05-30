@@ -20,3 +20,4 @@ config.bat
 # Planning documents (not code)
 *.xlsx
 .claude/
+tsconfig.tsbuildinfo
