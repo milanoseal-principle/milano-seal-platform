@@ -69,12 +69,16 @@ export function TrustStrip() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              <Link href={href} className="flex items-center gap-3 group min-h-[44px]">
-                <div className="p-2 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 flex-shrink-0">
+              <Link
+                href={href}
+                prefetch={false}
+                className="flex items-center gap-3 group min-h-[48px]"
+              >
+                <div className="p-2 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] transition-all duration-300 md:group-hover:border-[#C6A55A]/30 md:group-hover:bg-[#C6A55A]/5 flex-shrink-0">
                   <Icon className="w-4 h-4 text-[#C6A55A]" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-[#B0B0B0] group-hover:text-white transition-colors duration-300 leading-tight">
+                  <div className="text-xs font-semibold text-[#B0B0B0] md:group-hover:text-white transition-colors duration-300 leading-tight">
                     {label}
                   </div>
                   <div className="text-[10px] text-[#8A8A8A] leading-tight mt-0.5">

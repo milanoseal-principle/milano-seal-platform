@@ -2,122 +2,130 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import { Users, CheckCircle, ArrowRight, FileCheck, Globe } from "lucide-react";
+import { ArrowRight, FileText, CheckSquare, ShieldCheck, Globe } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "USCIS Document Support & Immigration Documents | The Milano Seal™",
+  title: "Immigration Document Support | The Milano Seal™",
   description:
-    "Affidavit preparation, translation coordination, and notarization support for USCIS immigration documents. Identity verification and administrative coordination for immigration-related paperwork.",
+    "Notarization, affidavit execution, and document coordination for USCIS and immigration-related matters. Identity-verified execution and structured administrative support.",
+  keywords: [
+    "immigration document notarization",
+    "USCIS document support",
+    "affidavit notarization Florida",
+    "immigration affidavit",
+    "notarize immigration documents",
+    "Florida immigration document support",
+  ],
   alternates: { canonical: "https://themilanoseal.com/services/immigration-documents" },
 };
 
-const services = [
-  "Affidavit of support preparation and notarization",
-  "Sworn statement notarization for USCIS submissions",
-  "Document translation coordination (certified translators)",
-  "Identity verification for immigration-related submissions",
-  "Power of attorney for immigration matters",
-  "Apostille coordination for foreign document use",
-  "Birth certificate and civil document authentication",
-  "Supporting declaration notarization",
+const FEATURES = [
+  { icon: FileText,    label: "Affidavit Execution",         detail: "Sworn affidavits and supporting declarations notarized with identity verification and record of execution." },
+  { icon: CheckSquare, label: "Document Sequencing",         detail: "Administrative review of document order, completeness, and formatting requirements prior to submission." },
+  { icon: ShieldCheck, label: "Identity Validation",         detail: "Multi-factor identity verification through approved RON procedures or in-person examination before notarization." },
+  { icon: Globe,        label: "Cross-Border Coordination",   detail: "Where foreign-destination documents require apostille or legalization, routing coordinated from the same matter." },
 ];
+
+const PROCESS = [
+  "Submit your document details and intended submission destination through secure intake.",
+  "Document type and administrative requirements reviewed for sequencing and format compliance.",
+  "Identity verification completed — remote online or in-person depending on document requirements.",
+  "Affidavit or supporting document notarized with tamper-evident digital or physical seal.",
+  "Executed document delivered digitally or dispatched per your submission instructions.",
+];
+
+const DISCLAIMER =
+  "I am not an attorney. Document notarization and execution services are administrative in nature and do not constitute legal advice or legal representation. Legal services are provided by Demesmin & Dover PLLC. Acceptance of any notarized or authenticated document rests with the receiving authority.";
 
 export default function ImmigrationDocumentsPage() {
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <>
       <Header />
-
-      {/* Hero */}
-      <section className="pt-32 pb-16 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
-            <Users className="w-4 h-4 text-[#C6A55A]" />
-            <span className="text-sm text-[#C6A55A] font-medium">USCIS Document Support</span>
+      <main className="bg-[#050507] min-h-screen">
+        {/* Hero */}
+        <section className="pt-28 pb-16 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-[#C6A55A] text-[10px] tracking-[0.3em] uppercase font-medium mb-4">
+              Service — Document Coordination
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-6 text-balance">
+              Immigration Document Support
+            </h1>
+            <p className="text-[#B0B0B0] text-lg max-w-2xl leading-relaxed mb-8">
+              Notarization, affidavit execution, and document sequencing for USCIS and
+              immigration-related matters. Identity-verified execution through approved
+              procedures. Administrative coordination only — not legal advice.
+            </p>
+            <Link
+              href="/intake"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
+            >
+              Submit Your Matter
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Affidavit, Translation &amp; Support Execution
-          </h1>
-          <p className="text-lg text-[#B0B0B0] mb-8 max-w-2xl mx-auto leading-relaxed">
-            Administrative coordination and notarization support for immigration-related documents. Document sequencing, identity validation workflows, and USCIS submission preparation.
-          </p>
-          <Link
-            href="/intake"
-            className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-          >
-            <span>Start Immigration Document Matter</span>
-            <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-        </div>
-      </section>
+        </section>
 
-      {/* Services */}
-      <section className="py-16 px-6 bg-[#111111]">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-8 text-center">
-            Document Services Covered
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {services.map((s) => (
-              <div key={s} className="flex items-start gap-3 p-4 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg">
-                <CheckCircle className="w-5 h-5 text-[#C6A55A] flex-shrink-0 mt-0.5" />
-                <span className="text-[#B0B0B0] text-sm">{s}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Signals */}
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
-          {[
-            { icon: Users, title: "Identity Verified", body: "Multi-factor identity verification per Florida notarial requirements before execution." },
-            { icon: FileCheck, title: "USCIS-Ready Format", body: "Documents structured and sealed for USCIS submission standards." },
-            { icon: Globe, title: "Translation Coordination", body: "Certified translation services coordinated for foreign-language document requirements." },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6 text-center">
-              <div className="inline-flex p-3 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] mb-4">
-                <Icon className="w-6 h-6 text-[#C6A55A]" />
-              </div>
-              <h3 className="font-medium text-white mb-2">{title}</h3>
-              <p className="text-sm text-[#B0B0B0]">{body}</p>
+        {/* Features */}
+        <section className="py-16 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-serif text-2xl font-medium text-white mb-8">Service Components</h2>
+            <div className="grid md:grid-cols-2 gap-5">
+              {FEATURES.map((f) => (
+                <div key={f.label} className="bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl p-6">
+                  <div className="inline-flex p-2.5 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] mb-4">
+                    <f.icon className="w-5 h-5 text-[#C6A55A]" />
+                  </div>
+                  <h3 className="text-white font-medium text-sm mb-2">{f.label}</h3>
+                  <p className="text-[#8A8A8A] text-xs leading-relaxed">{f.detail}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Disclaimer Notice */}
-      <section className="py-8 px-6 bg-[#111111]">
-        <div className="max-w-3xl mx-auto p-6 border border-[#2A2A2A] rounded-xl">
-          <p className="text-sm text-[#6A6A6A] leading-relaxed text-center">
-            This service covers document sequencing, identity validation workflows, and administrative coordination only. We do not provide immigration legal advice, case strategy, or representation. Consult a licensed immigration attorney for legal guidance.
-          </p>
-        </div>
-      </section>
+        {/* Process */}
+        <section className="py-16 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-serif text-2xl font-medium text-white mb-8">Execution Sequence</h2>
+            <ol className="space-y-4">
+              {PROCESS.map((step, i) => (
+                <li key={i} className="flex items-start gap-4">
+                  <span className="font-serif text-2xl font-medium text-[#C6A55A]/30 flex-shrink-0 w-8">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-[#B0B0B0] text-sm leading-relaxed pt-1">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-      {/* CTA */}
-      <section className="py-16 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4">
-            Begin Your Document Execution
-          </h2>
-          <p className="text-[#B0B0B0] mb-8">
-            Submit your document type, purpose, and any deadlines. We will confirm the required notarization and coordination steps.
-          </p>
-          <Link
-            href="/intake"
-            className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-          >
-            <span>Submit Document Matter</span>
-            <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-          <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-            I am not an attorney. Legal services are provided by Demesmin &amp; Dover PLLC. Final document acceptance and cross-border validation reliability rest explicitly with the receiving foreign authority.
-          </p>
-        </div>
-      </section>
+        {/* Disclaimer */}
+        <section className="py-8 px-6 border-b border-[#1A1A1A]">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-[#555] text-xs leading-relaxed">{DISCLAIMER}</p>
+          </div>
+        </section>
 
+        {/* CTA */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="font-serif text-2xl font-medium text-white mb-4">Ready to Begin?</h2>
+            <p className="text-[#8A8A8A] text-sm mb-8 max-w-md mx-auto">
+              Submit your document and destination details. Administrative coordination handled from intake through delivery.
+            </p>
+            <Link
+              href="/intake"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
+            >
+              Start Your Matter
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }
