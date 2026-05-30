@@ -113,6 +113,32 @@ export default async function CountryPage({ params }: PageProps) {
           <div className="h-px bg-gradient-to-r from-transparent via-[#C6A55A]/25 to-transparent" />
         </section>
 
+        {/* Authority Signal Banner */}
+        <section className="max-w-5xl mx-auto px-6 pb-6">
+          <div
+            className="rounded-lg border border-[#C6A55A]/10 bg-[#0A0906] px-5 py-3.5"
+            style={{ boxShadow: "inset 0 0 0 1px rgba(212,175,55,0.04)" }}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#C6A55A]/55 flex-shrink-0">
+                CORRIDOR STATUS:
+              </span>
+              <span className="font-mono text-[8px] tracking-[0.18em] uppercase text-[#C6A55A]/80">
+                {dest.name.toUpperCase()} FLORIDA INTERNATIONAL ROUTE
+                &nbsp;//&nbsp;
+                {dest.hague
+                  ? "HAGUE CONVENTION VALIDATION VERIFIED"
+                  : "CONSULAR LEGALIZATION WORKFLOW REQUIRED"}
+              </span>
+            </div>
+            <p className="font-mono text-[7px] text-[#3A3A3A] mt-1.5 leading-relaxed">
+              {dest.hague
+                ? `Document workflow routes through the Florida Department of State apostille channel for cross-border recognition review.`
+                : `Document workflow routes through state-level authentication before embassy or consular review when required.`}
+            </p>
+          </div>
+        </section>
+
         {/* Content grid */}
         <section className="max-w-5xl mx-auto px-6 pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
