@@ -15,19 +15,14 @@ const RAIL_A = [
   { label: "COORDINATOR VISIBILITY",        tone: "gold" },
 ];
 
-const RAIL_B = [
-  "FLORIDA -> ITALY",
-  "FLORIDA -> SPAIN",
-  "FLORIDA -> GREECE",
-  "FLORIDA -> PORTUGAL",
-  "FLORIDA -> BRAZIL",
-  "FLORIDA -> UAE",
-  "FLORIDA -> GERMANY",
-  "FLORIDA -> FRANCE",
-  "FLORIDA -> MEXICO",
-  "FLORIDA -> UNITED KINGDOM",
-  "FLORIDA -> ARGENTINA",
-  "FLORIDA -> AUSTRALIA",
+const RAIL_B: { route: string; workflow: string }[] = [
+  { route: "FLORIDA → ITALY",    workflow: "Hague Convention Validation Route" },
+  { route: "FLORIDA → SPAIN",    workflow: "Apostille Review Pathway" },
+  { route: "FLORIDA → UAE",      workflow: "Consular Authentication Workflow" },
+  { route: "FLORIDA → BRAZIL",   workflow: "International Release Corridor" },
+  { route: "FLORIDA → MEXICO",   workflow: "Cross-Border Legalization Path" },
+  { route: "FLORIDA → PORTUGAL", workflow: "Hague Apostille Review Path" },
+  { route: "FLORIDA → GREECE",   workflow: "Hague Convention Document Route" },
 ];
 
 export function CredentialTicker() {
@@ -69,17 +64,29 @@ export function CredentialTicker() {
 
       {/* Rail B — corridor map, scrolls right */}
       <div className="flex ticker-anim-reverse whitespace-nowrap py-1.5 relative">
-        {[...RAIL_B, ...RAIL_B].map((label, i) => (
+        {[...RAIL_B, ...RAIL_B].map((item, i) => (
           <span
             key={`b-${i}`}
-            className="text-[8px] font-mono tracking-[0.35em] mx-8 flex items-center gap-2.5"
-            style={{ color: "rgba(210, 185, 110, 0.75)" }}
+            className="mx-8 flex items-center gap-3 flex-shrink-0"
           >
             <span
               className="w-2 h-px flex-shrink-0"
-              style={{ background: "rgba(212,175,55,0.6)" }}
+              style={{ background: "rgba(212,175,55,0.5)" }}
             />
-            {label}
+            <span className="flex flex-col leading-tight">
+              <span
+                className="text-[9px] font-mono tracking-[0.28em]"
+                style={{ color: "rgba(210, 185, 110, 0.90)" }}
+              >
+                {item.route}
+              </span>
+              <span
+                className="text-[7px] font-mono tracking-[0.18em]"
+                style={{ color: "rgba(180, 155, 90, 0.50)" }}
+              >
+                {item.workflow}
+              </span>
+            </span>
           </span>
         ))}
       </div>

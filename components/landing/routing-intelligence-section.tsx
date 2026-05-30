@@ -9,43 +9,50 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Italy",
-    label: "Apostille Validation Active",
+    label: "Hague Convention Validation Route",
     href: "/countries/italy",
     icon: Globe2,
   },
   {
     origin: "Florida",
     destination: "Spain",
-    label: "Apostille Validation Active",
+    label: "Apostille Review Pathway",
     href: "/countries/spain",
     icon: Send,
   },
   {
     origin: "Florida",
     destination: "UAE",
-    label: "Consular Legalization Path",
+    label: "Consular Authentication Workflow",
     href: "/countries/uae",
     icon: Compass,
   },
   {
     origin: "Florida",
     destination: "Brazil",
-    label: "International Execution Route",
+    label: "International Release Corridor",
     href: "/countries/brazil",
     icon: FileCheck,
   },
   {
     origin: "Florida",
     destination: "Mexico",
-    label: "Cross-Border Document Route",
+    label: "Cross-Border Legalization Path",
     href: "/countries/mexico",
     icon: Landmark,
   },
   {
     origin: "Florida",
-    destination: "United States",
-    label: "Statewide RON Authority",
-    href: "/services/remote-online-notary",
+    destination: "Portugal",
+    label: "Hague Apostille Review Path",
+    href: "/countries/portugal",
+    icon: Globe2,
+  },
+  {
+    origin: "Florida",
+    destination: "Greece",
+    label: "Hague Convention Document Route",
+    href: "/countries/greece",
     icon: ShieldCheck,
   },
 ];
@@ -79,7 +86,7 @@ export function RoutingIntelligenceSection() {
         </div>
 
         {/* Desktop: all 6 cards in a row */}
-        <div className="hidden md:grid md:grid-cols-6 border border-[#1A1A1A] rounded-xl overflow-hidden">
+        <div className="hidden md:grid md:grid-cols-7 border border-[#1A1A1A] rounded-xl overflow-hidden">
           {CORRIDORS.map((c, i) => {
             const Icon = c.icon;
             return (
