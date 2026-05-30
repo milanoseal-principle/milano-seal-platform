@@ -10,6 +10,7 @@ import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { ClientTypes } from "@/components/landing/client-types";
 import { GlobalMap } from "@/components/landing/global-map";
 import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
+import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { Footer } from "@/components/landing/footer";
@@ -37,6 +38,7 @@ export default function HomePage() {
         <ClientTypes />
         <div id="countries">
           <RoutingIntelligenceSection />
+          <CorridorTimeStrip />
           <GlobalMap />
         </div>
       </CinematicStage>
