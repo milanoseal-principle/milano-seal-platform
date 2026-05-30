@@ -75,6 +75,14 @@ Locked client-perspective backlog for future sovereign execution features, inclu
 
 **Status:** STAGED ONLY — do not implement until P0 live verification passes.
 
+### Final Production Launch Report
+
+Live production readiness state, manual courier operating mode, Shippo go-live requirements, post-launch hardening backlog, and Revenue Phase gate. Locks the exact production state so future branches do not reopen completed architecture.
+
+**Location:** `docs/final-production-launch-report.md`
+
+**Status:** PRODUCTION READY WITH MANUAL COURIER — do not transition to Revenue Phase until live smoke test is complete.
+
 ### P1/P2 Architecture Notes
 
 Acquisition entry flow, smart intake parser, portal terminal UX, health latency targets, logger security rules, and shipping 501 guard specifications.
