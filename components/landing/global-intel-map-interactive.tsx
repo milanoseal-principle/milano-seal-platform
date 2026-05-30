@@ -49,6 +49,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest }: Props = {}
     <div
       ref={containerRef}
       className="relative w-full bg-[#0A0A0A] overflow-hidden"
+      className="relative w-full bg-[#0A0A0A] border-y border-[#141414] overflow-hidden"
       onMouseMove={handleMouseMove}
     >
       {/* Mouse-tracked gold light leak */}

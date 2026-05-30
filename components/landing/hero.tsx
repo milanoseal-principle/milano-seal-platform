@@ -46,6 +46,7 @@ export function Hero() {
     <section
       ref={ref}
       className="relative min-h-screen lg:h-screen pt-[136px] md:pt-[148px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[128px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -81,6 +82,17 @@ export function Hero() {
                   Florida Notary #668288 · Hague Convention Routing
                 </span>
               </div>
+          <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center">
+
+            {/* Credential badge — below ticker, above headline */}
+            <div className={`ms-hero-line inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 mb-8${heroVisible[0] ? " is-visible" : ""}`}>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
+              </span>
+              <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+                Florida · Hague Apostille Authority
+              </span>
             </div>
 
             {/* Headline */}
@@ -125,6 +137,31 @@ export function Hero() {
               </Link>
             </div>
 
+
+          </div>
+
+          {/* RIGHT: Kinetic Core — globe */}
+          <div className="w-full lg:w-[48%] flex items-center justify-center relative">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex items-center justify-center"
+            >
+              <GlobalTrustCoreHero />
+            </motion.div>
+          </div>
+
+
+            {/* Trust badges */}
+            <div className={`ms-hero-line flex flex-wrap gap-4 justify-center lg:justify-start${heroVisible[7] ? " is-visible" : ""}`}>
+              {TRUST_ITEMS.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2 text-xs text-[#8A8A8A]">
+                  <Icon className="w-3.5 h-3.5 text-[#C6A55A]" />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
 
           </div>
 

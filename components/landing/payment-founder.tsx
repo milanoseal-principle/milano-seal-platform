@@ -94,6 +94,9 @@ export function PaymentFounder() {
                   width={52}
                   height={52}
                   className="opacity-90 drop-shadow-lg"
+                  width={80}
+                  height={80}
+                  className="opacity-95 drop-shadow-lg"
                 />
               </motion.div>
             </motion.div>

@@ -36,6 +36,21 @@ export default function HomePage() {
           <GlobalMap />
         </div>
       </CinematicStage>
+      <Hero />
+      <TrustStrip />
+      <div id="services">
+        <Services />
+      </div>
+      <div id="process">
+        <HowItWorks />
+      </div>
+      <div id="pricing">
+        <ExecutionTiers />
+      </div>
+      <ClientTypes />
+      <div id="countries">
+        <GlobalMap />
+      </div>
       <GlobalIntel />
       <DocumentIntelligence />
       <HighTrustClose />

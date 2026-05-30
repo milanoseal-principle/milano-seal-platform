@@ -384,6 +384,8 @@ export function GlobalTrustCoreHero() {
             const bodyFilter    = isSelected ? "url(#gtc-glow-arc-bright)" : "url(#gtc-glow-arc)";
             const bloomOpacity  = arcsDone ? (isDimmed ? 0.2 : 1) : 0;
 
+            const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
+            const intakeHref = `/intake?country=${encodeURIComponent(dest.label)}`;
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes */}
@@ -465,6 +467,21 @@ export function GlobalTrustCoreHero() {
                     cx={dest.x} cy={dest.y}
                     r={isSelected ? 5 : 3.5}
                     fill={isSelected ? "#F0C84A" : "#D4AF37"}
+                {/* Clickable node + ring + label → intake for this country */}
+                <a
+                  href={intakeHref}
+                  style={{ cursor: "pointer" }}
+                  aria-label={`Begin intake for ${dest.label}`}
+                >
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="14"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="3.5"
+                    fill="#D4AF37"
                     filter="url(#gtc-glow-node)"
                     opacity={arcsDone ? 1 : 0}
                     className={arcsDone
@@ -492,6 +509,18 @@ export function GlobalTrustCoreHero() {
                   />
 
                   {/* Label */}
+                    style={{ transitionDelay: `${i * 120}ms` }}
+                  />
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="8.5"
+                    fill="none"
+                    stroke="#C6A55A"
+                    strokeWidth="0.7"
+                    opacity={arcsDone ? 0.25 : 0}
+                    className="ms-globe-dest-ring"
+                    style={{ transitionDelay: `${i * 120 + 120}ms` }}
+                  />
                   {arcsDone && (
                     <text
                       x={dest.x + (dest.x > 200 ? 14 : -14)}
@@ -503,11 +532,13 @@ export function GlobalTrustCoreHero() {
                         opacity: isDimmed ? 0.15 : 1,
                         transition: "opacity 0.35s ease",
                       }}
+                      style={{ animationDelay: `${i * 80}ms` }}
                     >
                       {dest.label.toUpperCase()}
                     </text>
                   )}
                 </g>
+                </a>
               </g>
             );
           })}

@@ -38,6 +38,8 @@ export function GlobalMap() {
       transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Ambient vault glow */}
+    <section className="relative py-32 md:py-40 bg-[#050507] overflow-hidden">
+      {/* Ambient vault glow — intensifies as map awakens */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.04) 0%, rgba(5,5,7,0) 70%)" }}
@@ -45,9 +47,25 @@ export function GlobalMap() {
       {/* Animated grid background */}
       <div className="absolute inset-0 opacity-[0.07]">
         <svg viewBox="0 0 1200 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+      {/* Subtle grid background */}
+      <div className="absolute inset-0 opacity-10">
+        <svg
+          viewBox="0 0 1200 600"
+          className="w-full h-full"
+          preserveAspectRatio="xMidYMid slice"
+        >
           <defs>
             <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.3" />
+              <animateTransform
+                attributeName="patternTransform"
+                type="translate"
+                from="0 0"
+                to="40 40"
+                dur="22s"
+                repeatCount="indefinite"
+              />
+              {/* Slow parallax drift — grid floats on a deeper axis */}
               <animateTransform
                 attributeName="patternTransform"
                 type="translate"
@@ -76,11 +94,13 @@ export function GlobalMap() {
           </span>
           <h2
             className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-5 text-balance"
+            className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance"
             style={{ filter: "drop-shadow(0 4px 12px rgba(5,5,7,0.95))" }}
           >
             Global Document Intelligence™
           </h2>
           <p className="text-[#8A8A8A] text-sm max-w-xl mx-auto leading-relaxed font-light">
+          <p className="text-[#8A8A8A] text-base max-w-xl mx-auto leading-relaxed font-light">
             Jurisdiction routing, Hague compliance, and execution paths —
             from Florida to key international destinations.
           </p>
