@@ -67,6 +67,14 @@ This reference is documentation-only. It does not override the Master Reconcilia
 
 **Location:** `docs/architecture/ULTRA_CTO_HANDOFF_REFERENCE.md`
 
+### Avvocato Sovereign Intelligence Backlog
+
+Locked client-perspective backlog for future sovereign execution features, including VA attribution, stagnation alerts, attested evidence packets, alliance health scoring, corridor SEO, asset-class intake intelligence, verification posture, jurisdictional alerting, operator knowledge graph, execution reconciliation center, client return engine, and Trust Engine 2.0.
+
+**Location:** `docs/architecture/AVVOCATO_SOVEREIGN_INTELLIGENCE_BACKLOG.md`
+
+**Status:** STAGED ONLY — do not implement until P0 live verification passes.
+
 ### P1/P2 Architecture Notes
 
 Acquisition entry flow, smart intake parser, portal terminal UX, health latency targets, logger security rules, and shipping 501 guard specifications.
