@@ -4,7 +4,212 @@ import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
 import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
+import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { createClient } from "@/lib/supabase/client";
+
+// ─── Portal Assistant ────────────────────────────────────────────────────────
+
+const ASSISTANT_CHIPS = [
+  "What is apostille?",
+  "What happens next?",
+  "How do I prepare for my session?",
+  "What documents do I need?",
+  "How long does this take?",
+  "What is the Hague Convention?",
+];
+
+interface AssistantMsg {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+}
+
+function PortalAssistant() {
+  const [msgs, setMsgs] = useState<AssistantMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    threadRef.current?.scrollTo({
+      top: threadRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [msgs, loading]);
+
+  async function ask(text?: string) {
+    const prompt = (text ?? input).trim();
+    if (!prompt || loading) return;
+    setInput("");
+    setMsgs((m) => [
+      ...m,
+      { id: `u${Date.now()}`, role: "user", text: prompt },
+    ]);
+    setLoading(true);
+    try {
+      const r = await fetch("/api/portal/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = (await r.json()) as { text?: string; error?: string };
+      const reply =
+        data.text ??
+        "Your coordinator will be in touch with more information.";
+      setMsgs((m) => [
+        ...m,
+        { id: `a${Date.now()}`, role: "assistant", text: reply },
+      ]);
+    } catch {
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `a${Date.now()}`,
+          role: "assistant",
+          text: "We're unable to answer right now. Please reach out to your coordinator directly.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="pp-card pa-card">
+      <div className="pp-card-h">Questions about your matter</div>
+
+      {/* Thread */}
+      <div className="pa-thread" ref={threadRef}>
+        {msgs.length === 0 && !loading && (
+          <div className="pa-welcome">
+            Ask anything about your document journey — apostille, what to
+            expect, how to prepare, or what happens next.
+          </div>
+        )}
+        <AnimatePresence initial={false}>
+          {msgs.map((m) =>
+            m.role === "user" ? (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="pa-user-bubble"
+              >
+                {m.text}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="pa-ai-bubble"
+              >
+                <span className="pa-ai-mark">✦</span>
+                {m.text}
+              </motion.div>
+            ),
+          )}
+        </AnimatePresence>
+        {loading && (
+          <div className="pa-thinking">
+            {[0, 140, 280].map((d) => (
+              <span
+                key={d}
+                className="pa-dot"
+                style={{ animationDelay: `${d}ms` }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick prompts */}
+      {msgs.length === 0 && (
+        <div className="pa-chips">
+          {ASSISTANT_CHIPS.map((c) => (
+            <button
+              key={c}
+              className="pa-chip"
+              disabled={loading}
+              onClick={() => void ask(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Composer */}
+      <div className="pa-composer">
+        <input
+          className="pa-input"
+          placeholder="Ask a question…"
+          value={input}
+          disabled={loading}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void ask();
+          }}
+        />
+        <button
+          className="pa-send"
+          disabled={loading || !input.trim()}
+          onClick={() => void ask()}
+        >
+          {loading ? "…" : "Ask"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  // State transitions
+  intake_received: "Matter received and secured",
+  under_review: "Document under procedural review",
+  compliance_review: "Compliance review initiated",
+  quoted: "Execution proposal issued",
+  awaiting_payment: "Payment required before scheduling",
+  payment_confirmed: "Payment confirmed — scheduling unlocked",
+  scheduled: "Execution session scheduled",
+  in_execution: "Execution in progress",
+  apostille_processing: "Apostille processing initiated",
+  courier_ready: "Document packaged for release",
+  shipped: "Released to courier",
+  delivered: "Delivery confirmed",
+  completed: "Matter closed",
+  // Custody ledger events
+  DOC_SIGNED: "Notarization completed",
+  DOC_APOSTILLED: "Apostille issued",
+  DOC_SHIPPED: "Released to courier",
+  DOC_DELIVERED: "Delivery confirmed",
+  DOC_RELEASED: "Document released",
+  PAYMENT_RECEIVED: "Payment received",
+  REVIEW_STARTED: "Procedural review initiated",
+  OPERATOR_ASSIGNED: "Execution coordinator assigned",
+  MATTER_CREATED: "Matter created",
+  MATTER_UPDATED: "Status updated",
+};
+
+function formatEventLabel(raw: string): string {
+  if (EVENT_LABELS[raw]) return EVENT_LABELS[raw];
+  return raw
+    .replace(/^DOC_/, "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  paid: "Payment Confirmed",
+  confirmed: "Payment Confirmed",
+  pending: "Payment Pending",
+  awaiting: "Payment Required",
+  unpaid: "Payment Required",
+  failed: "Payment Failed",
+};
 
 interface Message {
   id: string;
@@ -13,49 +218,6 @@ interface Message {
   content: string;
   status: string | null;
   created_at: string;
-}
-
-const TRACK_STEPS = [
-  {
-    keys: ["new", "reviewing"],
-    label: "Intake Received",
-    desc: "Your matter has been received and is under review by our team.",
-  },
-  {
-    keys: ["quoted", "awaiting_payment"],
-    label: "Reviewed · Invoice Issued",
-    desc: "Your matter has been structured and a quote prepared. Payment unlocks scheduling.",
-  },
-  {
-    keys: ["scheduled"],
-    label: "Payment Confirmed",
-    desc: "Retainer received. Matter scheduled for execution.",
-  },
-  {
-    keys: ["in_execution"],
-    label: "In Execution",
-    desc: "Active notarization session in progress.",
-  },
-  {
-    keys: ["apostille"],
-    label: "Apostille Coordination",
-    desc: "Documents submitted to the Florida Department of State.",
-  },
-  {
-    keys: ["shipped"],
-    label: "Delivery",
-    desc: "Authenticated documents shipped to your destination.",
-  },
-  {
-    keys: ["completed"],
-    label: "Matter Closed",
-    desc: "Documents delivered and matter closed. Paid & released.",
-  },
-];
-
-function stageIndex(status: string | null | undefined): number {
-  if (!status) return -1;
-  return TRACK_STEPS.findIndex((s) => s.keys.includes(status));
 }
 
 const CHECKLIST_ITEMS = [
@@ -78,7 +240,7 @@ export default function MyMatterPage() {
     if (typeof window !== "undefined") {
       return !!sessionStorage.getItem("ms-portal-entry");
     }
-    return true; // SSR: skip ritual
+    return true;
   });
 
   function handleEntryDone() {
@@ -157,11 +319,25 @@ export default function MyMatterPage() {
     }
   };
 
-  const currentIdx = stageIndex(deal?.status);
-
   if (isLoading) {
     return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading your matter…</div>
+      <div style={{ paddingTop: 8 }}>
+        {[55, 36, 80, 55].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: i === 0 ? 28 : i === 1 ? 18 : 52,
+              borderRadius: 2,
+              marginBottom: 12,
+              background: "rgba(198,165,90,0.05)",
+              border: "1px solid rgba(198,165,90,0.08)",
+              animation: "ppSkeleton 2s ease-in-out infinite",
+              animationDelay: `${i * 0.15}s`,
+              width: `${w}%`,
+            }}
+          />
+        ))}
+      </div>
     );
   }
 
@@ -171,11 +347,16 @@ export default function MyMatterPage() {
         <div className="pp-no-deal-title">No matter linked yet</div>
         <div className="pp-no-deal-body">
           {message ??
-            "We couldn't find a matter associated with this email. Please contact your coordinator."}
+            "We couldn't find a matter associated with this account. Please contact your coordinator."}
         </div>
       </div>
     );
   }
+
+  const paymentConfirmed =
+    deal.payment_status === "paid" ||
+    deal.payment_status === "confirmed" ||
+    deal.matter_status === "payment_confirmed";
 
   return (
     <>
@@ -195,12 +376,12 @@ export default function MyMatterPage() {
         </h1>
         <div className="pp-sub">
           {deal.document_type ?? "Document execution"} ·{" "}
-          <em>{deal.destination_country ?? deal.country ?? "—"}</em>
+          <em>{deal.destination_country ?? "—"}</em>
         </div>
 
-        {/* Paid & Released banner — only when completed + paid */}
+        {/* Paid & Released banner */}
         <AnimatePresence>
-          {deal.status === "completed" && deal.payment_status === "paid" && (
+          {deal.is_paid_and_released && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -228,6 +409,28 @@ export default function MyMatterPage() {
           )}
         </AnimatePresence>
 
+        {/* Payment confirmed reveal */}
+        <AnimatePresence>
+          {paymentConfirmed && !deal.is_paid_and_released && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }}
+              className="mb-4 border rounded-sm px-4 py-3 flex items-center gap-3"
+              style={{
+                background: "rgba(198,165,90,0.05)",
+                borderColor: "rgba(198,165,90,0.18)",
+              }}
+            >
+              <span style={{ color: "#C6A55A", fontSize: 13 }}>✓</span>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                Payment confirmed — scheduling is now unlocked.
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="pp-grid">
           {/* Left column */}
           <motion.div
@@ -235,40 +438,13 @@ export default function MyMatterPage() {
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{ duration: 0.4, ease: "easeInOut", delay: 0.1 }}
           >
-            {/* Progress tracker */}
+            {/* Premium status rail — PORTAL-MOTION-01 */}
             <div className="pp-card">
-              <div className="pp-card-h">Progress</div>
-              {TRACK_STEPS.map((s, i) => {
-                const done = currentIdx > i;
-                const act = currentIdx === i;
-                const dotClass = done ? "done" : act ? "act" : "pend";
-                const nameClass = done ? "done" : act ? "act" : "pend";
-                return (
-                  <div key={s.label} className="pp-track-step">
-                    {i < TRACK_STEPS.length - 1 && (
-                      <div
-                        className="pp-track-line"
-                        style={{
-                          background: done
-                            ? "#C6A55A"
-                            : "rgba(198,165,90,.18)",
-                        }}
-                      />
-                    )}
-                    <div className={`pp-track-dot ${dotClass}`}>
-                      {done ? "✓" : act ? "●" : i + 1}
-                    </div>
-                    <div>
-                      <div className={`pp-track-name ${nameClass}`}>
-                        {s.label}
-                      </div>
-                      {(done || act) && (
-                        <div className="pp-track-desc">{s.desc}</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="pp-card-h">Execution Progress</div>
+              <PortalStatusRail
+                matterStatus={deal.matter_status}
+                paymentStatus={deal.payment_status}
+              />
             </div>
 
             {/* Messages */}
@@ -315,6 +491,9 @@ export default function MyMatterPage() {
                 </button>
               </div>
             </div>
+
+            {/* Client matter guide assistant */}
+            <PortalAssistant />
           </motion.div>
 
           {/* Right column */}
@@ -328,7 +507,7 @@ export default function MyMatterPage() {
               <div className="pp-kv">
                 <span className="pp-kv-k">Matter ID</span>
                 <span className="pp-kv-v pp-kv-v mono">
-                  {deal.id.slice(0, 8)}…
+                  {(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}…
                 </span>
               </div>
               <div className="pp-kv">
@@ -338,29 +517,38 @@ export default function MyMatterPage() {
               <div className="pp-kv">
                 <span className="pp-kv-k">Destination</span>
                 <span className="pp-kv-v">
-                  {deal.destination_country ?? deal.country ?? "—"}
+                  {deal.destination_country ?? "—"}
                 </span>
               </div>
               <div className="pp-kv">
                 <span className="pp-kv-k">Status</span>
                 <span className="pp-kv-v pp-kv-v gold">
-                  {(deal.status ?? "").replace(/_/g, " ")}
+                  {deal.client_facing_status ??
+                    (deal.matter_status ?? "").replace(/_/g, " ")}
                 </span>
               </div>
               <div className="pp-kv">
                 <span className="pp-kv-k">Payment</span>
                 <span
-                  className={`pp-kv-v ${deal.payment_status === "paid" ? "pp-kv-v paid" : "pp-kv-v pending"}`}
+                  className={`pp-kv-v ${paymentConfirmed ? "pp-kv-v paid" : "pp-kv-v pending"}`}
                 >
-                  {deal.payment_status === "paid" ? "Paid" : "Pending"}
+                  {paymentConfirmed ? "Paid" : "Pending"}
                 </span>
               </div>
+              {deal.payment_amount_due != null && !paymentConfirmed && (
+                <div className="pp-kv">
+                  <span className="pp-kv-k">Amount Due</span>
+                  <span className="pp-kv-v gold">
+                    ${deal.payment_amount_due.toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="pp-card">
               <div className="pp-card-h">Pre-flight checklist</div>
               {CHECKLIST_ITEMS.map((item, i) => {
-                const done = currentIdx >= 2 && i < 2;
+                const done = paymentConfirmed && i < 2;
                 return (
                   <div key={item} className="pp-check-row">
                     <span className={`pp-check-box ${done ? "done" : "todo"}`}>
@@ -378,7 +566,7 @@ export default function MyMatterPage() {
 
             {ledger.length > 0 && (
               <div className="pp-card">
-                <div className="pp-card-h">Recent Activity</div>
+                <div className="pp-card-h">Execution Timeline</div>
                 {(() => {
                   const items = ledger.slice(-5).reverse();
                   return items.map((l, i) => (
@@ -402,7 +590,7 @@ export default function MyMatterPage() {
                       </div>
                       <div className="pp-timeline-content">
                         <div className="pp-activity-event">
-                          {l.event.replace("DOC_", "").replace(/_/g, " ")}
+                          {formatEventLabel(l.event)}
                         </div>
                         {l.location && (
                           <div className="pp-activity-location">{l.location}</div>

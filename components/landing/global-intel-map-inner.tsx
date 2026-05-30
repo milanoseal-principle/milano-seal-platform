@@ -85,6 +85,15 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
     if (flyTarget) map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
   }, [flyTarget, map]);
 
+  // Fly to selected destination
+  useEffect(() => {
+    if (!active) return;
+    const dest = ROUTE_DESTS.find(d => d.name === active.name);
+    if (dest) {
+      map.flyTo([dest.lat, dest.lng], 5, { duration: 1.1, easeLinearity: 0.3 });
+    }
+  }, [active, map]);
+
   return null;
 }
 
@@ -156,7 +165,7 @@ function arcD(ox: number, oy: number, dx: number, dy: number, i: number): string
   return `M ${ox.toFixed(1)} ${oy.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${dx.toFixed(1)} ${dy.toFixed(1)}`;
 }
 
-function MapSVGRoutes() {
+function MapSVGRoutes({ active }: { active: Destination | null }) {
   const map = useMap();
   const [, mapBump]  = useState(0);
   const [spotIdx, setSpotIdx] = useState(0);
@@ -206,6 +215,42 @@ function MapSVGRoutes() {
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
+
+      {/* ── Featured destination arc (active selection) ─────────────────── */}
+      {(() => {
+        const featuredRoute = active
+          ? ROUTE_DESTS.find(d => d.name === active.name)
+          : null;
+        const fpt = featuredRoute ? map.latLngToContainerPoint([featuredRoute.lat, featuredRoute.lng]) : null;
+        const featuredD = fpt ? arcD(op.x, op.y, fpt.x, fpt.y, 0) : null;
+        if (!featuredD || !fpt || !active) return null;
+        return (
+          <g key={`featured-${active.slug}`}>
+            {/* Atmospheric bloom */}
+            <path d={featuredD} fill="none" stroke="#D4AF37" strokeWidth={14} opacity="0.12"
+              filter="url(#ms-bloom-soft)" />
+            {/* Bright core arc */}
+            <path d={featuredD} fill="none" stroke="#C6A55A" strokeWidth="2.5" opacity="0.85"
+              style={{ mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"] }}>
+              <animate attributeName="stroke-dasharray" from="0 2000" to="2000 0"
+                dur="1.1s" fill="freeze" key={active.slug} />
+            </path>
+            {/* Champagne filament */}
+            <path id={`featured-path-${active.slug}`} d={featuredD} fill="none"
+              stroke="#F4E5B8" strokeWidth="1" opacity="0.9" strokeDasharray="8 4">
+              <animate attributeName="stroke-dashoffset" from="0" to="-36"
+                dur="1.6s" repeatCount="indefinite" />
+            </path>
+            {/* Destination node pulse */}
+            <circle cx={fpt.x} cy={fpt.y} r="5" fill="#F4E5B8" filter="url(#ms-dot-glow)" />
+            <circle cx={fpt.x} cy={fpt.y} r="5" fill="none" stroke="#C6A55A" strokeWidth="1.5">
+              <animate attributeName="r" values="5;28" dur="2.0s" repeatCount="indefinite"
+                calcMode="spline" keySplines="0.16 1 0.3 1" />
+              <animate attributeName="opacity" values="0.9;0" dur="2.0s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        );
+      })()}
 
       {/* ── Arc filaments — drawn back-to-front (ghosts first, active on top) ── */}
       {[...routes].sort((a, b) => b.age - a.age).map((r) => {
@@ -303,7 +348,7 @@ export default function MapInner({ active, setActive, flyTarget }: Props) {
       maxZoom={8}
     >
       <LayerControl active={active} setActive={setActive} flyTarget={flyTarget} />
-      <MapSVGRoutes />
+      <MapSVGRoutes active={active} />
     </MapContainer>
   );
 }

@@ -13,6 +13,11 @@ import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { runDealEngine } from "@/lib/core/engine";
+import {
+  normalizeIntakeRouting,
+  checkAffidavitFederalConflict,
+  formatApostillePath,
+} from "@/lib/intake/routing-normalizer";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -123,6 +128,22 @@ export async function POST(req: NextRequest) {
 
     const data = normalizeMatter(raw);
 
+    // ── Routing normalizer (P0 correctness fix) ───────────────────────────
+    // Converts raw origin_state overload into a deterministic NormalizedRoutingContext.
+    // origin_authority_label is used in review summaries and notifications instead of
+    // raw origin_state so that RON affidavits are never misrouted as federal documents.
+    // P1/P2: promote normalized routing fields to dedicated columns after registry migrations are approved.
+    let normalizedRouting = normalizeIntakeRouting({
+      ...raw,
+      ...data,
+    });
+    normalizedRouting = checkAffidavitFederalConflict(
+      normalizedRouting,
+      data.document_type as string || "",
+    );
+    const originAuthorityLabel = normalizedRouting.origin_authority_label;
+    const routingWarnings = normalizedRouting.warnings;
+
     try {
       validateMatter(data);
     } catch (e: any) {
@@ -181,23 +202,37 @@ export async function POST(req: NextRequest) {
 
     const priority_tier = routeDeal(conversion_score);
 
+    // Payment reference is always matterReference-R for retainer reconciliation
+    const payment_reference = `${deal_id}-R`;
+    const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
+
     const wiseResult = await createWisePaymentRequest({
-      dealId: deal_id,
+      dealId: payment_reference,
       amount: invoice.retainer,
       currency: "USD",
-      description: `The Milano Seal™ — ${finalLane} Lane Retainer · ${
-        data.document_type || prefillDoc || "Document"
-      } · ${country}`,
+      description: payment_description,
       clientName: client_name,
       clientEmail: data.email || null,
       redirectUrl: `${SITE}/portal`,
     });
     const payment_link = wiseResult.url;
+
+    // P1/P2: promote payment metadata to dedicated columns after registry migrations approved.
+    const payment_metadata = {
+      provider: "wise",
+      amount_due: invoice.retainer,
+      currency: "USD",
+      payment_reference,
+      description: payment_description,
+      is_prefilled: wiseResult.mode === "production",
+      manual_fallback_required: wiseResult.mode !== "production",
+    };
+
     const wise_invoice = {
       payment_method: "WISE",
       amount: invoice.retainer,
-      reference: deal_id,
-      note: `The Milano Seal™ — Retainer (50%) · ${client_name}`,
+      reference: payment_reference,
+      note: payment_description,
       wise_link: wiseResult.url,
       wise_request_id: wiseResult.id,
       wise_mode: wiseResult.mode,
@@ -228,7 +263,18 @@ export async function POST(req: NextRequest) {
       document_type: docType,
       service_type: docType,
       use_case: useCase || null,
-      notes: data.notes || "",
+      notes: [
+        data.notes || "",
+        `[routing] origin_authority_type=${normalizedRouting.origin_authority_type}`,
+        `[routing] origin_authority_label=${originAuthorityLabel}`,
+        `[routing] apostille_path=${normalizedRouting.apostille_path}`,
+        routingWarnings.length > 0
+          ? `[routing_warnings] ${routingWarnings.join(" | ")}`
+          : "",
+        `[payment_metadata:${JSON.stringify(payment_metadata)}]`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
       lane: finalLane,
       execution_tier: finalLane,
       execution_lane: finalLane,
@@ -372,7 +418,7 @@ export async function POST(req: NextRequest) {
         deal_id,
         actor,
         action: "created",
-        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country}`,
+        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country} · ${originAuthorityLabel}`,
         meta: {
           source,
           lane: finalLane,

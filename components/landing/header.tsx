@@ -29,7 +29,12 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]">
+      {/* paddingTop: var(--sa-top) keeps header content below the notch/Dynamic Island.
+          Requires viewport-fit=cover (set in app/layout.tsx). */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]"
+        style={{ paddingTop: "var(--sa-top)" }}
+      >
         <CredentialTicker />
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
@@ -95,7 +100,8 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-[116px] z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            className="fixed inset-x-0 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            style={{ top: "calc(124px + var(--sa-top))" }}
           >
             <nav className="flex flex-col p-6 space-y-4">
               {navLinks.map((link) => (

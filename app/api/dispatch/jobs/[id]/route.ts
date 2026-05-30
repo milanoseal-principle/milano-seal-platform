@@ -12,9 +12,9 @@ interface StubJobDetail {
 // Stub: get a single dispatch job by ID
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse<StubJobDetail | { error: string }>> {
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }

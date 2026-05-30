@@ -26,6 +26,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
 import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
+import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
+import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
+import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
+import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
+import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecutionIntelligence";
 
 interface DashboardSummary {
   total_deals: number;
@@ -74,32 +79,65 @@ interface DashboardSummary {
   }[];
 }
 
+interface SlaAlert {
+  deal_id: string;
+  client_name: string | null;
+  deal_status: string;
+  hours_in_stage: number;
+  sla_hours: number;
+  severity: "low" | "medium" | "high";
+}
+
+function slaAlertLabel(alert: SlaAlert): string {
+  const over = Math.round(alert.hours_in_stage - alert.sla_hours);
+  if (over <= 0) return `Within SLA (${Math.round(alert.hours_in_stage)}h / ${alert.sla_hours}h)`;
+  return `${over}h over SLA — ${stageLabel(alert.deal_status)}`;
+}
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
 function Stat({
   label,
   value,
   hint,
   icon: Icon,
+  critical,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon: typeof Briefcase;
+  critical?: boolean;
 }) {
   return (
-    <Card className="bg-card border-gold">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
-          {label}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-gold" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-serif text-foreground">{value}</div>
-        {hint ? (
-          <p className="text-xs text-muted-foreground mt-1">{hint}</p>
-        ) : null}
-      </CardContent>
-    </Card>
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", damping: 30, stiffness: 180 }}
+    >
+      <Card className={`bg-card ${critical ? "border-destructive/60" : "border-gold"}`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            {label}
+          </CardTitle>
+          {critical ? (
+            <motion.div
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Icon className="h-4 w-4 text-destructive" />
+            </motion.div>
+          ) : (
+            <Icon className="h-4 w-4 text-gold" />
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-serif text-foreground">{value}</div>
+          {hint ? (
+            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+          ) : null}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -113,9 +151,19 @@ function formatEventLabel(event: string): string {
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: EASE },
+  },
 };
+
+const alertRowVariants = {
+  hidden: { opacity: 0, x: -8 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
+};
+
 
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
@@ -134,6 +182,7 @@ export default function Dashboard() {
   const { data, isLoading, isError } = useApi<DashboardSummary>(
     "/api/dashboard/summary",
   );
+  const { data: slaAlerts } = useApi<SlaAlert[]>("/api/admin/sla-alerts");
 
   if (isLoading)
     return (
@@ -306,7 +355,12 @@ export default function Dashboard() {
       >
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <motion.div
+        className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: entryComplete ? 1 : 0, y: entryComplete ? 0 : -8 }}
+        transition={{ duration: 0.5, ease: EASE }}
+      >
         <div>
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
             Execution Center
@@ -324,7 +378,7 @@ export default function Dashboard() {
             New Matter Intake <ArrowRight className="ml-2 w-4 h-4" />
           </Button>
         </Link>
-      </div>
+      </motion.div>
 
       {/* Status strip — 6 cards */}
       <motion.div
@@ -332,7 +386,7 @@ export default function Dashboard() {
         initial="hidden"
         animate={entryComplete ? "visible" : "hidden"}
         variants={{
-          visible: { transition: { staggerChildren: 0.08 } },
+          visible: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
         }}
       >
         <motion.div variants={cardVariants}>
@@ -349,6 +403,7 @@ export default function Dashboard() {
             value={String(data.awaiting_payment)}
             hint="Gated until cleared"
             icon={Clock}
+            critical={data.awaiting_payment > 0}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
@@ -385,6 +440,61 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
+      {/* SLA Alerts */}
+      {slaAlerts && slaAlerts.length > 0 && (
+        <motion.div
+          className="space-y-2"
+          initial="hidden"
+          animate={entryComplete ? "visible" : "hidden"}
+          variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.55 } } }}
+        >
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
+            SLA Alerts
+          </p>
+          {slaAlerts.map((alert) => (
+            <motion.div key={alert.deal_id} variants={alertRowVariants}>
+              <Link href={`/dashboard/deals/${alert.deal_id}`}>
+                <div className={`flex items-center justify-between gap-3 p-3 rounded-md border cursor-pointer hover-elevate ${
+                  alert.severity === "high"
+                    ? "border-destructive/60 bg-destructive/5"
+                    : alert.severity === "medium"
+                      ? "border-amber-500/40 bg-amber-500/5"
+                      : "border-border"
+                }`}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldAlert className={`w-4 h-4 flex-shrink-0 ${
+                      alert.severity === "high" ? "text-destructive" : "text-amber-500"
+                    }`} />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm text-foreground truncate">{alert.client_name ?? alert.deal_id}</span>
+                      <span className="text-xs text-muted-foreground">{slaAlertLabel(alert)}</span>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={
+                    alert.severity === "high" ? "bg-critical" : "bg-await"
+                  }>
+                    {alert.severity.toUpperCase()}
+                  </Badge>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Execution Pipeline */}
+      <ExecutionOrchestrationPipeline
+        counts={{
+          reviewing_count: data.reviewing_count,
+          awaiting_payment: data.awaiting_payment,
+          scheduled_count: data.scheduled_count,
+          in_execution: data.in_execution,
+          apostille_count: data.apostille_count,
+          shipped_count: data.shipped_count,
+        }}
+        slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
+      />
+
       {/* Pipeline Load Matrix */}
       <StatusGlowMatrix
         counts={{
@@ -414,48 +524,55 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {data.recent_deals.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No matters yet.</p>
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <Briefcase className="w-6 h-6 text-muted-foreground/30" />
+                <p className="text-muted-foreground text-sm">No matters yet.</p>
+              </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {data.recent_deals.map((d) => (
-                  <Link
+                {data.recent_deals.map((d, idx) => (
+                  <motion.div
                     key={d.id}
-                    href={`/dashboard/deals/${d.deal_id ?? d.id}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: idx * 0.05, ease: EASE }}
                   >
-                    <div
-                      data-testid={`recent-deal-${d.deal_id ?? d.id}`}
-                      className="flex items-center justify-between gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer"
-                    >
-                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="font-mono text-xs text-gold">
-                          {d.deal_id ?? `${d.id.slice(0, 8)}…`}
-                        </span>
-                        <span className="text-sm text-foreground truncate">
-                          {d.client_name ?? "—"}
-                        </span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {d.document_type} → {d.destination_country}
-                        </span>
+                    <Link href={`/dashboard/deals/${d.deal_id ?? d.id}`}>
+                      <div
+                        data-testid={`recent-deal-${d.deal_id ?? d.id}`}
+                        className="flex items-center justify-between gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer"
+                      >
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                          <span className="font-mono text-xs text-gold">
+                            {d.deal_id ?? `${d.id.slice(0, 8)}…`}
+                          </span>
+                          <span className="text-sm text-foreground truncate">
+                            {d.client_name ?? "—"}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {d.document_type} → {d.destination_country}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="text-sm text-foreground">
+                            {formatCurrency(d.total_price)}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              stageTone(d.deal_status) === "paid"
+                                ? "bg-paid"
+                                : stageTone(d.deal_status) === "critical"
+                                  ? "bg-critical"
+                                  : "bg-await"
+                            }
+                          >
+                            {stageLabel(d.deal_status)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-sm text-foreground">
-                          {formatCurrency(d.total_price)}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={
-                            stageTone(d.deal_status) === "paid"
-                              ? "bg-paid"
-                              : stageTone(d.deal_status) === "critical"
-                                ? "bg-critical"
-                                : "bg-await"
-                          }
-                        >
-                          {stageLabel(d.deal_status)}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -470,9 +587,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-3 overflow-hidden">
             {data.recent_activity.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No activity recorded.
-              </p>
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <Activity className="w-6 h-6 text-muted-foreground/30" />
+                <p className="text-muted-foreground text-sm">No activity recorded.</p>
+              </div>
             ) : (
               data.recent_activity.slice(0, 8).map((a) => (
                 <div
@@ -545,6 +663,14 @@ export default function Dashboard() {
               <span className="text-muted-foreground">Revenue Collected</span>
               <span className="text-foreground">{formatCurrency(data.revenue_closed)}</span>
             </div>
+            <div className="flex justify-between text-sm border-t border-border pt-2 mt-1">
+              <span className="text-muted-foreground">Completion Rate</span>
+              <span className="text-gold">
+                {(data.confirmed_payments + data.pending_payments + data.failed_payments) > 0
+                  ? `${Math.round((data.confirmed_payments / (data.confirmed_payments + data.pending_payments + data.failed_payments)) * 100)}%`
+                  : "—"}
+              </span>
+            </div>
           </CardContent>
         </Card>
         </motion.div>
@@ -566,11 +692,11 @@ export default function Dashboard() {
                   <span className="text-foreground">{c.country}</span>
                   <div className="flex items-center gap-3">
                     <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <div
+                      <motion.div
                         className="h-full bg-primary"
-                        style={{
-                          width: `${(c.count / maxCountry) * 100}%`,
-                        }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(c.count / maxCountry) * 100}%` }}
+                        transition={{ duration: 0.6, ease: EASE, delay: 0.55 }}
                       />
                     </div>
                     <span className="text-muted-foreground w-6 text-right">
@@ -594,15 +720,19 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           {data.security_events.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No security events recorded.
-            </p>
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <CheckCircle2 className="w-6 h-6 text-muted-foreground/30" />
+              <p className="text-muted-foreground text-sm">No security events recorded.</p>
+            </div>
           ) : (
             <div>
               {data.security_events.slice(0, 8).map((e) => (
-                <div
+                <motion.div
                   key={e.id}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0 text-sm"
+                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0 text-sm rounded-sm px-1 -mx-1"
+                  initial={{ backgroundColor: "rgba(198,165,90,0)" }}
+                  whileHover={{ backgroundColor: "rgba(198,165,90,0.025)" }}
+                  transition={{ duration: 0.15 }}
                 >
                   <span className="text-foreground font-medium">
                     {formatEventLabel(e.event)}
@@ -616,35 +746,24 @@ export default function Dashboard() {
                   <span className="text-[11px] text-muted-foreground/70 shrink-0">
                     {timeAgo(e.created_at)}
                   </span>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Live Event Bus */}
+      <LiveEventBusStream />
+
       {/* Document Custody */}
-      <Card className="bg-card border-gold">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <Package className="w-4 h-4 text-gold" /> Document Custody — Chain-of-Custody
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm">
-            Open a matter from the Execution Queue to view its chain-of-custody timeline.
-          </p>
-          <Link href="/dashboard/deals">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft text-xs"
-            >
-              Open Execution Queue
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <ChainOfCustodyIntelligence />
+
+      {/* Courier Release Intelligence */}
+      <CourierIntelligencePanel />
+
+      {/* Global Execution Intelligence */}
+      <GlobalExecutionIntelligence />
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">

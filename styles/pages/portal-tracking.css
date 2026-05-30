@@ -1,3 +1,8 @@
+@keyframes ppSkeleton {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 .ct-eyebrow {
   font-size: 9px;
   letter-spacing: 0.3em;

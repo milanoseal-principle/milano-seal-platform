@@ -5,11 +5,11 @@ import { Shield, Eye, Clock, AlertCircle } from "lucide-react";
 // TODO: validate token against review_links table, check expiration, emit audit event.
 
 interface ReviewPageProps {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
-export default function SecureReviewPage({ params }: ReviewPageProps) {
-  const { token } = params;
+export default async function SecureReviewPage({ params }: ReviewPageProps) {
+  const { token } = await params;
 
   // Stub: in production this resolves the token against DB and returns the linked record.
   // If token is invalid or expired → show expired state.

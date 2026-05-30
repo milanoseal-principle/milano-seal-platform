@@ -445,56 +445,6 @@ export function GlobalTrustCoreHero() {
           })}
         </svg>
 
-        {/* Premium floating popover — renders inside sphere for correct z-stacking */}
-        {selectedDest && (
-          <div
-            style={{
-              position: "absolute",
-              left: popLeft,
-              top: popTop,
-              transform: popAnchor,
-              zIndex: 50,
-              pointerEvents: "auto",
-            }}
-            data-seo-intent={selectedDest.seoIntent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="bg-[#050507]/92 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
-              style={{
-                width: "13.5rem",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
-              }}
-            >
-              {/* Dismiss */}
-              <button
-                onClick={() => setSelectedId(null)}
-                className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              {/* Header label */}
-              <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
-                DESTINATION VECTOR
-              </span>
-
-              {/* Scramble text — country // framework */}
-              <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
-                {scrambledText}
-              </p>
-
-              {/* Route vector label */}
-              <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
-                FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Glass specular cap */}
         <div className="ms-globe-glass-cap" />
         {/* Crest glow */}
@@ -504,6 +454,51 @@ export function GlobalTrustCoreHero() {
         {/* Spotlight */}
         <div className="ms-globe-spotlight" />
       </div>
+
+      {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
+      {selectedDest && (
+        <div
+          className="ms-destination-popover"
+          className="ms-destination-popover hidden md:block"
+          style={{
+            position: "absolute",
+            left: popLeft,
+            top: popTop,
+            transform: popAnchor,
+            zIndex: 50,
+            pointerEvents: "auto",
+          }}
+          data-seo-intent={selectedDest.seoIntent}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="bg-[#050507]/92 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
+            style={{
+              width: "13.5rem",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
+            }}
+          >
+            <button
+              onClick={() => setSelectedId(null)}
+              className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
+              DESTINATION VECTOR
+            </span>
+            <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
+              {scrambledText}
+            </p>
+            <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
+              FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Orbit rings */}
       <div className="ms-orbit-ring ms-orbit-ring--main" />
