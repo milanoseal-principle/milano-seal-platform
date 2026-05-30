@@ -18,7 +18,7 @@ export async function requireAllianceAccess(): Promise<{
     (user.app_metadata?.role as string | undefined) ??
     "";
 
-  const allowed = ["alliance", "alliance_partner", "alliance_member"];
+  const allowed = ["founder_admin", "alliance", "alliance_partner", "alliance_member"];
   if (!allowed.includes(role)) {
     redirect("/login?error=access_denied");
   }
