@@ -50,7 +50,12 @@ const T = {
 
 /* ─── Canvas helpers ────────────────────────────────────────── */
 function project(lon: number, lat: number, w: number, h: number): [number, number] {
-  return [(lon + 180) * (w / 360), (90 - lat) * (h / 180)];
+  // Maintain 2:1 world-map aspect ratio, centered in the canvas.
+  // Prevents vertical stretch on portrait mobile screens.
+  const scale = Math.min(w / 360, h / 180);
+  const ox = (w - 360 * scale) / 2;
+  const oy = (h - 180 * scale) / 2;
+  return [ox + (lon + 180) * scale, oy + (90 - lat) * scale];
 }
 
 function quad(t: number, a: number, b: number, c: number) {
