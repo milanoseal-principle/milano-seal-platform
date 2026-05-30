@@ -134,9 +134,17 @@ export default function FinanceReconciliation() {
                 />
               ))}
             </div>
+          ) : wiseData?.wise_ok === false ? (
+            <div className="p-6 text-center space-y-1">
+              <div className="text-sm font-mono text-yellow-400 uppercase tracking-widest">Wise Unavailable</div>
+              <div className="text-xs text-muted-foreground">Reconciliation pending — do not treat open matters as confirmed.</div>
+              {wiseData?.wise_error && (
+                <div className="text-[10px] text-red-400 mt-2">{wiseData.wise_error}</div>
+              )}
+            </div>
           ) : wisePayments.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              No payment records found.
+              No Wise payment records found. Reconciliation pending.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -311,18 +319,34 @@ function SummaryCard({
 
 function WiseStatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
-  const isPaid =
-    s === "paid" || s === "completed" || s === "incoming_payment_waiting";
+  // Only DB-confirmed "paid" shows green. Wise-side statuses are informational only.
+  // "incoming_payment_waiting" = Wise is waiting for transfer — NOT confirmed.
+  // "completed" from Wise = transfer processed on Wise side — still needs operator reconciliation.
+  const isPaid = s === "paid";
+  const isWiseComplete = s === "completed";
+  const isWisePending = s === "incoming_payment_waiting";
   const isFailed = s === "failed" || s === "cancelled" || s === "returned";
+
+  const label = isWisePending
+    ? "Wise Pending"
+    : isWiseComplete
+    ? "Wise Complete — Reconcile"
+    : status;
 
   return (
     <Badge
       variant="outline"
       className={
-        isPaid ? "bg-paid" : isFailed ? "bg-critical" : "bg-await"
+        isPaid
+          ? "bg-paid"
+          : isFailed
+          ? "bg-critical"
+          : isWiseComplete
+          ? "border-yellow-600 text-yellow-400 bg-yellow-950/30"
+          : "bg-await"
       }
     >
-      {status}
+      {label}
     </Badge>
   );
 }
