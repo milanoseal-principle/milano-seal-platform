@@ -31,6 +31,7 @@ import { ExecutionOrchestrationPipeline } from "@/components/dashboard/Execution
 import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
 import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
 import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecutionIntelligence";
+import { DestinationIntelligenceWidget } from "@/components/dashboard/destination-intelligence-widget";
 
 interface DashboardSummary {
   total_deals: number;
@@ -764,6 +765,9 @@ export default function Dashboard() {
 
       {/* Global Execution Intelligence */}
       <GlobalExecutionIntelligence />
+
+      {/* Destination Intelligence — per-corridor matter/revenue breakdown */}
+      <DestinationIntelligenceWidget />
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
