@@ -2,13 +2,6 @@
 
 import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,47 +38,50 @@ export default function FollowUps() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Touchpoints
+        <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-2">
+          Follow-Up Queue
         </p>
         <h1 className="font-serif text-4xl text-foreground">Follow-ups</h1>
       </div>
 
-      <Card className="bg-card border-gold">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Open touchpoints</CardTitle>
-          <CardDescription>
-            Auto-scheduled at intake; resolve as you complete each touch.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="bg-[#0c0c12] border border-gray-900 rounded-sm">
+        <div className="p-4 border-b border-gray-900">
+          <h2 className="font-serif text-lg text-foreground">Open touchpoints</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Auto-scheduled at intake — resolve as you complete each touch.
+          </p>
+        </div>
+
+        <div className="p-4 space-y-2">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  className="p-3 rounded-sm border border-gray-900 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Skeleton className="w-4 h-4 shrink-0 rounded-full" />
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <Skeleton className="h-5 w-20 rounded-full" />
+                        <Skeleton className="h-5 w-20 rounded-sm" />
                         <Skeleton className="h-4 w-24 rounded" />
-                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-16 rounded-sm" />
                       </div>
                       <Skeleton className="h-3 w-48 rounded" />
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <Skeleton className="h-8 w-20 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-sm" />
+                    <Skeleton className="h-8 w-8 rounded-sm" />
                   </div>
                 </div>
               ))}
             </div>
           ) : !data || data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No follow-ups.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No active follow-ups. All matters are current.
+            </p>
           ) : (
             data.map((f) => {
               const due = new Date(f.due_at).getTime();
@@ -93,48 +89,48 @@ export default function FollowUps() {
               return (
                 <div
                   key={f.id}
-                  className={`p-3 rounded-md border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
+                  className={`p-3 rounded-sm border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-colors ${
                     overdue
-                      ? "border-destructive/40 bg-critical"
-                      : "border-border"
+                      ? "border-red-500/20 bg-red-500/5"
+                      : "border-gray-900 hover:bg-white/[0.01]"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Clock
                       className={`w-4 h-4 shrink-0 ${
-                        overdue ? "text-destructive" : "text-gold"
+                        overdue ? "text-red-400" : "text-[#D4AF37]"
                       }`}
                     />
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge
                           variant="outline"
-                          className="bg-gold-soft border-gold text-gold"
+                          className="border-[#D4AF37]/15 text-[#D4AF37] bg-[#D4AF37]/5 rounded-sm text-[10px]"
                         >
                           {f.type}
                         </Badge>
                         {f.deal_id && (
                           <Link href={`/dashboard/deals/${f.deal_id}`}>
-                            <span className="font-mono text-xs text-gold hover:underline cursor-pointer">
+                            <span className="font-mono text-xs text-[#D4AF37] hover:underline cursor-pointer">
                               {f.deal_id}
                             </span>
                           </Link>
                         )}
                         <Badge
                           variant="outline"
-                          className={
+                          className={`rounded-sm text-[10px] ${
                             f.status === "completed"
-                              ? "bg-paid"
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                               : f.status === "cancelled"
-                                ? "bg-critical"
-                                : "bg-await"
-                          }
+                                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                          }`}
                         >
                           {f.status}
                         </Badge>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1 truncate">
-                        Due {formatDateTime(f.due_at)} · {timeAgo(f.due_at)}
+                      <div className="text-xs text-muted-foreground mt-1 truncate font-mono">
+                        Due {formatDateTime(f.due_at)} &middot; {timeAgo(f.due_at)}
                         {f.note ? ` · ${f.note}` : ""}
                       </div>
                     </div>
@@ -144,6 +140,7 @@ export default function FollowUps() {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="border-gray-800 hover:border-[#D4AF37]/40 hover:text-[#D4AF37] text-xs"
                         onClick={() => setStatus(f.id, "completed")}
                       >
                         <CheckCircle2 className="w-4 h-4 mr-1" /> Done
@@ -151,6 +148,7 @@ export default function FollowUps() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        className="text-muted-foreground hover:text-foreground"
                         onClick={() => setStatus(f.id, "cancelled")}
                       >
                         <X className="w-4 h-4" />
@@ -161,8 +159,8 @@ export default function FollowUps() {
               );
             })
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
