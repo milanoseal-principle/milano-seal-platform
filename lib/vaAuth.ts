@@ -15,7 +15,7 @@ const VA_ROLES = new Set([
 ]);
 
 export function isVARole(role: string): boolean {
-  return VA_ROLES.has(role);
+  return role === "founder_admin" || VA_ROLES.has(role);
 }
 
 export async function requireVAAccess(): Promise<{

@@ -8,7 +8,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const DASHBOARD_ROLES = new Set(["admin", "ops_manager", "finance"]);
+const DASHBOARD_ROLES = new Set(["admin", "admin_operator", "ops_manager", "finance", "execution_coordinator", "apostille_coordinator", "finance_operator", "client_support"]);
 const ALLIANCE_ROLES = new Set(["alliance", "alliance_partner", "alliance_member"]);
 const VA_ROLES = new Set([
   "virtual_assistant", "va_manager", "intake_assistant", "scheduling_assistant",
