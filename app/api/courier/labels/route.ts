@@ -86,6 +86,29 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
+
+    // Payment confirmation gate: label cannot be purchased until payment is confirmed and balance is zero
+    if (deal.payment_status !== "payment_confirmed") {
+      return NextResponse.json(
+        {
+          error: "Release gate: payment not confirmed",
+          reason: `Payment status is '${deal.payment_status ?? "unpaid"}'. Label purchase requires payment_status = payment_confirmed.`,
+          code: "PAYMENT_NOT_CONFIRMED",
+        },
+        { status: 422 },
+      );
+    }
+
+    if (deal.balance_due !== null && deal.balance_due > 0) {
+      return NextResponse.json(
+        {
+          error: "Release gate: balance outstanding",
+          reason: `Balance due is ${deal.balance_due}. Label purchase blocked until balance_due = 0.`,
+          code: "BALANCE_OUTSTANDING",
+        },
+        { status: 422 },
+      );
+    }
   } else {
     // Log explicit override
     await appendLedger({
