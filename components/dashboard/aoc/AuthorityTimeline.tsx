@@ -15,7 +15,7 @@ function dotColor(type: TimelineEventType): string {
 }
 
 function formatEventType(type: TimelineEventType): string {
-  return type.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return type.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase());
 }
 
 function formatDate(iso: string): string {
