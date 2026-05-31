@@ -40,6 +40,7 @@ import { ActiveExecutionTimeline } from "@/components/dashboard/ActiveExecutionT
 import { CustodyAccessAuditPanel } from "@/components/dashboard/CustodyAccessAuditPanel";
 import { MatterDetailDrawer } from "@/components/dashboard/MatterDetailDrawer";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
+import { ExecutionReadinessEngine } from "@/components/dashboard/ExecutionReadinessEngine";
 
 interface DashboardSummary {
   total_deals: number;
@@ -539,6 +540,18 @@ export default function Dashboard() {
         }}
       >
         <IntelligenceCommandCenter />
+      </div>
+
+      {/* Execution Readiness Engine */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <ExecutionReadinessEngine />
       </div>
 
       {/* Pipeline Load Matrix */}
