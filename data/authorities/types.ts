@@ -9,17 +9,45 @@
 // ── Authority classification ───────────────────────────────────────────────────
 
 export type AuthorityType =
-  | "municipality"       // Comune, City Hall, Municipal Office
-  | "state_registry"     // Civil Registry, Registro Civil
-  | "notary_registry"    // Cartório (Brazil/Portugal), Notaría Pública (Mexico)
-  | "court"              // Tribunal, Tribunale, Court
-  | "prefettura"         // Italian Prefettura
-  | "consulate"          // Foreign consulate in the US
-  | "embassy"            // Foreign embassy in the US
-  | "immigration_office" // USCIS, foreign immigration authority
-  | "university"         // Academic institution accepting documents
-  | "employer"           // Corporate/employer entity
-  | "land_registry"      // Property/land registry
+  // Civil & vital records
+  | "municipality"           // Comune, City Hall, Municipal Office
+  | "civil_registry"         // Registro Civil, Conservatória, GRO, Standesamt
+  | "vital_records"          // Dedicated vital records authority (distinct from civil registry)
+  | "state_registry"         // State-level civil registry (Brazil, Mexico state offices)
+  | "notary_registry"        // Notaría Pública (MX), Notaio (IT), Notaire (FR), Cartório (BR)
+  // Administrative & government
+  | "prefecture"             // Prefettura (IT), Préfecture (FR), Prefektur (DE)
+  | "prefecture_equivalent"  // Non-Italian prefecture-type authorities
+  | "ministry"               // Ministry of Foreign Affairs, Interior, Justice
+  | "government_office"      // Generic government office not elsewhere classified
+  | "apostille_authority"    // Designated apostille-issuing body (Secretary of State, MOFA)
+  // Legal & judicial
+  | "court"                  // Tribunale, Tribunal, Court
+  | "notary_public"          // US Notary Public (distinct from civil law notary)
+  // Diplomatic
+  | "consulate"
+  | "embassy"
+  | "consular_section"       // Specific consular section within embassy
+  // Immigration & identity
+  | "immigration_office"     // USCIS, foreign immigration authority
+  | "passport_authority"     // Passport issuing authority
+  | "identity_authority"     // National ID, ANPR, identity registry
+  // Corporate & commercial
+  | "chamber_of_commerce"    // Camera di Commercio, Cámara de Comercio
+  | "corporate_registry"     // Companies House (UK), SIREN (FR), Handelsregister (DE)
+  | "licensing_board"        // Professional licensing authority
+  // Academic
+  | "university"
+  | "academic_registry"      // University academic records / transcripts office
+  // Financial & property
+  | "land_registry"
+  | "tax_authority"          // IRS equivalent, Agenzia delle Entrate, SAT (MX)
+  | "bank"                   // For matters requiring bank authority
+  // Healthcare
+  | "health_authority"       // Ministry of Health, health registry
+  // Other
+  | "employer"
+  | "police_authority"       // For criminal record / background check certificates
   | "other";
 
 export type AuthorityStatus = "active" | "inactive" | "seasonal" | "unknown";
@@ -126,6 +154,7 @@ export interface ReceivingAuthority {
   verified_at: string | null;         // ISO date of last verification
   review_cadence_months: number;      // How often to re-verify (e.g., 12)
   next_review_due: string | null;     // ISO date
+  reviewed_at: string | null;         // ISO date of last operator review
 
   // Friction & complexity
   friction_score: number;             // 1–10
@@ -327,4 +356,54 @@ export interface AuthorityCoverageEntry {
   pending: number;    // OBSERVED | PARTNER_CONFIRMED | MULTI_SOURCE_CONFIRMED
   unknown: number;    // VERIFICATION_REQUIRED | UNVERIFIED
   demoted: number;
+}
+
+// ── Authority Dependency Graph ─────────────────────────────────────────────────
+// Models the ordered chain of authorities a document must pass through.
+// Example: Birth Certificate → Civil Registry → Apostille Authority → Receiving Authority
+
+export type DependencyType =
+  | "authentication_chain"   // Document must be authenticated by upstream before downstream accepts
+  | "concurrent"             // Both authorities may be engaged simultaneously
+  | "conditional"            // Dependency applies only under certain conditions
+  | "optional"               // Upstream authority may add value but is not required
+  | "superseded_by";         // Upstream used to be required; downstream now handles directly
+
+export type AuthorityRole =
+  | "origin"                 // Where document is issued
+  | "authenticator"          // Adds official seal/apostille
+  | "legalizer"              // Consular legalization step
+  | "translator_certifier"   // Certifies translation
+  | "receiving";             // Final receiving authority
+
+export interface AuthorityDependency {
+  id: string;
+  document_type_slug: string | null;   // null = applies to all document types
+  country: string;                     // ISO-2 — the corridor country
+  upstream_authority_id: string;       // authority that must act first
+  downstream_authority_id: string;     // authority that receives result of upstream
+  dependency_type: DependencyType;
+  upstream_role: AuthorityRole;
+  downstream_role: AuthorityRole;
+  required_order: number;              // 1 = first in chain, 2 = second, etc.
+  condition_note: string | null;       // Operator note on when this applies
+  source_reference: string | null;
+  valid_from: string;
+  valid_to: string | null;
+}
+
+export interface AuthorityChain {
+  country: string;
+  document_type_slug: string | null;
+  chain: Array<{
+    step: number;
+    authority_id: string;
+    authority_name: string;
+    authority_type: AuthorityType;
+    role: AuthorityRole;
+    confidence: AuthorityConfidence;
+    dependency_type: DependencyType;
+  }>;
+  is_complete: boolean;     // true if all authorities in chain have confidence >= OBSERVED
+  chain_confidence: AuthorityConfidence | null;  // lowest confidence in chain
 }

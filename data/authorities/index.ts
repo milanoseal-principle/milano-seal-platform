@@ -115,7 +115,7 @@ export function getAuthorityStaticParams(): { country: string; authority: string
 }
 
 export { AUTHORITY_CHANGE_LOG, AUTHORITY_TIMELINE, SOURCE_VAULT } from "./changelog";
-export type { AuthorityChangeLogEntry, AuthorityTimelineEvent, SourceVaultEntry, AuthorityCoverageEntry } from "./types";
+export type { AuthorityChangeLogEntry, AuthorityTimelineEvent, TimelineEventType, SourceVaultEntry, AuthorityCoverageEntry } from "./types";
 
 // ── AOC queries ────────────────────────────────────────────────────────────────
 
@@ -203,4 +203,102 @@ export function getSourceVault(authorityId: string): SourceVaultEntry[] {
   const { SOURCE_VAULT } = require("./changelog") as { SOURCE_VAULT: SourceVaultEntry[] };
   return SOURCE_VAULT.filter((e) => e.authority_id === authorityId)
     .sort((a, b) => b.captured_at.localeCompare(a.captured_at));
+}
+
+import { AUTHORITY_DEPENDENCIES } from "./dependencies";
+import type { AuthorityDependency, AuthorityChain, DependencyType, AuthorityRole } from "./types";
+
+export { AUTHORITY_DEPENDENCIES };
+export type { AuthorityDependency, AuthorityChain, DependencyType, AuthorityRole };
+
+// ── Dependency graph queries ───────────────────────────────────────────────────
+
+export function getDependenciesForAuthority(authorityId: string): AuthorityDependency[] {
+  return AUTHORITY_DEPENDENCIES.filter(
+    (d) =>
+      (d.upstream_authority_id === authorityId ||
+        d.downstream_authority_id === authorityId) &&
+      d.valid_to === null,
+  );
+}
+
+export function getDependencyChain(
+  countryIso: string,
+  documentTypeSlug: string | null,
+): AuthorityDependency[] {
+  return AUTHORITY_DEPENDENCIES.filter(
+    (d) =>
+      d.country.toUpperCase() === countryIso.toUpperCase() &&
+      (d.document_type_slug === documentTypeSlug || d.document_type_slug === null) &&
+      d.valid_to === null,
+  ).sort((a, b) => a.required_order - b.required_order);
+}
+
+export function buildAuthorityChain(
+  countryIso: string,
+  documentTypeSlug: string | null,
+): AuthorityChain {
+  const deps = getDependencyChain(countryIso, documentTypeSlug);
+  const authorityIds = new Set<string>();
+  for (const d of deps) {
+    authorityIds.add(d.upstream_authority_id);
+    authorityIds.add(d.downstream_authority_id);
+  }
+
+  const steps: AuthorityChain["chain"] = [];
+  const seen = new Set<string>();
+
+  for (const dep of deps) {
+    if (!seen.has(dep.upstream_authority_id)) {
+      seen.add(dep.upstream_authority_id);
+      const a = getAuthority(dep.upstream_authority_id);
+      if (a) {
+        steps.push({
+          step: dep.required_order,
+          authority_id: a.id,
+          authority_name: a.authority_name,
+          authority_type: a.authority_type,
+          role: dep.upstream_role,
+          confidence: a.authority_confidence,
+          dependency_type: dep.dependency_type,
+        });
+      }
+    }
+  }
+
+  const confidenceLevels: AuthorityConfidence[] = [
+    "AUTHORITY_VERIFIED",
+    "MULTI_SOURCE_CONFIRMED",
+    "PARTNER_CONFIRMED",
+    "OBSERVED",
+    "UNVERIFIED",
+    "VERIFICATION_REQUIRED",
+    "DEMOTED",
+  ];
+
+  let chainConfidence: AuthorityConfidence | null = null;
+  for (const step of steps) {
+    const idx = confidenceLevels.indexOf(step.confidence);
+    if (
+      chainConfidence === null ||
+      idx > confidenceLevels.indexOf(chainConfidence)
+    ) {
+      chainConfidence = step.confidence;
+    }
+  }
+
+  const isComplete = steps.length > 0 && steps.every(
+    (s) =>
+      s.confidence !== "VERIFICATION_REQUIRED" &&
+      s.confidence !== "UNVERIFIED" &&
+      s.confidence !== "DEMOTED",
+  );
+
+  return {
+    country: countryIso,
+    document_type_slug: documentTypeSlug,
+    chain: steps.sort((a, b) => a.step - b.step),
+    is_complete: isComplete,
+    chain_confidence: chainConfidence,
+  };
 }
