@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Shield, Globe, Video, FileCheck, Users, Layers, Navigation } from "lucide-react";
+import { Shield, Zap, Lock, Scale } from "lucide-react";
 
 const items = [
   {
@@ -46,6 +47,23 @@ const items = [
     label: "Tallahassee Field Dispatch",
     sub: "Physical Courier · FL Dept of State",
     href: "/services/florida-apostille-courier",
+    label: "Florida Commissioned",
+    sub: "Statewide Mobile & RON Authority",
+  },
+  {
+    icon: Scale,
+    label: "Executive Liaison",
+    sub: "Healthcare & Legal Network Architecture",
+  },
+  {
+    icon: Lock,
+    label: "100% Scripted Compliance",
+    sub: "Zero Hague Procedural Exceptions",
+  },
+  {
+    icon: Zap,
+    label: "Express Escalation",
+    sub: "Same-Day Matter Review Intake",
   },
 ];
 

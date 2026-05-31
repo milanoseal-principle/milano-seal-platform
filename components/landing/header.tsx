@@ -35,6 +35,7 @@ export function Header() {
         className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]"
         style={{ paddingTop: "var(--sa-top)" }}
       >
+      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]">
         <CredentialTicker />
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">

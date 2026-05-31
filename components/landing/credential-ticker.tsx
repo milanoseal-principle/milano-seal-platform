@@ -23,6 +23,16 @@ const RAIL_B: { route: string; workflow: string }[] = [
   { route: "FLORIDA → MEXICO",   workflow: "Cross-Border Legalization Path" },
   { route: "FLORIDA → PORTUGAL", workflow: "Hague Apostille Review Path" },
   { route: "FLORIDA → GREECE",   workflow: "Hague Convention Document Route" },
+import { Activity, Radio, Wifi, Cpu, TerminalSquare, Network, ShieldCheck } from "lucide-react";
+
+const ITEMS = [
+  { icon: Activity,       label: "SECURE VAULT GATEWAY: ACTIVE // LATENCY 14MS" },
+  { icon: Network,        label: "HAGUE CONVENTION JURISDICTIONS: 125+ MEMBERS VERIFIED" },
+  { icon: TerminalSquare, label: "FLORIDA DOS RON SEALS: EMITTING // TALLAHASSEE CORE ONLINE" },
+  { icon: ShieldCheck,    label: "APOSTILLE ROUTING ENGINE: LIVE // EXECUTION QUEUE CLEAR" },
+  { icon: Cpu,            label: "USCIS-READY DOCUMENT MATRIX: FULL COMPLIANCE CLEARANCE" },
+  { icon: Radio,          label: "LEGAL-MEDICAL LIAISON TERMINALS: CONNECTED // TRIAGE STABLE" },
+  { icon: Wifi,           label: "PROTOCOL V2026: ACTIVE // ALLIANCE AGENT TOKENS PARSING" },
 ];
 
 export function CredentialTicker() {

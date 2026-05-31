@@ -51,6 +51,15 @@ const DESTINATIONS = [
     seoIntent: "/jurisdictions/mexico-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_MX",
   },
+  // Europe: upper-right quadrant (Italy right of Spain, both clearly east of Atlantic midline)
+  { id: "italy",  label: "Italy",  x: 255, y: 105, dur: 2.4, startDelay: 0.0 },
+  { id: "spain",  label: "Spain",  x: 208, y: 122, dur: 2.8, startDelay: 0.7 },
+  // Brazil: lower-left — below Florida on the same western longitude band
+  { id: "brazil", label: "Brazil", x: 118, y: 268, dur: 3.1, startDelay: 1.4 },
+  // UAE: far right, Middle East gateway — same latitude as Florida
+  { id: "uae",    label: "UAE",    x: 330, y: 192, dur: 2.6, startDelay: 0.3 },
+  // Mexico: southwest of Florida — North America civil law bridge
+  { id: "mexico", label: "Mexico", x:  62, y: 222, dur: 1.8, startDelay: 2.1 },
 ];
 
 // Typography scramble — characters cycle before settling on final text
@@ -174,6 +183,11 @@ export function GlobalTrustCoreHero() {
       setScrambleTick(t => t + 1);
     }
   };
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const openCard = useCallback((id: string) => setSelectedCountry(id), []);
+  const closeCard = useCallback(() => setSelectedCountry(null), []);
 
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -316,6 +330,7 @@ export function GlobalTrustCoreHero() {
             const headStroke    = isSelected ? "#FFFFFF" : "#FFF5DC";
             const bodyFilter    = isSelected ? "url(#gtc-glow-arc-bright)" : "url(#gtc-glow-arc)";
             const bloomOpacity  = arcsDone ? (isDimmed ? 0.2 : 1) : 0;
+            const path = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes */}
@@ -388,6 +403,14 @@ export function GlobalTrustCoreHero() {
                   data-target-vector={dest.isoCode}
                   onClick={(e) => { e.stopPropagation(); handleSelect(dest.id); }}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelect(dest.id); }}
+                {/* Clickable node + ring + label → opens compliance card */}
+                <g
+                  style={{ cursor: "pointer" }}
+                  role="button"
+                  aria-label={`View ${dest.label} compliance details`}
+                  onClick={() => openCard(dest.id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCard(dest.id); }}
                 >
                   {/* Expanded hit area */}
                   <circle cx={dest.x} cy={dest.y} r="18" fill="transparent" />
@@ -397,6 +420,13 @@ export function GlobalTrustCoreHero() {
                     cx={dest.x} cy={dest.y}
                     r={isSelected ? 5 : 3.5}
                     fill={isSelected ? "#F0C84A" : "#D4AF37"}
+                    r="18"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r="3.5"
+                    fill="#D4AF37"
                     filter="url(#gtc-glow-node)"
                     opacity={arcsDone ? 1 : 0}
                     className={arcsDone
@@ -518,6 +548,7 @@ export function GlobalTrustCoreHero() {
 
       {/* Country compliance card — portal-style fixed overlay */}
       <CountryComplianceCard countryId={selectedId} onClose={() => setSelectedId(null)} />
+      <CountryComplianceCard countryId={selectedCountry} onClose={closeCard} />
     </div>
   );
 }
