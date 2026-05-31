@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { CountryComplianceCard } from "@/components/landing/country-compliance-card";
 
 const FLORIDA = { x: 108, y: 190 };
 
@@ -315,7 +316,6 @@ export function GlobalTrustCoreHero() {
             const headStroke    = isSelected ? "#FFFFFF" : "#FFF5DC";
             const bodyFilter    = isSelected ? "url(#gtc-glow-arc-bright)" : "url(#gtc-glow-arc)";
             const bloomOpacity  = arcsDone ? (isDimmed ? 0.2 : 1) : 0;
-
             return (
               <g key={dest.id}>
                 {/* Chromatic fringes */}
@@ -515,6 +515,9 @@ export function GlobalTrustCoreHero() {
               : "Florida Origin · Execution Authority"}
         </span>
       </div>
+
+      {/* Country compliance card — portal-style fixed overlay */}
+      <CountryComplianceCard countryId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
