@@ -42,6 +42,7 @@ import { MatterDetailDrawer } from "@/components/dashboard/MatterDetailDrawer";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 import { ExecutionReadinessEngine } from "@/components/dashboard/ExecutionReadinessEngine";
 import { ExecutiveOperationsCenter } from "@/components/dashboard/ExecutiveOperationsCenter";
+import { AuthorityAlertSystem } from "@/components/dashboard/AuthorityAlertSystem";
 
 interface DashboardSummary {
   total_deals: number;
@@ -530,6 +531,9 @@ export default function Dashboard() {
 
       {/* Executive Operations Center */}
       <ExecutiveOperationsCenter summaryData={data as unknown as Record<string, unknown>} />
+
+      {/* Authority Alert System */}
+      <AuthorityAlertSystem />
 
       {/* Execution Status Rail */}
       <ExecutionStatusRail />
