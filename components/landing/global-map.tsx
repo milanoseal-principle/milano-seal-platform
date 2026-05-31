@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
-import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield } from "lucide-react";
+import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield, ChevronDown, ChevronRight, Clock, Languages, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
+import { getCorridorIntel, type MatterVector } from "@/data/corridor-intel";
 
 const GlobalIntelMapInteractive = dynamic(
   () =>
@@ -63,12 +64,90 @@ const REGION_FLY_TARGETS: Partial<Record<RegionTab, { lat: number; lng: number; 
   "Asia Pacific": { lat: 20, lng: 115, zoom: 4 },
 };
 
+// ── Corridor Memory (sessionStorage) ─────────────────────────────────────────
+function useCorridorMemory() {
+  const [storedSlug, setStoredSlug] = useState<string | null>(null);
+  const [storedMatter, setStoredMatter] = useState<string | null>(null);
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current) return;
+    hydrated.current = true;
+    try {
+      setStoredSlug(sessionStorage.getItem("ms_corridor_country"));
+      setStoredMatter(sessionStorage.getItem("ms_corridor_matter"));
+    } catch {}
+  }, []);
+
+  const saveCountry = useCallback((slug: string | null) => {
+    try {
+      slug ? sessionStorage.setItem("ms_corridor_country", slug) : sessionStorage.removeItem("ms_corridor_country");
+    } catch {}
+    setStoredSlug(slug);
+  }, []);
+
+  const saveMatter = useCallback((matter: string | null) => {
+    try {
+      matter ? sessionStorage.setItem("ms_corridor_matter", matter) : sessionStorage.removeItem("ms_corridor_matter");
+    } catch {}
+    setStoredMatter(matter);
+  }, []);
+
+  return { storedSlug, storedMatter, saveCountry, saveMatter };
+}
+
 export function GlobalMap() {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
   const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
+
+  // Sprint One — intelligence layer state
+  const [activeMatter, setActiveMatter] = useState<MatterVector | null>(null);
+  const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [hoveredToken, setHoveredToken] = useState<string | null>(null);
+  const { storedSlug, storedMatter, saveCountry, saveMatter } = useCorridorMemory();
+  const [showMemoryBanner, setShowMemoryBanner] = useState(false);
+
+  // Restore from corridor memory on mount
+  useEffect(() => {
+    if (!storedSlug) return;
+    const dest = DESTINATIONS.find(d => d.slug === storedSlug) ?? null;
+    if (dest && !selectedDest) {
+      setShowMemoryBanner(true);
+    }
+  }, [storedSlug]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When selected destination changes, save to memory + reset matter/step
+  const handleSelectDest = useCallback((dest: Destination | null) => {
+    setSelectedDest(dest);
+    setActiveMatter(null);
+    setExpandedStep(null);
+    saveCountry(dest?.slug ?? null);
+    if (!dest) saveMatter(null);
+  }, [saveCountry, saveMatter]);
+
+  // When matter changes, save to memory
+  const handleSelectMatter = useCallback((mv: MatterVector | null) => {
+    setActiveMatter(mv);
+    setExpandedStep(null);
+    saveMatter(mv?.label ?? null);
+  }, [saveMatter]);
+
+  // Restore memory session
+  function resumeMemorySession() {
+    const dest = DESTINATIONS.find(d => d.slug === storedSlug) ?? null;
+    if (!dest) return;
+    setSelectedDest(dest);
+    if (dest.lat && dest.lng) setMapFlyTarget({ lat: dest.lat, lng: dest.lng, zoom: 5 });
+    const intel = getCorridorIntel(dest.slug, dest.hague);
+    if (storedMatter) {
+      const mv = intel.matterVectors.find(m => m.label === storedMatter) ?? null;
+      setActiveMatter(mv);
+    }
+    setShowMemoryBanner(false);
+  }
 
   const openCompliance = useCallback((slug: string) => {
     if (COUNTRY_COMPLIANCE_DATA[slug]) setComplianceCountryId(slug);
@@ -78,6 +157,15 @@ export function GlobalMap() {
   useEffect(() => {
     setActiveRouteId(selectedDest?.slug ?? null);
   }, [selectedDest]);
+
+  // Derived corridor intelligence for selected destination
+  const corridorIntel = selectedDest
+    ? getCorridorIntel(selectedDest.slug, selectedDest.hague)
+    : null;
+
+  // Active execution path: matter-specific or generic
+  const activePath = activeMatter?.path ?? selectedDest?.executionPath ?? [];
+  const activeTimeline = activeMatter?.timeline ?? corridorIntel?.timeline ?? null;
 
   const allSorted = [...DESTINATIONS].sort((a, b) => (b.demand || 0) - (a.demand || 0));
   const teaser = activeRegion === "All"
@@ -169,6 +257,44 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
+        {/* Corridor Memory Banner */}
+        <AnimatePresence>
+          {showMemoryBanner && storedSlug && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="mb-5 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04]"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[#C6A55A] text-base leading-none flex-shrink-0">
+                  {DESTINATIONS.find(d => d.slug === storedSlug)?.flag}
+                </span>
+                <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#C6A55A]/70 truncate">
+                  Continue exploring {DESTINATIONS.find(d => d.slug === storedSlug)?.name}
+                  {storedMatter ? ` · ${storedMatter}` : ""}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={resumeMemorySession}
+                  className="font-mono text-[8px] tracking-[0.18em] uppercase text-[#C6A55A] hover:text-[#D4B76A] transition-colors px-2.5 py-1 border border-[#C6A55A]/30 rounded hover:border-[#C6A55A]/60"
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={() => setShowMemoryBanner(false)}
+                  className="text-[#444] hover:text-[#666] transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* THREE-COLUMN EXECUTION DECK: How It Works | map canvas | dock */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -248,7 +374,7 @@ export function GlobalMap() {
             {/* CENTER: Interactive map canvas */}
             <div className="lg:col-span-6 lg:border-r border-white/[0.04] relative">
               <GlobalIntelMapInteractive
-                onSelect={setSelectedDest}
+                onSelect={handleSelectDest}
                 selectedDest={selectedDest}
                 externalFlyTarget={mapFlyTarget}
               />
@@ -311,7 +437,7 @@ export function GlobalMap() {
                           Begin Intake
                         </Link>
                         <button
-                          onClick={() => setSelectedDest(null)}
+                          onClick={() => handleSelectDest(null)}
                           className="p-1.5 rounded hover:bg-white/[0.08] text-[#555] hover:text-[#888] transition-colors"
                           aria-label="Clear selection"
                         >
@@ -367,7 +493,7 @@ export function GlobalMap() {
                         </span>
                       </div>
                       <button
-                        onClick={() => setSelectedDest(null)}
+                        onClick={() => handleSelectDest(null)}
                         className="p-1.5 rounded hover:bg-white/[0.05] text-[#444] hover:text-[#888] transition-colors flex-shrink-0"
                         aria-label="Clear selection"
                       >
@@ -393,64 +519,157 @@ export function GlobalMap() {
                       </span>
                     </div>
 
-                    {/* Procedural sequence */}
-                    <div className="mb-4 flex-1">
-                      <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-3">
-                        PROCEDURAL SEQUENCE
-                      </span>
-                      <div className="space-y-2.5">
-                        {selectedDest.executionPath.map((step, i) => (
-                          <div key={i} className="flex items-start gap-3">
-                            <span className="font-mono text-[#C6A55A]/40 text-[8px] mt-0.5 w-5 flex-shrink-0">
-                              {String(i + 1).padStart(2, "0")}
-                            </span>
-                            <span className="text-[#909090] text-[11px] leading-snug">{step}</span>
+                    {/* Intelligence metadata row */}
+                    {corridorIntel && (
+                      <div className="flex items-center gap-3 mb-4 flex-wrap">
+                        {activeTimeline && (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-[#C6A55A]/40 flex-shrink-0" />
+                            <span className="font-mono text-[9px] text-[#555]">{activeTimeline}</span>
                           </div>
-                        ))}
+                        )}
+                        {corridorIntel.translationRequired && (
+                          <div className="flex items-center gap-1.5">
+                            <Languages className="w-3 h-3 text-[#C6A55A]/40 flex-shrink-0" />
+                            <span className="font-mono text-[9px] text-[#555]">Translation required</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
 
-                    {/* Matter vectors */}
-                    {selectedDest.commonDocuments && selectedDest.commonDocuments.length > 0 && (
-                      <div className="mb-5">
-                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2.5">
-                          MATTER VECTORS
+                    {/* Matter Vector Intelligence — clickable chips that reconfigure sequence */}
+                    {corridorIntel && corridorIntel.matterVectors.length > 0 && (
+                      <div className="mb-4">
+                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2">
+                          SELECT MATTER TYPE
                         </span>
                         <div className="flex flex-wrap gap-1.5">
-                          {selectedDest.commonDocuments.slice(0, 4).map((doc) => (
-                            <span
-                              key={doc}
-                              className="font-mono text-[9px] px-2 py-0.5 border border-white/[0.06] text-[#666] rounded"
-                            >
-                              {doc}
-                            </span>
+                          {corridorIntel.matterVectors.map((mv) => {
+                            const isActive = activeMatter?.label === mv.label;
+                            return (
+                              <button
+                                key={mv.label}
+                                onClick={() => handleSelectMatter(isActive ? null : mv)}
+                                className={`font-mono text-[9px] px-2.5 py-1 rounded border transition-all duration-200 ${
+                                  isActive
+                                    ? "border-[#C6A55A]/60 text-[#C6A55A] bg-[#C6A55A]/[0.08]"
+                                    : "border-white/[0.08] text-[#5A5A5A] hover:border-[#C6A55A]/30 hover:text-[#888]"
+                                }`}
+                              >
+                                {isActive && <CheckCircle2 className="inline w-2.5 h-2.5 mr-1 mb-0.5" />}
+                                {mv.label}
+                              </button>
+                            );
+                          })}
+                          {/* Fallback generic matter chips if no corridor intel matters */}
+                          {corridorIntel.matterVectors.length === 0 && selectedDest.commonDocuments.slice(0, 3).map((doc) => (
+                            <span key={doc} className="font-mono text-[9px] px-2 py-0.5 border border-white/[0.06] text-[#555] rounded">{doc}</span>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Common use cases */}
-                    {selectedDest.audiences && selectedDest.audiences.length > 0 && (
-                      <div className="mb-4">
-                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2.5">
-                          COMMON USE CASES
+                    {/* Interactive Procedural Sequence */}
+                    <div className="mb-4 flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444]">
+                          {activeMatter ? `${activeMatter.label.toUpperCase()} SEQUENCE` : "PROCEDURAL SEQUENCE"}
                         </span>
-                        <div className="flex flex-wrap gap-x-3 gap-y-2">
-                          {selectedDest.audiences.map((aud) => {
-                            const cfg = AUDIENCE_CONFIG[aud as AudienceKey];
-                            if (!cfg) return null;
-                            const { Icon, label } = cfg;
+                        {activeMatter && (
+                          <button
+                            onClick={() => handleSelectMatter(null)}
+                            className="font-mono text-[7px] tracking-[0.12em] text-[#444] hover:text-[#C6A55A]/60 transition-colors uppercase"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={activeMatter?.label ?? "generic"}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.25 }}
+                          className="space-y-0"
+                        >
+                          {activePath.map((step, i) => {
+                            const isExpanded = expandedStep === i;
+                            // derive contextual note from step text
+                            const note = step.toLowerCase().includes("apostille")
+                              ? "Florida Department of State. Standard processing 2–5 business days."
+                              : step.toLowerCase().includes("translation")
+                              ? "Certified translation by sworn translator. Required by receiving authority."
+                              : step.toLowerCase().includes("notarization") || step.toLowerCase().includes("notary")
+                              ? "Florida-commissioned notary. RON available for remote signers."
+                              : step.toLowerCase().includes("courier")
+                              ? "Secure international courier with tracking. Delivery 3–7 business days."
+                              : step.toLowerCase().includes("embassy") || step.toLowerCase().includes("consulate")
+                              ? "Embassy/consulate processing times vary. Typically 5–15 business days."
+                              : step.toLowerCase().includes("authentication")
+                              ? "Florida SOS or U.S. State Dept. confirms notary credentials for foreign use."
+                              : null;
                             return (
-                              <div key={aud} className="flex items-center gap-1.5">
-                                <Icon size={10} style={{ color: "rgba(198,165,90,0.5)", flexShrink: 0 }} />
-                                <span className="font-mono text-[9px] text-[#555] tracking-wide">{label}</span>
+                              <div key={`${activeMatter?.label ?? "x"}-${i}`}>
+                                <button
+                                  className={`w-full flex items-start gap-3 py-2 text-left group transition-colors ${note ? "cursor-pointer" : "cursor-default"}`}
+                                  onClick={() => note && setExpandedStep(isExpanded ? null : i)}
+                                  disabled={!note}
+                                >
+                                  <span className="font-mono text-[#C6A55A]/40 text-[8px] mt-0.5 w-5 flex-shrink-0 group-hover:text-[#C6A55A]/60 transition-colors">
+                                    {String(i + 1).padStart(2, "0")}
+                                  </span>
+                                  <span className="text-[#909090] text-[11px] leading-snug flex-1 text-left group-hover:text-[#ABABAB] transition-colors">
+                                    {step}
+                                  </span>
+                                  {note && (
+                                    <span className="flex-shrink-0 mt-0.5">
+                                      {isExpanded
+                                        ? <ChevronDown className="w-3 h-3 text-[#C6A55A]/40" />
+                                        : <ChevronRight className="w-3 h-3 text-[#333] group-hover:text-[#C6A55A]/30 transition-colors" />}
+                                    </span>
+                                  )}
+                                </button>
+                                <AnimatePresence>
+                                  {isExpanded && note && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.22 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <div className="ml-8 mb-2 px-3 py-2 rounded bg-[#C6A55A]/[0.04] border border-[#C6A55A]/10">
+                                        <p className="font-mono text-[9px] text-[#666] leading-relaxed">{note}</p>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
                             );
                           })}
-                        </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Use cases (compact) */}
+                    {selectedDest.audiences && selectedDest.audiences.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1.5">
+                        {selectedDest.audiences.map((aud) => {
+                          const cfg = AUDIENCE_CONFIG[aud as AudienceKey];
+                          if (!cfg) return null;
+                          const { Icon, label } = cfg;
+                          return (
+                            <div key={aud} className="flex items-center gap-1.5">
+                              <Icon size={9} style={{ color: "rgba(198,165,90,0.45)", flexShrink: 0 }} />
+                              <span className="font-mono text-[8.5px] text-[#4A4A4A] tracking-wide">{label}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
-                    {/* Compliance Intelligence link — only for PRIMARY_ROUTES countries */}
+
+                    {/* Compliance Intelligence link */}
                     {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
                       <button
                         onClick={() => openCompliance(selectedDest.slug)}
@@ -469,12 +688,13 @@ export function GlobalMap() {
                       Procedural guidance only. Requirements confirmed with receiving authority before execution.
                     </p>
 
-                    {/* Execution CTA */}
+                    {/* Execution CTA — preloaded with country + matter */}
                     <Link
-                      href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
+                      href={`/intake?country=${encodeURIComponent(selectedDest.name)}${activeMatter ? `&matter=${encodeURIComponent(activeMatter.label)}` : ""}`}
                       className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.14em] text-[10px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors duration-200"
                     >
                       Begin Secure Intake
+                      {activeMatter && <span className="opacity-70">· {activeMatter.label}</span>}
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </motion.div>
@@ -588,12 +808,57 @@ export function GlobalMap() {
           transition={{ duration: 0.5, delay: 0.25 }}
           className="border border-white/[0.04] rounded-xl overflow-hidden mb-8"
         >
-          {/* Token grid header */}
-          <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
-            <span className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#444]">
-              HIGH-DEMAND DESTINATIONS
-            </span>
-            <span className="font-mono text-[8px] text-[#333]">
+          {/* Token grid header — with dynamic hover preview */}
+          <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between min-h-[44px]">
+            <AnimatePresence mode="wait">
+              {hoveredToken ? (() => {
+                const hd = teaser.find(d => d.slug === hoveredToken);
+                const hi = hd ? getCorridorIntel(hd.slug, hd.hague) : null;
+                return hd && hi ? (
+                  <motion.div
+                    key={hoveredToken}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-3"
+                  >
+                    <span className="text-base leading-none">{hd.flag}</span>
+                    <span className="font-serif text-sm text-white">{hd.name}</span>
+                    <span className="font-mono text-[8px] text-[#C6A55A]/60 tracking-[0.18em] uppercase">{hi.routeType}</span>
+                    <span className="text-[#333]">·</span>
+                    <span className="font-mono text-[8px] text-[#555]">{hi.timeline}</span>
+                    {hi.translationRequired && (
+                      <>
+                        <span className="text-[#333]">·</span>
+                        <span className="font-mono text-[8px] text-[#555]">Translation required</span>
+                      </>
+                    )}
+                    {hi.matterVectors.length > 0 && (
+                      <div className="hidden md:flex items-center gap-1.5 ml-1">
+                        {hi.matterVectors.slice(0, 2).map(mv => (
+                          <span key={mv.label} className="font-mono text-[7.5px] px-1.5 py-0.5 border border-white/[0.06] text-[#4A4A4A] rounded">
+                            {mv.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                ) : null;
+              })() : (
+                <motion.span
+                  key="default-label"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#444]"
+                >
+                  HIGH-DEMAND DESTINATIONS
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <span className="font-mono text-[8px] text-[#333] flex-shrink-0 ml-3">
               {TEASER_LIMIT} OF 150 ACTIVE
             </span>
           </div>
@@ -604,11 +869,13 @@ export function GlobalMap() {
                 key={d.slug}
                 onClick={() => {
                   const next = selectedDest?.slug === d.slug ? null : d;
-                  setSelectedDest(next);
+                  handleSelectDest(next);
                   if (next?.lat && next?.lng) {
                     setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 });
                   }
                 }}
+                onMouseEnter={() => setHoveredToken(d.slug)}
+                onMouseLeave={() => setHoveredToken(null)}
                 className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${
                   selectedDest?.slug === d.slug
                     ? "bg-[#C6A55A]/[0.06]"
