@@ -46,6 +46,8 @@ export async function proxy(request: NextRequest) {
   }
 
   let response = NextResponse.next({ request });
+  // Inject current pathname so server layouts can redirect with route-specific next= params
+  response.headers.set("x-pathname", pathname);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
