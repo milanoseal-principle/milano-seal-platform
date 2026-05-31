@@ -31,6 +31,11 @@ import { ExecutionOrchestrationPipeline } from "@/components/dashboard/Execution
 import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
 import { CourierIntelligencePanel } from "@/components/dashboard/CourierIntelligencePanel";
 import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecutionIntelligence";
+import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
+import { IntelligenceCommandCenter } from "@/components/dashboard/IntelligenceCommandCenter";
+import { MatterQueue } from "@/components/dashboard/MatterQueue";
+import { GDIWidget } from "@/components/dashboard/GDIWidget";
+import { OperationalLog } from "@/components/dashboard/OperationalLog";
 
 interface DashboardSummary {
   total_deals: number;
@@ -495,6 +500,21 @@ export default function Dashboard() {
         slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
       />
 
+      {/* Execution Status Rail */}
+      <ExecutionStatusRail />
+
+      {/* Intelligence Command Center */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <IntelligenceCommandCenter />
+      </div>
+
       {/* Pipeline Load Matrix */}
       <StatusGlowMatrix
         counts={{
@@ -752,6 +772,42 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Matter Queue */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <MatterQueue />
+      </div>
+
+      {/* Global Document Intelligence Widget */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <GDIWidget />
+      </div>
+
+      {/* Operational Log */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <OperationalLog />
+      </div>
 
       {/* Live Event Bus */}
       <LiveEventBusStream />
