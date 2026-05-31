@@ -19,6 +19,7 @@ function IntakeContent({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   return (
@@ -36,13 +37,14 @@ async function IntakeWizardWrapper({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   const params = await searchParams;
   const prefill = {
     country: params.country || "",
     document: params.document || "",
-    useCase: params.useCase || "",
+    useCase: params.useCase || params.matter || "",
   };
   const tier = params.tier as
     | "signature"
@@ -65,6 +67,7 @@ export default function IntakePage({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   return (
