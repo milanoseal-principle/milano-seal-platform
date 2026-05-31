@@ -30,6 +30,17 @@ interface PricingResult {
 }
 
 const US_STATES = [
+  // RON / Florida
+  "Florida RON Notarial Act",
+  // Federal agencies
+  "Federal (FBI)",
+  "Federal (U.S. Department of State)",
+  "Federal (USCIS)",
+  "Federal (IRS)",
+  "Federal (Social Security Administration)",
+  "Federal (U.S. Federal Court)",
+  "Federal (USPTO)",
+  // U.S. States
   "Florida",
   "California",
   "New York",
@@ -40,6 +51,10 @@ const US_STATES = [
   "Washington",
   "Illinois",
   "Massachusetts",
+  // Corporate / Foreign / Other
+  "Corporate / Secretary of State",
+  "Foreign Issuing Authority",
+  "Other / Not Sure",
 ];
 
 const COUNTRIES = [
@@ -435,7 +450,7 @@ export function OperatorIntakeForm() {
                   options={COUNTRIES}
                 />
               </Field>
-              <Field id="origin_state" label="Origin state" required>
+              <Field id="origin_state" label="Origin Authority" required>
                 <SelectInput
                   id="origin_state"
                   value={form.origin_state}

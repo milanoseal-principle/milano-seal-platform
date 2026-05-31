@@ -1,0 +1,502 @@
+/* Alliance Partner Portal — B2B Light Design */
+.ap-shell {
+  min-height: 100vh;
+  background: #fafafa;
+  color: #1f2937;
+  font-family: var(--font-geist), "Inter", system-ui, sans-serif;
+}
+
+/* Topbar */
+.ap-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.ap-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ap-brand-mark {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #f4e5b8 0%, #d4af37 60%, #8b6914 100%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+  flex-shrink: 0;
+}
+
+.ap-brand-name {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.ap-brand-sub {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+/* Nav Pills */
+.ap-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.ap-nav-item {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ap-nav-item:hover {
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.ap-nav-item.active {
+  color: #d4af37;
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* Page content */
+.ap-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* Cards */
+.ap-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ap-card-hover {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ap-card-hover:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.08);
+}
+
+.ap-card-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ap-card-title {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.ap-card-body {
+  padding: 20px 24px;
+}
+
+/* Section eyebrow */
+.ap-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Eligibility badge */
+.ap-eligible {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ap-eligible.yes {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #065f46;
+}
+
+.ap-eligible.no {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #991b1b;
+}
+
+/* Metric cards */
+.ap-metric {
+  padding: 20px 24px;
+}
+
+.ap-metric-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ap-metric-value {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.ap-metric-sub {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Status pills */
+.ap-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.ap-pill.green {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #065f46;
+}
+
+.ap-pill.amber {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+.ap-pill.blue {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #1e3a8a;
+}
+
+.ap-pill.purple {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.25);
+  color: #4c1d95;
+}
+
+.ap-pill.gray {
+  background: rgba(107, 114, 128, 0.06);
+  border-color: rgba(107, 114, 128, 0.25);
+  color: #374151;
+}
+
+.ap-pill.gold {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #78530a;
+}
+
+/* Tool Belt progress */
+.ap-tool-bar {
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ap-tool-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37, #f4e5b8);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* Jobs table */
+.ap-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ap-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ap-table td {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.ap-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.ap-table tr:hover td {
+  background: #fafafa;
+}
+
+/* Action buttons */
+.ap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.ap-btn.primary {
+  background: linear-gradient(135deg, #f4e5b8 0%, #d4af37 100%);
+  border-color: #d4af37;
+  color: #1a0e00;
+}
+
+.ap-btn.primary:hover {
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.ap-btn.ghost {
+  background: transparent;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+.ap-btn.ghost:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #d4af37;
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.ap-btn.accept {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #065f46;
+}
+
+.ap-btn.accept:hover {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.ap-btn.decline {
+  background: transparent;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+}
+
+.ap-btn.decline:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+/* Onboarding step */
+.ap-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.ap-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #9ca3af;
+}
+
+.ap-step.done .ap-step-num {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #065f46;
+}
+
+.ap-step.active .ap-step-num {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #92400e;
+}
+
+/* Empty state */
+.ap-empty {
+  padding: 48px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Quick action tiles */
+.ap-action-tile {
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.ap-action-tile:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.08);
+}
+
+.ap-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.ap-action-tile:hover .ap-action-icon {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+/* Kv row */
+.ap-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+
+.ap-kv:last-child {
+  border-bottom: 0;
+}
+
+.ap-kv-k {
+  color: #9ca3af;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.ap-kv-v {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* Resource item */
+.ap-resource {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.15s;
+}
+
+.ap-resource:last-child {
+  border-bottom: 0;
+}
+
+.ap-resource:hover {
+  background: #fafafa;
+}
+
+/* Payout stat */
+.ap-payout-stat {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.ap-payout-stat-amount {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ap-payout-stat-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-top: 4px;
+}

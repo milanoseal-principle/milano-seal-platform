@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Begin Execution | The Milano Seal™",
+  title: "Begin Secure Intake | The Milano Seal™",
   description:
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };

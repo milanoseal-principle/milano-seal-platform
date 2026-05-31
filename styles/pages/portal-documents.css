@@ -35,9 +35,14 @@
   padding: 14px 18px;
   border-bottom: 1px solid rgba(198, 165, 90, 0.06);
   align-items: center;
+  transition: background 0.22s ease, border-color 0.22s ease;
 }
 .cd-row:last-child {
   border-bottom: 0;
+}
+.cd-row:hover {
+  background: rgba(198, 165, 90, 0.03);
+  border-bottom-color: rgba(198, 165, 90, 0.12);
 }
 .cd-name {
   font-size: 12.5px;
@@ -78,12 +83,27 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 2px 8px;
-  background: rgba(198, 165, 90, 0.1);
+  background: rgba(198, 165, 90, 0.08);
   color: #c6a55a;
   border: 1px solid rgba(198, 165, 90, 0.22);
   border-radius: 2px;
   margin-top: 4px;
 }
+.cd-tag.released {
+  background: rgba(74, 158, 107, 0.08);
+  color: #4a9e6b;
+  border-color: rgba(74, 158, 107, 0.22);
+}
+.cd-tag.pending {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+@keyframes cdSkeleton {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 @media (max-width: 720px) {
   .cd-row {
     grid-template-columns: 1fr 70px;

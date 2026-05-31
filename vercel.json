@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sla-watch",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/track-shipments",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { roleFromEmail } from "@/lib/rbac";
+import { audit } from "@/lib/audit";
+
+// SECURITY-05: AI endpoint requires operator or admin role.
+// Any authenticated user without operator/admin role is denied.
+// Portal sessions and unauthenticated clients cannot access this route.
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   dm: `You are The Milano Seal™ outreach specialist. Write concise, authoritative DMs for Instagram, WhatsApp, LinkedIn, Facebook.
@@ -16,6 +23,36 @@ Be precise, professional, actionable. Focus on deals, client communication, exec
 
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY-05: Require operator or admin role
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const role = roleFromEmail(user.email);
+    if (role !== "operator" && role !== "admin") {
+      try {
+        await audit({
+          event: "resource.access.denied",
+          actor: user.email,
+          resource: "ai:generate",
+          payload: {
+            actorKind: "client",
+            reason: "insufficient role for AI endpoint",
+            action: "denied",
+            status: "failure",
+          },
+        });
+      } catch {
+        // Logging failure must never block production flow
+      }
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { prompt, system, type = "general" } = await req.json();
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key)
@@ -56,7 +93,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, text });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
