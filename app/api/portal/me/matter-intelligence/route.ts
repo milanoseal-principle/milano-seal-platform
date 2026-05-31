@@ -88,9 +88,10 @@ export async function GET(req: NextRequest) {
       occurred_at: r.created_at as string,
     }));
 
-  const paymentStatus = (deal as Record<string, unknown>).payment_status as string | null ?? null;
-  const matterStatus = (deal as Record<string, unknown>).matter_status as string | null ?? null;
-  const isPaidAndReleased = !!(deal as Record<string, unknown>).is_paid_and_released;
+  const d = deal as unknown as Record<string, unknown>;
+  const paymentStatus = (d.payment_status as string | null) ?? null;
+  const matterStatus = (d.matter_status as string | null) ?? (d.status as string | null) ?? null;
+  const isPaidAndReleased = !!(d.is_paid_and_released);
   const paid =
     paymentStatus === "paid" ||
     paymentStatus === "payment_confirmed" ||
@@ -108,17 +109,17 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     intelligence: {
       matter_id: deal.id,
-      display_id: (deal as Record<string, unknown>).display_id as string | null ?? null,
+      display_id: (d.display_id as string | null) ?? null,
       matter_status: matterStatus,
       payment_status: paymentStatus,
       paid_and_released: isPaidAndReleased,
-      destination_country: (deal as Record<string, unknown>).destination_country as string | null ?? null,
-      document_type: (deal as Record<string, unknown>).document_type as string | null ?? null,
-      assigned_lane: (deal as Record<string, unknown>).assigned_lane as string | null ?? null,
-      delivery_status: (deal as Record<string, unknown>).delivery_status as string | null ?? null,
-      delivery_eta: (deal as Record<string, unknown>).delivery_eta as string | null ?? null,
-      courier_carrier: (deal as Record<string, unknown>).courier_carrier as string | null ?? null,
-      courier_tracking_id: (deal as Record<string, unknown>).courier_tracking_id as string | null ?? null,
+      destination_country: (d.destination_country as string | null) ?? null,
+      document_type: (d.document_type as string | null) ?? null,
+      assigned_lane: (d.assigned_lane as string | null) ?? null,
+      delivery_status: (d.delivery_status as string | null) ?? null,
+      delivery_eta: (d.delivery_eta as string | null) ?? null,
+      courier_carrier: (d.courier_carrier as string | null) ?? null,
+      courier_tracking_id: (d.courier_tracking_id as string | null) ?? null,
       payment_gate: paymentGate,
       next_action: deriveNextAction(matterStatus, paymentStatus, isPaidAndReleased),
       milestones,
