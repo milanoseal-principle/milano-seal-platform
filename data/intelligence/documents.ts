@@ -1,0 +1,88 @@
+import type { DocumentType } from "./types";
+
+export const DOCUMENT_TYPES: DocumentType[] = [
+  {
+    id: "power-of-attorney",
+    name: "Power of Attorney",
+    category: "legal",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "birth-certificate",
+    name: "Birth Certificate",
+    category: "identity",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of Health / Florida Department of State",
+  },
+  {
+    id: "marriage-certificate",
+    name: "Marriage Certificate",
+    category: "identity",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of Health / Florida Department of State",
+  },
+  {
+    id: "death-certificate",
+    name: "Death Certificate",
+    category: "identity",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of Health / Florida Department of State",
+  },
+  {
+    id: "corporate-authorization",
+    name: "Corporate Authorization",
+    category: "corporate",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State — Division of Corporations",
+  },
+  {
+    id: "real-estate-deed",
+    name: "Real Estate Deed",
+    category: "real-estate",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "affidavit",
+    name: "Affidavit",
+    category: "legal",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "estate-documents",
+    name: "Estate Documents (Will / Trust)",
+    category: "estate",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "immigration-documents",
+    name: "Immigration Documents",
+    category: "immigration",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "academic-transcripts",
+    name: "Academic Transcripts",
+    category: "academic",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "name-change-documents",
+    name: "Name Change Documents",
+    category: "legal",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+  {
+    id: "medical-power-of-attorney",
+    name: "Medical Power of Attorney",
+    category: "legal",
+    commonlyApostilled: true,
+    floridaSourceAuthority: "Florida Department of State",
+  },
+];

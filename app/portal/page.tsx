@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
 import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
 import { PortalStatusRail } from "@/components/portal/portal-status-rail";
+import { CustodyTimeline } from "@/components/portal/CustodyTimeline";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
@@ -604,6 +605,9 @@ export default function MyMatterPage() {
                 })()}
               </div>
             )}
+
+            {/* Chain of Custody Timeline */}
+            <CustodyTimeline />
           </motion.div>
         </div>
       </motion.div>
