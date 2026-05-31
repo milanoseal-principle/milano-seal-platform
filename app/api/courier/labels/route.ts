@@ -109,11 +109,61 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
+
+    // Execution complete gate: deal must be past in_execution
+    const EXECUTION_COMPLETE_STATUSES = new Set([
+      "apostille_processing",
+      "courier_ready",
+      "shipped",
+      "delivered",
+      "completed",
+      "closed",
+    ]);
+    if (!EXECUTION_COMPLETE_STATUSES.has(deal.deal_status ?? "")) {
+      return NextResponse.json(
+        {
+          error: "Release gate: execution not complete",
+          reason: `Deal status is '${deal.deal_status ?? "unknown"}'. Label purchase requires execution to be complete (status must be apostille_processing or beyond).`,
+          code: "EXECUTION_NOT_COMPLETE",
+        },
+        { status: 422 },
+      );
+    }
+
+    // Apostille gate: if apostille is in progress, block until complete
+    if (deal.deal_status === "apostille_processing") {
+      // Only block if deal explicitly still has apostille in progress
+      // courier_ready means apostille is done and package is cleared
+      return NextResponse.json(
+        {
+          error: "Release gate: apostille still pending",
+          reason: "Apostille processing is active. Label purchase is unlocked once status reaches courier_ready.",
+          code: "APOSTILLE_PENDING",
+        },
+        { status: 422 },
+      );
+    }
+
+    // Shipping address gate
+    const hasAddress =
+      deal.ship_to ||
+      (deal.address_line1 && deal.city) ||
+      (deal.to_address_json);
+    if (!hasAddress) {
+      return NextResponse.json(
+        {
+          error: "Release gate: shipping address missing",
+          reason: "No delivery address is on file for this matter. Add a shipping address before purchasing a label.",
+          code: "ADDRESS_MISSING",
+        },
+        { status: 422 },
+      );
+    }
   } else {
     // Log explicit override
     await appendLedger({
       deal_id: body.matter_id,
-      event: "RELEASE_GATE_OVERRIDE",
+      event: CUSTODY_EVENTS.RELEASE_GATE_OVERRIDE,
       actor_type: "operator",
       actor_id: user.id,
       notes: `Release gate bypassed by operator (skip_release_gate=true). Deal status: ${deal.deal_status}`,

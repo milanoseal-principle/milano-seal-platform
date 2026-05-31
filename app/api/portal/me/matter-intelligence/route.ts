@@ -106,6 +106,28 @@ export async function GET(req: NextRequest) {
     apostilleActive: ["apostille_processing", "courier_ready", "shipped", "delivered", "completed"].includes(matterStatus ?? ""),
   };
 
+  const rawCarrier = (d.courier_carrier as string | null) ?? null;
+  const rawTracking = (d.courier_tracking_id as string | null) ?? null;
+  const deliveryStatus = (d.delivery_status as string | null) ?? null;
+  const deliveredAt = (d.delivery_timestamp as string | null) ?? null;
+  const updatedAt = (d.updated_at as string | null) ?? null;
+
+  // Client-safe tracking display: show last 6 chars only — no full tracking number in client view
+  const trackingDisplay = rawTracking
+    ? `···${rawTracking.slice(-6)}`
+    : null;
+
+  // courier_status structured object — never includes label_url, shipping_cost, storage_path
+  const courierStatus = rawCarrier || rawTracking || deliveryStatus
+    ? {
+        carrier: rawCarrier,
+        tracking_number_display: trackingDisplay,
+        status: deliveryStatus,
+        last_updated: updatedAt,
+        delivered_at: deliveredAt,
+      }
+    : null;
+
   return NextResponse.json({
     intelligence: {
       matter_id: deal.id,
@@ -116,10 +138,11 @@ export async function GET(req: NextRequest) {
       destination_country: (d.destination_country as string | null) ?? null,
       document_type: (d.document_type as string | null) ?? null,
       assigned_lane: (d.assigned_lane as string | null) ?? null,
-      delivery_status: (d.delivery_status as string | null) ?? null,
+      delivery_status: deliveryStatus,
       delivery_eta: (d.delivery_eta as string | null) ?? null,
-      courier_carrier: (d.courier_carrier as string | null) ?? null,
-      courier_tracking_id: (d.courier_tracking_id as string | null) ?? null,
+      courier_carrier: rawCarrier,
+      courier_tracking_id: rawTracking,
+      courier_status: courierStatus,
       payment_gate: paymentGate,
       next_action: deriveNextAction(matterStatus, paymentStatus, isPaidAndReleased),
       milestones,

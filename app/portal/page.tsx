@@ -10,6 +10,7 @@ import { MatterJourneyCard } from "@/components/portal/MatterJourneyCard";
 import { CoordinatorCard } from "@/components/portal/CoordinatorCard";
 import { PreFlightReview } from "@/components/portal/PreFlightReview";
 import { ReadinessSummaryCard } from "@/components/portal/ReadinessSummaryCard";
+import { PortalCourierCustody } from "@/components/portal/PortalCourierCustody";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
@@ -595,6 +596,9 @@ export default function MyMatterPage() {
                 })()}
               </div>
             )}
+
+            {/* Courier & Delivery */}
+            <PortalCourierCustody />
 
             {/* Chain of Custody Timeline */}
             <CustodyTimeline />
