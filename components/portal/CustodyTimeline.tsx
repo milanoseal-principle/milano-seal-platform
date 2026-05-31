@@ -65,23 +65,42 @@ export function CustodyTimeline() {
   }, []);
 
   return (
-    <div className="pp-card">
-      <div className="pp-card-h">Chain of Custody Timeline</div>
+    <div
+      style={{
+        background: "rgba(255,255,255,0.01)",
+        border: "1px solid rgba(198,165,90,0.14)",
+        borderRadius: 6,
+        padding: "24px 28px",
+        marginBottom: 24,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          letterSpacing: "0.26em",
+          textTransform: "uppercase",
+          fontFamily: "monospace",
+          color: "rgba(198,165,90,0.5)",
+          marginBottom: 20,
+        }}
+      >
+        Chain of Custody
+      </div>
 
       {loading && (
-        <p style={{ color: "#5A5A5A", fontSize: "0.85rem", padding: "0.5rem 0" }}>
+        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
           Loading timeline…
         </p>
       )}
 
       {error && (
-        <p style={{ color: "#9A9A9A", fontSize: "0.85rem", padding: "0.5rem 0" }}>
+        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
           {error}
         </p>
       )}
 
       {!loading && !error && events.length === 0 && (
-        <p style={{ color: "#5A5A5A", fontSize: "0.85rem", padding: "0.5rem 0" }}>
+        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
           No custody events recorded yet.
         </p>
       )}
@@ -131,8 +150,8 @@ export function CustodyTimeline() {
                 <div style={{ paddingBottom: isLast ? 0 : "1.25rem", paddingTop: "1px" }}>
                   <p
                     style={{
-                      color: "#FFFFFF",
-                      fontSize: "0.88rem",
+                      color: "rgba(255,255,255,0.78)",
+                      fontSize: "0.85rem",
                       fontWeight: 500,
                       margin: "0 0 0.2rem",
                     }}
@@ -140,11 +159,11 @@ export function CustodyTimeline() {
                     {humanLabel(evt.event)}
                   </p>
                   {evt.notes && (
-                    <p style={{ color: "#9A9A9A", fontSize: "0.78rem", margin: "0 0 0.2rem", lineHeight: 1.4 }}>
+                    <p style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.76rem", margin: "0 0 0.2rem", lineHeight: 1.4 }}>
                       {evt.notes}
                     </p>
                   )}
-                  <p style={{ color: "#5A5A5A", fontSize: "0.75rem", margin: 0 }}>
+                  <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.73rem", margin: 0, fontFamily: "monospace" }}>
                     {new Date(evt.created_at).toLocaleString()}
                   </p>
                 </div>

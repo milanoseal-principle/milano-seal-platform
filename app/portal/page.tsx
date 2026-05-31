@@ -9,6 +9,7 @@ import { CustodyTimeline } from "@/components/portal/CustodyTimeline";
 import { MatterJourneyCard } from "@/components/portal/MatterJourneyCard";
 import { CoordinatorCard } from "@/components/portal/CoordinatorCard";
 import { PreFlightReview } from "@/components/portal/PreFlightReview";
+import { ReadinessSummaryCard } from "@/components/portal/ReadinessSummaryCard";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
@@ -377,6 +378,9 @@ export default function MyMatterPage() {
 
         {/* PORTAL-01: Matter Intelligence Hero */}
         <MatterJourneyCard deal={deal} />
+
+        {/* PORTAL-03: Execution Readiness (client-safe) */}
+        <ReadinessSummaryCard />
 
         {/* Paid & Released banner */}
         <AnimatePresence>
