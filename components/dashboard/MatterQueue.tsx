@@ -22,6 +22,10 @@ interface ApiResponse {
   matters: MatterRow[];
 }
 
+interface Props {
+  onMatterClick?: (id: string) => void;
+}
+
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function daysSince(iso: string): number {
@@ -59,7 +63,7 @@ function PaymentBadge({ status }: { status: string | null }) {
   );
 }
 
-export function MatterQueue() {
+export function MatterQueue({ onMatterClick }: Props) {
   const { data, isLoading, isError } = useApi<ApiResponse>("/api/dashboard/matters");
 
   const matters = data?.matters ?? [];
@@ -115,79 +119,92 @@ export function MatterQueue() {
           {matters.map((m, idx) => {
             const days = daysSince(m.updated_at);
             const tone = stageTone(m.deal_status);
+            const rowContent = (
+              <div
+                className="flex items-center justify-between gap-3 px-4 py-3 rounded-sm cursor-pointer"
+                style={{
+                  background: "rgba(198,165,90,0.02)",
+                  border: "1px solid rgba(198,165,90,0.08)",
+                  transition: "border-color 0.15s",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLDivElement).style.borderColor =
+                    "rgba(198,165,90,0.22)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLDivElement).style.borderColor =
+                    "rgba(198,165,90,0.08)")
+                }
+              >
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span
+                    className="font-mono text-[10px] truncate"
+                    style={{ color: "rgba(198,165,90,0.6)" }}
+                  >
+                    {m.id.slice(0, 8)}…
+                  </span>
+                  <span
+                    className="text-sm truncate"
+                    style={{ color: "rgba(255,255,255,0.8)" }}
+                  >
+                    {m.client_name ?? "—"}
+                  </span>
+                  <span
+                    className="text-[10px] truncate"
+                    style={{ color: "rgba(255,255,255,0.3)" }}
+                  >
+                    {m.destination_country ?? "—"}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className={
+                      tone === "paid"
+                        ? "bg-paid"
+                        : tone === "critical"
+                          ? "bg-critical"
+                          : "bg-await"
+                    }
+                  >
+                    {stageLabel(m.deal_status)}
+                  </Badge>
+                  <PaymentBadge status={m.payment_status} />
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[9px] font-mono"
+                      style={{
+                        color:
+                          days > 7
+                            ? "rgba(239,68,68,0.6)"
+                            : "rgba(255,255,255,0.2)",
+                      }}
+                    >
+                      {days === 0 ? "Today" : `${days}d ago`}
+                    </span>
+                    <Link
+                      href={`/dashboard/deals/${m.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[9px] font-mono"
+                      style={{ color: "rgba(198,165,90,0.4)" }}
+                    >
+                      View →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+
             return (
               <motion.div
                 key={m.id}
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.35, ease: EASE, delay: idx * 0.04 }}
+                onClick={() => onMatterClick?.(m.id)}
               >
-                <Link href={`/dashboard/deals/${m.id}`}>
-                  <div
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-sm cursor-pointer"
-                    style={{
-                      background: "rgba(198,165,90,0.02)",
-                      border: "1px solid rgba(198,165,90,0.08)",
-                      transition: "border-color 0.15s",
-                    }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLDivElement).style.borderColor =
-                        "rgba(198,165,90,0.22)")
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLDivElement).style.borderColor =
-                        "rgba(198,165,90,0.08)")
-                    }
-                  >
-                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <span
-                        className="font-mono text-[10px] truncate"
-                        style={{ color: "rgba(198,165,90,0.6)" }}
-                      >
-                        {m.id.slice(0, 8)}…
-                      </span>
-                      <span
-                        className="text-sm truncate"
-                        style={{ color: "rgba(255,255,255,0.8)" }}
-                      >
-                        {m.client_name ?? "—"}
-                      </span>
-                      <span
-                        className="text-[10px] truncate"
-                        style={{ color: "rgba(255,255,255,0.3)" }}
-                      >
-                        {m.destination_country ?? "—"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <Badge
-                        variant="outline"
-                        className={
-                          tone === "paid"
-                            ? "bg-paid"
-                            : tone === "critical"
-                              ? "bg-critical"
-                              : "bg-await"
-                        }
-                      >
-                        {stageLabel(m.deal_status)}
-                      </Badge>
-                      <PaymentBadge status={m.payment_status} />
-                      <span
-                        className="text-[9px] font-mono"
-                        style={{
-                          color:
-                            days > 7
-                              ? "rgba(239,68,68,0.6)"
-                              : "rgba(255,255,255,0.2)",
-                        }}
-                      >
-                        {days === 0 ? "Today" : `${days}d ago`}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                {rowContent}
               </motion.div>
             );
           })}

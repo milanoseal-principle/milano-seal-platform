@@ -36,6 +36,10 @@ import { IntelligenceCommandCenter } from "@/components/dashboard/IntelligenceCo
 import { MatterQueue } from "@/components/dashboard/MatterQueue";
 import { GDIWidget } from "@/components/dashboard/GDIWidget";
 import { OperationalLog } from "@/components/dashboard/OperationalLog";
+import { ActiveExecutionTimeline } from "@/components/dashboard/ActiveExecutionTimeline";
+import { CustodyAccessAuditPanel } from "@/components/dashboard/CustodyAccessAuditPanel";
+import { MatterDetailDrawer } from "@/components/dashboard/MatterDetailDrawer";
+import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 
 interface DashboardSummary {
   total_deals: number;
@@ -172,6 +176,8 @@ const alertRowVariants = {
 
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [selectedMatter, setSelectedMatter] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("ms-operator-entry")) {
@@ -371,18 +377,26 @@ export default function Dashboard() {
             Execution Center
           </p>
           <h1 className="font-serif text-4xl text-foreground">
-            Today at the Seal
+            Premium International Document Execution
           </h1>
           <p className="text-muted-foreground mt-2 max-w-xl">
-            Live snapshot of every matter in the international execution
-            pipeline — intake to apostille to delivery.
+            Structured visibility for active matters, compliance routing, apostille coordination, payment status, and international release sequencing.
           </p>
         </div>
-        <Link href="/dashboard/intake">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gold-glow">
-            New Matter Intake <ArrowRight className="ml-2 w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            className="text-gold border border-gold/30 hover:bg-gold/5"
+            onClick={() => setActionsOpen(true)}
+          >
+            Quick Actions
           </Button>
-        </Link>
+          <Link href="/dashboard/intake">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gold-glow">
+              New Matter Intake <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
       </motion.div>
 
       {/* Status strip — 6 cards */}
@@ -444,6 +458,18 @@ export default function Dashboard() {
           />
         </motion.div>
       </motion.div>
+
+      {/* Active Execution Timeline */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <ActiveExecutionTimeline />
+      </div>
 
       {/* SLA Alerts */}
       {slaAlerts && slaAlerts.length > 0 && (
@@ -782,7 +808,19 @@ export default function Dashboard() {
           padding: "1.5rem",
         }}
       >
-        <MatterQueue />
+        <MatterQueue onMatterClick={(id) => setSelectedMatter(id)} />
+      </div>
+
+      {/* Custody Access Audit Panel */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <CustodyAccessAuditPanel />
       </div>
 
       {/* Global Document Intelligence Widget */}
@@ -847,6 +885,12 @@ export default function Dashboard() {
       </Card>
     </div>
       </motion.div>
+
+      {/* Operator Quick Actions drawer */}
+      <OperatorActionPanel isOpen={actionsOpen} onClose={() => setActionsOpen(false)} />
+
+      {/* Matter Detail Drawer */}
+      <MatterDetailDrawer matterId={selectedMatter} onClose={() => setSelectedMatter(null)} />
     </>
   );
 }
