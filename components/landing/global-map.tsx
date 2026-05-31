@@ -331,7 +331,7 @@ export function GlobalMap() {
                     { n: "3", title: "Secure Payment", desc: "Confirm scope and complete payment." },
                     { n: "4", title: "Document Execution", desc: "We execute your documents securely." },
                     { n: "5", title: "Apostille Coordination", desc: "We coordinate authentication & Apostille." },
-                    { n: "6", title: "International Release", desc: "Secure release via approved method." },
+                    { n: "6", title: "International Release", desc: "Secure release via confirmed delivery method." },
                   ].map((step, i) => (
                     <div key={step.n} className="relative group flex items-start gap-3 py-3.5 border-b border-white/[0.04] last:border-0">
                       {/* Vertical connector line */}
@@ -615,6 +615,7 @@ export function GlobalMap() {
                                   className={`w-full flex items-start gap-3 py-2 text-left group transition-colors ${note ? "cursor-pointer" : "cursor-default"}`}
                                   onClick={() => note && setExpandedStep(isExpanded ? null : i)}
                                   disabled={!note}
+                                  aria-expanded={note ? isExpanded : undefined}
                                 >
                                   <span className="font-mono text-[#C6A55A]/40 text-[8px] mt-0.5 w-5 flex-shrink-0 group-hover:text-[#C6A55A]/60 transition-colors">
                                     {String(i + 1).padStart(2, "0")}
