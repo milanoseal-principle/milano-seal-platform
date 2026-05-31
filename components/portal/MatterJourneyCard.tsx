@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { getWorkflow, getCountry, getDocumentType } from "@/data/intelligence";
+import { getWorkflowOrDerive, getCountry, getDocumentType } from "@/data/intelligence";
 import type { PortalClientMatter } from "@/components/portal/portal-context";
 
 // ─── Stage definitions ────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ function WorkflowIntelBlock({
 
   const country = getCountry(countrySlug);
   const doc = getDocumentType(docSlug);
-  const workflow = country && doc ? getWorkflow(countrySlug, docSlug) : undefined;
+  const workflow = country && doc ? getWorkflowOrDerive(countrySlug, docSlug) : undefined;
 
   if (!workflow || !country) return null;
 

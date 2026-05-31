@@ -38,7 +38,7 @@ const DESTINATIONS = [
     x: 330, y: 192,
     dur: 2.6, startDelay: 0.3,
     framework: "CONSULAR AUTHENTICATION TRACK",
-    seoIntent: "/jurisdictions/uae-consular-authentication-track",
+    seoIntent: "/apostille/uae",
     isoCode: "JURISDICTION_ISO_AE",
   },
   {

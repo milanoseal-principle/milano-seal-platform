@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { stageLabel, timeAgo } from "@/lib/format";
-import { getWorkflow } from "@/data/intelligence";
+import { getWorkflowOrDerive } from "@/data/intelligence";
 import type { Workflow } from "@/data/intelligence";
 
 interface MatterDetail {
@@ -140,7 +140,7 @@ function Field({ label, value }: { label: string; value: string }) {
 function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () => void }) {
   const countrySlug = toSlug(matter.destination_country);
   const docSlug = toSlug(matter.document_type);
-  const workflow = getWorkflow(countrySlug, docSlug);
+  const workflow = getWorkflowOrDerive(countrySlug, docSlug);
   const { score, items: readinessItems } = computeReadiness(matter, workflow);
 
   const ronEligibility =

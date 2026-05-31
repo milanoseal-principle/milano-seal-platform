@@ -216,8 +216,8 @@ export default async function ApostilleCountryPage({ params }: PageProps) {
             {[
               {
                 icon: Shield,
-                title: "Compliance Guaranteed",
-                description: `We ensure your documents meet all requirements for acceptance in ${country.name}.`,
+                title: "Procedural Compliance",
+                description: `We prepare your documents to meet the authentication requirements for ${country.name}, confirmed before execution.`,
               },
               {
                 icon: Globe,

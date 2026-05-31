@@ -95,7 +95,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     id: "uae",
     name: "UAE",
     coordinates: { x: 70, y: 31 },
-    seoTarget: "/jurisdictions/uae-consular-authentication-track",
+    seoTarget: "/apostille/uae",
     schemaContext: {
       destinationCountry: "AE",
       legalFramework: "Hague Apostille Convention · Accession 2021",
