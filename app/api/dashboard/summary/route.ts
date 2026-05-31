@@ -10,8 +10,11 @@ export async function GET() {
 
   const { data: rows } = await supabase
     .from("deals")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select(
+      "id,deal_id,client_name,client_type,company_name,email,document_type,destination_country,origin_state,lane,urgency,deal_status,payment_status,total_price,invoice_retainer,invoice_balance,base_price,witness_total,conversion_score,assignee,scheduled_at,executed_at,apostille_at,shipped_at,completed_at,tracking_number,created_at,updated_at,balance_payment_status,balance_paid_at,balance_amount_received"
+    )
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   const deals = (rows ?? []).map(serializeDealMS);
 
@@ -63,7 +66,7 @@ export async function GET() {
     .map(([lane, count]) => ({ lane, count }))
     .sort((a, b) => b.count - a.count);
 
-  const recent_deals = deals.slice(0, 8);
+  const recent_deals = deals.slice(0, 8).map(({ notes: _n, payment_link: _pl, balance_payment_link: _bpl, ...safe }) => safe);
 
   const { data: activityRows } = await supabase
     .from("activity_logs")
@@ -71,6 +74,46 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(15);
   const recent_activity = (activityRows ?? []).map(serializeActivityMS);
+
+  // New computed fields
+  const reviewing_count = deals.filter(
+    (d) => d.deal_status === "new" || d.deal_status === "reviewing"
+  ).length;
+  const scheduled_count = deals.filter(
+    (d) => d.deal_status === "scheduled"
+  ).length;
+  const apostille_count = deals.filter(
+    (d) => d.deal_status === "apostille"
+  ).length;
+  const shipped_count = deals.filter(
+    (d) => d.deal_status === "shipped"
+  ).length;
+  const confirmed_payments = deals.filter(
+    (d) => d.payment_status === "paid"
+  ).length;
+  const pending_payments = deals.filter(
+    (d) => isOpenStage(d.deal_status) && d.payment_status !== "paid" && d.payment_status !== "failed"
+  ).length;
+  const failed_payments = deals.filter(
+    (d) => d.payment_status === "failed"
+  ).length;
+  const balance_due = deals
+    .filter((d) => isOpenStage(d.deal_status) && d.payment_status !== "paid")
+    .reduce((s, d) => s + d.total_price, 0);
+
+  // Audit logs — gracefully handle missing table
+  let security_events: { id: string; event: string; actor: string | null; resource: string | null; created_at: string }[] = [];
+  try {
+    const { data: auditRows } = await supabase
+      .from("audit_logs")
+      .select("id, event, actor, resource, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12);
+    security_events = auditRows ?? [];
+  } catch {
+    security_events = [];
+  }
+  const security_events_count = security_events.length;
 
   return NextResponse.json({
     total_deals: total,
@@ -87,5 +130,15 @@ export async function GET() {
     lanes,
     recent_deals,
     recent_activity,
+    reviewing_count,
+    scheduled_count,
+    apostille_count,
+    shipped_count,
+    confirmed_payments,
+    pending_payments,
+    failed_payments,
+    balance_due,
+    security_events,
+    security_events_count,
   });
 }

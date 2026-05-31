@@ -5,6 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Shield, Globe, FileCheck } from "lucide-react";
 
+const PRIMARY_SOCIALS = [
+  { label: "View LinkedIn",       url: "https://www.linkedin.com/in/mr-nickmilano/" },
+  { label: "Follow on Instagram", url: "https://www.instagram.com/mr.nickmilano" },
+  { label: "Read Google Reviews", url: "https://share.google/IzX9DLwBp0bZTd09I" },
+];
+const SECONDARY_SOCIALS = [
+  { label: "Facebook", url: "https://www.facebook.com/share/1JRqXU984M/?mibextid=wwXIfr" },
+];
+
 export const metadata: Metadata = {
   title: "Nicholas Milano — U.S. International Document Execution Liaison",
   description:
@@ -33,23 +42,25 @@ export default function FounderPage() {
                 <div className="w-12 h-px bg-[#C6A55A] mb-8 opacity-60" />
                 <div className="space-y-5 text-[#B0B0B0] font-light leading-relaxed">
                   <p>
-                    I built The Milano Seal™ because the international document
-                    market has a structural problem: the gap between basic
-                    notarization and full legal coordination is where most
-                    matters break down.
+                    Nicholas Milano has built his practice at the intersection of international
+                    document execution, procedural compliance, and cross-border coordination — a
+                    space most professionals never operate within directly. Specializing in
+                    international execution workflows and destination-aware document handling, he
+                    has developed a methodology that combines the rigor of Florida notarial
+                    standards with the operational precision demanded by global transactions.
                   </p>
                   <p>
-                    Attorneys working across borders need a reliable U.S.
-                    execution partner. Private clients navigating citizenship,
-                    property, or estate matters need someone who understands
-                    both the procedural requirements and the human stakes
-                    involved.
+                    His approach is singular: treat every matter as a high-stakes engagement,
+                    regardless of apparent complexity. Clients who retain The Milano Seal receive
+                    not merely a service, but a structured execution partner focused on clarity,
+                    discretion, procedural control, and international readiness.
                   </p>
                   <p>
-                    My role is precise coordination — not just a signature. I
-                    manage the full execution chain from intake through
-                    apostille delivery, with the same standard on every
-                    engagement.
+                    What distinguishes the practice is its architecture — a vertically integrated
+                    execution environment designed for international attorneys, private clients,
+                    real estate professionals, healthcare providers, businesses, and cross-border
+                    operators who require document coordination without unnecessary friction,
+                    delay, or operational ambiguity.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-8">
@@ -64,6 +75,33 @@ export default function FounderPage() {
                     >
                       {c}
                     </span>
+                  ))}
+                </div>
+
+                {/* Social trust chips */}
+                <div className="flex flex-wrap gap-2 mt-6">
+                  {PRIMARY_SOCIALS.map((chip) => (
+                    <a
+                      key={chip.url}
+                      href={chip.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] hover:border-[#D4AF37]/40 transition-all duration-300"
+                    >
+                      <span className="h-1 w-1 rounded-full bg-[#C6A55A]/70" />
+                      {chip.label}
+                    </a>
+                  ))}
+                  {SECONDARY_SOCIALS.map((chip) => (
+                    <a
+                      key={chip.url}
+                      href={chip.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#4A4A4A] hover:text-[#7A7A7A] transition-colors duration-300"
+                    >
+                      {chip.label}
+                    </a>
                   ))}
                 </div>
               </div>
@@ -195,7 +233,7 @@ export default function FounderPage() {
               href="/intake"
               className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-sm hover:bg-[#D4BB7A] transition-all"
             >
-              Begin Execution
+              Begin Secure Intake
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

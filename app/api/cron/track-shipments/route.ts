@@ -13,11 +13,12 @@ const MS_PER_DAY = 86_400_000;
 
 export async function POST(req: NextRequest) {
   const expected = process.env.CRON_SECRET;
-  if (expected) {
-    const got = req.headers.get("x-cron-secret");
-    if (got !== expected) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const got = req.headers.get("x-cron-secret");
+  if (got !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createAdminClient();

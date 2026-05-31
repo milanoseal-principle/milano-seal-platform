@@ -9,6 +9,7 @@
 @import "../styles/pages/portal-tracking.css";
 @import "../styles/pages/portal-documents.css";
 @import "../styles/pages/terminal.css";
+@import "../styles/pages/alliance-portal.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,6 +46,13 @@
 
 /* ── MILANO SEAL™ DESIGN SYSTEM ─────────────────────────────── */
 :root {
+  /* Safe-area inset tokens (non-zero only when viewport-fit=cover is set).
+     All safe-area consumers reference these vars for a single source of truth. */
+  --sa-top:    env(safe-area-inset-top,    0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left:   env(safe-area-inset-left,   0px);
+  --sa-right:  env(safe-area-inset-right,  0px);
+
   /* HSL tokens (used by @theme inline → shadcn components) */
   --bg-hsl: 0 0% 4%;
   --fg-hsl: 0 0% 100%;
@@ -149,9 +157,11 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 body {
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 12% 0%, hsl(38 30% 12% / 0.55), transparent 60%),
     radial-gradient(
@@ -215,7 +225,58 @@ h4 {
   text-wrap: pretty;
 }
 
+/* ── CINEMATIC RUNWAY ────────────────────────────────────────── */
+.ms-cinematic-runway {
+  isolation: isolate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-cinematic-runway * {
+    animation: none !important;
+    transition: none !important;
+    /* Force framer-motion initial opacity:0 elements to be visible */
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* Ensure sticky atmospheric layer doesn't trap content at any opacity */
+  .ms-cinematic-runway [aria-hidden="true"] {
+    display: none !important;
+  }
+}
+
 /* ── GOLD UTILITIES ──────────────────────────────────────────── */
+/* Scanning line — fires once on card entry, never loops aggressively */
+@keyframes terminal-scan {
+  0%   { top: 0%; opacity: 0; }
+  8%   { opacity: 0.22; }
+  92%  { opacity: 0.18; }
+  100% { top: 100%; opacity: 0; }
+}
+.terminal-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,244,210,0.6) 50%, transparent 100%);
+  animation: terminal-scan 0.9s cubic-bezier(0.4, 0, 0.6, 1) both;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Destination node radial pulse — active state only */
+@keyframes node-radial-pulse {
+  0%   { transform: scale(1); opacity: 0.12; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.node-radial-pulse {
+  animation: node-radial-pulse 2.5s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-scan-line { animation: none !important; opacity: 0 !important; }
+  .node-radial-pulse  { animation: none !important; }
+}
+
 .gold-glow {
   box-shadow: 0 0 30px rgba(198, 165, 90, 0.15);
 }
@@ -700,11 +761,10 @@ h4 {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* Safe viewport for notched/small screens */
-  min-height: 100svh;
+  /* Safe viewport: fallback → small viewport unit (stable with toolbar shown) */
   min-height: 100vh;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  min-height: 100svh;
+  padding: var(--sa-top) var(--sa-right) var(--sa-bottom) var(--sa-left);
   animation: ro-fade-in 0.5s ease both;
   user-select: none;
 }
@@ -1210,7 +1270,8 @@ h4 {
 /* ── Mobile scale — phones ≤ 430px ──────────────────────────── */
 @media (max-width: 430px) {
   .ritual-overlay__inner {
-    padding: 16px 16px 28px;
+    /* bottom: keep ≥28px but grow to clear home indicator (34px on iPhone) */
+    padding: 16px 16px max(28px, calc(var(--sa-bottom) + 12px));
   }
 
   .ritual-overlay__seal-area {
@@ -1256,6 +1317,39 @@ h4 {
 
   .ritual-overlay__section {
     max-width: 100%;
+  }
+}
+
+/* ── Ritual overlay — mobile fixes ─────────────────────────── */
+@media (max-width: 640px) {
+  .ritual-overlay__inner {
+    padding: 16px;
+    gap: 16px;
+  }
+  .ritual-overlay__seal-wrap {
+    transform: scale(0.70);
+  }
+  .ritual-overlay__seal-area {
+    margin-bottom: -12px;
+  }
+  .ritual-overlay__wordmark {
+    font-size: 18px;
+  }
+  .ritual-overlay__tagline {
+    font-size: 10px;
+  }
+  .ritual-overlay__status {
+    font-size: 11px;
+  }
+  .ritual-overlay__section {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .ritual-overlay__list {
+    gap: 6px;
+  }
+  .ritual-overlay__item {
+    font-size: 10px;
   }
 }
 
@@ -1512,7 +1606,7 @@ h4 {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: rgba(220, 200, 155, 0.92);
 }
 
 .ticker-item__dot {
@@ -1521,13 +1615,40 @@ h4 {
   border-radius: 50%;
   background: var(--gold);
   flex-shrink: 0;
-  opacity: 0.5;
+  opacity: 0.85;
 }
 
 .ticker-item__icon {
   color: var(--gold);
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 1;
+}
+
+/* ── Dual-rail operational ticker animations ─────────────────── */
+@keyframes ticker-fwd {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-anim { animation: ticker-fwd 120s linear infinite; will-change: transform; }
+
+@keyframes ticker-rev {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.ticker-anim-reverse { animation: ticker-rev 60s linear infinite; will-change: transform; }
+
+@keyframes rail-sweep-kf {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(530%); opacity: 0; }
+}
+.rail-sweep { animation: rail-sweep-kf 7s cubic-bezier(0.4, 0, 0.6, 1) infinite; will-change: transform, opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-anim,
+  .ticker-anim-reverse,
+  .rail-sweep { animation: none !important; }
 }
 
 @keyframes ticker-scroll {
@@ -1982,6 +2103,35 @@ h4 {
   .ms-globe-sphere {
     width: 220px;
     height: 220px;
+    overflow: hidden; /* keep sphere artwork clipped */
+  }
+}
+
+/* ── Destination popover — stage-level overlay (not clipped by sphere) ── */
+.ms-destination-popover {
+  position: absolute;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+  .ms-globe-container {
+    overflow: visible; /* allow popover to extend beyond stage bounds */
+  }
+  .ms-destination-popover {
+    left: 50% !important;
+    right: auto !important;
+    top: 46% !important;
+    transform: translateX(-50%) !important;
+    width: min(78vw, 280px) !important;
+    max-width: calc(100vw - 48px) !important;
+    z-index: 5;
+  }
+  .ms-destination-popover p,
+  .ms-destination-popover span {
+    white-space: normal;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
   }
 }
 
@@ -2320,6 +2470,12 @@ h4 {
 @keyframes ms-dest-bloom-pulse {
   0%, 100% { opacity: 0.10; }
   50%       { opacity: 0.26; }
+}
+
+/* ── Globe cinematic popover entry ──────────────────────────── */
+@keyframes gtc-popover-in {
+  from { opacity: 0; transform: scale(0.94) translateY(4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
 /* ── Founder chip ────────────────────────────────────────────── */

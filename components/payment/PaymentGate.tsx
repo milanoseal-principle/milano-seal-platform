@@ -10,6 +10,7 @@ import {
   Clock,
   AlertCircle,
   Copy,
+  Info,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STATUS_LABEL, type PaymentStatus } from "@/lib/payments/state-machine";
@@ -41,7 +42,7 @@ export function PaymentGate({
   const [status, setStatus] = useState<PaymentStatus>("awaiting_payment");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,13 +109,17 @@ export function PaymentGate({
   if (status === "refunded")
     return <PaymentErrorState message="This payment has been refunded." />;
 
-  const handleCopy = async (text: string) => {
+  const handleCopy = async (field: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
     } catch {}
   };
+
+  // Determine if this is a prefilled link (production mode = prefilled)
+  const isPrefilled = session.mode === "production";
+  const manualFallbackRequired = !isPrefilled;
 
   return (
     <motion.div
@@ -146,6 +151,7 @@ export function PaymentGate({
         <PaymentStatusBadge status={status} />
       </div>
 
+      {/* Payment details card with copy buttons */}
       <div className="bg-black/40 border border-[#D4AF37]/10 rounded-sm p-5 mb-6 space-y-3">
         <PaymentRow
           label="Matter Reference"
@@ -157,19 +163,61 @@ export function PaymentGate({
           label="Payment Reference"
           value={session.reference}
           mono
-          onCopy={() => handleCopy(session.reference)}
-          copied={copied}
+          onCopy={() => handleCopy("reference", session.reference)}
+          copied={copiedField === "reference"}
         />
-        <PaymentRow label="Description" value={session.description} />
+        <PaymentRow
+          label="Description"
+          value={session.description}
+          onCopy={() => handleCopy("description", session.description)}
+          copied={copiedField === "description"}
+        />
         <div className="pt-3 mt-3 border-t border-[#D4AF37]/10">
           <PaymentRow
             label="Amount Due"
             value={`${session.amount.toFixed(2)} ${session.currency}`}
             highlight
+            onCopy={() =>
+              handleCopy(
+                "amount",
+                `${session.amount.toFixed(2)} ${session.currency}`,
+              )
+            }
+            copied={copiedField === "amount"}
           />
         </div>
       </div>
 
+      {/* Conditional prefill / manual fallback notice */}
+      <div className="bg-[#D4AF37]/[0.04] border border-[#D4AF37]/20 rounded-sm p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-4 h-4 text-[#D4AF37] mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-gray-400 leading-relaxed">
+            {isPrefilled ? (
+              "Wise will open with your matter-specific payment details prepared. Do not modify the reference."
+            ) : (
+              "Wise may ask you to enter the amount manually. Enter the exact amount and reference shown above. Do not modify the reference."
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Always-visible reference reminder */}
+      <div className="bg-black/30 border border-[#D4AF37]/15 rounded-sm p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <Lock className="w-4 h-4 text-[#D4AF37] mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-gray-400 leading-relaxed">
+            Your payment reference is:{" "}
+            <span className="font-mono text-[#D4AF37] font-semibold">
+              {session.reference}
+            </span>
+            . Use this exact reference. The Milano Seal™ uses it to reconcile
+            your payment and unlock execution.
+          </div>
+        </div>
+      </div>
+
+      {/* Payment-gated execution */}
       <div className="bg-[#D4AF37]/[0.04] border border-[#D4AF37]/20 rounded-sm p-4 mb-6">
         <div className="flex items-start gap-3">
           <Lock className="w-4 h-4 text-[#D4AF37] mt-0.5 flex-shrink-0" />
@@ -178,13 +226,16 @@ export function PaymentGate({
               Payment-Gated Execution
             </div>
             <div className="text-xs text-gray-400 leading-relaxed">
-              Execution begins automatically upon payment confirmation. Your
-              transfer reference is pre-filled — please do not modify it.
+              Execution begins only after payment confirmation and
+              reconciliation. Your matter reference and payment reference are
+              used to match the transfer to your file. Do not modify the
+              reference.
             </div>
           </div>
         </div>
       </div>
 
+      {/* CTA button — shows exact retainer amount dynamically */}
       <a
         href={session.paymentUrl}
         target="_blank"
@@ -197,12 +248,18 @@ export function PaymentGate({
           className="w-full py-4 bg-gradient-to-r from-[#F4E5B8] via-[#D4AF37] to-[#B8960A] hover:brightness-110 text-black/90 font-semibold tracking-[0.2em] uppercase text-sm transition-all flex items-center justify-center gap-2"
           style={{ boxShadow: "0 8px 24px rgba(212,175,55,0.25)" }}
         >
-          Pay Securely with Wise
+          Pay Retainer — {session.amount.toFixed(2)} {session.currency}
           <ArrowRight className="w-4 h-4" />
         </motion.button>
       </a>
 
-      <div className="mt-4 flex items-center justify-center gap-4 text-[9px] font-mono text-gray-500 tracking-[0.2em] uppercase">
+      {/* Mobile return note */}
+      <div className="mt-4 text-center text-[10px] text-gray-600 font-mono tracking-[0.15em]">
+        After completing payment on Wise, return to this page. Your portal will
+        update once payment is reconciled.
+      </div>
+
+      <div className="mt-3 flex items-center justify-center gap-4 text-[9px] font-mono text-gray-500 tracking-[0.2em] uppercase">
         <span>AES-256 Encrypted</span>
         <span className="text-[#D4AF37]/30">/</span>
         <span>Wise Verified</span>
@@ -251,8 +308,12 @@ function PaymentRow({
           <button
             type="button"
             onClick={onCopy}
-            className="text-[#D4AF37]/50 hover:text-[#D4AF37] transition-colors"
-            title={copied ? "Copied" : "Copy"}
+            className={`transition-colors ${
+              copied
+                ? "text-[#D4AF37]"
+                : "text-[#D4AF37]/50 hover:text-[#D4AF37]"
+            }`}
+            title={copied ? "Copied ✓" : "Copy"}
           >
             {copied ? (
               <CheckCircle2 className="w-3 h-3" />

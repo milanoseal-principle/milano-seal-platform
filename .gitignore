@@ -1,3 +1,6 @@
+# Claude Code internal
+.claude/
+
 # v0 sandbox internal files
 __v0_runtime_loader.js
 __v0_devtools.tsx
@@ -16,3 +19,7 @@ node_modules
 .DS_Store
 .vercel
 config.bat
+
+# Planning documents (not code)
+*.xlsx
+.claude/

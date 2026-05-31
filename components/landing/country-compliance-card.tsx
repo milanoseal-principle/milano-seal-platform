@@ -84,6 +84,32 @@ export const COUNTRY_COMPLIANCE_DATA: Record<string, CountryData> = {
     complianceBadges: ["Hague Apostille", "Notario Compatible", "SRE Registry Ready"],
     documentTypes: ["Property Escrituras", "Business Powers of Attorney", "Corporate Resolutions", "Vital Records"],
   },
+  portugal: {
+    id: "portugal",
+    name: "Portugal",
+    flag: "🇵🇹",
+    tagline: "Atlantic Gateway to the Portuguese-Speaking World",
+    seoFact:
+      "Portugal has been a Hague Convention member since 1968 and serves as the apostille bridge for Brazil, Angola, Mozambique, and Cape Verde. A Florida apostille authenticated through Portugal can cascade into the entire Lusophone legal sphere via bilateral recognition frameworks.",
+    hagueSince: "1968",
+    processingDays: "3–5",
+    jurisdiction: "Civil Law · Notarial (IRN)",
+    complianceBadges: ["Hague Apostille", "Lusophone Bridge", "EU Direct Recognition", "IRN Registry Ready"],
+    documentTypes: ["Residence Permits", "Powers of Attorney", "Property Deeds", "Vital Records"],
+  },
+  greece: {
+    id: "greece",
+    name: "Greece",
+    flag: "🇬🇷",
+    tagline: "Hellenic Republic — Civil & Maritime Jurisdiction",
+    seoFact:
+      "Greece has been a Hague Convention member since 1985 and is a primary apostille destination for Greek diaspora documentation — citizenship restoration, property inheritance, and maritime corporate filings. The Hellenic Ministry of Interior requires Florida-notarized documents to carry a state-issued apostille before registry acceptance.",
+    hagueSince: "1985",
+    processingDays: "5–7",
+    jurisdiction: "Civil Law · Hellenic Ministry",
+    complianceBadges: ["Hague Apostille", "Diaspora Registry Compliant", "EU Direct Recognition", "Maritime Authority Ready"],
+    documentTypes: ["Greek Citizenship Restoration", "Inheritance & Estate Docs", "Maritime Corporate Filings", "Property Deeds"],
+  },
 };
 
 interface Props {
