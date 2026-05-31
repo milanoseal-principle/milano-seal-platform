@@ -6,6 +6,8 @@ import { usePortal } from "@/components/portal/portal-context";
 import { PortalEntryRitual } from "@/components/portal/portal-entry-ritual";
 import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { CustodyTimeline } from "@/components/portal/CustodyTimeline";
+import { MatterJourneyCard } from "@/components/portal/MatterJourneyCard";
+import { CoordinatorCard } from "@/components/portal/CoordinatorCard";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
@@ -375,10 +377,12 @@ export default function MyMatterPage() {
         <h1 className="pp-h1">
           Welcome back, {deal.client_name?.split(" ")[0] ?? "Client"}
         </h1>
-        <div className="pp-sub">
-          {deal.document_type ?? "Document execution"} ·{" "}
-          <em>{deal.destination_country ?? "—"}</em>
+        <div className="pp-sub" style={{ marginBottom: 20 }}>
+          {deal.document_type ?? "Document execution"} · <em>{deal.destination_country ?? "—"}</em>
         </div>
+
+        {/* PORTAL-01: Matter Intelligence Hero */}
+        <MatterJourneyCard deal={deal} />
 
         {/* Paid & Released banner */}
         <AnimatePresence>
@@ -503,6 +507,11 @@ export default function MyMatterPage() {
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{ duration: 0.4, ease: "easeInOut", delay: 0.2 }}
           >
+            {/* Coordinator card */}
+            <div className="pp-card">
+              <CoordinatorCard />
+            </div>
+
             <div className="pp-card">
               <div className="pp-card-h">Matter Details</div>
               <div className="pp-kv">
