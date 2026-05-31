@@ -33,7 +33,8 @@ export type AuthorityConfidence =
   | "PARTNER_CONFIRMED"        // Attorney/partner confirmed — drives readiness with note
   | "OBSERVED"                 // Operator-observed from completed matters — advisory only
   | "UNVERIFIED"               // No source — shows Verification Required
-  | "VERIFICATION_REQUIRED";   // Explicitly flagged — blocks requirement auto-population
+  | "VERIFICATION_REQUIRED"    // Explicitly flagged — blocks requirement auto-population
+  | "DEMOTED";                 // Requirements changed, authority rejected, partner was wrong, policy updated
 
 // ── Source types ──────────────────────────────────────────────────────────────
 
@@ -251,4 +252,79 @@ export interface AuthoritySeoPage {
   // Content blocks
   requirements_summary: string | null;
   disclaimer: string;
+}
+
+// ── AOC — Change log, timeline, source vault, coverage ────────────────────────
+
+export type ChangeLogField =
+  | "authority_confidence"
+  | "friction_score"
+  | "complexity_score"
+  | "source_reference"
+  | "source_type"
+  | "verified_by"
+  | "verified_at"
+  | "next_review_due"
+  | "notes_operator"
+  | "notes_client_safe"
+  | "valid_to"
+  | "translation_requirement"
+  | "witness_requirement"
+  | "document_rules"
+  | "rejection_rules";
+
+export interface AuthorityChangeLogEntry {
+  id: string;                    // uuid or sequential id
+  authority_id: string;
+  field: ChangeLogField;
+  old_value: string | null;
+  new_value: string | null;
+  actor: string;                 // operator email or system
+  reason: string;                // required — why was this changed
+  timestamp: string;             // ISO datetime
+  system_generated: boolean;     // true if auto-generated (e.g., review due trigger)
+}
+
+export type TimelineEventType =
+  | "CREATED"
+  | "OBSERVED"
+  | "PARTNER_CONFIRMED"
+  | "MULTI_SOURCE_CONFIRMED"
+  | "AUTHORITY_VERIFIED"
+  | "REVIEWED"
+  | "DEMOTED"
+  | "SOURCE_ADDED"
+  | "DOCUMENT_RULE_ADDED"
+  | "REJECTION_RULE_ADDED"
+  | "REVIEW_DUE";
+
+export interface AuthorityTimelineEvent {
+  id: string;
+  authority_id: string;
+  event_type: TimelineEventType;
+  actor: string | null;
+  note: string | null;
+  timestamp: string;             // ISO datetime
+}
+
+export interface SourceVaultEntry {
+  id: string;
+  authority_id: string;
+  source_type: SourceType;
+  label: string;                 // e.g., "Official website screenshot", "Partner email 2026-05-15"
+  url: string | null;
+  notes: string | null;          // operator-only
+  captured_at: string;           // ISO datetime
+  captured_by: string;           // operator email
+  valid_from: string;
+  valid_to: string | null;
+}
+
+export interface AuthorityCoverageEntry {
+  country_iso: string;
+  country_name: string;
+  verified: number;
+  pending: number;    // OBSERVED | PARTNER_CONFIRMED | MULTI_SOURCE_CONFIRMED
+  unknown: number;    // VERIFICATION_REQUIRED | UNVERIFIED
+  demoted: number;
 }

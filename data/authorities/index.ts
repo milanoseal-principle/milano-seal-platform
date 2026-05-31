@@ -4,6 +4,10 @@ import type {
   AuthorityType,
   AuthorityConfidence,
   CorridorStatus,
+  AuthorityCoverageEntry,
+  AuthorityTimelineEvent,
+  AuthorityChangeLogEntry,
+  SourceVaultEntry,
 } from "./types";
 
 export type { ReceivingAuthority, AuthorityType, AuthorityConfidence, CorridorStatus };
@@ -75,8 +79,10 @@ export function getAuthorityDocumentRule(
 
 // ── Confidence gate ────────────────────────────────────────────────────────────
 // Only AUTHORITY_VERIFIED and MULTI_SOURCE_CONFIRMED may auto-drive requirements.
+// DEMOTED explicitly blocked — requirements no longer reliable.
 
 export function canAutoDriveReadiness(confidence: AuthorityConfidence): boolean {
+  if (confidence === "DEMOTED") return false;
   return (
     confidence === "AUTHORITY_VERIFIED" || confidence === "MULTI_SOURCE_CONFIRMED"
   );
@@ -106,4 +112,95 @@ export function getAuthorityStaticParams(): { country: string; authority: string
     country: a.country.toLowerCase(),
     authority: toAuthoritySlug(a.authority_name),
   }));
+}
+
+export { AUTHORITY_CHANGE_LOG, AUTHORITY_TIMELINE, SOURCE_VAULT } from "./changelog";
+export type { AuthorityChangeLogEntry, AuthorityTimelineEvent, SourceVaultEntry, AuthorityCoverageEntry } from "./types";
+
+// ── AOC queries ────────────────────────────────────────────────────────────────
+
+export function getAuthorityCoverage(): AuthorityCoverageEntry[] {
+  const byCountry: Record<string, AuthorityCoverageEntry> = {};
+
+  for (const a of RECEIVING_AUTHORITIES) {
+    if (a.valid_to !== null) continue;
+    const key = a.country.toUpperCase();
+    if (!byCountry[key]) {
+      byCountry[key] = {
+        country_iso: key,
+        country_name: a.country_name,
+        verified: 0,
+        pending: 0,
+        unknown: 0,
+        demoted: 0,
+      };
+    }
+    const c = a.authority_confidence;
+    if (c === "AUTHORITY_VERIFIED" || c === "MULTI_SOURCE_CONFIRMED") {
+      byCountry[key].verified++;
+    } else if (c === "PARTNER_CONFIRMED" || c === "OBSERVED") {
+      byCountry[key].pending++;
+    } else if (c === "DEMOTED") {
+      byCountry[key].demoted++;
+    } else {
+      byCountry[key].unknown++;
+    }
+  }
+
+  return Object.values(byCountry).sort((a, b) =>
+    b.verified - a.verified || a.country_name.localeCompare(b.country_name)
+  );
+}
+
+export function getVerificationQueue(): ReceivingAuthority[] {
+  return RECEIVING_AUTHORITIES.filter(
+    (a) =>
+      (a.authority_confidence === "VERIFICATION_REQUIRED" ||
+        a.authority_confidence === "UNVERIFIED") &&
+      a.valid_to === null,
+  ).sort((a, b) => b.friction_score - a.friction_score);
+}
+
+export function getReviewQueue(): ReceivingAuthority[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return RECEIVING_AUTHORITIES.filter(
+    (a) =>
+      a.next_review_due !== null &&
+      a.next_review_due <= today &&
+      a.valid_to === null,
+  ).sort((a, b) => (a.next_review_due ?? "").localeCompare(b.next_review_due ?? ""));
+}
+
+export function getPromotionQueue(): ReceivingAuthority[] {
+  return RECEIVING_AUTHORITIES.filter(
+    (a) =>
+      (a.authority_confidence === "OBSERVED" ||
+        a.authority_confidence === "PARTNER_CONFIRMED") &&
+      a.valid_to === null &&
+      a.source_reference !== null,
+  ).sort((a, b) => b.friction_score - a.friction_score);
+}
+
+export function getDemotedAuthorities(): ReceivingAuthority[] {
+  return RECEIVING_AUTHORITIES.filter(
+    (a) => a.authority_confidence === "DEMOTED" && a.valid_to === null,
+  );
+}
+
+export function getAuthorityTimeline(authorityId: string): AuthorityTimelineEvent[] {
+  const { AUTHORITY_TIMELINE } = require("./changelog") as { AUTHORITY_TIMELINE: AuthorityTimelineEvent[] };
+  return AUTHORITY_TIMELINE.filter((e) => e.authority_id === authorityId)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
+export function getAuthorityChangeLog(authorityId: string): AuthorityChangeLogEntry[] {
+  const { AUTHORITY_CHANGE_LOG } = require("./changelog") as { AUTHORITY_CHANGE_LOG: AuthorityChangeLogEntry[] };
+  return AUTHORITY_CHANGE_LOG.filter((e) => e.authority_id === authorityId)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
+export function getSourceVault(authorityId: string): SourceVaultEntry[] {
+  const { SOURCE_VAULT } = require("./changelog") as { SOURCE_VAULT: SourceVaultEntry[] };
+  return SOURCE_VAULT.filter((e) => e.authority_id === authorityId)
+    .sort((a, b) => b.captured_at.localeCompare(a.captured_at));
 }
