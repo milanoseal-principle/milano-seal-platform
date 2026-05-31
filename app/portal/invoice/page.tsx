@@ -3,6 +3,8 @@
 import { useRef } from "react";
 import { usePortal } from "@/components/portal/portal-context";
 import { formatCurrency } from "@/lib/format";
+import { PricingBreakdown } from "@/components/shared/PricingBreakdown";
+import type { PricingBreakdownData } from "@/components/shared/PricingBreakdown";
 
 export default function ClientInvoicePage() {
   const { deal, isLoading } = usePortal();
@@ -67,6 +69,23 @@ export default function ClientInvoicePage() {
   const subtotal = Number(deal.payment_amount_due ?? 0);
   const paid = deal.payment_status === "paid" || deal.payment_status === "confirmed" || deal.is_paid_and_released;
 
+  const pricingData: PricingBreakdownData = {
+    lane: deal.assigned_lane ?? null,
+    basePrice: subtotal > 0 ? subtotal : null,
+    retainerPaid: null,
+    addOns: [],
+    included: [
+      "Remote Online Notarization (RON)",
+      "Apostille coordination",
+      "International courier release",
+      "Custody chain documentation",
+    ],
+    total: subtotal > 0 ? subtotal : null,
+    balanceDue: paid ? 0 : subtotal > 0 ? subtotal : null,
+    paymentStatus: deal.payment_status,
+    wiseReference: null,
+  };
+
   return (
     <div>
       <div className="ci-eyebrow">Your Invoice</div>
@@ -112,6 +131,17 @@ export default function ClientInvoicePage() {
         >
           ↓ Download / Print
         </button>
+      </div>
+
+      {/* Digital pricing summary — not included in print layout */}
+      <div style={{ marginBottom: 28 }}>
+        <PricingBreakdown
+          data={pricingData}
+          showPaymentButton={!paid && subtotal > 0}
+          onPaymentAction={() => {
+            window.location.href = "/portal/messages";
+          }}
+        />
       </div>
 
       <div className="ci-shell">

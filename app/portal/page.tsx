@@ -8,6 +8,7 @@ import { PortalStatusRail } from "@/components/portal/portal-status-rail";
 import { CustodyTimeline } from "@/components/portal/CustodyTimeline";
 import { MatterJourneyCard } from "@/components/portal/MatterJourneyCard";
 import { CoordinatorCard } from "@/components/portal/CoordinatorCard";
+import { PreFlightReview } from "@/components/portal/PreFlightReview";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
@@ -223,13 +224,6 @@ interface Message {
   created_at: string;
 }
 
-const CHECKLIST_ITEMS = [
-  "Government-issued photo ID (passport or driver's license)",
-  "Signed engagement letter",
-  "Document(s) to be notarized — uploaded as PDF or photo",
-  "Quiet, well-lit space for the video session",
-  "Working webcam + microphone",
-];
 
 export default function MyMatterPage() {
   const { deal, ledger, isLoading, message } = usePortal();
@@ -555,24 +549,7 @@ export default function MyMatterPage() {
               )}
             </div>
 
-            <div className="pp-card">
-              <div className="pp-card-h">Pre-flight checklist</div>
-              {CHECKLIST_ITEMS.map((item, i) => {
-                const done = paymentConfirmed && i < 2;
-                return (
-                  <div key={item} className="pp-check-row">
-                    <span className={`pp-check-box ${done ? "done" : "todo"}`}>
-                      {done && <span className="pp-check-icon">✓</span>}
-                    </span>
-                    <span
-                      className={`pp-check-text ${done ? "done" : "todo"}`}
-                    >
-                      {item}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <PreFlightReview deal={deal} />
 
             {ledger.length > 0 && (
               <div className="pp-card">
