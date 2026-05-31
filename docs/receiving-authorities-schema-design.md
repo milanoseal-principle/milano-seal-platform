@@ -2,7 +2,59 @@
 
 **Status:** Design Only — Not Implemented  
 **Purpose:** Foundation for authority-specific workflow requirements beyond country-level derivation  
-**Gate:** Production data requires operator verification before any requirement is surfaced to clients
+**Gate:** Production data requires operator verification before any requirement is surfaced to clients  
+**Last Updated:** 2026-05-31
+
+---
+
+## Authority Confidence Levels
+
+Every authority record must carry a `verification_status`. This controls what the readiness engine is allowed to assert.
+
+| Level | Code | Engine Behavior |
+|---|---|---|
+| Authority Verified | `AUTHORITY_VERIFIED` | Full auto-drive of readiness requirements |
+| Multi-Source Confirmed | `MULTI_SOURCE_CONFIRMED` | Drives readiness with source attribution shown |
+| Partner Confirmed | `PARTNER_CONFIRMED` | Drives readiness; note shown: "Partner-confirmed" |
+| Observed | `OBSERVED` | Drives readiness with caution note |
+| Unverified | `UNVERIFIED` | Shows "Verification Required" — does not drive requirements |
+| Verification Required | `VERIFICATION_REQUIRED` | Blocks automatic requirement population |
+
+**Rule:** Only `AUTHORITY_VERIFIED` and `MULTI_SOURCE_CONFIRMED` may auto-drive execution requirements without a "Verification Required" flag.
+
+**Escalation:** Any authority at `UNVERIFIED` or `VERIFICATION_REQUIRED` that is referenced in an active matter triggers an operator alert.
+
+---
+
+## Authority Friction Scoring
+
+Friction score 1–10 drives QA requirements, complexity, and escalation routing.
+
+| Score | Level | Behavior |
+|---|---|---|
+| 1–3 | Low Friction | Standard processing |
+| 4–6 | Moderate Friction | Enhanced QA recommended |
+| 7–8 | High Friction | Operator review required before apostille |
+| 9–10 | Executive Attention | Nick review required; maximum QA applied |
+
+---
+
+## Priority Authorities for Verification (Phase 1)
+
+High-volume, high-impact corridors where authority-level specificity reduces rejection risk most:
+
+| Country | Authority | Type | Friction Est. | Verification Status |
+|---|---|---|---|---|
+| Italy | Comune di Roma | Municipality | 6 | Unverified |
+| Italy | Comune di Cansano | Municipality | 8 | Unverified |
+| Italy | Prefettura di Roma | State Office | 7 | Unverified |
+| Brazil | Cartório de Registro | Notary Registry | 7 | Unverified |
+| Mexico | Registro Civil | Civil Registry | 5 | Unverified |
+| Spain | Registro Civil Municipal | Civil Registry | 5 | Unverified |
+| Germany | Standesamt | Municipal Court | 6 | Unverified |
+| UAE | Dubai Courts | Government | 8 | Unverified |
+| France | Chambre des Notaires | Notary Chamber | 6 | Unverified |
+| Japan | City Hall (役所) | Municipal Office | 7 | Unverified |
 
 ---
 

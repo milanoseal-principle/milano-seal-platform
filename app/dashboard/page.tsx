@@ -41,6 +41,7 @@ import { CustodyAccessAuditPanel } from "@/components/dashboard/CustodyAccessAud
 import { MatterDetailDrawer } from "@/components/dashboard/MatterDetailDrawer";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 import { ExecutionReadinessEngine } from "@/components/dashboard/ExecutionReadinessEngine";
+import { ExecutiveOperationsCenter } from "@/components/dashboard/ExecutiveOperationsCenter";
 
 interface DashboardSummary {
   total_deals: number;
@@ -526,6 +527,9 @@ export default function Dashboard() {
         }}
         slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
       />
+
+      {/* Executive Operations Center */}
+      <ExecutiveOperationsCenter summaryData={data as unknown as Record<string, unknown>} />
 
       {/* Execution Status Rail */}
       <ExecutionStatusRail />

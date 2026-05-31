@@ -43,6 +43,16 @@ export interface RejectionRisk {
   severity: "fatal" | "correctable";
 }
 
+// ── Authority confidence levels (Trust Core) ──────────────────────────────────
+
+export type AuthorityConfidence =
+  | "AUTHORITY_VERIFIED"
+  | "MULTI_SOURCE_CONFIRMED"
+  | "PARTNER_CONFIRMED"
+  | "OBSERVED"
+  | "UNVERIFIED"
+  | "VERIFICATION_REQUIRED";
+
 export interface ReadinessResult {
   score: number;                      // 0–100
   riskLevel: "low" | "medium" | "high";
@@ -61,11 +71,16 @@ export interface ReadinessResult {
   consularRequired: boolean;
   executionPath: string[];
   rejectionRisks: RejectionRisk[];
-  corridorLabel: "Certified Corridor" | "Standard Corridor";
+  corridorLabel: "Certified Corridor" | "Standard Corridor" | "Authority-Verified Corridor";
   isDerived: boolean;
   countryName: string;
   documentName: string;
   lastReviewed: string;
+  // Trust Core
+  verificationStatus: AuthorityConfidence;
+  authoritySource: string | null;
+  requirementSource: string | null;
+  clientSafeReason: string | null;
 }
 
 // ── Matter state interface (minimal — no internal fields) ────────────────────
@@ -299,6 +314,23 @@ export function computeExecutionReadiness(
     severity: rt.severity,
   }));
 
+  // Trust Core: derive verification status and source from workflow metadata
+  const verificationStatus: AuthorityConfidence = workflow.isDerived
+    ? "OBSERVED"
+    : workflow.sourceReference
+    ? "MULTI_SOURCE_CONFIRMED"
+    : "PARTNER_CONFIRMED";
+
+  const authoritySource = workflow.isDerived
+    ? null
+    : (workflow.apostilleAuthority ?? "Florida Department of State");
+
+  const requirementSource = workflow.sourceReference ?? null;
+
+  const clientSafeReason = workflow.isDerived
+    ? `This corridor follows standard ${countryName} authentication requirements for ${documentName}.`
+    : `Requirements are based on ${workflow.routeType} standards reviewed ${workflow.lastReviewed}.`;
+
   return {
     score,
     riskLevel,
@@ -324,6 +356,10 @@ export function computeExecutionReadiness(
     countryName,
     documentName,
     lastReviewed: workflow.lastReviewed,
+    verificationStatus,
+    authoritySource,
+    requirementSource,
+    clientSafeReason,
   };
 }
 
@@ -395,5 +431,9 @@ function unknownCorridorResult(countryName: string, documentName: string): Readi
     countryName,
     documentName,
     lastReviewed: new Date().toISOString().slice(0, 10),
+    verificationStatus: "VERIFICATION_REQUIRED",
+    authoritySource: null,
+    requirementSource: null,
+    clientSafeReason: "This corridor has not yet been mapped. Your coordinator will review requirements before execution.",
   };
 }
