@@ -1,0 +1,431 @@
+/**
+ * Receiving Authority Intelligence — Type System
+ *
+ * Every authority requirement must carry source attribution, review date,
+ * and confidence level before it can drive readiness output.
+ * No requirement is asserted as fact without a verified source.
+ */
+
+// ── Authority classification ───────────────────────────────────────────────────
+
+export type AuthorityType =
+  // Civil & vital records
+  | "municipality"           // Comune, City Hall, Municipal Office
+  | "civil_registry"         // Registro Civil, Conservatória, GRO, Standesamt
+  | "vital_records"          // Dedicated vital records authority (distinct from civil registry)
+  | "state_registry"         // State-level civil registry (Brazil, Mexico state offices)
+  | "notary_registry"        // Notaría Pública (MX), Notaio (IT), Notaire (FR), Cartório (BR)
+  // Administrative & government
+  | "prefecture"             // Prefettura (IT), Préfecture (FR), Prefektur (DE)
+  | "prefecture_equivalent"  // Non-Italian prefecture-type authorities
+  | "ministry"               // Ministry of Foreign Affairs, Interior, Justice
+  | "government_office"      // Generic government office not elsewhere classified
+  | "apostille_authority"    // Designated apostille-issuing body (Secretary of State, MOFA)
+  // Legal & judicial
+  | "court"                  // Tribunale, Tribunal, Court
+  | "notary_public"          // US Notary Public (distinct from civil law notary)
+  // Diplomatic
+  | "consulate"
+  | "embassy"
+  | "consular_section"       // Specific consular section within embassy
+  // Immigration & identity
+  | "immigration_office"     // USCIS, foreign immigration authority
+  | "passport_authority"     // Passport issuing authority
+  | "identity_authority"     // National ID, ANPR, identity registry
+  // Corporate & commercial
+  | "chamber_of_commerce"    // Camera di Commercio, Cámara de Comercio
+  | "corporate_registry"     // Companies House (UK), SIREN (FR), Handelsregister (DE)
+  | "licensing_board"        // Professional licensing authority
+  // Academic
+  | "university"
+  | "academic_registry"      // University academic records / transcripts office
+  // Financial & property
+  | "land_registry"
+  | "tax_authority"          // IRS equivalent, Agenzia delle Entrate, SAT (MX)
+  | "bank"                   // For matters requiring bank authority
+  // Healthcare
+  | "health_authority"       // Ministry of Health, health registry
+  // Other
+  | "employer"
+  | "police_authority"       // For criminal record / background check certificates
+  | "other";
+
+export type AuthorityStatus = "active" | "inactive" | "seasonal" | "unknown";
+
+// ── Confidence levels ─────────────────────────────────────────────────────────
+// Controls what the readiness engine is permitted to assert.
+
+export type AuthorityConfidence =
+  | "AUTHORITY_VERIFIED"       // Direct authority communication on file — may auto-drive readiness
+  | "MULTI_SOURCE_CONFIRMED"   // 2+ independent sources — may drive readiness with attribution
+  | "PARTNER_CONFIRMED"        // Attorney/partner confirmed — drives readiness with note
+  | "OBSERVED"                 // Operator-observed from completed matters — advisory only
+  | "UNVERIFIED"               // No source — shows Verification Required
+  | "VERIFICATION_REQUIRED"    // Explicitly flagged — blocks requirement auto-population
+  | "DEMOTED";                 // Requirements changed, authority rejected, partner was wrong, policy updated
+
+// ── Source types ──────────────────────────────────────────────────────────────
+
+export type SourceType =
+  | "HCCH"                    // Hague Conference on Private International Law
+  | "STATE_AUTHORITY"         // Florida Dept of State or other US state authority
+  | "EMBASSY"                 // Embassy communication or website
+  | "CONSULATE"               // Consulate communication or website
+  | "RECEIVING_AUTHORITY"     // Direct authority communication
+  | "PARTNER_CONFIRMED"       // Attorney or partner network
+  | "CLIENT_PROVIDED"         // Client-reported (lowest reliability)
+  | "OPERATOR_OBSERVED"       // Observed from completed matters
+  | "INTERNAL_CASE_MEMORY";   // Derived from internal execution history
+
+// ── Translation and witness types ─────────────────────────────────────────────
+
+export type TranslationRequirement =
+  | "none"
+  | "recommended"
+  | "required"
+  | "certified_required"
+  | "sworn_required"
+  | "authority_specific";     // Requires further verification
+
+export type WitnessRequirement =
+  | "none"
+  | "one_witness"
+  | "two_witnesses"
+  | "authority_specific";
+
+// ── Rejection intelligence ────────────────────────────────────────────────────
+
+export type RejectionSeverity = "fatal" | "correctable" | "advisory";
+
+export interface AuthorityRejectionRule {
+  id: string;
+  trigger: string;            // e.g., "expired_record", "missing_original_seal"
+  description: string;        // Operator-facing detail
+  client_safe_label: string;  // Portal-safe version
+  severity: RejectionSeverity;
+  source_type: SourceType;
+  source_reference: string | null;
+  last_observed_at: string | null;
+  active: boolean;
+}
+
+// ── Document rule ─────────────────────────────────────────────────────────────
+
+export interface AuthorityDocumentRule {
+  document_type_slug: string;
+  apostille_required: boolean;
+  consular_required: boolean;
+  translation_requirement: TranslationRequirement;
+  translation_language: string | null;
+  witness_requirement: WitnessRequirement;
+  notarization_required: boolean;
+  ron_accepted: boolean;
+  original_required: boolean;
+  copy_accepted: boolean;
+  age_limit_months: number | null;   // Max document age in months; null = no limit
+  special_format_notes: string | null; // Operator-only
+  valid_from: string;
+  valid_to: string | null;           // null = currently valid
+  last_reviewed_at: string;
+  source_type: SourceType;
+  source_reference: string | null;
+}
+
+// ── Core authority record ──────────────────────────────────────────────────────
+
+export interface ReceivingAuthority {
+  // Identity
+  id: string;                         // e.g., "it-comune-cansano"
+  version: number;                    // Increment on every update; never overwrite
+  authority_name: string;             // Official name in local language
+  authority_name_english: string | null; // English translation if applicable
+  country: string;                    // ISO-2 country code
+  country_name: string;
+  region: string | null;              // Sub-national region
+  city: string | null;
+
+  // Classification
+  authority_type: AuthorityType;
+  authority_status: AuthorityStatus;
+
+  // Confidence & verification
+  authority_confidence: AuthorityConfidence;
+  verified_by: string | null;         // Operator ID or partner name
+  verified_at: string | null;         // ISO date of last verification
+  review_cadence_months: number;      // How often to re-verify (e.g., 12)
+  next_review_due: string | null;     // ISO date
+  reviewed_at: string | null;         // ISO date of last operator review
+
+  // Friction & complexity
+  friction_score: number;             // 1–10
+  complexity_score: number;           // 1–10
+  escalation_required: boolean;       // friction >= 9 triggers Nick review
+
+  // Contact (operator-only — never exposed to portal)
+  website: string | null;
+  contact_email: string | null;       // Internal only
+  contact_phone: string | null;       // Internal only
+  contact_hours: string | null;
+
+  // Requirements (macro)
+  translation_requirement: TranslationRequirement;
+  translation_language: string | null;
+  witness_requirement: WitnessRequirement;
+  ron_eligibility: boolean;
+  apostille_standard: string | null;  // e.g., "Prefettura", "Hague Direct"
+  federal_auth_required: boolean;
+  consular_auth_required: boolean;
+
+  // Document-specific rules (overrides country defaults when authority-verified)
+  document_rules: AuthorityDocumentRule[];
+
+  // Rejection intelligence
+  rejection_rules: AuthorityRejectionRule[];
+
+  // Source attribution
+  source_type: SourceType;
+  source_reference: string | null;
+
+  // Operator notes (never exposed to portal)
+  notes_operator: string | null;
+  notes_client_safe: string | null;
+
+  // Audit
+  valid_from: string;
+  valid_to: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Authority pack (generated output) ─────────────────────────────────────────
+
+export interface AuthorityPack {
+  authority: {
+    id: string;
+    name: string;
+    country: string;
+    type: string;
+    confidence: AuthorityConfidence;
+    friction_score: number;
+    complexity_score: number;
+    verified_at: string | null;
+  };
+  requirements: {
+    apostille_required: boolean;
+    consular_required: boolean;
+    translation: TranslationRequirement;
+    translation_language: string | null;
+    witnesses: WitnessRequirement;
+    ron_accepted: boolean;
+    original_required: boolean;
+    age_limit_months: number | null;
+  } | null;
+  rejection_warnings: {
+    trigger: string;
+    client_safe_label: string;
+    severity: RejectionSeverity;
+  }[];
+  source_attribution: string | null;
+  verification_status: AuthorityConfidence;
+  client_safe_notes: string | null;
+  operator_guidance: string | null;
+  requires_qa_checklist: boolean;    // true if friction >= 7 or country = Italy
+  customs_advisory: CustomsAdvisory | null;
+}
+
+// ── Corridor intelligence ──────────────────────────────────────────────────────
+
+export type CorridorStatus = "NORMAL" | "ELEVATED" | "RESTRICTED" | "VERIFICATION_REQUIRED";
+
+export interface CorridorProfile {
+  id: string;
+  origin_state: string;              // e.g., "FL", "CO", "TX"
+  destination_country: string;       // ISO-2
+  document_type_slug: string;
+  receiving_authority_id: string | null;
+  route_type: "hague" | "consular";
+  corridor_status: CorridorStatus;
+  friction_score: number;            // 1–10 combined corridor friction
+  // Stats — only populated from real completed matters
+  average_timeline_days: number | null;
+  sample_size: number;               // number of completed matters this is based on
+  last_successful_execution_at: string | null;
+  known_delays: string | null;       // operator notes on operational delays
+  source_reference: string | null;
+}
+
+// ── Customs intelligence (advisory only) ──────────────────────────────────────
+
+export interface CustomsAdvisory {
+  advisory_only: true;               // Always true — never implies customs approval
+  pre_clearance_integrity_score: number | null; // 0–100 based on doc completeness only
+  documentation_completeness: "complete" | "partial" | "unknown";
+  authority_pack_status: "ready" | "incomplete" | "verification_required";
+  customs_risk_buffer: "low" | "moderate" | "elevated" | "unknown";
+  corridor_friction: number | null;
+  known_operational_delays: string | null;
+  disclaimer: string;
+}
+
+// ── SEO authority page data ────────────────────────────────────────────────────
+
+export interface AuthoritySeoPage {
+  country_slug: string;
+  authority_slug: string;
+  document_slug: string;
+  page_title: string;
+  meta_description: string;
+  authority_name: string;
+  authority_type: AuthorityType;
+  country_name: string;
+  // Content blocks
+  requirements_summary: string | null;
+  disclaimer: string;
+}
+
+// ── AOC — Change log, timeline, source vault, coverage ────────────────────────
+
+export type ChangeLogField =
+  | "authority_confidence"
+  | "friction_score"
+  | "complexity_score"
+  | "source_reference"
+  | "source_type"
+  | "verified_by"
+  | "verified_at"
+  | "next_review_due"
+  | "notes_operator"
+  | "notes_client_safe"
+  | "valid_to"
+  | "translation_requirement"
+  | "witness_requirement"
+  | "document_rules"
+  | "rejection_rules";
+
+export interface AuthorityChangeLogEntry {
+  id: string;                    // uuid or sequential id
+  authority_id: string;
+  field: ChangeLogField;
+  old_value: string | null;
+  new_value: string | null;
+  actor: string;                 // operator email or system
+  reason: string;                // required — why was this changed
+  timestamp: string;             // ISO datetime
+  system_generated: boolean;     // true if auto-generated (e.g., review due trigger)
+}
+
+export type TimelineEventType =
+  | "CREATED"
+  | "OBSERVED"
+  | "PARTNER_CONFIRMED"
+  | "MULTI_SOURCE_CONFIRMED"
+  | "AUTHORITY_VERIFIED"
+  | "REVIEWED"
+  | "DEMOTED"
+  | "SOURCE_ADDED"
+  | "DOCUMENT_RULE_ADDED"
+  | "REJECTION_RULE_ADDED"
+  | "REVIEW_DUE";
+
+export interface AuthorityTimelineEvent {
+  id: string;
+  authority_id: string;
+  event_type: TimelineEventType;
+  actor: string | null;
+  note: string | null;
+  timestamp: string;             // ISO datetime
+}
+
+export interface SourceVaultEntry {
+  id: string;
+  authority_id: string;
+  source_type: SourceType;
+  label: string;                 // e.g., "Official website screenshot", "Partner email 2026-05-15"
+  url: string | null;
+  notes: string | null;          // operator-only
+  captured_at: string;           // ISO datetime
+  captured_by: string;           // operator email
+  valid_from: string;
+  valid_to: string | null;
+}
+
+export interface AuthorityCoverageEntry {
+  country_iso: string;
+  country_name: string;
+  verified: number;
+  pending: number;    // OBSERVED | PARTNER_CONFIRMED | MULTI_SOURCE_CONFIRMED
+  unknown: number;    // VERIFICATION_REQUIRED | UNVERIFIED
+  demoted: number;
+}
+
+// ── Authority Dependency Graph ─────────────────────────────────────────────────
+// Models the ordered chain of authorities a document must pass through.
+// Example: Birth Certificate → Civil Registry → Apostille Authority → Receiving Authority
+
+export type DependencyType =
+  | "authentication_chain"   // Document must be authenticated by upstream before downstream accepts
+  | "concurrent"             // Both authorities may be engaged simultaneously
+  | "conditional"            // Dependency applies only under certain conditions
+  | "optional"               // Upstream authority may add value but is not required
+  | "superseded_by";         // Upstream used to be required; downstream now handles directly
+
+export type AuthorityRole =
+  | "origin"                 // Where document is issued
+  | "authenticator"          // Adds official seal/apostille
+  | "legalizer"              // Consular legalization step
+  | "translator_certifier"   // Certifies translation
+  | "receiving";             // Final receiving authority
+
+export interface AuthorityDependency {
+  id: string;
+  document_type_slug: string | null;   // null = applies to all document types
+  country: string;                     // ISO-2 — the corridor country
+  upstream_authority_id: string;       // authority that must act first
+  downstream_authority_id: string;     // authority that receives result of upstream
+  dependency_type: DependencyType;
+  upstream_role: AuthorityRole;
+  downstream_role: AuthorityRole;
+  required_order: number;              // 1 = first in chain, 2 = second, etc.
+  condition_note: string | null;       // Operator note on when this applies
+  source_reference: string | null;
+  valid_from: string;
+  valid_to: string | null;
+}
+
+export interface AuthorityChain {
+  country: string;
+  document_type_slug: string | null;
+  chain: Array<{
+    step: number;
+    authority_id: string;
+    authority_name: string;
+    authority_type: AuthorityType;
+    role: AuthorityRole;
+    confidence: AuthorityConfidence;
+    dependency_type: DependencyType;
+  }>;
+  is_complete: boolean;     // true if all authorities in chain have confidence >= OBSERVED
+  chain_confidence: AuthorityConfidence | null;  // lowest confidence in chain
+}
+
+// ── Authority Intelligence Score ───────────────────────────────────────────────
+// Computed operator-only score. Never exposed to portal or alliance.
+// Based solely on real data — no synthetic metrics.
+
+export interface AuthorityIntelligenceScore {
+  authority_id: string;
+  authority_name: string;
+  // Component scores (0–100 each)
+  source_score: number;        // Based on source count and source type quality
+  freshness_score: number;     // Based on how recently reviewed vs. review cadence
+  confidence_score: number;    // Based on authority_confidence level
+  dependency_score: number;    // Based on completion of dependency chain
+  rule_coverage_score: number; // Based on document_rules count vs. expected
+  // Composite
+  total_score: number;         // Weighted average of above
+  // Labels
+  confidence_label: AuthorityConfidence;
+  score_interpretation: "insufficient" | "minimal" | "developing" | "solid" | "complete";
+  // What's missing
+  missing: string[];           // operator-facing list of what would improve the score
+}

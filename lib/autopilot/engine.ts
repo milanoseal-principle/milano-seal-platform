@@ -1,4 +1,17 @@
-// ─── Types ───────────────────────────────────────────────────────────────────
+/**
+ * Matter Intelligence Autopilot Engine
+ *
+ * Generates automation suggestions triggered by matter status transitions.
+ * ALL suggestions require operator confirmation before execution.
+ * This engine never executes — it only recommends.
+ *
+ * Safeguards (hard-coded, never overridable by config):
+ * - Cannot mark payment confirmed
+ * - Cannot release documents
+ * - Cannot override QA gates
+ * - Cannot override authority confidence
+ * - Cannot override protected identifier lock
+ */
 
 export type AutopilotTrigger =
   | "PAYMENT_CONFIRMED"
@@ -24,243 +37,264 @@ export type AutopilotTaskType =
   | "ARCHIVE_MATTER"
   | "GENERATE_CLIENT_FOLLOWUP";
 
-export type AutopilotTaskStatus = "PENDING" | "CONFIRMED" | "DISMISSED" | "BLOCKED" | "COMPLETED";
+export type AutopilotTaskStatus =
+  | "pending_confirmation"   // waiting for operator to confirm
+  | "confirmed"              // operator confirmed, ready to execute
+  | "executing"              // in progress
+  | "completed"              // done
+  | "blocked"                // missing data or gate failure
+  | "dismissed";             // operator dismissed
+
+export type AutopilotAssignee = "operator" | "va" | "coordinator";
 
 export interface AutopilotTask {
   id: string;
-  matter_id: string;
   trigger: AutopilotTrigger;
   task_type: AutopilotTaskType;
-  label: string;
-  description: string;
-  priority: "CRITICAL" | "HIGH" | "NORMAL";
+  matter_id: string;
+  matter_label: string;           // "Italy / Power of Attorney" — no client name
+  priority: "CRITICAL" | "HIGH" | "NORMAL" | "LOW";
   status: AutopilotTaskStatus;
-  requires_operator_confirmation: true; // always true — autopilot never executes
-  blocked_reason?: string;
+  assignee: AutopilotAssignee;
+  required_action: string;        // operator-facing instruction
+  blocker_reason: string | null;  // why it's blocked, if blocked
+  requires_operator_confirmation: true;  // always true — autopilot never auto-executes
+  safeguard_note: string;         // what this task cannot do
   generated_at: string;
+  confirmed_at: string | null;
+  completed_at: string | null;
 }
 
 export interface AutopilotInput {
   matter_id: string;
+  country_id: string;
+  document_id: string;
   matter_status: string | null;
   payment_status: string | null;
-  destination_country: string | null;
-  document_type: string | null;
-  witness_required?: boolean;
-  ron_eligible?: boolean;
-  translation_required?: boolean;
-  apostille_required?: boolean;
-  consular_required?: boolean;
-  is_paid_and_released?: boolean;
+  is_paid_and_released: boolean;
+  is_notarized: boolean;
+  has_apostille: boolean;
+  has_translation: boolean;
+  has_scheduled: boolean;
+  courier_status: string | null;
+  requires_qa_checklist: boolean;
+  ron_eligible: boolean;
+  witness_required: boolean;
+  translation_required: boolean;
+  apostille_required: boolean;
 }
 
 export interface AutopilotResult {
   matter_id: string;
   trigger: AutopilotTrigger | null;
   tasks: AutopilotTask[];
-  blocked: AutopilotTask[];
+  blocked_tasks: AutopilotTask[];
   pending_confirmation: AutopilotTask[];
-  total_tasks: number;
-  can_auto_drive: false; // Autopilot recommends only. Operator confirmation required before any task executes.
+  completed_tasks: AutopilotTask[];
+  summary: string;
 }
 
-// ─── Trigger detection ───────────────────────────────────────────────────────
-
-function detectTrigger(matter_status: string | null): AutopilotTrigger | null {
-  switch (matter_status) {
-    case "payment_confirmed":
-      return "PAYMENT_CONFIRMED";
-    case "scheduled":
-      return "EXECUTION_SCHEDULED";
-    case "in_execution":
-      return "EXECUTION_COMPLETED";
-    case "apostille_processing":
-      return "APOSTILLE_COMPLETED";
-    case "delivered":
-      return "DELIVERED";
-    default:
-      return null;
-  }
-}
-
-// ─── Task definitions ────────────────────────────────────────────────────────
-
-const TASK_META: Record<AutopilotTaskType, { label: string; description: string }> = {
-  SCHEDULE_NOTARY: {
-    label: "Schedule Notary",
-    description: "Coordinate notary appointment based on matter and document requirements.",
-  },
-  GENERATE_INTAKE_REVIEW: {
-    label: "Generate Intake Review",
-    description: "Review intake documents for completeness and accuracy before proceeding.",
-  },
-  GENERATE_AUTHORITY_REVIEW: {
-    label: "Generate Authority Review",
-    description: "Verify issuing authority credentials and chain of custody documentation.",
-  },
-  VERIFY_WITNESS: {
-    label: "Verify Witness",
-    description: "Confirm witness identity and eligibility for execution proceedings.",
-  },
-  PREPARE_RON_SESSION: {
-    label: "Prepare RON Session",
-    description: "Set up Remote Online Notarization session for eligible matter.",
-  },
-  PREPARE_EXECUTION_PACKET: {
-    label: "Prepare Execution Packet",
-    description: "Assemble all documents required for scheduled execution.",
-  },
-  PREPARE_APOSTILLE_PACKET: {
-    label: "Prepare Apostille Packet",
-    description: "Compile documents and cover sheets for apostille submission.",
-  },
-  PREPARE_COURIER_RELEASE: {
-    label: "Prepare Courier Release",
-    description: "Stage documents and release authorization for courier dispatch.",
-  },
-  PREPARE_TRANSLATION_REVIEW: {
-    label: "Prepare Translation Review",
-    description: "Queue documents requiring certified translation for destination country.",
-  },
-  GENERATE_FINAL_QA: {
-    label: "Generate Final QA",
-    description: "Run final quality assurance check on completed execution documents.",
-  },
-  CREATE_COURIER_LABEL: {
-    label: "Create Courier Label",
-    description: "Generate shipping label and tracking details for document delivery.",
-  },
-  PREPARE_RELEASE_REVIEW: {
-    label: "Prepare Release Review",
-    description: "Review all release conditions before authorizing courier dispatch.",
-  },
-  GENERATE_CERTIFICATE: {
-    label: "Generate Certificate",
-    description: "Issue completion certificate upon successful matter delivery.",
-  },
-  ARCHIVE_MATTER: {
-    label: "Archive Matter",
-    description: "Archive matter records and close all open action items.",
-  },
-  GENERATE_CLIENT_FOLLOWUP: {
-    label: "Generate Client Follow-up",
-    description: "Prepare post-delivery follow-up communication for client.",
-  },
+const TRIGGER_MAP: Record<string, AutopilotTrigger> = {
+  "payment_confirmed": "PAYMENT_CONFIRMED",
+  "scheduled": "EXECUTION_SCHEDULED",
+  "in_execution": "EXECUTION_COMPLETED",
+  "apostille_processing": "APOSTILLE_COMPLETED",
+  "delivered": "DELIVERED",
+  "completed": "DELIVERED",
 };
 
-// ─── Task generator ──────────────────────────────────────────────────────────
-
 function makeTask(
-  matter_id: string,
   trigger: AutopilotTrigger,
-  task_type: AutopilotTaskType,
-  priority: "CRITICAL" | "HIGH" | "NORMAL",
-  status: AutopilotTaskStatus = "PENDING",
-  blocked_reason?: string
+  matter_id: string,
+  matter_label: string,
+  type: AutopilotTaskType,
+  priority: AutopilotTask["priority"],
+  assignee: AutopilotAssignee,
+  required_action: string,
+  safeguard_note: string,
+  blocker_reason: string | null = null,
 ): AutopilotTask {
-  const meta = TASK_META[task_type];
   return {
-    id: crypto.randomUUID(),
-    matter_id,
+    id: `ap-${matter_id.substring(0, 8)}-${type.toLowerCase().replace(/_/g, "-")}-${Date.now()}`,
     trigger,
-    task_type,
-    label: meta.label,
-    description: meta.description,
+    task_type: type,
+    matter_id,
+    matter_label,
     priority,
-    status,
-    requires_operator_confirmation: true as const,
-    ...(blocked_reason ? { blocked_reason } : {}),
+    status: blocker_reason ? "blocked" : "pending_confirmation",
+    assignee,
+    required_action,
+    blocker_reason,
+    requires_operator_confirmation: true,
+    safeguard_note,
     generated_at: new Date().toISOString(),
+    confirmed_at: null,
+    completed_at: null,
   };
 }
 
 export function generateAutopilotTasks(input: AutopilotInput): AutopilotTask[] {
-  const trigger = detectTrigger(input.matter_status);
+  const tasks: AutopilotTask[] = [];
+  const trigger = TRIGGER_MAP[input.matter_status ?? ""] ?? null;
+  const label = `${input.country_id.replace(/-/g, " ")} / ${input.document_id.replace(/-/g, " ")}`;
+
   if (!trigger) return [];
 
-  const { matter_id } = input;
-  const tasks: AutopilotTask[] = [];
+  // ── PAYMENT_CONFIRMED ──────────────────────────────────────────────────────
 
-  switch (trigger) {
-    case "PAYMENT_CONFIRMED":
-      tasks.push(makeTask(matter_id, trigger, "GENERATE_INTAKE_REVIEW", "HIGH"));
-      tasks.push(makeTask(matter_id, trigger, "GENERATE_AUTHORITY_REVIEW", "HIGH"));
-      tasks.push(makeTask(matter_id, trigger, "SCHEDULE_NOTARY", "CRITICAL"));
-      break;
+  if (trigger === "PAYMENT_CONFIRMED") {
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "SCHEDULE_NOTARY", "HIGH", "coordinator",
+      "Payment confirmed. Schedule the notarization / execution session with the client.",
+      "Cannot mark session as scheduled without operator or coordinator action.",
+    ));
 
-    case "EXECUTION_SCHEDULED":
-      if (input.witness_required) {
-        tasks.push(makeTask(matter_id, trigger, "VERIFY_WITNESS", "HIGH"));
-      }
-      if (input.ron_eligible) {
-        tasks.push(makeTask(matter_id, trigger, "PREPARE_RON_SESSION", "HIGH"));
-      }
-      tasks.push(makeTask(matter_id, trigger, "PREPARE_EXECUTION_PACKET", "CRITICAL"));
-      if (input.translation_required) {
-        tasks.push(makeTask(matter_id, trigger, "PREPARE_TRANSLATION_REVIEW", "NORMAL"));
-      }
-      break;
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "GENERATE_INTAKE_REVIEW", "NORMAL", "va",
+      "Review intake documents for completeness before execution session.",
+      "Cannot approve or reject intake — flags for operator review only.",
+    ));
 
-    case "EXECUTION_COMPLETED":
-      if (input.apostille_required) {
-        tasks.push(makeTask(matter_id, trigger, "PREPARE_APOSTILLE_PACKET", "CRITICAL"));
-      } else if (input.consular_required) {
-        tasks.push(
-          makeTask(
-            matter_id,
-            trigger,
-            "PREPARE_APOSTILLE_PACKET",
-            "CRITICAL",
-            "BLOCKED",
-            "Consular route — apostille not applicable."
-          )
-        );
-      } else {
-        // apostille_required is false (and not consular) — still add as BLOCKED
-        tasks.push(
-          makeTask(
-            matter_id,
-            trigger,
-            "PREPARE_APOSTILLE_PACKET",
-            "CRITICAL",
-            "BLOCKED",
-            "Apostille not required for this corridor"
-          )
-        );
-      }
-      tasks.push(makeTask(matter_id, trigger, "PREPARE_COURIER_RELEASE", "NORMAL"));
-      tasks.push(makeTask(matter_id, trigger, "GENERATE_FINAL_QA", "HIGH"));
-      break;
+    if (input.apostille_required) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "GENERATE_AUTHORITY_REVIEW", "NORMAL", "va",
+        "Confirm receiving authority requirements and apostille route for this corridor.",
+        "Cannot promote authority confidence — flags for operator review only.",
+      ));
+    }
+  }
 
-    case "APOSTILLE_COMPLETED":
-      tasks.push(makeTask(matter_id, trigger, "CREATE_COURIER_LABEL", "HIGH"));
-      tasks.push(makeTask(matter_id, trigger, "PREPARE_RELEASE_REVIEW", "CRITICAL"));
-      break;
+  // ── EXECUTION_SCHEDULED ───────────────────────────────────────────────────
 
-    case "DELIVERED":
-      tasks.push(makeTask(matter_id, trigger, "GENERATE_CERTIFICATE", "HIGH"));
-      tasks.push(makeTask(matter_id, trigger, "GENERATE_CLIENT_FOLLOWUP", "NORMAL"));
-      tasks.push(makeTask(matter_id, trigger, "ARCHIVE_MATTER", "NORMAL"));
-      break;
+  if (trigger === "EXECUTION_SCHEDULED") {
+    if (input.witness_required) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "VERIFY_WITNESS", "HIGH", "coordinator",
+        "Confirm witness availability for execution session. Witnesses may not be related to the principal.",
+        "Cannot confirm witnesses without coordinator action.",
+      ));
+    }
+
+    if (input.ron_eligible) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "PREPARE_RON_SESSION", "HIGH", "operator",
+        "Prepare Remote Online Notarization session. Confirm platform, link, and signer access.",
+        "Cannot initiate RON session — operator must prepare and send access link.",
+      ));
+    }
+
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "PREPARE_EXECUTION_PACKET", "NORMAL", "va",
+      "Prepare execution packet: confirm document version, notary commission currency, and witness requirements.",
+      "Cannot execute documents — prepares packet for operator review only.",
+    ));
+
+    if (input.requires_qa_checklist) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "GENERATE_FINAL_QA", "HIGH", "operator",
+        "Complete pre-execution QA checklist. Required for Italy matters and high-friction corridors.",
+        "Cannot override QA gate — operator must complete checklist before execution proceeds.",
+      ));
+    }
+  }
+
+  // ── EXECUTION_COMPLETED ───────────────────────────────────────────────────
+
+  if (trigger === "EXECUTION_COMPLETED") {
+    if (input.apostille_required) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "PREPARE_APOSTILLE_PACKET", "HIGH", "va",
+        "Documents executed. Prepare apostille filing packet for Florida Department of State submission.",
+        "Cannot file for apostille — prepares packet for operator action.",
+      ));
+    }
+
+    if (input.translation_required && !input.has_translation) {
+      tasks.push(makeTask(
+        trigger, input.matter_id, label,
+        "PREPARE_TRANSLATION_REVIEW", "HIGH", "operator",
+        "Translation required. Confirm certified translator assignment and language.",
+        "Cannot assign translator — operator must confirm certified translator.",
+      ));
+    }
+  }
+
+  // ── APOSTILLE_COMPLETED ───────────────────────────────────────────────────
+
+  if (trigger === "APOSTILLE_COMPLETED") {
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "CREATE_COURIER_LABEL", "HIGH", "operator",
+      "Apostille complete. Generate Shippo courier label for international release.",
+      "Cannot create courier label without operator action in the courier module.",
+    ));
+
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "PREPARE_RELEASE_REVIEW", "HIGH", "operator",
+      "Final review before courier release. Confirm document count, addresses, and apostille completeness.",
+      "Cannot approve release — operator must complete release review.",
+    ));
+  }
+
+  // ── DELIVERED ─────────────────────────────────────────────────────────────
+
+  if (trigger === "DELIVERED") {
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "GENERATE_CERTIFICATE", "NORMAL", "operator",
+      "Matter delivered. Generate Certificate of Digital Custody and share verification link with client.",
+      "Cannot generate certificate without operator action. Requires PAID_AND_RELEASED confirmation.",
+      input.is_paid_and_released ? null : "Matter must reach PAID_AND_RELEASED before certificate generation.",
+    ));
+
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "ARCHIVE_MATTER", "LOW", "operator",
+      "Archive matter record. Confirm all documents are in vault and custody ledger is complete.",
+      "Cannot archive — operator must confirm completeness before archiving.",
+    ));
+
+    tasks.push(makeTask(
+      trigger, input.matter_id, label,
+      "GENERATE_CLIENT_FOLLOWUP", "LOW", "coordinator",
+      "Send client follow-up: confirm document receipt and provide verification link.",
+      "Cannot send external communications — coordinator must initiate from outside the system.",
+    ));
   }
 
   return tasks;
 }
 
 export function buildAutopilotResult(input: AutopilotInput): AutopilotResult {
-  const trigger = detectTrigger(input.matter_status);
+  const trigger = (TRIGGER_MAP[input.matter_status ?? ""] ?? null) as AutopilotTrigger | null;
   const tasks = generateAutopilotTasks(input);
 
-  const blocked = tasks.filter((t) => t.status === "BLOCKED");
-  const pending_confirmation = tasks.filter((t) => t.status === "PENDING");
+  const blocked = tasks.filter(t => t.status === "blocked");
+  const pending = tasks.filter(t => t.status === "pending_confirmation");
+  const completed = tasks.filter(t => t.status === "completed");
+
+  const summary = tasks.length === 0
+    ? "No autopilot tasks for current matter status."
+    : blocked.length > 0
+    ? `${tasks.length} task${tasks.length > 1 ? "s" : ""} generated. ${blocked.length} blocked — operator review required.`
+    : `${tasks.length} task${tasks.length > 1 ? "s" : ""} pending operator confirmation.`;
 
   return {
     matter_id: input.matter_id,
     trigger,
     tasks,
-    blocked,
-    pending_confirmation,
-    total_tasks: tasks.length,
-    can_auto_drive: false, // Autopilot recommends only. Operator confirmation required before any task executes.
+    blocked_tasks: blocked,
+    pending_confirmation: pending,
+    completed_tasks: completed,
+    summary,
   };
 }

@@ -184,7 +184,7 @@ export function CountryComplianceCard({ countryId, onClose }: Props) {
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="w-3.5 h-3.5 text-[#C6A55A] flex-shrink-0" />
                   <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A]">
-                    Hague Compliance Intelligence
+                    Hague Route Intelligence
                   </span>
                 </div>
                 <p className="text-sm text-[#C0C0C0] leading-relaxed">{data.seoFact}</p>

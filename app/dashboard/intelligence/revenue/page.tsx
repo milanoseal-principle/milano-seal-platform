@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { RevenueIntelligencePanel } from "@/components/dashboard/RevenueIntelligencePanel";
+import { PartnerScorecard } from "@/components/dashboard/PartnerScorecard";
+import { PayoutReviewPanel } from "@/components/dashboard/PayoutReviewPanel";
 
 export default async function RevenueIntelligencePage() {
   await requireDashboardAccess();
@@ -21,6 +23,21 @@ export default async function RevenueIntelligencePage() {
         </p>
       </div>
       <RevenueIntelligencePanel />
+      <div
+        className="rounded-sm px-5 py-5"
+        style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)" }}
+      >
+        <div className="text-[9px] font-mono uppercase tracking-[0.28em] mb-4" style={{ color: "rgba(212,175,55,0.5)" }}>
+          Partner Scorecard
+        </div>
+        <PartnerScorecard scores={[]} />
+      </div>
+      <div
+        className="rounded-sm px-5 py-5"
+        style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)" }}
+      >
+        <PayoutReviewPanel items={[]} />
+      </div>
     </div>
   );
 }

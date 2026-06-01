@@ -189,7 +189,7 @@ export default function OperatorCommandCenter() {
 
   return (
     <div className="ms-fade-up">
-      <div className="ms-eyebrow">Command Center · {today()}</div>
+      <div className="ms-eyebrow">Execution Center · {today()}</div>
       <h1 className="ms-h1">
         Welcome back, <em>Nicholas</em>
       </h1>

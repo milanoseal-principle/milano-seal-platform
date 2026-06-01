@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { DollarSign, AlertCircle, ArrowRight } from "lucide-react";
 import { formatCurrency, stageLabel, timeAgo } from "@/lib/format";
 import Link from "next/link";
+import type { ReferralLedgerEntry, AttributionStatus, ReferralSourceType } from "@/lib/referrals/ledger";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const DURATION = 0.58;
@@ -36,8 +37,18 @@ function SkeletonRows({ n }: { n: number }) {
   );
 }
 
+const ATTRIBUTION_STATUS_ORDER: AttributionStatus[] = ["captured", "verified", "locked", "disputed", "resolved"];
+const ATTRIBUTION_STATUS_COLORS: Record<AttributionStatus, string> = {
+  captured: "rgba(255,255,255,0.3)",
+  verified: "#60a5fa",
+  locked: "#34d399",
+  disputed: "#f87171",
+  resolved: "#d4af37",
+};
+
 export function RevenueIntelligencePanel() {
   const { data, isLoading } = useApi<RevenueData>("/api/revenue/intelligence");
+  const { data: ledgerData } = useApi<{ entries: ReferralLedgerEntry[] }>("/api/dashboard/referral-ledger");
 
   const maxCountry = data ? Math.max(1, ...data.by_country.map(c => c.closed + c.pipeline)) : 1;
   const maxDoc = data ? Math.max(1, ...data.by_document_type.map(d => d.revenue)) : 1;
@@ -278,6 +289,129 @@ export function RevenueIntelligencePanel() {
           </div>
         </div>
       )}
+
+      {/* Revenue by Source */}
+      <div
+        className="rounded-sm"
+        style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)" }}
+      >
+        <div className="px-5 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="text-[9px] font-mono uppercase tracking-[0.28em]" style={{ color: "rgba(212,175,55,0.5)" }}>
+            Revenue by Source
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          {!ledgerData || ledgerData.entries.length === 0 ? (
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.22)" }}>
+              Attribution data will populate once referral ledger is active.
+            </p>
+          ) : (() => {
+            const grouped = ledgerData.entries.reduce<Record<ReferralSourceType, number>>((acc, e) => {
+              acc[e.source_type] = (acc[e.source_type] ?? 0) + 1;
+              return acc;
+            }, {} as Record<ReferralSourceType, number>);
+            const entries = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
+            const max = Math.max(1, ...entries.map(([, v]) => v));
+            return (
+              <div className="space-y-3">
+                {entries.map(([source, count], idx) => (
+                  <motion.div
+                    key={source}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ ease: EASE, duration: DURATION, delay: idx * 0.04 }}
+                    className="space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {source.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-[9px] font-mono" style={{ color: "rgba(212,175,55,0.6)" }}>
+                        {count}
+                      </span>
+                    </div>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: "rgba(212,175,55,0.35)" }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(count / max) * 100}%` }}
+                        transition={{ ease: EASE, duration: 0.6, delay: 0.3 + idx * 0.04 }}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* Attribution Status Rail */}
+      <div
+        className="rounded-sm"
+        style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)" }}
+      >
+        <div className="px-5 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="text-[9px] font-mono uppercase tracking-[0.28em]" style={{ color: "rgba(212,175,55,0.5)" }}>
+            Attribution Status Rail
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          {!ledgerData || ledgerData.entries.length === 0 ? (
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.22)" }}>
+              No attribution entries yet.
+            </p>
+          ) : (
+            <div className="flex gap-4 flex-wrap">
+              {ATTRIBUTION_STATUS_ORDER.map((status) => {
+                const count = ledgerData.entries.filter(e => e.attribution_status === status).length;
+                return (
+                  <div key={status} className="text-center">
+                    <div
+                      className="text-base font-light"
+                      style={{ fontFamily: "var(--font-playfair), Georgia, serif", color: ATTRIBUTION_STATUS_COLORS[status] }}
+                    >
+                      {count}
+                    </div>
+                    <div className="text-[8px] font-mono uppercase tracking-[0.12em] mt-0.5" style={{ color: "rgba(255,255,255,0.25)" }}>
+                      {status}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Pending Payout Reviews */}
+      <div
+        className="rounded-sm"
+        style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)" }}
+      >
+        <div className="px-5 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="flex items-center justify-between">
+            <div className="text-[9px] font-mono uppercase tracking-[0.28em]" style={{ color: "rgba(212,175,55,0.5)" }}>
+              Pending Payout Reviews
+            </div>
+            <Link href="/dashboard/alliance">
+              <span className="text-[8px] font-mono" style={{ color: "rgba(212,175,55,0.4)" }}>
+                Alliance →
+              </span>
+            </Link>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.22)" }}>
+            Payout reviews are operator-confirmed only. Visit the{" "}
+            <Link href="/dashboard/alliance" style={{ color: "rgba(212,175,55,0.6)" }}>
+              Alliance dashboard
+            </Link>{" "}
+            to manage pending reviews.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

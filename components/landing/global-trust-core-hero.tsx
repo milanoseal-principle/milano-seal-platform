@@ -38,7 +38,7 @@ const DESTINATIONS = [
     x: 330, y: 192,
     dur: 2.6, startDelay: 0.3,
     framework: "CONSULAR AUTHENTICATION TRACK",
-    seoIntent: "/jurisdictions/uae-consular-authentication-track",
+    seoIntent: "/apostille/uae",
     isoCode: "JURISDICTION_ISO_AE",
   },
   {
@@ -458,7 +458,6 @@ export function GlobalTrustCoreHero() {
       {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
       {selectedDest && (
         <div
-          className="ms-destination-popover"
           className="ms-destination-popover hidden md:block"
           style={{
             position: "absolute",
