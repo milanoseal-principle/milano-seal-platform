@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Send, Map, CheckCircle, AlertTriangle } from "lucide-react";
+import { FileText, Send, Map, CheckCircle, AlertTriangle, GitBranch, Eye } from "lucide-react";
 
 const CORRIDORS = ["Italy", "Portugal", "Mexico", "Brazil", "Spain", "France", "Other"];
 const ROLES = [
@@ -405,6 +405,20 @@ export default function AlliancePage() {
                 description: "View current processing timelines, authority notes, and jurisdictional intelligence by corridor.",
                 href: "/map",
                 label: "View Map",
+              },
+              {
+                icon: GitBranch,
+                title: "Submit a Referral",
+                description: "Refer a client matter to The Milano Seal for execution. Referrals are reviewed before acceptance.",
+                href: "/alliance/referrals/new",
+                label: "Submit Referral",
+              },
+              {
+                icon: Eye,
+                title: "Referral Status",
+                description: "View the status of referrals submitted through your partner account.",
+                href: "/alliance/referrals",
+                label: "View Status",
               },
             ].map((card) => (
               <Link
