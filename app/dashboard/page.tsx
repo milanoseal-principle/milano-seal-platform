@@ -43,6 +43,7 @@ import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel"
 import { ExecutionReadinessEngine } from "@/components/dashboard/ExecutionReadinessEngine";
 import { ExecutiveOperationsCenter } from "@/components/dashboard/ExecutiveOperationsCenter";
 import { AuthorityAlertSystem } from "@/components/dashboard/AuthorityAlertSystem";
+import { MatterIntelligenceWidget } from "@/components/dashboard/MatterIntelligenceWidget";
 
 interface DashboardSummary {
   total_deals: number;
@@ -879,6 +880,9 @@ export default function Dashboard() {
 
       {/* Global Execution Intelligence */}
       <GlobalExecutionIntelligence />
+
+      {/* Matter Intelligence Core */}
+      <MatterIntelligenceWidget />
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
