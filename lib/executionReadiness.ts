@@ -12,6 +12,17 @@
 import { getWorkflowOrDerive, getCountry, getDocumentType } from "@/data/intelligence";
 import type { Workflow } from "@/data/intelligence";
 
+// ── Matter Intelligence structural type (avoids circular import) ──────────────
+interface MatterIntelligenceOverlay {
+  authority_confidence?: string | null;
+  authority_chain?: { status?: string | null } | null;
+  estimated_timeline_days?: number | null;
+  requires_qa_checklist?: boolean;
+  is_derived: boolean;
+  next_action_operator?: string | null;
+  next_action_client?: string | null;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type ReadinessCategory =
@@ -406,6 +417,42 @@ export function toClientSummary(result: ReadinessResult): ClientReadinessSummary
 }
 
 // ── Fallback for unknown corridor ─────────────────────────────────────────────
+
+// ── Matter Intelligence overlay ───────────────────────────────────────────────
+// Enriches readiness result with authority chain intelligence when available.
+
+export interface EnrichedReadinessResult extends ReadinessResult {
+  matter_intelligence: {
+    authority_confidence: string | null;
+    chain_certification_status: string | null;
+    estimated_timeline_days: number | null;
+    requires_qa_checklist: boolean;
+    is_derived: boolean;
+    next_action_operator: string | null;
+    next_action_client: string | null;
+  } | null;
+}
+
+export function enrichReadinessWithIntelligence(
+  readiness: ReadinessResult,
+  intelligence: MatterIntelligenceOverlay | null,
+): EnrichedReadinessResult {
+  if (!intelligence) {
+    return { ...readiness, matter_intelligence: null };
+  }
+  return {
+    ...readiness,
+    matter_intelligence: {
+      authority_confidence: intelligence.authority_confidence ?? null,
+      chain_certification_status: intelligence.authority_chain?.status ?? null,
+      estimated_timeline_days: intelligence.estimated_timeline_days ?? null,
+      requires_qa_checklist: intelligence.requires_qa_checklist ?? false,
+      is_derived: intelligence.is_derived,
+      next_action_operator: intelligence.next_action_operator ?? null,
+      next_action_client: intelligence.next_action_client ?? null,
+    },
+  };
+}
 
 function unknownCorridorResult(countryName: string, documentName: string): ReadinessResult {
   return {

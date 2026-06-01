@@ -44,6 +44,7 @@ import { ExecutionReadinessEngine } from "@/components/dashboard/ExecutionReadin
 import { ExecutiveOperationsCenter } from "@/components/dashboard/ExecutiveOperationsCenter";
 import { AuthorityAlertSystem } from "@/components/dashboard/AuthorityAlertSystem";
 import { MatterIntelligenceWidget } from "@/components/dashboard/MatterIntelligenceWidget";
+import { ExecutionIntelligencePanel } from "@/components/dashboard/ExecutionIntelligencePanel";
 
 interface DashboardSummary {
   total_deals: number;
@@ -883,6 +884,18 @@ export default function Dashboard() {
 
       {/* Matter Intelligence Core */}
       <MatterIntelligenceWidget />
+
+      {/* Execution Intelligence Panel */}
+      <div
+        style={{
+          background: "rgba(8,5,1,0.97)",
+          border: "1px solid rgba(212,175,55,0.08)",
+          borderRadius: "2px",
+          padding: "1.5rem",
+        }}
+      >
+        <ExecutionIntelligencePanel />
+      </div>
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
