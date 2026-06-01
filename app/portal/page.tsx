@@ -549,22 +549,34 @@ export default function MyMatterPage() {
                   >
                     View Vault
                   </a>
-                  <button
-                    disabled
+                  <a
+                    href="/api/portal/me/certificate"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       fontSize: 10,
                       fontFamily: "monospace",
                       letterSpacing: "0.05em",
-                      color: "rgba(255,255,255,0.2)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#C6A55A",
+                      border: "1px solid rgba(198,165,90,0.35)",
                       borderRadius: 3,
                       padding: "5px 12px",
-                      background: "transparent",
-                      cursor: "not-allowed",
+                      background: "rgba(198,165,90,0.06)",
+                      textDecoration: "none",
+                    }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      const res = await fetch("/api/portal/me/certificate");
+                      const data = await res.json();
+                      if (data.certificate?.verification_url) {
+                        window.open(data.certificate.verification_url, "_blank");
+                      } else {
+                        alert("Certificate not yet available. Please contact your coordinator.");
+                      }
                     }}
                   >
-                    Certificate of Custody — Coming Soon
-                  </button>
+                    Certificate of Custody
+                  </a>
                 </div>
               </div>
             </motion.div>
