@@ -81,14 +81,14 @@ export default function FounderPage() {
                 <div className="flex flex-wrap gap-3 mt-8">
                   {[
                     "Florida Notary #668288",
-                    "RON Certified",
-                    "Hague Convention Compliant",
+                    "Remote Online Notary",
+                    "Hague Route Reviewed",
                   ].map((c) => (
                     <span
                       key={c}
                       className="px-4 py-2 bg-[#111111] border border-[#2A2A2A] rounded-full text-xs text-[#C6A55A] tracking-wide"
                     >
-                      {c === "RON Certified" ? "Remote Online Notary" : c === "Hague Convention Compliant" ? "Hague Route Reviewed" : c}
+                      {c}
                     </span>
                   ))}
                 </div>
