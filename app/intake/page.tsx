@@ -6,9 +6,9 @@ import { Shield } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Begin Secure Intake | The Milano Seal™",
+  title: "Smart Matter Intake | The Milano Seal™",
   description:
-    "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
+    "Start your document execution process. Smart intake for Remote Online Notary, Apostille Coordination, and International Document Execution.",
 };
 
 function IntakeContent({
@@ -19,6 +19,7 @@ function IntakeContent({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   return (
@@ -36,6 +37,7 @@ async function IntakeWizardWrapper({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -43,6 +45,7 @@ async function IntakeWizardWrapper({
     country: params.country || "",
     document: params.document || "",
     useCase: params.useCase || "",
+    matter: params.matter || "",
   };
   const tier = params.tier as
     | "signature"
@@ -54,7 +57,7 @@ async function IntakeWizardWrapper({
       ? tier
       : "priority";
 
-  return <IntakeWizard initialTier={validTier} prefill={prefill} />;
+  return <IntakeWizard initialTier={validTier} prefill={{ ...prefill, matter: params.matter || "" }} />;
 }
 
 export default function IntakePage({
@@ -65,6 +68,7 @@ export default function IntakePage({
     country?: string;
     document?: string;
     useCase?: string;
+    matter?: string;
   }>;
 }) {
   return (
@@ -82,11 +86,10 @@ export default function IntakePage({
               </span>
             </div>
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
-              Begin Your Execution
+              Smart Matter Intake
             </h1>
             <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto">
-              Complete the intake process below. Your matter will be structured
-              for execution with precision and discretion.
+              Submit your document details, destination country, signer information, witness needs, and timeline. The Milano Seal will review the matter for execution pathway, apostille coordination, payment-gated scheduling, and international release requirements.
             </p>
           </div>
 
