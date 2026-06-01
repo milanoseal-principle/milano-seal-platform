@@ -33,6 +33,11 @@ export const LEDGER_EVENT_TYPES = [
   "PARTNER_REFERRAL_ATTACHED_TO_MATTER",
   "PARTNER_REFERRAL_ATTRIBUTION_LOCKED",
   "PARTNER_REFERRAL_CONVERTED_TO_OBSERVATION",
+  "AUTOPILOT_TASK_GENERATED",
+  "AUTOPILOT_TASK_CONFIRMED",
+  "AUTOPILOT_TASK_BLOCKED",
+  "AUTOPILOT_TASK_DISMISSED",
+  "AUTOPILOT_TASK_COMPLETED",
 ] as const;
 
 export type LedgerEventType = typeof LEDGER_EVENT_TYPES[number];
@@ -47,7 +52,8 @@ type EventGroup =
   | "Release"
   | "Authority"
   | "Intake"
-  | "Referral";
+  | "Referral"
+  | "Autopilot";
 
 const EVENT_GROUP_MAP: Record<LedgerEventType, EventGroup> = {
   PAYMENT_LINK_CREATED: "Payment",
@@ -76,6 +82,11 @@ const EVENT_GROUP_MAP: Record<LedgerEventType, EventGroup> = {
   PARTNER_REFERRAL_ATTACHED_TO_MATTER: "Referral",
   PARTNER_REFERRAL_ATTRIBUTION_LOCKED: "Referral",
   PARTNER_REFERRAL_CONVERTED_TO_OBSERVATION: "Referral",
+  AUTOPILOT_TASK_GENERATED: "Autopilot",
+  AUTOPILOT_TASK_CONFIRMED: "Autopilot",
+  AUTOPILOT_TASK_BLOCKED: "Autopilot",
+  AUTOPILOT_TASK_DISMISSED: "Autopilot",
+  AUTOPILOT_TASK_COMPLETED: "Autopilot",
 };
 
 const GROUP_COLORS: Record<EventGroup, string> = {
@@ -87,6 +98,7 @@ const GROUP_COLORS: Record<EventGroup, string> = {
   Authority: "#fb923c",
   Intake: "#9ca3af",
   Referral: "#34d399",
+  Autopilot: "#818cf8",
 };
 
 function getEventGroup(eventType: string): EventGroup | null {

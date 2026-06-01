@@ -29,6 +29,7 @@ import {
   Wrench,
   BookOpen,
   FileText,
+  Zap,
 } from "lucide-react";
 
 const NAV = [
@@ -45,6 +46,7 @@ const NAV = [
   { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
   { href: "/dashboard/intelligence/acquisition", label: "Acquisition Intel", icon: Target },
   { href: "/dashboard/intelligence/revenue", label: "Revenue Intel", icon: TrendingUp },
+  { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
   { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
   { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
   { href: "/dashboard/courier", label: "Courier", icon: Truck },
