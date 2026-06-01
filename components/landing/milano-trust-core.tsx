@@ -129,85 +129,83 @@ export function MilanoTrustCore() {
           </div>
         </div>
 
-        {/* Desktop: three-column radial split */}
-        <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-0">
-          {/* Left pillars */}
-          <div className="flex flex-col gap-8 pr-10">
-            {/* Header block on left */}
-            <motion.div
-              initial={{ opacity: 0, x: -18 }}
-              animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-2"
-            >
-              <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
-                Our Platform Principles
-              </p>
-              <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
-                Milano<br />Trust Core
-              </h2>
-              <p className="text-[#5A5A5A] text-xs leading-relaxed max-w-[220px]">
-                Six pillars of deterministic execution for international document success.
-              </p>
-            </motion.div>
-
-            {LEFT_PILLARS.map((p, i) => (
-              <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
-            ))}
-          </div>
-
-          {/* Center medallion */}
+        {/* Desktop: header above, then three-column radial split */}
+        <div className="hidden lg:block">
+          {/* Header centered above */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-shrink-0 w-[180px] flex items-center justify-center relative"
+            initial={{ opacity: 0, y: -12 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-10"
           >
-            {/* Outer glow ring */}
-            <div
-              className="absolute w-[164px] h-[164px] rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(198,165,90,0.07) 0%, transparent 68%)",
-                filter: "blur(12px)",
-              }}
-            />
-            {/* Outer decorative ring */}
-            <div className="absolute w-[148px] h-[148px] rounded-full border border-[#C6A55A]/08" />
-            {/* Mid ring */}
-            <div className="absolute w-[126px] h-[126px] rounded-full border border-[#C6A55A]/12" />
-            {/* Inner ring */}
-            <div className="absolute w-[104px] h-[104px] rounded-full border border-[#C6A55A]/18" />
-            {/* Core circle */}
-            <div
-              className="relative w-[88px] h-[88px] rounded-full border border-[#C6A55A]/35 flex items-center justify-center"
-              style={{
-                background: "radial-gradient(circle, rgba(198,165,90,0.10) 0%, rgba(6,6,8,0.95) 65%)",
-                boxShadow: "0 0 32px rgba(198,165,90,0.10), inset 0 0 20px rgba(198,165,90,0.04)",
-              }}
-            >
-              <span
-                className="font-serif text-[#C6A55A] text-4xl font-medium leading-none select-none"
-                style={{ textShadow: "0 0 24px rgba(198,165,90,0.4)" }}
-              >
-                M
-              </span>
-            </div>
+            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+              Our Platform Principles
+            </p>
+            <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
+              Milano Trust Core
+            </h2>
+            <p className="text-[#5A5A5A] text-xs leading-relaxed">
+              Six pillars of deterministic execution for international document success.
+            </p>
           </motion.div>
 
-          {/* Right pillars */}
-          <div className="flex flex-col gap-8 pl-10 justify-end">
-            {/* Spacer to align pillars with left side (skip header height) */}
-            <div className="mb-2 invisible pointer-events-none select-none" aria-hidden>
-              <p className="font-mono text-[9px] tracking-[0.35em] uppercase mb-2">placeholder</p>
-              <h2 className="font-serif text-3xl font-light mb-2 leading-tight">
-                Milano<br />Trust Core
-              </h2>
-              <p className="text-xs leading-relaxed max-w-[220px]">Six pillars placeholder text here ok.</p>
+          {/* Three-column: pillars | medallion | pillars — all vertically centered */}
+          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0">
+            {/* Left pillars */}
+            <div className="flex flex-col gap-7 pr-8">
+              {LEFT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
             </div>
 
-            {RIGHT_PILLARS.map((p, i) => (
-              <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
-            ))}
+            {/* Center medallion */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88 }}
+              animate={inView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center relative"
+              style={{ height: 280 }}
+            >
+              {/* Glow */}
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: 260, height: 260,
+                  background: "radial-gradient(circle, rgba(198,165,90,0.09) 0%, transparent 70%)",
+                  filter: "blur(16px)",
+                }}
+              />
+              {/* Connector lines — left */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[calc(50%-70px)] h-px bg-gradient-to-r from-transparent to-[#C6A55A]/25" />
+              {/* Connector lines — right */}
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[calc(50%-70px)] h-px bg-gradient-to-l from-transparent to-[#C6A55A]/25" />
+              {/* Rings */}
+              <div className="absolute w-[240px] h-[240px] rounded-full border border-[#C6A55A]/06" />
+              <div className="absolute w-[200px] h-[200px] rounded-full border border-[#C6A55A]/10" />
+              <div className="absolute w-[160px] h-[160px] rounded-full border border-[#C6A55A]/16" />
+              {/* Core */}
+              <div
+                className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center"
+                style={{
+                  background: "radial-gradient(circle, rgba(198,165,90,0.13) 0%, rgba(6,6,8,0.97) 70%)",
+                  boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
+                }}
+              >
+                <span
+                  className="font-serif text-[#C6A55A] text-5xl font-medium leading-none select-none"
+                  style={{ textShadow: "0 0 32px rgba(198,165,90,0.5)" }}
+                >
+                  M
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Right pillars */}
+            <div className="flex flex-col gap-7 pl-8">
+              {RIGHT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
