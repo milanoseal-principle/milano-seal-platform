@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import {
-  generateVATasks,
   type VATask,
-  type VATaskInput,
   type VATaskStatus,
   type VATaskType,
 } from "@/lib/vaTasks";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Task type colors — VA cannot promote authority, approve release,
-// mark payment confirmed, override QA gates, or access restricted fields.
+// VA cannot promote authority, approve release, mark payment confirmed,
+// override QA gates, or access restricted fields.
 const TASK_TYPE_COLORS: Record<VATaskType, string> = {
   AUTHORITY_DISCOVERY: "#fb923c",
   SOURCE_VALIDATION: "#60a5fa",
@@ -34,56 +32,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   LOW: "rgba(255,255,255,0.25)",
 };
 
-// Sample inputs derived from deal state — in production these come from the deals API.
-// Fields excluded from VA view: client email/phone, internal_notes, operator_notes,
-// revenue, margin, shipping_cost, label_url, storage_path.
-const SAMPLE_INPUTS: VATaskInput[] = [
-  {
-    matter_id: "matter-demo-001",
-    country_id: "Italy",
-    document_id: "Birth Certificate",
-    deal_status: "pending",
-    payment_status: "paid",
-    is_notarized: true,
-    has_apostille: false,
-    has_translation: false,
-    courier_status: null,
-    missing_items: ["Certified Italian translation required"],
-    authority_confidence: "VERIFICATION_REQUIRED",
-    chain_certification_status: "INCOMPLETE",
-    requires_qa_checklist: false,
-  },
-  {
-    matter_id: "matter-demo-002",
-    country_id: "Mexico",
-    document_id: "Marriage Certificate",
-    deal_status: "in_progress",
-    payment_status: "paid",
-    is_notarized: true,
-    has_apostille: true,
-    has_translation: false,
-    courier_status: "in_transit",
-    missing_items: [],
-    authority_confidence: "AUTHORITY_VERIFIED",
-    chain_certification_status: "COMPLETE",
-    requires_qa_checklist: false,
-  },
-  {
-    matter_id: "matter-demo-003",
-    country_id: "Germany",
-    document_id: "Divorce Decree",
-    deal_status: "pending",
-    payment_status: "pending",
-    is_notarized: false,
-    has_apostille: false,
-    has_translation: false,
-    courier_status: null,
-    missing_items: ["Passport copy required", "Certified German translation required"],
-    authority_confidence: null,
-    chain_certification_status: "NO_CHAIN",
-    requires_qa_checklist: true,
-  },
-];
 
 function TaskTypeBadge({ type }: { type: VATaskType }) {
   const color = TASK_TYPE_COLORS[type];
@@ -310,14 +258,30 @@ function TaskCard({
 }
 
 export function VATaskIntelligencePanel() {
-  // Generate tasks from sample deal state — client-side, no DB table needed.
-  // In production these inputs come from the deals API, with restricted field projection:
-  // excluded fields: client email/phone, internal_notes, operator_notes,
-  // revenue, margin, shipping_cost, label_url, storage_path.
-  const initialTasks = useMemo(
-    () => SAMPLE_INPUTS.flatMap((input) => generateVATasks(input)),
-    []
-  );
+  // Fetch tasks from the live API — tasks are generated server-side from
+  // real deal state via matter intelligence. Excluded fields (never exposed):
+  // client email/phone, internal_notes, operator_notes, revenue, margin,
+  // shipping_cost, label_url, storage_path.
+  const [fetchedTasks, setFetchedTasks] = useState<VATask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/dashboard/va-tasks")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) {
+          setFetchedTasks(Array.isArray(data.tasks) ? data.tasks : []);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [taskStatuses, setTaskStatuses] = useState<
     Record<string, VATaskStatus>
@@ -325,11 +289,11 @@ export function VATaskIntelligencePanel() {
 
   const tasks = useMemo(
     () =>
-      initialTasks.map((t) => ({
+      fetchedTasks.map((t) => ({
         ...t,
         status: taskStatuses[t.id] ?? t.status,
       })),
-    [initialTasks, taskStatuses]
+    [fetchedTasks, taskStatuses]
   );
 
   const openCount = tasks.filter(
@@ -406,7 +370,24 @@ export function VATaskIntelligencePanel() {
       {/* Task list */}
       <div className="p-4 space-y-2">
         <AnimatePresence mode="popLayout">
-          {tasks.length === 0 ? (
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="py-10 flex flex-col items-center gap-3"
+            >
+              <Brain size={22} style={{ color: "rgba(212,175,55,0.2)" }} />
+              <p
+                className="text-[10px] font-mono tracking-widest text-center"
+                style={{ color: "rgba(255,255,255,0.18)" }}
+              >
+                LOADING MATTER INTELLIGENCE…
+              </p>
+            </motion.div>
+          ) : tasks.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
