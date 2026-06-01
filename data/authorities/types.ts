@@ -407,3 +407,25 @@ export interface AuthorityChain {
   is_complete: boolean;     // true if all authorities in chain have confidence >= OBSERVED
   chain_confidence: AuthorityConfidence | null;  // lowest confidence in chain
 }
+
+// ── Authority Intelligence Score ───────────────────────────────────────────────
+// Computed operator-only score. Never exposed to portal or alliance.
+// Based solely on real data — no synthetic metrics.
+
+export interface AuthorityIntelligenceScore {
+  authority_id: string;
+  authority_name: string;
+  // Component scores (0–100 each)
+  source_score: number;        // Based on source count and source type quality
+  freshness_score: number;     // Based on how recently reviewed vs. review cadence
+  confidence_score: number;    // Based on authority_confidence level
+  dependency_score: number;    // Based on completion of dependency chain
+  rule_coverage_score: number; // Based on document_rules count vs. expected
+  // Composite
+  total_score: number;         // Weighted average of above
+  // Labels
+  confidence_label: AuthorityConfidence;
+  score_interpretation: "insufficient" | "minimal" | "developing" | "solid" | "complete";
+  // What's missing
+  missing: string[];           // operator-facing list of what would improve the score
+}
