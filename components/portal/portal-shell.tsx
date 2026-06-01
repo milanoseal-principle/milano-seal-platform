@@ -8,6 +8,7 @@ import {
   Receipt,
   Truck,
   FolderOpen,
+  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -51,6 +52,7 @@ const NAV = [
   { href: "/portal/invoice", label: "Invoice", icon: Receipt },
   { href: "/portal/tracking", label: "Tracking", icon: Truck },
   { href: "/portal/documents", label: "Documents", icon: FolderOpen },
+  { href: "/portal/messages", label: "Messages", icon: MessageCircle },
 ];
 
 function LogoMark({ size = 32 }: { size?: number }) {

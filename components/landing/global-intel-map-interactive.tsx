@@ -134,7 +134,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
               href={`/intake?country=${encodeURIComponent(active.name)}`}
               className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
             >
-              Begin Execution for {active.name}
+              Begin Secure Intake for {active.name}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

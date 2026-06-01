@@ -330,7 +330,7 @@ function CompliancePanel({
         href={`/intake?country=${encodeURIComponent(result.jurisdiction)}`}
         className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-medium text-sm rounded-lg hover:bg-[#D4BB7A] transition-colors"
       >
-        Begin Execution for{" "}
+        Begin Secure Intake for{" "}
         {result.jurisdiction
           .split(" ")
           .map((w) => w[0].toUpperCase() + w.slice(1))
@@ -392,10 +392,10 @@ export default function MapPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4">
-              Compliance Intelligence
+              Global Document Intelligence
             </p>
             <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-6">
-              Global Compliance <em className="text-[#C6A55A]">Map</em>
+              Global Document <em className="text-[#C6A55A]">Intelligence</em>
             </h1>
             <p className="text-[#8A8A8A] text-lg font-light max-w-2xl mx-auto">
               Select any jurisdiction to view RON authorization, apostille

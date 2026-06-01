@@ -9,6 +9,7 @@ import {
   Sparkles,
   Upload,
   X,
+  Globe,
 } from "lucide-react";
 import {
   STRUCTURING_LABEL,
@@ -23,6 +24,20 @@ import {
 interface SmartMatterIntakeProps {
   onAnalysisReady?: (analysis: MatterAnalysis) => void;
   onFilesPicked?: (files: File[]) => void;
+  initialMessage?: string;
+}
+
+interface MatterIntelligencePreview {
+  corridor_type: "hague" | "consular" | "unknown";
+  estimated_timeline_days: number | null;
+  translation_required: boolean;
+  translation_language: string | null;
+  witnesses_required: boolean;
+  witness_count: number;
+  apostille_required: boolean;
+  next_action_client: string;
+  is_derived: boolean;
+  authority_name: string | null;
 }
 
 const STEP_INTERVAL_MS = 700;
@@ -30,15 +45,18 @@ const STEP_INTERVAL_MS = 700;
 export function SmartMatterIntake({
   onAnalysisReady,
   onFilesPicked,
+  initialMessage,
 }: SmartMatterIntakeProps) {
   const [analysis, setAnalysis] = useState<MatterAnalysis>(emptyAnalysis());
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage ?? "");
   const [files, setFiles] = useState<File[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [intelligencePreview, setIntelligencePreview] = useState<MatterIntelligencePreview | null>(null);
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
 
   useEffect(() => {
     setAnalysis((prev) => applyQuickTags(prev, message));
@@ -91,6 +109,29 @@ export function SmartMatterIntake({
       setAnalysis({ ...next, structuringState: "READY_FOR_REVIEW" });
       onAnalysisReady?.(next);
       if (files.length) onFilesPicked?.(files);
+
+      // Fetch matter intelligence preview if country + document detected
+      if (next.country || next.documentType) {
+        setIntelligenceLoading(true);
+        setIntelligencePreview(null);
+        try {
+          const countrySlug = next.country.toLowerCase().replace(/\s+/g, "-");
+          const docSlug = next.documentType.toLowerCase().replace(/\s+/g, "-");
+          const params = new URLSearchParams({
+            country: countrySlug,
+            document: docSlug,
+          });
+          const r = await fetch(`/api/matter-intelligence?${params.toString()}`);
+          if (r.ok) {
+            const json = await r.json() as MatterIntelligencePreview;
+            setIntelligencePreview(json);
+          }
+        } catch {
+          // silently hide — don't crash form
+        } finally {
+          setIntelligenceLoading(false);
+        }
+      }
     } catch (e) {
       ticker.settle();
       setAnalysis((prev) => ({ ...prev, structuringState: "IDLE" }));
@@ -296,6 +337,61 @@ export function SmartMatterIntake({
                 </div>
               )}
 
+              {/* Matter Intelligence Preview */}
+              {(intelligenceLoading || intelligencePreview) && (
+                <div className="mb-5 bg-[#0D0D0D] border border-[rgba(198,165,90,0.28)] rounded-sm overflow-hidden">
+                  <div className="flex items-center gap-2 px-5 py-3 border-b border-[rgba(198,165,90,0.14)]">
+                    <Globe className="w-3.5 h-3.5 text-[#C6A55A]" />
+                    <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A]">
+                      Matter Intelligence Preview
+                    </span>
+                    {intelligenceLoading && (
+                      <Loader2 className="w-3 h-3 text-[#C6A55A] animate-spin ml-auto" />
+                    )}
+                  </div>
+                  {intelligencePreview && (
+                    <div className="px-5 py-4 space-y-2.5">
+                      <IntelRow label="Route Type">
+                        {intelligencePreview.corridor_type === "hague"
+                          ? "Hague Route"
+                          : intelligencePreview.corridor_type === "consular"
+                            ? "Consular Route"
+                            : "Standard Corridor"}
+                        {intelligencePreview.is_derived && (
+                          <span className="ml-2 text-[9px] text-[#9A8A6A] uppercase tracking-wider">(derived)</span>
+                        )}
+                      </IntelRow>
+                      {intelligencePreview.estimated_timeline_days && (
+                        <IntelRow label="Estimated Timeline">
+                          {intelligencePreview.estimated_timeline_days} days
+                        </IntelRow>
+                      )}
+                      <IntelRow label="Translation Required">
+                        {intelligencePreview.translation_required
+                          ? `Yes${intelligencePreview.translation_language ? ` — Certified ${intelligencePreview.translation_language}` : ""}`
+                          : "No"}
+                      </IntelRow>
+                      <IntelRow label="Witness Required">
+                        {intelligencePreview.witnesses_required
+                          ? `Yes — ${intelligencePreview.witness_count} witness${intelligencePreview.witness_count > 1 ? "es" : ""}`
+                          : "No"}
+                      </IntelRow>
+                      <IntelRow label="Apostille Route">
+                        {intelligencePreview.apostille_required
+                          ? "Florida Dept of State"
+                          : "Not required"}
+                      </IntelRow>
+                      <IntelRow label="Client Next Action">
+                        {intelligencePreview.next_action_client}
+                      </IntelRow>
+                      <p className="text-[10px] text-[#6E6558] font-light leading-relaxed pt-2 border-t border-[rgba(198,165,90,0.1)]">
+                        International use is subject to destination and receiving-authority requirements. The Milano Seal provides notarial and document coordination services only and does not provide legal advice.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {showEmptyParseNotice && (
                 <div className="mb-5 px-4 py-3 bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.25)] rounded-sm">
                   <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-1">
@@ -481,6 +577,17 @@ function ConfidencePanel({ analysis }: { analysis: MatterAnalysis }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function IntelRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#8A7A60] pt-0.5 w-[130px] flex-shrink-0">
+        {label}
+      </span>
+      <span className="text-[12px] text-[#D8C08A] font-light leading-relaxed">{children}</span>
     </div>
   );
 }

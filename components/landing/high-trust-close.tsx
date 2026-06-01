@@ -73,7 +73,7 @@ export function HighTrustClose() {
               href="/intake"
               className="group inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-xl transition-all duration-300 hover:bg-[#D4B76A] gold-glow-hover"
             >
-              <span>Begin Your Execution</span>
+              <span>Begin Secure Intake</span>
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           </motion.div>

@@ -1,394 +1,1171 @@
 // HAGUE APOSTILLE COUNTRY LANGUAGE ROUTING
-// Used by the Smart Matter Intake to surface translation guidance per destination.
-// All notes are client-safe: we never assert guaranteed acceptance or legal finality.
-// Receiving authority requirements are always confirmed before execution.
+// Source authority: HCCH — Hague Conference on Private International Law.
+// Covers all contracting states to the Convention of 5 October 1961
+// Abolishing the Requirement of Legalisation for Foreign Public Documents.
+//
+// counselTerm: the local-language equivalent of "Avvocato" (attorney / counsel / lawyer)
+// used for client-facing routing signals, SEO, and correspondence tone.
+//
+// All translation notes are client-safe: we never assert guaranteed acceptance or legal
+// finality. Receiving authority requirements are always confirmed before execution.
 
 export interface CountryLanguageRouting {
   country: string;
+  isoAlpha2: string;
   officialLanguages: string[];
+  counselTerm: string;      // local word for attorney / counsel / lawyer
+  counselScript?: string;   // non-Latin script rendering where applicable
   translationLikely: boolean;
   translationNote: string;
+  hagueJoined?: number;     // year the country acceded to the 1961 Convention
 }
 
-// Countries where the document language is English and translation is not typically required
-const ENGLISH_LANGUAGE_COUNTRIES = new Set([
-  "United Kingdom",
-  "Ireland",
-  "Australia",
-  "New Zealand",
-  "Singapore",
-]);
-
 const ROUTING_TABLE: Record<string, CountryLanguageRouting> = {
-  Italy: {
-    country: "Italy",
-    officialLanguages: ["Italian"],
-    translationLikely: true,
-    translationNote:
-      "Italian translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Spain: {
-    country: "Spain",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  France: {
-    country: "France",
-    officialLanguages: ["French"],
-    translationLikely: true,
-    translationNote:
-      "French translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Germany: {
-    country: "Germany",
-    officialLanguages: ["German"],
-    translationLikely: true,
-    translationNote:
-      "German translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Austria: {
-    country: "Austria",
-    officialLanguages: ["German"],
-    translationLikely: true,
-    translationNote:
-      "German translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Switzerland: {
-    country: "Switzerland",
-    officialLanguages: ["German", "French", "Italian"],
-    translationLikely: true,
-    translationNote:
-      "Translation requirements vary by canton (German, French, or Italian). Target jurisdiction confirmed before international release.",
-  },
-  Portugal: {
-    country: "Portugal",
-    officialLanguages: ["Portuguese"],
-    translationLikely: true,
-    translationNote:
-      "Portuguese translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Brazil: {
-    country: "Brazil",
-    officialLanguages: ["Portuguese"],
-    translationLikely: true,
-    translationNote:
-      "Portuguese (Brazilian) translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Mexico: {
-    country: "Mexico",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Mexico is a Hague Convention member. Receiving authority requirements are confirmed before international release.",
-  },
-  Argentina: {
-    country: "Argentina",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Colombia: {
-    country: "Colombia",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Chile: {
-    country: "Chile",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Peru: {
-    country: "Peru",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Uruguay: {
-    country: "Uruguay",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Ecuador: {
-    country: "Ecuador",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Venezuela: {
-    country: "Venezuela",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Panama: {
-    country: "Panama",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  "Costa Rica": {
-    country: "Costa Rica",
-    officialLanguages: ["Spanish"],
-    translationLikely: true,
-    translationNote:
-      "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Greece: {
-    country: "Greece",
-    officialLanguages: ["Greek"],
-    translationLikely: true,
-    translationNote:
-      "Greek translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Netherlands: {
-    country: "Netherlands",
-    officialLanguages: ["Dutch"],
-    translationLikely: true,
-    translationNote:
-      "Dutch translation is often required, though some authorities accept English. Receiving authority requirements are confirmed before international release.",
-  },
-  Belgium: {
-    country: "Belgium",
-    officialLanguages: ["French", "Dutch", "German"],
-    translationLikely: true,
-    translationNote:
-      "Translation requirements depend on the receiving region (French, Dutch, or German). Target jurisdiction confirmed before international release.",
-  },
-  Luxembourg: {
-    country: "Luxembourg",
-    officialLanguages: ["French", "German", "Luxembourgish"],
-    translationLikely: true,
-    translationNote:
-      "French or German translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Poland: {
-    country: "Poland",
-    officialLanguages: ["Polish"],
-    translationLikely: true,
-    translationNote:
-      "Polish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Romania: {
-    country: "Romania",
-    officialLanguages: ["Romanian"],
-    translationLikely: true,
-    translationNote:
-      "Romanian translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Hungary: {
-    country: "Hungary",
-    officialLanguages: ["Hungarian"],
-    translationLikely: true,
-    translationNote:
-      "Hungarian translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  "Czech Republic": {
-    country: "Czech Republic",
-    officialLanguages: ["Czech"],
-    translationLikely: true,
-    translationNote:
-      "Czech translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Sweden: {
-    country: "Sweden",
-    officialLanguages: ["Swedish"],
-    translationLikely: true,
-    translationNote:
-      "Swedish translation may be required. Some Swedish authorities accept English. Receiving authority requirements are confirmed before international release.",
-  },
-  Norway: {
-    country: "Norway",
-    officialLanguages: ["Norwegian"],
-    translationLikely: true,
-    translationNote:
-      "Norwegian translation may be required. Receiving authority requirements are confirmed before international release.",
-  },
-  Denmark: {
-    country: "Denmark",
-    officialLanguages: ["Danish"],
-    translationLikely: true,
-    translationNote:
-      "Danish translation may be required. Receiving authority requirements are confirmed before international release.",
-  },
-  Finland: {
-    country: "Finland",
-    officialLanguages: ["Finnish", "Swedish"],
-    translationLikely: true,
-    translationNote:
-      "Finnish or Swedish translation may be required. Receiving authority requirements are confirmed before international release.",
-  },
-  Japan: {
-    country: "Japan",
-    officialLanguages: ["Japanese"],
-    translationLikely: true,
-    translationNote:
-      "Japanese translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  China: {
-    country: "China",
-    officialLanguages: ["Mandarin Chinese"],
-    translationLikely: true,
-    translationNote:
-      "Simplified Chinese translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  "Hong Kong": {
-    country: "Hong Kong",
-    officialLanguages: ["Chinese", "English"],
-    translationLikely: false,
-    translationNote:
-      "English documents are often accepted in Hong Kong. Translation requirements are confirmed before international release.",
-  },
-  "South Korea": {
-    country: "South Korea",
-    officialLanguages: ["Korean"],
-    translationLikely: true,
-    translationNote:
-      "Korean translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  India: {
-    country: "India",
-    officialLanguages: ["Hindi", "English"],
-    translationLikely: false,
-    translationNote:
-      "English is an official language of India. Translation requirements vary by state and authority. Confirmed before international release.",
-  },
-  "United Arab Emirates": {
-    country: "United Arab Emirates",
-    officialLanguages: ["Arabic"],
-    translationLikely: true,
-    translationNote:
-      "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  "Saudi Arabia": {
-    country: "Saudi Arabia",
-    officialLanguages: ["Arabic"],
-    translationLikely: true,
-    translationNote:
-      "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Qatar: {
-    country: "Qatar",
-    officialLanguages: ["Arabic"],
-    translationLikely: true,
-    translationNote:
-      "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Israel: {
-    country: "Israel",
-    officialLanguages: ["Hebrew", "Arabic"],
-    translationLikely: true,
-    translationNote:
-      "Hebrew translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  Turkey: {
-    country: "Turkey",
-    officialLanguages: ["Turkish"],
-    translationLikely: true,
-    translationNote:
-      "Turkish translation is typically required. Receiving authority requirements are confirmed before international release.",
-  },
-  "United Kingdom": {
-    country: "United Kingdom",
+
+  // ─── AMERICAS ────────────────────────────────────────────────────────────────
+
+  "United States": {
+    country: "United States",
+    isoAlpha2: "US",
     officialLanguages: ["English"],
+    counselTerm: "Attorney",
     translationLikely: false,
-    translationNote:
-      "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
-  },
-  Ireland: {
-    country: "Ireland",
-    officialLanguages: ["English", "Irish"],
-    translationLikely: false,
-    translationNote:
-      "English documents are generally accepted without translation. Receiving authority requirements are confirmed before international release.",
-  },
-  Australia: {
-    country: "Australia",
-    officialLanguages: ["English"],
-    translationLikely: false,
-    translationNote:
-      "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
-  },
-  "New Zealand": {
-    country: "New Zealand",
-    officialLanguages: ["English", "Māori"],
-    translationLikely: false,
-    translationNote:
-      "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
-  },
-  Singapore: {
-    country: "Singapore",
-    officialLanguages: ["English", "Mandarin", "Malay", "Tamil"],
-    translationLikely: false,
-    translationNote:
-      "English documents are generally accepted in Singapore. Receiving authority requirements are confirmed before international release.",
+    translationNote: "Domestic matter — no international translation or apostille required.",
+    hagueJoined: 1981,
   },
   Canada: {
     country: "Canada",
+    isoAlpha2: "CA",
     officialLanguages: ["English", "French"],
+    counselTerm: "Lawyer / Avocat",
     translationLikely: false,
-    translationNote:
-      "English and French documents are accepted depending on the province. Receiving authority requirements are confirmed before international release.",
+    translationNote: "English and French documents are accepted depending on the province. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1965,
   },
-  "South Africa": {
-    country: "South Africa",
-    officialLanguages: ["English", "Afrikaans", "Zulu", "Xhosa"],
+  Mexico: {
+    country: "Mexico",
+    isoAlpha2: "MX",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Mexico is a Hague Convention member. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Argentina: {
+    country: "Argentina",
+    isoAlpha2: "AR",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1987,
+  },
+  Brazil: {
+    country: "Brazil",
+    isoAlpha2: "BR",
+    officialLanguages: ["Portuguese"],
+    counselTerm: "Advogado",
+    translationLikely: true,
+    translationNote: "Portuguese (Brazilian) translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2016,
+  },
+  Chile: {
+    country: "Chile",
+    isoAlpha2: "CL",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1975,
+  },
+  Colombia: {
+    country: "Colombia",
+    isoAlpha2: "CO",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1997,
+  },
+  Peru: {
+    country: "Peru",
+    isoAlpha2: "PE",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2010,
+  },
+  Venezuela: {
+    country: "Venezuela",
+    isoAlpha2: "VE",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1999,
+  },
+  Ecuador: {
+    country: "Ecuador",
+    isoAlpha2: "EC",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2005,
+  },
+  Uruguay: {
+    country: "Uruguay",
+    isoAlpha2: "UY",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2012,
+  },
+  Paraguay: {
+    country: "Paraguay",
+    isoAlpha2: "PY",
+    officialLanguages: ["Spanish", "Guaraní"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2013,
+  },
+  Bolivia: {
+    country: "Bolivia",
+    isoAlpha2: "BO",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2020,
+  },
+  Panama: {
+    country: "Panama",
+    isoAlpha2: "PA",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1991,
+  },
+  "Costa Rica": {
+    country: "Costa Rica",
+    isoAlpha2: "CR",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2011,
+  },
+  Honduras: {
+    country: "Honduras",
+    isoAlpha2: "HN",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2004,
+  },
+  "El Salvador": {
+    country: "El Salvador",
+    isoAlpha2: "SV",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Guatemala: {
+    country: "Guatemala",
+    isoAlpha2: "GT",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2018,
+  },
+  Nicaragua: {
+    country: "Nicaragua",
+    isoAlpha2: "NI",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2013,
+  },
+  "Dominican Republic": {
+    country: "Dominican Republic",
+    isoAlpha2: "DO",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2009,
+  },
+  Suriname: {
+    country: "Suriname",
+    isoAlpha2: "SR",
+    officialLanguages: ["Dutch"],
+    counselTerm: "Advocaat",
+    translationLikely: true,
+    translationNote: "Dutch translation may be required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1981,
+  },
+  Guyana: {
+    country: "Guyana",
+    isoAlpha2: "GY",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
     translationLikely: false,
-    translationNote:
-      "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1968,
+  },
+  "Trinidad and Tobago": {
+    country: "Trinidad and Tobago",
+    isoAlpha2: "TT",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1966,
+  },
+  Barbados: {
+    country: "Barbados",
+    isoAlpha2: "BB",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Bahamas: {
+    country: "Bahamas",
+    isoAlpha2: "BS",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1976,
+  },
+  Jamaica: {
+    country: "Jamaica",
+    isoAlpha2: "JM",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2024,
+  },
+  Belize: {
+    country: "Belize",
+    isoAlpha2: "BZ",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1993,
+  },
+  "Antigua and Barbuda": {
+    country: "Antigua and Barbuda",
+    isoAlpha2: "AG",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1981,
+  },
+  "Saint Kitts and Nevis": {
+    country: "Saint Kitts and Nevis",
+    isoAlpha2: "KN",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1994,
+  },
+  "Saint Lucia": {
+    country: "Saint Lucia",
+    isoAlpha2: "LC",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1986,
+  },
+  "Saint Vincent and the Grenadines": {
+    country: "Saint Vincent and the Grenadines",
+    isoAlpha2: "VC",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2002,
+  },
+  Grenada: {
+    country: "Grenada",
+    isoAlpha2: "GD",
+    officialLanguages: ["English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1981,
+  },
+
+  // ─── EUROPE ──────────────────────────────────────────────────────────────────
+
+  Italy: {
+    country: "Italy",
+    isoAlpha2: "IT",
+    officialLanguages: ["Italian"],
+    counselTerm: "Avvocato",
+    translationLikely: true,
+    translationNote: "Italian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1978,
+  },
+  Spain: {
+    country: "Spain",
+    isoAlpha2: "ES",
+    officialLanguages: ["Spanish"],
+    counselTerm: "Abogado",
+    translationLikely: true,
+    translationNote: "Spanish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1978,
+  },
+  France: {
+    country: "France",
+    isoAlpha2: "FR",
+    officialLanguages: ["French"],
+    counselTerm: "Avocat",
+    translationLikely: true,
+    translationNote: "French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1965,
+  },
+  Germany: {
+    country: "Germany",
+    isoAlpha2: "DE",
+    officialLanguages: ["German"],
+    counselTerm: "Rechtsanwalt",
+    translationLikely: true,
+    translationNote: "German translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1965,
+  },
+  Austria: {
+    country: "Austria",
+    isoAlpha2: "AT",
+    officialLanguages: ["German"],
+    counselTerm: "Rechtsanwalt",
+    translationLikely: true,
+    translationNote: "German translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1968,
+  },
+  Switzerland: {
+    country: "Switzerland",
+    isoAlpha2: "CH",
+    officialLanguages: ["German", "French", "Italian", "Romansh"],
+    counselTerm: "Anwalt / Avocat / Avvocato",
+    translationLikely: true,
+    translationNote: "Translation requirements vary by canton (German, French, or Italian). Target jurisdiction confirmed before international release.",
+    hagueJoined: 1972,
+  },
+  Portugal: {
+    country: "Portugal",
+    isoAlpha2: "PT",
+    officialLanguages: ["Portuguese"],
+    counselTerm: "Advogado",
+    translationLikely: true,
+    translationNote: "Portuguese translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1968,
+  },
+  Greece: {
+    country: "Greece",
+    isoAlpha2: "GR",
+    officialLanguages: ["Greek"],
+    counselTerm: "Δικηγόρος",
+    counselScript: "Δικηγόρος",
+    translationLikely: true,
+    translationNote: "Greek translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1985,
+  },
+  Netherlands: {
+    country: "Netherlands",
+    isoAlpha2: "NL",
+    officialLanguages: ["Dutch"],
+    counselTerm: "Advocaat",
+    translationLikely: true,
+    translationNote: "Dutch translation is often required, though some authorities accept English. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1965,
+  },
+  Belgium: {
+    country: "Belgium",
+    isoAlpha2: "BE",
+    officialLanguages: ["French", "Dutch", "German"],
+    counselTerm: "Avocat / Advocaat / Rechtsanwalt",
+    translationLikely: true,
+    translationNote: "Translation requirements depend on the receiving region (French, Dutch, or German). Target jurisdiction confirmed before international release.",
+    hagueJoined: 1975,
+  },
+  Luxembourg: {
+    country: "Luxembourg",
+    isoAlpha2: "LU",
+    officialLanguages: ["French", "German", "Luxembourgish"],
+    counselTerm: "Avocat / Affekot",
+    translationLikely: true,
+    translationNote: "French or German translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1979,
+  },
+  Poland: {
+    country: "Poland",
+    isoAlpha2: "PL",
+    officialLanguages: ["Polish"],
+    counselTerm: "Adwokat",
+    translationLikely: true,
+    translationNote: "Polish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2005,
+  },
+  Romania: {
+    country: "Romania",
+    isoAlpha2: "RO",
+    officialLanguages: ["Romanian"],
+    counselTerm: "Avocat",
+    translationLikely: true,
+    translationNote: "Romanian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2017,
+  },
+  Hungary: {
+    country: "Hungary",
+    isoAlpha2: "HU",
+    officialLanguages: ["Hungarian"],
+    counselTerm: "Ügyvéd",
+    translationLikely: true,
+    translationNote: "Hungarian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2008,
+  },
+  "Czech Republic": {
+    country: "Czech Republic",
+    isoAlpha2: "CZ",
+    officialLanguages: ["Czech"],
+    counselTerm: "Advokát",
+    translationLikely: true,
+    translationNote: "Czech translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1998,
+  },
+  Slovakia: {
+    country: "Slovakia",
+    isoAlpha2: "SK",
+    officialLanguages: ["Slovak"],
+    counselTerm: "Advokát",
+    translationLikely: true,
+    translationNote: "Slovak translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2002,
+  },
+  Bulgaria: {
+    country: "Bulgaria",
+    isoAlpha2: "BG",
+    officialLanguages: ["Bulgarian"],
+    counselTerm: "Адвокат",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Bulgarian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
+  },
+  Croatia: {
+    country: "Croatia",
+    isoAlpha2: "HR",
+    officialLanguages: ["Croatian"],
+    counselTerm: "Odvjetnik",
+    translationLikely: true,
+    translationNote: "Croatian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1991,
+  },
+  Serbia: {
+    country: "Serbia",
+    isoAlpha2: "RS",
+    officialLanguages: ["Serbian"],
+    counselTerm: "Advokat",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Serbian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
+  },
+  Slovenia: {
+    country: "Slovenia",
+    isoAlpha2: "SI",
+    officialLanguages: ["Slovenian"],
+    counselTerm: "Odvetnik",
+    translationLikely: true,
+    translationNote: "Slovenian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1992,
+  },
+  "Bosnia and Herzegovina": {
+    country: "Bosnia and Herzegovina",
+    isoAlpha2: "BA",
+    officialLanguages: ["Bosnian", "Croatian", "Serbian"],
+    counselTerm: "Advokat",
+    translationLikely: true,
+    translationNote: "Bosnian/Serbian/Croatian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1993,
+  },
+  Montenegro: {
+    country: "Montenegro",
+    isoAlpha2: "ME",
+    officialLanguages: ["Montenegrin"],
+    counselTerm: "Advokat",
+    translationLikely: true,
+    translationNote: "Montenegrin/Serbian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2006,
+  },
+  "North Macedonia": {
+    country: "North Macedonia",
+    isoAlpha2: "MK",
+    officialLanguages: ["Macedonian"],
+    counselTerm: "Адвокат",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Macedonian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1992,
+  },
+  Albania: {
+    country: "Albania",
+    isoAlpha2: "AL",
+    officialLanguages: ["Albanian"],
+    counselTerm: "Avokat",
+    translationLikely: true,
+    translationNote: "Albanian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2004,
+  },
+  "United Kingdom": {
+    country: "United Kingdom",
+    isoAlpha2: "GB",
+    officialLanguages: ["English"],
+    counselTerm: "Solicitor / Barrister",
+    translationLikely: false,
+    translationNote: "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1965,
+  },
+  Ireland: {
+    country: "Ireland",
+    isoAlpha2: "IE",
+    officialLanguages: ["English", "Irish"],
+    counselTerm: "Solicitor / Aturnae",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted without translation. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1999,
+  },
+  Sweden: {
+    country: "Sweden",
+    isoAlpha2: "SE",
+    officialLanguages: ["Swedish"],
+    counselTerm: "Advokat",
+    translationLikely: true,
+    translationNote: "Swedish translation may be required. Some Swedish authorities accept English. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1999,
+  },
+  Norway: {
+    country: "Norway",
+    isoAlpha2: "NO",
+    officialLanguages: ["Norwegian"],
+    counselTerm: "Advokat",
+    translationLikely: true,
+    translationNote: "Norwegian translation may be required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1983,
+  },
+  Denmark: {
+    country: "Denmark",
+    isoAlpha2: "DK",
+    officialLanguages: ["Danish"],
+    counselTerm: "Advokat",
+    translationLikely: true,
+    translationNote: "Danish translation may be required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1967,
+  },
+  Finland: {
+    country: "Finland",
+    isoAlpha2: "FI",
+    officialLanguages: ["Finnish", "Swedish"],
+    counselTerm: "Asianajaja / Advokat",
+    translationLikely: true,
+    translationNote: "Finnish or Swedish translation may be required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1985,
+  },
+  Iceland: {
+    country: "Iceland",
+    isoAlpha2: "IS",
+    officialLanguages: ["Icelandic"],
+    counselTerm: "Lögmaður",
+    translationLikely: true,
+    translationNote: "Icelandic translation may be required. Some authorities accept English. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1997,
+  },
+  Lithuania: {
+    country: "Lithuania",
+    isoAlpha2: "LT",
+    officialLanguages: ["Lithuanian"],
+    counselTerm: "Advokatas",
+    translationLikely: true,
+    translationNote: "Lithuanian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2000,
+  },
+  Latvia: {
+    country: "Latvia",
+    isoAlpha2: "LV",
+    officialLanguages: ["Latvian"],
+    counselTerm: "Advokāts",
+    translationLikely: true,
+    translationNote: "Latvian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1996,
+  },
+  Estonia: {
+    country: "Estonia",
+    isoAlpha2: "EE",
+    officialLanguages: ["Estonian"],
+    counselTerm: "Advokaat",
+    translationLikely: true,
+    translationNote: "Estonian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
+  },
+  Ukraine: {
+    country: "Ukraine",
+    isoAlpha2: "UA",
+    officialLanguages: ["Ukrainian"],
+    counselTerm: "Адвокат",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Ukrainian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2003,
+  },
+  Moldova: {
+    country: "Moldova",
+    isoAlpha2: "MD",
+    officialLanguages: ["Romanian", "Russian"],
+    counselTerm: "Avocat",
+    translationLikely: true,
+    translationNote: "Romanian or Russian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2007,
+  },
+  Belarus: {
+    country: "Belarus",
+    isoAlpha2: "BY",
+    officialLanguages: ["Belarusian", "Russian"],
+    counselTerm: "Адвакат",
+    counselScript: "Адвакат",
+    translationLikely: true,
+    translationNote: "Belarusian or Russian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1992,
+  },
+  Malta: {
+    country: "Malta",
+    isoAlpha2: "MT",
+    officialLanguages: ["Maltese", "English"],
+    counselTerm: "Avukat",
+    translationLikely: false,
+    translationNote: "English is an official language of Malta and is widely accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1999,
+  },
+  Cyprus: {
+    country: "Cyprus",
+    isoAlpha2: "CY",
+    officialLanguages: ["Greek", "Turkish"],
+    counselTerm: "Δικηγόρος",
+    counselScript: "Δικηγόρος",
+    translationLikely: true,
+    translationNote: "Greek translation is typically required for the Republic of Cyprus. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1973,
+  },
+  Andorra: {
+    country: "Andorra",
+    isoAlpha2: "AD",
+    officialLanguages: ["Catalan"],
+    counselTerm: "Advocat",
+    translationLikely: true,
+    translationNote: "Catalan translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1996,
+  },
+  Monaco: {
+    country: "Monaco",
+    isoAlpha2: "MC",
+    officialLanguages: ["French"],
+    counselTerm: "Avocat",
+    translationLikely: true,
+    translationNote: "French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2002,
+  },
+  "San Marino": {
+    country: "San Marino",
+    isoAlpha2: "SM",
+    officialLanguages: ["Italian"],
+    counselTerm: "Avvocato",
+    translationLikely: true,
+    translationNote: "Italian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1994,
+  },
+  Liechtenstein: {
+    country: "Liechtenstein",
+    isoAlpha2: "LI",
+    officialLanguages: ["German"],
+    counselTerm: "Rechtsanwalt",
+    translationLikely: true,
+    translationNote: "German translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1972,
+  },
+  Georgia: {
+    country: "Georgia",
+    isoAlpha2: "GE",
+    officialLanguages: ["Georgian"],
+    counselTerm: "ადვოკატი",
+    counselScript: "ადვოკატი",
+    translationLikely: true,
+    translationNote: "Georgian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2007,
+  },
+  Armenia: {
+    country: "Armenia",
+    isoAlpha2: "AM",
+    officialLanguages: ["Armenian"],
+    counselTerm: "Փաստաբան",
+    counselScript: "Փաստաբան",
+    translationLikely: true,
+    translationNote: "Armenian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1994,
+  },
+  Azerbaijan: {
+    country: "Azerbaijan",
+    isoAlpha2: "AZ",
+    officialLanguages: ["Azerbaijani"],
+    counselTerm: "Vəkil",
+    translationLikely: true,
+    translationNote: "Azerbaijani translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2004,
+  },
+
+  // ─── MIDDLE EAST & NORTH AFRICA ───────────────────────────────────────────
+
+  Israel: {
+    country: "Israel",
+    isoAlpha2: "IL",
+    officialLanguages: ["Hebrew", "Arabic"],
+    counselTerm: "עורך דין",
+    counselScript: "עורך דין",
+    translationLikely: true,
+    translationNote: "Hebrew translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1978,
+  },
+  Turkey: {
+    country: "Turkey",
+    isoAlpha2: "TR",
+    officialLanguages: ["Turkish"],
+    counselTerm: "Avukat",
+    translationLikely: true,
+    translationNote: "Turkish translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1985,
+  },
+  "United Arab Emirates": {
+    country: "United Arab Emirates",
+    isoAlpha2: "AE",
+    officialLanguages: ["Arabic"],
+    counselTerm: "محامي",
+    counselScript: "محامي",
+    translationLikely: true,
+    translationNote: "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2009,
+  },
+  Bahrain: {
+    country: "Bahrain",
+    isoAlpha2: "BH",
+    officialLanguages: ["Arabic"],
+    counselTerm: "محامي",
+    counselScript: "محامي",
+    translationLikely: true,
+    translationNote: "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2013,
+  },
+  Oman: {
+    country: "Oman",
+    isoAlpha2: "OM",
+    officialLanguages: ["Arabic"],
+    counselTerm: "محامي",
+    counselScript: "محامي",
+    translationLikely: true,
+    translationNote: "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2012,
+  },
+  Qatar: {
+    country: "Qatar",
+    isoAlpha2: "QA",
+    officialLanguages: ["Arabic"],
+    counselTerm: "محامي",
+    counselScript: "محامي",
+    translationLikely: true,
+    translationNote: "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2012,
+  },
+  Kuwait: {
+    country: "Kuwait",
+    isoAlpha2: "KW",
+    officialLanguages: ["Arabic"],
+    counselTerm: "محامي",
+    counselScript: "محامي",
+    translationLikely: true,
+    translationNote: "Arabic translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
   },
   Morocco: {
     country: "Morocco",
+    isoAlpha2: "MA",
     officialLanguages: ["Arabic", "Berber", "French"],
+    counselTerm: "محامي / Avocat",
+    counselScript: "محامي",
     translationLikely: true,
-    translationNote:
-      "Arabic or French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    translationNote: "Arabic or French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1999,
   },
   Tunisia: {
     country: "Tunisia",
+    isoAlpha2: "TN",
     officialLanguages: ["Arabic", "French"],
+    counselTerm: "محامي / Avocat",
+    counselScript: "محامي",
     translationLikely: true,
-    translationNote:
-      "Arabic or French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    translationNote: "Arabic or French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2002,
+  },
+  "Cape Verde": {
+    country: "Cape Verde",
+    isoAlpha2: "CV",
+    officialLanguages: ["Portuguese"],
+    counselTerm: "Advogado",
+    translationLikely: true,
+    translationNote: "Portuguese translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2009,
+  },
+
+  // ─── ASIA-PACIFIC ────────────────────────────────────────────────────────────
+
+  Japan: {
+    country: "Japan",
+    isoAlpha2: "JP",
+    officialLanguages: ["Japanese"],
+    counselTerm: "弁護士",
+    counselScript: "弁護士",
+    translationLikely: true,
+    translationNote: "Japanese translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1970,
+  },
+  "South Korea": {
+    country: "South Korea",
+    isoAlpha2: "KR",
+    officialLanguages: ["Korean"],
+    counselTerm: "변호사",
+    counselScript: "변호사",
+    translationLikely: true,
+    translationNote: "Korean translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2007,
+  },
+  "Hong Kong": {
+    country: "Hong Kong",
+    isoAlpha2: "HK",
+    officialLanguages: ["Chinese", "English"],
+    counselTerm: "律師 / Solicitor",
+    counselScript: "律師",
+    translationLikely: false,
+    translationNote: "English documents are often accepted in Hong Kong. Translation requirements are confirmed before international release.",
+    hagueJoined: 1965,
+  },
+  Macau: {
+    country: "Macau",
+    isoAlpha2: "MO",
+    officialLanguages: ["Portuguese", "Chinese"],
+    counselTerm: "Advogado / 律師",
+    counselScript: "律師",
+    translationLikely: true,
+    translationNote: "Portuguese or Chinese translation may be required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1983,
+  },
+  India: {
+    country: "India",
+    isoAlpha2: "IN",
+    officialLanguages: ["Hindi", "English"],
+    counselTerm: "Advocate / वकील",
+    counselScript: "वकील",
+    translationLikely: false,
+    translationNote: "English is an official language of India. Translation requirements vary by state and authority. Confirmed before international release.",
+    hagueJoined: 2005,
+  },
+  Singapore: {
+    country: "Singapore",
+    isoAlpha2: "SG",
+    officialLanguages: ["English", "Mandarin", "Malay", "Tamil"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted in Singapore. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2021,
+  },
+  Australia: {
+    country: "Australia",
+    isoAlpha2: "AU",
+    officialLanguages: ["English"],
+    counselTerm: "Solicitor / Barrister",
+    translationLikely: false,
+    translationNote: "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  "New Zealand": {
+    country: "New Zealand",
+    isoAlpha2: "NZ",
+    officialLanguages: ["English", "Māori"],
+    counselTerm: "Lawyer / Rōia",
+    translationLikely: false,
+    translationNote: "English documents are accepted without translation. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2002,
   },
   Philippines: {
     country: "Philippines",
+    isoAlpha2: "PH",
     officialLanguages: ["Filipino", "English"],
+    counselTerm: "Abogado",
     translationLikely: false,
-    translationNote:
-      "English documents are generally accepted in the Philippines. Receiving authority requirements are confirmed before international release.",
+    translationNote: "English documents are generally accepted in the Philippines. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2019,
   },
   Indonesia: {
     country: "Indonesia",
+    isoAlpha2: "ID",
     officialLanguages: ["Indonesian"],
+    counselTerm: "Advokat",
     translationLikely: true,
-    translationNote:
-      "Indonesian (Bahasa) translation is typically required. Receiving authority requirements are confirmed before international release.",
+    translationNote: "Indonesian (Bahasa) translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2022,
   },
-  "United States": {
-    country: "United States",
-    officialLanguages: ["English"],
+  Mongolia: {
+    country: "Mongolia",
+    isoAlpha2: "MN",
+    officialLanguages: ["Mongolian"],
+    counselTerm: "Өмгөөлөгч",
+    counselScript: "Өмгөөлөгч",
+    translationLikely: true,
+    translationNote: "Mongolian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2011,
+  },
+  Kazakhstan: {
+    country: "Kazakhstan",
+    isoAlpha2: "KZ",
+    officialLanguages: ["Kazakh", "Russian"],
+    counselTerm: "Адвокат",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Kazakh or Russian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
+  },
+  Kyrgyzstan: {
+    country: "Kyrgyzstan",
+    isoAlpha2: "KG",
+    officialLanguages: ["Kyrgyz", "Russian"],
+    counselTerm: "Адвокат",
+    counselScript: "Адвокат",
+    translationLikely: true,
+    translationNote: "Kyrgyz or Russian translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2014,
+  },
+  Brunei: {
+    country: "Brunei",
+    isoAlpha2: "BN",
+    officialLanguages: ["Malay", "English"],
+    counselTerm: "Peguam / Lawyer",
     translationLikely: false,
-    translationNote:
-      "Domestic matter — no international translation or apostille required.",
+    translationNote: "English documents are generally accepted in Brunei. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1987,
+  },
+  Fiji: {
+    country: "Fiji",
+    isoAlpha2: "FJ",
+    officialLanguages: ["English", "Fijian", "Hindi"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1971,
+  },
+  "Marshall Islands": {
+    country: "Marshall Islands",
+    isoAlpha2: "MH",
+    officialLanguages: ["Marshallese", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1991,
+  },
+  Palau: {
+    country: "Palau",
+    isoAlpha2: "PW",
+    officialLanguages: ["Palauan", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2019,
+  },
+  Samoa: {
+    country: "Samoa",
+    isoAlpha2: "WS",
+    officialLanguages: ["Samoan", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1988,
+  },
+  Tonga: {
+    country: "Tonga",
+    isoAlpha2: "TO",
+    officialLanguages: ["Tongan", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2003,
+  },
+  Tuvalu: {
+    country: "Tuvalu",
+    isoAlpha2: "TV",
+    officialLanguages: ["Tuvaluan", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2019,
+  },
+  Vanuatu: {
+    country: "Vanuatu",
+    isoAlpha2: "VU",
+    officialLanguages: ["Bislama", "English", "French"],
+    counselTerm: "Lawyer / Avocat",
+    translationLikely: false,
+    translationNote: "English or French documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2012,
+  },
+  "Cook Islands": {
+    country: "Cook Islands",
+    isoAlpha2: "CK",
+    officialLanguages: ["English", "Cook Islands Māori"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1971,
+  },
+  Niue: {
+    country: "Niue",
+    isoAlpha2: "NU",
+    officialLanguages: ["Niuean", "English"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1971,
+  },
+
+  // ─── AFRICA ──────────────────────────────────────────────────────────────────
+
+  "South Africa": {
+    country: "South Africa",
+    isoAlpha2: "ZA",
+    officialLanguages: ["English", "Afrikaans", "Zulu", "Xhosa"],
+    counselTerm: "Attorney / Prokureur",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Botswana: {
+    country: "Botswana",
+    isoAlpha2: "BW",
+    officialLanguages: ["English", "Tswana"],
+    counselTerm: "Attorney",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1967,
+  },
+  Lesotho: {
+    country: "Lesotho",
+    isoAlpha2: "LS",
+    officialLanguages: ["Sesotho", "English"],
+    counselTerm: "Attorney",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2013,
+  },
+  Eswatini: {
+    country: "Eswatini",
+    isoAlpha2: "SZ",
+    officialLanguages: ["Swati", "English"],
+    counselTerm: "Attorney",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1978,
+  },
+  Namibia: {
+    country: "Namibia",
+    isoAlpha2: "NA",
+    officialLanguages: ["English"],
+    counselTerm: "Legal Practitioner",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2001,
+  },
+  Malawi: {
+    country: "Malawi",
+    isoAlpha2: "MW",
+    officialLanguages: ["English", "Chichewa"],
+    counselTerm: "Lawyer",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1967,
+  },
+  Liberia: {
+    country: "Liberia",
+    isoAlpha2: "LR",
+    officialLanguages: ["English"],
+    counselTerm: "Attorney",
+    translationLikely: false,
+    translationNote: "English documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Mauritius: {
+    country: "Mauritius",
+    isoAlpha2: "MU",
+    officialLanguages: ["English", "French"],
+    counselTerm: "Attorney / Avocat",
+    translationLikely: false,
+    translationNote: "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1995,
+  },
+  Seychelles: {
+    country: "Seychelles",
+    isoAlpha2: "SC",
+    officialLanguages: ["English", "French", "Seychellois Creole"],
+    counselTerm: "Attorney / Avocat",
+    translationLikely: false,
+    translationNote: "English or French documents are accepted. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 1978,
+  },
+  "São Tomé and Príncipe": {
+    country: "São Tomé and Príncipe",
+    isoAlpha2: "ST",
+    officialLanguages: ["Portuguese"],
+    counselTerm: "Advogado",
+    translationLikely: true,
+    translationNote: "Portuguese translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2008,
+  },
+  Burundi: {
+    country: "Burundi",
+    isoAlpha2: "BI",
+    officialLanguages: ["Kirundi", "French", "English"],
+    counselTerm: "Avocat",
+    translationLikely: true,
+    translationNote: "French translation is typically required. Receiving authority requirements are confirmed before international release.",
+    hagueJoined: 2012,
   },
 };
 
+// ─── LOOKUP HELPERS ───────────────────────────────────────────────────────────
+
 /**
  * Returns language routing guidance for a destination country.
- * Returns null for unknown countries; caller should treat as manual review.
+ * Returns null for unknown / non-Hague countries; caller should treat as manual review.
  */
 export function getLanguageRouting(
   country: string,
@@ -400,17 +1177,32 @@ export function getLanguageRouting(
   for (const key of Object.keys(ROUTING_TABLE)) {
     if (key.toLowerCase() === lower) return ROUTING_TABLE[key];
   }
-  // English-language fallback for known English countries
-  if (ENGLISH_LANGUAGE_COUNTRIES.has(normalized)) {
-    return {
-      country: normalized,
-      officialLanguages: ["English"],
-      translationLikely: false,
-      translationNote:
-        "English documents are generally accepted. Receiving authority requirements are confirmed before international release.",
-    };
-  }
   return null;
+}
+
+/**
+ * Returns the local-language term for "attorney / counsel / lawyer"
+ * for the given Hague destination country.
+ * Falls back to "Counsel" if country is not indexed.
+ */
+export function getCounselTerm(country: string): string {
+  return getLanguageRouting(country)?.counselTerm ?? "Counsel";
+}
+
+/**
+ * Returns all indexed Hague member countries sorted alphabetically.
+ */
+export function getAllHagueCountries(): CountryLanguageRouting[] {
+  return Object.values(ROUTING_TABLE).sort((a, b) =>
+    a.country.localeCompare(b.country),
+  );
+}
+
+/**
+ * Returns only countries where translation is likely required.
+ */
+export function getTranslationRequiredCountries(): CountryLanguageRouting[] {
+  return getAllHagueCountries().filter((c) => c.translationLikely);
 }
 
 export { ROUTING_TABLE };
