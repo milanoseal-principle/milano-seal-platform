@@ -66,6 +66,18 @@ function resolveStageIndex(status: string | null | undefined): number {
   return idx === -1 ? 0 : idx;
 }
 
+// ─── Execution lane label ─────────────────────────────────────────────────────
+
+function resolveLaneLabel(lane: string | null | undefined): string {
+  if (!lane) return "To Be Confirmed";
+  switch (lane.toLowerCase()) {
+    case "signature": return "Signature Lane";
+    case "priority":  return "Priority Lane";
+    case "executive": return "Executive Lane";
+    default:          return lane.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
+
 // ─── Country/document slug normalizer ─────────────────────────────────────────
 
 function toSlug(str: string | null | undefined): string {
@@ -405,6 +417,37 @@ export function MatterJourneyCard({ deal }: Props) {
             }}
           >
             {deal.document_type ?? "Document execution"} · {deal.destination_country ?? "—"}
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "4px 14px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                fontFamily: "monospace",
+                letterSpacing: "0.04em",
+                color: "rgba(198,165,90,0.65)",
+              }}
+            >
+              {resolveLaneLabel(deal.assigned_lane)}
+            </span>
+            {deal.display_id || deal.id ? (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.04em",
+                  color: "rgba(255,255,255,0.22)",
+                }}
+              >
+                # {(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}
+              </span>
+            ) : null}
           </div>
         </div>
 

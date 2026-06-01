@@ -682,6 +682,20 @@ export default function MyMatterPage() {
                 <span className="pp-kv-v">{deal.document_type ?? "—"}</span>
               </div>
               <div className="pp-kv">
+                <span className="pp-kv-k">Execution Lane</span>
+                <span className="pp-kv-v">
+                  {deal.assigned_lane
+                    ? deal.assigned_lane === "signature"
+                      ? "Signature Lane"
+                      : deal.assigned_lane === "priority"
+                      ? "Priority Lane"
+                      : deal.assigned_lane === "executive"
+                      ? "Executive Lane"
+                      : deal.assigned_lane.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "To Be Confirmed"}
+                </span>
+              </div>
+              <div className="pp-kv">
                 <span className="pp-kv-k">Destination</span>
                 <span className="pp-kv-v">
                   {deal.destination_country ?? "—"}
