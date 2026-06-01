@@ -12,6 +12,10 @@ interface FileRow {
   uploaded_at: string;
   verification_status: "released" | "processing" | "pending";
   signed_url: string | null;
+  // optional vault intelligence fields
+  released_by?: string | null;
+  released_at?: string | null;
+  version?: number | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -24,6 +28,34 @@ const STATUS_COLOR: Record<string, string> = {
   released: "#4a9e6b",
   processing: "#C6A55A",
   pending: "#5A5A5A",
+};
+
+// Compute a release status from deal state when the API doesn't supply one
+type ReleaseStatus = "Released" | "Pending Release" | "Held";
+
+function computeReleaseStatus(
+  file: FileRow,
+  matterStatus: string | null | undefined,
+  isPaidAndReleased: boolean,
+): ReleaseStatus {
+  if (file.verification_status === "released") return "Released";
+  if (isPaidAndReleased) return "Released";
+
+  const COURIER_READY_AND_BEYOND = [
+    "courier_ready",
+    "shipped",
+    "delivered",
+    "completed",
+    "closed",
+  ];
+  if (COURIER_READY_AND_BEYOND.includes(matterStatus ?? "")) return "Pending Release";
+  return "Held";
+}
+
+const RELEASE_STATUS_COLOR: Record<ReleaseStatus, string> = {
+  Released: "#4a9e6b",
+  "Pending Release": "#C6A55A",
+  Held: "#5A5A5A",
 };
 
 export default function ClientDocumentsPage() {
@@ -282,42 +314,79 @@ export default function ClientDocumentsPage() {
             No documents yet. Files you upload above or that we complete (notarized PDF, apostille certificate) will appear here once released by your operator.
           </div>
         ) : (
-          files.map((f, fileIndex) => (
-            <motion.div
-              key={f.document_id}
-              className="cd-row"
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.28, delay: fileIndex * 0.05, ease: "easeOut" }}
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="w-4 h-4 flex-shrink-0" style={{ color: STATUS_COLOR[f.verification_status] ?? "#5A5A5A" }} />
-                <div>
-                  <div className="cd-name">{f.document_label}</div>
-                  <span className="text-[11px]" style={{ color: STATUS_COLOR[f.verification_status] ?? "#5A5A5A" }}>
-                    {STATUS_LABEL[f.verification_status] ?? f.verification_status}
-                  </span>
+          files.map((f, fileIndex) => {
+            const releaseStatus = computeReleaseStatus(
+              f,
+              deal.matter_status,
+              deal.is_paid_and_released,
+            );
+            const releaseColor = RELEASE_STATUS_COLOR[releaseStatus];
+            const releasedBy =
+              f.released_by ?? (releaseStatus === "Released" ? "Milano Seal Team" : null);
+            const releaseDate =
+              f.released_at ?? (releaseStatus === "Released" ? f.uploaded_at : null);
+            return (
+              <motion.div
+                key={f.document_id}
+                className="cd-row"
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.28, delay: fileIndex * 0.05, ease: "easeOut" }}
+              >
+                <div className="flex items-center gap-3" style={{ flex: 1, minWidth: 0 }}>
+                  <FileText className="w-4 h-4 flex-shrink-0" style={{ color: releaseColor }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="cd-name">{f.document_label}</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", marginTop: 2 }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontFamily: "monospace",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase" as const,
+                          color: releaseColor,
+                          background: `${releaseColor}14`,
+                          border: `1px solid ${releaseColor}30`,
+                          borderRadius: 99,
+                          padding: "1px 7px",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {releaseStatus}
+                      </span>
+                      {releasedBy && (
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                          {releasedBy}
+                        </span>
+                      )}
+                      {releaseDate && (
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", fontFamily: "monospace" }}>
+                          {new Date(releaseDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="cd-meta cd-meta-hide">
-                {new Date(f.uploaded_at).toLocaleDateString()}
-              </div>
-              <div>
-                {f.signed_url ? (
-                  <a
-                    href={f.signed_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cd-link"
-                  >
-                    View
-                  </a>
-                ) : (
-                  <span className="cd-link-na">—</span>
-                )}
-              </div>
-            </motion.div>
-          ))
+                <div className="cd-meta cd-meta-hide">
+                  {new Date(f.uploaded_at).toLocaleDateString()}
+                </div>
+                <div>
+                  {f.signed_url ? (
+                    <a
+                      href={f.signed_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cd-link"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="cd-link-na">—</span>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })
         )}
       </div>
 

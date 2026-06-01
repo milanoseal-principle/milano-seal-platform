@@ -13,8 +13,10 @@ import { RoutingIntelligenceSection } from "@/components/landing/routing-intelli
 import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { Footer } from "@/components/landing/footer";
+import { PlatformPrinciples } from "@/components/landing/platform-principles";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
+import { ExecutionStatusTicker } from "@/components/landing/ExecutionStatusTicker";
 
 export default function HomePage() {
   return (
@@ -22,6 +24,7 @@ export default function HomePage() {
       <RitualOverlay />
       <Header />
       <IntelligenceRail />
+      <ExecutionStatusTicker />
       <CinematicStage>
         <Hero />
         <TrustStrip />
@@ -44,6 +47,7 @@ export default function HomePage() {
       <DocumentIntelligence />
       <HighTrustClose />
       <PaymentFounder />
+      <PlatformPrinciples />
       <Footer />
     </main>
   );

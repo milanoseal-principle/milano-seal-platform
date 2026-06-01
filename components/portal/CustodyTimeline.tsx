@@ -1,68 +1,142 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import type { PortalClientMatter } from "@/components/portal/portal-context";
 
-// ── Event label map ───────────────────────────────────────────────────────────
+// ── Stage definitions ─────────────────────────────────────────────────────────
 
-const EVENT_LABELS: Record<string, string> = {
-  DOC_RECEIVED: "Document Received",
-  IDENTITY_VERIFIED: "Identity Verified",
-  PAYMENT_CONFIRMED: "Payment Confirmed",
-  DOC_NOTARIZED: "Notarization Completed",
-  DOC_APOSTILLE_SUBMITTED: "Apostille Submitted",
-  DOC_APOSTILLE_RECEIVED: "Apostille Released",
-  DOC_LABEL_CREATED: "Courier Label Created",
-  DOC_SHIPPED: "Released to Courier",
-  DOC_IN_TRANSIT: "In Transit",
-  DOC_OUT_FOR_DELIVERY: "Out for Delivery",
-  DOC_DELIVERED: "Delivered",
-  DOC_RELEASE_CONFIRMED: "Custody Released",
-  RELEASE_GATE_OVERRIDE: "Operator Override",
-  PAYMENT_RECEIVED: "Payment Received",
-  // fallbacks for other events
-  DOC_CREATED: "Matter Opened",
-  DOC_IN_POSSESSION: "Document in Possession",
-  DOC_HANDOFF: "Document Transferred",
-  DOC_SIGNED: "Document Signed",
-};
-
-function humanLabel(event: string): string {
-  return EVENT_LABELS[event] ?? event.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface TimelineEvent {
+interface Stage {
   id: string;
-  deal_id: string;
-  event: string;
-  actor_type: string;
-  notes: string | null;
-  created_at: string;
+  label: string;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+const STAGES: Stage[] = [
+  { id: "intake",    label: "Intake" },
+  { id: "review",   label: "Review" },
+  { id: "payment",  label: "Payment" },
+  { id: "execution",label: "Execution" },
+  { id: "apostille",label: "Apostille" },
+  { id: "transit",  label: "Transit" },
+  { id: "released", label: "Released" },
+];
 
-export function CustodyTimeline() {
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const STATUS_ORDER = [
+  "new",
+  "intake_received",
+  "under_review",
+  "compliance_review",
+  "needs_info",
+  "compliance_blocked",
+  "quoted",
+  "awaiting_payment",
+  "payment_confirmed",
+  "scheduled",
+  "in_execution",
+  "apostille_processing",
+  "courier_ready",
+  "shipped",
+  "delivered",
+  "completed",
+  "closed",
+];
 
-  useEffect(() => {
-    fetch("/api/portal/me/timeline")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to load timeline");
-        return r.json() as Promise<{ events: TimelineEvent[] }>;
-      })
-      .then((data) => {
-        setEvents(data.events ?? []);
-      })
-      .catch(() => {
-        setError("Unable to load custody timeline.");
-      })
-      .finally(() => setLoading(false));
-  }, []);
+function statusRank(status: string | null | undefined): number {
+  if (!status) return 0;
+  const i = STATUS_ORDER.indexOf(status);
+  return i === -1 ? 0 : i;
+}
+
+function resolveStageCompletion(deal: PortalClientMatter): number {
+  // Returns the index of the CURRENT active stage (0-based)
+  const status = deal.matter_status ?? "";
+  const rank = statusRank(status);
+  const paymentPaid =
+    deal.payment_status === "paid" ||
+    deal.payment_status === "confirmed" ||
+    deal.payment_status === "payment_confirmed";
+  const released =
+    deal.is_paid_and_released ||
+    status === "delivered" ||
+    status === "completed" ||
+    status === "closed";
+
+  if (released) return 6;
+  if (status === "shipped") return 5;
+  if (status === "apostille_processing" || status === "courier_ready") return 4;
+  if (status === "in_execution" || status === "scheduled") return 3;
+  if (paymentPaid || status === "payment_confirmed") return 2;
+  if (rank >= statusRank("under_review")) return 1;
+  return 0; // intake
+}
+
+// ── Colors ────────────────────────────────────────────────────────────────────
+
+const GOLD = "#C6A55A";
+const GOLD_MID = "rgba(198,165,90,0.4)";
+const GOLD_FAINT = "rgba(198,165,90,0.1)";
+const DIM = "rgba(255,255,255,0.08)";
+const DIM_LABEL = "rgba(255,255,255,0.18)";
+
+// ── Dot component ─────────────────────────────────────────────────────────────
+
+function Dot({
+  done,
+  active,
+  reduced,
+}: {
+  done: boolean;
+  active: boolean;
+  reduced: boolean | null;
+}) {
+  return (
+    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, flexShrink: 0 }}>
+      {/* Pulse ring for active dot */}
+      {active && !reduced && (
+        <motion.div
+          animate={{ scale: [1, 1.7, 1], opacity: [0.45, 0, 0.45] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            inset: -4,
+            borderRadius: "50%",
+            border: `1.5px solid ${GOLD}`,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      <motion.div
+        animate={
+          active && !reduced
+            ? { boxShadow: [`0 0 0 0 ${GOLD_MID}`, `0 0 8px 3px ${GOLD_MID}`, `0 0 0 0 ${GOLD_MID}`] }
+            : {}
+        }
+        transition={active && !reduced ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
+        style={{
+          width: done || active ? 14 : 10,
+          height: done || active ? 14 : 10,
+          borderRadius: "50%",
+          background: done
+            ? GOLD
+            : active
+            ? GOLD_FAINT
+            : DIM,
+          border: `2px solid ${done ? GOLD : active ? GOLD : "rgba(255,255,255,0.12)"}`,
+          transition: reduced ? "none" : "all 0.35s ease",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+interface Props {
+  deal: PortalClientMatter;
+}
+
+export function CustodyTimeline({ deal }: Props) {
+  const reduced = useReducedMotion();
+  const currentStage = resolveStageCompletion(deal);
 
   return (
     <div
@@ -70,7 +144,7 @@ export function CustodyTimeline() {
         background: "rgba(255,255,255,0.01)",
         border: "1px solid rgba(198,165,90,0.14)",
         borderRadius: 6,
-        padding: "24px 28px",
+        padding: "22px 24px",
         marginBottom: 24,
       }}
     >
@@ -87,91 +161,73 @@ export function CustodyTimeline() {
         Chain of Custody
       </div>
 
-      {loading && (
-        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
-          Loading timeline…
-        </p>
-      )}
+      {/* Rail */}
+      <div style={{ display: "flex", alignItems: "flex-start", padding: "0 4px" }}>
+        {STAGES.map((stage, i) => {
+          const done = currentStage > i;
+          const active = currentStage === i;
+          return (
+            <div
+              key={stage.id}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative" }}
+            >
+              {/* Connector before */}
+              {i > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: "50%",
+                    top: 10,
+                    height: 2,
+                    background: done || active ? (done ? GOLD : GOLD_MID) : "rgba(255,255,255,0.06)",
+                    transition: reduced ? "none" : "background 0.5s ease",
+                    zIndex: 0,
+                  }}
+                />
+              )}
+              {/* Connector after */}
+              {i < STAGES.length - 1 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    right: 0,
+                    top: 10,
+                    height: 2,
+                    background: done ? GOLD : "rgba(255,255,255,0.06)",
+                    transition: reduced ? "none" : "background 0.5s ease",
+                    zIndex: 0,
+                  }}
+                />
+              )}
 
-      {error && (
-        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
-          {error}
-        </p>
-      )}
+              {/* Dot */}
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <Dot done={done} active={active} reduced={reduced} />
+              </div>
 
-      {!loading && !error && events.length === 0 && (
-        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.82rem", padding: "0.5rem 0" }}>
-          No custody events recorded yet.
-        </p>
-      )}
-
-      {!loading && !error && events.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {events.map((evt, i) => {
-            const isLast = i === events.length - 1;
-            return (
-              <motion.div
-                key={evt.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.08, ease: "easeOut" }}
-                style={{ display: "flex", gap: "0.85rem", alignItems: "flex-start" }}
+              {/* Label */}
+              <div
+                style={{
+                  marginTop: 7,
+                  fontSize: 8,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.07em",
+                  textTransform: "uppercase",
+                  textAlign: "center",
+                  color: active ? GOLD : done ? "rgba(198,165,90,0.5)" : DIM_LABEL,
+                  fontWeight: active ? 600 : 400,
+                  whiteSpace: "nowrap",
+                  transition: reduced ? "none" : "color 0.3s",
+                }}
               >
-                {/* Bullet + line */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                  <div
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      backgroundColor: "#C6A55A",
-                      flexShrink: 0,
-                      marginTop: "3px",
-                      boxShadow: "0 0 0 2px #0A0A0A, 0 0 0 3px #C6A55A33",
-                    }}
-                  />
-                  {!isLast && (
-                    <motion.div
-                      initial={{ scaleY: 0 }}
-                      animate={{ scaleY: 1 }}
-                      transition={{ duration: 0.25, delay: i * 0.08 + 0.15, ease: "easeOut" }}
-                      style={{
-                        width: "1px",
-                        backgroundColor: "#2A2A2A",
-                        flexGrow: 1,
-                        minHeight: "28px",
-                        transformOrigin: "top",
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Content */}
-                <div style={{ paddingBottom: isLast ? 0 : "1.25rem", paddingTop: "1px" }}>
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,0.78)",
-                      fontSize: "0.85rem",
-                      fontWeight: 500,
-                      margin: "0 0 0.2rem",
-                    }}
-                  >
-                    {humanLabel(evt.event)}
-                  </p>
-                  {evt.notes && (
-                    <p style={{ color: "rgba(255,255,255,0.38)", fontSize: "0.76rem", margin: "0 0 0.2rem", lineHeight: 1.4 }}>
-                      {evt.notes}
-                    </p>
-                  )}
-                  <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.73rem", margin: 0, fontFamily: "monospace" }}>
-                    {new Date(evt.created_at).toLocaleString()}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+                {stage.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

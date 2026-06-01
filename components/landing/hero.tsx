@@ -123,7 +123,7 @@ export function Hero() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
                 </span>
                 <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase whitespace-nowrap">
-                  Florida Notary #668288 · Hague Convention Routing
+                  The Milano Seal™
                 </span>
               </div>
             </div>
@@ -137,19 +137,18 @@ export function Hero() {
                 Across <span className="ms-hero-borders-gradient italic">Borders</span>
               </span>
               <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
-                Secure International Document Execution & Authentication Infrastructure
+                U.S. Document Execution for International Use
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
-              Coordinate your international documents with precision,
-              discretion, and procedural control.
+              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
             {/* Subtext */}
             <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
-              Structured for international use. Procedural control across jurisdictions.
+              International use is subject to destination and receiving-authority requirements.
             </p>
 
             {/* CTAs */}
@@ -173,8 +172,8 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: Kinetic Core — globe */}
-          <div className="w-full lg:w-[48%] flex items-center justify-center relative">
+          {/* RIGHT: Kinetic Core — globe + founder card */}
+          <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -182,6 +181,56 @@ export function Hero() {
               className="relative flex items-center justify-center"
             >
               <GlobalTrustCoreHero />
+            </motion.div>
+
+            {/* Founder Trading Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <a href="/founder" style={{ display: "block" }}>
+                <img
+                  src="/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png"
+                  alt="Nicholas Milano, founder of The Milano Seal, Florida Notary Public and Remote Online Notary for apostille coordination and international document execution support."
+                  style={{
+                    maxWidth: 340,
+                    width: "100%",
+                    borderRadius: 12,
+                    display: "block",
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </a>
+            </motion.div>
+
+            {/* PATCH 4 — Founder SEO Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{ maxWidth: 340, width: "100%", textAlign: "center" }}
+            >
+              <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
+                Founder-Led Document Execution
+              </p>
+              <p style={{ color: "rgba(176,176,176,0.8)", fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
+                The Milano Seal™ is led by Nicholas Milano, a Florida Notary Public and Remote Online Notary supporting apostille coordination, international document execution, mobile notary requests, witness coordination, and secure release workflows for clients, attorneys, businesses, real estate professionals, healthcare providers, and private clients.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                <a
+                  href="/founder"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Meet the Founder →
+                </a>
+                <a
+                  href="/intake"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Begin Secure Intake →
+                </a>
+              </div>
             </motion.div>
           </div>
 

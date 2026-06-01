@@ -12,6 +12,7 @@ import { PreFlightReview } from "@/components/portal/PreFlightReview";
 import { ReadinessSummaryCard } from "@/components/portal/ReadinessSummaryCard";
 import { PortalCourierCustody } from "@/components/portal/PortalCourierCustody";
 import { createClient } from "@/lib/supabase/client";
+import type { ClientMatterIntelligence } from "@/lib/matterIntelligence";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
 
@@ -171,6 +172,32 @@ function PortalAssistant() {
   );
 }
 
+// ─── Concierge copy helper ───────────────────────────────────────────────────
+
+function getConciergeCopy(status: string): string {
+  switch (status) {
+    case "awaiting_payment":
+      return "Complete payment to unlock scheduling. Estimated review: 1–2 business days after payment confirmation.";
+    case "payment_confirmed":
+      return "Payment confirmed. Your coordinator is preparing your execution session.";
+    case "scheduled":
+      return "Your execution session is scheduled. Your coordinator will reach out with final preparation steps.";
+    case "in_execution":
+      return "Your documents are being executed. You'll be notified when apostille processing begins.";
+    case "apostille_processing":
+      return "Apostille processing is underway with the Florida Department of State.";
+    case "courier_ready":
+      return "Documents are prepared for release to your international courier.";
+    case "shipped":
+      return "Your documents are in transit via international courier.";
+    case "delivered":
+    case "completed":
+      return "Your documents have been delivered. Review your Document Vault for release records.";
+    default:
+      return "";
+  }
+}
+
 const EVENT_LABELS: Record<string, string> = {
   // State transitions
   intake_received: "Matter received and secured",
@@ -226,6 +253,96 @@ interface Message {
   created_at: string;
 }
 
+
+// ─── Matter Intelligence Card ────────────────────────────────────────────────
+
+const GOLD_MI = "#C6A55A";
+const EMERALD_MI = "#4a9e6b";
+
+function MatterIntelligenceCard() {
+  const [intel, setIntel] = useState<ClientMatterIntelligence | null>(null);
+
+  useEffect(() => {
+    fetch("/api/portal/me/matter-intelligence-v2")
+      .then((r) => r.ok ? r.json() as Promise<{ intelligence: ClientMatterIntelligence | null }> : Promise.resolve({ intelligence: null }))
+      .then((d) => setIntel(d.intelligence ?? null))
+      .catch(() => setIntel(null));
+  }, []);
+
+  if (!intel) return null;
+
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.01)",
+        border: "1px solid rgba(198,165,90,0.12)",
+        borderRadius: 6,
+        padding: "20px 24px",
+        marginBottom: 24,
+      }}
+    >
+      <div style={{ fontSize: 9, letterSpacing: "0.26em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.45)", marginBottom: 16 }}>
+        Matter Intelligence
+      </div>
+
+      {/* Execution Path */}
+      {intel.execution_path.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>Execution Path</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {intel.execution_path.map((step, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: 10,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.04em",
+                  padding: "3px 10px",
+                  borderRadius: 99,
+                  background: "rgba(198,165,90,0.07)",
+                  border: "1px solid rgba(198,165,90,0.18)",
+                  color: GOLD_MI,
+                }}
+              >
+                {i + 1}. {step}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Flags row */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", marginBottom: intel.timeline_note ? 14 : 0 }}>
+        <div>
+          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Translation</div>
+          <span style={{ fontSize: 11, color: intel.translation_required ? GOLD_MI : EMERALD_MI }}>
+            {intel.translation_required
+              ? `Required${intel.translation_language ? ` — ${intel.translation_language}` : ""}${intel.translation_certified ? " (Certified)" : ""}`
+              : "Not required"}
+          </span>
+        </div>
+        <div>
+          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Witnesses</div>
+          <span style={{ fontSize: 11, color: intel.witnesses_required ? GOLD_MI : "rgba(255,255,255,0.45)" }}>
+            {intel.witnesses_required ? "Required" : "Not required"}
+          </span>
+        </div>
+        <div>
+          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Apostille</div>
+          <span style={{ fontSize: 11, color: intel.apostille_required ? GOLD_MI : "rgba(255,255,255,0.45)" }}>
+            {intel.apostille_required ? "Required" : "Not required"}
+          </span>
+        </div>
+        {intel.timeline_note && (
+          <div>
+            <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Est. Timeline</div>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{intel.timeline_note}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MyMatterPage() {
   const { deal, ledger, isLoading, message } = usePortal();
@@ -383,6 +500,9 @@ export default function MyMatterPage() {
         {/* PORTAL-03: Execution Readiness (client-safe) */}
         <ReadinessSummaryCard />
 
+        {/* PORTAL-02: Matter Intelligence Card */}
+        <MatterIntelligenceCard />
+
         {/* Paid & Released banner */}
         <AnimatePresence>
           {deal.is_paid_and_released && (
@@ -391,22 +511,60 @@ export default function MyMatterPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="mb-5 border rounded-sm px-5 py-4 flex items-center gap-3"
+              className="mb-5"
               style={{
-                background:
-                  "linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(212,175,55,0.05) 100%)",
-                borderColor: "rgba(212,175,55,0.2)",
-                boxShadow: "0 0 12px rgba(212,175,55,0.05)",
+                background: "linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(198,165,90,0.06) 100%)",
+                border: "1px solid rgba(198,165,90,0.35)",
+                borderRadius: 6,
+                padding: "16px 20px",
+                boxShadow: "0 0 20px rgba(198,165,90,0.07), inset 0 1px 0 rgba(198,165,90,0.1)",
               }}
             >
-              <span className="text-emerald-400 text-base">✓</span>
-              <div>
-                <div className="text-[#D4AF37] font-semibold text-sm font-serif">
-                  Paid &amp; Released
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ color: "#4a9e6b", fontSize: 18, lineHeight: 1 }}>✓</span>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-playfair, Georgia, serif)", fontWeight: 600, fontSize: 15, color: "#C6A55A", letterSpacing: "0.02em" }}>
+                      PAID &amp; RELEASED
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>
+                      Your documents have been released. Review your Document Vault for records.
+                    </div>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-xs mt-0.5">
-                  Your matter is complete. All obligations fulfilled and
-                  documents released.
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <a
+                    href="/portal/documents"
+                    style={{
+                      fontSize: 11,
+                      fontFamily: "monospace",
+                      letterSpacing: "0.06em",
+                      color: "#C6A55A",
+                      border: "1px solid rgba(198,165,90,0.35)",
+                      borderRadius: 3,
+                      padding: "5px 12px",
+                      textDecoration: "none",
+                      background: "rgba(198,165,90,0.06)",
+                    }}
+                  >
+                    View Vault
+                  </a>
+                  <button
+                    disabled
+                    style={{
+                      fontSize: 10,
+                      fontFamily: "monospace",
+                      letterSpacing: "0.05em",
+                      color: "rgba(255,255,255,0.2)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 3,
+                      padding: "5px 12px",
+                      background: "transparent",
+                      cursor: "not-allowed",
+                    }}
+                  >
+                    Certificate of Custody — Coming Soon
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -536,6 +694,14 @@ export default function MyMatterPage() {
                     (deal.matter_status ?? "").replace(/_/g, " ")}
                 </span>
               </div>
+              {deal.matter_status && getConciergeCopy(deal.matter_status) && (
+                <div className="pp-kv" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                  <span className="pp-kv-k">Concierge Note</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.55 }}>
+                    {getConciergeCopy(deal.matter_status)}
+                  </span>
+                </div>
+              )}
               <div className="pp-kv">
                 <span className="pp-kv-k">Payment</span>
                 <span
@@ -601,7 +767,7 @@ export default function MyMatterPage() {
             <PortalCourierCustody />
 
             {/* Chain of Custody Timeline */}
-            <CustodyTimeline />
+            <CustodyTimeline deal={deal} />
           </motion.div>
         </div>
       </motion.div>
