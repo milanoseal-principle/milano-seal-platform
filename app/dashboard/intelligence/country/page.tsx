@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { COUNTRY_PROFILES } from "@/data/intelligence/countryProfiles";
+import { CountryHeatmap } from "@/components/dashboard/CountryHeatmap";
 
 const HAGUE_LABELS: Record<string, string> = {
   hague: "Hague",
@@ -214,6 +215,11 @@ export default async function CountryIntelligencePage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Country Heatmap */}
+      <div style={{ marginTop: "2rem" }}>
+        <CountryHeatmap />
       </div>
     </div>
   );

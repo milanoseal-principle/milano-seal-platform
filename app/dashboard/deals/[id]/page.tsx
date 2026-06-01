@@ -37,6 +37,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
 import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
+import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
 import {
   ArrowLeft,
   CalendarClock,
@@ -640,6 +641,18 @@ export default function DealDetail() {
             >
               {deal.lane}
             </Badge>
+            <MatterRiskBadge
+              factors={{
+                country_id: deal.destination_country,
+                authority_confidence: null,
+                translation_required: deal.translation,
+                payment_status: deal.payment_status,
+                matter_status: deal.matter_status,
+                days_since_update: deal.apostille_at ? Math.floor((Date.now() - new Date(deal.apostille_at).getTime()) / 86400000) : 0,
+                missing_items_count: 0,
+                is_high_value: deal.total_price > 1500,
+              }}
+            />
           </div>
           <h1 className="font-serif text-4xl text-foreground mt-2">
             {deal.client_name}
