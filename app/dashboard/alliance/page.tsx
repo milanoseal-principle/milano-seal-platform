@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Network, Layers, Shield, ArrowRight, Eye, CheckCheck, Trash2, Users, GitBranch, Inbox, Tag, UserCheck } from "lucide-react";
+import { AllianceScoreboard } from "@/components/dashboard/AllianceScoreboard";
 
 async function getSummary() {
   const admin = createAdminClient();
@@ -430,6 +431,9 @@ export default async function AllianceIntelligencePage() {
           ))}
         </div>
       </div>
+
+      {/* Alliance Scoreboard */}
+      <AllianceScoreboard />
     </div>
   );
 }

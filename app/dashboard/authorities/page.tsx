@@ -14,6 +14,7 @@ import { PromotionQueue } from "@/components/dashboard/aoc/PromotionQueue";
 import { AuthorityAlertSystem } from "@/components/dashboard/AuthorityAlertSystem";
 import { ChainCertificationPanel } from "@/components/dashboard/aoc/ChainCertificationPanel";
 import { IntelligenceScorePanel } from "@/components/dashboard/aoc/IntelligenceScorePanel";
+import { AuthorityDependencyGraph } from "@/components/dashboard/AuthorityDependencyGraph";
 import {
   getCountryChainReport,
   getAllAuthorityIntelligenceScores,
@@ -246,6 +247,9 @@ export default async function AuthorityOperationsCenterPage() {
           </div>
         </div>
       )}
+
+      {/* Authority Dependency Graph */}
+      <AuthorityDependencyGraph />
 
       {/* Footnote */}
       <div

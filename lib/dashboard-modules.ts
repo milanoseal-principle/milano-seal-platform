@@ -182,17 +182,10 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
   },
   // INTELLIGENCE
   {
-    name: "Autopilot",
-    route: "intelligence/autopilot",
-    icon: "Zap",
-    description: "Operator-confirmed task automation across active matters",
-    group: "Intelligence",
-  },
-  {
-    name: "Country Intelligence",
-    route: "intelligence/country",
-    icon: "Globe",
-    description: "Country profile enrichment — routing context only",
+    name: "Executive",
+    route: "executive",
+    icon: "Crown",
+    description: "Executive financial and operational intelligence",
     group: "Intelligence",
   },
   {
@@ -222,6 +215,28 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     icon: "Shield",
     description: "License & renewal alert engine",
     group: "Intelligence",
+  },
+  // OPERATIONS
+  {
+    name: "Execution Control",
+    route: "execution-control",
+    icon: "AlertTriangle",
+    description: "Real-time matter escalation and execution queue",
+    group: "Operations",
+  },
+  {
+    name: "Releases",
+    route: "releases",
+    icon: "Send",
+    description: "Document release queue and courier readiness",
+    group: "Operations",
+  },
+  {
+    name: "Rejections",
+    route: "rejections",
+    icon: "XCircle",
+    description: "Rejection intelligence and institutional memory",
+    group: "Operations",
   },
   // SYSTEM
   {
@@ -266,6 +281,7 @@ export const MODULE_GROUPS = [
   "Core",
   "Pipeline",
   "Execution",
+  "Operations",
   "Outreach",
   "Growth",
   "Intelligence",
