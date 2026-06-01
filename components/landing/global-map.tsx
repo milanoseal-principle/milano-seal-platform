@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
 import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield, ChevronDown, ChevronRight, Clock, Languages, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -100,7 +99,6 @@ export function GlobalMap() {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
-  const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
   const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
 
   // Sprint One — intelligence layer state
@@ -153,10 +151,6 @@ export function GlobalMap() {
     if (COUNTRY_COMPLIANCE_DATA[slug]) setComplianceCountryId(slug);
   }, []);
   const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
-
-  useEffect(() => {
-    setActiveRouteId(selectedDest?.slug ?? null);
-  }, [selectedDest]);
 
   // Derived corridor intelligence for selected destination
   const corridorIntel = selectedDest
@@ -377,10 +371,6 @@ export function GlobalMap() {
                 onSelect={handleSelectDest}
                 selectedDest={selectedDest}
                 externalFlyTarget={mapFlyTarget}
-              />
-              <GlobalRouteAnimation
-                activeRouteId={activeRouteId}
-                onRouteActivate={setActiveRouteId}
               />
 
               {/* Mobile bottom-sheet: slides up inside the map when a destination is selected */}
