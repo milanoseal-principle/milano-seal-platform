@@ -12,6 +12,12 @@ import { VerificationQueue } from "@/components/dashboard/aoc/VerificationQueue"
 import { ReviewQueue } from "@/components/dashboard/aoc/ReviewQueue";
 import { PromotionQueue } from "@/components/dashboard/aoc/PromotionQueue";
 import { AuthorityAlertSystem } from "@/components/dashboard/AuthorityAlertSystem";
+import { ChainCertificationPanel } from "@/components/dashboard/aoc/ChainCertificationPanel";
+import { IntelligenceScorePanel } from "@/components/dashboard/aoc/IntelligenceScorePanel";
+import {
+  getCountryChainReport,
+  getAllAuthorityIntelligenceScores,
+} from "@/lib/authorityChainCertification";
 
 const GOLD = "#C6A55A";
 const RED = "#e05252";
@@ -35,6 +41,14 @@ export default async function AuthorityOperationsCenterPage() {
       a.authority_confidence === "AUTHORITY_VERIFIED" ||
       a.authority_confidence === "MULTI_SOURCE_CONFIRMED",
   ).length;
+
+  const chainResults = [
+    ...getCountryChainReport("IT"),
+    ...getCountryChainReport("PT"),
+    ...getCountryChainReport("MX"),
+  ];
+
+  const intelligenceScores = getAllAuthorityIntelligenceScores();
 
   return (
     <div
@@ -150,7 +164,17 @@ export default async function AuthorityOperationsCenterPage() {
         <AuthorityAlertSystem />
       </div>
 
-      {/* Row 5 — Demoted authorities */}
+      {/* Row 5 — Chain Certification */}
+      <div style={{ marginBottom: 20 }}>
+        <ChainCertificationPanel results={chainResults} />
+      </div>
+
+      {/* Row 6 — Intelligence Scores */}
+      <div style={{ marginBottom: 20 }}>
+        <IntelligenceScorePanel scores={intelligenceScores} />
+      </div>
+
+      {/* Row 7 — Demoted authorities */}
       {demoted.length > 0 && (
         <div
           style={{
