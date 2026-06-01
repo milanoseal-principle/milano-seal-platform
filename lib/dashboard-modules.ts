@@ -189,6 +189,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Intelligence",
   },
   {
+    name: "Country Intelligence",
+    route: "intelligence/country",
+    icon: "Globe",
+    description: "Country profile enrichment — routing context only",
+    group: "Intelligence",
+  },
+  {
     name: "Countries",
     route: "countries",
     icon: "Map",
