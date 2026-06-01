@@ -15,14 +15,29 @@ const SECONDARY_SOCIALS = [
 ];
 
 export const metadata: Metadata = {
-  title: "Nicholas Milano — U.S. International Document Execution Liaison",
+  title: "Nicholas Milano | Founder of The Milano Seal™ | Florida Remote Online Notary",
   description:
-    "Nicholas Milano is a Florida-licensed Notary Public and RON specialist operating as a U.S. international document execution liaison for clients and counsel worldwide.",
+    "Nicholas Milano is the founder of The Milano Seal™, supporting Florida Remote Online Notarization, Apostille Coordination, Mobile Notary execution, and international document coordination.",
+};
+
+const founderJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Nicholas Milano",
+  jobTitle: "Founder, Florida Notary Public, Remote Online Notary",
+  worksFor: { "@type": "Organization", name: "The Milano Seal™" },
+  description:
+    "Nicholas Milano is a Florida Notary Public and Remote Online Notary supporting apostille coordination and international document coordination.",
+  url: "https://themilanoseal.com/founder",
 };
 
 export default function FounderPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(founderJsonLd) }}
+      />
       <Header />
       <main className="bg-[#0A0A0A] text-white min-h-screen">
         {/* Hero */}
@@ -66,8 +81,8 @@ export default function FounderPage() {
                 <div className="flex flex-wrap gap-3 mt-8">
                   {[
                     "Florida Notary #668288",
-                    "RON Certified",
-                    "Hague Convention Compliant",
+                    "Remote Online Notary",
+                    "Hague Route Reviewed",
                   ].map((c) => (
                     <span
                       key={c}
@@ -125,7 +140,7 @@ export default function FounderPage() {
                         Founder · The Milano Seal™
                       </p>
                       <p className="text-xs text-[#B0B0B0]/60 mt-1">
-                        Florida Notary #668288 · RON Specialist
+                        Florida Notary #668288 · Remote Online Notary
                       </p>
                     </div>
                   </div>
@@ -233,7 +248,7 @@ export default function FounderPage() {
               href="/intake"
               className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-sm hover:bg-[#D4BB7A] transition-all"
             >
-              Begin Execution
+              Begin Secure Intake
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

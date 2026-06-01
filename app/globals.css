@@ -13,6 +13,55 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Founder card premium animation */
+.founder-card-animated {
+  opacity: 0;
+  transform: translateY(12px);
+  animation:
+    founderReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards,
+    founderShimmer 1.2s ease 1.6s 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, opacity;
+}
+
+@keyframes founderReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes founderShimmer {
+  0% { box-shadow: 0 0 0 0 rgba(198, 165, 90, 0); }
+  30% { box-shadow: 0 0 0 2px rgba(198, 165, 90, 0.35), 0 0 18px 4px rgba(198, 165, 90, 0.12); }
+  70% { box-shadow: 0 0 0 1px rgba(198, 165, 90, 0.2), 0 0 12px 2px rgba(198, 165, 90, 0.06); }
+  100% { box-shadow: 0 0 0 0 rgba(198, 165, 90, 0); }
+}
+
+.founder-card-animated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(198, 165, 90, 0.18), 0 0 0 1px rgba(198, 165, 90, 0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .founder-card-animated {
+    animation: founderFadeOnly 0.5s ease 0.3s forwards;
+    transform: none;
+  }
+  .founder-card-animated:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  @keyframes founderFadeOnly {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
 @theme inline {
   --color-background: hsl(var(--bg-hsl));
   --color-foreground: hsl(var(--fg-hsl));

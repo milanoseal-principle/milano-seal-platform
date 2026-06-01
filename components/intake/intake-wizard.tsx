@@ -37,6 +37,7 @@ interface IntakePrefill {
   country?: string;
   document?: string;
   useCase?: string;
+  matter?: string;
 }
 
 interface IntakeWizardProps {
@@ -345,6 +346,26 @@ export function IntakeWizard({
       .split(/\s+/)
       .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
       .join(" ");
+
+  // Generate a natural description from prefill params for the NL box
+  const initialNLMessage = (() => {
+    if (!prefill) return "";
+    const parts: string[] = [];
+    if (prefill.country && prefill.document) {
+      parts.push(`I need a ${prefill.document.replace(/-/g, " ")} for ${titleCase(prefill.country)}`);
+    } else if (prefill.country) {
+      parts.push(`I need document services for ${titleCase(prefill.country)}`);
+    } else if (prefill.document) {
+      parts.push(`I need a ${prefill.document.replace(/-/g, " ")}`);
+    }
+    if (prefill.matter) {
+      parts.push(`related to ${prefill.matter.replace(/_/g, " ")}`);
+    }
+    if (prefill.useCase) {
+      parts.push(`(${prefill.useCase.replace(/-/g, " ")})`);
+    }
+    return parts.join(" ");
+  })();
   const [data, setData] = useState<IntakeData>({
     ...INITIAL_DATA,
     destination_country: prefill?.country
@@ -590,6 +611,7 @@ export function IntakeWizard({
           <SmartMatterIntake
             onAnalysisReady={handleAnalysisReady}
             onFilesPicked={handleSmartFilesPicked}
+            initialMessage={initialNLMessage}
           />
           {analysisNote && (
             <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
@@ -1519,6 +1541,38 @@ export function IntakeWizard({
                     </p>
                   </div>
 
+                  {/* Founder Reassurance Card */}
+                  <div className="flex items-center gap-4 bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.2)] rounded-sm px-5 py-4 mb-5">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-[rgba(198,165,90,0.3)] flex-shrink-0 bg-[rgba(198,165,90,0.08)] flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/nicholas-milano.jpeg"
+                        alt="Nicholas Milano"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const t = e.currentTarget;
+                          t.style.display = "none";
+                          const parent = t.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<span class="text-[#C6A55A] text-lg font-serif">N</span>';
+                          }
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold text-[#1A1208]">Nicholas Milano</div>
+                      <div className="text-[10px] text-[#8A7A60] mb-1.5">Founder · The Milano Seal™</div>
+                      <p className="text-[11px] text-[#4A4030] font-light leading-relaxed">
+                        Every matter is reviewed before execution begins.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Gate Notice */}
+                  <p className="text-[11px] text-[#8A7A60] text-center mb-5 font-light">
+                    No matter is scheduled or executed until scope is confirmed and payment is complete.
+                  </p>
+
                   <div className="mb-2">
                     <CheckRow
                       checked={consent}
@@ -1590,8 +1644,7 @@ export function IntakeWizard({
       </div>
 
       <p className="text-center text-[10px] tracking-[0.08em] uppercase text-[rgba(198,165,90,0.4)] mt-7">
-        Florida Notary Public &nbsp;·&nbsp; RON Certified &nbsp;·&nbsp; Hague
-        Convention Compliant
+        Florida Notary Public &nbsp;·&nbsp; Remote Online Notary &nbsp;·&nbsp; Hague Route Reviewed
       </p>
     </div>
   );

@@ -307,7 +307,7 @@ export function PipelineBoard() {
   if (loading)
     return (
       <div className="h-40 flex items-center justify-center text-[#8A8A8A] text-sm">
-        Loading Trust Flow Command Center…
+        Loading Execution Center…
       </div>
     );
 
@@ -326,7 +326,7 @@ export function PipelineBoard() {
 
   return (
     <div>
-      {/* Command Center Header */}
+      {/* Execution Center Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -334,7 +334,7 @@ export function PipelineBoard() {
               Live
             </p>
             <h2 className="text-white font-serif text-xl font-light">
-              Trust Flow Command Center
+              Execution Center
             </h2>
           </div>
           <div className="text-[10px] text-[#4A4A4A]">↻ auto-refresh 10s</div>

@@ -8,17 +8,14 @@ import { Shield, Circle } from "lucide-react";
 
 const VA_NAV = [
   // TASKS
-  { href: "/va/dashboard", label: "My Tasks", group: "TASKS" },
-  { href: "/va/dashboard?tab=follow-ups", label: "Follow-Ups", group: "TASKS" },
-  { href: "/va/dashboard?tab=intake", label: "Intake Support", group: "TASKS" },
+  { href: "/va/dashboard", label: "Overview", group: "TASKS" },
+  { href: "/va/tasks", label: "My Tasks", group: "TASKS" },
+  { href: "/va/follow-ups", label: "Follow-Ups", group: "TASKS" },
   // COORDINATION
-  { href: "/va/dashboard?tab=scheduling", label: "Scheduling", group: "COORDINATION" },
-  { href: "/va/dashboard?tab=documents", label: "Documents", group: "COORDINATION" },
-  { href: "/va/dashboard?tab=translation", label: "Translation Flags", group: "COORDINATION" },
-  { href: "/va/dashboard?tab=courier", label: "Courier Follow-Up", group: "COORDINATION" },
+  { href: "/va/matters", label: "My Matters", group: "COORDINATION" },
+  { href: "/va/uploads", label: "Document Uploads", group: "COORDINATION" },
   // SUPPORT
-  { href: "/va/dashboard?tab=sops", label: "SOP Library", group: "SUPPORT" },
-  { href: "/va/dashboard?tab=escalations", label: "Escalations", group: "SUPPORT" },
+  { href: "/va/dashboard", label: "SOP Library", group: "SUPPORT" },
 ];
 
 const VA_RITUAL_STEPS = [

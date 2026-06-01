@@ -36,6 +36,7 @@ import {
 } from "@/lib/format";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
+import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
 import {
   ArrowLeft,
   CalendarClock,
@@ -108,6 +109,8 @@ interface MilanoDeal {
   carrier: string | null;
   label_url: string | null;
   notes: string | null;
+  is_paid_and_released: boolean | null;
+  matter_status: string | null;
 }
 
 interface ActivityRow {
@@ -998,6 +1001,15 @@ export default function DealDetail() {
             originState={deal.origin_state ?? null}
             dealStatus={deal.deal_status ?? ""}
             paymentStatus={deal.payment_status ?? ""}
+          />
+
+          <CertificatePanel
+            matterId={deal.id}
+            isPaidAndReleased={deal.is_paid_and_released ?? false}
+            documentCount={deal.docs_count ?? 1}
+            destinationCountry={deal.destination_country ?? null}
+            documentType={deal.document_type ?? null}
+            releasedAt={deal.completed_at ?? null}
           />
 
           <Card className="bg-card border-gold">
