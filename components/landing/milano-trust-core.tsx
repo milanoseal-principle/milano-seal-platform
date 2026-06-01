@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
 
 const LEFT_PILLARS = [
@@ -9,16 +10,19 @@ const LEFT_PILLARS = [
     icon: Shield,
     title: "Secure Intake",
     desc: "Verified identity & document stage. Every matter begins with structured scope confirmation.",
+    href: "/intake",
   },
   {
     icon: Globe,
     title: "Global Document Intelligence",
     desc: "Destination rules, forms & authority requirements reviewed for your specific corridor.",
+    href: "/countries",
   },
   {
     icon: Lock,
     title: "Payment-Gated Scheduling",
     desc: "No scheduling until scope & payment are confirmed. Your resources are reserved for your matter only.",
+    href: "/process",
   },
 ];
 
@@ -27,16 +31,19 @@ const RIGHT_PILLARS = [
     icon: Eye,
     title: "Chain-of-Custody Visibility",
     desc: "Track every step from intake to release. Full custody record maintained throughout.",
+    href: "/process",
   },
   {
     icon: FileCheck,
     title: "Apostille Coordination",
     desc: "Expert coordination for Hague Convention certification and consular legalization workflows.",
+    href: "/services",
   },
   {
     icon: Send,
     title: "International Release",
     desc: "Secure release through approved courier methods and international delivery partners.",
+    href: "/services",
   },
 ];
 
@@ -47,6 +54,7 @@ function Pillar({
   align,
   delay,
   inView,
+  href,
 }: {
   icon: React.ElementType;
   title: string;
@@ -54,23 +62,28 @@ function Pillar({
   align: "left" | "right";
   delay: number;
   inView: boolean;
+  href: string;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: align === "left" ? -18 : 18 }}
       animate={inView ? { opacity: 1, x: 0 } : {}}
       transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
     >
-      <div className="w-8 h-8 rounded-lg border border-[#C6A55A]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[#C6A55A]/40 transition-colors">
-        <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
-      </div>
-      <div className="min-w-0">
-        <h3 className="text-white text-[13px] font-medium mb-1 leading-snug">{title}</h3>
-        <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
-          {desc}
-        </p>
-      </div>
+      <Link
+        href={href}
+        className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
+      >
+        <div className="w-8 h-8 rounded-lg border border-[#C6A55A]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[#C6A55A]/40 transition-colors">
+          <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-white text-[13px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
+          <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
+            {desc}
+          </p>
+        </div>
+      </Link>
     </motion.div>
   );
 }
