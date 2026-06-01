@@ -1,4 +1,6 @@
 // INTERNAL PRICING ENGINE — DO NOT EXPOSE TO FRONTEND
+// Shared pricing constants consumed by dashboard, portal invoice, and payment gate.
+// Never expose margin, base_cost, or internal notes to client surfaces.
 export type ExecutionLane =
   | "RON_SIMPLE"
   | "MOBILE_STANDARD"
@@ -588,4 +590,173 @@ export function determineLaneAndPrice(data: PricingData): PricingResult {
   }
   const wt = calcWitness(data);
   return { lane, base, total: base + wt, addons: [], witness_total: wt };
+}
+
+// ── Execution Intelligence Expansion — Structured Pricing Layer ───────────────
+// New canonical lane configs consumed by dashboard, portal invoice, payment gate.
+
+export type ExecutionLaneId = "signature" | "priority" | "executive";
+
+export interface ExecutionLaneConfig {
+  id: ExecutionLaneId;
+  label: string;
+  price: number;
+  turnaround: string;
+  included: string[];
+}
+
+export const EXECUTION_LANES: Record<ExecutionLaneId, ExecutionLaneConfig> = {
+  signature: {
+    id: "signature",
+    label: "Signature Lane",
+    price: 750,
+    turnaround: "Standard",
+    included: [
+      "Notarization / Document Execution",
+      "Florida Apostille Filing",
+      "Secure Document Handling",
+      "Shippo Courier Integration",
+      "Client Portal Access",
+    ],
+  },
+  priority: {
+    id: "priority",
+    label: "Priority Lane",
+    price: 975,
+    turnaround: "Priority",
+    included: [
+      "Notarization / Document Execution",
+      "Florida Apostille Filing",
+      "Priority Processing Queue",
+      "Secure Document Handling",
+      "Shippo Courier Integration",
+      "Client Portal Access",
+      "Dedicated Coordinator Review",
+    ],
+  },
+  executive: {
+    id: "executive",
+    label: "Executive Lane",
+    price: 1850,
+    turnaround: "White Glove",
+    included: [
+      "Notarization / Document Execution",
+      "Florida Apostille Filing",
+      "White Glove Priority Processing",
+      "Secure Document Handling",
+      "Shippo Courier Integration",
+      "Client Portal Access",
+      "Dedicated Coordinator — Named Contact",
+      "Pre-Flight Document Review",
+      "Direct Coordinator Communication",
+    ],
+  },
+};
+
+export type PricingAddonId =
+  | "apostille"
+  | "rush"
+  | "extraSigner"
+  | "witnessRemote"
+  | "witnessInPerson"
+  | "translationReview"
+  | "courier";
+
+export interface PricingAddon {
+  id: PricingAddonId;
+  label: string;
+  price: number;
+  included_in_lanes: ExecutionLaneId[];
+}
+
+export const PRICING_ADDONS: Record<PricingAddonId, PricingAddon> = {
+  apostille: {
+    id: "apostille",
+    label: "Apostille Processing",
+    price: 250,
+    included_in_lanes: ["signature", "priority", "executive"],
+  },
+  rush: {
+    id: "rush",
+    label: "Rush Processing",
+    price: 400,
+    included_in_lanes: [],
+  },
+  extraSigner: {
+    id: "extraSigner",
+    label: "Additional Signer",
+    price: 150,
+    included_in_lanes: [],
+  },
+  witnessRemote: {
+    id: "witnessRemote",
+    label: "Remote Witness",
+    price: 50,
+    included_in_lanes: [],
+  },
+  witnessInPerson: {
+    id: "witnessInPerson",
+    label: "In-Person Witness",
+    price: 75,
+    included_in_lanes: [],
+  },
+  translationReview: {
+    id: "translationReview",
+    label: "Translation Review",
+    price: 150,
+    included_in_lanes: [],
+  },
+  courier: {
+    id: "courier",
+    label: "International Courier",
+    price: 0,
+    included_in_lanes: ["signature", "priority", "executive"],
+  },
+};
+
+export interface PricingBreakdown {
+  lane: ExecutionLaneId | null;
+  basePrice: number;
+  retainerPaid: number;
+  addOns: Array<{ id: PricingAddonId; label: string; price: number }>;
+  included: string[];
+  total: number;
+  balanceDue: number;
+  paymentStatus: "unpaid" | "partial" | "paid" | "refunded";
+}
+
+export function computePricingBreakdown(
+  lane: ExecutionLaneId | null,
+  addOnIds: PricingAddonId[],
+  retainerPaid: number,
+  paymentStatus: PricingBreakdown["paymentStatus"],
+): PricingBreakdown {
+  const laneConfig = lane ? EXECUTION_LANES[lane] : null;
+  const basePrice = laneConfig?.price ?? 0;
+  const included = laneConfig?.included ?? [];
+
+  const addOns = addOnIds
+    .filter((id) => {
+      const addon = PRICING_ADDONS[id];
+      return addon && lane && !addon.included_in_lanes.includes(lane);
+    })
+    .map((id) => {
+      const addon = PRICING_ADDONS[id];
+      return { id, label: addon.label, price: addon.price };
+    });
+
+  const addOnsTotal = addOns.reduce((sum, a) => sum + a.price, 0);
+  const total = basePrice + addOnsTotal;
+  const balanceDue = Math.max(0, total - retainerPaid);
+
+  return {
+    lane,
+    basePrice,
+    retainerPaid,
+    addOns,
+    included,
+    total,
+    balanceDue,
+    paymentStatus,
+  };
 }
