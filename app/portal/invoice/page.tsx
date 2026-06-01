@@ -67,7 +67,16 @@ export default function ClientInvoicePage() {
 
   // Use payment_amount_due from the safe API — no internal cost/margin fields
   const subtotal = Number(deal.payment_amount_due ?? 0);
-  const paid = deal.payment_status === "paid" || deal.payment_status === "confirmed" || deal.is_paid_and_released;
+  const paid =
+    deal.payment_status === "paid" ||
+    deal.payment_status === "confirmed" ||
+    deal.payment_status === "payment_confirmed" ||
+    deal.is_paid_and_released;
+
+  const schedulingLocked = !paid;
+
+  // Generate a deterministic Wise reference from the matter ID
+  const wiseRef = `milano-seal-${(deal.display_id ?? deal.id).slice(0, 8).toLowerCase()}`;
 
   const pricingData: PricingBreakdownData = {
     lane: deal.assigned_lane ?? null,
@@ -83,7 +92,7 @@ export default function ClientInvoicePage() {
     total: subtotal > 0 ? subtotal : null,
     balanceDue: paid ? 0 : subtotal > 0 ? subtotal : null,
     paymentStatus: deal.payment_status,
-    wiseReference: null,
+    wiseReference: !paid ? wiseRef : null,
   };
 
   return (
@@ -134,7 +143,7 @@ export default function ClientInvoicePage() {
       </div>
 
       {/* Digital pricing summary — not included in print layout */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 16 }}>
         <PricingBreakdown
           data={pricingData}
           showPaymentButton={!paid && subtotal > 0}
@@ -142,6 +151,64 @@ export default function ClientInvoicePage() {
             window.location.href = "/portal/messages";
           }}
         />
+      </div>
+
+      {/* Scheduling lock status */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 16px",
+          borderRadius: 4,
+          marginBottom: 24,
+          background: schedulingLocked
+            ? "rgba(198,165,90,0.05)"
+            : "rgba(74,158,107,0.05)",
+          border: schedulingLocked
+            ? "1px solid rgba(198,165,90,0.2)"
+            : "1px solid rgba(74,158,107,0.2)",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            color: schedulingLocked ? "#C6A55A" : "#4a9e6b",
+            lineHeight: 1,
+          }}
+        >
+          {schedulingLocked ? "⬤" : "✓"}
+        </span>
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              fontFamily: "monospace",
+              letterSpacing: "0.06em",
+              color: schedulingLocked ? "#C6A55A" : "#4a9e6b",
+            }}
+          >
+            {schedulingLocked
+              ? "Scheduling Locked — Complete payment to unlock"
+              : "Scheduling Unlocked ✓"}
+          </div>
+          {schedulingLocked && (
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+              Use reference{" "}
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  color: "rgba(255,255,255,0.55)",
+                  userSelect: "all",
+                }}
+              >
+                {wiseRef}
+              </span>{" "}
+              when sending payment via Wise.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="ci-shell">
