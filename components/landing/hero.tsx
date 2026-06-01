@@ -189,7 +189,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
             >
-              <a href="/founder" style={{ display: "block" }}>
+              <a href="/founder" style={{ display: "block" }} className="founder-card-animated">
                 <img
                   src="/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png"
                   alt="Nicholas Milano, founder of The Milano Seal, Florida Notary Public and Remote Online Notary for apostille coordination and international document execution support."
