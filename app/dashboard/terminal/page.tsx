@@ -85,6 +85,11 @@ const EVENT_LABELS: Record<string, string> = {
   DOC_DELIVERED: "Document Delivered",
   DOC_SIGNED: "Document Signed",
   DOC_RELEASE_CONFIRMED: "Release Confirmed",
+  AUTOPILOT_TASK_GENERATED: "Autopilot task generated and pending confirmation",
+  AUTOPILOT_TASK_CONFIRMED: "Operator confirmed autopilot task",
+  AUTOPILOT_TASK_BLOCKED: "Autopilot task blocked — manual review required",
+  AUTOPILOT_TASK_DISMISSED: "Operator dismissed autopilot task",
+  AUTOPILOT_TASK_COMPLETED: "Autopilot task completed",
 };
 
 const STAGE_LABELS: Record<string, string> = {

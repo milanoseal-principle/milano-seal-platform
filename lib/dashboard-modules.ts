@@ -182,6 +182,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
   },
   // INTELLIGENCE
   {
+    name: "Autopilot",
+    route: "intelligence/autopilot",
+    icon: "Zap",
+    description: "Operator-confirmed task automation across active matters",
+    group: "Intelligence",
+  },
+  {
     name: "Countries",
     route: "countries",
     icon: "Map",
