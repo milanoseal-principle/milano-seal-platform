@@ -20,7 +20,7 @@ const items = [
   {
     icon: Video,
     label: "Remote Online Notarization",
-    sub: "RON Certified Network",
+    sub: "Remote Online Notary Network",
     href: "/services/remote-online-notary",
   },
   {

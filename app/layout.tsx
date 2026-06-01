@@ -33,18 +33,20 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL("https://themilanoseal.com"),
   title: {
-    default: "The Milano Seal™ — International Document Execution & Apostille",
+    default: "The Milano Seal™ | U.S. Document Execution for International Use",
     template: "%s | The Milano Seal™",
   },
   description:
-    "U.S. document execution and apostille coordination for international use. Attorneys, private clients, and institutions operating across jurisdictions.",
+    "Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.",
   keywords: [
     "apostille",
     "notarization",
     "international documents",
-    "RON",
+    "remote online notary",
     "Hague Convention",
     "document execution",
+    "apostille coordination",
+    "international document coordination",
   ],
   authors: [
     { name: "Nicholas Milano", url: "https://themilanoseal.com/founder" },
@@ -64,12 +66,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://themilanoseal.com",
     siteName: "The Milano Seal™",
-    title: "The Milano Seal™ — International Document Execution",
+    title: "The Milano Seal™ | U.S. Document Execution for International Use",
     description:
-      "U.S. document execution and apostille liaison. Precision, discretion, and procedural control for international matters.",
+      "Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png",
         width: 1200,
         height: 630,
         alt: "The Milano Seal™",
@@ -96,7 +98,7 @@ const jsonLd = {
       logo: "https://themilanoseal.com/milano-seal-gold-transparent-512.png",
       image: "https://themilanoseal.com/og-image.png",
       description:
-        "U.S. document execution and apostille coordination for international use. Attorneys, private clients, and institutions operating across jurisdictions.",
+        "U.S. Document Execution for International Use — Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
       address: {
         "@type": "PostalAddress",
         addressRegion: "FL",
@@ -116,12 +118,12 @@ const jsonLd = {
       "@type": "Person",
       "@id": "https://themilanoseal.com/founder#person",
       name: "Nicholas Milano",
-      jobTitle: "Founder & U.S. International Document Execution Liaison",
+      jobTitle: "Founder, Florida Notary Public, Remote Online Notary",
       worksFor: { "@id": "https://themilanoseal.com/#business" },
       url: "https://themilanoseal.com/founder",
       image: "https://themilanoseal.com/nicholas-milano.jpeg",
       description:
-        "Florida-licensed Notary Public #668288 and RON specialist. Founder of The Milano Seal™.",
+        "Nicholas Milano is a Florida Notary Public and Remote Online Notary supporting apostille coordination and international document coordination. Founder of The Milano Seal™.",
     },
     {
       "@type": "WebSite",
