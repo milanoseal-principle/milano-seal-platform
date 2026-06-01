@@ -115,8 +115,8 @@ export function Hero() {
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
-            {/* Credential badge — animation wrapper is block, visual badge is inline-flex */}
-            <div className={`ms-hero-line mb-8${heroVisible[0] ? " is-visible" : ""}`}>
+            {/* Credential badge */}
+            <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
               <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 max-w-fit [isolation:isolate]">
                 <span className="relative flex h-2 w-2 flex-shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
@@ -129,46 +129,75 @@ export function Hero() {
             </div>
 
             {/* Headline */}
-            <h1 className="ms-hero-h1 font-serif text-3xl md:text-4xl lg:text-[3.25rem] xl:text-[3.75rem] font-medium leading-[1.1] text-white mb-6">
-              <span className={`ms-hero-line${heroVisible[1] ? " is-visible" : ""}`}>
+            <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-3">
+              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[1] ? " is-visible" : ""}`}>
                 Sealing Trust
               </span>
-              <span className={`ms-hero-line${heroVisible[2] ? " is-visible" : ""}`}>
+              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[2] ? " is-visible" : ""}`}>
                 Across <span className="ms-hero-borders-gradient italic">Borders</span>
-              </span>
-              <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
-                U.S. Document Execution for International Use
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
+            {/* Subtitle — separate line, lighter weight */}
+            <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-[#9A9A9A] font-light mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
+              U.S. Document Execution for International Use
+            </p>
+
+            {/* Body */}
+            <p className={`ms-hero-line text-sm md:text-base text-[#6A6A6A] mb-3 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            {/* Subtext */}
-            <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
-              International use is subject to destination and receiving-authority requirements.
+            {/* Disclaimer */}
+            <p className={`ms-hero-line text-xs text-[#4A4A4A] mb-8 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
+              International use is subject to destination country and receiving authority requirements.
             </p>
 
             {/* CTAs */}
-            <div className={`ms-hero-line flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
-                className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
+                className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
               >
                 Begin Secure Intake
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }} />
               </Link>
               <Link
                 href="/map"
-                className="group inline-flex items-center justify-center gap-2 px-8 py-4 border border-[#2A2A2A] text-[#B0B0B0] font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/30 hover:text-white hover:bg-[#111111]"
+                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-[#B0B0B0] font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
               >
                 <Globe className="w-4 h-4" />
                 Explore Global Document Intelligence
               </Link>
             </div>
 
+            {/* Trust credential strip */}
+            <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
+                {[
+                  { icon: "shield", label: "Florida\nNotary Public" },
+                  { icon: "monitor", label: "Remote\nOnline Notary" },
+                  { icon: "check", label: "Apostille\nCoordination" },
+                  { icon: "globe", label: "Global\nDocument Intelligence" },
+                  { icon: "lock", label: "Payment-Gated\nExecution" },
+                  { icon: "eye", label: "Chain-of-Custody\nVisibility" },
+                ].map(({ icon, label }) => (
+                  <div key={label} className="flex flex-col items-center gap-1.5 group">
+                    <div className="w-9 h-9 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04] flex items-center justify-center group-hover:border-[#C6A55A]/40 transition-colors">
+                      {icon === "shield" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                      {icon === "monitor" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
+                      {icon === "check" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>}
+                      {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
+                      {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                      {icon === "eye" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                    </div>
+                    <span className="font-mono text-[8px] text-[#4A4A4A] tracking-wide leading-tight text-center whitespace-pre-line group-hover:text-[#6A6A6A] transition-colors">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
           </div>
 
