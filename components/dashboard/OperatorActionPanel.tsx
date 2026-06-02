@@ -10,38 +10,83 @@ import {
   Send,
   BookOpen,
   FolderOpen,
-  CheckCircle2,
+  Unlock,
   X,
   Shield,
+  Sparkles,
+  GitBranch,
+  Users,
 } from "lucide-react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const ACTIONS = [
-  { label: "CREATE MATTER",         icon: FilePlus2,    route: "/dashboard/intake",  hasHook: true },
-  { label: "GENERATE INVOICE",      icon: FileText,     route: null,                 hasHook: false },
-  { label: "RUN COMPLIANCE REVIEW", icon: ShieldCheck,  route: "/dashboard/tools",   hasHook: true },
-  { label: "CREATE COURIER LABEL",  icon: Package,      route: "/dashboard/courier", hasHook: true },
-  { label: "SEND CLIENT UPDATE",    icon: Send,         route: null,                 hasHook: false },
-  { label: "CREATE LEDGER EVENT",   icon: BookOpen,     route: null,                 hasHook: false },
-  { label: "OPEN DOCUMENT VAULT",   icon: FolderOpen,   route: "/dashboard/sops",    hasHook: true },
-  { label: "MARK PAID & RELEASED",  icon: CheckCircle2, route: null,                 hasHook: false },
-] as const;
+interface Action {
+  label: string;
+  icon: React.ElementType;
+  route: string;
+  matterParam?: string; // query param key to append when matterId is present
+  group: string;
+  danger?: boolean;
+}
+
+const ACTIONS: Action[] = [
+  // Matter Control
+  { label: "CREATE MATTER",        icon: FilePlus2,   route: "/dashboard/intake",            group: "MATTER" },
+  { label: "SMART INTAKE",         icon: Sparkles,    route: "/dashboard/intake",            matterParam: "mode=smart", group: "MATTER" },
+
+  // Financial
+  { label: "GENERATE INVOICE",     icon: FileText,    route: "/dashboard/invoices/new",      matterParam: "matter_id", group: "FINANCIAL" },
+
+  // Execution
+  { label: "RUN COMPLIANCE REVIEW",icon: ShieldCheck, route: "/dashboard/compliance",        matterParam: "matter_id", group: "EXECUTION" },
+  { label: "CREATE COURIER LABEL", icon: Package,     route: "/dashboard/shipping",          matterParam: "matter_id", group: "EXECUTION" },
+
+  // Communication
+  { label: "SEND CLIENT UPDATE",   icon: Send,        route: "/dashboard/communications",    matterParam: "matter_id", group: "COMMS" },
+  { label: "SEND PARTNER UPDATE",  icon: Users,       route: "/dashboard/alliance",          group: "COMMS" },
+
+  // Documents
+  { label: "OPEN DOCUMENT VAULT",  icon: FolderOpen,  route: "/dashboard/documents",         matterParam: "matter_id", group: "DOCUMENTS" },
+  { label: "CREATE LEDGER EVENT",  icon: BookOpen,    route: "/dashboard/terminal/new",      matterParam: "matter_id", group: "DOCUMENTS" },
+
+  // Intelligence
+  { label: "RUN COPILOT",          icon: GitBranch,   route: "/dashboard/copilot",           group: "INTELLIGENCE" },
+
+  // Release — requires operator review workflow, not one-click action
+  { label: "RELEASE REVIEW",       icon: Unlock,      route: "/dashboard/releases",          matterParam: "matter_id", group: "RELEASE", danger: false },
+];
+
+const GROUP_ORDER = ["MATTER", "FINANCIAL", "EXECUTION", "COMMS", "DOCUMENTS", "INTELLIGENCE", "RELEASE"];
 
 export function OperatorActionPanel({
   isOpen,
   onClose,
+  matterId,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  matterId?: string;
 }) {
   const router = useRouter();
+
+  function buildRoute(action: Action): string {
+    if (!action.matterParam) return action.route;
+    // Smart intake uses mode=smart directly
+    if (action.matterParam === "mode=smart") return `${action.route}?mode=smart`;
+    // All others append matter_id if present
+    if (matterId) return `${action.route}?${action.matterParam}=${matterId}`;
+    return action.route;
+  }
+
+  const grouped = GROUP_ORDER.map((group) => ({
+    group,
+    actions: ACTIONS.filter((a) => a.group === group),
+  }));
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -53,7 +98,6 @@ export function OperatorActionPanel({
             onClick={onClose}
           />
 
-          {/* Drawer */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
@@ -67,7 +111,7 @@ export function OperatorActionPanel({
               boxShadow: "-20px 0 60px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(212,175,55,0.04)",
             }}
           >
-            {/* Gold gradient header */}
+            {/* Header */}
             <div
               className="relative flex items-center justify-between px-6 py-5 flex-shrink-0"
               style={{
@@ -75,33 +119,26 @@ export function OperatorActionPanel({
                 borderBottom: "1px solid rgba(212,175,55,0.12)",
               }}
             >
-              {/* Gold shimmer line */}
               <div
                 className="absolute top-0 left-0 right-0 h-px"
                 style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent)" }}
               />
-
               <div className="flex items-center gap-3">
-                {/* Shield icon */}
                 <div
                   className="w-9 h-9 flex items-center justify-center rounded flex-shrink-0"
-                  style={{
-                    background: "rgba(212,175,55,0.08)",
-                    border: "1px solid rgba(212,175,55,0.22)",
-                  }}
+                  style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.22)" }}
                 >
                   <Shield className="w-4.5 h-4.5" style={{ color: "#D4AF37" }} />
                 </div>
                 <div>
                   <p className="font-mono text-[8.5px] tracking-[0.32em] uppercase" style={{ color: "rgba(212,175,55,0.55)" }}>
-                    Internal Management Layer
+                    {matterId ? `Matter · ${matterId.slice(0, 8).toUpperCase()}` : "Internal Management Layer"}
                   </p>
                   <h2 className="font-serif text-base text-white tracking-wide leading-tight mt-0.5">
                     Quick Actions
                   </h2>
                 </div>
               </div>
-
               <button
                 onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center rounded transition-colors"
@@ -114,106 +151,86 @@ export function OperatorActionPanel({
               </button>
             </div>
 
-            {/* Section label */}
-            <div className="px-6 pt-4 pb-2 flex-shrink-0">
-              <span
-                className="font-mono text-[8px] tracking-[0.28em] uppercase"
-                style={{ color: "rgba(212,175,55,0.35)" }}
-              >
-                Operator Actions
-              </span>
-            </div>
-
-            {/* Action tiles grid */}
-            <div className="flex-1 overflow-y-auto px-4 pb-5" style={{ scrollbarWidth: "none" }}>
-              <div className="space-y-1.5">
-                {ACTIONS.map((action, i) => {
-                  const Icon = action.icon;
-                  return (
-                    <motion.button
-                      key={action.label}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.038, ease: EASE, duration: 0.32 }}
-                      disabled={!action.hasHook}
-                      onClick={() => {
-                        if (action.route) {
-                          router.push(action.route);
-                          onClose();
-                        }
-                      }}
-                      whileHover={action.hasHook ? { y: -1 } : undefined}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded text-left transition-all duration-200"
-                      style={
-                        action.hasHook
-                          ? {
-                              background: "rgba(255,255,255,0.025)",
-                              border: "1px solid rgba(212,175,55,0.1)",
-                            }
-                          : {
-                              background: "rgba(255,255,255,0.01)",
-                              border: "1px solid rgba(255,255,255,0.04)",
-                              opacity: 0.4,
-                              cursor: "not-allowed",
-                            }
-                      }
-                      onMouseEnter={e => {
-                        if (!action.hasHook) return;
-                        const el = e.currentTarget;
-                        el.style.background = "rgba(212,175,55,0.06)";
-                        el.style.borderColor = "rgba(212,175,55,0.3)";
-                      }}
-                      onMouseLeave={e => {
-                        if (!action.hasHook) return;
-                        const el = e.currentTarget;
-                        el.style.background = "rgba(255,255,255,0.025)";
-                        el.style.borderColor = "rgba(212,175,55,0.1)";
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Icon box */}
-                        <span
-                          className="w-8 h-8 flex items-center justify-center rounded flex-shrink-0"
+            {/* Action list */}
+            <div className="flex-1 overflow-y-auto px-4 pb-5 pt-3" style={{ scrollbarWidth: "none" }}>
+              {grouped.map(({ group, actions }) => (
+                <div key={group} className="mb-4">
+                  <span
+                    className="font-mono text-[7.5px] tracking-[0.3em] uppercase px-1 pb-1 block"
+                    style={{ color: "rgba(212,175,55,0.3)" }}
+                  >
+                    {group}
+                  </span>
+                  <div className="space-y-1">
+                    {actions.map((action, i) => {
+                      const Icon = action.icon;
+                      const route = buildRoute(action);
+                      const isRelease = action.group === "RELEASE";
+                      return (
+                        <motion.button
+                          key={action.label}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.03, ease: EASE, duration: 0.28 }}
+                          onClick={() => { router.push(route); onClose(); }}
+                          whileHover={{ y: -1 }}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded text-left transition-all duration-200"
                           style={{
-                            background: action.hasHook
-                              ? "rgba(212,175,55,0.08)"
-                              : "rgba(255,255,255,0.03)",
-                            border: action.hasHook
-                              ? "1px solid rgba(212,175,55,0.2)"
-                              : "1px solid rgba(255,255,255,0.06)",
+                            background: isRelease ? "rgba(198,165,90,0.04)" : "rgba(255,255,255,0.025)",
+                            border: isRelease
+                              ? "1px solid rgba(198,165,90,0.18)"
+                              : "1px solid rgba(212,175,55,0.1)",
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = isRelease
+                              ? "rgba(198,165,90,0.09)"
+                              : "rgba(212,175,55,0.06)";
+                            e.currentTarget.style.borderColor = isRelease
+                              ? "rgba(198,165,90,0.4)"
+                              : "rgba(212,175,55,0.3)";
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = isRelease
+                              ? "rgba(198,165,90,0.04)"
+                              : "rgba(255,255,255,0.025)";
+                            e.currentTarget.style.borderColor = isRelease
+                              ? "rgba(198,165,90,0.18)"
+                              : "rgba(212,175,55,0.1)";
                           }}
                         >
-                          <Icon
-                            className="w-3.5 h-3.5"
-                            style={{ color: action.hasHook ? "#D4AF37" : "rgba(255,255,255,0.25)" }}
-                          />
-                        </span>
-                        {/* Label */}
-                        <span
-                          className="font-mono text-[10px] tracking-[0.2em] uppercase"
-                          style={{ color: action.hasHook ? "rgba(255,255,255,0.78)" : "rgba(255,255,255,0.3)" }}
-                        >
-                          {action.label}
-                        </span>
-                      </div>
-                      {/* Route status */}
-                      <span
-                        className="font-mono text-[8.5px] whitespace-nowrap flex-shrink-0"
-                        style={{ color: action.hasHook ? "rgba(212,175,55,0.5)" : "rgba(255,255,255,0.2)" }}
-                      >
-                        {action.hasHook ? "→ READY" : "PENDING"}
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="w-8 h-8 flex items-center justify-center rounded flex-shrink-0"
+                              style={{
+                                background: "rgba(212,175,55,0.08)",
+                                border: "1px solid rgba(212,175,55,0.2)",
+                              }}
+                            >
+                              <Icon className="w-3.5 h-3.5" style={{ color: "#D4AF37" }} />
+                            </span>
+                            <span
+                              className="font-mono text-[10px] tracking-[0.2em] uppercase"
+                              style={{ color: "rgba(255,255,255,0.78)" }}
+                            >
+                              {action.label}
+                            </span>
+                          </div>
+                          <span
+                            className="font-mono text-[8px] whitespace-nowrap flex-shrink-0"
+                            style={{ color: matterId && action.matterParam === "matter_id" ? "rgba(198,165,90,0.7)" : "rgba(212,175,55,0.45)" }}
+                          >
+                            {matterId && action.matterParam === "matter_id" ? "→ MATTER" : "→"}
+                          </span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Footer */}
-            <div
-              className="px-6 py-4 flex-shrink-0"
-              style={{ borderTop: "1px solid rgba(212,175,55,0.08)" }}
-            >
+            <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(212,175,55,0.08)" }}>
               <p
                 className="font-mono text-[8px] tracking-[0.3em] uppercase text-center"
                 style={{ color: "rgba(212,175,55,0.25)" }}
