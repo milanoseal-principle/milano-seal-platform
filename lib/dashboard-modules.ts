@@ -354,6 +354,20 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Generate and print release and completion certificates",
     group: "Operations",
   },
+  {
+    name: "Opportunities",
+    route: "opportunities",
+    icon: "Target",
+    description: "Global vertical opportunity engine — 22 B2B ecosystems",
+    group: "Core",
+  },
+  {
+    name: "Outreach",
+    route: "outreach",
+    icon: "Send",
+    description: "Professional outreach templates for attorneys, partners, authorities",
+    group: "Outreach",
+  },
 ];
 
 export const MODULE_GROUPS = [
