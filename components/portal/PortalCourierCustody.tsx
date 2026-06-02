@@ -94,18 +94,24 @@ export function PortalCourierCustody({ matterId }: PortalCourierCustodyProps) {
       )}
 
       {!loading && !hasData && (
-        <p
-          style={{
-            color: "rgba(255,255,255,0.35)",
-            fontSize: 13,
-            lineHeight: 1.6,
-            margin: 0,
-            fontStyle: "italic",
-          }}
-        >
-          Courier tracking will appear once your document is released to carrier
-          custody.
-        </p>
+        <div>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.35)",
+              fontSize: 13,
+              lineHeight: 1.6,
+              margin: "0 0 10px",
+              fontStyle: "italic",
+            }}
+          >
+            Courier tracking will appear once your document packet is released to carrier custody.
+          </p>
+          <p style={{ color: "rgba(198,165,90,0.4)", fontSize: 11, lineHeight: 1.6, margin: 0 }}>
+            Courier custody is included in your Milano Seal matter. Your document packet is released
+            to carrier custody after payment, execution, and any required apostille or authentication
+            steps are complete.
+          </p>
+        </div>
       )}
 
       {!loading && hasData && (

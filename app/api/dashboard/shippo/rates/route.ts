@@ -3,9 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { roleFromEmail } from "@/lib/rbac";
 import { createShippoShipment } from "@/lib/shippo/client";
 import { buildReturnAddress, buildRecipientAddressFromMatter, validateMilanoShippingAddress } from "@/lib/shippo/address";
-import { buildDocumentParcel } from "@/lib/shippo/parcel";
+import { buildDocumentParcel, selectPackageTemplate } from "@/lib/shippo/parcel";
 import { requiresCustoms, buildDocumentCustomsPayload, getCustomsAdvisory } from "@/lib/shippo/customs";
 import { createShippoCustomsItem, createShippoCustomsDeclaration } from "@/lib/shippo/client";
+import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
+import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { matter_id, parcel_override } = body;
+    const { matter_id, parcel_override, package_template_override } = body;
 
     if (!matter_id) return NextResponse.json({ error: "matter_id required" }, { status: 400 });
 
@@ -31,11 +33,19 @@ export async function POST(req: NextRequest) {
 
     const { data: matter, error: mErr } = await supabase
       .from("deals")
-      .select("id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required")
+      .select("id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, amount_due, amount_paid, tier, status")
       .eq("id", matter_id)
       .single();
 
     if (mErr || !matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
+
+    // Payment gate — must be confirmed before label or rate preview
+    try {
+      assertPaymentConfirmed(matter, "rate_preview");
+    } catch (err) {
+      const code = err instanceof PaymentGateError ? err.code : "PAYMENT_REQUIRED";
+      return NextResponse.json({ error: code, message: "Payment must be confirmed before rate preview." }, { status: 402 });
+    }
 
     const recipient = buildRecipientAddressFromMatter(matter);
     const validationErrors = validateMilanoShippingAddress(recipient);
@@ -43,7 +53,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid shipping address", details: validationErrors }, { status: 422 });
     }
 
-    const parcel = parcel_override ?? buildDocumentParcel({ documentCount: matter.document_count ?? 1 });
+    // Select package template based on lane and document count
+    const packageTemplate = selectPackageTemplate({
+      lane: matter.tier ?? undefined,
+      documentCount: matter.document_count ?? 1,
+      operatorOverride: package_template_override,
+    });
+
+    const parcel = parcel_override ?? buildDocumentParcel({ templateId: packageTemplate.id });
     const destCountry = matter.destination_country ?? matter.country ?? "US";
 
     let customsDeclarationId: string | undefined;
@@ -63,7 +80,10 @@ export async function POST(req: NextRequest) {
       async: false,
     });
 
-    const sanitizedRates = shipment.rates.map((r) => ({
+    // Filter rates to approved carriers only
+    const approvedRates = filterApprovedRates(shipment.rates);
+
+    const sanitizedRates = approvedRates.map((r) => ({
       rate_id: r.object_id,
       provider: r.provider,
       servicelevel_name: r.servicelevel.name,
@@ -71,12 +91,16 @@ export async function POST(req: NextRequest) {
       estimated_days: r.estimated_days ?? null,
       duration_terms: r.duration_terms ?? null,
       arrives_by: r.arrives_by ?? null,
+      // operator_display_amount only for admin/founder
+      ...(role === "admin" ? { amount: r.amount, currency: r.currency } : {}),
     }));
 
     return NextResponse.json({
       success: true,
       shipment_id: shipment.object_id,
       rates: sanitizedRates,
+      package_template_used: packageTemplate.id,
+      shipping_option_used: "milano_international_release",
       customs_required: needsCustoms,
       customs_advisory: needsCustoms ? getCustomsAdvisory(destCountry) : null,
     });

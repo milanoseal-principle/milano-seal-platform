@@ -23,6 +23,15 @@ export const SHIPPO_TAGS = {
 
   // Control
   RELEASE_REVIEW_REQUIRED: "RELEASE_REVIEW_REQUIRED",
+
+  // Extended — add these in Shippo dashboard as real orders accumulate
+  CUSTOMS_REVIEW:          "CUSTOMS_REVIEW",
+  UPS_BACKUP:              "UPS_BACKUP",
+  FEDEX_BACKUP:            "FEDEX_BACKUP",
+  USPS_DOMESTIC:           "USPS_DOMESTIC",
+  CARRIER_OVERRIDE:        "CARRIER_OVERRIDE",
+  EXECUTIVE_FOLDER_PACKET: "EXECUTIVE_FOLDER_PACKET",
+  STANDARD_FOLDER_PACKET:  "STANDARD_FOLDER_PACKET",
 } as const;
 
 export type ShippoTag = typeof SHIPPO_TAGS[keyof typeof SHIPPO_TAGS];

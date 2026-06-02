@@ -59,9 +59,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Label purchase failed", messages: transaction.messages }, { status: 502 });
     }
 
-    const carrier = "unknown"; // extracted from rate provider if available
+    const carrier = body.selected_carrier ?? "unknown";
     const trackingNumber = transaction.tracking_number;
     const trackingUrl = transaction.tracking_url_provider ?? null;
+
+    // Package template and shipping option — default to folder_packet / included
+    const packageTemplateId = body.package_template_id ?? "milano_folder_packet";
+    const shippingOptionId = body.shipping_option_id ?? "milano_international_release";
 
     // Register tracking webhook
     if (trackingNumber) {
@@ -72,7 +76,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Persist to shippo_shipments — label_url stored here never exposed via API
+    // Persist to shippo_shipments — label_url and actual_shippo_cost stored server-side only
     const { error: insertErr } = await supabase.from("shippo_shipments").insert({
       matter_id,
       shippo_shipment_id: shipment_id ?? null,
@@ -88,12 +92,21 @@ export async function POST(req: NextRequest) {
       label_created_at: new Date().toISOString(),
       tracking_registered_at: trackingNumber ? new Date().toISOString() : null,
       created_by: user.id,
+      // Packaging policy fields
+      package_template_id: packageTemplateId,
+      shipping_option_id: shippingOptionId,
+      tax_id_policy: "NO_TAX_ID",
+      carrier_policy_status: "APPROVED",
+      packaging_qa_status: "PENDING",
+      actual_shippo_cost: null, // populated by rate data if available; internal only
+      shippo_currency: "USD",
     });
 
     if (insertErr) {
       console.error("shippo_shipments insert error:", insertErr.message);
     }
 
+    // Ledger events
     await audit({
       event: "courier.label.created",
       actor: user.email,
@@ -102,9 +115,18 @@ export async function POST(req: NextRequest) {
         matter_id,
         tracking_number: trackingNumber,
         carrier,
+        package_template_id: packageTemplateId,
+        shipping_option_id: shippingOptionId,
         action: "created",
         status: "success",
         actorKind: "operator",
+        events: [
+          "SHIPPO_RATE_SELECTED",
+          "COURIER_LABEL_CREATED",
+          "COURIER_TRACKING_REGISTERED",
+          "PACKAGE_PROFILE_SELECTED",
+          "SHIPPING_OPTION_SELECTED",
+        ],
       },
     });
 
@@ -116,6 +138,9 @@ export async function POST(req: NextRequest) {
       tracking_url: trackingUrl,
       courier_status: "LABEL_CREATED",
       label_created_at: new Date().toISOString(),
+      package_template_used: packageTemplateId,
+      shipping_option_used: shippingOptionId,
+      // label_url never returned — stored internally
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

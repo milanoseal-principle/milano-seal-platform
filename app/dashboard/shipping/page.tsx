@@ -105,6 +105,76 @@ export default function ShippingPage() {
         </div>
       )}
 
+      {/* Courier billing model policy cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12, marginBottom: 28 }}>
+        {[
+          {
+            title: "Courier Billing Model",
+            lines: [
+              "Client pays Milano Seal through Wise.",
+              "Milano Seal purchases the Shippo label internally.",
+              "Courier custody is included in the selected lane.",
+              "Shippo costs are internal fulfillment expenses.",
+            ],
+          },
+          {
+            title: "Package Template — Default",
+            lines: [
+              "Milano Seal Folder Packet",
+              "13 × 10 × 1 in · 1 lb",
+              "Matte black presentation folder inside rigid stay-flat mailer.",
+              "Executive lane: 13 × 10 × 2 in · 2 lb",
+            ],
+          },
+          {
+            title: "Packaging SOP",
+            lines: [
+              "Document slip or cover letter",
+              "Apostille / notarized documents",
+              "Milano Seal matte black folder",
+              "Rigid stay-flat protective mailer",
+              "No poly mailers. No loose folders.",
+            ],
+          },
+          {
+            title: "Tax ID Policy",
+            lines: [
+              "Default: No Tax ID",
+              "Milano Seal ships document packets, not purchased goods.",
+              "Hague status controls apostille route only — not Tax ID.",
+              "Carrier Tax ID request → operator review required.",
+            ],
+          },
+          {
+            title: "Carrier Policy",
+            lines: [
+              "Primary: DHL Express",
+              "Backup International: FedEx · UPS",
+              "Domestic: USPS",
+              "Foreign local carriers: rejected until local ops",
+            ],
+          },
+          {
+            title: "Shipping Option",
+            lines: [
+              "Milano Seal International Release — Included",
+              "Milano Seal Executive Courier Release — Included (Executive lane)",
+              "No client-facing shipping checkout.",
+              "No carrier selection by client.",
+            ],
+          },
+        ].map((card) => (
+          <div key={card.title} style={{ padding: "14px 16px", background: "#0B0B0B", border: "1px solid rgba(198,165,90,0.1)", borderRadius: 4 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", marginBottom: 8 }}>
+              {card.title}
+            </div>
+            {card.lines.map((line, i) => (
+              <div key={i} style={{ fontSize: 11, color: "rgba(246,241,230,0.6)", lineHeight: 1.6 }}>{line}</div>
+            ))}
+          </div>
+        ))}
+      </div>
+
       {/* Visual example — status rail with UNKNOWN */}
       <div
         style={{

@@ -52,6 +52,37 @@ const DEFAULT_TASKS: VATaskCustodyCardProps[] = [
     actionRoute: "/dashboard/releases",
     canEscalate: false,
   },
+  // Packaging QA tasks
+  {
+    taskType: "PACKAGE_QA",
+    action: "Review Packaging",
+    actionRoute: "/dashboard/shipping",
+    canEscalate: true,
+  },
+  {
+    taskType: "FOLDER_PACKET_READY",
+    action: "Confirm Folder",
+    actionRoute: "/dashboard/shipping",
+    canEscalate: false,
+  },
+  {
+    taskType: "EXECUTIVE_PACKET_REVIEW",
+    action: "Review Executive Packet",
+    actionRoute: "/dashboard/shipping",
+    canEscalate: true,
+  },
+  {
+    taskType: "CUSTOMS_TAX_ID_REVIEW",
+    action: "Customs Review",
+    actionRoute: "/dashboard/shipping",
+    canEscalate: true,
+  },
+  {
+    taskType: "CARRIER_POLICY_REVIEW",
+    action: "Carrier Override Review",
+    actionRoute: "/dashboard/shipping",
+    canEscalate: true,
+  },
 ];
 
 interface VACourierTaskPanelProps {
