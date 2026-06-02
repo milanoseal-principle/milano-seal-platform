@@ -368,6 +368,28 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Professional outreach templates for attorneys, partners, authorities",
     group: "Outreach",
   },
+  // INTELLIGENCE — authority moat layer
+  {
+    name: "Authority Acquisition",
+    route: "authority-acquisition",
+    icon: "TrendingUp",
+    description: "Systematic authority confidence promotion scoreboard",
+    group: "Intelligence",
+  },
+  {
+    name: "Auth Research Queue",
+    route: "authority-research",
+    icon: "Search",
+    description: "Authority verification work queue",
+    group: "Intelligence",
+  },
+  {
+    name: "Observations",
+    route: "observations",
+    icon: "Eye",
+    description: "Authority observation request templates",
+    group: "Intelligence",
+  },
 ];
 
 export const MODULE_GROUPS = [
