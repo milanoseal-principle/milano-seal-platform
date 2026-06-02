@@ -22,6 +22,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Admin",
   },
   {
+    name: "Copilot",
+    route: "copilot",
+    icon: "Sparkles",
+    description: "Daily operator briefing — top actions, risk, opportunities",
+    group: "Admin",
+  },
+  {
     name: "New Matter",
     route: "intake",
     icon: "FilePlus2",
