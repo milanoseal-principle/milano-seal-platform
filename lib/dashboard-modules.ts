@@ -281,6 +281,44 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Drive folder index & asset map",
     group: "System",
   },
+  // INTELLIGENCE — moat layer
+  {
+    name: "Corridors",
+    route: "corridors",
+    icon: "Route",
+    description: "Verified execution corridor registry",
+    group: "Intelligence",
+  },
+  {
+    name: "Trust Engine",
+    route: "trust",
+    icon: "ShieldCheck",
+    description: "Verified delivery and authority trust metrics",
+    group: "Intelligence",
+  },
+  {
+    name: "Authority Verify",
+    route: "authorities/verify",
+    icon: "BadgeCheck",
+    description: "Authority confidence promotion workflow",
+    group: "Intelligence",
+  },
+  // SYSTEM — moat layer
+  {
+    name: "Deployment",
+    route: "deployment",
+    icon: "Server",
+    description: "Infrastructure and deployment validation",
+    group: "System",
+  },
+  // OPERATIONS — certificates
+  {
+    name: "Release Certificates",
+    route: "releases/certificates",
+    icon: "Award",
+    description: "Generate and print release and completion certificates",
+    group: "Operations",
+  },
 ];
 
 export const MODULE_GROUPS = [
