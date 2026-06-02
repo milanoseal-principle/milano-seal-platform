@@ -8,6 +8,13 @@ export interface DashboardModule {
 
 export const DASHBOARD_MODULES: DashboardModule[] = [
   {
+    name: "Command",
+    route: "command",
+    icon: "Terminal",
+    description: "Nicholas Milano Command Center — full OS overview",
+    group: "Admin",
+  },
+  {
     name: "Command Center",
     route: "admin",
     icon: "ShieldAlert",
