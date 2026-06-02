@@ -324,6 +324,20 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Authority confidence promotion workflow",
     group: "Intelligence",
   },
+  {
+    name: "System Truth",
+    route: "truth",
+    icon: "Activity",
+    description: "Milano Seal system health across all 7 pillars",
+    group: "Intelligence",
+  },
+  {
+    name: "Memory Engine",
+    route: "memory",
+    icon: "BookMarked",
+    description: "Institutional memory — incidents, corrections, known patterns",
+    group: "Intelligence",
+  },
   // SYSTEM — moat layer
   {
     name: "Deployment",
