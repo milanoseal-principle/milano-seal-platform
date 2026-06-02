@@ -35,10 +35,8 @@ const INV_LABEL: Record<InvType, string> = {
 };
 
 const PAYMENT_METHODS = [
-  { label: "Wise", value: "wise.com/pay/me/nicholassamm1", icon: "W" },
-  { label: "Zelle", value: "contact@themilanoseal.com", icon: "Z" },
-  { label: "Venmo", value: "@NicholasMilano", icon: "V" },
-  { label: "Apple / Cash App", value: "Nicholas Milano", icon: "A" },
+  { label: "Wise (Primary)", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "" },
+  { label: "Stripe", value: "Operator-issued link", icon: "S", note: "Upon operator approval" },
 ];
 
 function InvSeals() {
@@ -176,7 +174,7 @@ function ProForma({ sel, subtotal, retainer }: Omit<InvCardProps, "type" | "bala
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#c6a55a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#f9f6f0", fontWeight: 700, flexShrink: 0 }}>
               {m.icon}
             </div>
-            <span style={{ fontSize: 10.5, color: "#5a4a3a" }}><strong>{m.label}:</strong> {m.value}</span>
+            <span style={{ fontSize: 10.5, color: "#5a4a3a" }}><strong>{m.label}:</strong> {m.value}{m.note ? <span style={{ color: "#8a7a6a", fontStyle: "italic" }}> · {m.note}</span> : null}</span>
           </div>
         ))}
       </div>
@@ -265,7 +263,7 @@ function FinalInv({ sel, subtotal, retainer, balance }: InvCardProps) {
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#c6a55a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#f9f6f0", fontWeight: 700, flexShrink: 0 }}>
               {m.icon}
             </div>
-            <span style={{ fontSize: 10.5, color: "#5a4a3a" }}><strong>{m.label}:</strong> {m.value}</span>
+            <span style={{ fontSize: 10.5, color: "#5a4a3a" }}><strong>{m.label}:</strong> {m.value}{m.note ? <span style={{ color: "#8a7a6a", fontStyle: "italic" }}> · {m.note}</span> : null}</span>
           </div>
         ))}
       </div>
