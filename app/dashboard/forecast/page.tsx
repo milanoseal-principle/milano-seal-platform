@@ -96,7 +96,7 @@ export default async function ForecastPage() {
   };
 
   return (
-    <div style={{ padding: "32px 24px" }}>
+    <div style={{ padding: "32px 24px" }} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 4px" }}>
           MILANO SEAL / FORECAST ENGINE

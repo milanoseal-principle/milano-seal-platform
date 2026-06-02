@@ -224,7 +224,7 @@ export default async function RelationshipsPage() {
 
   return (
     <div
-      className="min-h-screen px-6 py-8 space-y-10"
+      className="min-h-screen px-6 py-8 space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300"
       style={{ background: "#0A0A0A" }}
     >
       {/* Header */}

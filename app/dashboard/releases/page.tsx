@@ -7,5 +7,9 @@ export const metadata = {
 
 export default async function ReleasesPage() {
   await requireDashboardAccess();
-  return <ReleaseControlCenter />;
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <ReleaseControlCenter />
+    </div>
+  );
 }

@@ -126,7 +126,7 @@ export default async function FinancialsPage() {
   );
 
   return (
-    <div style={{ padding: "32px 24px" }}>
+    <div style={{ padding: "32px 24px" }} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Founder private banner */}
         <div

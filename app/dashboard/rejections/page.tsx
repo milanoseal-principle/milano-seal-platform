@@ -7,5 +7,9 @@ export const metadata = {
 
 export default async function RejectionsPage() {
   await requireDashboardAccess();
-  return <RejectionIntelligence />;
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <RejectionIntelligence />
+    </div>
+  );
 }
