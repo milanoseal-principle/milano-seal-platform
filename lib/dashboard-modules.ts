@@ -189,6 +189,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Intelligence",
   },
   {
+    name: "Relationships",
+    route: "relationships",
+    icon: "Network",
+    description: "Client, attorney, partner relationship registry",
+    group: "Intelligence",
+  },
+  {
     name: "Countries",
     route: "countries",
     icon: "Map",
