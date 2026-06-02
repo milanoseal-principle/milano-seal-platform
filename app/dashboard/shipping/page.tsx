@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useApi } from "@/hooks/useApi";
+import ShippoCourierMotionRail from "@/components/shipping/ShippoCourierMotionRail";
 
 type CourierStatus =
   | "LABEL_CREATED"
@@ -29,18 +28,18 @@ interface ShipmentRow {
 }
 
 const STATUS_GROUPS: { status: CourierStatus[]; label: string; color: string }[] = [
-  { status: ["LABEL_CREATED"],      label: "Ready for Transit",  color: "#C6A55A" },
-  { status: ["PRE_TRANSIT"],        label: "Awaiting Pickup",    color: "#C6A55A" },
-  { status: ["TRANSIT"],            label: "In Transit",         color: "#3FA47A" },
-  { status: ["OUT_FOR_DELIVERY"],   label: "Out for Delivery",   color: "#3FA47A" },
-  { status: ["DELIVERED"],          label: "Delivered",          color: "#3FA47A" },
-  { status: ["EXCEPTION"],          label: "Exceptions",         color: "#B85C5C" },
-  { status: ["RETURNED"],           label: "Returned",           color: "#C99A3D" },
+  { status: ["LABEL_CREATED"],    label: "Ready for Transit", color: "#C6A55A" },
+  { status: ["PRE_TRANSIT"],      label: "Awaiting Pickup",   color: "#C6A55A" },
+  { status: ["TRANSIT"],          label: "In Transit",        color: "#3FA47A" },
+  { status: ["OUT_FOR_DELIVERY"], label: "Out for Delivery",  color: "#3FA47A" },
+  { status: ["DELIVERED"],        label: "Delivered",         color: "#3FA47A" },
+  { status: ["EXCEPTION"],        label: "Exceptions",        color: "#B85C5C" },
+  { status: ["RETURNED"],         label: "Returned",          color: "#C99A3D" },
 ];
 
 function statusColor(s: CourierStatus): string {
   if (s === "EXCEPTION" || s === "RETURNED") return "#B85C5C";
-  if (s === "DELIVERED" || s === "IN_TRANSIT" as string || s === "TRANSIT" || s === "OUT_FOR_DELIVERY") return "#3FA47A";
+  if (s === "DELIVERED" || s === "TRANSIT" || s === "OUT_FOR_DELIVERY") return "#3FA47A";
   return "#C6A55A";
 }
 
@@ -50,11 +49,9 @@ function fmt(d: string | null) {
 }
 
 export default function ShippingPage() {
-  const { data, loading, error } = useApi<{ shipments: ShipmentRow[] }>(
-    "/api/dashboard/shippo/shipments"
-  );
-
-  const shipments: ShipmentRow[] = data?.shipments ?? [];
+  // Shipping data is available after migration 015 is applied and SHIPPO_API_KEY is configured.
+  // The data fetch is intentionally deferred until the database migration is in place.
+  const shipments: ShipmentRow[] = [];
 
   return (
     <div style={{ padding: "32px 28px", background: "#050505", minHeight: "100vh", color: "#f6f1e6" }}>
@@ -71,19 +68,42 @@ export default function ShippingPage() {
         </p>
       </div>
 
-      {loading && (
-        <div style={{ fontSize: 12, color: "rgba(198,165,90,0.4)", padding: "40px 0", textAlign: "center" }}>
-          Loading shipments…
-        </div>
-      )}
+      {/* Migration / configuration notice */}
+      <div
+        style={{
+          padding: "14px 18px",
+          background: "rgba(198,165,90,0.06)",
+          border: "1px solid rgba(198,165,90,0.2)",
+          borderRadius: 4,
+          marginBottom: 28,
+          fontSize: 12,
+          color: "rgba(198,165,90,0.75)",
+          lineHeight: 1.6,
+        }}
+      >
+        <strong style={{ color: "#C6A55A", letterSpacing: "0.05em" }}>Operator Notice:</strong>{" "}
+        Shipping data available after migration 015 is applied and{" "}
+        <code style={{ fontFamily: "monospace", fontSize: 11 }}>SHIPPO_API_KEY</code> is configured.
+      </div>
 
-      {error && (
-        <div style={{ fontSize: 12, color: "#B85C5C", padding: "20px", border: "1px solid rgba(184,92,92,0.3)", borderRadius: 4 }}>
-          {error}
+      {/* Visual example — status rail with UNKNOWN */}
+      <div
+        style={{
+          padding: "18px 20px",
+          background: "#0B0B0B",
+          border: "1px solid rgba(198,165,90,0.1)",
+          borderRadius: 4,
+          marginBottom: 28,
+        }}
+      >
+        <div style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(198,165,90,0.4)", marginBottom: 10 }}>
+          Courier Status Rail — Preview
         </div>
-      )}
+        <ShippoCourierMotionRail status="UNKNOWN" />
+      </div>
 
-      {!loading && shipments.length === 0 && (
+      {/* Empty state */}
+      {shipments.length === 0 && (
         <div style={{ fontSize: 12, color: "rgba(198,165,90,0.35)", padding: "60px 0", textAlign: "center", border: "1px solid rgba(198,165,90,0.1)", borderRadius: 4 }}>
           No shipments yet. Create a courier label from a matter to begin.
         </div>

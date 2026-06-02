@@ -104,7 +104,14 @@ export interface ShippoCustomsItem {
 }
 
 export interface ShippoCustomsDeclaration {
-  contents_type: "DOCUMENTS" | "GIFT" | "SAMPLE" | "MERCHANDISE" | "HUMANITARIAN_DONATION" | "RETURN_MERCHANDISE" | "OTHER";
+  contents_type:
+    | "DOCUMENTS"
+    | "GIFT"
+    | "SAMPLE"
+    | "MERCHANDISE"
+    | "HUMANITARIAN_DONATION"
+    | "RETURN_MERCHANDISE"
+    | "OTHER";
   contents_explanation?: string;
   non_delivery_option: "ABANDON" | "RETURN";
   certify: boolean;
