@@ -23,7 +23,7 @@ export function generateInvoice(total: number): InvoiceResult {
     status: "awaiting_payment",
     payment_options: {
       primary: "wise",
-      available: ["wise", "zelle", "venmo", "cash_app", "apple_cash"],
+      available: ["wise"],
       public_note: "Additional payment methods available upon request.",
     },
   };

@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 
-const VALID_METHODS = [
-  "stripe",
-  "wise",
-  "zelle",
-  "venmo",
-  "cash_app",
-  "apple_cash",
-];
+const VALID_METHODS = ["wise", "stripe"];
 
 export async function POST(
   req: NextRequest,
