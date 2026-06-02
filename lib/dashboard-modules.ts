@@ -390,6 +390,20 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Authority observation request templates",
     group: "Intelligence",
   },
+  {
+    name: "Document Demand",
+    route: "demand",
+    icon: "FileSearch",
+    description: "Real-time document demand by type, country, and source",
+    group: "Intelligence",
+  },
+  {
+    name: "Corridor Certification",
+    route: "corridors/certification",
+    icon: "Award",
+    description: "Priority corridor certification program",
+    group: "Intelligence",
+  },
 ];
 
 export const MODULE_GROUPS = [
