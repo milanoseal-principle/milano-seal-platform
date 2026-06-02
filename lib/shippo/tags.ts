@@ -1,0 +1,87 @@
+// Milano Seal Shippo tag constants
+// Start with 12 must-have tags. Add the rest as real orders accumulate.
+
+export const SHIPPO_TAGS = {
+  // Core status
+  READY_FOR_LABEL:        "READY_FOR_LABEL",
+  ADDRESS_REVIEW:         "ADDRESS_REVIEW",
+  LABEL_CREATED:          "LABEL_CREATED",
+  IN_TRANSIT:             "IN_TRANSIT",
+  DELIVERED:              "DELIVERED",
+  DELIVERED_NOT_RELEASED: "DELIVERED_NOT_RELEASED",
+  EXCEPTION:              "EXCEPTION",
+  RELEASED:               "RELEASED",
+
+  // Carrier
+  DHL_PRIMARY:            "DHL_PRIMARY",
+
+  // Lane
+  EXECUTIVE_LANE:         "EXECUTIVE_LANE",
+
+  // Matter type
+  FEDERAL_APOSTILLE:      "FEDERAL_APOSTILLE",
+
+  // Control
+  RELEASE_REVIEW_REQUIRED: "RELEASE_REVIEW_REQUIRED",
+} as const;
+
+export type ShippoTag = typeof SHIPPO_TAGS[keyof typeof SHIPPO_TAGS];
+
+// Extended tags — add via Shippo dashboard as matters accumulate
+export const SHIPPO_TAGS_EXTENDED = {
+  // Additional status
+  RATE_PREVIEWED:   "RATE_PREVIEWED",
+  AWAITING_SCAN:    "AWAITING_SCAN",
+  OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+  RETURNED:         "RETURNED",
+
+  // Additional matter types
+  APOSTILLE:          "APOSTILLE",
+  RON:                "RON",
+  MOBILE_NOTARY:      "MOBILE_NOTARY",
+  STATE_APOSTILLE:    "STATE_APOSTILLE",
+  INTERNATIONAL_POA:  "INTERNATIONAL_POA",
+  AFFIDAVIT:          "AFFIDAVIT",
+  VITAL_RECORD:       "VITAL_RECORD",
+  FBI_BACKGROUND_CHECK: "FBI_BACKGROUND_CHECK",
+  CORPORATE_DOCUMENT: "CORPORATE_DOCUMENT",
+  ESTATE_DOCUMENT:    "ESTATE_DOCUMENT",
+  REAL_ESTATE_DOCUMENT: "REAL_ESTATE_DOCUMENT",
+
+  // Country / corridor
+  ITALY:    "ITALY",
+  SPAIN:    "SPAIN",
+  PORTUGAL: "PORTUGAL",
+  MEXICO:   "MEXICO",
+  BRAZIL:   "BRAZIL",
+  UAE:      "UAE",
+  UK:       "UK",
+  GERMANY:  "GERMANY",
+  FRANCE:   "FRANCE",
+  GREECE:   "GREECE",
+  CANADA:   "CANADA",
+  OTHER_INTERNATIONAL: "OTHER_INTERNATIONAL",
+
+  // Priority
+  SIGNATURE_LANE: "SIGNATURE_LANE",
+  PRIORITY_LANE:  "PRIORITY_LANE",
+  RUSH:           "RUSH",
+  AFTER_HOURS:    "AFTER_HOURS",
+  HIGH_VALUE:     "HIGH_VALUE",
+  ATTORNEY_CLIENT: "ATTORNEY_CLIENT",
+  HNWI_CLIENT:    "HNWI_CLIENT",
+
+  // Additional carriers
+  UPS_BACKUP:       "UPS_BACKUP",
+  FEDEX_BACKUP:     "FEDEX_BACKUP",
+  USPS_DOMESTIC:    "USPS_DOMESTIC",
+  CARRIER_OVERRIDE: "CARRIER_OVERRIDE",
+
+  // Additional control
+  PAYMENT_CONFIRMED:   "PAYMENT_CONFIRMED",
+  APOSTILLE_COMPLETE:  "APOSTILLE_COMPLETE",
+  CERTIFICATE_REQUIRED: "CERTIFICATE_REQUIRED",
+  CERTIFICATE_CREATED: "CERTIFICATE_CREATED",
+  PORTAL_VISIBLE:      "PORTAL_VISIBLE",
+  OPERATOR_ONLY:       "OPERATOR_ONLY",
+} as const;
