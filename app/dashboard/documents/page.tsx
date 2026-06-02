@@ -1,7 +1,17 @@
 export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
-import { DOCUMENTS } from "@/components/landing/document-intelligence";
+// DOCUMENTS inlined from landing/document-intelligence to avoid client-component server import
+const DOCUMENTS = [
+  { id: "power-of-attorney", label: "Power of Attorney" },
+  { id: "birth-certificate", label: "Birth Certificate" },
+  { id: "marriage-certificate", label: "Marriage Certificate" },
+  { id: "fbi-background-check", label: "FBI Background Check" },
+  { id: "corporate-resolution", label: "Corporate Resolution" },
+  { id: "name-discrepancy-affidavit", label: "Name Discrepancy Affidavit" },
+  { id: "general-affidavit", label: "General Affidavit" },
+  { id: "estate-inheritance", label: "Estate / Inheritance Document" },
+];
 
 export const metadata = {
   title: "Document Classification — Milano Seal",

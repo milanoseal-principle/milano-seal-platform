@@ -179,6 +179,142 @@ function QueueColumn({
   );
 }
 
+interface DeliveredNotReleasedRow {
+  matter_id: string;
+  client_name: string;
+  country: string;
+  document_type: string;
+  carrier: string;
+  tracking_number_display: string;
+  delivered_at: string | null;
+  certificate_status: string;
+}
+
+function DeliveredNotReleasedSection() {
+  const [rows, setRows] = useState<DeliveredNotReleasedRow[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard/shippo/delivered-not-released")
+      .then((r) => r.json() as Promise<{ shipments: DeliveredNotReleasedRow[]; notice?: string }>)
+      .then((d) => {
+        setRows(d.shipments ?? []);
+        setNotice(d.notice ?? null);
+      })
+      .catch(() => setNotice("Unable to load — check configuration"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div
+      style={{
+        marginTop: 32,
+        padding: "20px 24px",
+        background: "rgba(184,92,92,0.04)",
+        border: "1px solid rgba(184,92,92,0.18)",
+        borderRadius: 4,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <div
+          style={{
+            fontSize: 9,
+            fontFamily: "monospace",
+            letterSpacing: "0.26em",
+            textTransform: "uppercase",
+            color: "#B85C5C",
+          }}
+        >
+          Delivered · Not Released
+        </div>
+        {rows.length > 0 && (
+          <span
+            style={{
+              fontSize: 10,
+              padding: "2px 8px",
+              borderRadius: 99,
+              background: "rgba(184,92,92,0.12)",
+              border: "1px solid rgba(184,92,92,0.3)",
+              color: "#B85C5C",
+            }}
+          >
+            {rows.length}
+          </span>
+        )}
+      </div>
+
+      {loading && (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
+          Loading…
+        </div>
+      )}
+
+      {!loading && notice && (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>
+          {notice}
+        </div>
+      )}
+
+      {!loading && !notice && rows.length === 0 && (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          No delivered-not-released matters.
+        </div>
+      )}
+
+      {!loading && rows.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {rows.map((row) => (
+            <div
+              key={row.matter_id}
+              style={{
+                background: "#0c0c0c",
+                border: "1px solid rgba(184,92,92,0.15)",
+                borderRadius: 3,
+                padding: "12px 16px",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "6px 20px",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", flex: 1, minWidth: 120 }}>
+                {row.client_name}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+                {row.document_type} · {row.country}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "monospace" }}>
+                {row.carrier} {row.tracking_number_display}
+              </div>
+              {row.delivered_at && (
+                <div style={{ fontSize: 10, color: "#3FA47A" }}>
+                  Delivered {new Date(row.delivered_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </div>
+              )}
+              <a
+                href={`/dashboard/releases?matter_id=${row.matter_id}`}
+                style={{
+                  fontSize: 10,
+                  padding: "4px 10px",
+                  borderRadius: 2,
+                  background: "rgba(184,92,92,0.1)",
+                  border: "1px solid rgba(184,92,92,0.25)",
+                  color: "#B85C5C",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Review Release →
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ReleaseControlCenter() {
   const [data, setData] = useState<ReleaseData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -232,6 +368,8 @@ export function ReleaseControlCenter() {
           ))}
         </div>
       )}
+
+      <DeliveredNotReleasedSection />
     </div>
   );
 }

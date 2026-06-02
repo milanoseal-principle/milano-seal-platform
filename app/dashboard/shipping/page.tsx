@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ShippoCourierMotionRail from "@/components/shipping/ShippoCourierMotionRail";
 
@@ -49,9 +50,20 @@ function fmt(d: string | null) {
 }
 
 export default function ShippingPage() {
-  // Shipping data is available after migration 015 is applied and SHIPPO_API_KEY is configured.
-  // The data fetch is intentionally deferred until the database migration is in place.
-  const shipments: ShipmentRow[] = [];
+  const [shipments, setShipments] = useState<ShipmentRow[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard/shippo/shipments")
+      .then((r) => r.json() as Promise<{ shipments: ShipmentRow[]; notice?: string }>)
+      .then((d) => {
+        setShipments(d.shipments ?? []);
+        setNotice(d.notice ?? null);
+      })
+      .catch(() => setNotice("Unable to load shipments"))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div style={{ padding: "32px 28px", background: "#050505", minHeight: "100vh", color: "#f6f1e6" }}>
@@ -68,23 +80,30 @@ export default function ShippingPage() {
         </p>
       </div>
 
-      {/* Migration / configuration notice */}
-      <div
-        style={{
-          padding: "14px 18px",
-          background: "rgba(198,165,90,0.06)",
-          border: "1px solid rgba(198,165,90,0.2)",
-          borderRadius: 4,
-          marginBottom: 28,
-          fontSize: 12,
-          color: "rgba(198,165,90,0.75)",
-          lineHeight: 1.6,
-        }}
-      >
-        <strong style={{ color: "#C6A55A", letterSpacing: "0.05em" }}>Operator Notice:</strong>{" "}
-        Shipping data available after migration 015 is applied and{" "}
-        <code style={{ fontFamily: "monospace", fontSize: 11 }}>SHIPPO_API_KEY</code> is configured.
-      </div>
+      {/* Migration / configuration notice — only when data unavailable */}
+      {notice && (
+        <div
+          style={{
+            padding: "14px 18px",
+            background: "rgba(198,165,90,0.06)",
+            border: "1px solid rgba(198,165,90,0.2)",
+            borderRadius: 4,
+            marginBottom: 28,
+            fontSize: 12,
+            color: "rgba(198,165,90,0.75)",
+            lineHeight: 1.6,
+          }}
+        >
+          <strong style={{ color: "#C6A55A", letterSpacing: "0.05em" }}>Operator Notice:</strong>{" "}
+          {notice}
+        </div>
+      )}
+
+      {loading && (
+        <div style={{ fontSize: 12, color: "rgba(198,165,90,0.35)", fontFamily: "monospace", padding: "20px 0" }}>
+          Loading shipments…
+        </div>
+      )}
 
       {/* Visual example — status rail with UNKNOWN */}
       <div

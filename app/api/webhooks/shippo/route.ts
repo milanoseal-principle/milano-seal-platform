@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabaseServer";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { mapShippoTrackingStatus, toCustodyLedgerEvent } from "@/lib/shippo/status";
 import { createHash } from "crypto";
 

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OperatorCopilot } from "@/components/dashboard/OperatorCopilot";
+import { CourierCopilotSection } from "@/components/dashboard/CourierCopilotSection";
 
 export const metadata = {
   title: "Operator Copilot — Milano Seal",
@@ -360,5 +361,10 @@ export default async function CopilotPage() {
     allDeals,
   });
 
-  return <OperatorCopilot briefing={briefing} />;
+  return (
+    <>
+      <OperatorCopilot briefing={briefing} />
+      <CourierCopilotSection />
+    </>
+  );
 }

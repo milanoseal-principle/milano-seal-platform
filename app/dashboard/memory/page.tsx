@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InstitutionalMemory } from "@/components/dashboard/InstitutionalMemory";
+import { CourierMemorySection } from "@/components/dashboard/CourierMemorySection";
 
 export const metadata = {
   title: "Memory Engine — Milano Seal",
@@ -60,9 +61,12 @@ export default async function MemoryPage() {
   }
 
   return (
-    <InstitutionalMemory
-      incidents={(rejectedMatters || []) as RejectedMatter[]}
-      events={terminalEvents}
-    />
+    <>
+      <InstitutionalMemory
+        incidents={(rejectedMatters || []) as RejectedMatter[]}
+        events={terminalEvents}
+      />
+      <CourierMemorySection />
+    </>
   );
 }

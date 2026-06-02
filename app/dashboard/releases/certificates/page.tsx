@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReleaseCertificateRenderer } from "@/components/releases/ReleaseCertificateRenderer";
+import { CertificateActions } from "@/components/releases/CertificateActions";
 
 const GOLD = "#C6A55A";
 const EMERALD = "#4a9e6b";
@@ -55,6 +57,45 @@ export default function CertificatesPage() {
 
   return (
     <>
+      {/* DEMO PREVIEW — NOT LIVE DATA */}
+      <div
+        style={{
+          marginBottom: 32,
+          padding: "12px 16px",
+          background: "rgba(198,165,90,0.05)",
+          border: "1px solid rgba(198,165,90,0.15)",
+          borderRadius: 3,
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "rgba(198,165,90,0.6)",
+          fontFamily: "monospace",
+        }}
+      >
+        Demo Preview — Not Live Data
+      </div>
+      <ReleaseCertificateRenderer
+        verificationId="DEMO-VERIFICATION-ID"
+        matterId="DEMO-MATTER-ID"
+        clientName="Demo Client"
+        documentType="Power of Attorney"
+        destinationCountry="Italy"
+        executionLane="Standard"
+        notarizationStatus="COMPLETE"
+        apostilleStatus="COMPLETE"
+        courierStatus="DELIVERED"
+        releaseStatus="PENDING REVIEW"
+        releaseDate={new Date().toISOString()}
+        custodyHash="MS-DEMO-HASH-0000"
+        verificationUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/verify/DEMO-VERIFICATION-ID`}
+        operatorOfRecord="Milano Seal Operations"
+      />
+      <CertificateActions
+        verificationId="DEMO-VERIFICATION-ID"
+        matterId="DEMO-MATTER-ID"
+      />
+      <div style={{ margin: "32px 0", height: 1, background: "rgba(198,165,90,0.1)" }} />
+
       <style>{`
         @media print {
           .no-print { display: none !important; }

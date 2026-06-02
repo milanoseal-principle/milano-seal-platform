@@ -16,6 +16,7 @@ try {
   RECEIVING_AUTHORITIES = [];
 }
 import { SystemHealth } from "@/components/dashboard/SystemHealth";
+import { CourierHealthCard } from "@/components/dashboard/CourierHealthCard";
 
 export const metadata = {
   title: "System Truth Engine — Milano Seal",
@@ -269,5 +270,10 @@ export default async function TruthPage() {
     scores.reduce((sum, s) => sum + s.score, 0) / scores.length
   );
 
-  return <SystemHealth scores={scores} overallScore={overallScore} />;
+  return (
+    <>
+      <SystemHealth scores={scores} overallScore={overallScore} />
+      <CourierHealthCard />
+    </>
+  );
 }
