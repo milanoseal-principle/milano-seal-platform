@@ -231,6 +231,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Intelligence",
   },
   {
+    name: "Execution DNA",
+    route: "dna",
+    icon: "Dna",
+    description: "Route intelligence from completed matter history",
+    group: "Intelligence",
+  },
+  {
     name: "Compliance",
     route: "compliance",
     icon: "Shield",
