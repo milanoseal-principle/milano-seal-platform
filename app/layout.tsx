@@ -71,10 +71,10 @@ export const metadata: Metadata = {
       "Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
     images: [
       {
-        url: "/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png",
-        width: 1200,
-        height: 630,
-        alt: "The Milano Seal™",
+        url: "/milano-seal-gold-transparent-512.png",
+        width: 512,
+        height: 512,
+        alt: "The Milano Seal™ — U.S. Document Execution for International Use",
       },
     ],
   },
