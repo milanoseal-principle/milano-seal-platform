@@ -148,19 +148,6 @@ export function Hero() {
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            {/* Disclaimer */}
-            <p className={`ms-hero-line text-xs text-[#4A4A4A] mb-8 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
-              International use is subject to destination country and receiving authority requirements.
-              <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
-                U.S. Document Execution for International Use
-              </span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
-              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
-            </p>
-
             {/* Subtext */}
             <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
