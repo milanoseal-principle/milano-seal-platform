@@ -225,27 +225,6 @@ export function Hero() {
               <GlobalTrustCoreHero />
             </motion.div>
 
-            {/* Founder Trading Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <a href="/founder" style={{ display: "block" }} className="founder-card-animated">
-                <img
-                  src="/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png"
-                  alt="Nicholas Milano, founder of The Milano Seal, Florida Notary Public and Remote Online Notary for apostille coordination and international document execution support."
-                  style={{
-                    maxWidth: 340,
-                    width: "100%",
-                    borderRadius: 12,
-                    display: "block",
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              </a>
-            </motion.div>
-
             {/* PATCH 4 — Founder SEO Section */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
