@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
 
   if (status) query = query.eq("status", status);
   if (paymentStatus) {
-    const mapped = paymentStatus === "unpaid" ? "pending" : paymentStatus;
-    query = query.eq("payment_status", mapped);
+    query = query.eq("payment_status", paymentStatus);
   }
   if (assignee) query = query.eq("assignee", assignee);
   if (search) {
