@@ -120,7 +120,7 @@ export function Services() {
             >
               <Link
                 href={service.href}
-                className="group relative bg-[#111111] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-500 hover:border-[#C6A55A]/30 gold-glow-hover flex flex-col h-full block"
+                className="group relative bg-[#111111] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-500 hover:border-[#C6A55A]/30 gold-glow-hover flex flex-col h-full"
               >
                 <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 self-start">
                   <service.icon className="w-6 h-6 text-[#C6A55A]" />
