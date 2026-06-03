@@ -13,6 +13,8 @@ import { ReadinessSummaryCard } from "@/components/portal/ReadinessSummaryCard";
 import { PortalCourierCustody } from "@/components/portal/PortalCourierCustody";
 import { createClient } from "@/lib/supabase/client";
 import type { ClientMatterIntelligence } from "@/lib/matterIntelligence";
+import { PortalTrustOrbit } from "@/components/orbit/PortalTrustOrbit";
+import type { OrbitState } from "@/lib/orbit/orbitStateMap";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
 
@@ -493,6 +495,12 @@ export default function MyMatterPage() {
         <div className="pp-sub" style={{ marginBottom: 20 }}>
           {deal.document_type ?? "Document execution"} · <em>{deal.destination_country ?? "—"}</em>
         </div>
+
+        {/* Trust Orbit — visual trust state */}
+        <PortalTrustOrbit
+          state={(deal.matter_status ?? "idle") as OrbitState}
+          clientName={deal.client_name ?? undefined}
+        />
 
         {/* PORTAL-01: Matter Intelligence Hero */}
         <MatterJourneyCard deal={deal} />
