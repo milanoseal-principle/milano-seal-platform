@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const { data: matter, error: mErr } = await supabase
       .from("deals")
-      .select("id, payment_status, paid_and_released, matter_status, apostille_required, shipping_street1, document_type, client_name, destination_country, country")
+      .select("id, payment_status, paid_and_released, deal_status, apostille_required, shipping_street1, document_type, client_name, destination_country, country")
       .eq("id", matter_id)
       .single();
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       assertCanCreateLabel({
         payment_status: matter.payment_status,
         paid_and_released: matter.paid_and_released,
-        matter_status: matter.matter_status,
+        matter_status: matter.deal_status,
         apostille_required: matter.apostille_required,
         shipping_address: matter.shipping_street1,
       });
