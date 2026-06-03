@@ -310,7 +310,7 @@ async function processWiseEvent(opts: {
   if (milanoStatus === "PAYMENT_PENDING") {
     await supabase
       .from("deals")
-      .update({ payment_status: "pending", updated_at: new Date().toISOString() })
+      .update({ payment_status: "unpaid", updated_at: new Date().toISOString() })
       .eq("id", deal.id);
     await logActivity({
       deal_id: deal.deal_id ?? deal.id,
@@ -403,7 +403,7 @@ async function flagForReview(
   if (dealId) {
     await supabase
       .from("deals")
-      .update({ payment_status: "review_required", updated_at: new Date().toISOString() })
+      .update({ payment_status: "failed", updated_at: new Date().toISOString() })
       .eq("id", dealId);
 
     await logActivity({

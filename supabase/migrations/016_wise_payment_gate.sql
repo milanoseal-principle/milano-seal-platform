@@ -135,6 +135,15 @@ ALTER TABLE deals
   ADD COLUMN IF NOT EXISTS wise_reference        TEXT,
   ADD COLUMN IF NOT EXISTS payment_confirmed_at  TIMESTAMPTZ;
 
+ALTER TABLE deals
+  DROP CONSTRAINT IF EXISTS deals_payment_status_check;
+
+ALTER TABLE deals
+  ADD CONSTRAINT deals_payment_status_check
+  CHECK (payment_status IN (
+    'unpaid', 'paid', 'failed', 'refunded'
+  ));
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DB-level payment gate trigger
 -- Prevents matter from advancing to scheduled or later without payment
