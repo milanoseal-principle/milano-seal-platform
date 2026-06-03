@@ -342,9 +342,6 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
           )}
         </div>
       )}
-    </div>
-        Courier & Delivery
-      </div>
 
       {loading && (
         <div style={{ height: 32, background: "rgba(255,255,255,0.03)", borderRadius: 4 }} />
