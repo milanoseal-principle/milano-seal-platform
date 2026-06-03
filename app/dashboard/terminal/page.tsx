@@ -61,7 +61,6 @@ type EventGroup =
   | "Referral"
   | "Autopilot"
   | "Intelligence";
-  | "Autopilot";
 
 const EVENT_GROUP_MAP: Record<LedgerEventType, EventGroup> = {
   PAYMENT_LINK_CREATED: "Payment",
