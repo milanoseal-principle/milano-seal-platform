@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, stageLabel, stageTone } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PipelineBoard } from "@/components/dashboard/pipeline-board";
 
 interface PipelineDeal {
   deal_id: string;
@@ -97,6 +98,9 @@ export default function Pipeline() {
           {formatCurrency(data.total_value_closed)} closed
         </p>
       </div>
+
+      {/* PipelineBoard — operator Kanban with advance controls */}
+      <PipelineBoard />
 
       <div className="grid grid-flow-col auto-cols-[minmax(280px,1fr)] gap-4 overflow-x-auto pb-4">
         {data.stages.map((s) => (
