@@ -207,6 +207,10 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     route: "relationships",
     icon: "Network",
     description: "Client, attorney, partner relationship registry",
+    name: "Autopilot",
+    route: "intelligence/autopilot",
+    icon: "Zap",
+    description: "Operator-confirmed task automation across active matters",
     group: "Intelligence",
   },
   {

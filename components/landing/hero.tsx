@@ -151,6 +151,19 @@ export function Hero() {
             {/* Disclaimer */}
             <p className={`ms-hero-line text-xs text-[#4A4A4A] mb-8 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination country and receiving authority requirements.
+              <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
+                U.S. Document Execution for International Use
+              </span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
+              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
+            </p>
+
+            {/* Subtext */}
+            <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
+              International use is subject to destination and receiving-authority requirements.
             </p>
 
             {/* CTAs */}
@@ -212,6 +225,55 @@ export function Hero() {
               <GlobalTrustCoreHero />
             </motion.div>
 
+            {/* Founder Trading Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <a href="/founder" style={{ display: "block" }} className="founder-card-animated">
+                <img
+                  src="/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png"
+                  alt="Nicholas Milano, founder of The Milano Seal, Florida Notary Public and Remote Online Notary for apostille coordination and international document execution support."
+                  style={{
+                    maxWidth: 340,
+                    width: "100%",
+                    borderRadius: 12,
+                    display: "block",
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </a>
+            </motion.div>
+
+            {/* PATCH 4 — Founder SEO Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{ maxWidth: 340, width: "100%", textAlign: "center" }}
+            >
+              <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
+                Founder-Led Document Execution
+              </p>
+              <p style={{ color: "rgba(176,176,176,0.8)", fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
+                The Milano Seal™ is led by Nicholas Milano, a Florida Notary Public and Remote Online Notary supporting apostille coordination, international document execution, mobile notary requests, witness coordination, and secure release workflows for clients, attorneys, businesses, real estate professionals, healthcare providers, and private clients.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                <a
+                  href="/founder"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Meet the Founder →
+                </a>
+                <a
+                  href="/intake"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Begin Secure Intake →
+                </a>
+              </div>
+            </motion.div>
           </div>
 
         </div>
