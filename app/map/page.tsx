@@ -397,10 +397,11 @@ export default function MapPage() {
             <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-6">
               Global Document <em className="text-[#C6A55A]">Intelligence</em>
             </h1>
-            <p className="text-[#8A8A8A] text-lg font-light max-w-2xl mx-auto">
+            <p className="text-[#8A8A8A] text-lg font-light max-w-2xl mx-auto mb-6">
               Select any jurisdiction to view RON authorization, apostille
               requirements, witness rules, and your execution path.
             </p>
+            <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", margin: "0 auto" }} />
           </div>
 
           <div className="grid lg:grid-cols-[1fr_400px] gap-8">
@@ -448,7 +449,10 @@ export default function MapPage() {
                 return (
                   <div key={region} className="mb-6">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-[#C6A55A] text-[9px] tracking-[0.2em] uppercase font-semibold">
+                      <span
+                        className="text-[#C6A55A] text-[9px] tracking-[0.2em] uppercase font-semibold"
+                        style={{ borderLeft: "2px solid rgba(198,165,90,0.3)", paddingLeft: 10 }}
+                      >
                         {region}
                       </span>
                       <div className="flex-1 h-px bg-[#1A1A1A]" />
@@ -463,6 +467,12 @@ export default function MapPage() {
                               ? "border-[#C6A55A] bg-[#C6A55A]/8"
                               : "border-[#1A1A1A] bg-[#111111] hover:border-[#2A2A2A]"
                           }`}
+                          style={{
+                            borderLeft: activeKey === j.key ? "2px solid rgba(198,165,90,0.5)" : "2px solid transparent",
+                            transition: "border 0.2s, background 0.2s",
+                          }}
+                          onMouseEnter={(e) => { if (activeKey !== j.key) (e.currentTarget as HTMLButtonElement).style.borderLeft = "2px solid rgba(198,165,90,0.5)"; }}
+                          onMouseLeave={(e) => { if (activeKey !== j.key) (e.currentTarget as HTMLButtonElement).style.borderLeft = "2px solid transparent"; }}
                         >
                           <span className="text-lg flex-shrink-0">
                             {j.flag}
@@ -500,14 +510,51 @@ export default function MapPage() {
                 </div>
               )}
               {!loading && !selected && (
-                <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-10 text-center">
-                  <div className="w-14 h-14 rounded-full border border-[#2A2A2A] flex items-center justify-center mx-auto mb-5">
-                    <Globe className="w-6 h-6 text-[#C6A55A]" />
+                <div className="bg-[#111111] border border-[#1A1A1A] rounded-xl overflow-hidden">
+                  <div style={{ padding: "32px 24px", textAlign: "center" }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: "50%",
+                      border: "1px solid rgba(198,165,90,0.2)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      margin: "0 auto 16px",
+                      background: "rgba(198,165,90,0.04)",
+                    }}>
+                      <Globe className="w-5 h-5" style={{ color: "rgba(198,165,90,0.4)" }} />
+                    </div>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.6, marginBottom: 20 }}>
+                      Select a jurisdiction to view compliance requirements and execution path.
+                    </p>
+                    <div style={{ borderTop: "1px solid rgba(198,165,90,0.08)", paddingTop: 16 }}>
+                      <p style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(198,165,90,0.35)", marginBottom: 10 }}>
+                        Common corridors
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {["italy","uae","brazil"].map((j) => (
+                          <button
+                            key={j}
+                            onClick={() => fetchCompliance(j)}
+                            style={{
+                              padding: "7px 12px",
+                              border: "1px solid rgba(198,165,90,0.15)",
+                              borderRadius: 3,
+                              background: "transparent",
+                              color: "rgba(198,165,90,0.6)",
+                              fontSize: 9,
+                              letterSpacing: "0.18em",
+                              textTransform: "uppercase",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "border-color 0.2s, color 0.2s",
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(198,165,90,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "#C6A55A"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(198,165,90,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(198,165,90,0.6)"; }}
+                          >
+                            {j === "italy" ? "🇮🇹 Italy" : j === "uae" ? "🇦🇪 UAE" : "🇧🇷 Brazil"} →
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[#8A8A8A] text-sm italic font-light">
-                    Select a jurisdiction to view compliance requirements and
-                    execution path.
-                  </p>
                 </div>
               )}
               {!loading && selected && (
@@ -540,12 +587,15 @@ export default function MapPage() {
             ].map((s) => (
               <div
                 key={s.title}
-                className="bg-[#111111] border border-[#1A1A1A] rounded-xl p-6"
+                className="bg-[#111111] border border-[#1A1A1A] rounded-xl overflow-hidden"
               >
-                <h3 className="text-[#C6A55A] font-medium mb-3">{s.title}</h3>
-                <p className="text-[#8A8A8A] text-sm leading-relaxed font-light">
-                  {s.desc}
-                </p>
+                <div style={{ height: 1, background: "linear-gradient(90deg, rgba(198,165,90,0.5), rgba(198,165,90,0.1))" }} />
+                <div className="p-6">
+                  <h3 className="text-[#C6A55A] font-medium mb-3">{s.title}</h3>
+                  <p className="text-[#8A8A8A] text-sm leading-relaxed font-light">
+                    {s.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
