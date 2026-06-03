@@ -39,6 +39,7 @@ import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
 import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
 import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
 import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
+import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import {
   ArrowLeft,
   CalendarClock,
@@ -1410,6 +1411,14 @@ export default function DealDetail() {
                       Confirm that documents have been released to the recipient.
                       This records a custody ledger event.
                     </p>
+                    {/* Milano Release Seal — visual release confirmation widget */}
+                    {!releaseSuccess && (
+                      <MilanoReleaseSeal
+                        matterId={deal.id}
+                        matterRef={deal.deal_id ?? deal.id.slice(0, 8).toUpperCase()}
+                        onConfirm={() => void confirmDocRelease()}
+                      />
+                    )}
                     {releaseSuccess ? (
                       <div className="flex items-center gap-2 p-2.5 rounded-sm border border-[#D4AF37]/20 bg-[#D4AF37]/5">
                         <CheckCircle2 className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
