@@ -89,7 +89,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[88px] md:pt-[96px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -107,7 +107,7 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-8 lg:py-0"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-4 lg:py-0"
       >
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
@@ -154,7 +154,7 @@ export function Hero() {
             </p>
 
             {/* CTAs */}
-            <div className={`ms-hero-line flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
