@@ -142,20 +142,18 @@ ALTER TABLE deals
 CREATE OR REPLACE FUNCTION check_payment_gate()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.matter_status IN (
-    'scheduled', 'in_execution', 'apostille_processing',
-    'in_transit', 'delivered', 'released', 'completed'
-  ) AND OLD.matter_status NOT IN (
-    'scheduled', 'in_execution', 'apostille_processing',
-    'in_transit', 'delivered', 'released', 'completed'
+  IF NEW.deal_status IN (
+    'scheduled', 'in_execution', 'apostille', 'shipped', 'completed'
+  ) AND OLD.deal_status NOT IN (
+    'scheduled', 'in_execution', 'apostille', 'shipped', 'completed'
   ) THEN
     IF COALESCE(NEW.amount_paid, 0) < COALESCE(NEW.amount_due, 0) THEN
       RAISE EXCEPTION 'PAYMENT_REQUIRED: matter cannot advance to % — amount_paid (%) < amount_due (%)',
-        NEW.matter_status, COALESCE(NEW.amount_paid, 0), COALESCE(NEW.amount_due, 0);
+        NEW.deal_status, COALESCE(NEW.amount_paid, 0), COALESCE(NEW.amount_due, 0);
     END IF;
     IF NEW.payment_status NOT IN ('paid') THEN
       RAISE EXCEPTION 'PAYMENT_REQUIRED: matter cannot advance to % — payment_status is %',
-        NEW.matter_status, COALESCE(NEW.payment_status, 'null');
+        NEW.deal_status, COALESCE(NEW.payment_status, 'null');
     END IF;
   END IF;
   RETURN NEW;
