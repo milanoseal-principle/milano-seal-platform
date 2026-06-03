@@ -4,6 +4,7 @@ import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { RevenueIntelligencePanel } from "@/components/dashboard/RevenueIntelligencePanel";
 import { PartnerScorecard } from "@/components/dashboard/PartnerScorecard";
 import { PayoutReviewPanel } from "@/components/dashboard/PayoutReviewPanel";
+import { IntelligenceCommandCenter2 } from "@/components/dashboard/IntelligenceCommandCenter2";
 
 export default async function RevenueIntelligencePage() {
   await requireDashboardAccess();
@@ -38,6 +39,7 @@ export default async function RevenueIntelligencePage() {
       >
         <PayoutReviewPanel items={[]} />
       </div>
+      <IntelligenceCommandCenter2 />
     </div>
   );
 }

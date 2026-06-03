@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { VAOperatorPanel } from "@/components/dashboard/va/VAOperatorPanel";
 import { VATaskIntelligencePanel } from "@/components/dashboard/va/VATaskIntelligencePanel";
+import { VACourierTaskPanel } from "@/components/operators/VACourierTaskPanel";
 
 export default async function VATaskManagementPage() {
   const { role } = await requireDashboardAccess();
@@ -33,6 +34,9 @@ export default async function VATaskManagementPage() {
 
       {/* Operator panel — assigned tasks from DB */}
       <VAOperatorPanel />
+
+      {/* Courier task queue */}
+      <VACourierTaskPanel />
     </div>
   );
 }

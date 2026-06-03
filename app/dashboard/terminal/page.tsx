@@ -38,6 +38,12 @@ export const LEDGER_EVENT_TYPES = [
   "AUTOPILOT_TASK_BLOCKED",
   "AUTOPILOT_TASK_DISMISSED",
   "AUTOPILOT_TASK_COMPLETED",
+  // Intelligence enrichment events (operator-only)
+  "COUNTRY_PROFILE_ENRICHED",
+  "LANGUAGE_PROFILE_ENRICHED",
+  "ALLIANCE_TARGET_IDENTIFIED",
+  "AUTHORITY_RESEARCH_TARGET_CREATED",
+  "TRANSLATION_REVIEW_FLAGGED",
 ] as const;
 
 export type LedgerEventType = typeof LEDGER_EVENT_TYPES[number];
@@ -53,6 +59,8 @@ type EventGroup =
   | "Authority"
   | "Intake"
   | "Referral"
+  | "Autopilot"
+  | "Intelligence";
   | "Autopilot";
 
 const EVENT_GROUP_MAP: Record<LedgerEventType, EventGroup> = {
@@ -87,6 +95,11 @@ const EVENT_GROUP_MAP: Record<LedgerEventType, EventGroup> = {
   AUTOPILOT_TASK_BLOCKED: "Autopilot",
   AUTOPILOT_TASK_DISMISSED: "Autopilot",
   AUTOPILOT_TASK_COMPLETED: "Autopilot",
+  COUNTRY_PROFILE_ENRICHED: "Intelligence",
+  LANGUAGE_PROFILE_ENRICHED: "Intelligence",
+  ALLIANCE_TARGET_IDENTIFIED: "Intelligence",
+  AUTHORITY_RESEARCH_TARGET_CREATED: "Intelligence",
+  TRANSLATION_REVIEW_FLAGGED: "Intelligence",
 };
 
 const GROUP_COLORS: Record<EventGroup, string> = {
@@ -99,6 +112,7 @@ const GROUP_COLORS: Record<EventGroup, string> = {
   Intake: "#9ca3af",
   Referral: "#34d399",
   Autopilot: "#818cf8",
+  Intelligence: "#22d3ee",
 };
 
 function getEventGroup(eventType: string): EventGroup | null {
@@ -222,6 +236,11 @@ const EVENT_LABELS: Record<string, string> = {
   AUTOPILOT_TASK_BLOCKED: "Autopilot task blocked — manual review required",
   AUTOPILOT_TASK_DISMISSED: "Operator dismissed autopilot task",
   AUTOPILOT_TASK_COMPLETED: "Autopilot task completed",
+  COUNTRY_PROFILE_ENRICHED: "Country profile enriched from intelligence registry",
+  LANGUAGE_PROFILE_ENRICHED: "Language profile enriched for destination corridor",
+  ALLIANCE_TARGET_IDENTIFIED: "Alliance expansion target identified for corridor",
+  AUTHORITY_RESEARCH_TARGET_CREATED: "Authority research target created — VA follow-up required",
+  TRANSLATION_REVIEW_FLAGGED: "Translation review flagged for destination",
 };
 
 const STAGE_LABELS: Record<string, string> = {

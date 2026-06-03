@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
 
 const LEFT_PILLARS = [
@@ -9,16 +10,19 @@ const LEFT_PILLARS = [
     icon: Shield,
     title: "Secure Intake",
     desc: "Verified identity & document stage. Every matter begins with structured scope confirmation.",
+    href: "/intake",
   },
   {
     icon: Globe,
     title: "Global Document Intelligence",
     desc: "Destination rules, forms & authority requirements reviewed for your specific corridor.",
+    href: "/countries",
   },
   {
     icon: Lock,
     title: "Payment-Gated Scheduling",
     desc: "No scheduling until scope & payment are confirmed. Your resources are reserved for your matter only.",
+    href: "/process",
   },
 ];
 
@@ -27,16 +31,19 @@ const RIGHT_PILLARS = [
     icon: Eye,
     title: "Chain-of-Custody Visibility",
     desc: "Track every step from intake to release. Full custody record maintained throughout.",
+    href: "/process",
   },
   {
     icon: FileCheck,
     title: "Apostille Coordination",
     desc: "Expert coordination for Hague Convention certification and consular legalization workflows.",
+    href: "/services",
   },
   {
     icon: Send,
     title: "International Release",
     desc: "Secure release through approved courier methods and international delivery partners.",
+    href: "/services",
   },
 ];
 
@@ -47,6 +54,7 @@ function Pillar({
   align,
   delay,
   inView,
+  href,
 }: {
   icon: React.ElementType;
   title: string;
@@ -54,23 +62,28 @@ function Pillar({
   align: "left" | "right";
   delay: number;
   inView: boolean;
+  href: string;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: align === "left" ? -18 : 18 }}
       animate={inView ? { opacity: 1, x: 0 } : {}}
       transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
     >
-      <div className="w-8 h-8 rounded-lg border border-[#C6A55A]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[#C6A55A]/40 transition-colors">
-        <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
-      </div>
-      <div className="min-w-0">
-        <h3 className="text-white text-[13px] font-medium mb-1 leading-snug">{title}</h3>
-        <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
-          {desc}
-        </p>
-      </div>
+      <Link
+        href={href}
+        className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
+      >
+        <div className="w-8 h-8 rounded-lg border border-[#C6A55A]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[#C6A55A]/40 transition-colors">
+          <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-white text-[13px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
+          <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
+            {desc}
+          </p>
+        </div>
+      </Link>
     </motion.div>
   );
 }
@@ -129,85 +142,83 @@ export function MilanoTrustCore() {
           </div>
         </div>
 
-        {/* Desktop: three-column radial split */}
-        <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-0">
-          {/* Left pillars */}
-          <div className="flex flex-col gap-8 pr-10">
-            {/* Header block on left */}
-            <motion.div
-              initial={{ opacity: 0, x: -18 }}
-              animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-2"
-            >
-              <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
-                Our Platform Principles
-              </p>
-              <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
-                Milano<br />Trust Core
-              </h2>
-              <p className="text-[#5A5A5A] text-xs leading-relaxed max-w-[220px]">
-                Six pillars of deterministic execution for international document success.
-              </p>
-            </motion.div>
-
-            {LEFT_PILLARS.map((p, i) => (
-              <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
-            ))}
-          </div>
-
-          {/* Center medallion */}
+        {/* Desktop: header above, then three-column radial split */}
+        <div className="hidden lg:block">
+          {/* Header centered above */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-shrink-0 w-[180px] flex items-center justify-center relative"
+            initial={{ opacity: 0, y: -12 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-10"
           >
-            {/* Outer glow ring */}
-            <div
-              className="absolute w-[164px] h-[164px] rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(198,165,90,0.07) 0%, transparent 68%)",
-                filter: "blur(12px)",
-              }}
-            />
-            {/* Outer decorative ring */}
-            <div className="absolute w-[148px] h-[148px] rounded-full border border-[#C6A55A]/08" />
-            {/* Mid ring */}
-            <div className="absolute w-[126px] h-[126px] rounded-full border border-[#C6A55A]/12" />
-            {/* Inner ring */}
-            <div className="absolute w-[104px] h-[104px] rounded-full border border-[#C6A55A]/18" />
-            {/* Core circle */}
-            <div
-              className="relative w-[88px] h-[88px] rounded-full border border-[#C6A55A]/35 flex items-center justify-center"
-              style={{
-                background: "radial-gradient(circle, rgba(198,165,90,0.10) 0%, rgba(6,6,8,0.95) 65%)",
-                boxShadow: "0 0 32px rgba(198,165,90,0.10), inset 0 0 20px rgba(198,165,90,0.04)",
-              }}
-            >
-              <span
-                className="font-serif text-[#C6A55A] text-4xl font-medium leading-none select-none"
-                style={{ textShadow: "0 0 24px rgba(198,165,90,0.4)" }}
-              >
-                M
-              </span>
-            </div>
+            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+              Our Platform Principles
+            </p>
+            <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
+              Milano Trust Core
+            </h2>
+            <p className="text-[#5A5A5A] text-xs leading-relaxed">
+              Six pillars of deterministic execution for international document success.
+            </p>
           </motion.div>
 
-          {/* Right pillars */}
-          <div className="flex flex-col gap-8 pl-10 justify-end">
-            {/* Spacer to align pillars with left side (skip header height) */}
-            <div className="mb-2 invisible pointer-events-none select-none" aria-hidden>
-              <p className="font-mono text-[9px] tracking-[0.35em] uppercase mb-2">placeholder</p>
-              <h2 className="font-serif text-3xl font-light mb-2 leading-tight">
-                Milano<br />Trust Core
-              </h2>
-              <p className="text-xs leading-relaxed max-w-[220px]">Six pillars placeholder text here ok.</p>
+          {/* Three-column: pillars | medallion | pillars — all vertically centered */}
+          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0">
+            {/* Left pillars */}
+            <div className="flex flex-col gap-7 pr-8">
+              {LEFT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
             </div>
 
-            {RIGHT_PILLARS.map((p, i) => (
-              <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
-            ))}
+            {/* Center medallion */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88 }}
+              animate={inView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center relative"
+              style={{ height: 280 }}
+            >
+              {/* Glow */}
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: 260, height: 260,
+                  background: "radial-gradient(circle, rgba(198,165,90,0.09) 0%, transparent 70%)",
+                  filter: "blur(16px)",
+                }}
+              />
+              {/* Connector lines — left */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[calc(50%-70px)] h-px bg-gradient-to-r from-transparent to-[#C6A55A]/25" />
+              {/* Connector lines — right */}
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[calc(50%-70px)] h-px bg-gradient-to-l from-transparent to-[#C6A55A]/25" />
+              {/* Rings */}
+              <div className="absolute w-[240px] h-[240px] rounded-full border border-[#C6A55A]/06" />
+              <div className="absolute w-[200px] h-[200px] rounded-full border border-[#C6A55A]/10" />
+              <div className="absolute w-[160px] h-[160px] rounded-full border border-[#C6A55A]/16" />
+              {/* Core */}
+              <div
+                className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center"
+                style={{
+                  background: "radial-gradient(circle, rgba(198,165,90,0.13) 0%, rgba(6,6,8,0.97) 70%)",
+                  boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
+                }}
+              >
+                <span
+                  className="font-serif text-[#C6A55A] text-5xl font-medium leading-none select-none"
+                  style={{ textShadow: "0 0 32px rgba(198,165,90,0.5)" }}
+                >
+                  M
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Right pillars */}
+            <div className="flex flex-col gap-7 pl-8">
+              {RIGHT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
+            </div>
           </div>
         </div>
       </div>

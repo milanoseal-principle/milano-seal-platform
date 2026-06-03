@@ -17,6 +17,8 @@ import { generateAuthorityPack } from "@/lib/authorityPack";
 import { certifyAuthorityChain } from "@/lib/authorityChainCertification";
 import type { ChainCertificationResult } from "@/lib/authorityChainCertification";
 import type { AuthorityPack } from "@/data/authorities/types";
+import { getCountryProfileSummary } from "@/data/intelligence/countryProfiles";
+import { getTranslationReviewNote, getCountryLanguageProfile } from "@/data/intelligence/languageProfiles";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -117,6 +119,11 @@ export interface MatterIntelligenceResult {
   is_derived: boolean;
   // Operator notes
   operator_summary: string;
+  // Supplemental enrichment (display only — does not override workflow results)
+  country_profile_summary?: string;
+  language_profile_summary?: string;
+  translation_review_note?: string;
+  alliance_coverage_note?: string;
 }
 
 // ── Client-safe subset ─────────────────────────────────────────────────────────
@@ -137,6 +144,10 @@ export interface ClientMatterIntelligence {
   requires_coordinator_review: boolean;
   timeline_note: string | null;
   disclaimer: string;
+  // Supplemental enrichment (client-safe only)
+  country_profile_summary?: string;
+  language_profile_summary?: string;
+  translation_review_note?: string;
 }
 
 // ── Disclaimer ─────────────────────────────────────────────────────────────────
@@ -363,6 +374,14 @@ export function computeMatterIntelligence(
     readiness_score: null,
     is_derived: isDerived,
     operator_summary: operatorSummary,
+    // Supplemental enrichment — display only, never overrides workflow results
+    country_profile_summary: getCountryProfileSummary(input.country_id),
+    language_profile_summary: (() => {
+      const lp = getCountryLanguageProfile(input.country_id);
+      return lp ? lp.notes_client_safe : undefined;
+    })(),
+    translation_review_note: getTranslationReviewNote(input.country_id, input.document_id),
+    alliance_coverage_note: undefined,
   };
 }
 
@@ -469,6 +488,10 @@ function buildUnknownResult(
     readiness_score: null,
     is_derived: true,
     operator_summary: `Unknown corridor: ${input.country_id} / ${input.document_id}. Manual research required.`,
+    country_profile_summary: getCountryProfileSummary(input.country_id),
+    language_profile_summary: undefined,
+    translation_review_note: getTranslationReviewNote(input.country_id),
+    alliance_coverage_note: undefined,
   };
 }
 
@@ -501,5 +524,9 @@ export function toClientMatterIntelligence(
     requires_coordinator_review: result.is_derived || !authorityVerified,
     timeline_note: result.timeline_note,
     disclaimer: DISCLAIMER,
+    // Supplemental enrichment — client-safe only (alliance_coverage_note excluded)
+    country_profile_summary: result.country_profile_summary,
+    language_profile_summary: result.language_profile_summary,
+    translation_review_note: result.translation_review_note,
   };
 }

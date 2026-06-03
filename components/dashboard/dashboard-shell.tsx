@@ -107,7 +107,7 @@ function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
   );
 }
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, activeMatterId }: { children: React.ReactNode; activeMatterId?: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [actionPanelOpen, setActionPanelOpen] = useState(false);
@@ -240,6 +240,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <OperatorActionPanel
         isOpen={actionPanelOpen}
         onClose={() => setActionPanelOpen(false)}
+        matterId={activeMatterId}
       />
     </div>
   );

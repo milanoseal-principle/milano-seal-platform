@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GlobalRouteAnimation } from "@/components/landing/global-route-animation";
 import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield, ChevronDown, ChevronRight, Clock, Languages, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -100,7 +99,6 @@ export function GlobalMap() {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
-  const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
   const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
 
   // Sprint One — intelligence layer state
@@ -154,10 +152,6 @@ export function GlobalMap() {
   }, []);
   const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
 
-  useEffect(() => {
-    setActiveRouteId(selectedDest?.slug ?? null);
-  }, [selectedDest]);
-
   // Derived corridor intelligence for selected destination
   const corridorIntel = selectedDest
     ? getCorridorIntel(selectedDest.slug, selectedDest.hague)
@@ -174,7 +168,7 @@ export function GlobalMap() {
 
   return (
     <motion.section
-      className="relative py-20 md:py-28 bg-[#050507] overflow-hidden"
+      className="relative py-10 md:py-14 bg-[#050507] overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.08 }}
@@ -218,45 +212,6 @@ export function GlobalMap() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10"
-        >
-          <span className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#6A5520] mb-5 block">
-            THE SYSTEM IN MOTION
-          </span>
-          <h2
-            className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-5 text-balance"
-            style={{ filter: "drop-shadow(0 4px 12px rgba(5,5,7,0.95))" }}
-          >
-            Global Document Intelligence™
-          </h2>
-          <p className="text-[#8A8A8A] text-sm max-w-xl mx-auto leading-relaxed font-light">
-            Jurisdiction routing, Hague compliance, and execution paths —
-            from Florida to key international destinations.
-          </p>
-        </motion.div>
-
-        {/* Florida origin badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="flex justify-center mb-8"
-        >
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-[#0D0D0D] border border-[#C6A55A]/25 rounded-full gold-glow">
-            <MapPin className="w-4 h-4 text-[#C6A55A]" />
-            <span className="text-white text-sm font-medium">Florida, United States</span>
-            <span className="text-[#444]">|</span>
-            <span className="font-mono text-[10px] tracking-wider text-[#C6A55A] uppercase">Execution Origin</span>
-          </div>
-        </motion.div>
-
         {/* Corridor Memory Banner */}
         <AnimatePresence>
           {showMemoryBanner && storedSlug && (
@@ -301,12 +256,36 @@ export function GlobalMap() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-6 border border-white/[0.04] rounded-xl overflow-hidden"
+          className="mb-6 border border-white/[0.06] rounded-xl overflow-hidden"
+          style={{ boxShadow: "0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(198,165,90,0.06)" }}
         >
+          {/* Panel top bar — header + origin badge collapsed into single strip */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.05]"
+            style={{ background: "rgba(3,3,5,0.90)" }}
+          >
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40">
+                THE SYSTEM IN MOTION
+              </span>
+              <span className="text-[#2A2A2A]">·</span>
+              <h2 className="font-serif text-sm text-white/90 font-light tracking-wide">
+                Global Document Intelligence™
+              </h2>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-[#C6A55A]/20 rounded-full"
+              style={{ background: "rgba(198,165,90,0.04)" }}
+            >
+              <MapPin className="w-3 h-3 text-[#C6A55A]/70" />
+              <span className="font-mono text-[9px] tracking-wider text-white/60">Florida, United States</span>
+              <span className="text-[#333]">·</span>
+              <span className="font-mono text-[8px] tracking-wider text-[#C6A55A]/60 uppercase">Execution Origin</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12">
 
             {/* LEFT: How It Works steps — desktop only */}
-            <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/[0.04]"
+            <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/[0.05]"
               style={{
                 background: "rgba(3,3,5,0.75)",
                 backdropFilter: "blur(10px)",
@@ -326,36 +305,38 @@ export function GlobalMap() {
 
                 <div className="flex flex-col gap-0 flex-1">
                   {[
-                    { n: "1", title: "Submit Your Matter", desc: "Verified identity & document upload." },
-                    { n: "2", title: "Execution Review", desc: "We review scope, destination & requirements." },
-                    { n: "3", title: "Secure Payment", desc: "Confirm scope and complete payment." },
-                    { n: "4", title: "Document Execution", desc: "We execute your documents securely." },
-                    { n: "5", title: "Apostille Coordination", desc: "We coordinate authentication & Apostille." },
-                    { n: "6", title: "International Release", desc: "Secure release via confirmed delivery method." },
-                  ].map((step, i) => (
-                    <div key={step.n} className="relative group flex items-start gap-3 py-3.5 border-b border-white/[0.04] last:border-0">
-                      {/* Vertical connector line */}
-                      {i < 5 && (
-                        <div className="absolute left-[18px] top-[34px] bottom-0 w-px bg-[#C6A55A]/08 pointer-events-none" />
-                      )}
-                      <div
-                        className="flex-shrink-0 w-6 h-6 rounded-full border border-[#C6A55A]/25 flex items-center justify-center mt-0.5 group-hover:border-[#C6A55A]/50 transition-colors"
-                        style={{ background: "rgba(198,165,90,0.04)" }}
-                      >
-                        <span className="font-mono text-[8px] text-[#C6A55A]/60 group-hover:text-[#C6A55A]/90 transition-colors leading-none">
-                          {step.n}
-                        </span>
-                      </div>
-                      <div className="min-w-0 pt-0.5">
-                        <div className="text-white/80 text-[11px] font-medium leading-snug mb-0.5 group-hover:text-white transition-colors">
-                          {step.title}
+                    { n: "1", title: "Submit Your Matter", desc: "Verified identity & document upload.", activeAt: null },
+                    { n: "2", title: "Execution Review", desc: "We review scope, destination & requirements.", activeAt: null },
+                    { n: "3", title: "Secure Payment", desc: "Confirm scope and complete payment.", activeAt: null },
+                    { n: "4", title: "Document Execution", desc: "We execute your documents securely.", activeAt: "dest" },
+                    { n: "5", title: "Apostille Coordination", desc: "We coordinate authentication & Apostille.", activeAt: "dest" },
+                    { n: "6", title: "International Release", desc: "Secure release via confirmed delivery method.", activeAt: "dest" },
+                  ].map((step, i) => {
+                    const lit = step.activeAt === "dest" && !!selectedDest;
+                    return (
+                      <div key={step.n} className={`relative group flex items-start gap-3 py-3 border-b border-white/[0.04] last:border-0 transition-all duration-500 ${lit ? "bg-[#C6A55A]/[0.03]" : ""}`}>
+                        {i < 5 && (
+                          <div className={`absolute left-[18px] top-[34px] bottom-0 w-px transition-colors duration-500 ${lit ? "bg-[#C6A55A]/30" : "bg-[#C6A55A]/08"}`} />
+                        )}
+                        {lit && <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />}
+                        <div
+                          className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center mt-0.5 transition-all duration-500 ${lit ? "border-[#C6A55A]/60 bg-[#C6A55A]/10" : "border-[#C6A55A]/20 bg-[rgba(198,165,90,0.03)] group-hover:border-[#C6A55A]/40"}`}
+                        >
+                          <span className={`font-mono text-[8px] leading-none transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-[#C6A55A]/50 group-hover:text-[#C6A55A]/80"}`}>
+                            {step.n}
+                          </span>
                         </div>
-                        <div className="text-[#4A4A4A] text-[10px] leading-snug group-hover:text-[#5A5A5A] transition-colors">
-                          {step.desc}
+                        <div className="min-w-0 pt-0.5">
+                          <div className={`text-[11px] font-medium leading-snug mb-0.5 transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-white/70 group-hover:text-white/90"}`}>
+                            {step.title}
+                          </div>
+                          <div className={`text-[10px] leading-snug transition-colors duration-500 ${lit ? "text-[#6A5520]" : "text-[#3A3A3A] group-hover:text-[#5A5A5A]"}`}>
+                            {step.desc}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* CTA at bottom */}
@@ -377,10 +358,6 @@ export function GlobalMap() {
                 onSelect={handleSelectDest}
                 selectedDest={selectedDest}
                 externalFlyTarget={mapFlyTarget}
-              />
-              <GlobalRouteAnimation
-                activeRouteId={activeRouteId}
-                onRouteActivate={setActiveRouteId}
               />
 
               {/* Mobile bottom-sheet: slides up inside the map when a destination is selected */}
@@ -716,7 +693,7 @@ export function GlobalMap() {
 
                     {/* Animated crosshair globe */}
                     <div className="relative mb-6 flex-shrink-0">
-                      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" className="opacity-60">
+                      <svg width="100" height="100" viewBox="0 0 72 72" fill="none" className="opacity-70">
                         {/* Outer ring — slow pulse */}
                         <circle cx="36" cy="36" r="32" stroke="#C6A55A" strokeWidth="0.5" opacity="0.25">
                           <animate attributeName="r" values="32;35;32" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" />
@@ -746,11 +723,14 @@ export function GlobalMap() {
                     </div>
 
                     {/* Label */}
-                    <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/30 block mb-3">
+                    <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40 block mb-2">
                       EXECUTION VECTOR
                     </span>
-                    <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#3A3A3A] max-w-[180px] leading-[1.8] block mb-6">
-                      Select a destination on the map to preview the execution path
+                    <span className="font-serif text-base text-white/20 max-w-[180px] leading-relaxed block mb-1 font-light">
+                      Select a destination
+                    </span>
+                    <span className="font-mono text-[9px] tracking-[0.12em] text-[#2A2A2A] max-w-[180px] leading-relaxed block mb-6">
+                      to preview the execution path
                     </span>
 
                     {/* Live status indicators */}

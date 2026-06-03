@@ -104,7 +104,7 @@ export async function sendIntakeConfirmation({
       <a href="${portalUrl}" style="font-size:13px;color:#C6A55A;font-family:Arial,sans-serif;">${portalUrl}</a>
     </div>
 
-    ${p("Wise is the primary payment method. If you need an alternative (Zelle, ACH, wire), reply to this email and Nicholas will coordinate directly.")}
+    ${p("Wise is the primary payment method. A Stripe payment link may be provided upon request. Contact us directly for payment arrangements.")}
   `);
 
   await getResend().emails.send({

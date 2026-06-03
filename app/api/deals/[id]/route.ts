@@ -101,17 +101,7 @@ export async function PATCH(
       );
     }
 
-    const validPaymentMethods = [
-      "wise",
-      "zelle",
-      "venmo",
-      "cash_app",
-      "apple_cash",
-      "ach",
-      "wire",
-      "check",
-      "stripe", // legacy
-    ];
+    const validPaymentMethods = ["wise", "stripe"];
     if (
       body.payment_method &&
       !validPaymentMethods.includes(body.payment_method)
