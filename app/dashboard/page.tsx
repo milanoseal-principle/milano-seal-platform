@@ -34,6 +34,12 @@ import { GlobalExecutionIntelligence } from "@/components/dashboard/GlobalExecut
 import { DestinationIntelligenceWidget } from "@/components/dashboard/destination-intelligence-widget";
 import { CountryHealthMatrix } from "@/components/dashboard/country-health-matrix";
 import { OperatorEventTimeline } from "@/components/dashboard/operator-event-timeline";
+import { ExecutionPipeline } from "@/components/dashboard/ExecutionPipeline";
+import { TrustEngineAlerts } from "@/components/dashboard/TrustEngineAlerts";
+import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import { TopCountriesPanel } from "@/components/dashboard/TopCountriesPanel";
+import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
+import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
 
 interface DashboardSummary {
   total_deals: number;
@@ -394,10 +400,10 @@ export default function Dashboard() {
       >
         <motion.div variants={cardVariants}>
           <Stat
-            label="Matters in Review"
-            value={String(data.reviewing_count)}
-            hint="Intake & review"
-            icon={FileText}
+            label="Active Matters"
+            value={String(data.open_deals)}
+            hint="Open in pipeline"
+            icon={Briefcase}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
@@ -411,34 +417,38 @@ export default function Dashboard() {
         </motion.div>
         <motion.div variants={cardVariants}>
           <Stat
-            label="Scheduled Execution"
-            value={String(data.scheduled_count)}
-            hint="Confirmed & queued"
-            icon={CalendarClock}
+            label="In Execution"
+            value={String(data.in_execution)}
+            hint="Being executed now"
+            icon={Activity}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
           <Stat
-            label="Apostille / Authentication"
-            value={String(data.apostille_count)}
-            hint="In authentication"
-            icon={Stamp}
+            label="Revenue (Week)"
+            value={formatCurrency(data.revenue_closed)}
+            hint="Collected this week"
+            icon={DollarSign}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
           <Stat
-            label="Ready for Release"
-            value={String(data.shipped_count)}
-            hint="Pending delivery"
-            icon={Package}
+            label="Pipeline Value"
+            value={formatCurrency(data.revenue_pipeline)}
+            hint="Open deal value"
+            icon={TrendingUp}
           />
         </motion.div>
         <motion.div variants={cardVariants}>
           <Stat
-            label="Security Events"
-            value={String(data.security_events_count)}
-            hint="Recent audit entries"
-            icon={ShieldAlert}
+            label="Completion Rate"
+            value={
+              (data.confirmed_payments + data.pending_payments + data.failed_payments) > 0
+                ? `${Math.round((data.confirmed_payments / (data.confirmed_payments + data.pending_payments + data.failed_payments)) * 100)}%`
+                : `${data.closed_deals > 0 ? Math.round((data.closed_deals / Math.max(data.total_deals, 1)) * 100) : 0}%`
+            }
+            hint="Closed vs total"
+            icon={CheckCircle2}
           />
         </motion.div>
       </motion.div>
@@ -775,6 +785,22 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CountryHealthMatrix />
         <OperatorEventTimeline />
+
+        {/* Execution Pipeline — stage counts */}
+        <ExecutionPipeline />
+
+        {/* Matters by Status + Trust Alerts + Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <MattersByStatus />
+          <TrustEngineAlerts />
+          <RecentActivityFeed />
+        </div>
+
+        {/* Top Countries + Top Documents */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TopCountriesPanel />
+          <TopDocumentsPanel />
+        </div>
       </div>
 
       {/* Service Lanes */}

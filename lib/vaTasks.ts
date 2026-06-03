@@ -3,6 +3,9 @@
 // VA cannot: promote authority confidence, approve release, mark payment confirmed,
 //            override QA gates, access revenue/margin/operator notes.
 
+import { getAllianceExpansionTarget } from "@/lib/alliance/expansionTargets";
+import { getCountryLanguageProfile } from "@/data/intelligence/languageProfiles";
+
 export type VATaskType =
   | "AUTHORITY_DISCOVERY"
   | "SOURCE_VALIDATION"
@@ -193,6 +196,71 @@ export function generateVATasks(input: VATaskInput): VATask[] {
       status: "open",
       created_at: now,
     });
+  }
+
+  // Alliance expansion: authority research needed
+  const allianceTarget = getAllianceExpansionTarget(input.country_id);
+  if (allianceTarget?.authority_research_needed) {
+    const alreadyHasAuthDiscovery = tasks.some((t) => t.task_type === "AUTHORITY_DISCOVERY");
+    if (!alreadyHasAuthDiscovery) {
+      tasks.push({
+        id: `va-alliance-auth-${input.matter_id}-${Date.now()}`,
+        task_type: "AUTHORITY_DISCOVERY",
+        matter_id: input.matter_id,
+        matter_label: matterLabel,
+        priority: "HIGH",
+        due_date: null,
+        required_action:
+          "Alliance expansion target: authority research is needed for this corridor. Research and document receiving authority requirements. Submit findings for operator review. Do not promote authority confidence.",
+        escalation_required: true,
+        escalation_note: "Alliance target corridor — operator must certify authority research before execution.",
+        allowed_role: "va",
+        status: "open",
+        created_at: now,
+      });
+    }
+  }
+
+  // Alliance expansion: translation partner needed
+  if (allianceTarget?.translation_partner_needed && !input.has_translation) {
+    tasks.push({
+      id: `va-alliance-trans-${input.matter_id}-${Date.now()}`,
+      task_type: "SOURCE_VALIDATION",
+      matter_id: input.matter_id,
+      matter_label: matterLabel,
+      priority: "NORMAL",
+      due_date: null,
+      required_action:
+        "Alliance expansion target: translation partner coordination may be needed for this destination. Validate translation source and confirm partner availability with operator.",
+      escalation_required: false,
+      escalation_note: null,
+      allowed_role: "va",
+      status: "open",
+      created_at: now,
+    });
+  }
+
+  // Language profile missing for destination
+  const languageProfile = getCountryLanguageProfile(input.country_id);
+  if (!languageProfile) {
+    const alreadyHasRequirementExtraction = tasks.some((t) => t.task_type === "REQUIREMENT_EXTRACTION");
+    if (!alreadyHasRequirementExtraction) {
+      tasks.push({
+        id: `va-lang-missing-${input.matter_id}-${Date.now()}`,
+        task_type: "REQUIREMENT_EXTRACTION",
+        matter_id: input.matter_id,
+        matter_label: matterLabel,
+        priority: "NORMAL",
+        due_date: null,
+        required_action:
+          "Language profile is not yet mapped for this destination. Research language review requirements and submit for operator review.",
+        escalation_required: false,
+        escalation_note: null,
+        allowed_role: "va",
+        status: "open",
+        created_at: now,
+      });
+    }
   }
 
   return tasks;

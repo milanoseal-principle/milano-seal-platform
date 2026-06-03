@@ -37,6 +37,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
 import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
+import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
+import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
 import {
   ArrowLeft,
   CalendarClock,
@@ -108,6 +110,9 @@ interface MilanoDeal {
   tracking_number: string | null;
   carrier: string | null;
   label_url: string | null;
+  courier_status: string | null;
+  label_created_at: string | null;
+  delivered_at: string | null;
   notes: string | null;
   is_paid_and_released: boolean | null;
   matter_status: string | null;
@@ -640,6 +645,18 @@ export default function DealDetail() {
             >
               {deal.lane}
             </Badge>
+            <MatterRiskBadge
+              factors={{
+                country_id: deal.destination_country,
+                authority_confidence: null,
+                translation_required: deal.translation,
+                payment_status: deal.payment_status,
+                matter_status: deal.matter_status,
+                days_since_update: deal.apostille_at ? Math.floor((Date.now() - new Date(deal.apostille_at).getTime()) / 86400000) : 0,
+                missing_items_count: 0,
+                is_high_value: deal.total_price > 1500,
+              }}
+            />
           </div>
           <h1 className="font-serif text-4xl text-foreground mt-2">
             {deal.client_name}
@@ -1001,6 +1018,16 @@ export default function DealDetail() {
             originState={deal.origin_state ?? null}
             dealStatus={deal.deal_status ?? ""}
             paymentStatus={deal.payment_status ?? ""}
+          />
+
+          <ShippoCustodyPanel
+            matterId={deal.id}
+            carrier={deal.carrier ?? null}
+            trackingNumber={deal.tracking_number ?? null}
+            trackingUrl={undefined}
+            courierStatus={deal.courier_status ?? null}
+            labelCreatedAt={deal.label_created_at ?? null}
+            deliveredAt={deal.delivered_at ?? null}
           />
 
           <CertificatePanel

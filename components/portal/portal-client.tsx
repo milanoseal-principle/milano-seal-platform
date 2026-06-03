@@ -570,8 +570,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
               </a>
             </div>
             <p className="text-[#8A8A8A] text-xs italic">
-              Wise is the primary method. Need an alternative (Zelle, ACH,
-              wire)? Reply to Nicholas on WhatsApp.
+              Wise is the primary payment method. For alternative arrangements, contact us directly.
             </p>
           </div>
         )}

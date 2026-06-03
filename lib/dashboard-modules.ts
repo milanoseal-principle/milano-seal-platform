@@ -8,10 +8,24 @@ export interface DashboardModule {
 
 export const DASHBOARD_MODULES: DashboardModule[] = [
   {
+    name: "Command",
+    route: "command",
+    icon: "Terminal",
+    description: "Nicholas Milano Command Center — full OS overview",
+    group: "Admin",
+  },
+  {
     name: "Command Center",
     route: "admin",
     icon: "ShieldAlert",
     description: "SLA alerts, conversion scoring, recent activity",
+    group: "Admin",
+  },
+  {
+    name: "Copilot",
+    route: "copilot",
+    icon: "Sparkles",
+    description: "Daily operator briefing — top actions, risk, opportunities",
     group: "Admin",
   },
   {
@@ -182,6 +196,17 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
   },
   // INTELLIGENCE
   {
+    name: "Executive",
+    route: "executive",
+    icon: "Crown",
+    description: "Executive financial and operational intelligence",
+    group: "Intelligence",
+  },
+  {
+    name: "Relationships",
+    route: "relationships",
+    icon: "Network",
+    description: "Client, attorney, partner relationship registry",
     name: "Autopilot",
     route: "intelligence/autopilot",
     icon: "Zap",
@@ -210,11 +235,40 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Intelligence",
   },
   {
+    name: "Execution DNA",
+    route: "dna",
+    icon: "Dna",
+    description: "Route intelligence from completed matter history",
+    group: "Intelligence",
+  },
+  {
     name: "Compliance",
     route: "compliance",
     icon: "Shield",
     description: "License & renewal alert engine",
     group: "Intelligence",
+  },
+  // OPERATIONS
+  {
+    name: "Execution Control",
+    route: "execution-control",
+    icon: "AlertTriangle",
+    description: "Real-time matter escalation and execution queue",
+    group: "Operations",
+  },
+  {
+    name: "Releases",
+    route: "releases",
+    icon: "Send",
+    description: "Document release queue and courier readiness",
+    group: "Operations",
+  },
+  {
+    name: "Rejections",
+    route: "rejections",
+    icon: "XCircle",
+    description: "Rejection intelligence and institutional memory",
+    group: "Operations",
   },
   // SYSTEM
   {
@@ -252,6 +306,108 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Drive folder index & asset map",
     group: "System",
   },
+  // INTELLIGENCE — moat layer
+  {
+    name: "Corridors",
+    route: "corridors",
+    icon: "Route",
+    description: "Verified execution corridor registry",
+    group: "Intelligence",
+  },
+  {
+    name: "Trust Engine",
+    route: "trust",
+    icon: "ShieldCheck",
+    description: "Verified delivery and authority trust metrics",
+    group: "Intelligence",
+  },
+  {
+    name: "Authority Verify",
+    route: "authorities/verify",
+    icon: "BadgeCheck",
+    description: "Authority confidence promotion workflow",
+    group: "Intelligence",
+  },
+  {
+    name: "System Truth",
+    route: "truth",
+    icon: "Activity",
+    description: "Milano Seal system health across all 7 pillars",
+    group: "Intelligence",
+  },
+  {
+    name: "Memory Engine",
+    route: "memory",
+    icon: "BookMarked",
+    description: "Institutional memory — incidents, corrections, known patterns",
+    group: "Intelligence",
+  },
+  // SYSTEM — moat layer
+  {
+    name: "Deployment",
+    route: "deployment",
+    icon: "Server",
+    description: "Infrastructure and deployment validation",
+    group: "System",
+  },
+  // OPERATIONS — certificates
+  {
+    name: "Release Certificates",
+    route: "releases/certificates",
+    icon: "Award",
+    description: "Generate and print release and completion certificates",
+    group: "Operations",
+  },
+  {
+    name: "Opportunities",
+    route: "opportunities",
+    icon: "Target",
+    description: "Global vertical opportunity engine — 22 B2B ecosystems",
+    group: "Core",
+  },
+  {
+    name: "Outreach",
+    route: "outreach",
+    icon: "Send",
+    description: "Professional outreach templates for attorneys, partners, authorities",
+    group: "Outreach",
+  },
+  // INTELLIGENCE — authority moat layer
+  {
+    name: "Authority Acquisition",
+    route: "authority-acquisition",
+    icon: "TrendingUp",
+    description: "Systematic authority confidence promotion scoreboard",
+    group: "Intelligence",
+  },
+  {
+    name: "Auth Research Queue",
+    route: "authority-research",
+    icon: "Search",
+    description: "Authority verification work queue",
+    group: "Intelligence",
+  },
+  {
+    name: "Observations",
+    route: "observations",
+    icon: "Eye",
+    description: "Authority observation request templates",
+    group: "Intelligence",
+  },
+  {
+    name: "Document Demand",
+    route: "demand",
+    icon: "FileSearch",
+    description: "Real-time document demand by type, country, and source",
+    group: "Intelligence",
+  },
+  {
+    name: "Corridor Certification",
+    route: "corridors/certification",
+    icon: "Award",
+    description: "Priority corridor certification program",
+    group: "Intelligence",
+  },
 ];
 
 export const MODULE_GROUPS = [
@@ -259,6 +415,7 @@ export const MODULE_GROUPS = [
   "Core",
   "Pipeline",
   "Execution",
+  "Operations",
   "Outreach",
   "Growth",
   "Intelligence",

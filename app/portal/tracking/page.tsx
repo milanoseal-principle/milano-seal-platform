@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { usePortal } from "@/components/portal/portal-context";
+import { PortalCourierCustody } from "@/components/portal/PortalCourierCustody";
 
 interface TrackingResponse {
   tracking: null | {
@@ -541,6 +542,8 @@ export default function ClientTrackingPage() {
       <h1 className="ct-h1">Carrier &amp; Delivery</h1>
 
       <ExecutionReadiness matterStatus={deal.matter_status ?? ""} />
+
+      <PortalCourierCustody matterId={deal.id} />
 
       {!t ? (
         <div className="ct-empty">

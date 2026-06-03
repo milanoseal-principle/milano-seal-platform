@@ -28,6 +28,8 @@ interface WiseItem {
 
 interface WiseResponse {
   ok: boolean;
+  wise_ok?: boolean;
+  wise_error?: string;
   fetched_at: string;
   wise_total: number;
   items: WiseItem[];

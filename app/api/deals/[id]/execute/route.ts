@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requirePaid } from "@/lib/gate";
+import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(
@@ -19,13 +19,11 @@ export async function POST(
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
 
     try {
-      requirePaid(deal);
-    } catch {
+      assertPaymentConfirmed(deal, "execute");
+    } catch (err) {
+      const code = err instanceof PaymentGateError ? err.code : "PAYMENT_REQUIRED";
       return NextResponse.json(
-        {
-          error: "PAYMENT_REQUIRED_BEFORE_EXECUTION",
-          message: "Payment must be received before scheduling can begin.",
-        },
+        { error: code, message: "Payment must be confirmed before execution can begin." },
         { status: 402 }
       );
     }
