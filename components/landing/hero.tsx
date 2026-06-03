@@ -89,7 +89,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[88px] md:pt-[96px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -107,7 +107,7 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-8 lg:py-0"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-4 lg:py-0"
       >
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
@@ -148,26 +148,13 @@ export function Hero() {
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            {/* Disclaimer */}
-            <p className={`ms-hero-line text-xs text-[#4A4A4A] mb-8 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
-              International use is subject to destination country and receiving authority requirements.
-              <span className={`ms-hero-line text-[1.3rem] md:text-[1.6rem] lg:text-[1.85rem] xl:text-[2.1rem] text-[#B0B0B0] font-light mt-2${heroVisible[3] ? " is-visible" : ""}`}>
-                U.S. Document Execution for International Use
-              </span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className={`ms-hero-line text-lg md:text-xl text-[#B0B0B0] mb-4 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
-              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
-            </p>
-
             {/* Subtext */}
             <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
             </p>
 
             {/* CTAs */}
-            <div className={`ms-hero-line flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
@@ -223,27 +210,6 @@ export function Hero() {
               className="relative flex items-center justify-center"
             >
               <GlobalTrustCoreHero />
-            </motion.div>
-
-            {/* Founder Trading Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <a href="/founder" style={{ display: "block" }} className="founder-card-animated">
-                <img
-                  src="/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png"
-                  alt="Nicholas Milano, founder of The Milano Seal, Florida Notary Public and Remote Online Notary for apostille coordination and international document execution support."
-                  style={{
-                    maxWidth: 340,
-                    width: "100%",
-                    borderRadius: 12,
-                    display: "block",
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              </a>
             </motion.div>
 
             {/* PATCH 4 — Founder SEO Section */}

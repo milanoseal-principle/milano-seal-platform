@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
+import { MilanoSealChatLauncher } from "@/components/orbit/MilanoSealChatLauncher";
 import "./globals.css";
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to have
@@ -71,10 +72,10 @@ export const metadata: Metadata = {
       "Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
     images: [
       {
-        url: "/nicholas-milano-florida-remote-online-notary-apostille-coordination-card.png",
-        width: 1200,
-        height: 630,
-        alt: "The Milano Seal™",
+        url: "/milano-seal-gold-transparent-512.png",
+        width: 512,
+        height: 512,
+        alt: "The Milano Seal™ — U.S. Document Execution for International Use",
       },
     ],
   },
@@ -171,6 +172,7 @@ export default function RootLayout({
             },
           }}
         />
+        <MilanoSealChatLauncher />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
