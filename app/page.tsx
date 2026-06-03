@@ -30,7 +30,9 @@ export default function HomePage() {
         <TrustStrip />
 
         {/* 3. Milano Trust Core — 6 pillars */}
-        <MilanoTrustCore />
+        <div id="process">
+          <MilanoTrustCore />
+        </div>
 
         {/* 4. Services — RON, Apostille, International Execution, Mobile Notary */}
         <div id="services">
