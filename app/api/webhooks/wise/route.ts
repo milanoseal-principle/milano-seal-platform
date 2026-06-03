@@ -7,6 +7,10 @@ import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 
+export async function GET() {
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
+
 // Wise payment webhooks — https://docs.wise.com/api-docs/features/webhooks-notifications
 // URL: https://themilanoseal.com/api/webhooks/wise  (NO query params — Wise requirement)
 // Secured via RSA-SHA256 signature on X-Signature-SHA256 header.
