@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
+import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
 import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
 import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
@@ -176,6 +177,7 @@ const alertRowVariants = {
 
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
+  const [actionPanelOpen, setActionPanelOpen] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem("ms-operator-entry")) {
@@ -829,6 +831,38 @@ export default function Dashboard() {
       </Card>
     </div>
       </motion.div>
+
+      {/* Quick Actions FAB — bottom-left, clear of concierge orb */}
+      <button
+        onClick={() => setActionPanelOpen(true)}
+        aria-label="Open operator quick actions"
+        style={{
+          position: "fixed",
+          bottom: 28,
+          left: 28,
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background: "linear-gradient(145deg, #1a1408, #0d0a03)",
+          border: "1.5px solid rgba(198,165,90,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          zIndex: 9000,
+          boxShadow: "0 4px 20px rgba(198,165,90,0.2)",
+          color: "#C6A55A",
+          fontSize: 24,
+          fontWeight: 300,
+        }}
+      >
+        +
+      </button>
+
+      <OperatorActionPanel
+        isOpen={actionPanelOpen}
+        onClose={() => setActionPanelOpen(false)}
+      />
     </>
   );
 }
