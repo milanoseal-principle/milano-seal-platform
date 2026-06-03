@@ -98,7 +98,7 @@ export function MilanoTrustCore() {
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full border-t border-[#1A1A1A] bg-[#060608] py-12 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      className="w-full border-t border-[#1A1A1A] bg-[#060608] py-10 px-4 sm:px-6 lg:px-8 overflow-hidden"
     >
       {/* Ambient gold particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -163,7 +163,7 @@ export function MilanoTrustCore() {
           </motion.div>
 
           {/* Three-column: pillars | medallion | pillars — all vertically centered */}
-          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0">
+          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0 relative" style={{ minHeight: 280 }}>
             {/* Left pillars */}
             <div className="flex flex-col gap-7 pr-8">
               {LEFT_PILLARS.map((p, i) => (
@@ -188,56 +188,6 @@ export function MilanoTrustCore() {
                   filter: "blur(16px)",
                 }}
               />
-              {/* Connector lines — SVG fan from center orb to each pillar row */}
-              <svg
-                className="absolute inset-0 pointer-events-none"
-                width="280"
-                height="280"
-                viewBox="0 0 280 280"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ overflow: "visible" }}
-              >
-                {/* Left connectors: from orb edge (x=75, y=140) to left column edge (x=0) at pillar rows */}
-                {[47, 140, 233].map((py, i) => (
-                  <line
-                    key={`l${i}`}
-                    x1={0} y1={py}
-                    x2={75} y2={140}
-                    stroke="url(#connLeft)"
-                    strokeWidth="1"
-                    strokeOpacity="0.5"
-                  />
-                ))}
-                {/* Right connectors: from orb edge (x=205, y=140) to right column edge (x=280) at pillar rows */}
-                {[47, 140, 233].map((py, i) => (
-                  <line
-                    key={`r${i}`}
-                    x1={205} y1={140}
-                    x2={280} y2={py}
-                    stroke="url(#connRight)"
-                    strokeWidth="1"
-                    strokeOpacity="0.5"
-                  />
-                ))}
-                {/* Small node dots at pillar connection points */}
-                {[47, 140, 233].map((py, i) => (
-                  <circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
-                ))}
-                {[47, 140, 233].map((py, i) => (
-                  <circle key={`rd${i}`} cx={280} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
-                ))}
-                <defs>
-                  <linearGradient id="connLeft" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
-                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0" />
-                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0.35" />
-                  </linearGradient>
-                  <linearGradient id="connRight" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
-                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
               {/* Rings */}
               <div className="absolute w-[240px] h-[240px] rounded-full border border-[#C6A55A]/06" />
               <div className="absolute w-[200px] h-[200px] rounded-full border border-[#C6A55A]/10" />
@@ -265,6 +215,36 @@ export function MilanoTrustCore() {
                 <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
               ))}
             </div>
+
+            {/* Connector lines SVG — absolutely positioned over the full grid */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 1000 280"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+              }}
+            >
+              {/* Left connectors: from orb left edge (x=435) to left edge (x=0), fanning to each pillar row */}
+              <line x1="0" y1="47"  x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="0" y1="140" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="0" y1="233" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              {/* Right connectors: from orb right edge (x=565) to right edge (x=1000) */}
+              <line x1="565" y1="140" x2="1000" y2="47"  stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="565" y1="140" x2="1000" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="565" y1="140" x2="1000" y2="233" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              {/* Endpoint dots */}
+              <circle cx="0"    cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="0"    cy="140" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="0"    cy="233" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="140" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="233" r="3" fill="rgba(198,165,90,0.4)" />
+            </svg>
           </div>
         </div>
       </div>
