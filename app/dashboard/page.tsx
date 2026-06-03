@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
+import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
 import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
 import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
 import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
@@ -40,6 +41,8 @@ import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { TopCountriesPanel } from "@/components/dashboard/TopCountriesPanel";
 import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
 import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
+import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
+import { MatterQueue } from "@/components/dashboard/MatterQueue";
 
 interface DashboardSummary {
   total_deals: number;
@@ -176,6 +179,8 @@ const alertRowVariants = {
 
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
+  const [actionPanelOpen, setActionPanelOpen] = useState(false);
+  const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("ms-operator-entry")) {
@@ -453,6 +458,9 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
+      {/* Execution Status Rail — live pipeline stage counts */}
+      <ExecutionStatusRail />
+
       {/* SLA Alerts */}
       {slaAlerts && slaAlerts.length > 0 && (
         <motion.div
@@ -519,6 +527,13 @@ export default function Dashboard() {
           shipped_count: data.shipped_count,
         }}
       />
+
+      {/* Matter Queue */}
+      <Card className="bg-card border-gold">
+        <CardContent className="pt-6">
+          <MatterQueue onMatterClick={(id) => setSelectedMatterId(id)} />
+        </CardContent>
+      </Card>
 
       {/* Recent Matters + Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -829,6 +844,38 @@ export default function Dashboard() {
       </Card>
     </div>
       </motion.div>
+
+      {/* Quick Actions FAB — bottom-left, clear of concierge orb */}
+      <button
+        onClick={() => setActionPanelOpen(true)}
+        aria-label="Open operator quick actions"
+        style={{
+          position: "fixed",
+          bottom: 28,
+          left: 28,
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background: "linear-gradient(145deg, #1a1408, #0d0a03)",
+          border: "1.5px solid rgba(198,165,90,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          zIndex: 9000,
+          boxShadow: "0 4px 20px rgba(198,165,90,0.2)",
+          color: "#C6A55A",
+          fontSize: 24,
+          fontWeight: 300,
+        }}
+      >
+        +
+      </button>
+
+      <OperatorActionPanel
+        isOpen={actionPanelOpen}
+        onClose={() => setActionPanelOpen(false)}
+      />
     </>
   );
 }

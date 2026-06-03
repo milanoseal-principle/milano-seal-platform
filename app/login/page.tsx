@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
 
 function destForRole(role: string, fallback: string): string {
   if (role === "founder_admin" || role === "admin" || role === "admin_operator" ||
@@ -37,6 +38,7 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [portalShellDismissed, setPortalShellDismissed] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,6 +51,26 @@ function LoginInner() {
     rawNext.startsWith("/dashboard")
       ? rawNext
       : null;
+
+  // Show PortalAccessShell as the entry gate for portal clients before the login form.
+  // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
+  // and reveals the login form below, rather than navigating away.
+  const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
+  if (isPortalEntry && !portalShellDismissed) {
+    return (
+      <div
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest("a")) {
+            e.preventDefault();
+            setPortalShellDismissed(true);
+          }
+        }}
+      >
+        <PortalAccessShell nextPath={safeNext ?? "/portal"} />
+      </div>
+    );
+  }
 
   // Redirect already-authenticated users
   useEffect(() => {

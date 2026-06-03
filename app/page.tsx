@@ -15,6 +15,7 @@ import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
+import { HowItWorks } from "@/components/landing/how-it-works";
 
 export default function HomePage() {
   return (
@@ -30,14 +31,21 @@ export default function HomePage() {
         <TrustStrip />
 
         {/* 3. Milano Trust Core — 6 pillars */}
-        <MilanoTrustCore />
+        <div id="process">
+          <MilanoTrustCore />
+        </div>
 
         {/* 4. Services — RON, Apostille, International Execution, Mobile Notary */}
         <div id="services">
           <Services />
         </div>
 
-        {/* 5. How It Works + Global Document Intelligence map (combined) */}
+        {/* 5. How It Works — #process nav target */}
+        <div id="process">
+          <HowItWorks />
+        </div>
+
+        {/* 6. Global Document Intelligence map */}
         <div id="countries">
           <RoutingIntelligenceSection />
           <CorridorTimeStrip />

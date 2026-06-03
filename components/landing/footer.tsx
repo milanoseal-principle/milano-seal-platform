@@ -112,10 +112,10 @@ const countryLinks = [
 ];
 
 const serviceLinks = [
-  { label: "Remote Online Notarization", href: "/services/ron" },
+  { label: "Remote Online Notarization", href: "/services/remote-online-notary" },
   { label: "Apostille Coordination", href: "/services/apostille" },
-  { label: "International Execution", href: "/services/international" },
-  { label: "Mobile Notary", href: "/services/mobile" },
+  { label: "International Execution", href: "/services/international-execution" },
+  { label: "Mobile Notary", href: "/services/mobile-notary" },
 ];
 
 export function Footer() {
