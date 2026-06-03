@@ -41,6 +41,8 @@ import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { TopCountriesPanel } from "@/components/dashboard/TopCountriesPanel";
 import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
 import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
+import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
+import { MatterQueue } from "@/components/dashboard/MatterQueue";
 
 interface DashboardSummary {
   total_deals: number;
@@ -178,6 +180,7 @@ const alertRowVariants = {
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
   const [actionPanelOpen, setActionPanelOpen] = useState(false);
+  const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("ms-operator-entry")) {
@@ -455,6 +458,9 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
+      {/* Execution Status Rail — live pipeline stage counts */}
+      <ExecutionStatusRail />
+
       {/* SLA Alerts */}
       {slaAlerts && slaAlerts.length > 0 && (
         <motion.div
@@ -521,6 +527,13 @@ export default function Dashboard() {
           shipped_count: data.shipped_count,
         }}
       />
+
+      {/* Matter Queue */}
+      <Card className="bg-card border-gold">
+        <CardContent className="pt-6">
+          <MatterQueue onMatterClick={(id) => setSelectedMatterId(id)} />
+        </CardContent>
+      </Card>
 
       {/* Recent Matters + Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
