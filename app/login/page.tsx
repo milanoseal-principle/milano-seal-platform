@@ -33,6 +33,7 @@ function LogoMark() {
 }
 
 function LoginInner() {
+  const [accessType, setAccessType] = useState<"portal"|"dashboard"|"alliance"|"va">("portal");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -253,9 +254,42 @@ function LoginInner() {
           <div className="ms-eyebrow">The Milano Seal™</div>
           <h1 className="ms-title">Secure Access</h1>
           <p className="ms-subtitle">
-            Private access for international document execution,
-            Hague routing, and protected matter coordination.
+            {accessType === "portal" && "Access your active matter, track execution progress, and coordinate your document specialist."}
+            {accessType === "dashboard" && "Operator workspace for matter execution, payment review, and courier coordination."}
+            {accessType === "alliance" && "Alliance partner access for referral matters and commission visibility."}
+            {accessType === "va" && "VA workspace for assigned tasks, document coordination, and matter support."}
           </p>
+
+          {/* Access type selector */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
+            {([
+              { key: "portal", label: "Client Portal" },
+              { key: "dashboard", label: "Operator" },
+              { key: "alliance", label: "Alliance" },
+              { key: "va", label: "VA" },
+            ] as const).map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setAccessType(t.key)}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 2,
+                  border: accessType === t.key ? "1px solid rgba(198,165,90,0.6)" : "1px solid rgba(198,165,90,0.15)",
+                  background: accessType === t.key ? "rgba(198,165,90,0.1)" : "transparent",
+                  color: accessType === t.key ? "#C6A55A" : "rgba(255,255,255,0.3)",
+                  fontSize: 9,
+                  fontWeight: 600,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>

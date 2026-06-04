@@ -381,7 +381,6 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
 
         return (
           <div>
-            {/* Status row */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <div
                 style={{
@@ -393,13 +392,7 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
                   boxShadow: isDelivered ? `0 0 8px ${EMERALD}60` : undefined,
                 }}
               />
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: color,
-                }}
-              >
+              <span style={{ fontSize: 15, fontWeight: 500, color }}>
                 {statusLabel(cs.status)}
               </span>
               {isDelivered && (
@@ -440,7 +433,6 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
               )}
             </div>
 
-            {/* Details grid */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px" }}>
               {cs.carrier && (
                 <div>

@@ -73,12 +73,11 @@ export async function PATCH(
 
     // Validate payment_status if being updated
     const validPaymentStatuses = [
-      "pending",
+      "unpaid",
       "partial",
       "paid",
       "failed",
       "refunded",
-      "disputed",
     ];
     if (
       body.payment_status &&

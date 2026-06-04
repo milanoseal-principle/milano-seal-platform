@@ -35,7 +35,7 @@ export async function POST(
     const { data: updated } = await supabase
       .from("deals")
       .update({
-        status: "scheduled",
+        deal_status: "scheduled",
         ...(body.execution_date ? { execution_date: body.execution_date } : {}),
       })
       .eq("id", id)

@@ -92,7 +92,7 @@ export function HowItWorks() {
             >
               <Link
                 href={step.href}
-                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover${step.highlight ? " border-[#C6A55A]/25 bg-[#0D0B08] hover:border-[#C6A55A]/50" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}
+                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover ${step.highlight ? " border-[#C6A55A]/25 bg-[#0D0B08] hover:border-[#C6A55A]/50" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}
               >
                 <div className="flex items-start justify-between">
                   <span className="font-serif text-4xl font-medium text-[#C6A55A]/20 group-hover:text-[#C6A55A]/40 transition-colors duration-300">
