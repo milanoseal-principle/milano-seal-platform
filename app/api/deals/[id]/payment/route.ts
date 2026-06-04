@@ -23,7 +23,7 @@ export async function POST(
         { error: "Invalid payment method" },
         { status: 400 }
       );
-    if (!["pending", "partial", "paid"].includes(payment_status))
+    if (!["unpaid", "partial", "paid"].includes(payment_status))
       return NextResponse.json(
         { error: "Invalid payment status" },
         { status: 400 }

@@ -1,64 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { Scale, ClipboardList, ScanSearch, FileText, Building2, PenLine, HeartHandshake, Landmark } from "lucide-react";
 
-const DOCUMENTS = [
-  {
-    id: "power-of-attorney",
-    label: "Power of Attorney",
-    icon: "⚖️",
-    countries: ["Italy", "Spain", "Greece", "Brazil", "Mexico", "Germany"],
-    bundle: "POA + Apostille Bundle",
-  },
-  {
-    id: "affidavit-name-discrepancy",
-    label: "Name Discrepancy Affidavit",
-    icon: "📋",
-    countries: ["Italy", "Spain", "Greece", "Portugal"],
-    bundle: "Citizenship Support Bundle",
-  },
-  {
-    id: "fbi-background-check",
-    label: "FBI Background Check",
-    icon: "🔍",
-    countries: ["Italy", "Germany", "Australia", "UAE", "Brazil"],
-    bundle: "Immigration Bundle",
-  },
-  {
-    id: "birth-certificate",
-    label: "Birth Certificate",
-    icon: "📄",
-    countries: ["Italy", "Spain", "Greece", "Argentina", "Colombia"],
-    bundle: "Citizenship Support Bundle",
-  },
-  {
-    id: "corporate-resolution",
-    label: "Corporate Resolution",
-    icon: "🏢",
-    countries: ["UAE", "Germany", "UK", "Brazil", "Mexico"],
-    bundle: "Corporate Authority Bundle",
-  },
-  {
-    id: "affidavit-general",
-    label: "General Affidavit",
-    icon: "✍️",
-    countries: ["Italy", "Spain", "France", "Brazil", "Argentina"],
-    bundle: null,
-  },
-  {
-    id: "marriage-certificate",
-    label: "Marriage Certificate",
-    icon: "💍",
-    countries: ["Italy", "Spain", "Greece", "Portugal", "Brazil"],
-    bundle: "Citizenship Support Bundle",
-  },
-  {
-    id: "estate-inheritance",
-    label: "Estate / Inheritance",
-    icon: "🏛️",
-    countries: ["Italy", "Spain", "Greece", "Germany", "France", "UK"],
-    bundle: "Estate Bundle",
-  },
+const DOCUMENTS: { id: string; label: string; Icon: React.ElementType; countries: string[]; bundle: string | null }[] = [
+  { id: "power-of-attorney", label: "Power of Attorney", Icon: Scale, countries: ["Italy","Spain","Greece","Brazil","Mexico","Germany"], bundle: "POA + Apostille Bundle" },
+  { id: "affidavit-name-discrepancy", label: "Name Discrepancy Affidavit", Icon: ClipboardList, countries: ["Italy","Spain","Greece","Portugal"], bundle: "Citizenship Support Bundle" },
+  { id: "fbi-background-check", label: "FBI Background Check", Icon: ScanSearch, countries: ["Italy","Germany","Australia","UAE","Brazil"], bundle: "Immigration Bundle" },
+  { id: "birth-certificate", label: "Birth Certificate", Icon: FileText, countries: ["Italy","Spain","Greece","Argentina","Colombia"], bundle: "Citizenship Support Bundle" },
+  { id: "corporate-resolution", label: "Corporate Resolution", Icon: Building2, countries: ["UAE","Germany","UK","Brazil","Mexico"], bundle: "Corporate Authority Bundle" },
+  { id: "affidavit-general", label: "General Affidavit", Icon: PenLine, countries: ["Italy","Spain","France","Brazil","Argentina"], bundle: null },
+  { id: "marriage-certificate", label: "Marriage Certificate", Icon: HeartHandshake, countries: ["Italy","Spain","Greece","Portugal","Brazil"], bundle: "Citizenship Support Bundle" },
+  { id: "estate-inheritance", label: "Estate / Inheritance", Icon: Landmark, countries: ["Italy","Spain","Greece","Germany","France","UK"], bundle: "Estate Bundle" },
 ];
 
 export { DOCUMENTS };
@@ -92,7 +45,9 @@ export function DocumentIntelligence() {
                   : "border-[#1E1E1E] bg-[#111111] hover:border-[#2A2A2A]"
               }`}
             >
-              <span className="text-xl block mb-2">{d.icon}</span>
+              <div className="mb-3">
+                <d.Icon className="w-5 h-5 text-[#C6A55A]/60" strokeWidth={1.5} />
+              </div>
               <p className="text-white text-xs font-medium leading-snug">
                 {d.label}
               </p>

@@ -5,7 +5,6 @@ export type PaymentGateResult =
   | "PAYMENT_CONFIRMED"
   | "PAYMENT_REQUIRED"
   | "PARTIAL_PAYMENT"
-  | "PAYMENT_PENDING"
   | "PAYMENT_REVIEW_REQUIRED"
   | "PAYMENT_FAILED"
   | "PAYMENT_REFUNDED";
@@ -37,7 +36,6 @@ export function evaluatePaymentGate(matter: PaymentGateMatter): PaymentGateResul
   if (status === "paid" && paid >= due && due > 0) return "PAYMENT_CONFIRMED";
   if (status === "paid" && due === 0) return "PAYMENT_CONFIRMED";
   if (paid > 0 && paid < due) return "PARTIAL_PAYMENT";
-  if (status === "pending") return "PAYMENT_PENDING";
   if (status === "failed") return "PAYMENT_FAILED";
   if (status === "refunded") return "PAYMENT_REFUNDED";
   return "PAYMENT_REQUIRED";

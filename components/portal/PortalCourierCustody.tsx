@@ -5,6 +5,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import ShippoCourierMotionRail from "@/components/shipping/ShippoCourierMotionRail";
 import ShippoStatusBadge from "@/components/shipping/ShippoStatusBadge";
 import type { MilanoCourierStatus } from "@/lib/shippo/types";
+import { CustodyStateBand } from "@/components/animations/CustodyStateBand";
+import type { CustodyStateBandProps } from "@/components/animations/CustodyStateBand";
 
 const GOLD = "#C6A55A";
 const EMERALD = "#4a9e6b";
@@ -379,9 +381,25 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
         const isDelivered = cs.status?.toLowerCase() === "delivered";
         const isException = cs.status?.toLowerCase() === "exception" || cs.status?.toLowerCase() === "returned";
 
+        const bandStatus: CustodyStateBandProps["status"] = (() => {
+          const s = cs.status?.toLowerCase() ?? "";
+          if (s === "delivered") return isException ? "exception" : "delivered";
+          if (s === "exception" || s === "returned") return "exception";
+          if (s === "in_transit" || s === "out_for_delivery") return "in_transit";
+          if (s === "label_created") return "label_purchased";
+          return "in_transit";
+        })();
+
         return (
           <div>
-            {/* Status row */}
+            <div style={{ marginBottom: 14 }}>
+              <CustodyStateBand
+                status={bandStatus}
+                carrier={cs.carrier ?? undefined}
+                trackingDisplay={cs.tracking_number_display ?? undefined}
+                estimatedDelivery={intel.delivery_eta ?? undefined}
+              />
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <div
                 style={{
@@ -393,13 +411,7 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
                   boxShadow: isDelivered ? `0 0 8px ${EMERALD}60` : undefined,
                 }}
               />
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: color,
-                }}
-              >
+              <span style={{ fontSize: 15, fontWeight: 500, color }}>
                 {statusLabel(cs.status)}
               </span>
               {isDelivered && (
@@ -440,7 +452,6 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
               )}
             </div>
 
-            {/* Details grid */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px" }}>
               {cs.carrier && (
                 <div>

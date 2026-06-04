@@ -188,6 +188,56 @@ export function MilanoTrustCore() {
                   filter: "blur(16px)",
                 }}
               />
+              {/* Connector lines — SVG fan from center orb to each pillar row */}
+              <svg
+                className="absolute inset-0 pointer-events-none"
+                width="280"
+                height="280"
+                viewBox="0 0 280 280"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ overflow: "visible" }}
+              >
+                {/* Left connectors: from orb edge (x=75, y=140) to left column edge (x=0) at pillar rows */}
+                {[47, 140, 233].map((py, i) => (
+                  <line
+                    key={`l${i}`}
+                    x1={0} y1={py}
+                    x2={75} y2={140}
+                    stroke="url(#connLeft)"
+                    strokeWidth="1"
+                    strokeOpacity="0.5"
+                  />
+                ))}
+                {/* Right connectors: from orb edge (x=205, y=140) to right column edge (x=280) at pillar rows */}
+                {[47, 140, 233].map((py, i) => (
+                  <line
+                    key={`r${i}`}
+                    x1={205} y1={140}
+                    x2={280} y2={py}
+                    stroke="url(#connRight)"
+                    strokeWidth="1"
+                    strokeOpacity="0.5"
+                  />
+                ))}
+                {/* Small node dots at pillar connection points */}
+                {[47, 140, 233].map((py, i) => (
+                  <circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
+                ))}
+                {[47, 140, 233].map((py, i) => (
+                  <circle key={`rd${i}`} cx={280} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
+                ))}
+                <defs>
+                  <linearGradient id="connLeft" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0" />
+                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0.35" />
+                  </linearGradient>
+                  <linearGradient id="connRight" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
               {/* Rings */}
               <div className="absolute w-[240px] h-[240px] rounded-full border border-[#C6A55A]/06" />
               <div className="absolute w-[200px] h-[200px] rounded-full border border-[#C6A55A]/10" />
