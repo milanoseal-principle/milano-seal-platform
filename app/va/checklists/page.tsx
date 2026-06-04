@@ -13,10 +13,10 @@ async function getChecklists(userId: string) {
     const admin = createAdminClient();
     const { data } = await admin
       .from("va_tasks")
-      .select("id, title, status, due_date, priority, task_type, matter_id")
+      .select("id, title, status, due_at, urgency, priority, task_type, matter_id")
       .eq("assigned_to", userId)
       .eq("task_type", "checklist")
-      .order("due_date", { ascending: true });
+      .order("due_at", { ascending: true, nullsFirst: false });
     return data ?? [];
   } catch {
     return [];
@@ -78,7 +78,7 @@ export default async function VAChecklistsPage() {
                 padding: "4px 10px",
                 borderRadius: 999,
                 border: "1px solid rgba(198,165,90,0.3)",
-                color: item.status === "complete" ? "#3FA47A" : "#C6A55A",
+                color: item.status === "complete" || item.status === "completed" ? "#3FA47A" : "#C6A55A",
               }}>
                 {item.status ?? "pending"}
               </span>
