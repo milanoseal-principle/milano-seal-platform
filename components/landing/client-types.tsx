@@ -79,7 +79,7 @@ export function ClientTypes() {
             >
               <Link
                 href={type.href}
-                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[#C6A55A]/30 gold-glow-hover block"
+                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[#C6A55A]/30 gold-glow-hover"
               >
                 <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 self-start">
                   <type.icon className="w-6 h-6 text-[#C6A55A]" />
