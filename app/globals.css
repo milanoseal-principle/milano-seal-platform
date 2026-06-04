@@ -2832,3 +2832,431 @@ h4 {
   --ms-font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
   --ms-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* ─── Milano Seal Orbit System ─────────────────────────────────────────────── */
+
+.milano-orbit-core {
+  --orbit-size: 168px;
+  --orbit-gold: #c6a65b;
+  --orbit-gold-light: #d8be73;
+  --orbit-antique: #8f7740;
+  --orbit-green: #3fa47a;
+  --orbit-amber: #c99a3d;
+  --orbit-red: #b85c5c;
+
+  position: relative;
+  width: var(--orbit-size);
+  height: var(--orbit-size);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  isolation: isolate;
+  flex-shrink: 0;
+}
+
+.milano-orbit-core:disabled { cursor: default; }
+.orbit-interactive { cursor: pointer; }
+
+.orbit-sm  { --orbit-size: 74px; }
+.orbit-md  { --orbit-size: 168px; }
+.orbit-lg  { --orbit-size: 260px; }
+.orbit-xl  { --orbit-size: min(460px, 82vw); }
+.orbit-custom-size { --orbit-size: inherit; }
+
+.orbit-halo {
+  position: absolute;
+  inset: 18%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(216,190,115,0.22), transparent 58%),
+    radial-gradient(circle, rgba(198,166,91,0.14), transparent 70%);
+  filter: blur(12px);
+  opacity: 0.9;
+  animation: milanoOrbitHalo 5.8s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.orbit-ring {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.orbit-ring-primary {
+  inset: 7%;
+  border: 1px solid rgba(216,190,115,0.74);
+  box-shadow: 0 0 24px rgba(198,166,91,0.16), inset 0 0 28px rgba(198,166,91,0.08);
+}
+
+.orbit-ring-secondary {
+  inset: 1.5%;
+  border: 1px dashed rgba(246,241,230,0.38);
+}
+
+.orbit-route-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.orbit-route {
+  fill: none;
+  stroke: rgba(216,190,115,0.62);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(198,166,91,0.35));
+}
+
+.orbit-route-two {
+  stroke: rgba(143,119,64,0.48);
+  stroke-dasharray: 4 8;
+}
+
+.orbit-node-layer, .orbit-segment-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbit-node {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 999px;
+  background: var(--orbit-gold-light);
+  box-shadow: 0 0 14px rgba(216,190,115,0.72);
+  transform:
+    rotate(calc((360deg / var(--node-count)) * var(--node-index)))
+    translateY(calc(var(--orbit-size) * -0.47));
+  transform-origin: center;
+  opacity: 0.88;
+}
+
+.orbit-segment {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 22px;
+  margin-left: -1.5px;
+  border-radius: 999px;
+  background: rgba(198,166,91,0.55);
+  transform:
+    rotate(calc((360deg / var(--segment-count)) * var(--segment-index)))
+    translateY(calc(var(--orbit-size) * -0.46));
+  transform-origin: center;
+}
+
+.orbit-segment.orbit-verified { background: var(--orbit-green); box-shadow: 0 0 16px rgba(63,164,122,0.42); }
+.orbit-segment.orbit-warning  { background: var(--orbit-amber);  box-shadow: 0 0 16px rgba(201,154,61,0.42); }
+.orbit-segment.orbit-blocked  { background: var(--orbit-red);    box-shadow: 0 0 16px rgba(184,92,92,0.42); }
+
+.orbit-crest-shell {
+  position: relative;
+  width: 58%;
+  height: 58%;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  z-index: 4;
+  box-shadow: 0 24px 90px rgba(0,0,0,0.62), 0 0 34px rgba(198,166,91,0.16);
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+
+.orbit-crest-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 18px rgba(198,166,91,0.22));
+}
+
+.orbit-sweep {
+  position: absolute;
+  inset: 5%;
+  border-radius: 999px;
+  background: conic-gradient(
+    from 210deg,
+    transparent 0deg,
+    transparent 295deg,
+    rgba(216,190,115,0.5) 315deg,
+    transparent 340deg,
+    transparent 360deg
+  );
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.orbit-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(198,165,90,0.5);
+  white-space: nowrap;
+}
+
+/* State modifiers */
+.orbit-page-hero .orbit-sweep,
+.orbit-released .orbit-sweep,
+.orbit-verified .orbit-sweep {
+  animation: milanoOrbitSweep 1.35s cubic-bezier(0.22,1,0.36,1) 0.4s 1;
+}
+
+.orbit-interactive:hover .orbit-ring-primary {
+  border-color: rgba(216,190,115,0.95);
+  box-shadow: 0 0 34px rgba(198,166,91,0.28), inset 0 0 32px rgba(198,166,91,0.12);
+}
+
+.orbit-interactive:hover .orbit-crest-shell {
+  transform: translateY(-2px) scale(1.015);
+}
+
+.orbit-verified .orbit-ring-primary,
+.orbit-released .orbit-ring-primary {
+  border-color: rgba(63,164,122,0.72);
+  box-shadow: 0 0 28px rgba(63,164,122,0.2), 0 0 48px rgba(198,166,91,0.12);
+}
+
+.orbit-warning .orbit-ring-primary {
+  border-color: rgba(201,154,61,0.84);
+  box-shadow: 0 0 28px rgba(201,154,61,0.22);
+}
+
+.orbit-blocked .orbit-ring-primary {
+  border-color: rgba(184,92,92,0.74);
+  box-shadow: 0 0 28px rgba(184,92,92,0.22);
+  animation: milanoOrbitBlocked 2.4s ease-in-out infinite;
+}
+
+.orbit-mode-portal .orbit-ring-secondary,
+.orbit-mode-launcher .orbit-ring-secondary { opacity: 0.35; }
+.orbit-mode-launcher .orbit-halo { inset: 8%; filter: blur(7px); }
+
+/* Keyframes */
+@keyframes milanoOrbitHalo {
+  0%, 100% { opacity: 0.65; transform: scale(0.98); }
+  50%       { opacity: 0.95; transform: scale(1.04); }
+}
+
+@keyframes milanoOrbitSweep {
+  0%   { opacity: 0; transform: rotate(-40deg); }
+  22%  { opacity: 0.85; }
+  100% { opacity: 0; transform: rotate(130deg); }
+}
+
+@keyframes milanoOrbitBlocked {
+  0%, 100% { box-shadow: 0 0 22px rgba(184,92,92,0.14); }
+  50%       { box-shadow: 0 0 38px rgba(184,92,92,0.34); }
+}
+
+/* Layout helpers */
+.homepage-hero-orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 400px;
+}
+
+.dashboard-orbit-card,
+.portal-trust-orbit,
+.milano-release-seal {
+  border: 1px solid rgba(198,166,91,0.24);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(198,166,91,0.07), transparent 34%),
+    rgba(11,11,11,0.9);
+  border-radius: 28px;
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+  align-items: center;
+}
+
+.dashboard-orbit-card { grid-template-columns: 1fr auto; }
+.portal-trust-orbit,
+.milano-release-seal  { grid-template-columns: auto 1fr; }
+
+.orbit-eyebrow {
+  color: #c6a65b;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.dashboard-orbit-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid rgba(198,166,91,0.18);
+  padding-top: 14px;
+  font-size: 11px;
+  color: #a8a29a;
+  grid-column: 1 / -1;
+}
+
+.dashboard-orbit-meta strong { color: #f6f1e6; }
+
+/* Chat launcher */
+.milano-chat-launcher {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 9900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.milano-chat-button {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(198,166,91,0.32);
+  border-radius: 999px;
+  background: rgba(5,5,5,0.92);
+  backdrop-filter: blur(18px);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.55), 0 0 28px rgba(198,166,91,0.12);
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.milano-chat-button:hover {
+  border-color: rgba(198,166,91,0.6);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.55), 0 0 36px rgba(198,166,91,0.22);
+}
+
+.milano-chat-panel {
+  position: absolute;
+  right: 0;
+  bottom: 84px;
+  width: min(390px, calc(100vw - 28px));
+  border: 1px solid rgba(198,166,91,0.28);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(198,166,91,0.1), transparent 32%),
+    #080808;
+  color: #f6f1e6;
+  overflow: hidden;
+  box-shadow: 0 28px 100px rgba(0,0,0,0.68), 0 0 48px rgba(198,166,91,0.12);
+}
+
+.milano-chat-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(198,166,91,0.18);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.milano-chat-title { display: flex; align-items: center; gap: 12px; }
+.milano-chat-title strong { display: block; font-size: 14px; }
+.milano-chat-title span  { display: block; font-size: 11px; color: #a8a29a; }
+
+.milano-chat-close {
+  color: #a8a29a; background: transparent; border: 0; cursor: pointer;
+  display: grid; place-items: center;
+}
+
+.milano-chat-body {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.milano-chat-message {
+  border: 1px solid rgba(246,241,230,0.1);
+  border-radius: 14px;
+  padding: 12px;
+  color: #f6f1e6;
+  background: rgba(255,255,255,0.03);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.milano-chat-note {
+  color: #a8a29a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.milano-chat-input {
+  padding: 14px;
+  border-top: 1px solid rgba(198,166,91,0.18);
+  display: flex;
+  gap: 10px;
+}
+
+.milano-chat-input input {
+  flex: 1; min-width: 0;
+  border: 1px solid rgba(246,241,230,0.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.035);
+  color: #f6f1e6;
+  padding: 10px 14px;
+  outline: none;
+  font-size: 13px;
+}
+
+.milano-chat-input input::placeholder { color: rgba(168,162,154,0.6); }
+
+.milano-chat-input button {
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(198,166,91,0.44);
+  background: rgba(198,166,91,0.12);
+  color: #d8be73;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.milano-chat-input button:hover {
+  background: rgba(198,166,91,0.22);
+  border-color: rgba(198,166,91,0.7);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-orbit-card,
+  .portal-trust-orbit,
+  .milano-release-seal {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .homepage-hero-orbit { min-height: 300px; }
+  .orbit-xl { --orbit-size: min(320px, 82vw); }
+
+  .milano-chat-launcher { right: 14px; bottom: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-halo,
+  .orbit-sweep,
+  .orbit-blocked .orbit-ring-primary { animation: none !important; }
+  .orbit-ring, .orbit-node, .orbit-crest-shell { transition: none !important; }
+}

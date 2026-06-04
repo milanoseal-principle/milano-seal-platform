@@ -2,154 +2,142 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { X, Send } from "lucide-react";
+import { MilanoSealOrbitCore } from "./MilanoSealOrbitCore";
 
-export function MilanoSealChatLauncher() {
+type MilanoSealChatLauncherProps = {
+  variant?: "public" | "portal" | "dashboard";
+};
+
+export function MilanoSealChatLauncher({ variant = "public" }: MilanoSealChatLauncherProps) {
   const [open, setOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   return (
-    <>
-      <style>{`
-        @keyframes ms-panel-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .ms-launcher-btn {
-          transition: box-shadow 0.25s ease, border-color 0.25s ease;
-        }
-        .ms-launcher-btn:hover {
-          box-shadow: 0 0 0 1px rgba(198,165,90,0.35), 0 8px 32px rgba(198,165,90,0.15);
-          border-color: rgba(198,165,90,0.6) !important;
-        }
-        .ms-panel-anim {
-          animation: ms-panel-in 0.22s cubic-bezier(0.16,1,0.3,1) both;
-        }
-      `}</style>
+    <div className={`milano-chat-launcher milano-chat-${variant}`}>
+      <AnimatePresence>
+        {open && (
+          <motion.aside
+            className="milano-chat-panel"
+            initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-label="Milano Seal Concierge"
+          >
+            <header className="milano-chat-header">
+              <div className="milano-chat-title">
+                <MilanoSealOrbitCore
+                  mode="launcher"
+                  state="chat-open"
+                  size="sm"
+                  showRouteArcs={false}
+                  showNodes={false}
+                  showHalo={false}
+                  label="Milano Seal Concierge"
+                />
+                <div>
+                  <strong>Milano Seal Concierge</strong>
+                  <span>Document execution assistant</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label="Close Milano Seal Concierge"
+                onClick={() => setOpen(false)}
+                className="milano-chat-close"
+              >
+                <X size={18} />
+              </button>
+            </header>
 
-      {/* Button */}
+            <div className="milano-chat-body">
+              <div className="milano-chat-message inbound">
+                Good evening. How may I help with your document matter today?
+              </div>
+              <div className="milano-chat-note">
+                This assistant can help route intake, explain document status, and prepare questions for operator review.
+              </div>
+              {variant !== "public" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                  <Link
+                    href="/intake"
+                    onClick={() => setOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "10px 14px",
+                      background: "#C6A55A",
+                      borderRadius: 6,
+                      color: "#0A0A0A",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    Begin Secure Intake →
+                  </Link>
+                  <a
+                    href="mailto:contact@themilanoseal.com"
+                    style={{
+                      display: "block",
+                      padding: "9px 14px",
+                      border: "1px solid rgba(198,165,90,0.3)",
+                      borderRadius: 6,
+                      color: "rgba(198,165,90,0.8)",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    Email Concierge
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <form
+              className="milano-chat-input"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              <input
+                aria-label="Ask Milano Seal"
+                placeholder="Ask about intake, apostille, release, or routing..."
+              />
+              <button type="submit" aria-label="Send message">
+                <Send size={17} />
+              </button>
+            </form>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
       <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Open Milano Seal concierge"
-        className="ms-launcher-btn"
-        style={{
-          position: "fixed",
-          bottom: 24,
-          right: 24,
-          width: 44,
-          height: 44,
-          borderRadius: 4,
-          background: "rgba(8,6,2,0.96)",
-          border: "1px solid rgba(198,165,90,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          zIndex: 9999,
-          padding: 0,
-          boxShadow: "0 2px 16px rgba(0,0,0,0.5)",
-        }}
+        type="button"
+        className="milano-chat-button"
+        aria-label={open ? "Close Milano Seal Concierge" : "Open Milano Seal Concierge"}
+        onClick={() => setOpen((v) => !v)}
       >
         {open ? (
-          <X style={{ color: "rgba(198,165,90,0.7)", width: 16, height: 16 }} />
+          <X size={20} color="rgba(198,165,90,0.8)" />
         ) : (
-          <span style={{
-            fontFamily: "var(--font-playfair, Georgia, serif)",
-            fontSize: 20,
-            fontWeight: 400,
-            color: "#C6A55A",
-            lineHeight: 1,
-            letterSpacing: "0.02em",
-            userSelect: "none",
-          }}>M</span>
+          <MilanoSealOrbitCore
+            mode="launcher"
+            state="idle"
+            size="sm"
+            showRouteArcs={false}
+            showNodes={false}
+            label="Milano Seal Concierge launcher"
+          />
         )}
       </button>
-
-      {/* Panel */}
-      {open && (
-        <div
-          className="ms-panel-anim"
-          style={{
-            position: "fixed",
-            bottom: 78,
-            right: 24,
-            width: 280,
-            background: "rgba(8,6,2,0.98)",
-            border: "1px solid rgba(198,165,90,0.2)",
-            borderRadius: 4,
-            zIndex: 9998,
-            boxShadow: "0 12px 48px rgba(0,0,0,0.8)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Header */}
-          <div style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid rgba(198,165,90,0.1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "#C6A55A", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-                The Milano Seal™
-              </div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 2 }}>
-                Document Execution · Florida Licensed
-              </div>
-            </div>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(52,211,153,0.8)", flexShrink: 0 }} />
-          </div>
-
-          {/* Body */}
-          <div style={{ padding: "14px 16px 16px" }}>
-            <p style={{ fontSize: 11, color: "rgba(176,176,176,0.8)", lineHeight: 1.6, marginBottom: 14, margin: "0 0 14px" }}>
-              Ready to execute your international documents. Begin a secure intake or reach us directly.
-            </p>
-
-            <Link
-              href="/intake"
-              onClick={() => setOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "10px 14px",
-                background: "#C6A55A",
-                borderRadius: 3,
-                color: "#0A0A0A",
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-                marginBottom: 8,
-              }}
-            >
-              Begin Secure Intake
-              <span style={{ fontSize: 12, marginLeft: 4 }}>→</span>
-            </Link>
-
-            <a
-              href="mailto:contact@themilanoseal.com"
-              style={{
-                display: "block",
-                padding: "9px 14px",
-                border: "1px solid rgba(198,165,90,0.22)",
-                borderRadius: 3,
-                color: "rgba(198,165,90,0.7)",
-                fontSize: 9,
-                fontWeight: 600,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-                textAlign: "center",
-              }}
-            >
-              Email Concierge
-            </a>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
