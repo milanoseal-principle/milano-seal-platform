@@ -13,10 +13,10 @@ async function getEscalations(userId: string) {
     const admin = createAdminClient();
     const { data } = await admin
       .from("va_tasks")
-      .select("id, title, status, due_date, priority, matter_id, notes")
+      .select("id, title, status, due_at, urgency, priority, task_type, matter_id, notes_public, escalation_reason")
       .eq("assigned_to", userId)
       .eq("status", "escalated")
-      .order("due_date", { ascending: true });
+      .order("due_at", { ascending: true, nullsFirst: false });
     return data ?? [];
   } catch {
     return [];
@@ -37,7 +37,7 @@ export default async function VAEscalationsPage() {
           Escalation Queue
         </h1>
         <p className="text-[10px] font-mono mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
-          Items flagged for Nicholas / operator review.
+          Items flagged for operator review.
         </p>
       </div>
 
@@ -50,7 +50,7 @@ export default async function VAEscalationsPage() {
           textAlign: "center",
         }}>
           <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, margin: 0 }}>
-            No escalations. Flagged matters will appear here when escalated to operator.
+            No escalations. Flagged tasks will appear here when escalated to operator.
           </p>
         </div>
       ) : (
@@ -73,8 +73,10 @@ export default async function VAEscalationsPage() {
                     {item.matter_id}
                   </p>
                 )}
-                {item.notes && (
-                  <p style={{ margin: "6px 0 0", fontSize: 11, color: "#A8A29A" }}>{item.notes}</p>
+                {(item.escalation_reason || item.notes_public) && (
+                  <p style={{ margin: "6px 0 0", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                    {item.escalation_reason ?? item.notes_public}
+                  </p>
                 )}
               </div>
               <span style={{
@@ -85,6 +87,7 @@ export default async function VAEscalationsPage() {
                 borderRadius: 999,
                 border: "1px solid rgba(184,92,92,0.4)",
                 color: "#B85C5C",
+                whiteSpace: "nowrap",
                 flexShrink: 0,
               }}>
                 Escalated
