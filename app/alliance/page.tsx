@@ -1,459 +1,245 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { FileText, Send, Map, CheckCircle, AlertTriangle, GitBranch, Eye } from "lucide-react";
+import { AllianceMotionHero } from "@/components/alliance/AllianceMotionHero";
+import { FileText, GitBranch, Eye, ShieldCheck, Users, Wrench } from "lucide-react";
 
-const CORRIDORS = ["Italy", "Portugal", "Mexico", "Brazil", "Spain", "France", "Other"];
-const ROLES = [
-  "Attorney",
-  "Notary",
-  "International Partner",
-  "Real Estate Professional",
-  "Other",
+export const metadata = {
+  title: "Global Execution Alliance | The Milano Seal™",
+  description:
+    "Partner infrastructure for international document execution, apostille coordination, referral visibility, and controlled client handoff.",
+};
+
+const WHO_ITS_FOR = [
+  {
+    title: "Immigration Attorneys",
+    description: "Refer clients requiring foreign document authentication, apostilles, or legalization for visa and residency applications.",
+  },
+  {
+    title: "Notary Operators",
+    description: "Coordinate notarizations, remote online notarizations, and document execution for international matters.",
+  },
+  {
+    title: "Relocation Firms",
+    description: "Manage document requirements for clients relocating internationally — from birth certificates to corporate records.",
+  },
+  {
+    title: "Real Estate Professionals",
+    description: "Support cross-border property transactions requiring authenticated powers of attorney and foreign-language documents.",
+  },
 ];
 
+const REFERRAL_STEPS = [
+  { step: "01", label: "Submit a Referral", desc: "Use the partner portal to submit a client matter with destination country, document type, and matter context." },
+  { step: "02", label: "Milano Seal Reviews", desc: "The operations team reviews the referral, assesses feasibility, and accepts or declines within 1–2 business days." },
+  { step: "03", label: "Execution Begins", desc: "Accepted matters enter the Milano Seal execution queue. The partner receives a partner-safe status update, not internal detail." },
+  { step: "04", label: "Commission Recorded", desc: "Upon completion, commission eligibility is reviewed and recorded. Payouts are processed manually on a scheduled basis." },
+];
+
+const WHAT_PARTNERS_SEE = [
+  "Partner-safe matter status (not internal processing detail)",
+  "Referral submission history and reference IDs",
+  "Commission status: Not Eligible, Pending Review, Approved, Paid, or On Hold",
+  "Your intake link performance (click count, active links)",
+  "Compliance and Tool Belt readiness indicators",
+  "No client documents. No internal margin. No other partners' data.",
+];
+
+const TOOLBELT_OVERVIEW = [
+  { icon: Users, label: "Identity", desc: "Verify professional identity and legal standing." },
+  { icon: FileText, label: "Service Scope", desc: "Define jurisdictions and document categories." },
+  { icon: ShieldCheck, label: "Compliance", desc: "Confirm Alliance SOPs and data handling standards." },
+  { icon: Wrench, label: "Security Attestation", desc: "Attest to your security controls and incident response readiness." },
+  { icon: GitBranch, label: "Referral Routing", desc: "Understand referral workflows and partner-safe handoff procedures." },
+  { icon: Eye, label: "Routing Eligibility", desc: "Complete readiness review to activate matter routing." },
+];
+
+const sectionHeadStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontFamily: "monospace",
+  letterSpacing: "0.28em",
+  textTransform: "uppercase",
+  color: "rgba(198,166,91,0.6)",
+  marginBottom: 12,
+};
+
+const h2Style: React.CSSProperties = {
+  fontSize: "clamp(20px,3.5vw,30px)",
+  fontWeight: 300,
+  fontFamily: "var(--font-playfair, Georgia, serif)",
+  color: "#F6F1E6",
+  margin: "0 0 16px",
+};
+
+const cardStyle: React.CSSProperties = {
+  padding: "24px",
+  background: "#0d0d0d",
+  border: "1px solid rgba(198,166,91,0.12)",
+  borderRadius: 8,
+};
+
 export default function AlliancePage() {
-  const [form, setForm] = useState({
-    partner_name: "",
-    firm: "",
-    email: "",
-    role: "",
-    corridors: [] as string[],
-    observation: "",
-    source_url: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{
-    success?: boolean;
-    message?: string;
-    reference?: string;
-    error?: string;
-  } | null>(null);
-
-  function toggleCorridor(c: string) {
-    setForm((f) => ({
-      ...f,
-      corridors: f.corridors.includes(c)
-        ? f.corridors.filter((x) => x !== c)
-        : [...f.corridors, c],
-    }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/alliance/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      setResult(data);
-      if (data.success) {
-        setForm({
-          partner_name: "",
-          firm: "",
-          email: "",
-          role: "",
-          corridors: [],
-          observation: "",
-          source_url: "",
-        });
-      }
-    } catch {
-      setResult({ error: "Submission failed. Please try again." });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "rgba(4,3,1,1)", color: "rgba(255,255,255,0.85)" }}
-    >
-      <div className="max-w-4xl mx-auto px-6 py-16 space-y-16">
-        {/* Header */}
-        <div className="space-y-3">
-          <p
-            className="text-[10px] font-mono uppercase tracking-[0.35em]"
-            style={{ color: "rgba(212,175,55,0.6)" }}
-          >
-            Milano Seal Alliance
-          </p>
-          <h1
-            className="text-4xl font-light"
-            style={{ fontFamily: "var(--font-playfair),Georgia,serif", color: "#d4af37" }}
-          >
-            Milano Execution Partner Suite™
-          </h1>
-          <p className="text-sm leading-relaxed max-w-2xl" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Join the network of attorneys, notaries, and international practitioners
-            coordinating document execution through The Milano Seal™.
-          </p>
-        </div>
+    <div style={{ minHeight: "100vh", background: "#050505", color: "#F6F1E6" }}>
+      {/* Hero */}
+      <AllianceMotionHero />
 
-        {/* Partner Observation Intake Form */}
-        <div
-          className="rounded-sm p-8 space-y-6"
+      {/* CTA bar */}
+      <div style={{ textAlign: "center", padding: "32px 24px", borderBottom: "1px solid rgba(198,166,91,0.08)" }}>
+        <Link
+          href="/alliance/login"
           style={{
-            background: "rgba(8,5,1,0.96)",
-            border: "1px solid rgba(212,175,55,0.12)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "12px 32px",
+            background: "rgba(198,166,91,0.12)",
+            border: "1px solid rgba(198,166,91,0.35)",
+            borderRadius: 4,
+            color: "#C6A55A",
+            fontSize: 13,
+            fontFamily: "monospace",
+            letterSpacing: "0.12em",
+            textDecoration: "none",
+            textTransform: "uppercase",
           }}
         >
-          <div>
-            <p
-              className="text-[9px] font-mono uppercase tracking-[0.3em] mb-1"
-              style={{ color: "rgba(212,175,55,0.5)" }}
-            >
-              Partner Observation Intake
-            </p>
-            <h2
-              className="text-lg font-light"
-              style={{ fontFamily: "var(--font-playfair),Georgia,serif" }}
-            >
-              Submit an Authority Observation
-            </h2>
-          </div>
+          Request Alliance Access →
+        </Link>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  Partner Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={form.partner_name}
-                  onChange={(e) => setForm((f) => ({ ...f, partner_name: e.target.value }))}
-                  className="w-full rounded-sm px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(212,175,55,0.15)",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                />
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px", display: "flex", flexDirection: "column", gap: 80 }}>
+
+        {/* Who it's for */}
+        <section>
+          <p style={sectionHeadStyle}>Who It&apos;s For</p>
+          <h2 style={h2Style}>Built for International Practice Professionals</h2>
+          <p style={{ fontSize: 14, color: "#A8A29A", maxWidth: 560, lineHeight: 1.7, marginBottom: 32 }}>
+            The Milano Seal Alliance is a B2B partner infrastructure layer for professionals who refer or coordinate international document execution matters on behalf of their clients.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+            {WHO_ITS_FOR.map((item) => (
+              <div key={item.title} style={cardStyle}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#F6F1E6", marginBottom: 8 }}>{item.title}</div>
+                <p style={{ fontSize: 13, color: "#A8A29A", lineHeight: 1.6, margin: 0 }}>{item.description}</p>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  Firm / Organization
-                </label>
-                <input
-                  type="text"
-                  value={form.firm}
-                  onChange={(e) => setForm((f) => ({ ...f, firm: e.target.value }))}
-                  className="w-full rounded-sm px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(212,175,55,0.15)",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded-sm px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(212,175,55,0.15)",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  Role
-                </label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                  className="w-full rounded-sm px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "rgba(8,5,1,0.98)",
-                    border: "1px solid rgba(212,175,55,0.15)",
-                    color: form.role ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
-                  }}
-                >
-                  <option value="">Select role...</option>
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Corridor Interest chips */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Corridor Interest
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CORRIDORS.map((c) => {
-                  const active = form.corridors.includes(c);
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => toggleCorridor(c)}
-                      className="px-3 py-1 rounded-sm text-[11px] font-mono uppercase tracking-[0.15em] transition-colors duration-200"
-                      style={{
-                        background: active ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
-                        border: active ? "1px solid rgba(212,175,55,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                        color: active ? "#d4af37" : "rgba(255,255,255,0.4)",
-                      }}
-                    >
-                      {c}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Authority Observation */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Authority Observation *
-              </label>
-              <textarea
-                required
-                rows={5}
-                value={form.observation}
-                onChange={(e) => setForm((f) => ({ ...f, observation: e.target.value }))}
-                placeholder="I have information about a receiving authority's requirements..."
-                className="w-full rounded-sm px-3 py-2 text-sm outline-none resize-none"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(212,175,55,0.15)",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              />
-            </div>
-
-            {/* Source URL */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Source URL (optional)
-              </label>
-              <input
-                type="url"
-                value={form.source_url}
-                onChange={(e) => setForm((f) => ({ ...f, source_url: e.target.value }))}
-                placeholder="https://..."
-                className="w-full rounded-sm px-3 py-2 text-sm outline-none"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(212,175,55,0.15)",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              />
-            </div>
-
-            {result && (
-              <div
-                className="flex items-start gap-3 rounded-sm px-4 py-3"
-                style={{
-                  background: result.success
-                    ? "rgba(212,175,55,0.06)"
-                    : "rgba(180,50,50,0.08)",
-                  border: result.success
-                    ? "1px solid rgba(212,175,55,0.2)"
-                    : "1px solid rgba(180,50,50,0.2)",
-                }}
-              >
-                {result.success ? (
-                  <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#d4af37" }} />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#b43232" }} />
-                )}
-                <div className="text-xs space-y-0.5">
-                  <p style={{ color: result.success ? "rgba(255,255,255,0.75)" : "rgba(255,100,100,0.8)" }}>
-                    {result.message ?? result.error}
-                  </p>
-                  {result.reference && (
-                    <p className="font-mono" style={{ color: "rgba(212,175,55,0.6)" }}>
-                      Reference: {result.reference}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-sm text-xs font-mono uppercase tracking-[0.2em] transition-opacity duration-200 disabled:opacity-50"
-              style={{
-                background: "rgba(212,175,55,0.12)",
-                border: "1px solid rgba(212,175,55,0.3)",
-                color: "#d4af37",
-              }}
-            >
-              <Send className="w-3.5 h-3.5" />
-              {submitting ? "Submitting..." : "Submit Observation"}
-            </button>
-          </form>
-        </div>
-
-        {/* What Partners Can Submit */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            className="rounded-sm p-6 space-y-4"
-            style={{
-              background: "rgba(8,5,1,0.96)",
-              border: "1px solid rgba(212,175,55,0.08)",
-            }}
-          >
-            <div>
-              <p className="text-[9px] font-mono uppercase tracking-[0.3em] mb-1" style={{ color: "rgba(212,175,55,0.45)" }}>
-                Partners Can Submit
-              </p>
-              <h3 className="text-sm font-light" style={{ fontFamily: "var(--font-playfair),Georgia,serif" }}>
-                Accepted Observations
-              </h3>
-            </div>
-            <ul className="space-y-2.5">
-              {[
-                "Authority requirement observations",
-                "Timeline observations from completed matters",
-                "Rejection observations",
-                "Source URLs for verification",
-                "Contact update requests",
-                "Referral leads",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: "rgba(212,175,55,0.5)" }} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div
-            className="rounded-sm p-6 space-y-4"
-            style={{
-              background: "rgba(8,5,1,0.96)",
-              border: "1px solid rgba(255,255,255,0.04)",
-            }}
-          >
-            <div>
-              <p className="text-[9px] font-mono uppercase tracking-[0.3em] mb-1" style={{ color: "rgba(255,255,255,0.2)" }}>
-                Partner Restrictions
-              </p>
-              <h3 className="text-sm font-light" style={{ fontFamily: "var(--font-playfair),Georgia,serif", color: "rgba(255,255,255,0.45)" }}>
-                What Partners Cannot Do
-              </h3>
-            </div>
-            <ul className="space-y-2.5">
-              {[
-                "Verify authority records or promote confidence levels",
-                "View client documents or matter internals",
-                "View other partners' data or revenue information",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  <span className="mt-1 flex-shrink-0 w-2.5 h-px" style={{ background: "rgba(255,255,255,0.15)" }} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Execution Partner Toolkit */}
-        <div className="space-y-4">
-          <div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.3em] mb-1" style={{ color: "rgba(212,175,55,0.5)" }}>
-              Alliance Resources
-            </p>
-            <h2 className="text-xl font-light" style={{ fontFamily: "var(--font-playfair),Georgia,serif" }}>
-              Execution Partner Toolkit™
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                icon: FileText,
-                title: "Submit an Observation",
-                description: "Share authority requirements, rejection notes, or timeline data with the Milano Seal operations team.",
-                href: "#intake-form",
-                label: "Open Form",
-              },
-              {
-                icon: Send,
-                title: "Refer a Matter",
-                description: "Send a client to Milano Seal intake. Your referral will be captured and attributed to your partner record.",
-                href: "/intake?ref=partner",
-                label: "Go to Intake",
-              },
-              {
-                icon: Map,
-                title: "Check Corridor Status",
-                description: "View current processing timelines, authority notes, and jurisdictional intelligence by corridor.",
-                href: "/map",
-                label: "View Map",
-              },
-              {
-                icon: GitBranch,
-                title: "Submit a Referral",
-                description: "Refer a client matter to The Milano Seal for execution. Referrals are reviewed before acceptance.",
-                href: "/alliance/referrals/new",
-                label: "Submit Referral",
-              },
-              {
-                icon: Eye,
-                title: "Referral Status",
-                description: "View the status of referrals submitted through your partner account.",
-                href: "/alliance/referrals",
-                label: "View Status",
-              },
-            ].map((card) => (
-              <Link
-                key={card.title}
-                href={card.href}
-                className="group block rounded-sm p-5 space-y-3 transition-colors duration-300"
-                style={{
-                  background: "rgba(8,5,1,0.96)",
-                  border: "1px solid rgba(212,175,55,0.1)",
-                }}
-              >
-                <div
-                  className="w-8 h-8 rounded-sm flex items-center justify-center"
-                  style={{
-                    background: "rgba(212,175,55,0.06)",
-                    border: "1px solid rgba(212,175,55,0.18)",
-                  }}
-                >
-                  <card.icon className="w-3.5 h-3.5" style={{ color: "#d4af37" }} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-light mb-1.5" style={{ fontFamily: "var(--font-playfair),Georgia,serif", color: "rgba(255,255,255,0.75)" }}>
-                    {card.title}
-                  </h3>
-                  <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    {card.description}
-                  </p>
-                </div>
-                <div className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: "rgba(212,175,55,0.5)" }}>
-                  {card.label} →
-                </div>
-              </Link>
             ))}
           </div>
-        </div>
+        </section>
+
+        {/* How referrals work */}
+        <section>
+          <p style={sectionHeadStyle}>How Referrals Work</p>
+          <h2 style={h2Style}>A Structured Referral Process</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {REFERRAL_STEPS.map((step) => (
+              <div
+                key={step.step}
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  padding: "20px 24px",
+                  background: "#0d0d0d",
+                  border: "1px solid rgba(198,166,91,0.1)",
+                  borderRadius: 8,
+                  alignItems: "flex-start",
+                }}
+              >
+                <span style={{ fontSize: 18, fontFamily: "monospace", fontWeight: 700, color: "rgba(198,166,91,0.4)", flexShrink: 0, lineHeight: 1.3 }}>
+                  {step.step}
+                </span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#F6F1E6", marginBottom: 6 }}>{step.label}</div>
+                  <p style={{ fontSize: 13, color: "#A8A29A", lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* What partners see */}
+        <section>
+          <p style={sectionHeadStyle}>What Partners See</p>
+          <h2 style={h2Style}>Visibility Without Exposure</h2>
+          <p style={{ fontSize: 14, color: "#A8A29A", maxWidth: 560, lineHeight: 1.7, marginBottom: 24 }}>
+            Partners have access to everything needed to track their referred matters and commissions — and nothing more. Internal processing detail, pricing, and other partners&apos; data are never exposed.
+          </p>
+          <div style={cardStyle}>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+              {WHAT_PARTNERS_SEE.map((item) => (
+                <li
+                  key={item}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    fontSize: 13,
+                    color: "#F6F1E6",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#C6A55A", flexShrink: 0, marginTop: 7 }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Tool Belt overview */}
+        <section>
+          <p style={sectionHeadStyle}>Execution Partner Toolkit™</p>
+          <h2 style={h2Style}>The Alliance Onboarding Framework</h2>
+          <p style={{ fontSize: 14, color: "#A8A29A", maxWidth: 560, lineHeight: 1.7, marginBottom: 32 }}>
+            Partners progress through a structured readiness framework before receiving referred matters. Each module unlocks in sequence based on completion status.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+            {TOOLBELT_OVERVIEW.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(198,166,91,0.06)", border: "1px solid rgba(198,166,91,0.16)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Icon size={15} color="#C6A55A" />
+                    </div>
+                    <span style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(198,166,91,0.4)" }}>{String(i + 1).padStart(2, "0")}</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#F6F1E6", marginBottom: 6 }}>{item.label}</div>
+                    <p style={{ fontSize: 12, color: "#A8A29A", lineHeight: 1.5, margin: 0 }}>{item.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Bottom CTA */}
+        <section style={{ textAlign: "center" }}>
+          <p style={{ ...sectionHeadStyle, textAlign: "center" }}>Apply to Join</p>
+          <h2 style={{ ...h2Style, textAlign: "center" }}>Ready to Become an Alliance Partner?</h2>
+          <p style={{ fontSize: 14, color: "#A8A29A", maxWidth: 480, margin: "0 auto 28px", lineHeight: 1.7 }}>
+            Alliance membership is by invitation and review only. Contact the Milano Seal team to begin the application process.
+          </p>
+          <Link
+            href="/alliance/login"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "12px 36px",
+              background: "rgba(198,166,91,0.12)",
+              border: "1px solid rgba(198,166,91,0.35)",
+              borderRadius: 4,
+              color: "#C6A55A",
+              fontSize: 13,
+              fontFamily: "monospace",
+              letterSpacing: "0.12em",
+              textDecoration: "none",
+              textTransform: "uppercase",
+            }}
+          >
+            Request Alliance Access →
+          </Link>
+        </section>
       </div>
     </div>
   );
