@@ -32,6 +32,13 @@ export function MilanoSealChatLauncher() {
           background: rgba(198,165,90,0.18);
           animation: ms-pulse2 2.4s ease-out infinite 0.8s;
         }
+        @keyframes ms-panel-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .ms-panel-anim {
+          animation: ms-panel-in 0.22s cubic-bezier(0.16,1,0.3,1) both;
+        }
       `}</style>
 
       {/* Orb button */}
@@ -74,6 +81,7 @@ export function MilanoSealChatLauncher() {
       {/* Panel */}
       {open && (
         <div
+          className="ms-panel-anim"
           style={{
             position: "fixed",
             bottom: 100,
