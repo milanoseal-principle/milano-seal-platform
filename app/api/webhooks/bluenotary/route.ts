@@ -7,9 +7,19 @@ import { redactBNPayload } from '@/lib/bluenotary/redaction';
 import { sanitizeDocumentName } from '@/lib/bluenotary/documents';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
+export async function GET() {
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
+
 export async function POST(request: NextRequest) {
-  // 1. Verify auth
-  if (!verifyBNWebhookAuth(request)) {
+  // 1. Verify auth — missing env var is a server config error, not a client error
+  if (!process.env.BLUENOTARY_WEBHOOK_SECRET) {
+    console.error('[BN webhook] BLUENOTARY_WEBHOOK_SECRET is not configured');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.BLUENOTARY_WEBHOOK_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

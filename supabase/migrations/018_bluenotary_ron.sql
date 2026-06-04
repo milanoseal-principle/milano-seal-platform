@@ -48,7 +48,7 @@ CREATE POLICY "ron_sessions_client_read" ON ron_sessions
   FOR SELECT USING (
     (auth.jwt() ->> 'role') = 'client'
     AND matter_id IN (
-      SELECT id FROM deals WHERE client_user_id = auth.uid()
+      SELECT id FROM deals WHERE email = auth.email()
     )
   );
 
@@ -148,7 +148,7 @@ CREATE POLICY "ron_documents_client_read" ON ron_documents
   FOR SELECT USING (
     (auth.jwt() ->> 'role') = 'client'
     AND matter_id IN (
-      SELECT id FROM deals WHERE client_user_id = auth.uid()
+      SELECT id FROM deals WHERE email = auth.email()
     )
     AND signed_document_received = true
   );
