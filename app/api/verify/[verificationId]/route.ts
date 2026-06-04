@@ -63,3 +63,49 @@ export async function GET(
     );
   }
 }
+
+// ─── Release Certificate hash lookup (public) ─────────────────────────────
+// Accessible at: /api/verify/<verification_hash>
+// Returns only: valid, status, verificationHash, displayId, releaseDate, documentCount, custodyStatus, releasedAt
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ verificationId: string }> }
+) {
+  const { verificationId } = await params;
+  const body = (await req.json().catch(() => ({}))) as { mode?: string };
+
+  if (body.mode !== "release_cert") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (!verificationId) {
+    return NextResponse.json({ valid: false, status: "not_found" }, { status: 404 });
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("release_certificates")
+      .select("verification_hash,display_id,release_date,document_count,custody_status,created_at")
+      .eq("verification_hash", verificationId)
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ valid: false, status: "not_found", verificationHash: verificationId });
+    }
+
+    const certStatus = data.custody_status as "valid" | "revoked" | "expired";
+    return NextResponse.json({
+      valid: certStatus === "valid",
+      status: certStatus,
+      verificationHash: data.verification_hash,
+      displayId: data.display_id,
+      releaseDate: data.release_date,
+      documentCount: data.document_count,
+      custodyStatus: data.custody_status,
+      releasedAt: data.created_at,
+    });
+  } catch {
+    return NextResponse.json({ valid: false, status: "error" }, { status: 500 });
+  }
+}
