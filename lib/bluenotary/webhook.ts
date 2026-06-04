@@ -1,36 +1,31 @@
 import { createHash } from 'crypto';
 import type { BNWebhookPayload } from './types';
 
+export type BNWebhookAuthResult =
+  | { ok: true }
+  | { ok: false; status: 401 | 500; reason: 'unauthorized' | 'misconfigured' };
+
 /**
- * Verify the Authorization Bearer token on incoming BlueNotary webhook requests.
- * Returns true if valid, false if missing or mismatched.
+ * Verify Authorization Bearer on incoming BlueNotary webhook requests.
+ * Returns a typed result so callers can distinguish 401 vs 500.
  * Never logs the token or secret.
  */
-export function verifyBNWebhookAuth(request: Request): boolean {
+export function verifyBNWebhookAuth(request: Request): BNWebhookAuthResult {
   const secret = process.env.BLUENOTARY_WEBHOOK_SECRET;
   if (!secret) {
-    // Fail closed — if secret is not configured, reject all webhooks
-    return false;
+    return { ok: false, status: 500, reason: 'misconfigured' };
   }
 
-  const authHeader = request.headers.get('Authorization') ?? '';
-  if (!authHeader.startsWith('Bearer ')) return false;
-
-  const token = authHeader.slice('Bearer '.length).trim();
-
-  // Constant-time comparison to prevent timing attacks
-  if (token.length !== secret.length) return false;
-
-  let diff = 0;
-  for (let i = 0; i < token.length; i++) {
-    diff |= token.charCodeAt(i) ^ secret.charCodeAt(i);
+  const authHeader = request.headers.get('authorization') ?? '';
+  if (authHeader === `Bearer ${secret}`) {
+    return { ok: true };
   }
-  return diff === 0;
+
+  return { ok: false, status: 401, reason: 'unauthorized' };
 }
 
 /**
  * Compute a SHA-256 hash for idempotency deduplication of webhook events.
- * Combines notarization_id + bn_session_id + event_type + message.
  */
 export function computeEventHash(payload: BNWebhookPayload): string {
   const raw = [
