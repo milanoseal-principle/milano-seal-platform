@@ -3,6 +3,7 @@ import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { MilanoSealChatLauncher } from "@/components/orbit/MilanoSealChatLauncher";
+import { NavigationLoader } from "@/components/NavigationLoader";
 import "./globals.css";
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to have
@@ -172,6 +173,7 @@ export default function RootLayout({
             },
           }}
         />
+        <NavigationLoader />
         <MilanoSealChatLauncher />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>

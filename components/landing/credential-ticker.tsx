@@ -81,7 +81,7 @@ export function CredentialTicker() {
                 {item.route}
               </span>
               <span
-                className="text-[7px] font-mono tracking-[0.18em]"
+                className="text-[10px] font-mono tracking-[0.06em]"
                 style={{ color: "rgba(180, 155, 90, 0.50)" }}
               >
                 {item.workflow}

@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { ClientMatterIntelligence } from "@/lib/matterIntelligence";
 import { PortalTrustOrbit } from "@/components/orbit/PortalTrustOrbit";
 import type { OrbitState } from "@/lib/orbit/orbitStateMap";
+import { StatusTransitionPill } from "@/components/animations/StatusTransitionPill";
+import { TrustConfirmSeal } from "@/components/animations/TrustConfirmSeal";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
 
@@ -605,7 +607,7 @@ export default function MyMatterPage() {
                 borderColor: "rgba(198,165,90,0.18)",
               }}
             >
-              <span style={{ color: "#C6A55A", fontSize: 13 }}>✓</span>
+              <TrustConfirmSeal event="payment_confirmed" size="sm" />
               <div className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
                 Payment confirmed — scheduling is now unlocked.
               </div>
@@ -723,9 +725,8 @@ export default function MyMatterPage() {
               </div>
               <div className="pp-kv">
                 <span className="pp-kv-k">Status</span>
-                <span className="pp-kv-v pp-kv-v gold">
-                  {deal.client_facing_status ??
-                    (deal.matter_status ?? "").replace(/_/g, " ")}
+                <span className="pp-kv-v">
+                  <StatusTransitionPill status={deal.matter_status ?? "new"} size="sm" />
                 </span>
               </div>
               {deal.matter_status && getConciergeCopy(deal.matter_status) && (

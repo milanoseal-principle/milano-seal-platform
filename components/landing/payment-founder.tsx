@@ -158,7 +158,7 @@ export function PaymentFounder() {
                 <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
                   Founder-Led Execution // Personally Overseen
                 </span>
-                <p className="text-[#B0B0B0] text-sm font-light leading-relaxed">
+                <p className="text-white/65 text-sm font-normal leading-relaxed">
                   Nicholas Milano has built his practice at the intersection of international document
                   execution, procedural compliance, and cross-border coordination — a space most
                   professionals never operate within directly. Specializing in international execution
