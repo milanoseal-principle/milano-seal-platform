@@ -1561,8 +1561,8 @@ h4 {
 
 /* ── Orbital node beads ──────────────────────────────────────── */
 @keyframes ro-node-pulse {
-  0%, 100% { transform: scale(0.82); opacity: 0.55; }
-  50%       { transform: scale(1.18); opacity: 1; }
+  0%, 100% { transform: scale(0.78); opacity: 0.50; }
+  50%       { transform: scale(1.22); opacity: 1; }
 }
 .ro-node { animation: ro-node-pulse 2.8s ease-in-out infinite; }
 .ro-node-o0 { animation-delay: 0.00s; }
