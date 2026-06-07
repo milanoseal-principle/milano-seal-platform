@@ -35,7 +35,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, siteName: "The Milano Seal™", type: "website" },
+    openGraph: { title, description, url: canonical, siteName: "The Milano Seal™", type: "website", images: [{ url: "https://www.themilanoseal.com/og-image.png", width: 1200, height: 630, alt: "The Milano Seal™" }] },
+    twitter: { card: "summary_large_image", title, description, images: ["https://www.themilanoseal.com/og-image.png"] },
   };
 }
 
