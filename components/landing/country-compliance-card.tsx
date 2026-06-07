@@ -183,7 +183,7 @@ export function CountryComplianceCard({ countryId, onClose }: Props) {
               <div className="mx-6 rounded-xl border border-[#C6A55A]/12 bg-[#C6A55A]/[0.04] p-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="w-3.5 h-3.5 text-[#C6A55A] flex-shrink-0" />
-                  <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A]">
+                  <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-[#C6A55A]">
                     Hague Route Intelligence
                   </span>
                 </div>
@@ -210,7 +210,7 @@ export function CountryComplianceCard({ countryId, onClose }: Props) {
 
               {/* Compliance badges */}
               <div className="mx-6 mb-4">
-                <div className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#444] mb-2">
+                <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-[#666] mb-2">
                   Compliance Clearances
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -228,7 +228,7 @@ export function CountryComplianceCard({ countryId, onClose }: Props) {
 
               {/* Document types */}
               <div className="mx-6 mb-6">
-                <div className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#444] mb-2">
+                <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-[#666] mb-2">
                   Documents Handled
                 </div>
                 <div className="flex flex-wrap gap-1.5">

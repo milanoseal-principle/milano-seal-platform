@@ -79,7 +79,7 @@ function Pillar({
         </div>
         <div className="min-w-0">
           <h3 className="text-white text-[13px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
-          <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
+          <p className="text-[#8A8A8A] text-[13px] leading-relaxed group-hover:text-[#9A9A9A] transition-colors">
             {desc}
           </p>
         </div>
@@ -127,11 +127,11 @@ export function MilanoTrustCore() {
             >
               <span className="font-serif text-[#C6A55A] text-2xl font-medium leading-none">M</span>
             </div>
-            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
               Our Platform Principles
             </p>
-            <h2 className="font-serif text-2xl text-white font-light mb-2">Milano Trust Core</h2>
-            <p className="text-[#6A6A6A] text-xs max-w-xs leading-relaxed">
+            <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
+            <p className="text-white/55 text-sm max-w-xs leading-relaxed">
               Six pillars of deterministic execution for international document success.
             </p>
           </div>
@@ -151,13 +151,13 @@ export function MilanoTrustCore() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-10"
           >
-            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
               Our Platform Principles
             </p>
-            <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
+            <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
               Milano Trust Core
             </h2>
-            <p className="text-[#5A5A5A] text-xs leading-relaxed">
+            <p className="text-white/50 text-sm leading-relaxed">
               Six pillars of deterministic execution for international document success.
             </p>
           </motion.div>
