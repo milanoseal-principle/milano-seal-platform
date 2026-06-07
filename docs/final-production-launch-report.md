@@ -142,3 +142,37 @@ Do not claim full automated courier readiness until:
 No new feature work until the production smoke test is complete.
 
 The platform is production-ready. Ship it.
+
+---
+
+## Production Truth Rule
+
+A feature is not live unless:
+
+1. Code exists in repo
+2. Build passes
+3. Migration is applied if required
+4. Deployed URL is confirmed
+5. Role access is tested
+6. Security scan is clean
+7. Webhook / payment / courier / RON smoke test passes where applicable
+
+Do not mark anything live until all 7 conditions are confirmed.
+
+---
+
+## Active Operator Sequence
+
+```
+migrations → merge → deploy → role tests → webhooks → first controlled paid matter
+```
+
+1. Apply migration 025 in Supabase (execution_qa_and_witness_network)
+2. Confirm Vercel deploy green
+3. Run 4-session role smoke test (portal / dashboard / alliance / va)
+4. Test Wise webhook live
+5. Test Shippo webhook live
+6. Test BlueNotary webhook live
+7. Run first controlled paid matter end-to-end
+8. Release first document packet
+9. Record first operational memory entry
