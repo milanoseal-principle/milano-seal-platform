@@ -131,26 +131,23 @@ export function Hero() {
             {/* Headline */}
             <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-3">
               <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[1] ? " is-visible" : ""}`}>
-                Sealing Trust
-              </span>
-              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[2] ? " is-visible" : ""}`}>
-                Across <span className="ms-hero-borders-gradient italic">Borders</span>
+                THE MILANO SEAL™
               </span>
             </h1>
 
             {/* Subtitle — separate line, lighter weight */}
             <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-white/70 font-normal mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
-              U.S. Document Execution for International Use
+              International Document Execution &amp; Apostille Coordination
             </p>
 
             {/* Body */}
             <p className={`ms-hero-line text-sm md:text-base text-white/55 mb-3 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
-              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
+              A premium U.S. execution partner for notarized documents, apostille coordination, authentication routing, consular legalization review, and cross-border release workflows. The Milano Seal supports attorneys, private clients, corporate teams, family offices, brokers, and international professionals who need U.S. documents prepared, reviewed, routed, and released for use abroad.
             </p>
 
             {/* Subtext */}
             <p className={`ms-hero-line text-sm text-white/50 mb-10 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
-              International use is subject to destination and receiving-authority requirements.
+              Structured intake. Payment-gated execution. Courier custody. Release review.
             </p>
 
             {/* CTAs */}
@@ -167,7 +164,7 @@ export function Hero() {
                 className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
               >
                 <Globe className="w-4 h-4" />
-                Explore Global Document Intelligence
+                Search the Atlas
               </Link>
             </div>
 

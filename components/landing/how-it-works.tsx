@@ -7,25 +7,25 @@ import { Lock, ArrowRight } from "lucide-react";
 const steps = [
   {
     number: "01",
-    title: "Submit Your Matter",
+    title: "Secure Intake",
     description:
-      "Provide document details and destination requirements through our secure intake process.",
+      "Client, document, signer, destination, receiving authority, urgency, and execution method are captured through a structured intake flow.",
     href: "/intake",
     highlight: false,
   },
   {
     number: "02",
-    title: "Compliance Review",
+    title: "Operational Review",
     description:
-      "Jurisdiction requirements are validated and the optimal execution path is determined.",
+      "The matter is reviewed for document type, origin jurisdiction, signer location, destination country, apostille/authentication route, and missing information.",
     href: "/process#compliance-review",
     highlight: false,
   },
   {
     number: "03",
-    title: "Payment-Gated Execution",
+    title: "Payment Gate",
     description:
-      "No matter is scheduled or executed until scope is confirmed and payment is complete.",
+      "Scheduling and execution remain locked until the matter scope and payment status are confirmed.",
     href: "/process#payment-gate",
     highlight: true,
   },
@@ -33,23 +33,23 @@ const steps = [
     number: "04",
     title: "Document Execution",
     description:
-      "Your documents are executed with precision, recorded, and sealed according to Florida law.",
+      "Eligible documents move through in-person notarization, Remote Online Notarization coordination, or document packet preparation according to the approved matter path.",
     href: "/process#execution",
     highlight: false,
   },
   {
     number: "05",
-    title: "Chain-of-Custody Visibility",
+    title: "Custody Rail",
     description:
-      "Apostille coordination and structured international release handled through proper authority channels.",
+      "Executed documents are reviewed, packaged, tracked, and monitored through courier custody or apostille/authentication routing.",
     href: "/process#custody",
     highlight: false,
   },
   {
     number: "06",
-    title: "Structured International Release",
+    title: "Release Desk",
     description:
-      "Receive your executed documents digitally and physically, ready for international use.",
+      "Documents are released only after the required execution, payment, custody, and review conditions are satisfied.",
     href: "/process#release",
     highlight: false,
   },
@@ -68,14 +68,13 @@ export function HowItWorks() {
           className="text-center mb-16"
         >
           <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Execution Path Preview
+            Execution Path
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            How It Works
+            International Document Execution Workflow
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            Executed properly the first time. Cross-border execution with U.S.
-            compliance standards.
+            Structured intake to structured release. Every step reviewed before the next begins.
           </p>
         </motion.div>
 
