@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ExternalLink, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Search } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { AtlasCountryReveal } from "@/components/animations/AtlasCountryReveal";
->>>>>>> claude/funny-maxwell-hlxQN
 
 type CountryRow = {
   id: string;
@@ -313,13 +310,6 @@ export function AtlasGovernancePanel() {
                 </div>
 
                 {/* Expanded detail + edit */}
-<<<<<<< HEAD
-                {isExpanded && (
-                  <div style={{
-                    padding: "16px 20px 20px",
-                    background: "rgba(0,0,0,0.2)",
-                    borderTop: "1px solid rgba(198,165,90,0.06)",
-=======
                 <AtlasCountryReveal
                   isVisible={isExpanded}
                   countryName={row.country_name}
@@ -333,7 +323,6 @@ export function AtlasGovernancePanel() {
                 >
                   <div style={{
                     padding: "0",
->>>>>>> claude/funny-maxwell-hlxQN
                   }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                       <div>
@@ -454,11 +443,7 @@ export function AtlasGovernancePanel() {
                       </button>
                     )}
                   </div>
-<<<<<<< HEAD
-                )}
-=======
                 </AtlasCountryReveal>
->>>>>>> claude/funny-maxwell-hlxQN
               </div>
             );
           })
