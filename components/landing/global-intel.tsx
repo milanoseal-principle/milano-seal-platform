@@ -46,7 +46,7 @@ export function GlobalIntel({
             <p className="text-[#C6A55A] text-[9px] tracking-[0.3em] uppercase font-semibold mb-3">
               Global Document Intelligence™
             </p>
-            <h2 className="font-serif text-3xl text-white font-light">
+            <h2 className="font-serif text-3xl text-white font-normal">
               Global Document Intelligence™
             </h2>
             <p className="text-[#8A8A8A] text-sm mt-2 max-w-xl">
