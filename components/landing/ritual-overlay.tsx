@@ -459,37 +459,37 @@ export function RitualOverlay() {
                 strokeLinecap="round"
               />
 
-              {/* ── 8 outer 3D sphere nodes on main circular orbit (r=195) ── */}
+              {/* ── 8 outer 3D sphere nodes (r=230 from centre, just outside the PNG ring border) ── */}
               {Array.from({ length: 8 }, (_, i) => {
                 const a = -Math.PI / 2 + i * (Math.PI / 4);
-                const x = 250 + 195 * Math.cos(a);
-                const y = 250 + 195 * Math.sin(a);
+                const x = 250 + 230 * Math.cos(a);
+                const y = 250 + 230 * Math.sin(a);
                 const isFlare = i === 1 || i === 4 || i === 6;
                 return (
                   <g key={`on-${i}`} style={{ transformOrigin: `${x}px ${y}px` }}
                     className={`ro-node ro-node-o${i}`}>
                     {/* Outer atmospheric glow */}
-                    <circle cx={x} cy={y} r={22} fill="url(#ro-node-glow)" />
-                    {/* Mid glow ring */}
-                    <circle cx={x} cy={y} r={13} fill="rgba(212,175,55,0.22)" />
+                    <circle cx={x} cy={y} r={26} fill="url(#ro-node-glow)" />
+                    {/* Mid glow */}
+                    <circle cx={x} cy={y} r={16} fill="rgba(212,175,55,0.25)" />
                     {/* 3D sphere */}
-                    <circle cx={x} cy={y} r={8} fill="url(#ro-sphere-a)" filter="url(#ro-glow-blur)" />
+                    <circle cx={x} cy={y} r={10} fill="url(#ro-sphere-a)" filter="url(#ro-glow-blur)" />
                     {/* Specular highlight */}
-                    <circle cx={x - 2.5} cy={y - 2.5} r={2.5} fill="rgba(255,252,230,0.85)" />
-                    {/* Flare star on select nodes — always visible */}
+                    <circle cx={x - 3} cy={y - 3} r={3} fill="rgba(255,252,230,0.88)" />
+                    {/* Star flare on select nodes — always visible, not just vault */}
                     {isFlare && (
                       <g filter="url(#ro-spark-blur)" style={{ transformOrigin: `${x}px ${y}px` }}
                         className={`ro-flare ro-flare-${i}`}>
-                        <circle cx={x} cy={y} r={18} fill="rgba(255,245,190,0.15)" />
+                        <circle cx={x} cy={y} r={22} fill="rgba(255,245,190,0.12)" />
                         {/* 4-point star */}
                         <path
-                          d={`M${x},${y-20} L${x+1.8},${y-4} L${x+20},${y} L${x+1.8},${y+4} L${x},${y+20} L${x-1.8},${y+4} L${x-20},${y} L${x-1.8},${y-4}Z`}
-                          fill="rgba(255,248,200,0.88)"
+                          d={`M${x},${y-24} L${x+2},${y-5} L${x+24},${y} L${x+2},${y+5} L${x},${y+24} L${x-2},${y+5} L${x-24},${y} L${x-2},${y-5}Z`}
+                          fill="rgba(255,248,200,0.90)"
                         />
-                        {/* 45° diagonal spikes */}
+                        {/* Diagonal spikes */}
                         <path
-                          d={`M${x-13},${y-13} L${x-1},${y-1} M${x+13},${y-13} L${x+1},${y-1} M${x+13},${y+13} L${x+1},${y+1} M${x-13},${y+13} L${x-1},${y+1}`}
-                          stroke="rgba(255,248,200,0.55)" strokeWidth={1.2}
+                          d={`M${x-16},${y-16} L${x-2},${y-2} M${x+16},${y-16} L${x+2},${y-2} M${x+16},${y+16} L${x+2},${y+2} M${x-16},${y+16} L${x-2},${y+2}`}
+                          stroke="rgba(255,248,200,0.60)" strokeWidth={1.4}
                         />
                       </g>
                     )}
@@ -497,29 +497,13 @@ export function RitualOverlay() {
                 );
               })}
 
-              {/* ── 6 inner sphere nodes on ring-a orbit (r=120) ── */}
-              {Array.from({ length: 6 }, (_, i) => {
-                const a = -Math.PI / 2 + i * (Math.PI / 3);
-                const x = 250 + 120 * Math.cos(a);
-                const y = 250 + 120 * Math.sin(a);
-                return (
-                  <g key={`in-${i}`} style={{ transformOrigin: `${x}px ${y}px` }}
-                    className={`ro-node ro-node-i${i}`}>
-                    <circle cx={x} cy={y} r={14} fill="rgba(212,175,55,0.18)" />
-                    <circle cx={x} cy={y} r={8} fill="rgba(212,175,55,0.30)" />
-                    <circle cx={x} cy={y} r={5} fill="url(#ro-sphere-b)" filter="url(#ro-glow-blur)" />
-                    <circle cx={x - 1.5} cy={y - 1.5} r={1.8} fill="rgba(255,252,230,0.8)" />
-                  </g>
-                );
-              })}
-
               {/* ── Vault spark ring bursts at all 8 outer nodes ── */}
               {vaultLocked && Array.from({ length: 8 }, (_, i) => {
                 const a = -Math.PI / 2 + i * (Math.PI / 4);
-                const x = 250 + 195 * Math.cos(a);
-                const y = 250 + 195 * Math.sin(a);
+                const x = 250 + 230 * Math.cos(a);
+                const y = 250 + 230 * Math.sin(a);
                 return (
-                  <circle key={`sp-${i}`} cx={x} cy={y} r={28}
+                  <circle key={`sp-${i}`} cx={x} cy={y} r={32}
                     stroke="rgba(244,229,184,0.9)" strokeWidth={1.5} fill="none"
                     style={{ transformOrigin: `${x}px ${y}px` }}
                     className={`ro-spark ro-spark-${i}`}
