@@ -1559,6 +1559,54 @@ h4 {
   100% { left: 100%; }
 }
 
+/* ── Orbital node beads ──────────────────────────────────────── */
+@keyframes ro-node-pulse {
+  0%, 100% { transform: scale(0.82); opacity: 0.55; }
+  50%       { transform: scale(1.18); opacity: 1; }
+}
+.ro-node { animation: ro-node-pulse 2.8s ease-in-out infinite; }
+.ro-node-o0 { animation-delay: 0.00s; }
+.ro-node-o1 { animation-delay: 0.35s; }
+.ro-node-o2 { animation-delay: 0.70s; }
+.ro-node-o3 { animation-delay: 1.05s; }
+.ro-node-o4 { animation-delay: 1.40s; }
+.ro-node-o5 { animation-delay: 1.75s; }
+.ro-node-o6 { animation-delay: 2.10s; }
+.ro-node-o7 { animation-delay: 2.45s; }
+.ro-node-i0 { animation-delay: 0.18s; }
+.ro-node-i1 { animation-delay: 0.64s; }
+.ro-node-i2 { animation-delay: 1.10s; }
+.ro-node-i3 { animation-delay: 1.56s; }
+.ro-node-i4 { animation-delay: 2.02s; }
+.ro-node-i5 { animation-delay: 2.48s; }
+
+/* ── Vault spark burst ───────────────────────────────────────── */
+@keyframes ro-spark-burst {
+  0%   { transform: scale(0.2); opacity: 0.9; }
+  70%  { transform: scale(1);   opacity: 0.3; }
+  100% { transform: scale(1.3); opacity: 0;   }
+}
+.ro-spark { animation: ro-spark-burst 0.65s ease-out forwards; }
+.ro-spark-0 { animation-delay: 0.00s; }
+.ro-spark-1 { animation-delay: 0.05s; }
+.ro-spark-2 { animation-delay: 0.10s; }
+.ro-spark-3 { animation-delay: 0.15s; }
+.ro-spark-4 { animation-delay: 0.20s; }
+.ro-spark-5 { animation-delay: 0.25s; }
+.ro-spark-6 { animation-delay: 0.30s; }
+.ro-spark-7 { animation-delay: 0.35s; }
+
+/* ── Star flares at 3 node positions ────────────────────────── */
+@keyframes ro-flare-in {
+  0%   { transform: scale(0) rotate(0deg);   opacity: 0; }
+  40%  { transform: scale(1.2) rotate(15deg); opacity: 1; }
+  100% { transform: scale(0.9) rotate(45deg); opacity: 0.7; }
+}
+.ro-flare { animation: ro-flare-in 0.7s cubic-bezier(0.16,1,0.3,1) forwards; }
+.ro-flare-0 { animation-delay: 0.10s; }
+.ro-flare-3 { animation-delay: 0.22s; }
+.ro-flare-6 { animation-delay: 0.34s; }
+
 /* Tap / click hint pulse */
 @keyframes ro-hint-pulse {
   0%, 100% { opacity: 0.38; }
@@ -1595,6 +1643,12 @@ h4 {
   .rings-active .ritual-overlay__ring,
   .rings-active .ritual-overlay__seal-bloom {
     opacity: 1 !important;
+  }
+
+  .ro-node,
+  .ro-spark,
+  .ro-flare {
+    animation: none !important;
   }
 
   .ritual-overlay__item--done {
