@@ -1,31 +1,36 @@
--- Migration 022: Release Certificates
--- Public-verifiable custody release records
+-- 022_release_certificates.sql
+-- Release certificates with public verification support
 
 CREATE TABLE IF NOT EXISTS release_certificates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+  verification_id TEXT UNIQUE NOT NULL,
   verification_hash TEXT UNIQUE NOT NULL,
-  matter_id UUID NOT NULL,
-  display_id TEXT NOT NULL,
-  release_date TIMESTAMPTZ NOT NULL,
-  document_count INTEGER,
-  custody_status TEXT CHECK (custody_status IN ('valid','revoked','expired')) DEFAULT 'valid',
-  released_by TEXT, -- operator display name only, no user ID exposed
-  release_method TEXT, -- "secure_courier" | "digital_release" | "in_person"
+  status TEXT NOT NULL DEFAULT 'valid' CHECK (status IN ('valid','revoked','expired')),
+  document_count INTEGER DEFAULT 0,
+  destination_country TEXT,
+  document_type TEXT,
+  release_date TIMESTAMPTZ,
+  public_summary TEXT,
+  issued_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ DEFAULT now(),
-  -- Never store: client documents, internal notes, label URLs, costs, raw events
-  CONSTRAINT fk_matter FOREIGN KEY (matter_id) REFERENCES deals(id) ON DELETE RESTRICT
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_release_certs_hash ON release_certificates(verification_hash);
-CREATE INDEX IF NOT EXISTS idx_release_certs_matter ON release_certificates(matter_id);
-
--- Public can verify (read only — no auth required for public verify page)
 ALTER TABLE release_certificates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "public_verify_release_certificate"
-  ON release_certificates FOR SELECT
-  USING (true);
+-- Operators can create and manage
+CREATE POLICY "release_certificates_operator_all" ON release_certificates
+  FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role IN ('admin','operator','superadmin','founder_admin','admin_operator','ops_manager')
+    )
+  );
 
-CREATE POLICY "dashboard_create_release_certificate"
-  ON release_certificates FOR INSERT
-  WITH CHECK (auth.jwt() ->> 'role' IN ('founder_admin','admin','admin_operator'));
+-- Public read for verification — safe fields only enforced at API layer
+CREATE POLICY "release_certificates_public_read" ON release_certificates
+  FOR SELECT
+  USING (status = 'valid');

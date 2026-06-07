@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { ReactNode } from "react";
 import Link from "next/link";
 
@@ -26,4 +27,12 @@ export default function LearnLayout({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+=======
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  robots: { index: true, follow: true },
+};
+export default function LearnLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+>>>>>>> claude/funny-maxwell-hlxQN
 }
