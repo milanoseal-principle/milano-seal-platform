@@ -905,8 +905,8 @@ h4 {
 /* ── Seal + rings ────────────────────────────────────────────── */
 .ritual-overlay__seal-wrap {
   position: relative;
-  width: 290px;
-  height: 290px;
+  width: 440px;
+  height: 440px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -921,8 +921,8 @@ h4 {
 /* Warm gold bloom behind seal — glows when rings activate */
 .ritual-overlay__seal-bloom {
   position: absolute;
-  width: 340px;
-  height: 340px;
+  width: 520px;
+  height: 520px;
   border-radius: 50%;
   background: radial-gradient(
     circle,
@@ -952,32 +952,32 @@ h4 {
   opacity: 1;
 }
 
-/* Ring A — tight solid, CCW vault spin */
+/* Ring A — tight solid, CCW vault spin — inset 38px in 440px wrap → 364px ring, flush with 360px disc */
 .ro-ring-a {
-  inset: 38px;   /* disc 210px in 290px wrap → ring 214px, inner edge flush with disc */
-  border: 1.5px solid rgba(212, 175, 55, 0.55);
+  inset: 38px;
+  border: 1.5px solid rgba(212, 175, 55, 0.50);
 }
 .rings-active .ro-ring-a {
   animation: vault-spin-a 3s cubic-bezier(0.4, 0, 0.15, 1) forwards;
 }
 .vault-locked .ro-ring-a {
-  border-color: rgba(212, 175, 55, 0.75);
+  border-color: rgba(212, 175, 55, 0.72);
   box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
   animation: none;
 }
 
-/* Ring B — tick-mark dial, CW */
+/* Ring B — tick-mark dial, CW — inset 10px → 420px ring */
 .ro-ring-b {
   inset: 10px;
   border: none;
   background:
     repeating-conic-gradient(
-      rgba(212, 175, 55, 0.45) 0deg 1.5deg,
+      rgba(212, 175, 55, 0.40) 0deg 1.5deg,
       transparent 1.5deg 12deg
     );
-  /* transparent inner cut: disc 210px / ring 270px = 77.8% */
-  mask-image: radial-gradient(transparent 77%, black 78%);
-  -webkit-mask-image: radial-gradient(transparent 77%, black 78%);
+  /* transparent inner cut: disc 360px / ring 420px = 85.7% */
+  mask-image: radial-gradient(transparent 85%, black 86%);
+  -webkit-mask-image: radial-gradient(transparent 85%, black 86%);
 }
 .rings-active .ro-ring-b {
   animation: vault-spin-b 3s cubic-bezier(0.4, 0, 0.15, 1) forwards;
@@ -985,15 +985,15 @@ h4 {
 .vault-locked .ro-ring-b {
   background:
     repeating-conic-gradient(
-      rgba(212, 175, 55, 0.72) 0deg 1.5deg,
+      rgba(212, 175, 55, 0.68) 0deg 1.5deg,
       transparent 1.5deg 12deg
     );
   animation: none;
 }
 
-/* Ring C — dashed compass, CCW, wider */
+/* Ring C — dashed compass, CCW, wider — inset -20px → 480px ring */
 .ro-ring-c {
-  inset: -18px;
+  inset: -20px;
   border: 1px dashed rgba(212, 175, 55, 0.28);
 }
 .rings-active .ro-ring-c {
@@ -1004,9 +1004,9 @@ h4 {
   animation: none;
 }
 
-/* Ring D — outermost faint */
+/* Ring D — outermost faint — inset -50px → 540px ring */
 .ro-ring-d {
-  inset: -44px;
+  inset: -50px;
   border: 1px solid rgba(212, 175, 55, 0.13);
 }
 .rings-active .ro-ring-d {
@@ -1021,30 +1021,30 @@ h4 {
 .ritual-overlay__seal-disc {
   position: relative;
   z-index: 2;
-  width: 210px;
-  height: 210px;
+  width: 360px;
+  height: 360px;
   border-radius: 50%;
   border: none;
   /*
-    Push the PNG's gold circle ring outside the disc (clipped by overflow:hidden).
-    At 820px the ring inner edge (~140px native radius) → 112px display > disc radius 105px.
-    Only M+feather fills the black disc. Content center native y≈220 → offset -71px.
+    Show PNG at 520px wide so the thick gold ring border fits inside the 360px disc.
+    Ring outer edge ≈ 69% of PNG width → 520×0.69 = 359px ≈ 360px disc diameter.
+    Center vertically — PNG center y ≈ 50% of 520×(741/1024) = 376px → 188px.
+    No offset needed: ring now fills the disc edge correctly.
   */
   background:
     #000000
     url('/milano-seal-black-1024.png')
     no-repeat
-    center -63px;
-  background-size: 780px auto;
-  /* Push dark warm fabric pixels to pure black; mid-bright gold M survives */
-  filter: contrast(1.8) brightness(0.7);
+    center center;
+  background-size: 520px auto;
+  filter: contrast(1.35) brightness(0.88);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   box-shadow:
-    0 0 48px rgba(212, 175, 55, 0.18),
-    0 0 100px rgba(212, 175, 55, 0.09);
+    0 0 60px rgba(212, 175, 55, 0.22),
+    0 0 120px rgba(212, 175, 55, 0.10);
 }
 
 /* Born — blur→sharpen assembly (0.75s, starts at T.seal) */
@@ -1329,33 +1329,33 @@ h4 {
   }
 
   .ritual-overlay__seal-wrap {
-    width: 230px;
-    height: 230px;
+    width: 320px;
+    height: 320px;
   }
 
   .ritual-overlay__seal-bloom {
-    width: 270px;
-    height: 270px;
+    width: 370px;
+    height: 370px;
   }
 
   .ritual-overlay__seal-disc {
-    width: 170px;
-    height: 170px;
-    /* Ring 310px native → 170px disc + buffer: 580px; center 227×(580/1024)=129 → offset -44 */
-    background-size: 640px auto;
-    background-position: center -53px;
+    width: 260px;
+    height: 260px;
+    /* 260px disc: ring at 69% of PNG → background-size 260/0.69 = 377px */
+    background-size: 377px auto;
+    background-position: center center;
   }
 
-  /* Recalculate ring insets for 230px wrap / 170px disc */
-  .ro-ring-a { inset: 28px; }  /* ring 174px, inner edge flush with 170px disc */
+  /* Recalculate ring insets for 320px wrap / 260px disc */
+  .ro-ring-a { inset: 28px; }  /* ring 264px ≈ flush with disc */
   .ro-ring-b {
-    inset: 6px;
-    /* disc 170 / ring 218 = 78% */
-    mask-image: radial-gradient(transparent 77%, black 78%);
-    -webkit-mask-image: radial-gradient(transparent 77%, black 78%);
+    inset: 8px;
+    /* disc 260 / ring 304 = 85.5% */
+    mask-image: radial-gradient(transparent 85%, black 86%);
+    -webkit-mask-image: radial-gradient(transparent 85%, black 86%);
   }
-  .ro-ring-c { inset: -14px; }
-  .ro-ring-d { inset: -34px; }
+  .ro-ring-c { inset: -16px; }
+  .ro-ring-d { inset: -38px; }
 
   .ritual-overlay__text-area {
     gap: 11px;
