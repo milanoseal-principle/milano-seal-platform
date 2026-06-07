@@ -1,31 +1,12 @@
-<<<<<<< HEAD
-import { requireAllianceAccess } from "@/lib/allianceAuth";
-import { AllianceShell } from "@/components/alliance/AllianceShell";
-import { PartnerCertificationFlow } from "@/components/alliance/PartnerCertificationFlow";
-
-export const dynamic = "force-dynamic";
-
-export const metadata = {
-=======
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
->>>>>>> claude/funny-maxwell-hlxQN
   title: "Partner Certification | The Milano Seal™",
   robots: { index: false, follow: false },
 };
 
-<<<<<<< HEAD
-export default async function PartnerCertificationPage() {
-  await requireAllianceAccess();
-
-  return (
-    <AllianceShell>
-      <PartnerCertificationFlow />
-    </AllianceShell>
-=======
 const STEPS = [
   { key: "step_1_identity", label: "Identity Verification", description: "Confirm business identity and legal standing." },
   { key: "step_2_service_scope", label: "Service Scope Agreement", description: "Define the scope of services you will refer." },
@@ -134,6 +115,5 @@ export default async function CertificationPage() {
         )}
       </div>
     </div>
->>>>>>> claude/funny-maxwell-hlxQN
   );
 }

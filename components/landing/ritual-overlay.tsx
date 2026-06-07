@@ -385,6 +385,90 @@ export function RitualOverlay() {
             <span className="ritual-overlay__ring ro-ring-b" />
             <span className="ritual-overlay__ring ro-ring-a" />
 
+            {/* Orbital node + spark SVG — centered over the 290px wrap */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 380 380"
+              fill="none"
+              style={{
+                position: "absolute",
+                width: 380,
+                height: 380,
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                pointerEvents: "none",
+                zIndex: 1,
+                opacity: ringsActive ? 1 : 0,
+                transition: "opacity 0.9s ease",
+              }}
+            >
+              {/* Outer ring node beads (ring-d radius 189) */}
+              {Array.from({ length: 8 }, (_, i) => {
+                const a = -Math.PI / 2 + i * (Math.PI / 4);
+                const x = 190 + 189 * Math.cos(a);
+                const y = 190 + 189 * Math.sin(a);
+                return (
+                  <g key={`on-${i}`} style={{ transformOrigin: `${x}px ${y}px` }} className={`ro-node ro-node-o${i}`}>
+                    <circle cx={x} cy={y} r={10} fill="rgba(212,175,55,0.10)" />
+                    <circle cx={x} cy={y} r={5.5} fill="rgba(212,175,55,0.45)" />
+                    <circle cx={x} cy={y} r={3} fill="rgba(244,229,184,0.92)" />
+                  </g>
+                );
+              })}
+
+              {/* Inner ring node beads (ring-a radius 107) */}
+              {Array.from({ length: 6 }, (_, i) => {
+                const a = -Math.PI / 2 + i * (Math.PI / 3);
+                const x = 190 + 107 * Math.cos(a);
+                const y = 190 + 107 * Math.sin(a);
+                return (
+                  <g key={`in-${i}`} style={{ transformOrigin: `${x}px ${y}px` }} className={`ro-node ro-node-i${i}`}>
+                    <circle cx={x} cy={y} r={7} fill="rgba(212,175,55,0.08)" />
+                    <circle cx={x} cy={y} r={3.5} fill="rgba(212,175,55,0.38)" />
+                    <circle cx={x} cy={y} r={2} fill="rgba(244,229,184,0.85)" />
+                  </g>
+                );
+              })}
+
+              {/* Vault-lock spark bursts — outer ring positions */}
+              {vaultLocked && Array.from({ length: 8 }, (_, i) => {
+                const a = -Math.PI / 2 + i * (Math.PI / 4);
+                const x = 190 + 189 * Math.cos(a);
+                const y = 190 + 189 * Math.sin(a);
+                return (
+                  <circle
+                    key={`sp-${i}`}
+                    cx={x}
+                    cy={y}
+                    r={22}
+                    stroke="rgba(244,229,184,0.85)"
+                    strokeWidth={1.2}
+                    fill="none"
+                    style={{ transformOrigin: `${x}px ${y}px` }}
+                    className={`ro-spark ro-spark-${i}`}
+                  />
+                );
+              })}
+
+              {/* Star flares at 3 outer nodes when vault-locked */}
+              {vaultLocked && [0, 3, 6].map((i) => {
+                const a = -Math.PI / 2 + i * (Math.PI / 4);
+                const x = 190 + 189 * Math.cos(a);
+                const y = 190 + 189 * Math.sin(a);
+                const d = `M${x},${y - 14} L${x + 1.5},${y - 3} L${x + 14},${y} L${x + 1.5},${y + 3} L${x},${y + 14} L${x - 1.5},${y + 3} L${x - 14},${y} L${x - 1.5},${y - 3} Z`;
+                return (
+                  <path
+                    key={`fl-${i}`}
+                    d={d}
+                    fill="rgba(244,229,184,0.75)"
+                    style={{ transformOrigin: `${x}px ${y}px` }}
+                    className={`ro-flare ro-flare-${i}`}
+                  />
+                );
+              })}
+            </svg>
+
             {/* Seal disc */}
             <div className={[
               "ritual-overlay__seal-disc",
