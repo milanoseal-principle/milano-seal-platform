@@ -23,10 +23,10 @@ export function DocumentIntelligence() {
   return (
     <section className="py-20 px-6 border-t border-[#1A1A1A] bg-[#0A0A0A]">
       <div className="max-w-6xl mx-auto">
-        <p className="text-[#C6A55A] text-[9px] tracking-[0.3em] uppercase font-semibold mb-3">
+        <p className="text-[#C6A55A] text-[9px] tracking-[0.08em] uppercase font-semibold mb-3">
           Document Intelligence
         </p>
-        <h2 className="font-serif text-3xl text-white font-light mb-2">
+        <h2 className="font-serif text-3xl text-white font-normal mb-2">
           What Are You Executing?
         </h2>
         <p className="text-[#8A8A8A] text-sm mb-10 max-w-xl">
@@ -91,7 +91,7 @@ export function DocumentIntelligence() {
                 doc.countries?.[0]?.toLowerCase().replace(/\s+/g, "-") ||
                 "italy"
               }/${doc.id}`}
-              className="inline-block px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-[10px] tracking-[0.2em] uppercase font-semibold hover:bg-[#D4BB7A] transition-colors rounded-sm"
+              className="inline-block px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-xs tracking-[0.08em] uppercase font-semibold hover:bg-[#D4BB7A] transition-colors rounded-sm"
             >
               Begin This Matter →
             </Link>

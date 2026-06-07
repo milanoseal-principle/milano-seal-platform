@@ -118,7 +118,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
           )}
 
           <div className="border-t border-[#1A1A1A] pt-4 mb-5">
-            <p className="text-[#C6A55A] text-[9px] tracking-[0.2em] uppercase font-semibold mb-3">Execution Path</p>
+            <p className="text-[#C6A55A] text-[9px] tracking-[0.08em] uppercase font-semibold mb-3">Execution Path</p>
             <div className="space-y-1.5">
               {active.executionPath.map((step, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs text-[#B0B0B0]">

@@ -79,7 +79,7 @@ function Pillar({
         </div>
         <div className="min-w-0">
           <h3 className="text-white text-[13px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
-          <p className="text-[#5A5A5A] text-[11px] leading-relaxed group-hover:text-[#6A6A6A] transition-colors">
+          <p className="text-[#8A8A8A] text-[13px] leading-relaxed group-hover:text-[#9A9A9A] transition-colors">
             {desc}
           </p>
         </div>
@@ -98,7 +98,7 @@ export function MilanoTrustCore() {
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full border-t border-[#1A1A1A] bg-[#060608] py-12 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      className="w-full border-t border-[#1A1A1A] bg-[#060608] py-10 px-4 sm:px-6 lg:px-8 overflow-hidden"
     >
       {/* Ambient gold particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -127,11 +127,11 @@ export function MilanoTrustCore() {
             >
               <span className="font-serif text-[#C6A55A] text-2xl font-medium leading-none">M</span>
             </div>
-            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
               Our Platform Principles
             </p>
-            <h2 className="font-serif text-2xl text-white font-light mb-2">Milano Trust Core</h2>
-            <p className="text-[#6A6A6A] text-xs max-w-xs leading-relaxed">
+            <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
+            <p className="text-white/55 text-sm max-w-xs leading-relaxed">
               Six pillars of deterministic execution for international document success.
             </p>
           </div>
@@ -151,19 +151,19 @@ export function MilanoTrustCore() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-10"
           >
-            <p className="font-mono text-[9px] tracking-[0.35em] uppercase text-[#C6A55A]/60 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
               Our Platform Principles
             </p>
-            <h2 className="font-serif text-3xl text-white font-light mb-2 leading-tight">
+            <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
               Milano Trust Core
             </h2>
-            <p className="text-[#5A5A5A] text-xs leading-relaxed">
+            <p className="text-white/50 text-sm leading-relaxed">
               Six pillars of deterministic execution for international document success.
             </p>
           </motion.div>
 
           {/* Three-column: pillars | medallion | pillars — all vertically centered */}
-          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0">
+          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0 relative" style={{ minHeight: 280 }}>
             {/* Left pillars */}
             <div className="flex flex-col gap-7 pr-8">
               {LEFT_PILLARS.map((p, i) => (
@@ -265,6 +265,36 @@ export function MilanoTrustCore() {
                 <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
               ))}
             </div>
+
+            {/* Connector lines SVG — absolutely positioned over the full grid */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 1000 280"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+              }}
+            >
+              {/* Left connectors: from orb left edge (x=435) to left edge (x=0), fanning to each pillar row */}
+              <line x1="0" y1="47"  x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="0" y1="140" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="0" y1="233" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              {/* Right connectors: from orb right edge (x=565) to right edge (x=1000) */}
+              <line x1="565" y1="140" x2="1000" y2="47"  stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="565" y1="140" x2="1000" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              <line x1="565" y1="140" x2="1000" y2="233" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
+              {/* Endpoint dots */}
+              <circle cx="0"    cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="0"    cy="140" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="0"    cy="233" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="140" r="3" fill="rgba(198,165,90,0.4)" />
+              <circle cx="1000" cy="233" r="3" fill="rgba(198,165,90,0.4)" />
+            </svg>
           </div>
         </div>
       </div>

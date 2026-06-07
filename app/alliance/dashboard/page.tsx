@@ -1,366 +1,201 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  FileText,
-  Calendar,
-  Users,
-  DollarSign,
-  Link2,
-  MessageSquare,
-  TrendingUp,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
-import { AllianceEntryRitual } from "@/components/alliance/AllianceEntryRitual";
-import { PhantomGraphIndicator } from "@/components/alliance/phantom-graph-indicator";
-import {
-  evaluateRoutingEligibility,
-  type PartnerProfile,
-} from "@/lib/allianceEligibility";
-import { requireAllianceAccess } from "@/lib/allianceAuth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { AllianceShell } from "@/components/alliance/AllianceShell";
+import { AllianceStatusRail } from "@/components/alliance/AllianceStatusRail";
+import { AllianceReadinessScore } from "@/components/alliance/AllianceReadinessScore";
+import { AllianceComplianceGate } from "@/components/alliance/AllianceComplianceGate";
+import { AllianceActivityLedger } from "@/components/alliance/AllianceActivityLedger";
+import { AllianceEmptyState } from "@/components/alliance/AllianceEmptyState";
+import { FileStack, GitBranch, Link2, Wallet } from "lucide-react";
 
-async function getPartnerProfile(userId: string): Promise<PartnerProfile> {
-  const admin = createAdminClient();
+async function getPartnerData(userId: string) {
+  const supabase = await createClient();
 
-  const [profileRes, toolbeltRes, complianceRes] = await Promise.all([
-    admin
-      .from("operator_profiles")
-      .select(
-        "id, full_name, firm_name, onboarding_status, identity_verified, background_verified, admin_approved",
-      )
-      .eq("id", userId)
-      .single(),
-    // operator_toolbelt_summary is a gated view (migration 011) — graceful fallback
-    admin
-      .from("operator_toolbelt_summary")
-      .select("completion_pct")
-      .eq("operator_id", userId)
-      .single()
-      .then((r) => r.error ? { data: null } : r),
-    // operator_compliance_status is a gated view (migration 011) — graceful fallback
-    admin
-      .from("operator_compliance_status")
-      .select("compliance_ready")
-      .eq("operator_id", userId)
-      .single()
-      .then((r) => r.error ? { data: null } : r),
-  ]);
+  const { data: partner } = await supabase
+    .from("alliance_partners")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
 
-  const profile = profileRes.data;
-  const toolbelt = toolbeltRes.data;
-  const compliance = complianceRes.data;
-
-  // Map DB onboarding_status to PartnerProfile.onboarding_status subset
-  const onboardingMap: Record<string, PartnerProfile["onboarding_status"]> = {
-    invited: "not_started",
-    profile_started: "profile_started",
-    documents_pending: "credentials_pending",
-    training_pending: "credentials_pending",
-    toolbelt_pending: "credentials_pending",
-    compliance_review: "under_review",
-    approved: "approved",
-    suspended: "paused",
-    rejected: "rejected",
+  const p = partner ?? {
+    id: null,
+    firm_name: null,
+    contact_name: null,
+    email: null,
+    partner_code: null,
+    status: "invited",
+    toolbelt_completed: false,
+    compliance_verified: false,
+    security_attested: false,
+    routing_eligible: false,
   };
 
-  const onboardingStatus =
-    onboardingMap[profile?.onboarding_status ?? ""] ?? "not_started";
-
-  // Derive account_state from onboarding + approval
-  let accountState: PartnerProfile["account_state"] = "SAFE";
-  if (
-    profile?.onboarding_status === "rejected" ||
-    profile?.onboarding_status === "suspended"
-  ) {
-    accountState = "LOCKED";
-  } else if (!profile?.admin_approved && onboardingStatus === "approved") {
-    accountState = "CAUTION";
+  let referralCount = 0;
+  if (p.id) {
+    const { count } = await supabase
+      .from("referral_ledger")
+      .select("id", { count: "exact", head: true })
+      .eq("partner_id", p.id);
+    referralCount = count ?? 0;
   }
 
-  // Derive availability from approval state
-  let availability: PartnerProfile["availability"] = "offline";
-  if (profile?.admin_approved && onboardingStatus === "approved") {
-    availability = "active";
-  } else if (profile?.onboarding_status === "compliance_review") {
-    availability = "limited";
-  }
-
-  return {
-    id: profile?.id ?? userId,
-    firm_name: profile?.firm_name ?? profile?.full_name ?? "Your Firm",
-    onboarding_status: onboardingStatus,
-    account_state: accountState,
-    credentials_verified:
-      (profile?.identity_verified && profile?.background_verified) ?? false,
-    toolbelt_completion_percent: toolbelt?.completion_pct ?? 0,
-    compliance_ready: compliance?.compliance_ready ?? false,
-    availability,
-  };
+  return { partner: p, referralCount };
 }
 
 export default async function AllianceDashboardPage() {
-  const { userId } = await requireAllianceAccess();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/alliance/login");
 
-  let partner: PartnerProfile;
-  try {
-    partner = await getPartnerProfile(userId);
-  } catch {
-    // Operator record may not exist yet (e.g., newly invited partner)
-    partner = {
-      id: userId,
-      firm_name: "Your Firm",
-      onboarding_status: "not_started",
-      account_state: "SAFE",
-      credentials_verified: false,
-      toolbelt_completion_percent: 0,
-      compliance_ready: false,
-      availability: "offline",
-    };
-  }
+  const { partner: p, referralCount } = await getPartnerData(user.id);
 
-  const { eligible, blockers } = evaluateRoutingEligibility(partner);
+  const isRoutingEligible =
+    (p.toolbelt_completed ?? false) &&
+    (p.compliance_verified ?? false) &&
+    (p.security_attested ?? false) &&
+    (p.routing_eligible ?? false) &&
+    p.status === "active";
 
   return (
-    <div className="space-y-6">
-      <AllianceEntryRitual />
-      {/* Welcome + Eligibility */}
-      <div className="ap-card ap-card-body flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <AllianceShell
+      partnerName={p.contact_name ?? undefined}
+      firmName={p.firm_name ?? undefined}
+      routingEligible={isRoutingEligible}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 1100 }}>
+        {/* Header */}
         <div>
-          <div className="ap-eyebrow">Alliance Partner</div>
-          <h1
-            className="text-2xl font-semibold text-gray-900 mt-1"
-            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-          >
-            {partner.firm_name}
+          <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 8 }}>
+            Alliance Desk
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 400, fontFamily: "var(--font-playfair, Georgia, serif)", color: "#F6F1E6", margin: "0 0 8px" }}>
+            {p.firm_name ?? p.contact_name ?? "Welcome"}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Coordinate cross-border document execution for your clients.
+          <p style={{ fontSize: 13, color: "#A8A29A", margin: 0 }}>
+            Partner infrastructure for international document execution and referral coordination.
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <div className={`ap-eligible ${eligible ? "yes" : "no"}`}>
-            {eligible ? (
-              <>
-                <CheckCircle2 size={13} />
-                ROUTING ELIGIBLE
-              </>
-            ) : (
-              <>
-                <AlertCircle size={13} />
-                NOT ROUTING ELIGIBLE
-              </>
+        {/* Lifecycle rail */}
+        <div style={{ padding: "20px 24px", background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 8 }}>
+          <div style={{ fontSize: 10, fontFamily: "monospace", letterSpacing: "0.18em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 16 }}>
+            Account Lifecycle
+          </div>
+          <AllianceStatusRail status={p.status} />
+        </div>
+
+        {/* Metrics */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+          {[
+            { icon: GitBranch, label: "Total Referrals", value: referralCount.toString(), sub: "All time" },
+            { icon: FileStack, label: "Active Matters", value: "—", sub: "In queue" },
+            { icon: Wallet, label: "Outstanding Commission", value: "—", sub: "Pending review" },
+          ].map((m) => {
+            const Icon = m.icon;
+            return (
+              <div
+                key={m.label}
+                style={{
+                  padding: "20px",
+                  background: "#0d0d0d",
+                  border: "1px solid rgba(198,166,91,0.12)",
+                  borderRadius: 8,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(198,166,91,0.06)", border: "1px solid rgba(198,166,91,0.16)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon size={14} color="#C6A55A" />
+                  </div>
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "monospace", color: "#F6F1E6", marginBottom: 4 }}>{m.value}</div>
+                <div style={{ fontSize: 11, color: "#A8A29A" }}>{m.label}</div>
+                <div style={{ fontSize: 11, color: "rgba(168,162,154,0.5)", marginTop: 2 }}>{m.sub}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Two-col: Readiness + Routing Gate */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <AllianceReadinessScore
+            profileComplete={!!(p.contact_name && p.email)}
+            toolbeltCompleted={p.toolbelt_completed ?? false}
+            complianceVerified={p.compliance_verified ?? false}
+            securityAttested={p.security_attested ?? false}
+            routingEligible={p.routing_eligible ?? false}
+          />
+
+          <div style={{ padding: "24px", background: "#111111", border: "1px solid rgba(198,166,91,0.16)", borderRadius: 8 }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.18em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 20 }}>
+              Routing Status
+            </div>
+            <AllianceComplianceGate
+              toolbeltCompleted={p.toolbelt_completed ?? false}
+              complianceVerified={p.compliance_verified ?? false}
+              securityAttested={p.security_attested ?? false}
+              routingEligible={p.routing_eligible ?? false}
+              status={p.status}
+            />
+            {isRoutingEligible && (
+              <div style={{ fontSize: 13, color: "#3FA47A" }}>
+                Routing active. You are eligible to receive assigned matters.
+              </div>
             )}
           </div>
-          {!eligible && blockers.length > 0 && (
-            <div className="text-xs text-gray-400 text-right max-w-xs">
-              {blockers[0]}
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ padding: "24px", background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.18em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 20 }}>
+            Quick Actions
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            {[
+              { href: "/alliance/referrals/new", icon: GitBranch, label: "Submit a Referral", sub: "New matter referral" },
+              { href: "/alliance/matters", icon: FileStack, label: "View Matters", sub: "Partner matter queue" },
+              { href: "/alliance/payouts", icon: Wallet, label: "Commission Status", sub: "View payout history" },
+              { href: "/alliance/toolbelt", icon: Link2, label: "Tool Belt", sub: "Partner readiness" },
+            ].map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 16px",
+                    background: "#141414",
+                    border: "1px solid rgba(198,166,91,0.1)",
+                    borderRadius: 6,
+                    textDecoration: "none",
+                  }}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(198,166,91,0.06)", border: "1px solid rgba(198,166,91,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={14} color="#C6A55A" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "#F6F1E6" }}>{action.label}</div>
+                    <div style={{ fontSize: 11, color: "#A8A29A" }}>{action.sub}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Activity ledger */}
+        <div style={{ background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 8, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(198,166,91,0.08)" }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", color: "#A8A29A" }}>
+              Activity Log
             </div>
-          )}
+          </div>
+          <AllianceActivityLedger entries={[]} />
         </div>
       </div>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            icon: FileText,
-            label: "Active Matters",
-            value: "—",
-            sub: "Dispatch queue",
-          },
-          {
-            icon: Calendar,
-            label: "This Month",
-            value: "—",
-            sub: "Referred matters",
-          },
-          {
-            icon: Users,
-            label: "Total Referred",
-            value: "—",
-            sub: "All time",
-          },
-          {
-            icon: DollarSign,
-            label: "Outstanding Commission",
-            value: "$0.00",
-            sub: "Pending payout",
-          },
-        ].map((m) => (
-          <div key={m.label} className="ap-card">
-            <div className="ap-metric">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="ap-action-icon">
-                  <m.icon size={16} color="#d4af37" />
-                </div>
-              </div>
-              <div className="ap-metric-value">{m.value}</div>
-              <div className="ap-metric-label mt-2">{m.label}</div>
-              <div className="ap-metric-sub">{m.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Referral volume trend */}
-      <PhantomGraphIndicator
-        weeks={[0, 0, 0, 0, 0, 0, 0, 0]}
-        label="Referral Volume — 8 Week Trend"
-      />
-
-      {/* Quick actions + Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 ap-card">
-          <div className="ap-card-header">
-            <h3 className="ap-card-title">Quick Actions</h3>
-          </div>
-          <div className="ap-card-body grid grid-cols-2 gap-3">
-            <button className="ap-action-tile">
-              <div className="ap-action-icon">
-                <Link2 size={16} color="#6b7280" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Create Intake Link
-                </div>
-                <div className="text-xs text-gray-500">
-                  White-label referral link
-                </div>
-              </div>
-            </button>
-            <button className="ap-action-tile">
-              <div className="ap-action-icon">
-                <FileText size={16} color="#6b7280" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Refer a Client
-                </div>
-                <div className="text-xs text-gray-500">New matter referral</div>
-              </div>
-            </button>
-            <button className="ap-action-tile">
-              <div className="ap-action-icon">
-                <DollarSign size={16} color="#6b7280" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Commission Statement
-                </div>
-                <div className="text-xs text-gray-500">View payout history</div>
-              </div>
-            </button>
-            <button className="ap-action-tile">
-              <div className="ap-action-icon">
-                <MessageSquare size={16} color="#6b7280" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Contact Milano Seal
-                </div>
-                <div className="text-xs text-gray-500">Secure message</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div className="ap-card">
-          <div className="ap-card-header">
-            <h3 className="ap-card-title">Account Status</h3>
-          </div>
-          <div className="ap-card-body space-y-0">
-            <div className="ap-kv">
-              <span className="ap-kv-k">Onboarding</span>
-              <span className="ap-kv-v capitalize">
-                {partner.onboarding_status.replace(/_/g, " ")}
-              </span>
-            </div>
-            <div className="ap-kv">
-              <span className="ap-kv-k">Account State</span>
-              <span
-                className={`ap-kv-v font-semibold ${
-                  partner.account_state === "SAFE"
-                    ? "text-emerald-600"
-                    : "text-amber-600"
-                }`}
-              >
-                {partner.account_state}
-              </span>
-            </div>
-            <div className="ap-kv">
-              <span className="ap-kv-k">Credentials</span>
-              <span
-                className={
-                  partner.credentials_verified
-                    ? "text-emerald-600 font-semibold"
-                    : "text-red-600 font-semibold"
-                }
-              >
-                {partner.credentials_verified ? "Verified" : "Pending"}
-              </span>
-            </div>
-            <div className="ap-kv">
-              <span className="ap-kv-k">Tool Belt</span>
-              <span className="ap-kv-v font-mono text-sm">
-                {partner.toolbelt_completion_percent}%
-              </span>
-            </div>
-            <div className="ap-kv">
-              <span className="ap-kv-k">Compliance</span>
-              <span
-                className={
-                  partner.compliance_ready
-                    ? "text-emerald-600 font-semibold"
-                    : "text-red-600 font-semibold"
-                }
-              >
-                {partner.compliance_ready ? "Ready" : "Incomplete"}
-              </span>
-            </div>
-            <div className="ap-kv">
-              <span className="ap-kv-k">Availability</span>
-              <span className="ap-kv-v capitalize">{partner.availability}</span>
-            </div>
-          </div>
-
-          {!eligible && (
-            <div className="px-4 pb-4">
-              <div className="text-xs text-gray-400 font-medium mb-2 uppercase tracking-wider">
-                Blockers
-              </div>
-              <ul className="space-y-1">
-                {blockers.map((b) => (
-                  <li key={b} className="text-xs text-red-500 flex gap-2">
-                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Referred matters placeholder */}
-      <div className="ap-card">
-        <div className="ap-card-header">
-          <h3 className="ap-card-title">Referred Matters</h3>
-          <Link href="/alliance/jobs" className="ap-btn ghost text-xs">
-            View Dispatch Queue →
-          </Link>
-        </div>
-        <div className="ap-empty">
-          <TrendingUp size={32} className="mx-auto mb-3 text-gray-300" />
-          <div className="font-medium text-gray-500 mb-1">
-            No referred matters yet
-          </div>
-          <div className="text-gray-400">
-            Referred client matters will appear here once your account is
-            approved and active.
-          </div>
-        </div>
-      </div>
-    </div>
+    </AllianceShell>
   );
 }

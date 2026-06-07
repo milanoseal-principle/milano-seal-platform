@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
+import { StatusTransitionPill } from "@/components/animations/StatusTransitionPill";
+import { TrustConfirmSeal } from "@/components/animations/TrustConfirmSeal";
 import {
   Lock,
   Mail,
@@ -512,8 +514,6 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                   ? `$${Number(deal.amount).toLocaleString()}`
                   : "—",
               },
-              { label: "Payment", value: deal.payment_status || "—" },
-              { label: "Invoice", value: deal.invoice_status || "—" },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-[#8A8A8A] text-[10px] uppercase tracking-[0.1em] mb-1">
@@ -524,6 +524,18 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                 </p>
               </div>
             ))}
+            <div>
+              <p className="text-[#8A8A8A] text-[10px] uppercase tracking-[0.1em] mb-1">
+                Status
+              </p>
+              <StatusTransitionPill status={deal.status || "new"} size="sm" />
+            </div>
+            <div>
+              <p className="text-[#8A8A8A] text-[10px] uppercase tracking-[0.1em] mb-1">
+                Payment
+              </p>
+              <StatusTransitionPill status={deal.payment_status || "pending"} size="sm" />
+            </div>
           </div>
         </div>
 
@@ -572,6 +584,13 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
             <p className="text-[#8A8A8A] text-xs italic">
               Wise is the primary payment method. For alternative arrangements, contact us directly.
             </p>
+          </div>
+        )}
+
+        {/* Payment confirmed seal */}
+        {deal.payment_status === "paid" && (
+          <div className="flex justify-center py-2">
+            <TrustConfirmSeal event="payment_confirmed" size="md" />
           </div>
         )}
 

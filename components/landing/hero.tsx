@@ -122,7 +122,7 @@ export function Hero() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
                 </span>
-                <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase whitespace-nowrap">
+                <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.08em] uppercase whitespace-nowrap">
                   The Milano Seal™
                 </span>
               </div>
@@ -139,17 +139,17 @@ export function Hero() {
             </h1>
 
             {/* Subtitle — separate line, lighter weight */}
-            <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-[#9A9A9A] font-light mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-white/70 font-normal mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
               U.S. Document Execution for International Use
             </p>
 
             {/* Body */}
-            <p className={`ms-hero-line text-sm md:text-base text-[#6A6A6A] mb-3 max-w-xl leading-relaxed font-light${heroVisible[4] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-sm md:text-base text-white/55 mb-3 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
             {/* Subtext */}
-            <p className={`ms-hero-line text-sm text-[#8A8A8A] mb-10 max-w-xl font-light${heroVisible[5] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-sm text-white/50 mb-10 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
             </p>
 
@@ -164,7 +164,7 @@ export function Hero() {
               </Link>
               <Link
                 href="/map"
-                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-[#B0B0B0] font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
+                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
               >
                 <Globe className="w-4 h-4" />
                 Explore Global Document Intelligence
@@ -212,25 +212,33 @@ export function Hero() {
               <GlobalTrustCoreHero />
             </motion.div>
 
-            {/* PATCH 4 — Founder SEO Section (compact byline strip) */}
+            {/* PATCH 4 — Founder SEO Section */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
-              style={{ width: "100%", maxWidth: 340 }}
-              className="flex items-center justify-center gap-4 pt-2"
+              transition={{ duration: 0.7, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{ maxWidth: 340, width: "100%", textAlign: "center" }}
             >
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#C6A55A]/20" />
-              <div className="text-center flex-shrink-0">
-                <p style={{ color: "rgba(198,165,90,0.6)", fontSize: 9, letterSpacing: "0.24em", textTransform: "uppercase", margin: "0 0 3px" }}>
-                  Nicholas Milano · Florida Notary #668288
-                </p>
-                <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                  <a href="/founder" style={{ color: "rgba(198,165,90,0.45)", fontSize: 10, letterSpacing: "0.1em" }}>Founder →</a>
-                  <a href="/intake" style={{ color: "rgba(198,165,90,0.45)", fontSize: 10, letterSpacing: "0.1em" }}>Intake →</a>
-                </div>
+              <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
+                Founder-Led Document Execution
+              </p>
+              <p style={{ color: "rgba(176,176,176,0.8)", fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
+                The Milano Seal™ is led by Nicholas Milano, a Florida Notary Public and Remote Online Notary supporting apostille coordination, international document execution, mobile notary requests, witness coordination, and secure release workflows for clients, attorneys, businesses, real estate professionals, healthcare providers, and private clients.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                <a
+                  href="/founder"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Meet the Founder →
+                </a>
+                <a
+                  href="/intake"
+                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
+                >
+                  Begin Secure Intake →
+                </a>
               </div>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#C6A55A]/20" />
             </motion.div>
           </div>
 
