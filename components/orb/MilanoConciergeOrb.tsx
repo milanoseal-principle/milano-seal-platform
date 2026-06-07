@@ -414,91 +414,72 @@ export function MilanoConciergeOrb({
           aria-label="Milano Seal Concierge"
           aria-expanded={open}
           style={{
-            width: 60,
-            height: 60,
+            width: 56,
+            height: 56,
             borderRadius: "50%",
             border: "none",
             padding: 0,
             cursor: "pointer",
             position: "relative",
             background: "none",
+            flexShrink: 0,
             ...pulseAnimation,
           }}
         >
           <svg
-            width={60}
-            height={60}
-            viewBox="0 0 60 60"
+            width={56}
+            height={56}
+            viewBox="0 0 56 56"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            style={{ display: "block" }}
+            style={{ display: "block", borderRadius: "50%", overflow: "hidden" }}
           >
             <defs>
-              <radialGradient id="orb-disc-grad" cx="42%" cy="36%" r="62%">
-                <stop offset="0%" stopColor="#1c1c1c" />
-                <stop offset="100%" stopColor="#080808" />
+              <radialGradient id="orb-disc-grad" cx="40%" cy="35%" r="62%">
+                <stop offset="0%" stopColor="#1e1e1e" />
+                <stop offset="100%" stopColor="#070707" />
               </radialGradient>
-              <radialGradient id="orb-bloom" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="rgba(212,175,55,0.22)" />
-                <stop offset="65%" stopColor="rgba(212,175,55,0.06)" />
+              <radialGradient id="orb-bg-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(212,175,55,0.18)" />
+                <stop offset="70%" stopColor="rgba(212,175,55,0.06)" />
                 <stop offset="100%" stopColor="rgba(212,175,55,0)" />
               </radialGradient>
-              <filter id="orb-glow-f" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <filter id="orb-m-glow" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
                 <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
               </filter>
             </defs>
 
-            {/* Outer bloom */}
-            <circle cx="30" cy="30" r="30" fill="url(#orb-bloom)" />
+            {/* Background bloom */}
+            <circle cx="28" cy="28" r="28" fill="url(#orb-bg-glow)" />
 
             {/* Dark disc */}
-            <circle cx="30" cy="30" r="27" fill="url(#orb-disc-grad)" />
+            <circle cx="28" cy="28" r="26" fill="url(#orb-disc-grad)" />
 
-            {/* Outer gold ring */}
-            <circle cx="30" cy="30" r="27" stroke="rgba(212,175,55,0.75)" strokeWidth="1.2" fill="none" />
+            {/* Primary gold border ring */}
+            <circle cx="28" cy="28" r="26" stroke="rgba(212,175,55,0.82)" strokeWidth="1.4" fill="none" />
 
-            {/* Faint second ring */}
-            <circle cx="30" cy="30" r="23.5" stroke="rgba(212,175,55,0.18)" strokeWidth="0.6" fill="none" />
+            {/* Subtle inner engraving ring */}
+            <circle cx="28" cy="28" r="22" stroke="rgba(212,175,55,0.20)" strokeWidth="0.6" fill="none" />
 
-            {/* 8 orbital node beads on outer ring (r=27) */}
-            {Array.from({ length: 8 }, (_, i) => {
-              const a = -Math.PI / 2 + i * (Math.PI / 4);
-              const x = 30 + 27 * Math.cos(a);
-              const y = 30 + 27 * Math.sin(a);
-              return (
-                <g key={i}>
-                  <circle cx={x} cy={y} r={3.2} fill="rgba(212,175,55,0.18)" />
-                  <circle cx={x} cy={y} r={1.8} fill="rgba(244,229,184,0.9)" />
-                </g>
-              );
-            })}
-
-            {/* Gold M serif letterform */}
+            {/* Gold M */}
             <text
-              x="30"
-              y="35"
+              x="28" y="34"
               textAnchor="middle"
-              fontSize="19"
+              fontSize="20"
               fontFamily="'Playfair Display', Georgia, 'Times New Roman', serif"
               fontWeight="700"
-              fill="rgba(212,175,55,0.95)"
-              filter="url(#orb-glow-f)"
-            >
-              M
-            </text>
+              fill="rgba(212,175,55,0.97)"
+              filter="url(#orb-m-glow)"
+            >M</text>
 
-            {/* Feather quill accent — right leg of M */}
+            {/* Feather quill on right leg of M */}
             <path
-              d="M 35.5 16.5 C 40 18.5 40.5 25 37 28.5 C 35.5 25 34.5 22 33.5 20.5 C 37 20 37.5 17.5 35.5 16.5 Z"
-              fill="rgba(212,175,55,0.65)"
+              d="M 34 14 C 38.5 16.5 39 23 35.5 26.5 C 34.2 23 33.2 20.5 32.2 19 C 36 18.5 36.5 15.5 34 14 Z"
+              fill="rgba(212,175,55,0.70)"
             />
-            <path
-              d="M 35.5 16.5 L 37 28.5"
-              stroke="rgba(244,229,184,0.4)"
-              strokeWidth="0.6"
-              fill="none"
-            />
+            <line x1="34" y1="14" x2="35.5" y2="26.5"
+              stroke="rgba(244,229,184,0.35)" strokeWidth="0.7" />
           </svg>
 
           {/* Unread badge */}
@@ -513,7 +494,7 @@ export function MilanoConciergeOrb({
                 borderRadius: "50%",
                 background: "#C6A55A",
                 border: "2px solid #0A0A0A",
-                boxShadow: "0 0 6px rgba(212,175,55,0.6)",
+                boxShadow: "0 0 6px rgba(212,175,55,0.7)",
               }}
             />
           )}
