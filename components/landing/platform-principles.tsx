@@ -32,7 +32,7 @@ export function PlatformPrinciples() {
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-3">
             Platform Principles
           </h2>
-          <p className="text-[#6A6A6A] text-sm font-light">
+          <p className="text-white/55 text-sm font-normal">
             Six anchors of deterministic execution.
           </p>
         </motion.div>

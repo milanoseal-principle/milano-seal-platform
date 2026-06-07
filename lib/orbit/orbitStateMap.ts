@@ -1,3 +1,6 @@
+import type { MilanoOrbitSegment, MilanoOrbitState } from "@/components/orbit/MilanoSealOrbitCore";
+
+// ─── Legacy pipeline state types (kept for backward compat) ───────────────────
 export type OrbitState =
   | "idle"
   | "intake_received"
@@ -16,15 +19,16 @@ export type OrbitMode =
   | "portal"
   | "trust"
   | "compact"
-  | "release";
+  | "release"
+  | "launcher";
 
 export interface OrbitStateConfig {
   label: string;
   sublabel: string;
   color: string;
-  pulseSpeed: number; // seconds
+  pulseSpeed: number;
   ringCount: number;
-  glowIntensity: number; // 0–1
+  glowIntensity: number;
 }
 
 export const ORBIT_STATE_MAP: Record<OrbitState, OrbitStateConfig> = {
@@ -109,3 +113,59 @@ export const ORBIT_STATE_MAP: Record<OrbitState, OrbitStateConfig> = {
     glowIntensity: 0.4,
   },
 };
+
+// ─── Interaction state helpers ────────────────────────────────────────────────
+
+export type OrbitHealthInput = {
+  truthScore?: number | null;
+  blockedMatters?: number;
+  staleMatters?: number;
+  releaseReady?: number;
+  paymentPending?: number;
+};
+
+export function getDashboardOrbitState(input: OrbitHealthInput): MilanoOrbitState {
+  if ((input.blockedMatters ?? 0) > 0) return "blocked";
+  if ((input.staleMatters ?? 0) > 0) return "warning";
+  if ((input.releaseReady ?? 0) > 0) return "released";
+  if (typeof input.truthScore === "number" && input.truthScore >= 85) return "verified";
+  if ((input.paymentPending ?? 0) > 0) return "active";
+  return "idle";
+}
+
+export function buildTruthOrbitSegments(scores: {
+  revenue?: number | null;
+  execution?: number | null;
+  authority?: number | null;
+  trust?: number | null;
+  partner?: number | null;
+  deployment?: number | null;
+  corridor?: number | null;
+}): MilanoOrbitSegment[] {
+  return Object.entries(scores).map(([key, value]) => ({
+    id: key,
+    label: key,
+    value: value ?? undefined,
+    state:
+      typeof value !== "number"
+        ? "idle"
+        : value >= 85
+          ? "verified"
+          : value >= 60
+            ? "warning"
+            : "blocked",
+  }));
+}
+
+export function getPortalOrbitState(input: {
+  status?: string | null;
+  isPaidAndReleased?: boolean;
+  hasCourierActivity?: boolean;
+  hasIssue?: boolean;
+}): MilanoOrbitState {
+  if (input.hasIssue) return "warning";
+  if (input.isPaidAndReleased) return "released";
+  if (input.status === "RELEASED") return "verified";
+  if (input.hasCourierActivity) return "active";
+  return "idle";
+}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 
 export function MilanoSealChatLauncher() {
   const [open, setOpen] = useState(false);
@@ -10,57 +11,70 @@ export function MilanoSealChatLauncher() {
   return (
     <>
       <style>{`
+        @keyframes ms-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.55); opacity: 0; }
+        }
+        @keyframes ms-pulse2 {
+          0%, 100% { transform: scale(1); opacity: 0.35; }
+          50% { transform: scale(1.9); opacity: 0; }
+        }
+        .ms-orb-pulse::before,
+        .ms-orb-pulse::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: rgba(198,165,90,0.35);
+          animation: ms-pulse 2.4s ease-out infinite;
+        }
+        .ms-orb-pulse::after {
+          background: rgba(198,165,90,0.18);
+          animation: ms-pulse2 2.4s ease-out infinite 0.8s;
+        }
         @keyframes ms-panel-in {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-        .ms-launcher-btn {
-          transition: box-shadow 0.25s ease, border-color 0.25s ease;
-        }
-        .ms-launcher-btn:hover {
-          box-shadow: 0 0 0 1px rgba(198,165,90,0.35), 0 8px 32px rgba(198,165,90,0.15);
-          border-color: rgba(198,165,90,0.6) !important;
         }
         .ms-panel-anim {
           animation: ms-panel-in 0.22s cubic-bezier(0.16,1,0.3,1) both;
         }
       `}</style>
 
-      {/* Button */}
+      {/* Orb button */}
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Open Milano Seal concierge"
-        className="ms-launcher-btn"
+        className="ms-orb-pulse"
         style={{
           position: "fixed",
-          bottom: 24,
-          right: 24,
-          width: 44,
-          height: 44,
-          borderRadius: 4,
-          background: "rgba(8,6,2,0.96)",
-          border: "1px solid rgba(198,165,90,0.3)",
+          bottom: 28,
+          right: 28,
+          width: 60,
+          height: 60,
+          borderRadius: "50%",
+          background: "linear-gradient(145deg, #1a1408, #0d0a03)",
+          border: "1.5px solid rgba(198,165,90,0.7)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
           zIndex: 9999,
+          boxShadow: "0 4px 28px rgba(198,165,90,0.3), 0 0 0 1px rgba(198,165,90,0.1)",
+          transition: "box-shadow 0.3s, border-color 0.3s",
           padding: 0,
-          boxShadow: "0 2px 16px rgba(0,0,0,0.5)",
         }}
       >
         {open ? (
-          <X style={{ color: "rgba(198,165,90,0.7)", width: 16, height: 16 }} />
+          <X style={{ color: "#C6A55A", width: 22, height: 22 }} />
         ) : (
-          <span style={{
-            fontFamily: "var(--font-playfair, Georgia, serif)",
-            fontSize: 20,
-            fontWeight: 400,
-            color: "#C6A55A",
-            lineHeight: 1,
-            letterSpacing: "0.02em",
-            userSelect: "none",
-          }}>M</span>
+          <Image
+            src="/milano-seal-gold-transparent-512.png"
+            alt="The Milano Seal"
+            width={36}
+            height={36}
+            style={{ objectFit: "contain", borderRadius: "50%" }}
+          />
         )}
       </button>
 
@@ -70,40 +84,58 @@ export function MilanoSealChatLauncher() {
           className="ms-panel-anim"
           style={{
             position: "fixed",
-            bottom: 78,
-            right: 24,
-            width: 280,
+            bottom: 100,
+            right: 28,
+            width: 300,
             background: "rgba(8,6,2,0.98)",
-            border: "1px solid rgba(198,165,90,0.2)",
-            borderRadius: 4,
+            border: "1px solid rgba(198,165,90,0.25)",
+            borderRadius: 8,
             zIndex: 9998,
-            boxShadow: "0 12px 48px rgba(0,0,0,0.8)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(198,165,90,0.08)",
             overflow: "hidden",
           }}
         >
           {/* Header */}
-          <div style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid rgba(198,165,90,0.1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}>
+          <div
+            style={{
+              padding: "14px 16px 12px",
+              borderBottom: "1px solid rgba(198,165,90,0.12)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <Image
+              src="/milano-seal-gold-transparent-512.png"
+              alt="The Milano Seal"
+              width={28}
+              height={28}
+              style={{ objectFit: "contain" }}
+            />
             <div>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "#C6A55A", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#C6A55A", letterSpacing: "0.08em" }}>
                 The Milano Seal™
               </div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 2 }}>
-                Document Execution · Florida Licensed
+              <div style={{ fontSize: 9, color: "rgba(198,165,90,0.45)", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 1 }}>
+                Concierge
               </div>
             </div>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(52,211,153,0.8)", flexShrink: 0 }} />
+            <div
+              style={{
+                marginLeft: "auto",
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "rgba(52,211,153,0.85)",
+                boxShadow: "0 0 8px rgba(16,185,129,0.6)",
+              }}
+            />
           </div>
 
           {/* Body */}
-          <div style={{ padding: "14px 16px 16px" }}>
-            <p style={{ fontSize: 11, color: "rgba(176,176,176,0.8)", lineHeight: 1.6, marginBottom: 14, margin: "0 0 14px" }}>
-              Ready to execute your international documents. Begin a secure intake or reach us directly.
+          <div style={{ padding: "16px" }}>
+            <p style={{ fontSize: 12, color: "rgba(176,176,176,0.9)", lineHeight: 1.65, marginBottom: 16 }}>
+              Ready to execute your documents for international use. Begin a secure intake or reach us directly.
             </p>
 
             <Link
@@ -115,18 +147,18 @@ export function MilanoSealChatLauncher() {
                 justifyContent: "space-between",
                 padding: "10px 14px",
                 background: "#C6A55A",
-                borderRadius: 3,
+                borderRadius: 5,
                 color: "#0A0A0A",
-                fontSize: 9,
+                fontSize: 11,
                 fontWeight: 700,
-                letterSpacing: "0.2em",
+                letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 textDecoration: "none",
                 marginBottom: 8,
               }}
             >
               Begin Secure Intake
-              <span style={{ fontSize: 12, marginLeft: 4 }}>→</span>
+              <ArrowRight style={{ width: 14, height: 14 }} />
             </Link>
 
             <a
@@ -134,12 +166,12 @@ export function MilanoSealChatLauncher() {
               style={{
                 display: "block",
                 padding: "9px 14px",
-                border: "1px solid rgba(198,165,90,0.22)",
-                borderRadius: 3,
-                color: "rgba(198,165,90,0.7)",
-                fontSize: 9,
+                border: "1px solid rgba(198,165,90,0.3)",
+                borderRadius: 5,
+                color: "rgba(198,165,90,0.8)",
+                fontSize: 11,
                 fontWeight: 600,
-                letterSpacing: "0.2em",
+                letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 textDecoration: "none",
                 textAlign: "center",
@@ -147,6 +179,21 @@ export function MilanoSealChatLauncher() {
             >
               Email Concierge
             </a>
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: "10px 16px",
+              borderTop: "1px solid rgba(198,165,90,0.08)",
+              fontSize: 9,
+              color: "rgba(198,165,90,0.3)",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              textAlign: "center",
+            }}
+          >
+            Secure · Founder-Led · Florida Licensed
           </div>
         </div>
       )}

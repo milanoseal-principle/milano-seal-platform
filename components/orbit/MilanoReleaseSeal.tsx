@@ -1,104 +1,70 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { MilanoSealOrbitCore } from "./MilanoSealOrbitCore";
 
 interface MilanoReleaseSealProps {
-  matterId: string;
-  matterRef: string;
+  // New spec props
+  verificationId?: string;
+  isReleased?: boolean;
+  // Legacy props
+  matterId?: string;
+  matterRef?: string;
   onConfirm?: () => void;
 }
 
-export function MilanoReleaseSeal({ matterId, matterRef, onConfirm }: MilanoReleaseSealProps) {
-  const [confirmed, setConfirmed] = useState(false);
-  const [pulse, setPulse] = useState(false);
-
-  useEffect(() => {
-    const t = setInterval(() => setPulse((p) => !p), 2000);
-    return () => clearInterval(t);
-  }, []);
-
-  const handleRelease = () => {
-    setConfirmed(true);
-    onConfirm?.();
-  };
-
-  if (confirmed) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          padding: "20px",
-          border: "1px solid rgba(63,164,122,0.4)",
-          borderRadius: 4,
-          background: "rgba(63,164,122,0.06)",
-        }}
-      >
-        <div style={{ fontSize: 24, color: "#3FA47A" }}>✓</div>
-        <div
-          style={{
-            fontSize: 11,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "#3FA47A",
-            fontWeight: 600,
-          }}
-        >
-          Release Initiated
-        </div>
-        <div style={{ fontSize: 10, color: "rgba(63,164,122,0.6)" }}>{matterRef}</div>
-      </div>
-    );
-  }
-
+export function MilanoReleaseSeal({
+  verificationId,
+  isReleased = false,
+  matterRef,
+  onConfirm,
+}: MilanoReleaseSealProps) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 12,
-        padding: "20px",
-        border: `1px solid ${pulse ? "rgba(198,165,90,0.6)" : "rgba(198,165,90,0.25)"}`,
-        borderRadius: 4,
-        background: "rgba(8,5,1,0.97)",
-        transition: "border-color 1s",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 10,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: "rgba(198,165,90,0.6)",
-        }}
-      >
-        Release Review
+    <section className="milano-release-seal">
+      <MilanoSealOrbitCore
+        mode="release"
+        state={isReleased ? "released" : "verified"}
+        size="lg"
+        showRouteArcs={false}
+        showNodes={isReleased}
+        label="Milano Seal release certificate seal"
+      />
+      <div>
+        <p className="orbit-eyebrow">/ SEAL OF RECORD /</p>
+        <h3 style={{ fontFamily: "var(--font-serif, Georgia, serif)", color: "#F6F1E6", fontSize: "clamp(22px,3vw,36px)", fontWeight: 500, margin: "6px 0" }}>
+          {isReleased ? "Paid & Released" : "Release Review"}
+        </h3>
+        <p style={{ color: "#A8A29A", maxWidth: 400, fontSize: 13, margin: "0 0 12px" }}>
+          {isReleased
+            ? "This matter has been sealed with a custody verification record."
+            : "Complete release review before final certificate generation."}
+        </p>
+        {(verificationId ?? matterRef) && (
+          <code style={{ fontSize: 11, color: "#C6A55A", letterSpacing: "0.1em", background: "rgba(198,165,90,0.08)", padding: "4px 10px", borderRadius: 4 }}>
+            {verificationId ?? matterRef}
+          </code>
+        )}
+        {!isReleased && onConfirm && (
+          <button
+            onClick={onConfirm}
+            style={{
+              display: "block",
+              marginTop: 16,
+              padding: "9px 22px",
+              background: "transparent",
+              border: "1px solid #C6A55A",
+              borderRadius: 3,
+              color: "#C6A55A",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Initiate Release
+          </button>
+        )}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(198,165,90,0.8)", fontWeight: 600 }}>{matterRef}</div>
-      <div style={{ fontSize: 10, color: "rgba(198,165,90,0.4)", textAlign: "center", maxWidth: 200 }}>
-        Operator action only. Requires payment confirmation before release.
-      </div>
-      <button
-        onClick={handleRelease}
-        style={{
-          marginTop: 4,
-          padding: "8px 20px",
-          background: "transparent",
-          border: "1px solid #C6A55A",
-          borderRadius: 2,
-          color: "#C6A55A",
-          fontSize: 10,
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
-      >
-        Initiate Release
-      </button>
-    </div>
+    </section>
   );
 }
