@@ -226,7 +226,7 @@ export function GlobalMap() {
                 <span className="text-[#C6A55A] text-base leading-none flex-shrink-0">
                   {DESTINATIONS.find(d => d.slug === storedSlug)?.flag}
                 </span>
-                <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#C6A55A]/70 truncate">
+                <span className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 truncate">
                   Continue exploring {DESTINATIONS.find(d => d.slug === storedSlug)?.name}
                   {storedMatter ? ` · ${storedMatter}` : ""}
                 </span>
@@ -234,7 +234,7 @@ export function GlobalMap() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={resumeMemorySession}
-                  className="font-mono text-[8px] tracking-[0.18em] uppercase text-[#C6A55A] hover:text-[#D4B76A] transition-colors px-2.5 py-1 border border-[#C6A55A]/30 rounded hover:border-[#C6A55A]/60"
+                  className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#C6A55A] hover:text-[#D4B76A] transition-colors px-2.5 py-1 border border-[#C6A55A]/30 rounded hover:border-[#C6A55A]/60"
                 >
                   Resume
                 </button>
@@ -264,11 +264,11 @@ export function GlobalMap() {
             style={{ background: "rgba(3,3,5,0.90)" }}
           >
             <div className="flex items-center gap-4">
-              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40">
+              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70">
                 THE SYSTEM IN MOTION
               </span>
               <span className="text-[#2A2A2A]">·</span>
-              <h2 className="font-serif text-sm text-white/90 font-light tracking-wide">
+              <h2 className="font-serif text-sm text-white/90 font-normal tracking-wide">
                 Global Document Intelligence™
               </h2>
             </div>
@@ -297,7 +297,7 @@ export function GlobalMap() {
 
               <div className="p-5 flex flex-col h-full">
                 <div className="mb-5">
-                  <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40 block mb-1">
+                  <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 block mb-1">
                     HOW IT WORKS
                   </span>
                   <div className="w-8 h-px bg-[#C6A55A]/20 mt-2" />
@@ -345,7 +345,7 @@ export function GlobalMap() {
                     href="/intake"
                     className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/25 text-[#C6A55A]/80 hover:text-[#C6A55A] hover:border-[#C6A55A]/45 hover:bg-[#C6A55A]/[0.04] rounded-lg transition-all duration-200"
                   >
-                    <span className="font-mono text-[9px] tracking-[0.18em] uppercase">Begin Intake</span>
+                    <span className="font-mono text-xs tracking-[0.08em] uppercase">Begin Intake</span>
                     <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -482,7 +482,7 @@ export function GlobalMap() {
                     <div className="bg-black/60 border border-[#D4AF37]/10 rounded-lg p-3.5 mb-4"
                       style={{ boxShadow: "0 0 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(212,175,55,0.05)" }}
                     >
-                      <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2">
+                      <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
                         JURISDICTIONAL FRAMEWORK
                       </span>
                       <span className={`inline-block font-mono text-[9px] px-2.5 py-1 rounded border ${
@@ -501,13 +501,13 @@ export function GlobalMap() {
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
                         {activeTimeline && (
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-[#C6A55A]/40 flex-shrink-0" />
+                            <Clock className="w-3 h-3 text-[#C6A55A]/70 flex-shrink-0" />
                             <span className="font-mono text-[9px] text-[#555]">{activeTimeline}</span>
                           </div>
                         )}
                         {corridorIntel.translationRequired && (
                           <div className="flex items-center gap-1.5">
-                            <Languages className="w-3 h-3 text-[#C6A55A]/40 flex-shrink-0" />
+                            <Languages className="w-3 h-3 text-[#C6A55A]/70 flex-shrink-0" />
                             <span className="font-mono text-[9px] text-[#555]">Translation required</span>
                           </div>
                         )}
@@ -517,7 +517,7 @@ export function GlobalMap() {
                     {/* Matter Vector Intelligence — clickable chips that reconfigure sequence */}
                     {corridorIntel && corridorIntel.matterVectors.length > 0 && (
                       <div className="mb-4">
-                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] block mb-2">
+                        <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
                           SELECT MATTER TYPE
                         </span>
                         <div className="flex flex-wrap gap-1.5">
@@ -549,7 +549,7 @@ export function GlobalMap() {
                     {/* Interactive Procedural Sequence */}
                     <div className="mb-4 flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444]">
+                        <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666]">
                           {activeMatter ? `${activeMatter.label.toUpperCase()} SEQUENCE` : "PROCEDURAL SEQUENCE"}
                         </span>
                         {activeMatter && (
@@ -594,7 +594,7 @@ export function GlobalMap() {
                                   disabled={!note}
                                   aria-expanded={note ? isExpanded : undefined}
                                 >
-                                  <span className="font-mono text-[#C6A55A]/40 text-[8px] mt-0.5 w-5 flex-shrink-0 group-hover:text-[#C6A55A]/60 transition-colors">
+                                  <span className="font-mono text-[#C6A55A]/70 text-[8px] mt-0.5 w-5 flex-shrink-0 group-hover:text-[#C6A55A]/60 transition-colors">
                                     {String(i + 1).padStart(2, "0")}
                                   </span>
                                   <span className="text-[#909090] text-[11px] leading-snug flex-1 text-left group-hover:text-[#ABABAB] transition-colors">
@@ -603,7 +603,7 @@ export function GlobalMap() {
                                   {note && (
                                     <span className="flex-shrink-0 mt-0.5">
                                       {isExpanded
-                                        ? <ChevronDown className="w-3 h-3 text-[#C6A55A]/40" />
+                                        ? <ChevronDown className="w-3 h-3 text-[#C6A55A]/70" />
                                         : <ChevronRight className="w-3 h-3 text-[#333] group-hover:text-[#C6A55A]/30 transition-colors" />}
                                     </span>
                                   )}
@@ -654,7 +654,7 @@ export function GlobalMap() {
                         className="flex items-center gap-2 w-full px-3 py-2 mb-3 rounded-lg border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] text-[#C6A55A]/70 hover:text-[#C6A55A] hover:border-[#C6A55A]/30 hover:bg-[#C6A55A]/[0.07] transition-all duration-200 group"
                       >
                         <Shield className="w-3 h-3 flex-shrink-0" />
-                        <span className="font-mono text-[9px] tracking-[0.18em] uppercase">
+                        <span className="font-mono text-[9px] tracking-[0.08em] uppercase">
                           Hague Compliance Intelligence
                         </span>
                         <ArrowRight className="w-2.5 h-2.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -723,10 +723,10 @@ export function GlobalMap() {
                     </div>
 
                     {/* Label */}
-                    <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/40 block mb-2">
+                    <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 block mb-2">
                       EXECUTION VECTOR
                     </span>
-                    <span className="font-serif text-base text-white/20 max-w-[180px] leading-relaxed block mb-1 font-light">
+                    <span className="font-serif text-base text-white/60 max-w-[180px] leading-relaxed block mb-1 font-normal">
                       Select a destination
                     </span>
                     <span className="font-mono text-[9px] tracking-[0.12em] text-[#2A2A2A] max-w-[180px] leading-relaxed block mb-6">
@@ -741,7 +741,7 @@ export function GlobalMap() {
                         { label: "ORIGIN", value: "FL · CLEARED" },
                       ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between px-3 py-1.5 border border-white/[0.04] rounded bg-white/[0.015]">
-                          <span className="font-mono text-[8px] tracking-[0.2em] text-[#333]">{label}</span>
+                          <span className="font-mono text-[8px] tracking-[0.08em] text-[#666]">{label}</span>
                           <span className="font-mono text-[8px] tracking-[0.15em] text-[#C6A55A]/50">{value}</span>
                         </div>
                       ))}
@@ -770,7 +770,7 @@ export function GlobalMap() {
                   setMapFlyTarget(REGION_FLY_TARGETS[region]!);
                 }
               }}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-sm font-mono text-[9px] tracking-[0.18em] uppercase transition-all duration-200 border ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-sm font-mono text-xs tracking-[0.08em] uppercase transition-all duration-200 border ${
                 activeRegion === region
                   ? "border-[#C6A55A]/40 text-[#C6A55A] bg-[#C6A55A]/[0.06]"
                   : "border-white/[0.05] text-[#444] hover:border-white/[0.1] hover:text-[#666]"
@@ -806,7 +806,7 @@ export function GlobalMap() {
                   >
                     <span className="text-base leading-none">{hd.flag}</span>
                     <span className="font-serif text-sm text-white">{hd.name}</span>
-                    <span className="font-mono text-[8px] text-[#C6A55A]/60 tracking-[0.18em] uppercase">{hi.routeType}</span>
+                    <span className="font-mono text-[10px] text-[#C6A55A]/70 tracking-[0.08em] uppercase">{hi.routeType}</span>
                     <span className="text-[#333]">·</span>
                     <span className="font-mono text-[8px] text-[#555]">{hi.timeline}</span>
                     {hi.translationRequired && (

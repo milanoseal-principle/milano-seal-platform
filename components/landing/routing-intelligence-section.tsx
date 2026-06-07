@@ -74,10 +74,10 @@ export function RoutingIntelligenceSection() {
 
         {/* Eyebrow + headline */}
         <div className="mb-8">
-          <p className="text-[10px] font-mono tracking-[0.35em] uppercase text-[#D4AF37]/60 mb-2">
+          <p className="text-[10px] font-mono tracking-[0.08em] uppercase text-[#D4AF37]/70 mb-2">
             Global Routing Intelligence
           </p>
-          <h2 className="text-xl sm:text-2xl font-light tracking-tight text-white">
+          <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-white">
             Priority Destination Corridors
           </h2>
           <p className="mt-2 text-sm text-[#6A6A6A] max-w-xl leading-relaxed">
@@ -109,7 +109,7 @@ export function RoutingIntelligenceSection() {
                 </div>
 
                 <span className="flex flex-col leading-tight">
-                  <span className="text-[10px] tracking-[0.18em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300 whitespace-nowrap">
+                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300 whitespace-nowrap">
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300 whitespace-nowrap">
@@ -142,7 +142,7 @@ export function RoutingIntelligenceSection() {
                 <Icon className="w-3.5 h-3.5 text-[#3A3A3A] group-hover:text-[#C6A55A] transition-colors duration-300" />
 
                 <span className="flex flex-col leading-tight mt-1">
-                  <span className="text-[10px] tracking-[0.18em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300">
+                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300">
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300">

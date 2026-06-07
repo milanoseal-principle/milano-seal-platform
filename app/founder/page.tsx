@@ -45,7 +45,7 @@ export default function FounderPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div>
-                <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-6">
+                <p className="text-[#C6A55A] text-xs tracking-[0.08em] uppercase font-medium mb-6">
                   The Operator
                 </p>
                 <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-4 leading-tight">
@@ -55,7 +55,7 @@ export default function FounderPage() {
                   U.S. International Document Execution Liaison
                 </p>
                 <div className="w-12 h-px bg-[#C6A55A] mb-8 opacity-60" />
-                <div className="space-y-5 text-[#B0B0B0] font-light leading-relaxed">
+                <div className="space-y-5 text-white/70 font-normal leading-relaxed">
                   <p>
                     Nicholas Milano has built his practice at the intersection of international
                     document execution, procedural compliance, and cross-border coordination — a
@@ -153,7 +153,7 @@ export default function FounderPage() {
         {/* Credentials */}
         <section className="py-20 px-6 bg-[#080808]">
           <div className="max-w-5xl mx-auto">
-            <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4 text-center">
+            <p className="text-[#C6A55A] text-xs tracking-[0.08em] uppercase font-medium mb-4 text-center">
               Credentials & Scope
             </p>
             <h2 className="font-serif text-3xl font-medium text-white mb-16 text-center">
@@ -220,7 +220,7 @@ export default function FounderPage() {
         {/* Philosophy */}
         <section className="py-20 px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-6">
+            <p className="text-[#C6A55A] text-xs tracking-[0.08em] uppercase font-medium mb-6">
               Operating Doctrine
             </p>
             <blockquote className="font-serif text-2xl md:text-3xl text-white italic leading-relaxed mb-8">
@@ -239,14 +239,14 @@ export default function FounderPage() {
             <h2 className="font-serif text-3xl font-medium text-white mb-6">
               Work with Nicholas directly
             </h2>
-            <p className="text-[#B0B0B0] mb-10 font-light">
+            <p className="text-white/65 mb-10 font-normal">
               Every engagement is personally reviewed and coordinated. Submit
               your matter and receive a structured response within one business
               day.
             </p>
             <Link
               href="/intake"
-              className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-sm hover:bg-[#D4BB7A] transition-all"
+              className="inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-lg rounded-sm hover:bg-[#D4BB7A] transition-all"
             >
               Begin Secure Intake
               <ArrowRight className="w-5 h-5" />

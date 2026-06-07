@@ -120,10 +120,10 @@ export default async function CountryPage({ params }: PageProps) {
             style={{ boxShadow: "inset 0 0 0 1px rgba(212,175,55,0.04)" }}
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#C6A55A]/55 flex-shrink-0">
+              <span className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 flex-shrink-0">
                 CORRIDOR STATUS:
               </span>
-              <span className="font-mono text-[8px] tracking-[0.18em] uppercase text-[#C6A55A]/80">
+              <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#C6A55A]/80">
                 {dest.name.toUpperCase()} FLORIDA INTERNATIONAL ROUTE
                 &nbsp;//&nbsp;
                 {dest.hague
@@ -151,7 +151,7 @@ export default async function CountryPage({ params }: PageProps) {
                 <div className="rounded-xl border border-[#C6A55A]/12 bg-[#C6A55A]/[0.04] p-6">
                   <div className="flex items-center gap-2 mb-3">
                     <Shield className="w-4 h-4 text-[#C6A55A]" />
-                    <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]">
+                    <span className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]">
                       Hague Compliance Intelligence
                     </span>
                   </div>
@@ -219,7 +219,7 @@ export default async function CountryPage({ params }: PageProps) {
               <div className="relative rounded-xl border border-[#C6A55A]/20 bg-[#0A0A0A] p-5 sticky top-6"
                 style={{ boxShadow: "0 0 0 1px rgba(198,165,90,0.06), 0 24px 48px rgba(0,0,0,0.6)" }}>
                 <div className="absolute top-0 left-0 right-0 h-px rounded-t-xl bg-gradient-to-r from-transparent via-[#C6A55A]/50 to-transparent" />
-                <p className="font-mono text-[8px] tracking-[0.28em] uppercase text-[#C6A55A]/40 mb-3">Begin Execution</p>
+                <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Begin Execution</p>
                 <p className="text-white font-serif text-lg leading-snug mb-4">{dest.name} Document Authentication</p>
                 <Link
                   href={`/intake?country=${encodeURIComponent(dest.name)}`}
@@ -238,7 +238,7 @@ export default async function CountryPage({ params }: PageProps) {
               {/* Compliance badges */}
               {compliance && (
                 <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
-                  <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Compliance Clearances</p>
+                  <p className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] mb-3">Compliance Clearances</p>
                   <div className="flex flex-wrap gap-1.5">
                     {compliance.complianceBadges.map((badge) => (
                       <span key={badge} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/[0.05] text-[11px] text-[#C6A55A]">
@@ -252,7 +252,7 @@ export default async function CountryPage({ params }: PageProps) {
 
               {/* Documents */}
               <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
-                <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Documents Handled</p>
+                <p className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] mb-3">Documents Handled</p>
                 <div className="flex flex-wrap gap-1.5">
                   {(compliance?.documentTypes ?? dest.commonDocuments).map((doc) => (
                     <Link
@@ -268,7 +268,7 @@ export default async function CountryPage({ params }: PageProps) {
 
               {/* Internal links */}
               <div className="rounded-xl border border-white/[0.05] bg-[#080808] p-5">
-                <p className="font-mono text-[8px] tracking-[0.25em] uppercase text-[#444] mb-3">Related Services</p>
+                <p className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] mb-3">Related Services</p>
                 <nav className="space-y-2">
                   {[
                     { label: "Apostille Coordination",         href: "/services/apostille" },
@@ -292,7 +292,7 @@ export default async function CountryPage({ params }: PageProps) {
         <section className="border-t border-white/[0.04] bg-[#070709]">
           <div className="max-w-5xl mx-auto px-6 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]/40 mb-1">The Milano Seal™</p>
+              <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/40 mb-1">The Milano Seal™</p>
               <p className="text-white font-serif text-lg">Florida notarization. Global authentication. Delivered.</p>
             </div>
             <div className="flex gap-3 flex-shrink-0">
