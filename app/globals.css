@@ -3315,3 +3315,59 @@ h4 {
   .orbit-blocked .orbit-ring-primary { animation: none !important; }
   .orbit-ring, .orbit-node, .orbit-crest-shell { transition: none !important; }
 }
+
+/* ── Milano Seal Kinetic Polish — Expansion Phase ───────────── */
+:root {
+  --ms-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ms-transition-fast: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ms-transition-medium: 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ms-transition-slow: 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-transition-soft {
+  transition-duration: 600ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-fade-slide {
+  animation: msFadeSlide 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.ms-row-lift:hover {
+  transform: translateY(-2px);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-obsidian-glass {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(212,175,55,0.08), transparent 30%),
+    linear-gradient(180deg, rgba(12,12,18,0.96), rgba(5,5,8,0.98));
+  border: 1px solid rgba(212,175,55,0.14);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter: blur(14px);
+}
+
+@keyframes msFadeSlide {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-transition-soft,
+  .ms-fade-slide {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+  .ms-row-lift:hover {
+    transform: none !important;
+  }
+}
