@@ -1025,19 +1025,7 @@ h4 {
   height: 210px;
   border-radius: 50%;
   border: none;
-  /*
-    Push the PNG's gold circle ring outside the disc (clipped by overflow:hidden).
-    At 820px the ring inner edge (~140px native radius) → 112px display > disc radius 105px.
-    Only M+feather fills the black disc. Content center native y≈220 → offset -71px.
-  */
-  background:
-    #000000
-    url('/milano-seal-black-1024.png')
-    no-repeat
-    center -63px;
-  background-size: 780px auto;
-  /* Push dark warm fabric pixels to pure black; mid-bright gold M survives */
-  filter: contrast(1.8) brightness(0.7);
+  background: #050507;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1341,9 +1329,6 @@ h4 {
   .ritual-overlay__seal-disc {
     width: 170px;
     height: 170px;
-    /* Ring 310px native → 170px disc + buffer: 580px; center 227×(580/1024)=129 → offset -44 */
-    background-size: 640px auto;
-    background-position: center -53px;
   }
 
   /* Recalculate ring insets for 230px wrap / 170px disc */
@@ -2313,8 +2298,6 @@ h4 {
   .ms-globe-crest {
     width: 42px;
     height: 42px;
-    background-size: 168px auto;
-    background-position: center -16px;
   }
 }
 
