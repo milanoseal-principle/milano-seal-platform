@@ -363,7 +363,7 @@ export function RitualOverlay() {
               discBreathe && !vaultLocked     ? "ro-disc-breathe" : "",
               vaultLocked                     ? "vault-flash"     : "",
             ].filter(Boolean).join(" ")}
-              style={{ background: "#050507", border: "none", overflow: "hidden" }}
+              style={{ background: "#050507", border: "none", overflow: "hidden", borderRadius: "50%" }}
             >
               <Image
                 src="/milano-seal-orb-v2.png"
