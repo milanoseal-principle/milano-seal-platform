@@ -41,6 +41,7 @@ export function GlobalTrustCoreHero() {
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
   const [arcsDone,    setArcsDone]    = useState(false);
   const [isSettled,   setIsSettled]   = useState(false);
+  const [sphereVis,   setSphereVis]   = useState(false);
   const [scrambleTick, setScrambleTick] = useState(0);
 
   const isFloridaSelected = selectedId === "__florida__";
@@ -51,9 +52,10 @@ export function GlobalTrustCoreHero() {
   const scrambledText = useScramble(scrambleText, !!selectedDest, scrambleTick);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setArcsDone(true), 1800);
+    const t0 = setTimeout(() => setSphereVis(true),  120);
+    const t1 = setTimeout(() => setArcsDone(true),  1800);
     const t2 = setTimeout(() => setIsSettled(true), 2200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export function GlobalTrustCoreHero() {
 
       {/* Sphere */}
       <div
-        className="ms-globe-sphere"
+        className={`ms-globe-sphere${sphereVis ? " ms-globe-sphere--visible" : ""}`}
         style={{
           transition: "transform 0.9s cubic-bezier(0.16,1,0.3,1)",
           transform: `translate(${nudgeX}%, ${nudgeY}%) scale(1)`,
