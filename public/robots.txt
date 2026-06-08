@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-
-# Disallow admin
-Disallow: /dashboard
-Disallow: /api/
-
-# Sitemap
-Sitemap: https://themilanoseal.com/sitemap.xml
