@@ -11,11 +11,21 @@ const CHIPS = [
   { label: "Contact Founder",   href: "mailto:themilanoseal@gmail.com" },
 ];
 
+// min 44px touch target for iOS/Android compliance
+const CHIP_CLS = "border border-zinc-900 bg-zinc-950/60 rounded-sm text-left text-zinc-400 hover:border-amber-500/30 hover:text-amber-400 hover:bg-zinc-900/30 active:bg-zinc-900/50 transition-all duration-300 flex items-center justify-between group min-h-[44px] px-3 py-2 text-[8px] tracking-wider uppercase touch-manipulation";
+
 export function MilanoSealChatLauncher() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 font-mono select-none">
+    // safe-area-inset keeps the orb above the home indicator on iOS
+    <div
+      className="fixed z-50 font-mono select-none"
+      style={{
+        bottom: "max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom)))",
+        left:   "max(1.5rem, calc(1.5rem + env(safe-area-inset-left)))",
+      }}
+    >
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -25,17 +35,13 @@ export function MilanoSealChatLauncher() {
             exit={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => setIsOpen(true)}
-            className="relative w-14 h-14 bg-[#050507] border border-amber-500/20 rounded-full flex items-center justify-center cursor-pointer group shadow-[0_0_50px_rgba(0,0,0,0.85)] focus:outline-none"
+            // 56px = w-14 h-14 — comfortably above 44px iOS minimum
+            className="relative w-14 h-14 bg-[#050507] border border-amber-500/20 rounded-full flex items-center justify-center cursor-pointer group shadow-[0_0_50px_rgba(0,0,0,0.85)] focus:outline-none touch-manipulation"
             aria-label="Open Milano Seal Concierge"
           >
-            {/* Breathing rings */}
             <div className="absolute inset-0 rounded-full border border-amber-500/30 animate-ping opacity-20 pointer-events-none [animation-duration:3s]" />
             <div className="absolute inset-[-4px] rounded-full border border-amber-500/10 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
-
-            {/* Glow envelope */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-t from-amber-500/5 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-
-            {/* Rotating orb */}
             <motion.img
               src="/milano-seal-orb-v2.png"
               alt="The Milano Seal Orb"
@@ -51,14 +57,15 @@ export function MilanoSealChatLauncher() {
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: 16, scale: 0.96, filter: "blur(10px)" }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            style={{ width: "min(340px, calc(100vw - 2rem))" }}
+            style={{
+              width: "min(340px, calc(100vw - 2rem))",
+              // webkit prefix required for iOS Safari backdrop-filter support
+              WebkitBackdropFilter: "blur(40px)",
+            }}
             className="bg-[#050507]/80 backdrop-blur-[40px] border border-zinc-800 rounded-sm overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] relative"
           >
-            {/* Top gold edge */}
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent z-20" />
-            {/* Subtle gold tint */}
             <div className="absolute inset-0 bg-gradient-to-b from-amber-500/[0.02] to-transparent pointer-events-none z-0" />
-            {/* Film grain */}
             <div
               className="absolute inset-0 opacity-[0.015] pointer-events-none z-0"
               style={{ backgroundImage: "url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPg==\")" }}
@@ -82,43 +89,46 @@ export function MilanoSealChatLauncher() {
                 </div>
               </div>
 
-              {/* Chat canvas */}
-              <div className="p-4 space-y-4 max-h-72 overflow-y-auto">
+              {/* Chat canvas — -webkit-overflow-scrolling for iOS inertial scroll */}
+              <div
+                className="p-4 space-y-4 max-h-72 overflow-y-auto"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
                 <div className="flex items-start space-x-3">
                   <div className="w-5 h-5 border border-zinc-800 rounded-full flex items-center justify-center bg-zinc-950 mt-0.5 shrink-0">
                     <img src="/milano-seal-orb-v2.png" className="w-4 h-4 object-contain rounded-full" alt="" />
                   </div>
+                  {/* text-[10px] kept — not an input field, no zoom risk */}
                   <div className="bg-zinc-900/40 border border-zinc-900 p-3 rounded-sm text-[10px] text-zinc-300 leading-relaxed tracking-wide max-w-[85%]">
                     Welcome to The Milano Seal™ secure execution desk. Select an intake pathway, review country routes, or contact the founder for cross-border document support.
                   </div>
                 </div>
 
-                {/* Quick action chips */}
-                <div className="grid grid-cols-2 gap-2 pt-2 text-[8px] tracking-wider uppercase">
+                {/* Quick action chips — min-h-[44px] for iOS/Android touch compliance */}
+                <div className="grid grid-cols-2 gap-2 pt-2">
                   {CHIPS.map((chip) => {
                     const isExternal = chip.href.startsWith("mailto") || chip.href.startsWith("http");
                     const inner = (
                       <>
                         <span>{chip.label}</span>
-                        <span className="opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 text-amber-500">→</span>
+                        <span className="opacity-0 group-hover:opacity-100 group-active:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 text-amber-500">→</span>
                       </>
                     );
-                    const cls = "border border-zinc-900 bg-zinc-950/60 p-2.5 rounded-sm text-left text-zinc-400 hover:border-amber-500/30 hover:text-amber-400 hover:bg-zinc-900/30 transition-all duration-300 flex items-center justify-between group min-h-[36px]";
                     return isExternal ? (
-                      <a key={chip.label} href={chip.href} target={chip.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className={cls}>{inner}</a>
+                      <a key={chip.label} href={chip.href} target={chip.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className={CHIP_CLS}>{inner}</a>
                     ) : (
-                      <Link key={chip.label} href={chip.href} onClick={() => setIsOpen(false)} className={cls}>{inner}</Link>
+                      <Link key={chip.label} href={chip.href} onClick={() => setIsOpen(false)} className={CHIP_CLS}>{inner}</Link>
                     );
                   })}
                 </div>
               </div>
 
-              {/* CTA */}
+              {/* CTA — min-h-[44px] touch target */}
               <div className="px-4 pb-2">
                 <Link
                   href="/intake"
                   onClick={() => setIsOpen(false)}
-                  className="w-full block text-center bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-zinc-950 text-[9px] font-bold tracking-[0.2em] uppercase py-3 rounded-sm transition-all duration-300 shadow-[0_4px_20px_rgba(212,175,55,0.15)] min-h-[44px] leading-[44px] py-0"
+                  className="w-full flex items-center justify-center bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 active:from-amber-400 active:to-amber-300 text-zinc-950 text-[9px] font-bold tracking-[0.2em] uppercase rounded-sm transition-all duration-300 shadow-[0_4px_20px_rgba(212,175,55,0.15)] min-h-[44px] touch-manipulation"
                 >
                   BEGIN SECURE INTAKE
                 </Link>
@@ -134,10 +144,10 @@ export function MilanoSealChatLauncher() {
               </div>
             </div>
 
-            {/* Close */}
+            {/* Close — min 44px touch area */}
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute top-3.5 right-4 text-zinc-600 hover:text-zinc-400 transition-colors z-30 p-1 text-[10px] font-sans"
+              className="absolute top-2 right-2 text-zinc-600 hover:text-zinc-400 active:text-zinc-300 transition-colors z-30 w-11 h-11 flex items-center justify-center touch-manipulation"
               aria-label="Close"
             >
               ✕
