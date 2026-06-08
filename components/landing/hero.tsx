@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
+import { GlobalDocumentGlobe } from "@/components/landing/GlobalDocumentGlobe";
 
 
 const INIT_PHRASES = [
@@ -199,7 +199,7 @@ export function Hero() {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center w-full"
             >
-              <GlobalTrustCoreHero />
+              <GlobalDocumentGlobe />
             </motion.div>
 
             {/* Founder strip — desktop only, 2 lines max */}
