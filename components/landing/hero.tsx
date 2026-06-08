@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import OrbitalEngine from "@/components/ui/OrbitalEngine";
+import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 
 const INIT_PHRASES = [
@@ -206,7 +206,7 @@ export function Hero() {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center"
             >
-              <OrbitalEngine />
+              <GlobalTrustCoreHero />
             </motion.div>
 
             {/* PATCH 4 — Founder SEO Section */}
@@ -219,8 +219,8 @@ export function Hero() {
               <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
                 Founder-Led Document Execution
               </p>
-              <p style={{ color: "rgba(176,176,176,0.8)", fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-                The Milano Seal™ is led by Nicholas Milano, a Florida Notary Public and Remote Online Notary supporting apostille coordination, international document execution, mobile notary requests, witness coordination, and secure release workflows for clients, attorneys, businesses, real estate professionals, healthcare providers, and private clients.
+              <p style={{ color: "rgba(176,176,176,0.7)", fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
+                Florida Notary Public &amp; Remote Online Notary. Apostille coordination, international execution, and secure release.
               </p>
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                 <a
