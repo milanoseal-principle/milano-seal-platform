@@ -2083,22 +2083,22 @@ h4 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 420px;
-  height: 420px;
+  width: 520px;
+  height: 520px;
   flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {
   .ms-globe-container {
-    width: 320px;
-    height: 320px;
+    width: 400px;
+    height: 400px;
   }
 }
 
 @media (max-width: 640px) {
   .ms-globe-container {
-    width: 260px;
-    height: 260px;
+    width: 300px;
+    height: 300px;
   }
 }
 
@@ -2143,8 +2143,8 @@ h4 {
 /* ── Sphere ──────────────────────────────────────────────────── */
 .ms-globe-sphere {
   position: relative;
-  width: 340px;
-  height: 340px;
+  width: 440px;
+  height: 440px;
   border-radius: 50%;
   /* Premium black glass sphere — triple gradient for 3D depth */
   background:
@@ -2178,16 +2178,16 @@ h4 {
 
 @media (max-width: 1024px) {
   .ms-globe-sphere {
-    width: 260px;
-    height: 260px;
+    width: 330px;
+    height: 330px;
   }
 }
 
 @media (max-width: 640px) {
   .ms-globe-sphere {
-    width: 220px;
-    height: 220px;
-    overflow: hidden; /* keep sphere artwork clipped */
+    width: 260px;
+    height: 260px;
+    overflow: hidden;
   }
 }
 
@@ -2379,16 +2379,16 @@ h4 {
 
 .ms-orbit-ring--main {
   /* Tilt to create 3D ellipse impression */
-  width: 380px;
-  height: 380px;
+  width: 480px;
+  height: 480px;
   transform: rotateX(72deg) rotateZ(15deg);
   border-color: rgba(198, 165, 90, 0.2);
   animation: ms-orbit-slow 18s linear infinite;
 }
 
 .ms-orbit-ring--outer {
-  width: 430px;
-  height: 430px;
+  width: 540px;
+  height: 540px;
   transform: rotateX(68deg) rotateZ(-10deg);
   border-color: rgba(198, 165, 90, 0.09);
   animation: ms-orbit-slow 26s linear infinite reverse;
