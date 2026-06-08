@@ -1,0 +1,280 @@
+'use client';
+
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
+import { ROLE_PROMPT_REGISTRY, AssistantRoleMode } from '@/lib/assistant/assistantPrompts';
+
+interface Message {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
+interface MilanoOrbAssistantProps {
+  roleMode?: AssistantRoleMode;
+}
+
+// 8 orbital node positions around a circle
+const NODE_ANGLES = Array.from({ length: 8 }, (_, i) => (i * 360) / 8);
+
+export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const config = ROLE_PROMPT_REGISTRY[roleMode];
+
+  // Spring for orb inertial shear at open
+  const orbShearSpring = useSpring(0, { stiffness: 300, damping: 18 });
+  const orbScaleY = useTransform(orbShearSpring, [-1, 0, 1], [0.88, 1, 0.88]);
+  const orbScaleX = useTransform(orbShearSpring, [-1, 0, 1], [1.06, 1, 1.06]);
+
+  // Spring for panel mount with overshoot
+  const panelY = useSpring(isOpen ? 0 : 20, { stiffness: 260, damping: 22, mass: 1.1 });
+  useEffect(() => { panelY.set(isOpen ? 0 : 20); }, [isOpen, panelY]);
+
+  const handleOpen = useCallback(() => {
+    orbShearSpring.set(1);
+    setTimeout(() => orbShearSpring.set(0), 350);
+    setIsOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 400);
+  }, [orbShearSpring]);
+
+  const handleClose = useCallback(() => {
+    orbShearSpring.set(-1);
+    setTimeout(() => orbShearSpring.set(0), 350);
+    setIsOpen(false);
+  }, [orbShearSpring]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || isLoading) return;
+    const userMsg: Message = { role: 'user', text: text.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInputValue('');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.trim(), role: roleMode }),
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'Unable to connect. Please try again.' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, roleMode]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
+
+  const isEmpty = messages.length === 0;
+
+  return (
+    <div
+      className="fixed z-50 font-mono select-none"
+      style={{
+        bottom: "max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom)))",
+        right: "max(1.5rem, calc(1.5rem + env(safe-area-inset-right)))",
+      }}
+    >
+      {/* Anamorphic bloom SVG filter */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+        <defs>
+          <filter id="ms-orb-bloom" x="-50%" y="-200%" width="200%" height="500%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6 15" result="blur" />
+            <feColorMatrix in="blur" type="matrix"
+              values="1.4 0.3 0   0 0.1
+                      0.8 1.0 0   0 0.05
+                      0   0   0.4 0 0
+                      0   0   0   1 0"
+              result="tinted"
+            />
+            <feMerge>
+              <feMergeNode in="tinted" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+
+      <AnimatePresence mode="wait">
+        {!isOpen ? (
+          /* ── ORB BUTTON ── */
+          <motion.button
+            key="orb"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            style={{ scaleY: orbScaleY, scaleX: orbScaleX, width: 64, height: 64 }}
+            onClick={handleOpen}
+            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation"
+            aria-label="Open Milano Seal Assistant"
+          >
+            {/* Halo breathe */}
+            <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 ms-orb-halo-breathe pointer-events-none" />
+            <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.08] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
+
+            {/* Obsidian disc */}
+            <svg width="64" height="64" viewBox="0 0 64 64" className="absolute inset-0">
+              {/* Gold rim */}
+              <circle cx="32" cy="32" r="30" fill="none" stroke="#C6A55A" strokeWidth="1.2" opacity="0.6" />
+              {/* Orbital ring */}
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.25" strokeDasharray="2 4" />
+              {/* Base disc */}
+              <circle cx="32" cy="32" r="29" fill="#050507" />
+              {/* Inner glow */}
+              <circle cx="32" cy="32" r="28" fill="url(#orbGradient)" />
+              {/* 8 orbital node dots */}
+              {NODE_ANGLES.map((angle, i) => {
+                const rad = (angle * Math.PI) / 180;
+                const nx = 32 + 24 * Math.cos(rad);
+                const ny = 32 + 24 * Math.sin(rad);
+                return <circle key={i} cx={nx} cy={ny} r="1.5" fill="#C6A55A" opacity="0.5" />;
+              })}
+              {/* M monogram */}
+              <text x="32" y="36.5" textAnchor="middle" fontFamily="serif" fontSize="16" fill="#C6A55A" opacity="0.85" fontWeight="500">M</text>
+              <defs>
+                <radialGradient id="orbGradient" cx="50%" cy="35%" r="60%">
+                  <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#050507" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+            </svg>
+          </motion.button>
+        ) : (
+          /* ── PANEL ── */
+          <motion.div
+            key="panel"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              width: "min(380px, calc(100vw - 2rem))",
+              WebkitBackdropFilter: "blur(40px)",
+            }}
+            className="bg-[#050507]/85 backdrop-blur-[40px] border border-zinc-800 rounded-sm overflow-hidden shadow-[0_32px_80px_-15px_rgba(0,0,0,0.97)] relative flex flex-col"
+          >
+            {/* Top accent line */}
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent z-20" />
+
+            {/* Header */}
+            <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                {/* Mini orb */}
+                <svg width="28" height="28" viewBox="0 0 28 28">
+                  <circle cx="14" cy="14" r="13" fill="#050507" stroke="#C6A55A" strokeWidth="0.8" opacity="0.6" />
+                  <text x="14" y="18" textAnchor="middle" fontFamily="serif" fontSize="10" fill="#C6A55A" opacity="0.85">M</text>
+                </svg>
+                <div className="flex flex-col">
+                  <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
+                  <span className="text-[7px] text-zinc-500 tracking-wider uppercase">{roleMode === 'PUBLIC' ? 'Secure Execution Desk' : roleMode + ' MODE'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-emerald-500/5 border border-emerald-500/20 px-2 py-0.5 rounded-sm">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[6.5px] text-emerald-400 font-bold tracking-widest uppercase">LIVE</span>
+                </div>
+                <button
+                  onClick={handleClose}
+                  className="w-8 h-8 flex items-center justify-center text-zinc-600 hover:text-zinc-300 transition-colors touch-manipulation"
+                  aria-label="Close"
+                >
+                  <span className="text-xs">✕</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div
+              className="flex-1 p-4 space-y-3 overflow-y-auto"
+              style={{ maxHeight: 280, WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+            >
+              {isEmpty && (
+                <div className="text-center py-4">
+                  <p className="text-[9px] text-zinc-500 tracking-wide leading-relaxed">
+                    Welcome to The Milano Seal™. Ask about apostille coordination, RON, or international document execution.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5 mt-4">
+                    {config.chips.map((chip) => (
+                      <button
+                        key={chip.label}
+                        onClick={() => sendMessage(chip.prompt)}
+                        className="border border-zinc-800 bg-zinc-950/60 rounded-sm text-left text-zinc-400 hover:border-amber-500/30 hover:text-amber-400 transition-all duration-200 px-2.5 py-2 text-[8px] tracking-wide uppercase min-h-[40px] touch-manipulation"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] px-3 py-2 rounded-sm text-[10px] leading-relaxed tracking-wide ${
+                      msg.role === 'user'
+                        ? 'bg-amber-500/10 border border-amber-500/20 text-amber-100'
+                        : 'bg-zinc-900/50 border border-zinc-800 text-zinc-300'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-zinc-900/50 border border-zinc-800 px-3 py-2 rounded-sm">
+                    <div className="flex gap-1 items-center">
+                      {[0, 1, 2].map(i => (
+                        <span key={i} className="w-1 h-1 rounded-full bg-amber-500/60 animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="p-3 border-t border-zinc-900/60 bg-zinc-950/20 shrink-0">
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={e => setInputValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(inputValue); } }}
+                  placeholder="Ask about your documents..."
+                  className="flex-1 bg-zinc-900/40 border border-zinc-800 rounded-sm px-3 py-2 text-[10px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/30 transition-colors min-h-[40px]"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={() => sendMessage(inputValue)}
+                  disabled={isLoading || !inputValue.trim()}
+                  className="bg-amber-500/90 hover:bg-amber-400 disabled:opacity-30 text-zinc-950 text-[8px] font-bold tracking-widest uppercase px-3 rounded-sm transition-colors min-h-[40px] min-w-[44px] touch-manipulation"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-3 py-2 border-t border-zinc-900/40 flex justify-between items-center text-[6px] text-zinc-600 tracking-[0.2em] uppercase bg-zinc-950/10 shrink-0">
+              <span>FLORIDA LICENSED</span>
+              <span>•</span>
+              <span>PAYMENT-GATED</span>
+              <span>•</span>
+              <span>FOUNDER-LED</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
-import { MilanoSealChatLauncher } from "@/components/orbit/MilanoSealChatLauncher";
+import { MilanoOrbAssistant } from "@/components/assistant/MilanoOrbAssistant";
 import { NavigationLoader } from "@/components/NavigationLoader";
 import "./globals.css";
 
@@ -175,7 +175,7 @@ export default function RootLayout({
           }}
         />
         <NavigationLoader />
-        <MilanoSealChatLauncher />
+        <MilanoOrbAssistant />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
