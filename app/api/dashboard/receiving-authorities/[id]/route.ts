@@ -23,7 +23,7 @@ const PATCHABLE_FIELDS = new Set([
   "stale_after_days",
 ]);
 
-const WRITE_ROLES = new Set(["founder_admin", "admin", "admin_operator"]);
+const WRITE_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function GET(
   _req: NextRequest,

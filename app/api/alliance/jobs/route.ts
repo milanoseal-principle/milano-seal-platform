@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-const ALLOWED_ROLES = ["alliance_partner", "operator", "admin"];
+const ALLOWED_ROLES = ["alliance_partner", "founder_admin", "admin_operator"];
 
 // Partner-safe stage labels — internal status names never sent to operators
 const STAGE_LABELS: Record<string, string> = {

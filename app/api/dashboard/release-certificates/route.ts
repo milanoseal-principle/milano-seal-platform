@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 const SAFE_FIELDS =
   "id,verification_hash,display_id,release_date,document_count,custody_status,release_method,created_at";
 
-const WRITE_ROLES = new Set(["founder_admin", "admin", "admin_operator"]);
+const WRITE_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function GET(_req: NextRequest) {
   await requireDashboardAccess();

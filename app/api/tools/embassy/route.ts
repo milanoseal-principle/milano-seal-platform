@@ -5,7 +5,7 @@ import { locateEmbassy } from "@/lib/tools/executionTools";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ROLES = new Set(["admin", "ops_manager"]);
+const ALLOWED_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
