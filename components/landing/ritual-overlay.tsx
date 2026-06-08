@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
-import Image from "next/image";
 
 const NODES: [number, number][] = [
   [-80.19,  25.77],
@@ -356,23 +355,48 @@ export function RitualOverlay() {
             <span className="ritual-overlay__ring ro-ring-b" />
             <span className="ritual-overlay__ring ro-ring-a" />
 
-            {/* Seal PNG */}
+            {/* Seal disc — pure SVG, zero PNG dependency */}
             <div className={[
               "ritual-overlay__seal-disc",
               discBorn                        ? "ro-disc-born"    : "",
               discBreathe && !vaultLocked     ? "ro-disc-breathe" : "",
               vaultLocked                     ? "vault-flash"     : "",
             ].filter(Boolean).join(" ")}
-              style={{ background: "#050507", border: "none", overflow: "hidden", borderRadius: "50%" }}
+              style={{ background: "#050507", border: "none", borderRadius: "50%" }}
             >
-              <Image
-                src="/milano-seal-orb-v2.png"
-                alt="The Milano Seal"
-                width={200}
-                height={200}
-                priority
-                style={{ objectFit: "contain", width: "100%", height: "100%" }}
-              />
+              <svg width="210" height="210" viewBox="0 0 210 210" aria-label="The Milano Seal">
+                {/* Radial glow fill */}
+                <defs>
+                  <radialGradient id="ro-orb-grad" cx="50%" cy="38%" r="58%">
+                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.13" />
+                    <stop offset="100%" stopColor="#050507" stopOpacity="0" />
+                  </radialGradient>
+                  <radialGradient id="ro-orb-inner" cx="50%" cy="30%" r="50%">
+                    <stop offset="0%" stopColor="#E8D08A" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#050507" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                {/* Base fill */}
+                <circle cx="105" cy="105" r="104" fill="#050507" />
+                <circle cx="105" cy="105" r="104" fill="url(#ro-orb-grad)" />
+                {/* Outer gold rim */}
+                <circle cx="105" cy="105" r="100" fill="none" stroke="#C6A55A" strokeWidth="1.4" opacity="0.55" />
+                {/* Secondary ring */}
+                <circle cx="105" cy="105" r="90" fill="none" stroke="#C6A55A" strokeWidth="0.6" opacity="0.18" strokeDasharray="3 6" />
+                {/* Inner dashed orbit */}
+                <circle cx="105" cy="105" r="72" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.22" strokeDasharray="2 5" />
+                {/* 8 orbital node dots on r=90 */}
+                {Array.from({ length: 8 }, (_, i) => {
+                  const rad = (i * 45 * Math.PI) / 180;
+                  return <circle key={i} cx={105 + 90 * Math.cos(rad)} cy={105 + 90 * Math.sin(rad)} r="3" fill="#C6A55A" opacity="0.5" />;
+                })}
+                {/* Inner highlight */}
+                <circle cx="105" cy="105" r="68" fill="url(#ro-orb-inner)" />
+                {/* M monogram */}
+                <text x="105" y="122" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="58" fill="#C6A55A" opacity="0.92" fontWeight="500" letterSpacing="-1">M</text>
+                {/* Specular top glint */}
+                <ellipse cx="88" cy="72" rx="18" ry="10" fill="white" opacity="0.04" transform="rotate(-20 88 72)" />
+              </svg>
             </div>
 
           </div>
