@@ -449,13 +449,16 @@ export function GlobalTrustCoreHero() {
         <div className="ms-globe-glass-cap" />
         {/* Crest glow */}
         <div className="ms-globe-crest-glow" />
-        {/* Milano Seal crest */}
-        <div className="ms-globe-crest" aria-hidden="true" />
+        {/* Center shield — programmatic, no PNG */}
+        <div className="ms-globe-crest" aria-hidden="true">
+          <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 7, fontWeight: 500, letterSpacing: "0.32em", color: "rgba(198,165,90,0.75)", textTransform: "uppercase", lineHeight: 1 }}>MILANO</span>
+          <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 6, fontWeight: 300, letterSpacing: "0.38em", color: "rgba(120,100,60,0.6)", textTransform: "uppercase", lineHeight: 1 }}>SEAL</span>
+        </div>
         {/* Spotlight */}
         <div className="ms-globe-spotlight" />
       </div>
 
-      {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
+      {/* Destination popover — rendered outside sphere, never overlaps node SVG layer */}
       {selectedDest && (
         <div
           className="ms-destination-popover hidden md:block"
@@ -464,8 +467,8 @@ export function GlobalTrustCoreHero() {
             left: popLeft,
             top: popTop,
             transform: popAnchor,
-            zIndex: 50,
-            pointerEvents: "auto",
+            zIndex: 30,
+            pointerEvents: "none",
           }}
           data-seo-intent={selectedDest.seoIntent}
           onClick={(e) => e.stopPropagation()}
@@ -477,6 +480,7 @@ export function GlobalTrustCoreHero() {
               backdropFilter: "blur(10px)",
               WebkitBackdropFilter: "blur(10px)",
               animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
+              pointerEvents: "auto",
             }}
           >
             <button
