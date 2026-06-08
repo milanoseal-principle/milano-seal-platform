@@ -93,6 +93,55 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── MILANO SEAL™ GLOBE TOKENS ──────────────────────────────── */
+:root {
+  --ms-gold: #D4AF37;
+  --ms-gold-bright: #E3C46F;
+  --ms-ivory: #F5F1E8;
+  --ms-black: #050505;
+  --ms-charcoal: #0C0C12;
+  --ms-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ms-ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes msGlobeHalo {
+  0%, 100% { opacity: 0.28; transform: scale(1); }
+  50%       { opacity: 0.42; transform: scale(1.03); }
+}
+
+@keyframes msRouteDraw {
+  from { stroke-dashoffset: 1; opacity: 0; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes msRouteSweep {
+  0%   { stroke-dashoffset: 1.2; opacity: 0; }
+  12%  { opacity: 0.9; }
+  88%  { opacity: 0.9; }
+  100% { stroke-dashoffset: -0.2; opacity: 0; }
+}
+
+@keyframes msNodePulse {
+  0%, 100% { transform: scale(1); opacity: 0.65; }
+  50%       { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes msOriginPulse {
+  0%   { transform: scale(0.92); opacity: 0.55; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-globe-rotate,
+  .ms-route-draw,
+  .ms-route-shimmer,
+  .ms-node-pulse {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}
+
 /* ── MILANO SEAL™ DESIGN SYSTEM ─────────────────────────────── */
 :root {
   /* Safe-area inset tokens (non-zero only when viewport-fit=cover is set).
