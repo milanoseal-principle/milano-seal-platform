@@ -2152,12 +2152,12 @@ h4 {
   );
   pointer-events: none;
   z-index: 0;
-  animation: ms-globe-bloom-breathe 7s ease-in-out infinite;
+  animation: ms-globe-bloom-breathe 14s ease-in-out infinite;
 }
 
 @keyframes ms-globe-bloom-breathe {
   0%, 100% { opacity: 1;    transform: scale(1);    }
-  50%       { opacity: 0.65; transform: scale(1.12); }
+  50%       { opacity: 0.72; transform: scale(1.06); }
 }
 
 /* ── Sphere ──────────────────────────────────────────────────── */
@@ -2321,7 +2321,7 @@ h4 {
 }
 
 .ms-globe-dest-node--pulse {
-  animation: ms-dest-pulse 2s ease-in-out infinite;
+  animation: ms-dest-pulse 10s ease-in-out infinite;
 }
 
 @keyframes ms-dest-pulse {
@@ -2406,12 +2406,11 @@ h4 {
 }
 
 .ms-orbit-ring--main {
-  /* Tilt to create 3D ellipse impression */
   width: 380px;
   height: 380px;
   transform: rotateX(72deg) rotateZ(15deg);
   border-color: rgba(198, 165, 90, 0.2);
-  animation: ms-orbit-slow 18s linear infinite;
+  animation: ms-orbit-slow 56s linear infinite;
 }
 
 .ms-orbit-ring--outer {
@@ -2419,7 +2418,7 @@ h4 {
   height: 430px;
   transform: rotateX(68deg) rotateZ(-10deg);
   border-color: rgba(198, 165, 90, 0.09);
-  animation: ms-orbit-slow 26s linear infinite reverse;
+  animation: ms-orbit-slow 80s linear infinite reverse;
 }
 
 @keyframes ms-orbit-slow {
