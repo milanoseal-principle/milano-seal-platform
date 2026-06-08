@@ -2536,8 +2536,9 @@ h4 {
   stroke-dashoffset: 520;
   opacity: 0;
 }
+/* Layer 5 polish: asymmetric hysteresis timing — acceleration → fast mid → cushion arrival */
 .ms-globe-arc-tip--flowing {
-  animation: ms-arc-tip-cinema linear infinite;
+  animation: ms-arc-tip-hysteresis cubic-bezier(0.28, 0.0, 0.58, 1.0) infinite;
 }
 
 /* Cinema comet keyframe — fades at endpoints for realism */
@@ -2548,12 +2549,21 @@ h4 {
   100% { stroke-dashoffset: -520; opacity: 0; }
 }
 
-/* Tip is shorter, also fades */
-@keyframes ms-arc-tip-cinema {
+/* Layer 5 — Spatial hysteresis: slow launch → max velocity mid-arc → heavy cushion into destination */
+@keyframes ms-arc-tip-hysteresis {
   0%   { stroke-dashoffset:  520; opacity: 0; }
-  5%   { opacity: 1; }
-  80%  { opacity: 1; }
+  5%   { stroke-dashoffset:  462; opacity: 1; }   /* slow launch — signal builds momentum */
+  18%  { stroke-dashoffset:  310; }                /* accelerating hard */
+  48%  { stroke-dashoffset:   28; }                /* peak velocity — mid-route confidence */
+  72%  { stroke-dashoffset: -310; }                /* beginning heavy deceleration */
+  88%  { stroke-dashoffset: -462; opacity: 1; }   /* cushion — atmospheric drag into node */
   100% { stroke-dashoffset: -520; opacity: 0; }
+}
+
+/* Layer 4 — Atmospheric equatorial haze (arcs catch light as they cross the visual equator) */
+@keyframes ms-equator-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1.00; }
 }
 
 /* ── Glass specular cap — animated shimmer ───────────────────── */
