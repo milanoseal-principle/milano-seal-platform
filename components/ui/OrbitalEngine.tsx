@@ -9,6 +9,16 @@ export default function OrbitalEngine() {
       className="relative flex items-center justify-center select-none"
       style={{ width: "min(420px, 88vw)", height: "min(420px, 88vw)" }}
     >
+      {/* Dark base so PNG transparency renders on black */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background: "#050507",
+        }}
+      />
+
       {/* Ambient gold bloom */}
       <motion.div
         animate={{ opacity: [0.06, 0.18, 0.06], scale: [1, 1.08, 1] }}

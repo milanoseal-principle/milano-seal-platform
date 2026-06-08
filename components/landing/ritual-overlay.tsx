@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 
-/* ─── Geographic nodes ──────────────────────────────────── */
 const NODES: [number, number][] = [
   [-80.19,  25.77],
   [-74.01,  40.71],
@@ -357,7 +356,7 @@ export function RitualOverlay() {
             <span className="ritual-overlay__ring ro-ring-b" />
             <span className="ritual-overlay__ring ro-ring-a" />
 
-            {/* PNG orb — transparent background, no CSS background-image */}
+            {/* PNG orb on dark background — no checkerboard */}
             <div
               className={[
                 "ritual-overlay__seal-disc",
@@ -365,7 +364,13 @@ export function RitualOverlay() {
                 discBreathe && !vaultLocked ? "ro-disc-breathe" : "",
                 vaultLocked                 ? "vault-flash"     : "",
               ].filter(Boolean).join(" ")}
-              style={{ background: "transparent", border: "none", boxShadow: "none", overflow: "visible" }}
+              style={{
+                background: "#050507",
+                border: "none",
+                boxShadow: "0 0 60px rgba(212,175,55,0.22), 0 0 120px rgba(212,175,55,0.10)",
+                overflow: "hidden",
+                borderRadius: "50%",
+              }}
             >
               <Image
                 src="/milano-seal-orb-v2.png"
@@ -373,7 +378,7 @@ export function RitualOverlay() {
                 width={360}
                 height={360}
                 priority
-                style={{ objectFit: "contain", width: "100%", height: "100%" }}
+                style={{ objectFit: "contain", width: "100%", height: "100%", display: "block" }}
               />
             </div>
 
