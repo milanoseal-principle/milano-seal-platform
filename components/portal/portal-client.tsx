@@ -57,7 +57,7 @@ interface Deal {
 interface FileRecord {
   id: string;
   filename: string;
-  file_url: string;
+  signed_url: string | null;
   file_type: string;
   file_size: number;
   uploaded_by: string;
@@ -681,15 +681,15 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                       </p>
                     </div>
                   </div>
-                  <a
-                    href={f.file_url}
+                  {f.signed_url && <a
+                    href={f.signed_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-xs text-[#C6A55A] hover:border-[#C6A55A]/40 transition-colors"
                   >
                     <Download className="w-3 h-3" />
                     Download
-                  </a>
+                  </a>}
                 </div>
               ))}
             </div>

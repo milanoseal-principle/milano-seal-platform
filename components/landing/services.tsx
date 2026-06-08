@@ -15,54 +15,54 @@ const services: {
 }[] = [
   {
     icon: Monitor,
-    title: "Remote Online Notarization (RON)",
+    title: "Remote Online Notarization Coordination",
     href: "/services/remote-online-notary",
     description:
-      "Secure, identity-verified digital notarization compliant with Florida law, valid for domestic and international use when accepted by receiving authority.",
+      "Florida Remote Online Notarization support for eligible documents, including identity verification workflow coordination, signer readiness review, session preparation, and post-execution document QA before apostille or release movement.",
     features: [
-      { label: "Identity verification", tooltip: "Multi-factor identity verification performed through approved RON platform procedures." },
-      { label: "Audio-video recording", tooltip: "Fully encrypted, tamper-secure session recording retained via statutory storage parameters." },
-      { label: "Tamper-evident seal", tooltip: "Advanced cryptographic validation signing identifying post-execution document alterations." },
-      { label: "Immediate delivery", tooltip: "" },
+      { label: "Identity verification workflow", tooltip: "Multi-factor identity verification performed through approved RON platform procedures." },
+      { label: "Signer readiness review", tooltip: "" },
+      { label: "Session preparation", tooltip: "" },
+      { label: "Post-execution QA", tooltip: "" },
     ],
   },
   {
     icon: FileCheck,
-    title: "Apostille Coordination",
+    title: "Hague Apostille Coordination",
     href: "/services/apostille",
     description:
-      "End-to-end handling of document authentication through the appropriate Secretary of State, ensuring Hague Convention compliance for international acceptance.",
+      "Document routing support for Hague Convention countries, including notarization review, state or federal apostille pathway review, destination-country awareness, courier custody, and receiving-authority sensitivity checks.",
     features: [
-      { label: "State authentication", tooltip: "Document sequencing verified directly with the Florida Department of State division." },
-      { label: "Hague compliance", tooltip: "Destination-country routing reviewed against Hague Convention authentication requirements." },
-      { label: "Tracking provided", tooltip: "Real-time transaction visibility and transit monitoring maintained through the client portal." },
-      { label: "Global recognition", tooltip: "" },
+      { label: "Apostille pathway review", tooltip: "Document sequencing verified directly with the Florida Department of State division." },
+      { label: "Destination-country awareness", tooltip: "Destination-country routing reviewed against Hague Convention authentication requirements." },
+      { label: "Courier custody", tooltip: "" },
+      { label: "Receiving-authority checks", tooltip: "" },
     ],
   },
   {
     icon: Globe2,
-    title: "International Document Execution",
+    title: "Non-Hague Authentication & Legalization Review",
     href: "/services/international-execution",
     description:
-      "Structured preparation, notarization, and coordination of U.S. documents intended for foreign jurisdictions.",
+      "Structured routing review for documents intended for non-Hague jurisdictions that may require state authentication, federal review, embassy or consular legalization, translation review, or specialized release handling.",
     features: [
-      { label: "Jurisdiction analysis", tooltip: "Algorithmic routing validation matching target embassy, consulate, or apostille protocols." },
-      { label: "Document structuring", tooltip: "Alignment of digital execution blocks with cross-border execution standards." },
-      { label: "Compliance verification", tooltip: "Strict administrative checking of identity credentials prior to final seal deployment." },
-      { label: "Destination guidance", tooltip: "" },
+      { label: "State authentication review", tooltip: "" },
+      { label: "Federal review pathway", tooltip: "" },
+      { label: "Embassy/consular legalization", tooltip: "" },
+      { label: "Translation review support", tooltip: "" },
     ],
   },
   {
     icon: Car,
-    title: "Mobile Notary",
+    title: "Executive Document Logistics",
     href: "/services/mobile-notary",
     description:
-      "In-person execution for high-sensitivity, high-value, or location-restricted matters.",
+      "High-control support for private-client, corporate, estate, maritime, equestrian, luxury asset, and international transaction documents requiring careful intake, document packet review, chain-of-custody awareness, and release coordination.",
     features: [
-      { label: "On-location service", tooltip: "" },
-      { label: "Flexible scheduling", tooltip: "" },
-      { label: "Witness coordination", tooltip: "" },
-      { label: "Same-day available", tooltip: "" },
+      { label: "High-control intake", tooltip: "" },
+      { label: "Document packet review", tooltip: "" },
+      { label: "Chain-of-custody awareness", tooltip: "" },
+      { label: "Release coordination", tooltip: "" },
     ],
   },
 ];

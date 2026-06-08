@@ -129,6 +129,30 @@ export default function ApostillePage() {
         </div>
       </section>
 
+      {/* Translation & Authentication Review Notes */}
+      <section className="py-16 px-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
+            <h3 className="font-medium text-white mb-3">Translation Review</h3>
+            <p className="text-sm text-[#B0B0B0] leading-relaxed">
+              Some destination countries or receiving authorities may require translated documents, sworn translations, certified translations, or format-specific language handling. The Milano Seal flags translation-sensitive matters for coordinator review before release.
+            </p>
+          </div>
+          <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
+            <h3 className="font-medium text-white mb-3">Authentication Review</h3>
+            <p className="text-sm text-[#B0B0B0] leading-relaxed">
+              Some countries are not handled through a standard apostille pathway and may require authentication or consular legalization review. The Milano Seal routes these matters for additional coordinator review before execution or release.
+            </p>
+          </div>
+          <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6">
+            <h3 className="font-medium text-white mb-3">What Clients Need to Know</h3>
+            <p className="text-sm text-[#B0B0B0] leading-relaxed">
+              Most clients are not expected to know the correct apostille, authentication, or translation pathway before intake. The Milano Seal structures the matter based on document type, signer location, destination country, and receiving authority information. If something is unclear, we flag it for coordinator review before execution.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-16 px-6">
         <div className="max-w-2xl mx-auto text-center">

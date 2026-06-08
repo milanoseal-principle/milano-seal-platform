@@ -1,87 +1,76 @@
 "use client";
 
-import { MilanoSealOrbitCore } from "./MilanoSealOrbitCore";
-import { OrbitState, ORBIT_STATE_MAP } from "@/lib/orbit/orbitStateMap";
+import { MilanoOrbitSegment, MilanoSealOrbitCore } from "./MilanoSealOrbitCore";
+import { getDashboardOrbitState } from "@/lib/orbit/orbitStateMap";
 
-interface DashboardOrbitStatesProps {
-  currentState: OrbitState;
+// Legacy props — pipeline state per matter
+interface LegacyProps {
+  currentState: string;
   matterRef?: string;
 }
 
-const STATE_ORDER: OrbitState[] = [
-  "intake_received",
-  "under_review",
-  "awaiting_payment",
-  "scheduled",
-  "in_execution",
-  "apostille_processing",
-  "in_transit",
-  "delivered",
-  "completed",
-];
+// System health props — dashboard-level
+interface HealthProps {
+  truthScore?: number | null;
+  blockedMatters?: number;
+  staleMatters?: number;
+  releaseReady?: number;
+  segments?: MilanoOrbitSegment[];
+}
 
-export function DashboardOrbitStates({ currentState, matterRef }: DashboardOrbitStatesProps) {
-  const currentIndex = STATE_ORDER.indexOf(currentState);
+type DashboardOrbitStatesProps = LegacyProps | HealthProps;
 
+function isHealthProps(p: DashboardOrbitStatesProps): p is HealthProps {
+  return !("currentState" in p);
+}
+
+export function DashboardOrbitStates(props: DashboardOrbitStatesProps) {
+  if (isHealthProps(props)) {
+    const { truthScore, blockedMatters = 0, staleMatters = 0, releaseReady = 0, segments = [] } = props;
+    const state = getDashboardOrbitState({ truthScore, blockedMatters, staleMatters, releaseReady });
+
+    return (
+      <section className="dashboard-orbit-card">
+        <div>
+          <p className="orbit-eyebrow">/ SYSTEM SEAL /</p>
+          <h3 style={{ fontFamily: "var(--font-serif, Georgia, serif)", color: "#F6F1E6", fontSize: "clamp(24px,3vw,40px)", fontWeight: 500, margin: "6px 0" }}>
+            Execution Orbit
+          </h3>
+          <p style={{ color: "#A8A29A", maxWidth: 420, fontSize: 13, margin: 0 }}>
+            Live operational crest state — motion reflects real platform conditions only.
+          </p>
+        </div>
+        <MilanoSealOrbitCore
+          mode="dashboard"
+          state={state}
+          size="lg"
+          showDataSegments={segments.length > 0}
+          segments={segments}
+          label="Dashboard execution orbit"
+        />
+        <div className="dashboard-orbit-meta">
+          <span>Truth Score</span>
+          <strong>{typeof truthScore === "number" ? `${truthScore}%` : "No data"}</strong>
+        </div>
+      </section>
+    );
+  }
+
+  // Legacy: pipeline state per active matter
+  const { currentState, matterRef } = props;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
       {matterRef && (
-        <div
-          style={{
-            fontSize: 10,
-            letterSpacing: "0.2em",
-            color: "rgba(198,165,90,0.5)",
-            textTransform: "uppercase",
-          }}
-        >
+        <div style={{ fontSize: 10, letterSpacing: "0.2em", color: "rgba(198,165,90,0.5)", textTransform: "uppercase" }}>
           {matterRef}
         </div>
       )}
-
       <MilanoSealOrbitCore
-        state={currentState}
+        state={currentState as never}
         mode="dashboard"
-        size={120}
-        showLabel={true}
-        crestSrc="/milano-seal-crest-canonical.png"
+        size="md"
+        label={`Matter status: ${currentState}`}
       />
-
-      {/* progress track */}
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", maxWidth: 280 }}>
-        {STATE_ORDER.map((s, i) => {
-          const cfg = ORBIT_STATE_MAP[s];
-          const past = i < currentIndex;
-          const active = i === currentIndex;
-          return (
-            <div
-              key={s}
-              title={cfg.label}
-              style={{
-                width: 20,
-                height: 4,
-                borderRadius: 2,
-                background: active
-                  ? cfg.color
-                  : past
-                  ? "rgba(198,165,90,0.35)"
-                  : "rgba(198,165,90,0.1)",
-                transition: "background 0.4s",
-              }}
-            />
-          );
-        })}
-      </div>
-
-      <div
-        style={{
-          fontSize: 9.5,
-          color: "rgba(198,165,90,0.4)",
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-        }}
-      >
-        Step {currentIndex + 1} of {STATE_ORDER.length}
-      </div>
     </div>
   );
 }

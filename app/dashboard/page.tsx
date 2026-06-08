@@ -43,6 +43,7 @@ import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
 import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
 import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
 import { MatterQueue } from "@/components/dashboard/MatterQueue";
+import { QuickActionIntelligenceMenu } from "@/components/dashboard/QuickActionIntelligenceMenu";
 
 interface DashboardSummary {
   total_deals: number;
@@ -89,6 +90,19 @@ interface DashboardSummary {
     resource: string | null;
     created_at: string;
   }[];
+}
+
+interface QuickActionSummary {
+  summary: {
+    actionRequiredCount: number;
+    blockedCount: number;
+    reviewRequiredCount: number;
+    readyCount: number;
+    deliveredNotReleasedCount: number;
+    vaTaskCount: number;
+    overdueVaTaskCount: number;
+    no_data: boolean;
+  };
 }
 
 interface SlaAlert {
@@ -197,6 +211,7 @@ export default function Dashboard() {
     "/api/dashboard/summary",
   );
   const { data: slaAlerts } = useApi<SlaAlert[]>("/api/admin/sla-alerts");
+  const { data: quickActionsData } = useApi<QuickActionSummary>("/api/dashboard/quick-actions");
 
   if (isLoading)
     return (
@@ -817,6 +832,19 @@ export default function Dashboard() {
           <TopDocumentsPanel />
         </div>
       </div>
+
+      {/* Quick Action Intelligence Menu */}
+      <Card className="bg-card border-gold overflow-hidden">
+        <QuickActionIntelligenceMenu
+          activeMatterId={selectedMatterId ?? undefined}
+          deliveredNotReleasedCount={quickActionsData?.summary?.deliveredNotReleasedCount ?? 0}
+          vaTaskCount={quickActionsData?.summary?.vaTaskCount ?? 0}
+          actionRequiredCount={quickActionsData?.summary?.actionRequiredCount ?? 0}
+          blockedCount={quickActionsData?.summary?.blockedCount ?? 0}
+          reviewRequiredCount={quickActionsData?.summary?.reviewRequiredCount ?? 0}
+          readyCount={quickActionsData?.summary?.readyCount ?? 0}
+        />
+      </Card>
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">

@@ -1,93 +1,74 @@
-import { DollarSign, Calendar } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { AllianceShell } from "@/components/alliance/AllianceShell";
+import { AlliancePayoutPanel } from "@/components/alliance/AlliancePayoutPanel";
 
-export default function AlliancePayoutsPage() {
+export default async function AlliancePayoutsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/alliance/login");
+
+  const { data: partner } = await supabase
+    .from("alliance_partners")
+    .select("id, firm_name, contact_name, routing_eligible, compliance_verified, toolbelt_completed")
+    .eq("user_id", user.id)
+    .single();
+
+  // Partner-safe: never expose base_cost, margin, or payout formula
+  // Show only summary status — no internal revenue data
+  const isEligible = (partner?.compliance_verified ?? false) && (partner?.toolbelt_completed ?? false);
+
   return (
-    <div className="space-y-6">
-      <div className="ap-card ap-card-body">
-        <div className="ap-eyebrow">Financial Ledger</div>
-        <h1
-          className="text-2xl font-semibold text-gray-900 mt-1"
-          style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-        >
-          Commission & Payouts
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Track earned commissions, payout schedule, and payment history.
-        </p>
-      </div>
-
-      {/* Payout stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Month to Date", value: "$0.00", sub: "Cleared commissions" },
-          { label: "Outstanding", value: "$0.00", sub: "Pending completion" },
-          { label: "Year to Date", value: "$0.00", sub: "All cleared payouts" },
-        ].map((s) => (
-          <div key={s.label} className="ap-card">
-            <div className="ap-payout-stat">
-              <div className="ap-payout-stat-amount">{s.value}</div>
-              <div className="ap-payout-stat-label">{s.label}</div>
-              <div className="text-xs text-gray-400 mt-1">{s.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Next payment */}
-      <div className="ap-card ap-card-body flex items-center gap-4">
-        <div className="ap-action-icon">
-          <Calendar size={18} color="#d4af37" />
-        </div>
+    <AllianceShell
+      partnerName={partner?.contact_name ?? undefined}
+      firmName={partner?.firm_name ?? undefined}
+      routingEligible={partner?.routing_eligible ?? false}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 800 }}>
         <div>
-          <div className="text-sm font-semibold text-gray-900">
-            Next Scheduled Payout
+          <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 8 }}>
+            Commission & Payouts
           </div>
-          <div className="text-sm text-gray-500">
-            Payouts processed Net 30 after matter completion — no active
-            payouts scheduled.
-          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 400, fontFamily: "var(--font-playfair, Georgia, serif)", color: "#F6F1E6", margin: "0 0 8px" }}>
+            Payout Status
+          </h1>
+          <p style={{ fontSize: 13, color: "#A8A29A", margin: 0, lineHeight: 1.6 }}>
+            Commission status for referred matters. Payouts are processed manually by the Milano Seal team on a scheduled basis.
+          </p>
         </div>
-      </div>
 
-      {/* Transaction history placeholder */}
-      <div className="ap-card">
-        <div className="ap-card-header">
-          <h3 className="ap-card-title">Transaction History</h3>
+        <div style={{ padding: "28px", background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.14)", borderRadius: 8 }}>
+          <AlliancePayoutPanel
+            data={{
+              month_to_date: "—",
+              outstanding: "—",
+              year_to_date: "—",
+              next_payment: "—",
+              status: isEligible ? "PENDING_REVIEW" : "NOT_ELIGIBLE",
+            }}
+          />
         </div>
-        <div className="ap-empty">
-          <DollarSign size={32} className="mx-auto mb-3 text-gray-200" />
-          <div className="font-medium text-gray-500">No transactions yet</div>
-          <div className="text-gray-400 text-sm mt-1">
-            Commission payments will appear here after matters are completed and
-            reviewed.
-          </div>
-        </div>
-      </div>
 
-      {/* Commission structure */}
-      <div className="ap-card">
-        <div className="ap-card-header">
-          <h3 className="ap-card-title">Commission Structure</h3>
-        </div>
-        <div className="ap-card-body space-y-0">
-          <div className="ap-kv">
-            <span className="ap-kv-k">Standard Jobs</span>
-            <span className="ap-kv-v font-mono">Net payout per job</span>
+        <div style={{ padding: "16px 20px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.12em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 12 }}>
+            Commission Policy
           </div>
-          <div className="ap-kv">
-            <span className="ap-kv-k">Payment Method</span>
-            <span className="ap-kv-v">Wise / ACH</span>
-          </div>
-          <div className="ap-kv">
-            <span className="ap-kv-k">Payment Terms</span>
-            <span className="ap-kv-v">Net 30 after completion review</span>
-          </div>
-          <div className="ap-kv">
-            <span className="ap-kv-k">Statements</span>
-            <span className="ap-kv-v">Monthly via secure portal</span>
-          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              "Commission is only tracked for accepted and completed referral matters.",
+              "Eligibility requires active partner status, completed Tool Belt, and verified compliance.",
+              "Payout amounts and formulas are not visible in the partner portal.",
+              "Commission disputes or questions should be directed to the Alliance support team.",
+              "Payouts are processed on a scheduled basis — no automatic or immediate payouts.",
+            ].map((item, i) => (
+              <li key={i} style={{ display: "flex", gap: 10, fontSize: 13, color: "#A8A29A", lineHeight: 1.5 }}>
+                <span style={{ color: "rgba(198,166,91,0.4)", flexShrink: 0 }}>—</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-    </div>
+    </AllianceShell>
   );
 }
