@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
+import OrbitalEngine from "@/components/ui/OrbitalEngine";
 
 
 const INIT_PHRASES = [
@@ -89,11 +89,10 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[64px] md:pt-[72px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
-      {/* Vault ambient — radiates from globe side (right) across text (left) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(circle at 65% 50%, rgba(212,175,55,0.05) 0%, rgba(16,16,20,0) 65%)" }}
@@ -109,13 +108,11 @@ export function Hero() {
         style={{ opacity }}
         className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-2 lg:py-0"
       >
-        {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
 
-          {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
+          {/* LEFT: Data Terminal */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
-            {/* Credential badge */}
             <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
               <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 max-w-fit [isolation:isolate]">
                 <span className="relative flex h-2 w-2 flex-shrink-0">
@@ -128,29 +125,27 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Headline */}
             <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-3">
               <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[1] ? " is-visible" : ""}`}>
-                THE MILANO SEAL™
+                Sealing Trust
+              </span>
+              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[2] ? " is-visible" : ""}`}>
+                Across <span className="ms-hero-borders-gradient italic">Borders</span>
               </span>
             </h1>
 
-            {/* Subtitle — separate line, lighter weight */}
             <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-white/70 font-normal mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
-              International Document Execution &amp; Apostille Coordination
+              U.S. Document Execution for International Use
             </p>
 
-            {/* Body */}
             <p className={`ms-hero-line text-sm md:text-base text-white/55 mb-3 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
-              A premium U.S. execution partner for notarized documents, apostille coordination, authentication routing, consular legalization review, and cross-border release workflows. The Milano Seal supports attorneys, private clients, corporate teams, family offices, brokers, and international professionals who need U.S. documents prepared, reviewed, routed, and released for use abroad.
+              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            {/* Subtext */}
             <p className={`ms-hero-line text-sm text-white/50 mb-10 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
-              Structured intake. Payment-gated execution. Courier custody. Release review.
+              International use is subject to destination and receiving-authority requirements.
             </p>
 
-            {/* CTAs */}
             <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
@@ -164,11 +159,10 @@ export function Hero() {
                 className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
               >
                 <Globe className="w-4 h-4" />
-                Search the Atlas
+                Explore Global Document Intelligence
               </Link>
             </div>
 
-            {/* Trust credential strip */}
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
                 {[
@@ -198,43 +192,34 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: Kinetic Core — globe + founder card */}
-          <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-8">
+          {/* RIGHT: Kinetic Core — PNG Orb */}
+          <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex items-center justify-center"
+              className="relative flex items-center justify-center w-full"
             >
-              <GlobalTrustCoreHero />
+              <OrbitalEngine />
             </motion.div>
 
-            {/* PATCH 4 — Founder SEO Section */}
+            {/* Founder strip — desktop only, 2 lines max */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              style={{ maxWidth: 340, width: "100%", textAlign: "center" }}
+              className="hidden lg:block text-center"
+              style={{ maxWidth: 320 }}
             >
-              <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
+              <p style={{ color: "#C6A55A", fontSize: 10, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>
                 Founder-Led Document Execution
               </p>
-              <p style={{ color: "rgba(176,176,176,0.7)", fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
+              <p style={{ color: "rgba(176,176,176,0.6)", fontSize: 12, lineHeight: 1.55, marginBottom: 10 }}>
                 Florida Notary Public &amp; Remote Online Notary. Apostille coordination, international execution, and secure release.
               </p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                <a
-                  href="/founder"
-                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
-                >
-                  Meet the Founder →
-                </a>
-                <a
-                  href="/intake"
-                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
-                >
-                  Begin Secure Intake →
-                </a>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <a href="/founder" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Meet the Founder →</a>
+                <a href="/intake" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Begin Intake →</a>
               </div>
             </motion.div>
           </div>
