@@ -89,7 +89,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-screen lg:h-screen pt-[64px] md:pt-[72px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
@@ -107,10 +107,10 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-4 lg:py-0"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-2 lg:py-0"
       >
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
 
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
