@@ -2285,34 +2285,28 @@ h4 {
   to   { transform: translateX(-50%); }
 }
 
-/* ── Center crest — official Milano Seal™ mark ───────────────── */
+/* ── Center crest — programmatic shield, no PNG ─────────────── */
 .ms-globe-crest {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 3;
+  z-index: 9;
   pointer-events: none;
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  overflow: hidden;
-  /* Logo rendered as glass-etched watermark inside the globe shell.
-     Near-transparent backing + mix-blend-mode:screen makes the black field
-     vanish, leaving only the bright M emblem blended into the sphere surface.
-     Grid lines and particles pass fluidly behind it — no hard black mask. */
-  background-color: rgba(0, 0, 0, 0.05);
-  background-image: url('/milano-seal-black-1024.png');
-  background-repeat: no-repeat;
-  background-position: center -22px;
-  background-size: 224px auto;
-  border: 1px solid rgba(198, 165, 90, 0.22);
+  background: #050507;
+  border: 1px solid rgba(198, 165, 90, 0.28);
   box-shadow:
-    0 0 28px rgba(198, 165, 90, 0.18),
-    inset 0 0 6px rgba(0, 0, 0, 0.3);
-  filter: contrast(2.2) brightness(0.78);
-  mix-blend-mode: screen;
-  z-index: 9;
+    0 0 0 4px rgba(5,5,7,0.98),
+    0 0 28px rgba(198, 165, 90, 0.14),
+    inset 0 0 8px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1px;
 }
 
 @media (max-width: 640px) {
