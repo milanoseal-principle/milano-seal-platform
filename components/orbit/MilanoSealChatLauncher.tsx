@@ -11,7 +11,7 @@ const CHIPS = [
   { label: "Contact Founder",   href: "mailto:themilanoseal@gmail.com" },
 ];
 
-export default function MilanoSealChatLauncher() {
+export function MilanoSealChatLauncher() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
