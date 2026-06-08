@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const role = roleFromEmail(user.email);
-    if (role !== "operator" && role !== "admin") {
+    if (!["founder_admin", "admin_operator"].includes(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       duration_terms: r.duration_terms ?? null,
       arrives_by: r.arrives_by ?? null,
       // operator_display_amount only for admin/founder
-      ...(role === "admin" ? { amount: r.amount, currency: r.currency } : {}),
+      ...( ["founder_admin", "admin_operator"].includes(role) ? { amount: r.amount, currency: r.currency } : {}),
     }));
 
     return NextResponse.json({

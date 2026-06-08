@@ -1,208 +1,259 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ORBIT_STATE_MAP, OrbitMode, OrbitState } from "@/lib/orbit/orbitStateMap";
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+import clsx from "clsx";
 
-export interface OrbitCoreProps {
-  state?: OrbitState;
-  mode?: OrbitMode;
-  size?: number;
+export type MilanoOrbitMode =
+  | "hero"
+  | "dashboard"
+  | "portal"
+  | "launcher"
+  | "release"
+  | "trust";
+
+export type MilanoOrbitState =
+  | "idle"
+  | "hover"
+  | "active"
+  | "verified"
+  | "warning"
+  | "blocked"
+  | "released"
+  | "loading"
+  | "chat-open"
+  | "page-hero";
+
+// Legacy pipeline states — kept for backward compat
+export type OrbitState =
+  | "idle"
+  | "intake_received"
+  | "under_review"
+  | "awaiting_payment"
+  | "scheduled"
+  | "in_execution"
+  | "apostille_processing"
+  | "in_transit"
+  | "delivered"
+  | "completed";
+
+export type OrbitMode = MilanoOrbitMode | "compact" | "trust";
+
+export type MilanoOrbitSegment = {
+  id: string;
+  label: string;
+  value?: number;
+  state?: MilanoOrbitState;
+};
+
+type MilanoSealOrbitCoreProps = {
+  mode?: MilanoOrbitMode | OrbitMode;
+  state?: MilanoOrbitState | OrbitState;
+  size?: "sm" | "md" | "lg" | "xl" | number;
+  interactive?: boolean;
+  showHalo?: boolean;
+  showRouteArcs?: boolean;
+  showNodes?: boolean;
+  showDataSegments?: boolean;
   showLabel?: boolean;
+  segments?: MilanoOrbitSegment[];
+  label?: string;
+  className?: string;
   crestSrc?: string;
+  onClick?: () => void;
+};
+
+const CREST_SRC = "/milano-seal-crest-canonical.png";
+
+const INTERACTION_STATES = new Set<string>([
+  "idle", "hover", "active", "verified", "warning",
+  "blocked", "released", "loading", "chat-open", "page-hero",
+]);
+
+function toInteractionState(state: string): MilanoOrbitState {
+  if (INTERACTION_STATES.has(state)) return state as MilanoOrbitState;
+  // Map legacy pipeline states → interaction states
+  const map: Record<string, MilanoOrbitState> = {
+    intake_received: "active",
+    under_review: "active",
+    awaiting_payment: "warning",
+    scheduled: "active",
+    in_execution: "active",
+    apostille_processing: "active",
+    in_transit: "active",
+    delivered: "verified",
+    completed: "verified",
+  };
+  return map[state] ?? "idle";
 }
 
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return reduced;
-}
+const sizeMap: Record<string, string> = {
+  sm: "orbit-sm",
+  md: "orbit-md",
+  lg: "orbit-lg",
+  xl: "orbit-xl",
+};
 
 export function MilanoSealOrbitCore({
-  state = "idle",
   mode = "dashboard",
-  size = 160,
-  showLabel = true,
+  state = "idle",
+  size = "md",
+  interactive = false,
+  showHalo = true,
+  showRouteArcs = true,
+  showNodes = true,
+  showDataSegments = false,
+  showLabel = false,
+  segments = [],
+  label = "The Milano Seal",
+  className,
   crestSrc,
-}: OrbitCoreProps) {
-  const cfg = ORBIT_STATE_MAP[state];
-  const reduced = useReducedMotion();
-  const cx = size / 2;
-  const cy = size / 2;
-  const crestR = size * 0.18;
-  const rings = Array.from({ length: cfg.ringCount }, (_, i) => ({
-    r: crestR + (i + 1) * (size * 0.085),
-    delay: i * 0.6,
-    opacity: cfg.glowIntensity * (1 - i * 0.22),
-    dashLen: 4 + i * 2,
-    dashGap: 6 + i * 3,
-    rotateDir: i % 2 === 0 ? 1 : -1,
-  }));
-
-  const animDuration = reduced ? "0s" : `${cfg.pulseSpeed}s`;
+  onClick,
+}: MilanoSealOrbitCoreProps) {
+  const reducedMotion = useReducedMotion();
+  const interactionState = toInteractionState(String(state));
+  const nodeCount = mode === "hero" ? 6 : mode === "portal" ? 4 : 7;
+  const nodes = Array.from({ length: nodeCount });
+  const isNumericSize = typeof size === "number";
 
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-        userSelect: "none",
-      }}
-      aria-label={`Matter status: ${cfg.label}`}
-      role="img"
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      disabled={!interactive && !onClick}
+      style={isNumericSize ? ({ "--orbit-size": `${size}px` } as React.CSSProperties) : undefined}
+      className={clsx(
+        "milano-orbit-core",
+        `orbit-mode-${mode}`,
+        isNumericSize ? "orbit-custom-size" : sizeMap[size as string] ?? "orbit-md",
+        `orbit-${interactionState}`,
+        (interactive || onClick) && "orbit-interactive",
+        className
+      )}
     >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ overflow: "visible" }}
-      >
-        <defs>
-          <radialGradient id={`og-${state}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={cfg.color} stopOpacity={cfg.glowIntensity * 0.6} />
-            <stop offset="100%" stopColor={cfg.color} stopOpacity={0} />
-          </radialGradient>
-          <filter id={`glow-${state}`} x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation={size * 0.03} result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
+      {showHalo && <span className="orbit-halo" aria-hidden="true" />}
 
-        {/* ambient glow */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={size * 0.38}
-          fill={`url(#og-${state})`}
-        />
+      <motion.span
+        className="orbit-ring orbit-ring-primary"
+        aria-hidden="true"
+        animate={
+          reducedMotion
+            ? undefined
+            : { rotate: interactionState === "loading" ? 360 : [0, 360] }
+        }
+        transition={
+          interactionState === "loading"
+            ? { duration: 8, repeat: Infinity, ease: "linear" }
+            : { duration: 20, repeat: Infinity, ease: "linear" }
+        }
+      />
 
-        {/* orbit rings */}
-        {rings.map((ring, i) => (
-          <g key={i}>
-            <circle
-              cx={cx}
-              cy={cy}
-              r={ring.r}
-              stroke={cfg.color}
-              strokeWidth={0.75}
-              strokeOpacity={ring.opacity * 0.5}
-              strokeDasharray={`${ring.dashLen} ${ring.dashGap}`}
-            >
-              {!reduced && (
-                <animateTransform
-                  attributeName="transform"
-                  type="rotate"
-                  from={`0 ${cx} ${cy}`}
-                  to={`${ring.rotateDir * 360} ${cx} ${cy}`}
-                  dur={`${cfg.pulseSpeed * (2.5 + i * 0.7)}s`}
-                  repeatCount="indefinite"
-                />
-              )}
-            </circle>
-            {/* orbit node */}
-            <circle r={2.5} fill={cfg.color} opacity={ring.opacity}>
-              {!reduced && (
-                <animateMotion
-                  dur={`${cfg.pulseSpeed * (2.5 + i * 0.7)}s`}
-                  repeatCount="indefinite"
-                  path={`M ${cx + ring.r} ${cy} A ${ring.r} ${ring.r} 0 1 ${ring.rotateDir > 0 ? 0 : 1} ${cx + ring.r - 0.001} ${cy}`}
-                />
-              )}
-            </circle>
-          </g>
-        ))}
+      <motion.span
+        className="orbit-ring orbit-ring-secondary"
+        aria-hidden="true"
+        animate={reducedMotion ? undefined : { rotate: [360, 0] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+      />
 
-        {/* crest medallion */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={crestR}
-          fill="rgba(8,5,1,0.97)"
-          stroke={cfg.color}
-          strokeWidth={1.5}
-          filter={`url(#glow-${state})`}
-        />
-
-        {crestSrc ? (
-          <image
-            href={crestSrc}
-            x={cx - crestR * 0.8}
-            y={cy - crestR * 0.8}
-            width={crestR * 1.6}
-            height={crestR * 1.6}
-            style={{ borderRadius: "50%" }}
+      {showRouteArcs && (
+        <svg
+          className="orbit-route-layer"
+          viewBox="0 0 240 240"
+          aria-hidden="true"
+        >
+          <motion.path
+            d="M38 142 C80 40, 160 40, 202 142"
+            className="orbit-route orbit-route-one"
+            initial={reducedMotion ? false : { pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{
+              duration: mode === "hero" ? 1.3 : 0.8,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           />
-        ) : (
-          <text
-            x={cx}
-            y={cy + size * 0.032}
-            textAnchor="middle"
-            fontSize={size * 0.13}
-            fontFamily="'Playfair Display', Georgia, serif"
-            fontWeight={700}
-            fill={cfg.color}
-          >
-            M
-          </text>
-        )}
+          <motion.path
+            d="M52 168 C96 92, 144 92, 188 168"
+            className="orbit-route orbit-route-two"
+            initial={reducedMotion ? false : { pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 0.7 }}
+            transition={{
+              delay: 0.18,
+              duration: mode === "hero" ? 1.15 : 0.75,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          />
+        </svg>
+      )}
 
-        {/* pulse ring */}
-        {!reduced && (
-          <circle cx={cx} cy={cy} r={crestR} stroke={cfg.color} strokeWidth={1} fill="none">
-            <animate
-              attributeName="r"
-              values={`${crestR};${crestR * 1.6};${crestR}`}
-              dur={animDuration}
-              repeatCount="indefinite"
+      {showNodes && (
+        <span className="orbit-node-layer" aria-hidden="true">
+          {nodes.map((_, index) => (
+            <motion.span
+              key={index}
+              className="orbit-node"
+              style={
+                {
+                  "--node-index": index,
+                  "--node-count": nodeCount,
+                } as React.CSSProperties
+              }
+              initial={reducedMotion ? false : { scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                delay: 0.12 + index * 0.055,
+                duration: 0.45,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             />
-            <animate
-              attributeName="stroke-opacity"
-              values={`${cfg.glowIntensity};0;${cfg.glowIntensity}`}
-              dur={animDuration}
-              repeatCount="indefinite"
+          ))}
+        </span>
+      )}
+
+      {showDataSegments && segments.length > 0 && (
+        <span className="orbit-segment-layer" aria-hidden="true">
+          {segments.slice(0, 7).map((segment, index) => (
+            <span
+              key={segment.id}
+              className={clsx(
+                "orbit-segment",
+                `orbit-${toInteractionState(segment.state ?? "idle")}`
+              )}
+              style={
+                {
+                  "--segment-index": index,
+                  "--segment-count": Math.min(segments.length, 7),
+                } as React.CSSProperties
+              }
             />
-          </circle>
-        )}
-      </svg>
+          ))}
+        </span>
+      )}
+
+      <motion.span
+        className="orbit-crest-shell"
+        initial={reducedMotion ? false : { opacity: 0, scale: 0.94, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{
+          duration: mode === "hero" ? 0.95 : 0.62,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      >
+        <Image
+          src={crestSrc ?? CREST_SRC}
+          alt="The Milano Seal canonical M feather crest"
+          width={420}
+          height={420}
+          priority={mode === "hero"}
+          className="orbit-crest-img"
+        />
+      </motion.span>
+
+      <span className="orbit-sweep" aria-hidden="true" />
 
       {showLabel && (
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: size * 0.08,
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontWeight: 600,
-              color: cfg.color,
-              letterSpacing: "0.05em",
-            }}
-          >
-            {cfg.label}
-          </div>
-          <div
-            style={{
-              fontSize: size * 0.065,
-              color: "rgba(198,165,90,0.55)",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              marginTop: 2,
-            }}
-          >
-            {cfg.sublabel}
-          </div>
-        </div>
+        <span className="orbit-label" aria-hidden="true">{label}</span>
       )}
-    </div>
+    </button>
   );
 }

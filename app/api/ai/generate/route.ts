@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const role = roleFromEmail(user.email);
-    if (role !== "operator" && role !== "admin") {
+    if (!["founder_admin", "admin_operator"].includes(role)) {
       try {
         await audit({
           event: "resource.access.denied",

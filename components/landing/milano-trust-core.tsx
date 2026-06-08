@@ -132,7 +132,7 @@ export function MilanoTrustCore() {
             </p>
             <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
             <p className="text-white/55 text-sm max-w-xs leading-relaxed">
-              Six pillars of deterministic execution for international document success.
+              International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -158,7 +158,7 @@ export function MilanoTrustCore() {
               Milano Trust Core
             </h2>
             <p className="text-white/50 text-sm leading-relaxed">
-              Six pillars of deterministic execution for international document success.
+              International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
             </p>
           </motion.div>
 

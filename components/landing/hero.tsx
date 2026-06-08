@@ -83,7 +83,6 @@ export function Hero() {
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6)
   const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100]);
 
   return (
@@ -91,9 +90,7 @@ export function Hero() {
       ref={ref}
       className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
-      {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
-      {/* Vault ambient — radiates from globe side (right) across text (left) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(circle at 65% 50%, rgba(212,175,55,0.05) 0%, rgba(16,16,20,0) 65%)" }}
@@ -112,10 +109,9 @@ export function Hero() {
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
 
-          {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
+          {/* LEFT: copy */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
-            {/* Credential badge */}
             <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
               <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 max-w-fit [isolation:isolate]">
                 <span className="relative flex h-2 w-2 flex-shrink-0">
@@ -128,7 +124,6 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Headline */}
             <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-3">
               <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[1] ? " is-visible" : ""}`}>
                 Sealing Trust
@@ -138,22 +133,18 @@ export function Hero() {
               </span>
             </h1>
 
-            {/* Subtitle — separate line, lighter weight */}
             <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-white/70 font-normal mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
               U.S. Document Execution for International Use
             </p>
 
-            {/* Body */}
             <p className={`ms-hero-line text-sm md:text-base text-white/55 mb-3 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            {/* Subtext */}
             <p className={`ms-hero-line text-sm text-white/50 mb-10 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
             </p>
 
-            {/* CTAs */}
             <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
@@ -171,7 +162,6 @@ export function Hero() {
               </Link>
             </div>
 
-            {/* Trust credential strip */}
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
                 {[
