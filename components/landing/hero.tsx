@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import OrbitalEngine from "@/components/ui/OrbitalEngine";
+import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 
 const INIT_PHRASES = [
@@ -83,7 +83,6 @@ export function Hero() {
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // badge(0) h1×2(1,2) support(3) subtitle(4) subtext(5) CTAs(6)
   const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100]);
 
   return (
@@ -91,7 +90,6 @@ export function Hero() {
       ref={ref}
       className="relative min-h-screen lg:h-screen pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
-      {/* Background */}
       <div className="absolute inset-0 bg-[#050507]" />
       <div
         className="absolute inset-0 pointer-events-none"
@@ -110,7 +108,7 @@ export function Hero() {
       >
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
 
-          {/* LEFT: Data Terminal */}
+          {/* LEFT: copy */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
             <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
@@ -192,7 +190,7 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: Kinetic Core — PNG Orb */}
+          {/* RIGHT: 3D Globe */}
           <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -200,10 +198,10 @@ export function Hero() {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center w-full"
             >
-              <OrbitalEngine />
+              <GlobalTrustCoreHero />
             </motion.div>
 
-            {/* Founder strip — desktop only, 2 lines max */}
+            {/* Founder strip — desktop only */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
