@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { roleFromEmail } from "@/lib/rbac";
+import { assertPaymentConfirmed } from "@/lib/payments/paymentGate";
 
 export const runtime = "nodejs";
 
@@ -35,12 +36,22 @@ export async function POST(
     );
   const { data: deal, error: dealErr } = await adminClient
     .from("deals")
-    .select("id, deal_id, deal_status")
+    .select("id, deal_id, deal_status, payment_status, amount_due, amount_paid")
     .eq(isUuid ? "id" : "deal_id", id)
     .single();
 
   if (dealErr || !deal) {
     return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+  }
+
+  // Payment gate — release is blocked until payment is fully confirmed
+  try {
+    assertPaymentConfirmed(deal, "release");
+  } catch {
+    return NextResponse.json(
+      { error: "Payment must be confirmed before documents can be released." },
+      { status: 402 },
+    );
   }
 
   const previousStatus = deal.deal_status;
