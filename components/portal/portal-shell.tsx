@@ -278,7 +278,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <main className="ps-content">{children}</main>
+        <main className="ps-content" style={{ minWidth: 0, overflowX: "hidden" }}>{children}</main>
       </div>
     </div>
   );
