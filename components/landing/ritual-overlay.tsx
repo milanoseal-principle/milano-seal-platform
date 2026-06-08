@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 
 /* ─── Geographic nodes ──────────────────────────────────────── */
 const NODES: [number, number][] = [
@@ -385,14 +386,23 @@ export function RitualOverlay() {
             <span className="ritual-overlay__ring ro-ring-b" />
             <span className="ritual-overlay__ring ro-ring-a" />
 
-            {/* Seal disc */}
+            {/* Seal PNG */}
             <div className={[
               "ritual-overlay__seal-disc",
               discBorn                        ? "ro-disc-born"    : "",
               discBreathe && !vaultLocked     ? "ro-disc-breathe" : "",
               vaultLocked                     ? "vault-flash"     : "",
-            ].filter(Boolean).join(" ")}>
-              <span className="ritual-overlay__metallic-sweep" aria-hidden="true" />
+            ].filter(Boolean).join(" ")}
+              style={{ background: "transparent", border: "none", boxShadow: "none", overflow: "visible" }}
+            >
+              <Image
+                src="/milano-seal-orb-v2.png"
+                alt="The Milano Seal"
+                width={200}
+                height={200}
+                priority
+                style={{ objectFit: "contain", width: "100%", height: "100%" }}
+              />
             </div>
 
           </div>
