@@ -4,8 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
-
+import OrbitalEngine from "@/components/ui/OrbitalEngine";
 
 const INIT_PHRASES = [
   "Initializing International Execution Environment...",
@@ -82,7 +81,6 @@ export function Hero() {
   });
   const y       = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
   const heroVisible = useHeroReveal([120, 280, 440, 600, 760, 920, 1100]);
 
   return (
@@ -190,7 +188,7 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: 3D Globe */}
+          {/* RIGHT: PNG Orb — canonical visual on all screen sizes */}
           <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -198,7 +196,7 @@ export function Hero() {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center w-full"
             >
-              <GlobalTrustCoreHero />
+              <OrbitalEngine />
             </motion.div>
 
             {/* Founder strip — desktop only */}
