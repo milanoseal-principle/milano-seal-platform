@@ -2963,3 +2963,13 @@ h4 {
   --ms-font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
   --ms-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+
+/* ── Milano Orb Assistant ── */
+.ms-orb-halo-breathe {
+  animation: ms-orb-halo 4s ease-in-out infinite;
+}
+@keyframes ms-orb-halo {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  50% { opacity: 0.38; transform: scale(1.04); }
+}
