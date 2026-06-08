@@ -11,7 +11,7 @@ const BLOCKED_FIELDS = [
   "BLUENOTARY_API_KEY", "SUPABASE_SERVICE_ROLE",
 ];
 
-const ADMIN_ROLES = new Set(["admin", "operator", "superadmin", "founder_admin", "admin_operator", "ops_manager"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 const GROUPS = [
   { id: "matter", label: "Matter", actions: ["Matter Registry", "Create Matter", "Review Active Matter", "Intake Review", "Matter Pipeline"] },

@@ -5,7 +5,7 @@ import { X, Send } from "lucide-react";
 import { OrbMessageBubble, OrbMessage, OrbAction } from "./OrbMessageBubble";
 
 export interface MilanoConciergeOrbProps {
-  role: "founder_admin" | "operator" | "client" | "va";
+  role: "founder_admin" | "admin_operator" | "virtual_assistant" | "client";
   activeMatterId?: string | null;
   activeMatterStatus?: string | null;
   userName?: string | null;
@@ -27,11 +27,11 @@ function getRoleBadgeLabel(role: MilanoConciergeOrbProps["role"]): string {
   switch (role) {
     case "founder_admin":
       return "Founder Admin";
-    case "operator":
-      return "Operator";
+    case "admin_operator":
+      return "Admin Operator";
     case "client":
       return "Client";
-    case "va":
+    case "virtual_assistant":
       return "Virtual Assistant";
   }
 }
@@ -45,13 +45,13 @@ function getWelcomeMessage(
   switch (role) {
     case "founder_admin":
       return `Welcome back${name}. All systems nominal. What do you need?`;
-    case "operator":
+    case "admin_operator":
       return "Concierge ready. Active matters and courier routes are live.";
     case "client":
       return activeMatterStatus
         ? `Welcome${name}. Your matter is being handled with care. Current status: ${activeMatterStatus.replace(/_/g, " ")}.`
         : `Welcome${name}. Your matter is being handled with care.`;
-    case "va":
+    case "virtual_assistant":
       return "VA mode active. Compliance checks and follow-up queues are ready.";
   }
 }

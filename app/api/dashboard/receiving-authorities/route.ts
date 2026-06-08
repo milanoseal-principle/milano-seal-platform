@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ authorities: data ?? [] });
 }
 
-const WRITE_ROLES = new Set(["founder_admin", "admin", "admin_operator"]);
+const WRITE_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function POST(req: NextRequest) {
   const { role } = await requireDashboardAccess();

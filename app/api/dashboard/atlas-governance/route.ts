@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_ROLES = new Set(["founder_admin", "admin", "admin_operator", "ops_manager"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 async function requireFounderAdmin() {
   const supabase = await createClient();

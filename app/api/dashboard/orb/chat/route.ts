@@ -37,7 +37,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (
     !role ||
-    !['founder_admin', 'operator', 'client', 'va'].includes(role)
+    !['founder_admin', 'admin_operator', 'virtual_assistant', 'client'].includes(role)
   ) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   }

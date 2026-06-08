@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
-const ADMIN_ROLES = new Set(["admin", "operator", "superadmin", "founder_admin", "admin_operator", "ops_manager"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function POST(_req: Request, { params }: { params: Promise<{ matterId: string }> }) {
   const { matterId } = await params;

@@ -1,6 +1,6 @@
 export interface OrbChatRequest {
   message: string;
-  role: 'founder_admin' | 'operator' | 'client' | 'va';
+  role: 'founder_admin' | 'admin_operator' | 'virtual_assistant' | 'client';
   matter_id?: string | null;
 }
 
@@ -61,7 +61,7 @@ function helpByRole(role: OrbChatRequest['role']): string {
         '3. RON session oversight and signing room access\n' +
         '4. Courier tracking and apostille processing status'
       );
-    case 'operator':
+    case 'admin_operator':
       return (
         'As operator, I can help you with:\n' +
         '1. Active matter status and stage progression\n' +
@@ -77,7 +77,7 @@ function helpByRole(role: OrbChatRequest['role']): string {
         '3. Your notarization session details\n' +
         '4. Apostille processing updates'
       );
-    case 'va':
+    case 'virtual_assistant':
       return (
         'In VA mode, I can help you with:\n' +
         '1. Matter status checks\n' +
@@ -96,7 +96,7 @@ export function routeOrbQuery(
   const { role, matter_id } = req;
 
   // VA restricted check — must run before any payment/signing patterns
-  if (role === 'va' && isVaRestricted(msg)) {
+  if (role === 'virtual_assistant' && isVaRestricted(msg)) {
     return { reply: 'That action requires operator authorization.' };
   }
 

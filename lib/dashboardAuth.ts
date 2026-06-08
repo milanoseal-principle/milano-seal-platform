@@ -3,14 +3,8 @@ import { redirect } from "next/navigation";
 
 const ADMIN_ROLES = new Set([
   "founder_admin",
-  "admin",
   "admin_operator",
-  "ops_manager",
-  "finance",
-  "execution_coordinator",
-  "apostille_coordinator",
-  "finance_operator",
-  "client_support",
+  "virtual_assistant",
 ]);
 
 export async function requireDashboardAccess(): Promise<{

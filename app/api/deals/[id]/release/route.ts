@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const role = roleFromEmail(user.email);
-  if (role !== "admin" && role !== "operator") {
+  if (!["founder_admin", "admin_operator"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

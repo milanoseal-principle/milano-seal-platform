@@ -5,7 +5,7 @@ import { track, ShippoTrack } from "@/lib/shippo";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ROLES = new Set(["admin", "ops_manager"]);
+const ALLOWED_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function GET(
   _req: NextRequest,

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
-const ADMIN_ROLES = new Set(["admin", "operator", "superadmin", "founder_admin", "admin_operator", "ops_manager"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 const SAFE_PARTNER_FIELDS = "id, name, partner_type, county, city, state, service_radius_miles, credential_status, availability_status, last_used_at, active, created_at";
 

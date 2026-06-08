@@ -5,7 +5,7 @@ import { QA_SELECT } from "@/lib/execution-qa/projection";
 
 export const runtime = "nodejs";
 
-const ADMIN_ROLES = new Set(["admin", "operator", "superadmin", "founder_admin", "admin_operator", "ops_manager"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 export async function GET() {
   const serverClient = await createClient();

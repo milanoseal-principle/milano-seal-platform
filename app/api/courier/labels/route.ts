@@ -13,7 +13,7 @@ import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ROLES = new Set(["admin", "ops_manager"]);
+const ALLOWED_ROLES = new Set(["founder_admin", "admin_operator"]);
 
 const BLOCKED_STATUSES = new Set(["cancelled", "refunded"]);
 
