@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
-import OrbitalEngine from "@/components/ui/OrbitalEngine";
+import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
 
 const INIT_PHRASES = [
   "Initializing International Execution Environment...",
@@ -175,7 +175,7 @@ export function Hero() {
                       {icon === "monitor" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
                       {icon === "check" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>}
                       {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
-                      {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                      {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height"11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
                       {icon === "eye" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                     </div>
                     <span className="font-mono text-[8px] text-[#4A4A4A] tracking-wide leading-tight text-center whitespace-pre-line group-hover:text-[#6A6A6A] transition-colors">
@@ -188,7 +188,7 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: PNG Orb — canonical visual on all screen sizes */}
+          {/* RIGHT: 3D Globe with Florida→world route arcs */}
           <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -196,7 +196,7 @@ export function Hero() {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex items-center justify-center w-full"
             >
-              <OrbitalEngine />
+              <GlobalTrustCoreHero />
             </motion.div>
 
             {/* Founder strip — desktop only */}
