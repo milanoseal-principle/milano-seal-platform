@@ -103,6 +103,16 @@ interface QuickActionSummary {
     overdueVaTaskCount: number;
     no_data: boolean;
   };
+  role?: string;
+  matterContext?: {
+    id?: string;
+    matter_ref?: string;
+    matter_status?: string;
+    payment_status?: string;
+    release_status?: string;
+    destination_country?: string;
+    document_type?: string;
+  } | null;
 }
 
 interface SlaAlert {
@@ -903,6 +913,11 @@ export default function Dashboard() {
       <OperatorActionPanel
         isOpen={actionPanelOpen}
         onClose={() => setActionPanelOpen(false)}
+        role={(quickActionsData?.role as import('@/lib/dashboard/quickActionTypes').QuickActionRole) ?? 'founder_admin'}
+        matterId={selectedMatterId ?? undefined}
+        matterState={quickActionsData?.matterContext?.matter_status}
+        paymentStatus={quickActionsData?.matterContext?.payment_status}
+        releaseStatus={quickActionsData?.matterContext?.release_status}
       />
     </>
   );
