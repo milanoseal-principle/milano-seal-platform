@@ -15,7 +15,7 @@ export function MilanoSealChatLauncher() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-mono select-none">
+    <div className="fixed bottom-6 left-6 z-50 font-mono select-none">
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button

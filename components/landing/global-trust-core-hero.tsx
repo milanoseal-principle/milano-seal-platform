@@ -1,10 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 const FLORIDA = { x: 108, y: 190 };
 
-const DESTINATIONS = [
+type HagueStatus = "HAGUE" | "AUTHORITY_REVIEW" | "CONSULAR_REVIEW";
+
+interface Destination {
+  id: string;
+  label: string;
+  x: number; y: number;
+  dur: number; startDelay: number;
+  framework: string;
+  seoIntent: string;
+  isoCode: string;
+  routeLabel: string;
+  hagueStatus: HagueStatus;
+  useCases: string[];
+  safeSummary: string;
+}
+
+const DESTINATIONS: Destination[] = [
   {
     id: "italy",
     label: "Italy",
@@ -13,6 +30,10 @@ const DESTINATIONS = [
     framework: "HAGUE CONVENTION ROUTING",
     seoIntent: "/jurisdictions/italy-apostille-coordination",
     isoCode: "JURISDICTION_ISO_IT",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Citizenship", "POA", "Affidavit", "Civil Records"],
+    safeSummary: "Florida-origin documents routed for Italian receiving-authority review.",
   },
   {
     id: "spain",
@@ -22,6 +43,36 @@ const DESTINATIONS = [
     framework: "HAGUE CONVENTION ROUTING",
     seoIntent: "/jurisdictions/spain-international-release-coordination",
     isoCode: "JURISDICTION_ISO_ES",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Real Estate", "Residency", "POA", "Corporate"],
+    safeSummary: "Structured U.S. execution support for Spanish destination use.",
+  },
+  {
+    id: "portugal",
+    label: "Portugal",
+    x: 192, y: 134,
+    dur: 2.9, startDelay: 1.1,
+    framework: "HAGUE CONVENTION ROUTING",
+    seoIntent: "/jurisdictions/portugal-apostille-coordination",
+    isoCode: "JURISDICTION_ISO_PT",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Residency", "D8 Visa", "POA", "Banking"],
+    safeSummary: "U.S. document execution support for Portugal residency and private-client matters.",
+  },
+  {
+    id: "greece",
+    label: "Greece",
+    x: 282, y: 118,
+    dur: 2.7, startDelay: 0.9,
+    framework: "HAGUE CONVENTION ROUTING",
+    seoIntent: "/jurisdictions/greece-apostille-coordination",
+    isoCode: "JURISDICTION_ISO_GR",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Citizenship", "Property", "Inheritance", "Maritime"],
+    safeSummary: "Boutique U.S. execution coordination for Greek international matters.",
   },
   {
     id: "brazil",
@@ -31,6 +82,10 @@ const DESTINATIONS = [
     framework: "HAGUE CONVENTION ROUTING",
     seoIntent: "/jurisdictions/brazil-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_BR",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Corporate", "Medical", "POA", "Academic"],
+    safeSummary: "Florida-origin documents routed for Brazilian receiving-authority review.",
   },
   {
     id: "uae",
@@ -40,6 +95,10 @@ const DESTINATIONS = [
     framework: "CONSULAR AUTHENTICATION TRACK",
     seoIntent: "/apostille/uae",
     isoCode: "JURISDICTION_ISO_AE",
+    routeLabel: "Consular Legalization Review",
+    hagueStatus: "CONSULAR_REVIEW",
+    useCases: ["Corporate", "Private Wealth", "Commercial", "Authentication"],
+    safeSummary: "Non-standard authentication and consular review may apply.",
   },
   {
     id: "mexico",
@@ -49,10 +108,58 @@ const DESTINATIONS = [
     framework: "HAGUE CONVENTION ROUTING",
     seoIntent: "/jurisdictions/mexico-hague-convention-routing",
     isoCode: "JURISDICTION_ISO_MX",
+    routeLabel: "Authority Review Required",
+    hagueStatus: "AUTHORITY_REVIEW",
+    useCases: ["Real Estate", "Family", "Corporate", "Translation"],
+    safeSummary: "Cross-border U.S. execution coordination requiring destination-specific review.",
+  },
+  {
+    id: "uk",
+    label: "UK",
+    x: 228, y: 88,
+    dur: 2.5, startDelay: 0.5,
+    framework: "HAGUE CONVENTION ROUTING",
+    seoIntent: "/jurisdictions/uk-apostille-coordination",
+    isoCode: "JURISDICTION_ISO_GB",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Corporate", "Estate", "Academic", "POA"],
+    safeSummary: "U.S. document execution support for United Kingdom destination use.",
+  },
+  {
+    id: "canada",
+    label: "Canada",
+    x: 110, y: 112,
+    dur: 1.5, startDelay: 2.5,
+    framework: "AUTHORITY REVIEW REQUIRED",
+    seoIntent: "/jurisdictions/canada-authentication",
+    isoCode: "JURISDICTION_ISO_CA",
+    routeLabel: "Authentication Review",
+    hagueStatus: "AUTHORITY_REVIEW",
+    useCases: ["Corporate", "Academic", "Immigration", "Identity"],
+    safeSummary: "Destination-specific review required based on document type and receiving authority.",
+  },
+  {
+    id: "colombia",
+    label: "Colombia",
+    x: 96, y: 252,
+    dur: 2.2, startDelay: 1.8,
+    framework: "HAGUE CONVENTION ROUTING",
+    seoIntent: "/jurisdictions/colombia-apostille-coordination",
+    isoCode: "JURISDICTION_ISO_CO",
+    routeLabel: "Hague Apostille Route",
+    hagueStatus: "HAGUE",
+    useCases: ["Family", "Real Estate", "Corporate", "POA"],
+    safeSummary: "U.S. execution coordination for Colombian destination matters.",
   },
 ];
 
-// Typography scramble — characters cycle before settling on final text
+function hagueColor(status: HagueStatus) {
+  if (status === "HAGUE") return { dot: "#D4AF37", badge: "#D4AF37", arc: "#C6A55A" };
+  if (status === "AUTHORITY_REVIEW") return { dot: "#C8A03E", badge: "#C8A03E", arc: "#B89038" };
+  return { dot: "#B8842A", badge: "#B8842A", arc: "#A87828" };
+}
+
 function useScramble(text: string, active: boolean, tick: number): string {
   const [display, setDisplay] = useState(text);
   useEffect(() => {
@@ -150,6 +257,10 @@ const ALL_DOTS = [
   ...FRONT_DOTS.map(d => ({ ...d, cx: d.cx + 400 })),
 ];
 
+// Geodesic lat/lon lines (viewBox 0 0 400 400, sphere cx=200 cy=200 r=193)
+const LAT_YS = [110, 145, 172, 200, 228, 255, 290];
+const LON_ANGLES = [0, 30, 60, 90, 120, 150];
+
 export function GlobalTrustCoreHero() {
   const [phase, setPhase] = useState<"idle" | "settled" | "arcs" | "rotating">("idle");
   const [arcsDone, setArcsDone] = useState(false);
@@ -160,7 +271,7 @@ export function GlobalTrustCoreHero() {
 
   const selectedDest = DESTINATIONS.find(d => d.id === selectedId) ?? null;
   const scrambleText = selectedDest
-    ? `${selectedDest.label.toUpperCase()} // ${selectedDest.framework}`
+    ? `FLORIDA → ${selectedDest.label.toUpperCase()}`
     : "";
   const scrambledText = useScramble(scrambleText, !!selectedDest, scrambleTick);
 
@@ -197,14 +308,11 @@ export function GlobalTrustCoreHero() {
 
   const isSettled  = phase !== "idle";
   const showArcs   = phase === "arcs" || phase === "rotating";
-  // Rotation pauses while a node is focused
   const isRotating = phase === "rotating" && !selectedId;
 
-  // Subtle camera nudge toward the selected node
   const nudgeX = selectedDest ? ((selectedDest.x - 200) / 200) * 2.5 : 0;
   const nudgeY = selectedDest ? ((selectedDest.y - 200) / 200) * 1.5 : 0;
 
-  // Popover placement — flip to left when node is in right hemisphere
   const popLeft = selectedDest
     ? `${Math.min(80, Math.max(5, (selectedDest.x / 400) * 100))}%`
     : "50%";
@@ -221,10 +329,8 @@ export function GlobalTrustCoreHero() {
       aria-label="Global document execution network"
       onClick={() => setSelectedId(null)}
     >
-      {/* Gold bloom behind sphere */}
       <div className="ms-globe-bloom" />
 
-      {/* Glass sphere — nudges toward selected node */}
       <div
         className={[
           "ms-globe-sphere",
@@ -237,14 +343,40 @@ export function GlobalTrustCoreHero() {
           position: "relative",
         }}
       >
-        {/* Atmospheric grid */}
-        <svg viewBox="0 0 400 400" className="ms-globe-grid-svg ms-globe-grid-svg--defocus" aria-hidden="true">
-          <ellipse cx="200" cy="200" rx="193" ry="40"  fill="none" stroke="#C6A55A" strokeWidth="0.4" opacity="0.10" />
-          <ellipse cx="200" cy="145" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
-          <ellipse cx="200" cy="255" rx="171" ry="32"  fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07" />
-          <ellipse cx="200" cy="200" rx="40"  ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.08" />
-          <ellipse cx="200" cy="200" rx="103" ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.2" opacity="0.05" />
-          <ellipse cx="200" cy="200" rx="156" ry="193" fill="none" stroke="#C6A55A" strokeWidth="0.2" opacity="0.04" />
+        {/* Geodesic grid — latitude + longitude lines */}
+        <svg
+          viewBox="0 0 400 400"
+          className="ms-globe-grid-svg ms-globe-grid-svg--defocus"
+          aria-hidden="true"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "hidden" }}
+        >
+          <defs>
+            <clipPath id="gtc-sphere-clip">
+              <circle cx="200" cy="200" r="193" />
+            </clipPath>
+          </defs>
+          <g clipPath="url(#gtc-sphere-clip)" opacity="1">
+            {/* Latitude ellipses */}
+            {LAT_YS.map(y => {
+              const ratio = Math.sqrt(Math.max(0, 1 - Math.pow((y - 200) / 193, 2)));
+              const rx = 193 * ratio;
+              const ry = Math.max(4, 22 * ratio);
+              return rx > 5 ? (
+                <ellipse key={`lat-${y}`} cx="200" cy={y} rx={rx} ry={ry}
+                  fill="none" stroke="#C6A55A" strokeWidth="0.35" opacity="0.09" />
+              ) : null;
+            })}
+            {/* Longitude meridians */}
+            {LON_ANGLES.map(a => (
+              <ellipse key={`lon-${a}`} cx="200" cy="200" rx="12" ry="193"
+                fill="none" stroke="#C6A55A" strokeWidth="0.3" opacity="0.07"
+                transform={`rotate(${a}, 200, 200)`} />
+            ))}
+          </g>
+          {/* Equator highlight */}
+          <ellipse cx="200" cy="200" rx="193" ry="40"
+            fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.12"
+            clipPath="url(#gtc-sphere-clip)" />
         </svg>
 
         {/* Continent dots */}
@@ -289,6 +421,7 @@ export function GlobalTrustCoreHero() {
             filter="url(#gtc-glow-node)"
             opacity={isSettled ? 1 : 0}
             className={`ms-globe-origin${isSettled ? " ms-globe-origin--glow" : ""}`}
+            style={{ animation: isSettled && !reducedMotion ? "msOriginPulse 5s ease-in-out infinite" : "none" }}
           />
           <circle
             cx={FLORIDA.x} cy={FLORIDA.y} r="13"
@@ -296,40 +429,64 @@ export function GlobalTrustCoreHero() {
             opacity={isSettled ? 0.28 : 0}
             className="ms-globe-origin-ring"
           />
+          {/* Bright inner core */}
           {isSettled && (
-            <text x={FLORIDA.x + 19} y={FLORIDA.y + 3} className="ms-globe-location-text">
-              FLORIDA ORIGIN
-            </text>
+            <circle cx={FLORIDA.x} cy={FLORIDA.y} r="2" fill="#F5F1E8" opacity="0.9" />
+          )}
+          {/* Florida label — left of node to avoid crest overlap */}
+          {isSettled && (
+            <>
+              <text x={FLORIDA.x - 16} y={FLORIDA.y - 4} className="ms-globe-location-text"
+                textAnchor="end" style={{ fontSize: "7.5px", letterSpacing: "0.08em" }}>
+                FLORIDA
+              </text>
+              <text x={FLORIDA.x - 16} y={FLORIDA.y + 6} className="ms-globe-location-text"
+                textAnchor="end" style={{ fontSize: "6px", opacity: 0.5, letterSpacing: "0.06em" }}>
+                ORIGIN
+              </text>
+            </>
           )}
 
           {/* Per-route */}
           {DESTINATIONS.map((dest, i) => {
-            const path      = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
+            const { arc, dot } = hagueColor(dest.hagueStatus);
+            const path       = makeCurvedPath(FLORIDA, { x: dest.x, y: dest.y });
             const isSelected = selectedId === dest.id;
             const isDimmed   = !!selectedId && !isSelected;
 
             const ghostOpacity  = isDimmed ? 0.015 : (showArcs ? 0.09 : 0);
             const fringeOpacity = isDimmed ? 0      : (showArcs ? 0.35 : 0);
             const fringeOpacity2 = isDimmed ? 0     : (showArcs ? 0.22 : 0);
-            const bodyStroke    = isSelected ? "#F0C84A" : "#C6A55A";
+            const bodyStroke    = isSelected ? "#F0C84A" : arc;
             const headStroke    = isSelected ? "#FFFFFF" : "#FFF5DC";
             const bodyFilter    = isSelected ? "url(#gtc-glow-arc-bright)" : "url(#gtc-glow-arc)";
             const bloomOpacity  = arcsDone ? (isDimmed ? 0.2 : 1) : 0;
 
             return (
               <g key={dest.id}>
-                {/* Chromatic fringes */}
                 <path d={path} stroke="#F4E5B8" strokeWidth="0.85" fill="none"
                   opacity={fringeOpacity} transform="translate(-1,0)"
                   style={{ transition: "opacity 0.5s ease" }} />
                 <path d={path} stroke="#9B9488" strokeWidth="0.85" fill="none"
                   opacity={fringeOpacity2} transform="translate(1,0)"
                   style={{ transition: "opacity 0.5s ease" }} />
-
-                {/* Ghost base */}
-                <path d={path} stroke="#C6A55A" strokeWidth="0.6" fill="none"
+                <path d={path} stroke={arc} strokeWidth="0.6" fill="none"
                   opacity={ghostOpacity}
                   style={{ transition: "opacity 0.4s ease" }} />
+
+                {/* Shimmer sweep — from GlobalDocumentGlobe */}
+                {showArcs && !reducedMotion && !isDimmed && (
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke="#E3C46F"
+                    strokeWidth="1"
+                    strokeDasharray="0.18 0.82"
+                    pathLength="1"
+                    opacity="0"
+                    style={{ animation: `msRouteSweep 9s ease-in-out ${dest.startDelay + 2.5}s infinite` }}
+                  />
+                )}
 
                 {/* Comet body */}
                 <path
@@ -360,7 +517,6 @@ export function GlobalTrustCoreHero() {
                   } as React.CSSProperties}
                 />
 
-                {/* animateMotion particle */}
                 {showArcs && !reducedMotion && !isDimmed && (
                   <circle r="2.2" fill="#F4E5B8" opacity="0.92">
                     <animateMotion dur={`${dest.dur}s`} begin={`${dest.startDelay}s`} repeatCount="indefinite">
@@ -372,13 +528,13 @@ export function GlobalTrustCoreHero() {
                 {/* Destination bloom */}
                 <circle
                   cx={dest.x} cy={dest.y} r="18"
-                  fill="#D4AF37" filter="url(#gtc-bloom-node)"
+                  fill={dot} filter="url(#gtc-bloom-node)"
                   opacity={bloomOpacity}
                   className={arcsDone ? "ms-globe-dest-bloom" : ""}
                   style={{ transition: "opacity 0.5s ease" }}
                 />
 
-                {/* Clickable node — semantic SEO attributes, cinematic focus */}
+                {/* Clickable node */}
                 <g
                   style={{ cursor: arcsDone ? "pointer" : "default", pointerEvents: "all" }}
                   role={arcsDone ? "button" : undefined}
@@ -389,14 +545,21 @@ export function GlobalTrustCoreHero() {
                   onClick={(e) => { e.stopPropagation(); handleSelect(dest.id); }}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelect(dest.id); }}
                 >
-                  {/* Expanded hit area */}
                   <circle cx={dest.x} cy={dest.y} r="18" fill="transparent" />
 
-                  {/* Node core */}
+                  {/* Outer glow ring */}
+                  <circle
+                    cx={dest.x} cy={dest.y}
+                    r={isSelected ? 10 : 6}
+                    fill={dot} opacity={arcsDone ? (isSelected ? 0.18 : 0.08) : 0}
+                    style={{ transition: "r 0.25s ease, opacity 0.25s ease" }}
+                  />
+
+                  {/* Core */}
                   <circle
                     cx={dest.x} cy={dest.y}
                     r={isSelected ? 5 : 3.5}
-                    fill={isSelected ? "#F0C84A" : "#D4AF37"}
+                    fill={isSelected ? "#F0C84A" : dot}
                     filter="url(#gtc-glow-node)"
                     opacity={arcsDone ? 1 : 0}
                     className={arcsDone
@@ -407,13 +570,17 @@ export function GlobalTrustCoreHero() {
                       transitionDelay: `${i * 120}ms`,
                     }}
                   />
+                  {/* Bright inner */}
+                  {arcsDone && isSelected && (
+                    <circle cx={dest.x} cy={dest.y} r="1.5" fill="#F5F1E8" opacity="0.9" />
+                  )}
 
                   {/* Node ring */}
                   <circle
                     cx={dest.x} cy={dest.y}
                     r={isSelected ? 12 : 8.5}
                     fill="none"
-                    stroke="#C6A55A"
+                    stroke={dot}
                     strokeWidth={isSelected ? 1.2 : 0.7}
                     opacity={arcsDone ? (isSelected ? 0.55 : (isDimmed ? 0.1 : 0.25)) : 0}
                     className="ms-globe-dest-ring"
@@ -434,6 +601,7 @@ export function GlobalTrustCoreHero() {
                         animationDelay: `${i * 80}ms`,
                         opacity: isDimmed ? 0.15 : 1,
                         transition: "opacity 0.35s ease",
+                        fontSize: "8px",
                       }}
                     >
                       {dest.label.toUpperCase()}
@@ -445,70 +613,114 @@ export function GlobalTrustCoreHero() {
           })}
         </svg>
 
-        {/* Glass specular cap */}
         <div className="ms-globe-glass-cap" />
-        {/* Crest glow */}
         <div className="ms-globe-crest-glow" />
-        {/* Milano Seal crest */}
         <div className="ms-globe-crest" aria-hidden="true" />
-        {/* Spotlight */}
         <div className="ms-globe-spotlight" />
       </div>
 
-      {/* Destination popover — stage level so sphere overflow:hidden does not clip it */}
-      {selectedDest && (
-        <div
-          className="ms-destination-popover hidden md:block"
-          style={{
-            position: "absolute",
-            left: popLeft,
-            top: popTop,
-            transform: popAnchor,
-            zIndex: 50,
-            pointerEvents: "auto",
-          }}
-          data-seo-intent={selectedDest.seoIntent}
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* Rich destination popover — matches GlobalDocumentGlobe style */}
+      {selectedDest && (() => {
+        const { badge } = hagueColor(selectedDest.hagueStatus);
+        return (
           <div
-            className="bg-[#050507]/92 border border-[#D4AF37]/25 rounded-xl px-4 py-3.5 shadow-2xl"
+            className="ms-destination-popover hidden md:block"
             style={{
-              width: "13.5rem",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              animation: "gtc-popover-in 0.2s cubic-bezier(0.16,1,0.3,1) both",
+              position: "absolute",
+              left: popLeft,
+              top: popTop,
+              transform: popAnchor,
+              zIndex: 50,
+              pointerEvents: "auto",
             }}
+            data-seo-intent={selectedDest.seoIntent}
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={() => setSelectedId(null)}
-              className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
-              aria-label="Close"
+            <div
+              style={{
+                width: "min(230px, calc(100vw - 3rem))",
+                background: "rgba(5,5,7,0.97)",
+                border: `1px solid ${badge}38`,
+                borderRadius: 4,
+                padding: "14px 16px 12px",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(212,175,55,0.04)",
+                animation: "gtc-popover-in 0.22s cubic-bezier(0.16,1,0.3,1) both",
+              }}
             >
-              ×
-            </button>
-            <span className="font-mono text-[7px] tracking-[0.32em] uppercase text-[#555] block mb-2.5">
-              DESTINATION VECTOR
-            </span>
-            <p className="font-mono text-[10px] text-[#D4AF37] tracking-wider leading-snug pr-5 min-h-[2.2em]">
-              {scrambledText}
-            </p>
-            <p className="font-mono text-[8px] text-[#383838] tracking-wide mt-2.5">
-              FL ORIGIN → {selectedDest.label.toUpperCase()} VECTOR
-            </p>
+              <button
+                onClick={() => setSelectedId(null)}
+                className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+
+              {/* Header */}
+              <p style={{ color: "#F5F1E8", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>
+                {scrambledText}
+              </p>
+
+              {/* Route badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: selectedDest.hagueStatus === "HAGUE" ? badge : "transparent",
+                  border: selectedDest.hagueStatus !== "HAGUE" ? `1px solid ${badge}` : "none",
+                }} />
+                <span style={{ color: badge, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "monospace" }}>
+                  {selectedDest.routeLabel.toUpperCase()}
+                </span>
+              </div>
+
+              {/* Use cases */}
+              <p style={{ color: "#8A8480", fontSize: 9, marginBottom: 6, fontFamily: "system-ui, sans-serif" }}>
+                {selectedDest.useCases.slice(0, 3).join(" · ")}
+              </p>
+
+              {/* Safe summary */}
+              <p style={{ color: "#555250", fontSize: 8.5, lineHeight: 1.55, marginBottom: 10, fontFamily: "system-ui, sans-serif" }}>
+                {selectedDest.safeSummary}
+              </p>
+
+              {/* CTA */}
+              <Link
+                href="/intake"
+                onClick={() => setSelectedId(null)}
+                style={{
+                  display: "block",
+                  background: "rgba(212,175,55,0.08)",
+                  border: "1px solid rgba(212,175,55,0.30)",
+                  color: "#D4AF37",
+                  fontSize: 8,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "7px 10px",
+                  textAlign: "center",
+                  textDecoration: "none",
+                  borderRadius: 2,
+                  fontFamily: "monospace",
+                  transition: "background 0.2s ease, border-color 0.2s ease",
+                }}
+              >
+                Begin Secure Intake →
+              </Link>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Orbit rings */}
       <div className="ms-orbit-ring ms-orbit-ring--main" />
       <div className="ms-orbit-ring ms-orbit-ring--outer" />
 
-      {/* Label row — updates on selection */}
+      {/* Label row */}
       <div className={`ms-globe-label${isSettled ? " ms-globe-label--visible" : ""}`}>
         <span className="ms-globe-label-text">Global Trust Core™</span>
         <span className="ms-globe-label-sub">
           {selectedDest
-            ? `${selectedDest.label} · ${selectedDest.framework}`
+            ? `${selectedDest.label} · ${selectedDest.routeLabel}`
             : arcsDone
               ? "Hague Route Reviewed · Structured International Release"
               : "Florida Origin · Execution Authority"}
