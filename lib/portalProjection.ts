@@ -41,6 +41,7 @@ export const PORTAL_BLOCKED_FIELDS = [
   "wise_reference",
   "wise_transfer_id",
   "wise_account_id",
+  "wise_payload",
   "stripe_payment_intent_id",
   "stripe_customer_id",
   // Internal notes
@@ -69,12 +70,14 @@ export const PORTAL_BLOCKED_FIELDS = [
   "compliance_flag",
   "compliance_override",
   "review_reason",
-  // Storage paths (signed URLs only)
+  // Storage paths and signing URLs
   "storage_path",
   "file_path",
   "evidence_path",
   "label_url",
   "evidence_url",
+  "full_signing_url",
+  "bn_signing_url",
   // Audit / admin structures
   "audit_logs",
   "admin_actions",
