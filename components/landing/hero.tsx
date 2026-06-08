@@ -107,10 +107,10 @@ export function Hero() {
 
       <motion.div
         style={{ opacity }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-16 py-4 lg:py-0"
+        className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-2 lg:py-0"
       >
         {/* ── Widescreen vault — unified single canvas, two-column on desktop ── */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
 
           {/* LEFT: Data Terminal — badge, headline, CTAs, trust */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
@@ -201,43 +201,34 @@ export function Hero() {
 
           </div>
 
-          {/* RIGHT: Kinetic Core — globe + founder card */}
-          <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-8">
+          {/* RIGHT: Kinetic Core */}
+          <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative gap-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex items-center justify-center"
+              className="relative flex items-center justify-center w-full"
             >
               <OrbitalEngine />
             </motion.div>
 
-            {/* PATCH 4 — Founder SEO Section */}
+            {/* Founder strip — desktop only, 2 lines max */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              style={{ maxWidth: 340, width: "100%", textAlign: "center" }}
+              className="hidden lg:block text-center"
+              style={{ maxWidth: 320 }}
             >
-              <p style={{ color: "#C6A55A", fontSize: 11, letterSpacing: "0.14em", marginBottom: 8, textTransform: "uppercase" }}>
+              <p style={{ color: "#C6A55A", fontSize: 10, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>
                 Founder-Led Document Execution
               </p>
-              <p style={{ color: "rgba(176,176,176,0.8)", fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-                The Milano Seal™ is led by Nicholas Milano, a Florida Notary Public and Remote Online Notary supporting apostille coordination, international document execution, mobile notary requests, witness coordination, and secure release workflows for clients, attorneys, businesses, real estate professionals, healthcare providers, and private clients.
+              <p style={{ color: "rgba(176,176,176,0.6)", fontSize: 12, lineHeight: 1.55, marginBottom: 10 }}>
+                Florida Notary Public &amp; Remote Online Notary. Apostille coordination, international execution, and secure release.
               </p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                <a
-                  href="/founder"
-                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
-                >
-                  Meet the Founder →
-                </a>
-                <a
-                  href="/intake"
-                  style={{ color: "#C6A55A", fontSize: 12, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.4)" }}
-                >
-                  Begin Secure Intake →
-                </a>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <a href="/founder" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Meet the Founder →</a>
+                <a href="/intake" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Begin Intake →</a>
               </div>
             </motion.div>
           </div>
