@@ -13,6 +13,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Mobile / cross-browser baseline ────────────────────────────────────── */
+/* Remove 300ms tap delay on iOS/Android, prevent double-tap zoom on buttons */
+a, button, [role="button"], input, select, textarea {
+  touch-action: manipulation;
+}
+/* Kill blue flash on tap (Android Chrome) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+/* Prevent rubber-band overscroll on body — allow on scrollable children */
+html {
+  overscroll-behavior: none;
+}
+/* CSS variables for safe-area insets (referenced in JS via max()) */
+:root {
+  --sa-top:    env(safe-area-inset-top,    0px);
+  --sa-right:  env(safe-area-inset-right,  0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left:   env(safe-area-inset-left,   0px);
+}
+
 /* Founder card premium animation */
 .founder-card-animated {
   opacity: 0;
