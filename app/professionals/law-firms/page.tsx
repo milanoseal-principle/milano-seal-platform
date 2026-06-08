@@ -107,6 +107,22 @@ export default function LawFirmsPage() {
                 </ul>
               </div>
 
+              {/* Document Governance Section */}
+              <div className="pt-6 border-t border-white/[0.04]">
+                <h2 className="font-serif text-xl font-medium text-white mb-3">
+                  Document Governance for Cross-Border Matters
+                </h2>
+                <p className="text-[#909090] text-sm leading-relaxed mb-4">
+                  The Milano Seal treats every document as part of a controlled lifecycle. Documents are reviewed, routed, executed, tracked, and released through defined status gates so attorneys, professional firms, and private clients can see where a matter stands without exposing internal operational details.
+                </p>
+                <Link
+                  href="/intake"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A]/10 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:bg-[#C6A55A]/20 transition-colors"
+                >
+                  Submit Professional Matter <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+
               {/* Disclaimers */}
               <div className="pt-4 border-t border-white/[0.04]">
                 <p className="font-mono text-[8px] text-[#2A2A2A] leading-relaxed mb-2">
