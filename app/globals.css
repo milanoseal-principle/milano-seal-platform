@@ -2496,83 +2496,156 @@ h4 {
   font-weight: 500;
 }
 
-/* ── Flowing comet arcs ──────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   CINEMA-GRADE ARC SYSTEM — 4-layer comet trail
+   ════════════════════════════════════════════════════════════════ */
+
+/* Layer 1 — Wide base glow trail (soft, broad) */
+.ms-globe-arc-glow {
+  stroke-dasharray: 110 390;
+  stroke-dashoffset: 520;
+  opacity: 0;
+}
+.ms-globe-arc-glow--flowing {
+  animation: ms-arc-cinema linear infinite;
+}
+
+/* Layer 2 — Comet body */
 .ms-globe-arc-body {
-  stroke-dasharray: 70 430;
-  stroke-dashoffset: 500;
+  stroke-dasharray: 72 428;
+  stroke-dashoffset: 520;
   opacity: 0;
 }
-
 .ms-globe-arc-body--flowing {
-  opacity: 0.72;
-  animation: ms-arc-comet-flow linear infinite;
+  animation: ms-arc-cinema linear infinite;
 }
 
+/* Layer 3 — Bright comet head (shorter, runs faster via duration override) */
 .ms-globe-arc-head {
-  stroke-dasharray: 10 490;
-  stroke-dashoffset: 500;
+  stroke-dasharray: 14 506;
+  stroke-dashoffset: 520;
   opacity: 0;
 }
-
 .ms-globe-arc-head--flowing {
-  opacity: 1;
-  animation: ms-arc-comet-flow linear infinite;
+  animation: ms-arc-cinema linear infinite;
 }
 
-@keyframes ms-arc-comet-flow {
-  0%   { stroke-dashoffset:  500; }
-  100% { stroke-dashoffset: -500; }
+/* Layer 4 — Ultra-white hot tip (even shorter) */
+.ms-globe-arc-tip {
+  stroke-dasharray: 4 516;
+  stroke-dashoffset: 520;
+  opacity: 0;
+}
+.ms-globe-arc-tip--flowing {
+  animation: ms-arc-tip-cinema linear infinite;
 }
 
-/* ── Glass specular cap ──────────────────────────────────────── */
+/* Cinema comet keyframe — fades at endpoints for realism */
+@keyframes ms-arc-cinema {
+  0%   { stroke-dashoffset:  520; opacity: 0; }
+  6%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { stroke-dashoffset: -520; opacity: 0; }
+}
+
+/* Tip is shorter, also fades */
+@keyframes ms-arc-tip-cinema {
+  0%   { stroke-dashoffset:  520; opacity: 0; }
+  5%   { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { stroke-dashoffset: -520; opacity: 0; }
+}
+
+/* ── Glass specular cap — animated shimmer ───────────────────── */
 .ms-globe-glass-cap {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: linear-gradient(
-    138deg,
-    rgba(244, 229, 184, 0.09) 0%,
-    rgba(255, 255, 255, 0.035) 22%,
-    transparent 50%
+  background: radial-gradient(
+    ellipse 55% 42% at 28% 22%,
+    rgba(255, 248, 210, 0.13) 0%,
+    rgba(244, 229, 184, 0.07) 38%,
+    transparent 70%
   );
   pointer-events: none;
   z-index: 6;
+  animation: ms-specular-drift 16s ease-in-out infinite;
 }
 
-/* ── Crest glow pulse (sibling to crest, z:8 < crest z:9) ───── */
+@keyframes ms-specular-drift {
+  0%   { opacity: 1.0; background-position: 28% 22%; }
+  25%  { opacity: 1.3; background-position: 32% 18%; }
+  55%  { opacity: 0.7; background-position: 24% 26%; }
+  80%  { opacity: 1.2; background-position: 30% 20%; }
+  100% { opacity: 1.0; background-position: 28% 22%; }
+}
+
+/* ── Atmospheric rim ring — sphere edge glow ─────────────────── */
+.ms-globe-rim-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid rgba(198, 165, 90, 0.22);
+  pointer-events: none;
+  z-index: 7;
+  animation: ms-rim-breathe 7s ease-in-out infinite;
+}
+
+@keyframes ms-rim-breathe {
+  0%, 100% { opacity: 0.18; box-shadow: 0 0 18px rgba(198,165,90,0.10); }
+  50%       { opacity: 0.42; box-shadow: 0 0 38px rgba(198,165,90,0.22); }
+}
+
+/* ── Crest glow pulse ────────────────────────────────────────── */
 .ms-globe-crest-glow {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 8;
-  width: 76px;
-  height: 76px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(198, 165, 90, 0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(198,165,90,0.28) 0%, rgba(198,165,90,0.08) 50%, transparent 72%);
   pointer-events: none;
-  animation: ms-crest-pulse 4s ease-in-out infinite;
+  animation: ms-crest-pulse 4.5s ease-in-out infinite;
 }
 
 @keyframes ms-crest-pulse {
-  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1);   }
-  50%       { opacity: 0.2; transform: translate(-50%, -50%) scale(1.6); }
+  0%, 100% { opacity: 0.75; transform: translate(-50%,-50%) scale(1.0); }
+  50%       { opacity: 0.20; transform: translate(-50%,-50%) scale(1.7); }
 }
 
-/* ── Destination atmospheric bloom ──────────────────────────── */
+/* ── Destination bloom — cinema grade ────────────────────────── */
 .ms-globe-dest-bloom {
-  animation: ms-dest-bloom-pulse 3.5s ease-in-out infinite;
+  animation: ms-bloom-cinema 4s ease-in-out infinite;
 }
 
-@keyframes ms-dest-bloom-pulse {
-  0%, 100% { opacity: 0.10; }
-  50%       { opacity: 0.26; }
+@keyframes ms-bloom-cinema {
+  0%, 100% { opacity: 0.07; }
+  50%       { opacity: 0.30; }
+}
+
+/* ── Florida origin radiating rings ─────────────────────────── */
+@keyframes ms-origin-radiate {
+  0%   { r: 9;  opacity: 0.70; stroke-width: 1.5; }
+  100% { r: 36; opacity: 0;    stroke-width: 0.2; }
+}
+
+/* ── Destination node pulse (selected state) ─────────────────── */
+@keyframes ms-selected-ring-beat {
+  0%, 100% { opacity: 0.55; stroke-width: 1.2; }
+  45%       { opacity: 0.18; stroke-width: 0.5; }
+}
+
+.ms-globe-selected-ring {
+  animation: ms-selected-ring-beat 2.2s ease-in-out infinite;
 }
 
 /* ── Globe cinematic popover entry ──────────────────────────── */
 @keyframes gtc-popover-in {
-  from { opacity: 0; transform: scale(0.94) translateY(4px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from { opacity: 0; transform: scale(0.90) translateY(6px); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   filter: blur(0); }
 }
 
 /* ── Founder chip ────────────────────────────────────────────── */
