@@ -1033,7 +1033,7 @@ h4 {
   */
   background:
     #000000
-    url('/milano-seal-black-1024.png')
+    url('/milano-seal-orb-v2.png')
     no-repeat
     center center;
   background-size: 520px auto;
@@ -2356,7 +2356,7 @@ h4 {
      vanish, leaving only the bright M emblem blended into the sphere surface.
      Grid lines and particles pass fluidly behind it — no hard black mask. */
   background-color: rgba(0, 0, 0, 0.05);
-  background-image: url('/milano-seal-black-1024.png');
+  background-image: url('/milano-seal-orb-v2.png');
   background-repeat: no-repeat;
   background-position: center -22px;
   background-size: 224px auto;
