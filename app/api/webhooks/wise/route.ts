@@ -28,6 +28,15 @@ function getEnvironment(): string {
   return process.env.WISE_ENV === "production" ? "production" : "sandbox";
 }
 
+// Test bypass: only active when WISE_WEBHOOK_TEST_BYPASS is set AND env != production.
+// Never active in production. Allows integration testing without a real Wise signature.
+function checkTestBypass(req: NextRequest): boolean {
+  const bypassSecret = process.env.WISE_WEBHOOK_TEST_BYPASS;
+  if (!bypassSecret) return false;
+  if (process.env.WISE_ENV === "production") return false;
+  return req.headers.get("X-Test-Bypass") === bypassSecret;
+}
+
 export async function POST(req: NextRequest) {
   const deliveryId = req.headers.get("X-Delivery-Id") ?? null;
   const testNotification = isTestNotification(req);
@@ -41,8 +50,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Signature verification — always first, using raw body
+  // Test bypass allowed only in non-production when WISE_WEBHOOK_TEST_BYPASS is set.
   const signature = req.headers.get("X-Signature-SHA256");
-  const valid = await verifyWiseSignature(rawBody, signature);
+  const valid = checkTestBypass(req) || await verifyWiseSignature(rawBody, signature);
   if (!valid) {
     console.warn("[wise-webhook] invalid signature — delivery:", deliveryId);
     // Store with signature_valid=false for audit, non-fatal
