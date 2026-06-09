@@ -102,7 +102,7 @@ async function getRONQueues() {
     .limit(200);
 
   if (error) return [];
-  return (data ?? []) as SessionRow[];
+  return (data ?? []) as unknown as SessionRow[];
 }
 
 function MatterCard({ session }: { session: SessionRow }) {

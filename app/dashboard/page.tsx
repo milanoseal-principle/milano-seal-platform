@@ -846,13 +846,9 @@ export default function Dashboard() {
       {/* Quick Action Intelligence Menu */}
       <Card className="bg-card border-gold overflow-hidden">
         <QuickActionIntelligenceMenu
-          activeMatterId={selectedMatterId ?? undefined}
-          deliveredNotReleasedCount={quickActionsData?.summary?.deliveredNotReleasedCount ?? 0}
-          vaTaskCount={quickActionsData?.summary?.vaTaskCount ?? 0}
-          actionRequiredCount={quickActionsData?.summary?.actionRequiredCount ?? 0}
-          blockedCount={quickActionsData?.summary?.blockedCount ?? 0}
-          reviewRequiredCount={quickActionsData?.summary?.reviewRequiredCount ?? 0}
-          readyCount={quickActionsData?.summary?.readyCount ?? 0}
+          isOpen={true}
+          onClose={() => {}}
+          matterId={selectedMatterId ?? undefined}
         />
       </Card>
 

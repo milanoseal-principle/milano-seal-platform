@@ -33,7 +33,7 @@ export function projectTask(raw: Record<string, unknown>): VASafeTask {
     due_at: (raw.due_at as string) ?? null,
     created_at: String(raw.created_at ?? ""),
     completed_at: (raw.completed_at as string) ?? null,
-    client_safe_context: (raw.client_safe_context ?? raw.notes_public as string) ?? null,
+    client_safe_context: ((raw.client_safe_context ?? raw.notes_public) as string | null) ?? null,
     escalation_reason: (raw.escalation_reason as string) ?? null,
   };
 }

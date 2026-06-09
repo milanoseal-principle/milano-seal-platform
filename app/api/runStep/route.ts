@@ -59,10 +59,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Gate: must be paid before any step
-  const paidCheck = requirePaid(deal);
-  if (!paidCheck.ok) {
+  try {
+    requirePaid(deal);
+  } catch {
     return NextResponse.json(
-      { error: paidCheck.message, code: "PAYMENT_REQUIRED" },
+      { error: "Payment must be confirmed before advancing this step.", code: "PAYMENT_REQUIRED" },
       { status: 402 },
     );
   }

@@ -44,7 +44,7 @@ export async function GET() {
       exception_at: row.exception_at ?? null,
       returned_at: row.returned_at ?? null,
       deals: row.deals
-        ? { id: (row.deals as { id: string; client_name: string | null }).id, client_name: (row.deals as { id: string; client_name: string | null }).client_name }
+        ? { id: (row.deals as unknown as { id: string; client_name: string | null }).id, client_name: (row.deals as unknown as { id: string; client_name: string | null }).client_name }
         : null,
     }));
 

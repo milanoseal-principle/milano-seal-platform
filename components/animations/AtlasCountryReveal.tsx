@@ -7,6 +7,10 @@ interface AtlasCountryRevealProps {
   isVisible: boolean;
   children: React.ReactNode;
   className?: string;
+  countryName?: string;
+  hagueMember?: boolean;
+  apostilleRequired?: boolean | null;
+  routingStatus?: string;
 }
 
 export function AtlasCountryReveal({ isVisible, children, className }: AtlasCountryRevealProps) {

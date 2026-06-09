@@ -12,7 +12,7 @@ export interface ShippoCourierMotionRailProps {
 }
 
 type RailNode = {
-  key: MilanoCourierStatus | "ORIGIN";
+  key: MilanoCourierStatus | "ORIGIN" | "DELIVERY";
   label: string;
   statuses: MilanoCourierStatus[];
 };
@@ -236,9 +236,7 @@ export default function ShippoCourierMotionRail({
                       ? "#444444"
                       : state === "active" && node.key === "DELIVERED"
                       ? "#3FA47A"
-                      : state !== "inactive"
-                      ? "#C6A55A"
-                      : "#444444"
+                      : "#C6A55A"
                   }
                   fontFamily="'Inter', system-ui, sans-serif"
                   letterSpacing="0.06em"
