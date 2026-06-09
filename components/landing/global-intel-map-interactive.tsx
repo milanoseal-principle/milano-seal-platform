@@ -8,7 +8,7 @@ import { ArrowRight, X } from "lucide-react";
 
 const COUNTRY_PAGES = new Set(["italy", "spain", "germany", "portugal", "uae", "mexico"]);
 function countryPath(slug: string) {
-  return COUNTRY_PAGES.has(slug) ? `/countries/${slug}` : `/apostille/${slug}`;
+  return COUNTRY_PAGES.has(slug) ? `/apostille/${slug}` : `/apostille/${slug}`;
 }
 
 const MapInner = dynamic(() => import("./global-intel-map-inner"), {
