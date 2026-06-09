@@ -347,17 +347,18 @@ export default function MapPage() {
   const [search, setSearch] = useState("");
   const [custom, setCustom] = useState("");
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const fetchCompliance = async (key: string) => {
     setLoading(true);
     setActiveKey(key);
+    setSheetOpen(true);
     try {
       const res = await fetch("/api/compliance/" + encodeURIComponent(key));
       if (res.ok) {
         const data = await res.json();
         setSelected(data.compliance || data);
       } else {
-        // Fallback: use client-side data
         const { validateCompliance } = await import("@/lib/compliance");
         const result = validateCompliance({
           country: key,
@@ -379,6 +380,12 @@ export default function MapPage() {
     }
   };
 
+  const closeSheet = () => {
+    setSheetOpen(false);
+    setSelected(null);
+    setActiveKey(null);
+  };
+
   const filtered = search
     ? JURISDICTIONS.filter((j) =>
         j.label.toLowerCase().includes(search.toLowerCase())
@@ -388,16 +395,47 @@ export default function MapPage() {
   return (
     <>
       <Header />
-      <main className="bg-[#0A0A0A] min-h-screen pt-24 pb-20 px-6">
+
+      {/* Mobile bottom sheet backdrop */}
+      {sheetOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={closeSheet}
+        />
+      )}
+
+      {/* Mobile bottom sheet */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 lg:hidden transition-transform duration-300 ease-out ${
+          sheetOpen ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{ maxHeight: "80vh", overflowY: "auto" }}
+      >
+        <div className="bg-[#0D0D0D] border-t border-[#2A2A2A] rounded-t-2xl px-4 pt-4 pb-8 min-h-[200px]">
+          {/* Drag handle */}
+          <div className="w-10 h-1 bg-[#2A2A2A] rounded-full mx-auto mb-4" />
+          {loading && (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-2 border-[#C6A55A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[#8A8A8A] text-sm">Loading compliance data…</p>
+            </div>
+          )}
+          {!loading && selected && (
+            <CompliancePanel result={selected} onClose={closeSheet} />
+          )}
+        </div>
+      </div>
+
+      <main className="bg-[#0A0A0A] min-h-screen pt-24 pb-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-10 md:mb-14">
             <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4">
               Global Document Intelligence
             </p>
-            <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-6">
+            <h1 className="font-serif text-3xl md:text-5xl font-medium text-white mb-5">
               Global Document <em className="text-[#C6A55A]">Intelligence</em>
             </h1>
-            <p className="text-[#8A8A8A] text-lg font-light max-w-2xl mx-auto mb-6">
+            <p className="text-[#8A8A8A] text-base md:text-lg font-light max-w-2xl mx-auto mb-6 px-2">
               Select any jurisdiction to view RON authorization, apostille
               requirements, witness rules, and your execution path.
             </p>
@@ -407,13 +445,14 @@ export default function MapPage() {
           <div className="grid lg:grid-cols-[1fr_400px] gap-8">
             {/* Left — jurisdiction selector */}
             <div>
-              <div className="flex gap-3 mb-6">
+              {/* Search row — stacks on mobile */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-6">
                 <input
                   type="text"
                   placeholder="Search jurisdictions…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-[#111111] border border-[#2A2A2A] rounded-lg text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A] transition-colors"
+                  className="flex-1 px-4 py-3 bg-[#111111] border border-[#2A2A2A] rounded-lg text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A] transition-colors"
                 />
                 <div className="flex gap-2">
                   <input
@@ -427,7 +466,7 @@ export default function MapPage() {
                         setCustom("");
                       }
                     }}
-                    className="px-4 py-2.5 bg-[#111111] border border-[#2A2A2A] rounded-lg text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A] transition-colors w-40"
+                    className="flex-1 sm:flex-none px-4 py-3 bg-[#111111] border border-[#2A2A2A] rounded-lg text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A] transition-colors sm:w-36"
                   />
                   <button
                     onClick={() => {
@@ -436,7 +475,7 @@ export default function MapPage() {
                         setCustom("");
                       }
                     }}
-                    className="px-4 py-2.5 border border-[#2A2A2A] text-[#C6A55A] text-xs font-semibold tracking-wider uppercase rounded-lg hover:border-[#C6A55A] transition-colors"
+                    className="px-4 py-3 border border-[#2A2A2A] text-[#C6A55A] text-xs font-semibold tracking-wider uppercase rounded-lg hover:border-[#C6A55A] transition-colors whitespace-nowrap"
                   >
                     Look Up
                   </button>
@@ -457,7 +496,7 @@ export default function MapPage() {
                       </span>
                       <div className="flex-1 h-px bg-[#1A1A1A]" />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2">
                       {items.map((j) => (
                         <button
                           key={j.key}
@@ -499,8 +538,8 @@ export default function MapPage() {
               })}
             </div>
 
-            {/* Right — result panel */}
-            <div className="lg:sticky lg:top-28 lg:self-start">
+            {/* Right — result panel (desktop only; mobile uses bottom sheet) */}
+            <div className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
               {loading && (
                 <div className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-8 text-center">
                   <div className="w-8 h-8 border-2 border-[#C6A55A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -560,17 +599,14 @@ export default function MapPage() {
               {!loading && selected && (
                 <CompliancePanel
                   result={selected}
-                  onClose={() => {
-                    setSelected(null);
-                    setActiveKey(null);
-                  }}
+                  onClose={closeSheet}
                 />
               )}
             </div>
           </div>
 
           {/* Info strip */}
-          <div className="mt-16 grid md:grid-cols-3 gap-6">
+          <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {[
               {
                 title: "RON Authorization by State",
