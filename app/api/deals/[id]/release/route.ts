@@ -14,10 +14,10 @@ export async function POST(
   const { id } = await params;
 
   // Auth check
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
-  } = await (await supabase).auth.getUser();
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
