@@ -13,8 +13,7 @@ import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
-import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
-import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
+import { JurisdictionComplianceLookup } from "@/components/landing/jurisdiction-compliance-lookup";
 import { HowItWorks } from "@/components/landing/how-it-works";
 
 export default function HomePage() {
@@ -45,10 +44,9 @@ export default function HomePage() {
           <HowItWorks />
         </div>
 
-        {/* 6. Global Document Intelligence map */}
+        {/* 6. Jurisdiction compliance lookup */}
         <div id="countries">
-          <RoutingIntelligenceSection />
-          <CorridorTimeStrip />
+          <JurisdictionComplianceLookup />
           <GlobalMap />
         </div>
 
