@@ -39,8 +39,6 @@ const enriched = DOCUMENTS.map((doc) => {
     apostille_eligible: matched?.apostille_eligible ?? true,
     translation_typically_required: matched?.translation_typically_required ?? false,
     notes: matched?.notes ?? "See country intelligence for requirements.",
-    countries: doc.countries,
-    bundle: doc.bundle,
   };
 });
 
@@ -113,7 +111,7 @@ export default async function DocumentsPage() {
                       <Chip active={doc.translation_typically_required} label={doc.translation_typically_required ? "YES" : "NO"} activeColor="#f59e0b" />
                     </td>
                     <td style={{ padding: "12px 16px", color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
-                      {doc.countries.slice(0, 3).join(", ")}{doc.countries.length > 3 ? ` +${doc.countries.length - 3}` : ""}
+                      —
                     </td>
                     <td style={{ padding: "12px 16px", color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{doc.notes}</td>
                   </tr>

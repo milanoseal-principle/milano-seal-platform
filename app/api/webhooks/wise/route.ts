@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   const eventType = String(payload.event_type ?? payload.type ?? "");
   const schemaVersion = String(payload.schema_version ?? "");
   const subscriptionId = String(payload.subscription_id ?? "");
-  const occurredAt = String(payload.data?.occurred_at ?? payload.sent_at ?? new Date().toISOString());
+  const occurredAt = String((payload.data as Record<string, unknown> | undefined)?.occurred_at ?? payload.sent_at ?? new Date().toISOString());
   const data = (payload.data ?? {}) as Record<string, unknown>;
   const resource = (data.resource ?? payload.resource ?? {}) as Record<string, unknown>;
   const resourceType = String(data.resource_type ?? resource.type ?? "");
@@ -204,8 +204,8 @@ async function processWiseEvent(opts: {
   // Extract reference from resource — operator must set this on Wise payment request
   const reference = String(
     resource.reference ??
-    resource.details?.reference ??
-    resource.metadata?.reference ??
+    (resource.details as Record<string, unknown> | undefined)?.reference ??
+    (resource.metadata as Record<string, unknown> | undefined)?.reference ??
     ""
   ).trim();
 

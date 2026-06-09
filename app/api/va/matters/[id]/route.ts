@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,7 +34,7 @@ export async function GET(
     const { data: taskCheck } = await admin
       .from("va_tasks")
       .select("id")
-      .eq("matter_id", params.id)
+      .eq("matter_id", id)
       .eq("assigned_to", user.id)
       .limit(1)
       .maybeSingle();
@@ -47,7 +48,7 @@ export async function GET(
       .select(
         "id, deal_id, display_id, client_display_name, destination_country, document_type, deal_status, client_safe_status, next_step, assigned_lane_name, due_at, priority, missing_info_count, assigned_task_count"
       )
-      .eq("id", params.id)
+      .eq("id", id)
       .maybeSingle();
 
     if (error && (error.code === "42P01" || error.message?.includes("does not exist"))) {

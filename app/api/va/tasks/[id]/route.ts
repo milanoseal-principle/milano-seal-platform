@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,7 +34,7 @@ export async function GET(
       .select(
         "id, matter_id, matter_display_id, task_type, title, status, urgency, priority, assigned_to, due_at, created_at, completed_at, notes_public, next_action, escalated_at, escalation_reason, client_safe_context"
       )
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("assigned_to", user.id)
       .maybeSingle();
 

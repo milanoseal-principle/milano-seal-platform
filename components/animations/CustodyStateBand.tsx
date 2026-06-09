@@ -12,10 +12,12 @@ const STATE_MAP: Record<string, { label: string; color: string; bg: string; swee
   exception: { label: "EXCEPTION", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
 };
 
-interface CustodyStateBandProps {
+export interface CustodyStateBandProps {
   status: string;
   trackingNumber?: string;
+  trackingDisplay?: string;
   carrier?: string;
+  estimatedDelivery?: string;
 }
 
 export function CustodyStateBand({ status, trackingNumber, carrier }: CustodyStateBandProps) {

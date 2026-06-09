@@ -34,7 +34,15 @@ export default async function MatterRoomPage({
 
   if (!profile || profile.role !== "client") redirect("/portal");
 
-  let matter = null;
+  type MatterRow = {
+    id: string; matter_reference?: string | null; deal_status?: string | null;
+    release_status?: string | null; payment_status?: string | null;
+    document_type?: string | null; destination_country?: string | null;
+    receiving_authority?: string | null; created_at?: string | null;
+    updated_at?: string | null; client_name?: string | null;
+    estimated_completion_date?: string | null;
+  };
+  let matter: MatterRow | null = null;
   if (matter_id) {
     const { data } = await supabase
       .from("deals")
@@ -42,7 +50,7 @@ export default async function MatterRoomPage({
       .eq("id", matter_id)
       .eq("client_email", user.email)
       .single();
-    matter = data;
+    matter = data as unknown as MatterRow | null;
   }
 
   const statusColor = (s: string) => {

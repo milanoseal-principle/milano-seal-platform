@@ -56,7 +56,7 @@ export async function GET(
       _duplicateMatched: duplicateMatched,
     };
 
-    const result = checkFailurePatterns(matter, taskList);
+    const result = checkFailurePatterns(matter);
     return NextResponse.json(result);
   } catch {
     return NextResponse.json(

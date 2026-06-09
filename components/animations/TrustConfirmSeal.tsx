@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useReducedMotion } from "react";
+import { useEffect } from "react";
+import { useReducedMotion } from "framer-motion";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SIZE_DIMS = { sm: 64, md: 96, lg: 128 };

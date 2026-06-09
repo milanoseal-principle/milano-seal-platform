@@ -19,5 +19,5 @@ export function NavigationLoader() {
   }, [pathname]);
 
   if (!loading) return null;
-  return <MilanoPageLoader mode="bar" />;
+  return <MilanoPageLoader />;
 }
