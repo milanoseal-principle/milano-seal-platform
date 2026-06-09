@@ -9,6 +9,15 @@ const nextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  async redirects() {
+    return [
+      {
+        source: "/countries/:slug",
+        destination: "/apostille/:slug",
+        permanent: true,
+      },
+    ];
+  },
 }
 
 export default nextConfig
