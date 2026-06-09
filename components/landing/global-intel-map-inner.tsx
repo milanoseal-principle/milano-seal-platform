@@ -85,12 +85,14 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
     if (flyTarget) map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
   }, [flyTarget, map]);
 
-  // Fly to selected destination
+  // Fly to selected destination (prefer ROUTE_DESTS coords, fall back to Destination coords)
   useEffect(() => {
     if (!active) return;
     const dest = ROUTE_DESTS.find(d => d.name === active.name);
     if (dest) {
       map.flyTo([dest.lat, dest.lng], 5, { duration: 1.1, easeLinearity: 0.3 });
+    } else if (active.lat != null && active.lng != null) {
+      map.flyTo([active.lat, active.lng], 5, { duration: 1.1, easeLinearity: 0.3 });
     }
   }, [active, map]);
 
@@ -183,9 +185,9 @@ function MapSVGRoutes({ active }: { active: Destination | null }) {
 
   // Also resolve selected destination if it's not in PRIMARY_ROUTES
   const activeInPrimary = active ? PRIMARY_ROUTES.find(r => r.name === active.name) : null;
-  const activeExtra = active && !activeInPrimary ? {
+  const activeExtra = active && !activeInPrimary && active.lat != null && active.lng != null ? {
     name: active.name,
-    pt: map.latLngToContainerPoint([active.lat!, active.lng!]),
+    pt: map.latLngToContainerPoint([active.lat, active.lng]),
     spread: 0,
   } : null;
 
