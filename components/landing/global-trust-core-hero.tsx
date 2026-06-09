@@ -135,8 +135,8 @@ export function GlobalTrustCoreHero() {
   // ── Spring physics camera (preserved from c255a13) ──────────────────────
   const rawNudgeX = selectedDest ? ((selectedDest.x - 200) / 200) * 12 : 0;
   const rawNudgeY = selectedDest ? ((selectedDest.y - 200) / 200) *  8 : 0;
-  const springX   = useSpring(rawNudgeX, { stiffness:80, damping:18, mass:1.4 });
-  const springY   = useSpring(rawNudgeY, { stiffness:80, damping:18, mass:1.4 });
+  const springX   = useSpring(rawNudgeX, { stiffness:200, damping:26, mass:0.8 });
+  const springY   = useSpring(rawNudgeY, { stiffness:200, damping:26, mass:0.8 });
 
   useEffect(()=>{ springX.set(rawNudgeX); }, [rawNudgeX, springX]);
   useEffect(()=>{ springY.set(rawNudgeY); }, [rawNudgeY, springY]);
@@ -169,8 +169,8 @@ export function GlobalTrustCoreHero() {
     // Layer 9: reduced motion fast-path
     if (reduced) { setPhase("rotating"); setArcsDone(true); return; }
     timers.current.push(setTimeout(()=>setPhase("settled"), 80));
-    timers.current.push(setTimeout(()=>setPhase("arcs"),    1100));
-    timers.current.push(setTimeout(()=>{ setArcsDone(true); setPhase("rotating"); }, 1800));
+    timers.current.push(setTimeout(()=>setPhase("arcs"),    600));
+    timers.current.push(setTimeout(()=>{ setArcsDone(true); setPhase("rotating"); }, 900));
     return ()=>timers.current.forEach(clearTimeout);
   }, []);
 
@@ -538,10 +538,10 @@ export function GlobalTrustCoreHero() {
       {selectedDest && (() => {
         const { badge } = hagueColor(selectedDest.hagueStatus);
         // spring cascade config
-        const titleSpring  = { type:"spring" as const, stiffness:340, damping:32, delay:0 };
-        const badgeSpring  = { type:"spring" as const, stiffness:300, damping:30, delay:0.10 };
-        const bodySpring   = { type:"spring" as const, stiffness:280, damping:28, delay:0.17 };
-        const ctaSpring    = { type:"spring" as const, stiffness:260, damping:26, delay:0.24 };
+        const titleSpring  = { type:"spring" as const, stiffness:420, damping:36, delay:0 };
+        const badgeSpring  = { type:"spring" as const, stiffness:400, damping:34, delay:0.05 };
+        const bodySpring   = { type:"spring" as const, stiffness:380, damping:32, delay:0.09 };
+        const ctaSpring    = { type:"spring" as const, stiffness:360, damping:30, delay:0.13 };
         return (
           <div
             className="ms-destination-popover hidden md:block"
