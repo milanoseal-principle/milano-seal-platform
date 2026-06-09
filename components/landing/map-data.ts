@@ -48,7 +48,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Mexico",
     nodeType: "HAGUE",
     coordinates: { x: 18, y: 34 },
-    seoTarget: "/countries/mexico",
+    seoTarget: "/apostille/mexico",
     schemaContext: {
       destinationCountry: "MX",
       legalFramework: "Hague Apostille Convention · Accession 1995",
@@ -64,7 +64,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Brazil",
     nodeType: "HAGUE",
     coordinates: { x: 33, y: 47 },
-    seoTarget: "/countries/brazil",
+    seoTarget: "/apostille/brazil",
     schemaContext: {
       destinationCountry: "BR",
       legalFramework: "Hague Apostille Convention · Accession 2016",
@@ -80,7 +80,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Spain",
     nodeType: "HAGUE",
     coordinates: { x: 48, y: 22 },
-    seoTarget: "/countries/spain",
+    seoTarget: "/apostille/spain",
     schemaContext: {
       destinationCountry: "ES",
       legalFramework: "Hague Apostille Convention · EU Direct Recognition",
@@ -96,7 +96,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Italy",
     nodeType: "HAGUE",
     coordinates: { x: 54, y: 21 },
-    seoTarget: "/countries/italy",
+    seoTarget: "/apostille/italy",
     schemaContext: {
       destinationCountry: "IT",
       legalFramework: "Hague Apostille Convention · EU Direct Recognition",
@@ -112,7 +112,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "UAE",
     nodeType: "HAGUE",
     coordinates: { x: 70, y: 31 },
-    seoTarget: "/countries/uae",
+    seoTarget: "/apostille/uae",
     schemaContext: {
       destinationCountry: "AE",
       legalFramework: "Hague Apostille Convention · Accession 2021",
@@ -128,7 +128,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Portugal",
     nodeType: "HAGUE",
     coordinates: { x: 45, y: 23 },
-    seoTarget: "/countries/portugal",
+    seoTarget: "/apostille/portugal",
     schemaContext: {
       destinationCountry: "PT",
       legalFramework: "Hague Apostille Convention · Original Member 1968",
@@ -144,7 +144,7 @@ export const DESTINATION_NODES: InternationalNode[] = [
     name: "Greece",
     nodeType: "CITIZENSHIP",
     coordinates: { x: 57, y: 24 },
-    seoTarget: "/countries/greece",
+    seoTarget: "/apostille/greece",
     schemaContext: {
       destinationCountry: "GR",
       legalFramework: "Hague Apostille Convention · Member 1985",

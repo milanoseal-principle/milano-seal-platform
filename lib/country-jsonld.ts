@@ -158,7 +158,7 @@ export function buildCountryJsonLd(
   compliance: CountryData,
   destination: Destination
 ): CountryJsonLd {
-  const pageUrl = `${SITE_URL}/countries/${slug}`;
+  const pageUrl = `${SITE_URL}/apostille/${slug}`;
   const faqs = COUNTRY_FAQS[slug] ?? [];
 
   const service = {
