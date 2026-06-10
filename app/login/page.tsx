@@ -53,6 +53,25 @@ function LoginInner() {
       ? rawNext
       : null;
 
+  // Redirect already-authenticated users — must be before any conditional return
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
+      router.replace(safeNext || destForRole(role, "/dashboard"));
+    });
+  }, [router, safeNext]);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "auth_failed" || err === "otp_expired") {
+      setError("That access link has expired or was already used. Please sign in again.");
+    } else if (err === "access_denied") {
+      setError("Access denied. Your session may have expired — please sign in again.");
+    }
+  }, [searchParams]);
+
   // Show PortalAccessShell as the entry gate for portal clients before the login form.
   // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
   // and reveals the login form below, rather than navigating away.
@@ -72,25 +91,6 @@ function LoginInner() {
       </div>
     );
   }
-
-  // Redirect already-authenticated users
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
-      router.replace(safeNext || destForRole(role, "/dashboard"));
-    });
-  }, [router, safeNext]);
-
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err === "auth_failed" || err === "otp_expired") {
-      setError("That access link has expired or was already used. Please sign in again.");
-    } else if (err === "access_denied") {
-      setError("Access denied. Your session may have expired — please sign in again.");
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
