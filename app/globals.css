@@ -922,9 +922,9 @@ h4 {
   position: absolute;
   inset: -44px;
   border-radius: 50%;
-  border: 1px solid rgba(212, 175, 55, 0.55);
+  border: 1px solid rgba(212, 175, 55, 0.38);
   pointer-events: none;
-  animation: ro-unlock-ping 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  animation: ro-unlock-ping 3.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
 }
 
 /* Cursor pointer only after readyForExit */
