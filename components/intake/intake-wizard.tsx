@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Loader2, Check, Upload, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
+import { FileUploadZone } from "@/components/intake/FileUploadZone";
 
 interface IntakeData {
   client_name: string;
@@ -398,7 +399,6 @@ export function IntakeWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [analysisNote, setAnalysisNote] = useState<{
     msg: string;
     targetStep?: number;
@@ -1206,83 +1206,17 @@ export function IntakeWizard({
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Controlled Records Upload{" "}
+                      Supporting Documents{" "}
                       <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
                         (optional — for advance review)
                       </span>
                     </label>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const incoming = Array.from(e.target.files);
-                          setFiles((prev) => {
-                            const existing = new Set(prev.map((f) => f.name));
-                            const merged = [
-                              ...prev,
-                              ...incoming.filter((f) => !existing.has(f.name)),
-                            ];
-                            return merged.slice(0, 10);
-                          });
-                          e.target.value = "";
-                        }
-                      }}
+                    <FileUploadZone
+                      value={files}
+                      onChange={setFiles}
+                      maxFiles={5}
+                      maxSizeMB={10}
                     />
-                    <div
-                      onClick={() => fileRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const dropped = Array.from(e.dataTransfer.files).filter(
-                          (f) => /\.(pdf|doc|docx|jpg|jpeg|png)$/i.test(f.name),
-                        );
-                        setFiles((prev) => {
-                          const existing = new Set(prev.map((f) => f.name));
-                          const merged = [
-                            ...prev,
-                            ...dropped.filter((f) => !existing.has(f.name)),
-                          ];
-                          return merged.slice(0, 10);
-                        });
-                      }}
-                      className="border border-dashed border-[rgba(198,165,90,0.3)] bg-[rgba(198,165,90,0.03)] rounded-sm px-6 py-7 text-center cursor-pointer hover:border-[#C6A55A] hover:bg-[rgba(198,165,90,0.06)] transition-all duration-200"
-                    >
-                      <Upload className="w-5 h-5 text-[#8A7240] mx-auto mb-2" />
-                      <p className="text-[12px] text-[#4A4030]">
-                        Drop files here or click to browse
-                      </p>
-                      <p className="text-[10.5px] text-[#8A7A60] mt-1">
-                        PDF, DOC, JPG accepted · Up to 10 files
-                      </p>
-                    </div>
-                    {files.length > 0 && (
-                      <div className="mt-3 space-y-1.5">
-                        {files.map((f, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between px-3 py-2 bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.15)] rounded-sm"
-                          >
-                            <span className="text-[12px] text-[#4A4030] truncate">
-                              {f.name}
-                            </span>
-                            <button
-                              onClick={() =>
-                                setFiles((prev) =>
-                                  prev.filter((_, j) => j !== i),
-                                )
-                              }
-                              className="ml-2 text-[#8A7A60] hover:text-[#4A4030] flex-shrink-0"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                     <p className="text-[11px] text-[#8A7A60] mt-2 font-light">
                       Uploading documents now allows for advance review prior to
                       scheduling. All files are handled with strict
