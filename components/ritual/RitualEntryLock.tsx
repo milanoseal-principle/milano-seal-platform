@@ -1,1 +1,1 @@
-test
+export function RitualEntryLock(){return null}
