@@ -626,7 +626,7 @@ export function IntakeWizard({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {step < 5 && (
+      {step === 1 && (
         <>
           <SmartMatterIntake
             onAnalysisReady={handleAnalysisReady}

@@ -340,6 +340,7 @@ export async function POST(req: NextRequest) {
         {
           error: "Failed to save matter. Please try again or contact support.",
           code: "INTAKE_DB_INSERT_FAILED",
+          supabase_code: error.code ?? null,
         },
         { status: 500 },
       );
