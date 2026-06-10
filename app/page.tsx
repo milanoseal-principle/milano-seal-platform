@@ -5,7 +5,6 @@ import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { Services } from "@/components/landing/services";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
-import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { PaymentFounder } from "@/components/landing/payment-founder";
 import { ClientTypes } from "@/components/landing/client-types";
 import { HighTrustClose } from "@/components/landing/high-trust-close";
@@ -16,7 +15,6 @@ import { JurisdictionComplianceLookup } from "@/components/landing/jurisdiction-
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
-import { PricingLanes } from "@/components/conversion/PricingLanes";
 import { PublicFAQ } from "@/components/conversion/PublicFAQ";
 import { TrustProof } from "@/components/conversion/TrustProof";
 import { FinalCTA } from "@/components/conversion/FinalCTA";
@@ -75,11 +73,6 @@ export default function HomePage() {
         {/* 6. What Are You Executing — document type grid */}
         <DocumentIntelligence />
 
-        {/* 7. Execution tiers — Signature / Priority / Executive */}
-        <div id="pricing">
-          <ExecutionTiers />
-        </div>
-
         {/* 8. Payment gate + Founder-Led Execution */}
         <PaymentFounder />
 
@@ -90,7 +83,6 @@ export default function HomePage() {
       {/* 10. Ready to Execute CTA */}
       <HighTrustClose />
 
-      <PricingLanes />
       <TrustProof />
       <PublicFAQ />
       <FinalCTA />

@@ -30,8 +30,8 @@ export const PRICING_LANES = [
   {
     id: "executive",
     name: "Executive Lane",
-    price: 1850,
-    priceLabel: "Starting at $1,850",
+    price: 1275,
+    priceLabel: "Starting at $1,275",
     description: "For complex international matters, multiple parties, or white-glove coordination.",
     features: [
       "White-glove matter coordination",
