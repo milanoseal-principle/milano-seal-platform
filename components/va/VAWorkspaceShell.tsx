@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState, useCallback } from "react";
+import { WorldMapCanvas } from "@/components/rituals/WorldMapCanvas";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -100,6 +101,9 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
             className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden select-none"
             style={{ background: "#060503", paddingTop: "var(--sa-top,0px)", paddingBottom: "var(--sa-bottom,0px)" }}
           >
+            {/* World map canvas */}
+            <WorldMapCanvas />
+
             <div className="absolute inset-0 pointer-events-none" style={{
               background: "radial-gradient(ellipse 55% 50% at 50% 30%, rgba(212,175,55,0.06) 0%, transparent 70%)",
             }} />

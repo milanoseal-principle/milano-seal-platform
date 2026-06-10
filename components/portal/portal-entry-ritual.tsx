@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
+import { WorldMapCanvas } from "@/components/rituals/WorldMapCanvas";
 
 const STEPS = [
   "Verifying matter access",
@@ -66,6 +67,9 @@ export function PortalEntryRitual({ onComplete }: { onComplete: () => void }) {
           onClick={dismiss}
           aria-hidden="true"
         >
+          {/* World map canvas */}
+          <WorldMapCanvas />
+
           {/* Atmosphere */}
           <div className="absolute inset-0 pointer-events-none" style={{
             background: "radial-gradient(ellipse 55% 50% at 50% 30%, rgba(212,175,55,0.06) 0%, transparent 70%)",

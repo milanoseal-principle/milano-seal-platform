@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
+import { WorldMapCanvas } from "@/components/rituals/WorldMapCanvas";
 
 const CHECKLIST = [
   "Verifying operational access",
@@ -63,6 +64,9 @@ export function MilanoSealEntryRitual({ onComplete }: { onComplete: () => void }
           onClick={dismiss}
           aria-hidden="true"
         >
+          {/* World map canvas */}
+          <WorldMapCanvas />
+
           {/* Radial atmosphere */}
           <div className="absolute inset-0 pointer-events-none" style={{
             background: "radial-gradient(ellipse 60% 55% at 50% 30%, rgba(212,175,55,0.07) 0%, transparent 70%)",
