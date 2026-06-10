@@ -273,6 +273,8 @@ html {
 
 html {
   scroll-behavior: smooth;
+  /* Offset anchor scrolling below the fixed header + credential ticker */
+  scroll-padding-top: 160px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
