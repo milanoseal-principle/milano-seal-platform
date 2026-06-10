@@ -110,17 +110,24 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
 
             {/* Seal medallion */}
             <div className="relative flex items-center justify-center mb-6" style={{ width: 190, height: 190 }}>
-              <motion.div className="absolute rounded-full border border-dashed" style={{ inset: 0, borderColor: "rgba(212,175,55,0.11)" }}
+              <motion.div className="absolute rounded-full" style={{ inset: 0, border: "1.5px dashed rgba(212,175,55,0.35)" }}
                 animate={{ rotate: 360 }} transition={{ duration: 90, repeat: Infinity, ease: "linear" }} />
-              <motion.div className="absolute rounded-full border" style={{ inset: 20, borderColor: "rgba(212,175,55,0.17)", borderStyle: "dashed" }}
+              <motion.div className="absolute rounded-full" style={{ inset: 20, border: "1.5px dashed rgba(212,175,55,0.42)" }}
                 animate={{ rotate: -360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }} />
-              <motion.div className="absolute rounded-full border" style={{ inset: 38, borderColor: "rgba(212,175,55,0.25)" }}
-                animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} />
+              <motion.div className="absolute rounded-full" style={{
+                inset: 38,
+                border: "2px solid rgba(212,175,55,0.65)",
+                boxShadow: "0 0 18px rgba(212,175,55,0.25), inset 0 0 18px rgba(212,175,55,0.08)",
+              }} animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} />
               {[0, 72, 144, 216, 288].map((deg) => {
-                const r = 95; const x = 95 + r * Math.cos((deg * Math.PI) / 180); const y = 95 + r * Math.sin((deg * Math.PI) / 180);
-                return <div key={deg} className="absolute rounded-full" style={{ width: 4, height: 4, left: x - 2, top: y - 2, background: "rgba(212,175,55,0.4)" }} />;
+                const r = 57; const x = 95 + r * Math.cos((deg * Math.PI) / 180); const y = 95 + r * Math.sin((deg * Math.PI) / 180);
+                return <div key={deg} className="absolute rounded-full" style={{
+                  width: 18, height: 18, left: x - 9, top: y - 9,
+                  background: "radial-gradient(circle at 35% 30%, #f4e5b8 0%, #d4af37 45%, transparent 75%)",
+                  boxShadow: "0 0 10px rgba(212,175,55,0.85), 0 0 22px rgba(212,175,55,0.45)",
+                }} />;
               })}
-              <div className="absolute rounded-full" style={{ inset: 38, background: "radial-gradient(circle, rgba(212,175,55,0.09) 0%, transparent 70%)", filter: "blur(10px)" }} />
+              <div className="absolute rounded-full" style={{ inset: 38, background: "radial-gradient(circle, rgba(212,175,55,0.16) 0%, transparent 70%)", filter: "blur(12px)" }} />
               <motion.div initial={{ scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                 className="relative flex items-center justify-center rounded-full overflow-hidden"
                 style={{ width: 104, height: 104, background: "radial-gradient(circle, rgba(212,175,55,0.09) 0%, #050503 70%)", border: "1px solid rgba(212,175,55,0.42)", boxShadow: "0 0 44px rgba(212,175,55,0.15), 0 0 90px rgba(212,175,55,0.06)" }}

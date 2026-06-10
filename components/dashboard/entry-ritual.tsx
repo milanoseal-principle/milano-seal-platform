@@ -75,39 +75,40 @@ export function MilanoSealEntryRitual({ onComplete }: { onComplete: () => void }
           {/* Seal medallion */}
           <div className="relative flex items-center justify-center mb-7" style={{ width: 220, height: 220 }}>
             {/* Outer orbit rings */}
-            <motion.div className="absolute rounded-full border border-dashed" style={{
+            <motion.div className="absolute rounded-full" style={{
               inset: 0,
-              borderColor: "rgba(212,175,55,0.13)",
+              border: "1.5px dashed rgba(212,175,55,0.38)",
             }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 80, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute rounded-full border" style={{
+            <motion.div className="absolute rounded-full" style={{
               inset: 18,
-              borderColor: "rgba(212,175,55,0.18)",
-              borderStyle: "dashed",
+              border: "1.5px dashed rgba(212,175,55,0.45)",
             }} animate={reduced ? {} : { rotate: -360 }} transition={{ duration: 55, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute rounded-full border" style={{
+            <motion.div className="absolute rounded-full" style={{
               inset: 36,
-              borderColor: "rgba(212,175,55,0.28)",
+              border: "2px solid rgba(212,175,55,0.65)",
+              boxShadow: "0 0 18px rgba(212,175,55,0.25), inset 0 0 18px rgba(212,175,55,0.08)",
             }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
 
-            {/* Node dots on outer ring */}
+            {/* Node spheres on primary ring (r=74 from center = inset:36 ring) */}
             {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
-              const r = 110;
+              const r = 74;
               const x = 110 + r * Math.cos((deg * Math.PI) / 180);
               const y = 110 + r * Math.sin((deg * Math.PI) / 180);
               return (
                 <div key={deg} className="absolute rounded-full" style={{
-                  width: 5, height: 5,
-                  left: x - 2.5, top: y - 2.5,
-                  background: "rgba(212,175,55,0.45)",
+                  width: 18, height: 18,
+                  left: x - 9, top: y - 9,
+                  background: "radial-gradient(circle at 35% 30%, #f4e5b8 0%, #d4af37 45%, transparent 75%)",
+                  boxShadow: "0 0 10px rgba(212,175,55,0.85), 0 0 22px rgba(212,175,55,0.45)",
                 }} />
               );
             })}
 
-            {/* Glow */}
+            {/* Center glow */}
             <div className="absolute rounded-full" style={{
               inset: 36,
-              background: "radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)",
-              filter: "blur(12px)",
+              background: "radial-gradient(circle, rgba(212,175,55,0.18) 0%, transparent 70%)",
+              filter: "blur(14px)",
             }} />
 
             {/* Core disc */}

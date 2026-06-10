@@ -365,41 +365,52 @@ export function RitualOverlay() {
               style={{ background: "#050507", border: "none", borderRadius: "50%" }}
             >
               <svg width="210" height="210" viewBox="0 0 210 210" aria-label="The Milano Seal">
-                {/* Radial glow fill */}
                 <defs>
                   <radialGradient id="ro-orb-grad" cx="50%" cy="38%" r="58%">
-                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.13" />
+                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.18" />
                     <stop offset="100%" stopColor="#050507" stopOpacity="0" />
                   </radialGradient>
                   <radialGradient id="ro-orb-inner" cx="50%" cy="30%" r="50%">
-                    <stop offset="0%" stopColor="#E8D08A" stopOpacity="0.18" />
+                    <stop offset="0%" stopColor="#E8D08A" stopOpacity="0.22" />
                     <stop offset="100%" stopColor="#050507" stopOpacity="0" />
                   </radialGradient>
+                  <radialGradient id="ro-node-grad" cx="35%" cy="30%" r="65%">
+                    <stop offset="0%" stopColor="#f4e5b8" stopOpacity="1" />
+                    <stop offset="45%" stopColor="#d4af37" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#d4af37" stopOpacity="0" />
+                  </radialGradient>
+                  <filter id="ro-node-glow" x="-150%" y="-150%" width="400%" height="400%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
                 </defs>
-                {/* Base fill */}
                 <circle cx="105" cy="105" r="104" fill="#050507" />
                 <circle cx="105" cy="105" r="104" fill="url(#ro-orb-grad)" />
-                {/* Outer gold rim */}
-                <circle cx="105" cy="105" r="100" fill="none" stroke="#C6A55A" strokeWidth="1.4" opacity="0.55" />
-                {/* Secondary ring */}
-                <circle cx="105" cy="105" r="90" fill="none" stroke="#C6A55A" strokeWidth="0.6" opacity="0.18" strokeDasharray="3 6" />
+                {/* Outer gold rim — thick & bright */}
+                <circle cx="105" cy="105" r="100" fill="none" stroke="#C6A55A" strokeWidth="2" opacity="0.72" />
+                {/* Node ring */}
+                <circle cx="105" cy="105" r="90" fill="none" stroke="#C6A55A" strokeWidth="1" opacity="0.35" />
                 {/* Inner dashed orbit */}
-                <circle cx="105" cy="105" r="72" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.22" strokeDasharray="2 5" />
-                {/* 8 orbital node dots on r=90 */}
+                <circle cx="105" cy="105" r="72" fill="none" stroke="#C6A55A" strokeWidth="0.8" opacity="0.28" strokeDasharray="2 5" />
+                {/* 8 orbital node spheres */}
                 {Array.from({ length: 8 }, (_, i) => {
                   const rad = (i * 45 * Math.PI) / 180;
-                  return <circle key={i} cx={105 + 90 * Math.cos(rad)} cy={105 + 90 * Math.sin(rad)} r="3" fill="#C6A55A" opacity="0.5" />;
+                  const cx = 105 + 90 * Math.cos(rad);
+                  const cy = 105 + 90 * Math.sin(rad);
+                  return (
+                    <g key={i} filter="url(#ro-node-glow)">
+                      <circle cx={cx} cy={cy} r="9" fill="url(#ro-node-grad)" />
+                      <circle cx={cx} cy={cy} r="4" fill="#f4e5b8" opacity="0.95" />
+                    </g>
+                  );
                 })}
-                {/* Inner highlight */}
                 <circle cx="105" cy="105" r="68" fill="url(#ro-orb-inner)" />
-                {/* Brand crest — feathered M mark */}
                 <image
                   href="/milano-seal-gold-transparent-512.png"
-                  x="49" y="49" width="112" height="112"
-                  opacity="0.95"
+                  x="42" y="42" width="126" height="126"
+                  opacity="0.97"
                 />
-                {/* Specular top glint */}
-                <ellipse cx="88" cy="72" rx="18" ry="10" fill="white" opacity="0.04" transform="rotate(-20 88 72)" />
+                <ellipse cx="88" cy="72" rx="18" ry="10" fill="white" opacity="0.05" transform="rotate(-20 88 72)" />
               </svg>
             </div>
 

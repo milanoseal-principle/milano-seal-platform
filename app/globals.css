@@ -1097,7 +1097,7 @@ h4 {
 /* Ring C — dashed compass, CCW, wider */
 .ro-ring-c {
   inset: -18px;
-  border: 1px dashed rgba(212, 175, 55, 0.28);
+  border: 1px dashed rgba(212, 175, 55, 0.42);
 }
 .rings-active .ro-ring-c {
   animation:
@@ -1105,14 +1105,14 @@ h4 {
     ro-orbit-ccw 80s linear 3s infinite;
 }
 .vault-locked .ro-ring-c {
-  border-color: rgba(212, 175, 55, 0.48);
+  border-color: rgba(212, 175, 55, 0.58);
   animation: none;
 }
 
-/* Ring D — outermost faint */
+/* Ring D — outermost */
 .ro-ring-d {
   inset: -44px;
-  border: 1px solid rgba(212, 175, 55, 0.13);
+  border: 1.5px solid rgba(212, 175, 55, 0.28);
 }
 .rings-active .ro-ring-d {
   animation:
@@ -1120,7 +1120,7 @@ h4 {
     ro-orbit-cw 110s linear 3s infinite;
 }
 .vault-locked .ro-ring-d {
-  border-color: rgba(212, 175, 55, 0.28);
+  border-color: rgba(212, 175, 55, 0.45);
   animation: none;
 }
 

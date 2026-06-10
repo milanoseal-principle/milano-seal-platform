@@ -77,33 +77,36 @@ export function PortalEntryRitual({ onComplete }: { onComplete: () => void }) {
 
           {/* Seal medallion */}
           <div className="relative flex items-center justify-center mb-7" style={{ width: 200, height: 200 }}>
-            <motion.div className="absolute rounded-full border border-dashed" style={{
-              inset: 0, borderColor: "rgba(212,175,55,0.11)",
+            <motion.div className="absolute rounded-full" style={{
+              inset: 0, border: "1.5px dashed rgba(212,175,55,0.35)",
             }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 90, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute rounded-full border" style={{
-              inset: 20, borderColor: "rgba(212,175,55,0.17)", borderStyle: "dashed",
+            <motion.div className="absolute rounded-full" style={{
+              inset: 20, border: "1.5px dashed rgba(212,175,55,0.42)",
             }} animate={reduced ? {} : { rotate: -360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }} />
-            <motion.div className="absolute rounded-full border" style={{
-              inset: 40, borderColor: "rgba(212,175,55,0.26)",
+            <motion.div className="absolute rounded-full" style={{
+              inset: 40,
+              border: "2px solid rgba(212,175,55,0.65)",
+              boxShadow: "0 0 18px rgba(212,175,55,0.25), inset 0 0 18px rgba(212,175,55,0.08)",
             }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} />
 
-            {/* Node dots */}
+            {/* Node spheres on primary ring (r=60 from center = inset:40 ring) */}
             {[0, 60, 120, 180, 240, 300].map((deg) => {
-              const r = 100;
+              const r = 60;
               const x = 100 + r * Math.cos((deg * Math.PI) / 180);
               const y = 100 + r * Math.sin((deg * Math.PI) / 180);
               return (
                 <div key={deg} className="absolute rounded-full" style={{
-                  width: 5, height: 5, left: x - 2.5, top: y - 2.5,
-                  background: "rgba(212,175,55,0.4)",
+                  width: 18, height: 18, left: x - 9, top: y - 9,
+                  background: "radial-gradient(circle at 35% 30%, #f4e5b8 0%, #d4af37 45%, transparent 75%)",
+                  boxShadow: "0 0 10px rgba(212,175,55,0.85), 0 0 22px rgba(212,175,55,0.45)",
                 }} />
               );
             })}
 
             <div className="absolute rounded-full" style={{
               inset: 40,
-              background: "radial-gradient(circle, rgba(212,175,55,0.10) 0%, transparent 70%)",
-              filter: "blur(10px)",
+              background: "radial-gradient(circle, rgba(212,175,55,0.16) 0%, transparent 70%)",
+              filter: "blur(12px)",
             }} />
 
             <motion.div
