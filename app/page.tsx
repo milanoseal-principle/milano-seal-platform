@@ -4,7 +4,6 @@ import { TrustStrip } from "@/components/landing/trust-strip";
 import { RitualOverlay } from "@/components/landing/ritual-overlay";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { Services } from "@/components/landing/services";
-import { GlobalMap } from "@/components/landing/global-map";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { PaymentFounder } from "@/components/landing/payment-founder";
@@ -44,10 +43,9 @@ export default function HomePage() {
           <HowItWorks />
         </div>
 
-        {/* 6. Jurisdiction compliance lookup */}
+        {/* 6. Countries — jurisdiction compliance lookup */}
         <div id="countries">
           <JurisdictionComplianceLookup />
-          <GlobalMap />
         </div>
 
         {/* 6. What Are You Executing — document type grid */}
