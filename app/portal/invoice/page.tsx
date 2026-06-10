@@ -170,7 +170,6 @@ export default function ClientInvoicePage() {
               currency: deal.currency,
             })
           }
-          wisePaymentUrl={deal.wise_payment_url ?? null}
           paidAt={deal.paid_at ?? null}
         />
       </div>
