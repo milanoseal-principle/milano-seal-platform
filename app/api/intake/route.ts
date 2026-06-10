@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
           code: e.code,
         });
 
-        // Attempt 2: minimal guaranteed-safe payload — all metadata already in notes
+        // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits
         const minimalPayload = {
           deal_id,
           access_token,
@@ -360,8 +360,6 @@ export async function POST(req: NextRequest) {
           multi_country: Boolean(data.multi_country ?? false),
           payment_status: "unpaid" as const,
           deal_status: "awaiting_payment" as const,
-          notes: safeNotes,
-          internal_notes: safeInternalNotes,
         };
 
         const { data: d2, error: e2 } = await supabase
@@ -377,18 +375,47 @@ export async function POST(req: NextRequest) {
             hint: e2.hint,
             code: e2.code,
           });
-          return NextResponse.json(
-            {
-              error: "Failed to save matter. Please try again or contact support.",
-              code: "INTAKE_DB_INSERT_FAILED",
-              supabase_code: e2.code ?? e.code ?? null,
-            },
-            { status: 500 },
-          );
-        }
 
-        deal = d2 as Record<string, unknown>;
-        console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
+          // Attempt 3: absolute bare minimum — deal_id + access_token only
+          const barePayload = {
+            deal_id,
+            access_token,
+            client_name,
+            email: data.email || "",
+            payment_status: "unpaid" as const,
+            deal_status: "awaiting_payment" as const,
+          };
+          const { data: d3, error: e3 } = await supabase
+            .from("deals")
+            .insert([barePayload])
+            .select()
+            .single();
+
+          if (e3) {
+            console.error("[intake] DB insert attempt 3 failed:", {
+              message: e3.message,
+              details: e3.details,
+              hint: e3.hint,
+              code: e3.code,
+            });
+            return NextResponse.json(
+              {
+                error: "Failed to save matter. Please try again or contact support.",
+                code: "INTAKE_DB_INSERT_FAILED",
+                supabase_code: e3.code ?? e2.code ?? e.code ?? null,
+                attempt1_code: e.code ?? null,
+                attempt2_code: e2.code ?? null,
+              },
+              { status: 500 },
+            );
+          }
+
+          deal = d3 as Record<string, unknown>;
+          console.warn("[intake] saved via bare payload fallback — attempt1:", e.code, "attempt2:", e2.code);
+        } else {
+          deal = d2 as Record<string, unknown>;
+          console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
+        }
       }
     }
 
