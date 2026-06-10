@@ -54,6 +54,15 @@ export function TrustStrip() {
     <section className="relative py-12 bg-[#050507] border-y border-[#1A1A1A] overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] z-10 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6">
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]/45 text-center mb-6"
+        >
+          Credentials &amp; Operational Infrastructure
+        </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
