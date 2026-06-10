@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { SealImpressionReview } from "@/components/reviews/SealImpressionReview";
+import { shouldShowReviewPrompt } from "@/lib/reviews/googleBusinessProfile";
 import Image from "next/image";
 import { StatusTransitionPill } from "@/components/animations/StatusTransitionPill";
 import { TrustConfirmSeal } from "@/components/animations/TrustConfirmSeal";
@@ -53,6 +55,10 @@ interface Deal {
   balance_payment_link?: string | null;
   balance_payment_status?: string | null;
   created_at: string;
+  deal_status?: string | null;
+  release_status?: string | null;
+  delivery_status?: string | null;
+  is_paid_and_released?: boolean | null;
 }
 interface FileRecord {
   id: string;
@@ -707,6 +713,17 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
             />
           </div>
         </div>
+
+        {/* Review prompt */}
+        <SealImpressionReview
+          token={token}
+          matterId={deal.id}
+          clientName={deal.client_name}
+          executionLane={deal.execution_tier ?? null}
+          destinationCountry={deal.country ?? null}
+          documentType={deal.document ?? null}
+          isUnlocked={shouldShowReviewPrompt(deal as unknown as Record<string, unknown>)}
+        />
 
         {/* Footer */}
         <div className="text-center text-[#8A8A8A] text-xs space-y-1 pb-4">

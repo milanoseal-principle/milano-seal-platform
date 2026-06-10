@@ -1,5 +1,22 @@
 # GBP Authority and Review Engine
 
+## Module Status (GBP Review Capture + Seal Impression)
+
+| Item | Status |
+|------|--------|
+| Review capture route (`/api/reviews/request`) | Implemented |
+| Portal review prompt (`SealImpressionReview`) | Implemented |
+| Standalone review page (`/review`) | Implemented |
+| ReviewProofCards component | Implemented |
+| Schema utility (`buildProfessionalServiceSchema`) | Implemented |
+| Fake reviews | **Prohibited** — zero fake reviews in codebase |
+| AggregateRating | Gated behind real review data (`includeAggregateRating` + `reviewCount > 0`) |
+| Review prompt timing | After completed/released deals only (`shouldShowReviewPrompt`) |
+| Incentivized reviews | **Prohibited** |
+| Google review URL env | `NEXT_PUBLIC_GBP_REVIEW_URL=https://g.page/r/YOUR_REAL_REVIEW_LINK/review` (do not use placeholder — replace with real link before launch) |
+
+---
+
 ## GBP Buildout Checklist
 
 ### Profile Completeness
