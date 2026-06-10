@@ -244,83 +244,81 @@ export async function POST(req: NextRequest) {
       ((raw as Record<string, string>).company_name as string) ||
       ((raw as Record<string, string>).company as string) ||
       null;
+
+    const intakeMetadata = {
+      source,
+      companyName,
+      originAuthorityLabel: originAuthorityLabel ?? null,
+      normalizedRouting: normalizedRouting ?? null,
+      routingWarnings: routingWarnings ?? [],
+      payment_metadata: payment_metadata ?? null,
+      wise_invoice: wise_invoice ?? null,
+      wise_reference: deal_id,
+      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,
+      amount_due: pricing.total,
+      currency: "USD",
+      compliance: compliance ?? null,
+      decline_risk: decline_risk ?? null,
+      followup_schedule: ["24h", "72h", "7d"],
+      matterCategory: (raw as Record<string, unknown>).matterCategory ?? (raw as Record<string, unknown>).matter_category ?? null,
+      ronPreferred: (raw as Record<string, unknown>).ronPreferred ?? (raw as Record<string, unknown>).ron_preferred ?? null,
+      wetInkRequired: (raw as Record<string, unknown>).wetInkRequired ?? (raw as Record<string, unknown>).wet_ink_required ?? null,
+      receivingAuthority: (raw as Record<string, unknown>).receivingAuthority ?? (raw as Record<string, unknown>).receiving_authority ?? null,
+      deadlineOrClosingDate: (raw as Record<string, unknown>).deadlineOrClosingDate ?? (raw as Record<string, unknown>).deadline_or_closing_date ?? null,
+      courierRequired: (raw as Record<string, unknown>).courierRequired ?? (raw as Record<string, unknown>).courier_required ?? null,
+    };
+
+    const safeNotes = [
+      (data.notes as string) || "",
+      `[routing] origin_authority_type=${normalizedRouting?.origin_authority_type ?? "unknown"}`,
+      `[routing] origin_authority_label=${originAuthorityLabel ?? "unknown"}`,
+      `[routing] apostille_path=${normalizedRouting?.apostille_path ?? "unknown"}`,
+      (routingWarnings?.length ?? 0) > 0 ? `[routing_warnings] ${routingWarnings.join(" | ")}` : "",
+      `[intake_metadata:${JSON.stringify(intakeMetadata)}]`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const safeInternalNotes = JSON.stringify(intakeMetadata);
+
     const intakePayload = {
       deal_id,
-
+      access_token,
       client_name,
-      full_name: client_name,
-      client_type:
-        ((raw as Record<string, string>).client_type as string) ?? "individual",
+      client_type: ((raw as Record<string, string>).client_type as string) ?? "individual",
       company_name: companyName,
-      company: companyName,
       email: data.email || "",
       phone: data.phone || "",
-      country,
-      destination_country: country,
-      origin_state:
-        ((raw as Record<string, string>).origin_state as string) || null,
-      document: docType,
       document_type: docType,
-      service_type: docType,
       use_case: useCase || null,
-      notes: [
-        data.notes || "",
-        `[routing] origin_authority_type=${normalizedRouting.origin_authority_type}`,
-        `[routing] origin_authority_label=${originAuthorityLabel}`,
-        `[routing] apostille_path=${normalizedRouting.apostille_path}`,
-        routingWarnings.length > 0
-          ? `[routing_warnings] ${routingWarnings.join(" | ")}`
-          : "",
-        `[payment_metadata:${JSON.stringify(payment_metadata)}]`,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-      lane: finalLane,
-      execution_tier: finalLane,
-      execution_lane: finalLane,
+      destination_country: country,
+      origin_state: ((raw as Record<string, string>).origin_state as string) || null,
+      apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
       docs_count: Number(data.docs ?? 1),
-      docs: Number(data.docs ?? 1),
+      lane: finalLane,
+      urgency: (data.urgency as string) ?? "standard",
+      mobile: Boolean(data.mobile ?? false),
+      miles: Number(data.miles ?? 0),
       signers: Number(data.signers ?? 1),
       witnesses: Number(data.witnesses ?? 0),
       witness_type: data.witness_type ?? null,
       after_hours: Boolean(data.after_hours ?? false),
-      urgency: (data.urgency as string) ?? "standard",
-      mobile: Boolean(data.mobile ?? false),
-      miles: Number(data.miles ?? 0),
       translation: Boolean(data.translation ?? false),
       multi_country: Boolean(data.multi_country ?? false),
-      apostille_required:
-        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
-      requires_apostille:
-        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
-      amount: pricing.total,
-      total_price: pricing.total,
       base_price: pricing.base,
       witness_total: pricing.witness_total,
-      status: "awaiting_payment",
-      deal_status: "awaiting_payment",
-      payment_status: "pending",
-      payment_method: "wise",
-      invoice_status: "proforma",
-      invoice_subtotal: invoice.subtotal,
+      total_price: pricing.total,
       invoice_retainer: invoice.retainer,
       invoice_balance: invoice.balance,
-      invoice_valid_until: new Date(invoice.valid_until).toISOString(),
-      compliance_result: JSON.stringify(compliance),
-      decline_risk,
+      payment_status: "unpaid",
+      payment_method: "wise",
+      payment_reference,
+      payment_link,
+      deal_status: "awaiting_payment",
       conversion_score,
       priority_tier,
-      follow_up_active: true,
-      last_contacted: null,
-      followup_schedule: JSON.stringify(["24h", "72h", "7d"]),
-      source,
-      payment_link,
-      access_token,
-      // Wise payment fields — surfaced to client portal for payment flow
-      wise_reference: deal_id, // e.g. MS-2025-1234
-      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,
-      amount_due: pricing.total,
-      currency: "USD",
+      notes: safeNotes,
+      internal_notes: safeInternalNotes,
     };
 
     const supabase = createAdminClient();
@@ -331,10 +329,17 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("DB insert error:", error);
+      console.error("[intake] DB insert error:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+
       return NextResponse.json(
         {
           error: "Failed to save matter. Please try again or contact support.",
+          code: "INTAKE_DB_INSERT_FAILED",
         },
         { status: 500 },
       );
@@ -380,7 +385,7 @@ export async function POST(req: NextRequest) {
             destination_country: country,
             country,
             status: "awaiting_payment",
-            payment_status: "pending",
+            payment_status: "unpaid",
             payment_link,
             raw_text:
               ((raw as Record<string, string>).message as string) ?? null,
