@@ -322,37 +322,84 @@ export async function POST(req: NextRequest) {
     };
 
     const supabase = createAdminClient();
-    const { data: deal, error } = await supabase
-      .from("deals")
-      .insert([intakePayload])
-      .select()
-      .single();
+    let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
 
-    if (error) {
-      console.error("[intake] DB insert error:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      });
+    // Attempt 1: full payload
+    {
+      const { data: d, error: e } = await supabase
+        .from("deals")
+        .insert([intakePayload])
+        .select()
+        .single();
 
-      return NextResponse.json(
-        {
-          error: "Failed to save matter. Please try again or contact support.",
-          code: "INTAKE_DB_INSERT_FAILED",
-          supabase_code: error.code ?? null,
-        },
-        { status: 500 },
-      );
+      if (!e) {
+        deal = d as Record<string, unknown>;
+      } else {
+        console.error("[intake] DB insert attempt 1 failed:", {
+          message: e.message,
+          details: e.details,
+          hint: e.hint,
+          code: e.code,
+        });
+
+        // Attempt 2: minimal guaranteed-safe payload — all metadata already in notes
+        const minimalPayload = {
+          deal_id,
+          access_token,
+          client_name,
+          email: data.email || "",
+          phone: data.phone || "",
+          document_type: docType,
+          destination_country: country,
+          apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+          urgency: (data.urgency as string) ?? "standard",
+          mobile: Boolean(data.mobile ?? false),
+          signers: Number(data.signers ?? 1),
+          witnesses: Number(data.witnesses ?? 0),
+          translation: Boolean(data.translation ?? false),
+          multi_country: Boolean(data.multi_country ?? false),
+          payment_status: "unpaid" as const,
+          deal_status: "awaiting_payment" as const,
+          notes: safeNotes,
+          internal_notes: safeInternalNotes,
+        };
+
+        const { data: d2, error: e2 } = await supabase
+          .from("deals")
+          .insert([minimalPayload])
+          .select()
+          .single();
+
+        if (e2) {
+          console.error("[intake] DB insert attempt 2 failed:", {
+            message: e2.message,
+            details: e2.details,
+            hint: e2.hint,
+            code: e2.code,
+          });
+          return NextResponse.json(
+            {
+              error: "Failed to save matter. Please try again or contact support.",
+              code: "INTAKE_DB_INSERT_FAILED",
+              supabase_code: e2.code ?? e.code ?? null,
+            },
+            { status: 500 },
+          );
+        }
+
+        deal = d2 as Record<string, unknown>;
+        console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
+      }
     }
 
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);
 
     if (deal?.id) {
+      const dealRowId = deal.id as string;
       void (async () => {
         try {
           await appendLedger({
-            deal_id: deal.id,
+            deal_id: dealRowId,
             event: CUSTODY_EVENTS.DOC_CREATED,
             actor_type: "system",
             location: "Milano Seal Intake",
@@ -377,7 +424,7 @@ export async function POST(req: NextRequest) {
       void (async () => {
         try {
           await runDealEngine({
-            id: deal.id,
+            id: dealRowId,
             deal_id,
             email: data.email,
             phone: data.phone as string | undefined,
