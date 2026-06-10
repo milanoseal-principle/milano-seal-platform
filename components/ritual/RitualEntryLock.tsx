@@ -39,7 +39,6 @@ export function RitualEntryLock({
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false;
 
-  // Session-gate: if already seen, skip immediately
   useEffect(() => {
     if (sessionKey && typeof sessionStorage !== "undefined") {
       if (sessionStorage.getItem(sessionKey)) {
@@ -65,7 +64,6 @@ export function RitualEntryLock({
     );
   }, [sessionKey, onComplete, reduced]);
 
-  // Animation timeline
   useEffect(() => {
     if (gone) return;
     if (sessionKey && typeof sessionStorage !== "undefined") {
@@ -74,24 +72,23 @@ export function RitualEntryLock({
 
     const ts: ReturnType<typeof setTimeout>[] = [];
 
-    ts.push(setTimeout(() => setShowContent(true), 400));
+    ts.push(setTimeout(() => setShowContent(true), 350));
 
     steps.forEach((_, i) => {
       ts.push(
         setTimeout(() => {
           setCompletedCount((c) => c + 1);
-        }, 1600 + i * 380)
+        }, 1200 + i * 340)
       );
     });
 
-    const allStepsDone = 1600 + steps.length * 380 + 500;
+    const allStepsDone = 1200 + steps.length * 340 + 450;
     ts.push(setTimeout(() => setReadyForExit(true), allStepsDone));
-    ts.push(setTimeout(() => dismiss(), allStepsDone + 800));
+    ts.push(setTimeout(() => dismiss(), allStepsDone + 1100));
 
     return () => ts.forEach(clearTimeout);
   }, [gone, steps, sessionKey, dismiss]);
 
-  // Escape key
   useEffect(() => {
     if (!readyForExit) return;
     const fn = (e: KeyboardEvent) => {
@@ -130,29 +127,27 @@ export function RitualEntryLock({
             overflow: "hidden",
             background: "#050507",
             cursor: readyForExit ? "pointer" : "default",
-            paddingTop: "var(--sa-top, 0px)",
-            paddingBottom: "var(--sa-bottom, 0px)",
+            paddingTop: "max(18px, env(safe-area-inset-top))",
+            paddingBottom: "max(18px, env(safe-area-inset-bottom))",
           }}
           onClick={() => readyForExit && dismiss()}
           aria-hidden="true"
         >
-          {/* World map canvas */}
           <WorldMapCanvas />
 
-          {/* Vertical spotlight */}
           <motion.div
             style={{
               position: "absolute",
               top: 0,
               left: "50%",
               transform: "translateX(-50%)",
-              width: 280,
-              height: "60%",
+              width: 520,
+              height: "72%",
               background:
-                "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(212,175,55,0.09) 0%, transparent 70%)",
+                "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(231,200,120,0.18) 0%, rgba(198,166,91,0.07) 35%, transparent 72%)",
               pointerEvents: "none",
             }}
-            animate={reduced ? {} : { opacity: [0.8, 1.0, 0.85] }}
+            animate={reduced ? {} : { opacity: [0.78, 1, 0.82] }}
             transition={{
               duration: 5.5,
               repeat: Infinity,
@@ -160,151 +155,19 @@ export function RitualEntryLock({
             }}
           />
 
-          {/* Dark vignette */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "radial-gradient(ellipse 70% 65% at 50% 40%, transparent 40%, rgba(5,5,7,0.75) 100%)",
+                "radial-gradient(ellipse 58% 58% at 50% 37%, transparent 38%, rgba(5,5,7,0.72) 100%)",
               pointerEvents: "none",
             }}
           />
 
-          {/* Medallion */}
-          <motion.div
-            initial={
-              reduced ? {} : { opacity: 0, scale: 0.92, y: 18, filter: "blur(10px)" }
-            }
-            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              duration: reduced ? 0.15 : 1.1,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            style={{ marginBottom: 20, position: "relative", zIndex: 1 }}
-          >
-            <RitualMedallion reduced={reduced} />
-          </motion.div>
-
-          {/* Typography block */}
-          <motion.div
-            initial={reduced ? {} : { opacity: 0, y: 8 }}
-            animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-            transition={{ duration: reduced ? 0.1 : 0.55, ease: "easeOut" }}
+          <div
             style={{
-              textAlign: "center",
-              marginBottom: 8,
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {eyebrow && (
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: 9,
-                  letterSpacing: "0.28em",
-                  textTransform: "uppercase",
-                  color: "rgba(212,175,55,0.45)",
-                  marginBottom: 6,
-                }}
-              >
-                {eyebrow}
-              </p>
-            )}
-
-            {/* h1 */}
-            <h1
-              style={{
-                fontFamily: "var(--font-playfair, Georgia, serif)",
-                fontWeight: "normal",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                fontSize: "clamp(1.2rem, 3vw, 1.6rem)",
-                background:
-                  "linear-gradient(105deg, #c6a55a 38%, #f4e5b8 50%, #c6a55a 62%)",
-                backgroundSize: "240% 100%",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                filter: "drop-shadow(0 0 22px rgba(212,175,55,0.28))",
-                margin: 0,
-              }}
-            >
-              The Milano Seal™
-            </h1>
-
-            {/* Divider */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                width: 260,
-                margin: "8px auto",
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  height: 1,
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent)",
-                }}
-              />
-              <span style={{ color: "rgba(212,175,55,0.55)", fontSize: 7 }}>
-                ◆
-              </span>
-              <div
-                style={{
-                  flex: 1,
-                  height: 1,
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent)",
-                }}
-              />
-            </div>
-
-            {/* Tagline */}
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: 9,
-                letterSpacing: "0.25em",
-                textTransform: "uppercase",
-                color: "rgba(212,175,55,0.45)",
-                margin: 0,
-              }}
-            >
-              Sealing Trust With Every Signature™
-            </p>
-
-            {/* Status text */}
-            <p
-              style={{
-                fontFamily: "system-ui, sans-serif",
-                fontSize: 13,
-                color: "rgba(255,255,255,0.35)",
-                marginTop: 8,
-                marginBottom: 0,
-              }}
-            >
-              {statusText}
-            </p>
-          </motion.div>
-
-          {/* Progress + Checklist block */}
-          <motion.div
-            initial={reduced ? {} : { opacity: 0, y: 6 }}
-            animate={
-              showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }
-            }
-            transition={{
-              duration: reduced ? 0.1 : 0.5,
-              delay: reduced ? 0 : 0.1,
-              ease: "easeOut",
-            }}
-            style={{
+              width: "min(94vw, 920px)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -312,33 +175,157 @@ export function RitualEntryLock({
               zIndex: 1,
             }}
           >
-            <RitualProgressRail label={sectionLabel} reduced={reduced} />
-            <div style={{ width: "min(100%, 340px)", padding: "0 16px" }}>
-              <RitualChecklist items={steps} completedCount={completedCount} />
-            </div>
-          </motion.div>
+            <motion.div
+              initial={
+                reduced ? {} : { opacity: 0, scale: 0.92, y: 18, filter: "blur(10px)" }
+              }
+              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+              transition={{
+                duration: reduced ? 0.15 : 1.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              style={{ marginBottom: 4, position: "relative", zIndex: 1 }}
+            >
+              <RitualMedallion reduced={reduced} />
+            </motion.div>
 
-          {/* Footer */}
-          <motion.div
-            animate={{ opacity: readyForExit ? 1 : 0 }}
-            transition={{ duration: reduced ? 0.1 : 0.5 }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 24,
-              fontSize: 9,
-              fontFamily: "monospace",
-              letterSpacing: "0.35em",
-              textTransform: "uppercase",
-              color: "rgba(212,175,55,0.7)",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            <ShieldCheck size={14} style={{ color: "#d4af37" }} />
-            <span>{footerText}</span>
-          </motion.div>
+            <motion.div
+              initial={reduced ? {} : { opacity: 0, y: 8 }}
+              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+              transition={{ duration: reduced ? 0.1 : 0.55, ease: "easeOut" }}
+              style={{
+                textAlign: "center",
+                marginTop: -10,
+                marginBottom: 18,
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              {eyebrow && (
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.32em",
+                    textTransform: "uppercase",
+                    color: "rgba(212,175,55,0.5)",
+                    marginBottom: 8,
+                  }}
+                >
+                  {eyebrow}
+                </p>
+              )}
+
+              <h1
+                style={{
+                  fontFamily: "var(--font-playfair, Georgia, serif)",
+                  fontWeight: "normal",
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  fontSize: "clamp(2.5rem, 5.6vw, 4.7rem)",
+                  lineHeight: 0.95,
+                  background:
+                    "linear-gradient(105deg, #a87822 18%, #f4e5b8 46%, #c6a55a 70%, #8a5f1d 100%)",
+                  backgroundSize: "240% 100%",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 24px rgba(212,175,55,0.28))",
+                  margin: 0,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                The Milano Seal™
+              </h1>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  width: "min(72vw, 560px)",
+                  margin: "18px auto 14px",
+                }}
+              >
+                <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.44), transparent)" }} />
+                <span style={{ color: "rgba(212,175,55,0.7)", fontSize: 9 }}>◆</span>
+                <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.44), transparent)" }} />
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: "clamp(0.68rem, 1.15vw, 0.92rem)",
+                  letterSpacing: "0.42em",
+                  textTransform: "uppercase",
+                  color: "rgba(231,200,120,0.72)",
+                  margin: 0,
+                }}
+              >
+                Sealing Trust With Every Signature™
+              </p>
+
+              <p
+                style={{
+                  fontFamily: "system-ui, sans-serif",
+                  fontSize: "clamp(1rem, 1.55vw, 1.35rem)",
+                  color: "rgba(255,255,255,0.82)",
+                  marginTop: 30,
+                  marginBottom: 0,
+                }}
+              >
+                {statusText}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={reduced ? {} : { opacity: 0, y: 6 }}
+              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+              transition={{
+                duration: reduced ? 0.1 : 0.5,
+                delay: reduced ? 0 : 0.1,
+                ease: "easeOut",
+              }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                position: "relative",
+                zIndex: 1,
+                width: "min(92vw, 620px)",
+              }}
+            >
+              <RitualProgressRail label={sectionLabel} reduced={reduced} />
+              <div style={{ width: "min(100%, 560px)", padding: "0 20px" }}>
+                <RitualChecklist items={steps} completedCount={completedCount} />
+              </div>
+            </motion.div>
+
+            <motion.div
+              animate={{ opacity: readyForExit ? 1 : 0 }}
+              transition={{ duration: reduced ? 0.1 : 0.5 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                marginTop: 24,
+                fontSize: "clamp(0.75rem, 1.35vw, 1rem)",
+                fontFamily: "monospace",
+                letterSpacing: "0.42em",
+                textTransform: "uppercase",
+                color: "rgba(231,200,120,0.82)",
+                position: "relative",
+                zIndex: 1,
+                width: "min(92vw, 720px)",
+              }}
+            >
+              <span style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.38))" }} />
+              <ShieldCheck size={24} style={{ color: "#d4af37", flexShrink: 0 }} />
+              <span>{footerText}</span>
+              <span style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(212,175,55,0.38), transparent)" }} />
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
