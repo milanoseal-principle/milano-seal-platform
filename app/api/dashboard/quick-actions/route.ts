@@ -11,7 +11,7 @@ const BLOCKED_FIELDS = [
   "BLUENOTARY_API_KEY", "SUPABASE_SERVICE_ROLE",
 ];
 
-const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
+const ADMIN_ROLES = new Set(["founder_admin", "admin_operator", "admin", "operator", "ops_manager", "finance", "va_operator", "alliance_partner"]);
 
 const GROUPS = [
   { id: "matter", label: "Matter", actions: ["Matter Registry", "Create Matter", "Review Active Matter", "Intake Review", "Matter Pipeline"] },
@@ -40,7 +40,7 @@ export async function GET() {
       .select("deal_status, release_status", { count: "exact" });
 
     if (dealsError) {
-      return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS });
+      return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS, role: profile.role, matterContext: null });
     }
 
     const rows = statusRows ?? [];
@@ -65,7 +65,12 @@ export async function GET() {
       }
     }
 
-    const payload = { summary: { actionRequiredCount, blockedCount, reviewRequiredCount, readyCount, deliveredNotReleasedCount, vaTaskCount, overdueVaTaskCount, no_data: false }, groups: GROUPS };
+    const payload = {
+      summary: { actionRequiredCount, blockedCount, reviewRequiredCount, readyCount, deliveredNotReleasedCount, vaTaskCount, overdueVaTaskCount, no_data: false },
+      groups: GROUPS,
+      role: profile.role,
+      matterContext: null,
+    };
 
     const serialized = JSON.stringify(payload);
     for (const field of BLOCKED_FIELDS) {
@@ -75,6 +80,6 @@ export async function GET() {
     return NextResponse.json(payload);
   } catch (err) {
     console.error("[quick-actions] unexpected error", err);
-    return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS });
+    return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS, role: 'founder_admin', matterContext: null });
   }
 }

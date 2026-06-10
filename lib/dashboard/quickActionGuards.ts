@@ -36,7 +36,9 @@ export function checkPrecondition(
         ? { pass: true }
         : { pass: false, reason: 'Matter must be release-ready.' };
     case 'final_document_ready':
-      return { pass: true }; // checked in release workflow
+      return ['final_uploaded', 'ready_for_release'].includes(ctx.releaseStatus ?? '')
+        ? { pass: true }
+        : { pass: false, reason: 'Final document must be ready before release.' };
     case 'delivery_confirmed_or_digital_release_ready':
       return (ctx.matterState === 'delivered' || ctx.matterState === 'digital_release_ready')
         ? { pass: true }
