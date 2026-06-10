@@ -91,7 +91,7 @@ function CountryCard({ country, index }: { country: CountrySpec; index: number }
           </span>
         </div>
         <Link
-          href="#"
+          href="/dashboard/relationships"
           className="text-[8px] font-mono uppercase tracking-[0.12em] px-2 py-0.5 rounded-sm transition-colors"
           style={{
             background: "rgba(212,175,55,0.06)",

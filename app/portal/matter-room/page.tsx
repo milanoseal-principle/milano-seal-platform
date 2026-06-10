@@ -2,20 +2,21 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
+import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
 
 export const metadata: Metadata = {
   title: "Matter Room | The Milano Seal™",
   robots: { index: false, follow: false },
 };
 
-// Safe fields only — never expose internal fields
+// Safe fields only — never expose internal fields.
+// Restricted to columns guaranteed to exist in the live deals table;
+// optional columns (currency, wise_payment_url, amount_due) are derived
+// with in-app fallbacks so a missing column can't fail the whole select.
 const SAFE_MATTER_FIELDS = [
-  "id", "matter_reference", "deal_status", "release_status",
-  "payment_status", "payment_confirmed", "paid_at", "currency",
-  "wise_reference", "wise_payment_url", "amount_due",
-  "document_type", "destination_country", "total_price",
-  "receiving_authority", "created_at", "updated_at",
-  "client_name", "estimated_completion_date",
+  "id", "status", "payment_status",
+  "wise_reference", "document_type", "destination_country",
+  "total_price", "created_at", "updated_at", "client_name",
 ].join(", ");
 
 export default async function MatterRoomPage({
@@ -38,16 +39,11 @@ export default async function MatterRoomPage({
   if (!profile || profile.role !== "client") redirect("/portal");
 
   type MatterRow = {
-    id: string; matter_reference?: string | null; deal_status?: string | null;
-    release_status?: string | null; payment_status?: string | null;
-    payment_confirmed?: boolean | null; paid_at?: string | null;
-    currency?: string | null; wise_reference?: string | null;
-    wise_payment_url?: string | null; amount_due?: number | null;
-    total_price?: number | null;
+    id: string; status?: string | null; payment_status?: string | null;
+    wise_reference?: string | null; total_price?: number | null;
     document_type?: string | null; destination_country?: string | null;
-    receiving_authority?: string | null; created_at?: string | null;
-    updated_at?: string | null; client_name?: string | null;
-    estimated_completion_date?: string | null;
+    created_at?: string | null; updated_at?: string | null;
+    client_name?: string | null;
   };
   let matter: MatterRow | null = null;
   if (matter_id) {
@@ -55,10 +51,12 @@ export default async function MatterRoomPage({
       .from("deals")
       .select(SAFE_MATTER_FIELDS)
       .eq("id", matter_id)
-      .eq("client_email", user.email)
+      .ilike("email", user.email ?? "")
       .single();
     matter = data as unknown as MatterRow | null;
   }
+
+  const matterPaid = matter?.payment_status === "paid";
 
   const statusColor = (s: string) => {
     if (s === "completed" || s === "released") return "#22c55e";
@@ -80,7 +78,7 @@ export default async function MatterRoomPage({
           </h1>
           {matter && (
             <p className="font-mono text-xs mt-1" style={{ color: "rgba(212,175,55,0.6)" }}>
-              {matter.matter_reference ?? matter.id?.slice(0, 8).toUpperCase()} · {matter.document_type ?? "Document Matter"}
+              {matter.id?.slice(0, 8).toUpperCase()} · {matter.document_type ?? "Document Matter"}
             </p>
           )}
         </div>
@@ -98,9 +96,9 @@ export default async function MatterRoomPage({
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(212,175,55,0.4)" }}>Matter Status</p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Status", value: matter.deal_status ?? "—" },
+                  { label: "Status", value: matter.status ?? "—" },
                   { label: "Payment", value: matter.payment_status ?? "—" },
-                  { label: "Release", value: matter.release_status ?? "—" },
+                  { label: "Document", value: matter.document_type ?? "—" },
                   { label: "Destination", value: matter.destination_country ?? "—" },
                 ].map(({ label, value }) => (
                   <div key={label}>
@@ -113,38 +111,33 @@ export default async function MatterRoomPage({
               </div>
             </div>
 
-            {/* Receiving Authority */}
-            {matter.receiving_authority && (
-              <div className="rounded border p-6" style={{ borderColor: "rgba(212,175,55,0.12)", background: "rgba(255,255,255,0.02)" }}>
-                <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-2" style={{ color: "rgba(212,175,55,0.4)" }}>Receiving Authority</p>
-                <p className="text-white font-medium">{matter.receiving_authority}</p>
-              </div>
-            )}
-
             {/* Payment Card */}
-            {(matter.payment_status !== "paid" && !matter.payment_confirmed) || matter.wise_reference ? (
-              <div>
-                <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-3" style={{ color: "rgba(212,175,55,0.4)" }}>Payment</p>
-                <WisePaymentCard
-                  amountDue={matter.amount_due ?? matter.total_price ?? 0}
-                  currency={matter.currency ?? "USD"}
-                  paymentStatus={matter.payment_confirmed ? "paid" : (matter.payment_status ?? "awaiting_payment")}
-                  wiseReference={
+            <div>
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-3" style={{ color: "rgba(212,175,55,0.4)" }}>Payment</p>
+              <WisePaymentCard
+                amountDue={matter.total_price ?? 0}
+                currency="USD"
+                paymentStatus={matter.payment_status ?? "awaiting_payment"}
+                wiseReference={
+                  matter.wise_reference ??
+                  `MS-${matter.id.slice(0, 8).toUpperCase()}`
+                }
+                wisePaymentUrl={buildWisePaymentUrl({
+                  wiseReference:
                     matter.wise_reference ??
-                    `MS-${matter.id.slice(0, 8).toUpperCase()}`
-                  }
-                  wisePaymentUrl={matter.wise_payment_url ?? null}
-                  paidAt={matter.paid_at ?? null}
-                />
-              </div>
-            ) : null}
+                    `MS-${matter.id.slice(0, 8).toUpperCase()}`,
+                  amountDue: matter.total_price ?? 0,
+                })}
+                paidAt={null}
+              />
+            </div>
 
             {/* Release Readiness */}
             <div className="rounded border p-6" style={{ borderColor: "rgba(212,175,55,0.12)", background: "rgba(255,255,255,0.02)" }}>
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(212,175,55,0.4)" }}>Release Readiness</p>
-              {matter.payment_status === "paid" && matter.release_status === "released" ? (
+              {matterPaid && matter.status === "released" ? (
                 <p className="font-mono text-sm" style={{ color: "#22c55e" }}>✓ Documents released. Contact your coordinator for delivery confirmation.</p>
-              ) : (matter.payment_status !== "paid" && !matter.payment_confirmed) ? (
+              ) : !matterPaid ? (
                 <p className="font-mono text-sm" style={{ color: "#f59e0b" }}>Payment Required — Complete payment above to unlock scheduling and document release.</p>
               ) : (
                 <p className="font-mono text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>Release pending operator review.</p>

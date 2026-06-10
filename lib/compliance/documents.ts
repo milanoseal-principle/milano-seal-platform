@@ -151,6 +151,17 @@ export const DOCUMENT_TAXONOMY: DocumentTaxonomyItem[] = [
     faqs: [],
   },
   {
+    slug: "name-discrepancy-affidavit",
+    name: "Name Discrepancy Affidavit",
+    category: "legal",
+    commonlyApostilled: true,
+    requiresNotarizationFirst: true,
+    translationOftenRequired: true,
+    seoTitle: "Apostille for Name Discrepancy Affidavit | The Milano Seal™",
+    seoDescription: "Name discrepancy (one-and-the-same person) affidavit notarization and apostille routing for international use. Coordination, courier custody, and release support.",
+    faqs: [],
+  },
+  {
     slug: "medical-records",
     name: "Medical Records",
     category: "personal-status",

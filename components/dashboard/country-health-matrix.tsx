@@ -23,7 +23,7 @@ function getCoverage(country: string): CoverageCheck {
   const slug = country.toLowerCase();
   return {
     compliance:    !!COUNTRY_COMPLIANCE_DATA[slug],
-    authorityPage: true,                    // all 7 have /countries/[slug]
+    authorityPage: true,                    // all 7 have /apostille/[slug]
     faq:           (COUNTRY_FAQS[slug]?.length ?? 0) >= 4,
     schema:        !!COUNTRY_COMPLIANCE_DATA[slug], // JSON-LD uses compliance data
     mapNode:       DESTINATION_NODES.some((n) => n.id === slug),
@@ -96,7 +96,7 @@ export function CountryHealthMatrix() {
               className="grid grid-cols-[120px_repeat(5,1fr)_80px] gap-2 items-center py-2 border-b border-white/[0.03] last:border-0"
             >
               <Link
-                href={`/countries/${slug}`}
+                href={`/apostille/${slug}`}
                 className="flex items-center gap-2 group"
               >
                 <span className="font-mono text-[10px] text-[#888] group-hover:text-[#C6A55A] transition-colors tracking-wide">
