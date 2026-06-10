@@ -1,4 +1,4 @@
-import { QuickAction, QuickActionStatus } from './quickActionTypes';
+import { QuickAction, QuickActionStatus, ResolvedQuickAction } from './quickActionTypes';
 import { MOUNTED_ROUTES } from './mountedRoutes';
 import { evaluateGuards, GuardContext } from './quickActionGuards';
 
@@ -7,6 +7,9 @@ export interface ResolvedAction extends QuickAction {
   resolvedStatus: QuickActionStatus;
   resolvedReason?: string;
 }
+
+// Re-export canonical type for new components
+export type { ResolvedQuickAction };
 
 export function buildQuickActionHref(
   action: QuickAction,

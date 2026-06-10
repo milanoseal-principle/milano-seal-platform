@@ -28,3 +28,22 @@ export interface QuickAction {
   destructive?: boolean;
   preconditions?: string[];
 }
+
+export interface QuickActionContext {
+  activeMatterId?: string;
+  activeMatterRef?: string;
+  role: QuickActionRole;
+  mountedRoutes: string[];
+  matterState?: string;
+  paymentStatus?: string;
+  executionStatus?: string;
+  releaseStatus?: string;
+}
+
+export interface ResolvedQuickAction extends QuickAction {
+  resolvedHref: string;
+  resolvedStatus: QuickActionStatus;
+  resolvedDisabledReason?: string;
+  /** @deprecated use resolvedDisabledReason */
+  resolvedReason?: string;
+}
