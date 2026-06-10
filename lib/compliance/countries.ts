@@ -558,6 +558,8 @@ const SLUG_ALIASES: Record<string, string> = {
 export function getCountryBySlug(slug: string): CountryComplianceProfile | undefined {
   const resolved = SLUG_ALIASES[slug] ?? slug;
   return COUNTRY_REGISTRY.find(c => c.slug === resolved);
+export function getCountryBySlug(slug: string): CountryComplianceProfile | undefined {
+  return COUNTRY_REGISTRY.find(c => c.slug === slug);
 }
 
 export function getActiveCorridors(): CountryComplianceProfile[] {

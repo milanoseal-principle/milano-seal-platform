@@ -48,6 +48,10 @@ export default function HomePage() {
         {/* 6. Countries — jurisdiction compliance lookup */}
         <div id="countries">
           <JurisdictionComplianceLookup />
+        {/* 6. Jurisdiction compliance lookup */}
+        <div id="countries">
+          <JurisdictionComplianceLookup />
+          <GlobalMap />
         </div>
 
         {/* 6. What Are You Executing — document type grid */}

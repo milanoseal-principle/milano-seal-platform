@@ -17,6 +17,12 @@ const SAFE_MATTER_FIELDS = [
   "id", "status", "payment_status",
   "wise_reference", "document_type", "destination_country",
   "total_price", "created_at", "updated_at", "client_name",
+  "id", "matter_reference", "deal_status", "release_status",
+  "payment_status", "payment_confirmed", "paid_at", "currency",
+  "wise_reference", "wise_payment_url", "amount_due",
+  "document_type", "destination_country", "total_price",
+  "receiving_authority", "created_at", "updated_at",
+  "client_name", "estimated_completion_date",
 ].join(", ");
 
 export default async function MatterRoomPage({
@@ -41,6 +47,12 @@ export default async function MatterRoomPage({
   type MatterRow = {
     id: string; status?: string | null; payment_status?: string | null;
     wise_reference?: string | null; total_price?: number | null;
+    id: string; matter_reference?: string | null; deal_status?: string | null;
+    release_status?: string | null; payment_status?: string | null;
+    payment_confirmed?: boolean | null; paid_at?: string | null;
+    currency?: string | null; wise_reference?: string | null;
+    wise_payment_url?: string | null; amount_due?: number | null;
+    total_price?: number | null;
     document_type?: string | null; destination_country?: string | null;
     created_at?: string | null; updated_at?: string | null;
     client_name?: string | null;
@@ -132,12 +144,31 @@ export default async function MatterRoomPage({
               />
             </div>
 
+            {/* Payment Card */}
+            {(matter.payment_status !== "paid" && !matter.payment_confirmed) || matter.wise_reference ? (
+              <div>
+                <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-3" style={{ color: "rgba(212,175,55,0.4)" }}>Payment</p>
+                <WisePaymentCard
+                  amountDue={matter.amount_due ?? matter.total_price ?? 0}
+                  currency={matter.currency ?? "USD"}
+                  paymentStatus={matter.payment_confirmed ? "paid" : (matter.payment_status ?? "awaiting_payment")}
+                  wiseReference={
+                    matter.wise_reference ??
+                    `MS-${matter.id.slice(0, 8).toUpperCase()}`
+                  }
+                  wisePaymentUrl={matter.wise_payment_url ?? null}
+                  paidAt={matter.paid_at ?? null}
+                />
+              </div>
+            ) : null}
+
             {/* Release Readiness */}
             <div className="rounded border p-6" style={{ borderColor: "rgba(212,175,55,0.12)", background: "rgba(255,255,255,0.02)" }}>
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase mb-4" style={{ color: "rgba(212,175,55,0.4)" }}>Release Readiness</p>
               {matterPaid && matter.status === "released" ? (
                 <p className="font-mono text-sm" style={{ color: "#22c55e" }}>✓ Documents released. Contact your coordinator for delivery confirmation.</p>
               ) : !matterPaid ? (
+              ) : (matter.payment_status !== "paid" && !matter.payment_confirmed) ? (
                 <p className="font-mono text-sm" style={{ color: "#f59e0b" }}>Payment Required — Complete payment above to unlock scheduling and document release.</p>
               ) : (
                 <p className="font-mono text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>Release pending operator review.</p>
