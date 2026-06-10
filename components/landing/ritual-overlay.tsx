@@ -392,8 +392,12 @@ export function RitualOverlay() {
                 })}
                 {/* Inner highlight */}
                 <circle cx="105" cy="105" r="68" fill="url(#ro-orb-inner)" />
-                {/* M monogram */}
-                <text x="105" y="122" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="58" fill="#C6A55A" opacity="0.92" fontWeight="500" letterSpacing="-1">M</text>
+                {/* Brand crest — feathered M mark */}
+                <image
+                  href="/milano-seal-gold-transparent-512.png"
+                  x="49" y="49" width="112" height="112"
+                  opacity="0.95"
+                />
                 {/* Specular top glint */}
                 <ellipse cx="88" cy="72" rx="18" ry="10" fill="white" opacity="0.04" transform="rotate(-20 88 72)" />
               </svg>
