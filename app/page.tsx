@@ -1,7 +1,7 @@
 import { Header } from "@/components/landing/header";
 import { Hero } from "@/components/landing/hero";
 import { TrustStrip } from "@/components/landing/trust-strip";
-import { RitualOverlay } from "@/components/landing/ritual-overlay";
+import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { Services } from "@/components/landing/services";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
@@ -19,7 +19,18 @@ import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
-      <RitualOverlay />
+      <RitualEntryLock
+        sessionKey="milano_ritual_home_seen"
+        sectionLabel="Structuring secure matter environment"
+        steps={[
+          "Verifying secure workspace",
+          "Preparing Global Document Intelligence",
+          "Reviewing execution pathway",
+          "Checking payment-gated scheduling",
+          "Structuring chain-of-custody visibility",
+          "Ready for review",
+        ]}
+      />
       <Header />
       <IntelligenceRail />
       <CorridorTimeStrip />
