@@ -31,6 +31,7 @@ export interface PortalClientMatter {
   invoice_status: string | null;
   wise_reference: string | null;
   wise_payment_url: string | null;
+  is_platform_fee_only: boolean;
   courier_tracking_id: string | null;
   courier_carrier: string | null;
   delivery_status: string | null;
@@ -77,6 +78,7 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     invoice_status: (raw.invoice_status as string | null) ?? null,
     wise_reference: (raw.wise_reference as string | null) ?? null,
     wise_payment_url: (raw.wise_payment_url as string | null) ?? null,
+    is_platform_fee_only: (raw.is_platform_fee_only as boolean) ?? false,
     courier_tracking_id: (raw.courier_tracking_id as string | null) ?? (raw.tracking_number as string | null) ?? null,
     courier_carrier: (raw.courier_carrier as string | null) ?? (raw.carrier as string | null) ?? null,
     delivery_status: (raw.delivery_status as string | null) ?? null,
