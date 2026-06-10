@@ -546,6 +546,18 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
   },
 ];
 
+// Alternate slugs that may arrive via external links or older URLs.
+const SLUG_ALIASES: Record<string, string> = {
+  "united-arab-emirates": "uae",
+  "uk": "united-kingdom",
+  "great-britain": "united-kingdom",
+  "korea": "south-korea",
+  "holland": "netherlands",
+};
+
+export function getCountryBySlug(slug: string): CountryComplianceProfile | undefined {
+  const resolved = SLUG_ALIASES[slug] ?? slug;
+  return COUNTRY_REGISTRY.find(c => c.slug === resolved);
 export function getCountryBySlug(slug: string): CountryComplianceProfile | undefined {
   return COUNTRY_REGISTRY.find(c => c.slug === slug);
 }

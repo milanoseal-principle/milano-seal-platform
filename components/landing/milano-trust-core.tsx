@@ -78,7 +78,7 @@ function Pillar({
           <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
         </div>
         <div className="min-w-0">
-          <h3 className="text-white text-[13px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
+          <h3 className="font-serif text-[#E8DCC0] text-[15px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
           <p className="text-[#8A8A8A] text-[13px] leading-relaxed group-hover:text-[#9A9A9A] transition-colors">
             {desc}
           </p>
@@ -117,7 +117,7 @@ export function MilanoTrustCore() {
         ))}
       </div>
 
-      <div className="relative max-w-6xl mx-auto">
+      <div className="relative max-w-5xl mx-auto">
         {/* Mobile: header + grid */}
         <div className="lg:hidden">
           <div className="flex flex-col items-center text-center mb-10">
@@ -157,7 +157,7 @@ export function MilanoTrustCore() {
             <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
               Milano Trust Core
             </h2>
-            <p className="text-white/50 text-sm leading-relaxed">
+            <p className="text-white/50 text-sm leading-relaxed max-w-2xl mx-auto">
               International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
             </p>
           </motion.div>
@@ -239,9 +239,9 @@ export function MilanoTrustCore() {
                 </defs>
               </svg>
               {/* Rings */}
-              <div className="absolute w-[240px] h-[240px] rounded-full border border-[#C6A55A]/06" />
-              <div className="absolute w-[200px] h-[200px] rounded-full border border-[#C6A55A]/10" />
-              <div className="absolute w-[160px] h-[160px] rounded-full border border-[#C6A55A]/16" />
+              <div className="absolute w-[240px] h-[240px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.08)" }} />
+              <div className="absolute w-[200px] h-[200px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.14)" }} />
+              <div className="absolute w-[160px] h-[160px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.22)" }} />
               {/* Core */}
               <div
                 className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center"
@@ -266,35 +266,6 @@ export function MilanoTrustCore() {
               ))}
             </div>
 
-            {/* Connector lines SVG — absolutely positioned over the full grid */}
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 1000 280"
-              preserveAspectRatio="none"
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                pointerEvents: "none",
-              }}
-            >
-              {/* Left connectors: from orb left edge (x=435) to left edge (x=0), fanning to each pillar row */}
-              <line x1="0" y1="47"  x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              <line x1="0" y1="140" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              <line x1="0" y1="233" x2="435" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              {/* Right connectors: from orb right edge (x=565) to right edge (x=1000) */}
-              <line x1="565" y1="140" x2="1000" y2="47"  stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              <line x1="565" y1="140" x2="1000" y2="140" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              <line x1="565" y1="140" x2="1000" y2="233" stroke="rgba(198,165,90,0.3)" strokeWidth="1" />
-              {/* Endpoint dots */}
-              <circle cx="0"    cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
-              <circle cx="0"    cy="140" r="3" fill="rgba(198,165,90,0.4)" />
-              <circle cx="0"    cy="233" r="3" fill="rgba(198,165,90,0.4)" />
-              <circle cx="1000" cy="47"  r="3" fill="rgba(198,165,90,0.4)" />
-              <circle cx="1000" cy="140" r="3" fill="rgba(198,165,90,0.4)" />
-              <circle cx="1000" cy="233" r="3" fill="rgba(198,165,90,0.4)" />
-            </svg>
           </div>
         </div>
       </div>

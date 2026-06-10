@@ -16,6 +16,16 @@ const nextConfig = {
         destination: "/apostille/:slug",
         permanent: true,
       },
+      {
+        source: "/apostille-for/:slug",
+        destination: "/apostille/:slug",
+        permanent: true,
+      },
+      {
+        source: "/apostille-for-:slug",
+        destination: "/apostille/:slug",
+        permanent: true,
+      },
     ];
   },
 }

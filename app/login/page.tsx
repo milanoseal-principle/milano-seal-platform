@@ -4,6 +4,17 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
+import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
+
+const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
+
+const GATEWAY_STEPS = [
+  "Verifying access environment",
+  "Connecting to secure workspace",
+  "Resolving role access",
+  "Preparing entry gateway",
+  "Ready",
+];
 
 function destForRole(role: string, fallback: string): string {
   if (role === "founder_admin" || role === "admin" || role === "admin_operator" ||
@@ -40,6 +51,10 @@ function LoginInner() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [portalShellDismissed, setPortalShellDismissed] = useState(false);
+  const [gatewayDone, setGatewayDone] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return !!sessionStorage.getItem(GATEWAY_KEY);
+  });
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,6 +67,38 @@ function LoginInner() {
     rawNext.startsWith("/dashboard")
       ? rawNext
       : null;
+
+  // Redirect already-authenticated users — must be before any conditional return
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
+      router.replace(safeNext || destForRole(role, "/dashboard"));
+    });
+  }, [router, safeNext]);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "auth_failed" || err === "otp_expired") {
+      setError("That access link has expired or was already used. Please sign in again.");
+    } else if (err === "access_denied") {
+      setError("Access denied. Your session may have expired — please sign in again.");
+    }
+  }, [searchParams]);
+
+  // Access gateway ritual — plays once per session for all login visitors.
+  if (!gatewayDone) {
+    return (
+      <RitualEntryLock
+        eyebrow="Access Gateway"
+        steps={GATEWAY_STEPS}
+        sectionLabel="Preparing secure access environment"
+        sessionKey={GATEWAY_KEY}
+        onComplete={() => setGatewayDone(true)}
+      />
+    );
+  }
 
   // Show PortalAccessShell as the entry gate for portal clients before the login form.
   // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
@@ -72,25 +119,6 @@ function LoginInner() {
       </div>
     );
   }
-
-  // Redirect already-authenticated users
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
-      router.replace(safeNext || destForRole(role, "/dashboard"));
-    });
-  }, [router, safeNext]);
-
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err === "auth_failed" || err === "otp_expired") {
-      setError("That access link has expired or was already used. Please sign in again.");
-    } else if (err === "access_denied") {
-      setError("Access denied. Your session may have expired — please sign in again.");
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

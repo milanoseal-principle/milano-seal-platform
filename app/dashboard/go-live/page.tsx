@@ -511,7 +511,7 @@ export default function GoLivePage() {
                 {[
                   { route: "/", label: "Homepage — public, indexable" },
                   { route: "/login", label: "Login — public, no redirect loop" },
-                  { route: "/countries/italy", label: "Country page — public, SEO" },
+                  { route: "/apostille/italy", label: "Country page — public, SEO" },
                   { route: "/documents/power-of-attorney", label: "Document page — public, SEO" },
                   { route: "/dashboard", label: "Dashboard — redirects anonymous to /login" },
                   { route: "/portal", label: "Portal — redirects anonymous to /login" },

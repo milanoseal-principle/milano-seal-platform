@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/format";
 import { PricingBreakdown } from "@/components/shared/PricingBreakdown";
 import type { PricingBreakdownData } from "@/components/shared/PricingBreakdown";
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
+import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
 
 export default function ClientInvoicePage() {
   const { deal, isLoading } = usePortal();
@@ -67,7 +68,7 @@ export default function ClientInvoicePage() {
   }
 
   // Use payment_amount_due from the safe API — no internal cost/margin fields
-  const subtotal = Number(deal.payment_amount_due ?? 0);
+  const subtotal = Number(deal.payment_amount_due ?? deal.amount_due ?? 0);
   const paid =
     deal.payment_status === "paid" ||
     deal.payment_status === "confirmed" ||
@@ -161,6 +162,14 @@ export default function ClientInvoicePage() {
           currency={deal.currency ?? "USD"}
           paymentStatus={deal.payment_status ?? (paid ? "paid" : "awaiting_payment")}
           wiseReference={wiseRef}
+          wisePaymentUrl={
+            deal.wise_payment_url ??
+            buildWisePaymentUrl({
+              wiseReference: wiseRef,
+              amountDue: subtotal,
+              currency: deal.currency,
+            })
+          }
           wisePaymentUrl={deal.wise_payment_url ?? null}
           paidAt={deal.paid_at ?? null}
         />

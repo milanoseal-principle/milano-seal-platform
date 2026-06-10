@@ -4,7 +4,6 @@ import { TrustStrip } from "@/components/landing/trust-strip";
 import { RitualOverlay } from "@/components/landing/ritual-overlay";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { Services } from "@/components/landing/services";
-import { GlobalMap } from "@/components/landing/global-map";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
 import { PaymentFounder } from "@/components/landing/payment-founder";
@@ -15,6 +14,7 @@ import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { JurisdictionComplianceLookup } from "@/components/landing/jurisdiction-compliance-lookup";
 import { HowItWorks } from "@/components/landing/how-it-works";
+import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 
 export default function HomePage() {
   return (
@@ -22,6 +22,7 @@ export default function HomePage() {
       <RitualOverlay />
       <Header />
       <IntelligenceRail />
+      <CorridorTimeStrip />
       <CinematicStage>
         {/* 1. Hero — globe replaces founder card */}
         <Hero />
@@ -30,7 +31,7 @@ export default function HomePage() {
         <TrustStrip />
 
         {/* 3. Milano Trust Core — 6 pillars */}
-        <div id="process">
+        <div id="principles">
           <MilanoTrustCore />
         </div>
 
@@ -44,6 +45,9 @@ export default function HomePage() {
           <HowItWorks />
         </div>
 
+        {/* 6. Countries — jurisdiction compliance lookup */}
+        <div id="countries">
+          <JurisdictionComplianceLookup />
         {/* 6. Jurisdiction compliance lookup */}
         <div id="countries">
           <JurisdictionComplianceLookup />

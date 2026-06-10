@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
+import { GlobalMap } from "@/components/landing/global-map";
 import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 
@@ -31,6 +32,7 @@ export default function MapPage() {
           </div>
         </div>
 
+        <GlobalMap />
         <RoutingIntelligenceSection />
         <CorridorTimeStrip />
       </main>

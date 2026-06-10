@@ -88,7 +88,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] lg:h-[100svh] pt-[72px] md:pt-[80px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-[100svh] lg:h-[100svh] pt-[136px] md:pt-[144px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
@@ -163,14 +163,17 @@ export function Hero() {
             </div>
 
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#C6A55A]/45 mb-3 text-center lg:text-left">
+                What You Get
+              </p>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
                 {[
-                  { icon: "shield", label: "Florida\nNotary Public" },
-                  { icon: "monitor", label: "Remote\nOnline Notary" },
-                  { icon: "check", label: "Apostille\nCoordination" },
-                  { icon: "globe", label: "Global\nDocument Intelligence" },
-                  { icon: "lock", label: "Payment-Gated\nExecution" },
-                  { icon: "eye", label: "Chain-of-Custody\nVisibility" },
+                  { icon: "shield", label: "Secure, Verified\nIntake" },
+                  { icon: "monitor", label: "Notarize From\nAnywhere" },
+                  { icon: "check", label: "Apostille Routing\nHandled For You" },
+                  { icon: "globe", label: "Destination Rules\nReviewed" },
+                  { icon: "lock", label: "Resources Reserved\nFor Your Matter" },
+                  { icon: "eye", label: "Track Every Step\nIntake to Release" },
                 ].map(({ icon, label }) => (
                   <div key={label} className="flex flex-col items-center gap-1.5 group">
                     <div className="w-9 h-9 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04] flex items-center justify-center group-hover:border-[#C6A55A]/40 transition-colors">
