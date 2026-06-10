@@ -1,100 +1,240 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 
 const CHECKLIST = [
-  "Verifying Operational Access...",
-  "Reviewing Active International Matters...",
-  "Syncing Apostille Coordination Queue...",
-  "Verifying Courier Release Controls...",
-  "Loading Execution Infrastructure...",
-  "Workspace Ready",
+  "Verifying operational access",
+  "Reviewing active international matters",
+  "Syncing apostille coordination queue",
+  "Verifying courier release controls",
+  "Loading execution infrastructure",
+  "Workspace ready",
 ];
 
-export function MilanoSealEntryRitual({
-  onComplete,
-}: {
-  onComplete: () => void;
-}) {
-  const [step, setStep] = useState(0);
+export function MilanoSealEntryRitual({ onComplete }: { onComplete: () => void }) {
+  const [step, setStep]           = useState(0);
+  const [exiting, setExiting]     = useState(false);
+  const [showReady, setShowReady] = useState(false);
+  const reduced = typeof window !== "undefined"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    : false;
 
   useEffect(() => {
-    if (step < CHECKLIST.length) {
-      const t = setTimeout(() => setStep((s) => s + 1), 350);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => onComplete(), 400);
-      return () => clearTimeout(t);
-    }
-  }, [step, onComplete]);
+    const ts: ReturnType<typeof setTimeout>[] = [];
+    CHECKLIST.forEach((_, i) => {
+      ts.push(setTimeout(() => setStep(i + 1), 420 + i * 390));
+    });
+    ts.push(setTimeout(() => setShowReady(true), 420 + CHECKLIST.length * 390));
+    return () => ts.forEach(clearTimeout);
+  }, []);
+
+  const dismiss = useCallback(() => {
+    if (!showReady) return;
+    setExiting(true);
+    setTimeout(onComplete, reduced ? 200 : 800);
+  }, [showReady, onComplete, reduced]);
+
+  useEffect(() => {
+    if (!showReady) return;
+    const t = setTimeout(dismiss, 900);
+    return () => clearTimeout(t);
+  }, [showReady, dismiss]);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [dismiss]);
 
   return (
-    <motion.div
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="fixed inset-0 z-50 bg-[#060608] flex flex-col items-center justify-center gap-6"
-      style={{ paddingTop: "var(--sa-top)", paddingBottom: "var(--sa-bottom)" }}
-    >
-      {/* Gold halo ring */}
-      <div className="relative w-20 h-20 flex items-center justify-center">
+    <AnimatePresence>
+      {!exiting && (
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="border border-[#D4AF37]/20 rounded-full border-dashed absolute inset-0"
-        />
-        <div className="bg-gradient-to-b from-[#D4AF37]/5 to-transparent blur-sm absolute inset-0 rounded-full" />
-        <span className="text-2xl text-[#D4AF37] relative z-10">⚜️</span>
-      </div>
+          key="dash-ritual"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.06, filter: "blur(8px)" }}
+          transition={{ duration: reduced ? 0.15 : 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-[9100] flex flex-col items-center justify-center overflow-hidden cursor-pointer"
+          style={{ background: "#060503", paddingTop: "var(--sa-top)", paddingBottom: "var(--sa-bottom)" }}
+          onClick={dismiss}
+          aria-hidden="true"
+        >
+          {/* Radial atmosphere */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: "radial-gradient(ellipse 60% 55% at 50% 30%, rgba(212,175,55,0.07) 0%, transparent 70%)",
+          }} />
 
-      {/* Title */}
-      <div className="text-center space-y-1">
-        <h1 className="font-serif text-2xl text-white">The Milano Seal™</h1>
-        <p className="text-[9px] uppercase tracking-[0.25em] text-gray-500">
-          Initializing Operational Intelligence
-        </p>
-      </div>
+          {/* Seal medallion */}
+          <div className="relative flex items-center justify-center mb-7" style={{ width: 220, height: 220 }}>
+            {/* Outer orbit rings */}
+            <motion.div className="absolute rounded-full border border-dashed" style={{
+              inset: 0,
+              borderColor: "rgba(212,175,55,0.13)",
+            }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 80, repeat: Infinity, ease: "linear" }} />
+            <motion.div className="absolute rounded-full border" style={{
+              inset: 18,
+              borderColor: "rgba(212,175,55,0.18)",
+              borderStyle: "dashed",
+            }} animate={reduced ? {} : { rotate: -360 }} transition={{ duration: 55, repeat: Infinity, ease: "linear" }} />
+            <motion.div className="absolute rounded-full border" style={{
+              inset: 36,
+              borderColor: "rgba(212,175,55,0.28)",
+            }} animate={reduced ? {} : { rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
 
-      {/* Checklist card */}
-      <div className="bg-[#0c0c12] border border-gray-900 rounded-sm p-4 font-mono w-72">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] text-gray-400">Operational Pre-Flight</span>
-          <span className="text-[8px] uppercase tracking-wider text-[#D4AF37]">
-            PREPARING WORKSPACE
-          </span>
-        </div>
-        <div className="space-y-2">
-          {CHECKLIST.map((item, idx) => {
-            const isDone = step > idx;
-            const isCurrent = step === idx;
-            return (
-              <div key={idx} className="flex items-center gap-2 text-[11px]">
-                {isDone ? (
-                  <span className="text-emerald-500 w-3 flex-shrink-0">✓</span>
-                ) : isCurrent ? (
-                  <span className="relative w-3 flex-shrink-0 flex items-center justify-center">
-                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-[#D4AF37] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]" />
-                  </span>
-                ) : (
-                  <span className="text-gray-700 w-3 flex-shrink-0">·</span>
-                )}
-                <span
-                  className={
-                    isDone
-                      ? "text-gray-400"
-                      : isCurrent
-                        ? "text-[#D4AF37] font-medium"
-                        : "text-gray-700"
-                  }
-                >
-                  {item}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </motion.div>
+            {/* Node dots on outer ring */}
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+              const r = 110;
+              const x = 110 + r * Math.cos((deg * Math.PI) / 180);
+              const y = 110 + r * Math.sin((deg * Math.PI) / 180);
+              return (
+                <div key={deg} className="absolute rounded-full" style={{
+                  width: 5, height: 5,
+                  left: x - 2.5, top: y - 2.5,
+                  background: "rgba(212,175,55,0.45)",
+                }} />
+              );
+            })}
+
+            {/* Glow */}
+            <div className="absolute rounded-full" style={{
+              inset: 36,
+              background: "radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)",
+              filter: "blur(12px)",
+            }} />
+
+            {/* Core disc */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex items-center justify-center rounded-full overflow-hidden"
+              style={{
+                width: 120, height: 120,
+                background: "radial-gradient(circle, rgba(212,175,55,0.1) 0%, #050503 70%)",
+                border: "1px solid rgba(212,175,55,0.45)",
+                boxShadow: "0 0 48px rgba(212,175,55,0.18), 0 0 100px rgba(212,175,55,0.08)",
+              }}
+            >
+              <Image
+                src="/milano-seal-gold-transparent-512.png"
+                alt="The Milano Seal"
+                width={88}
+                height={88}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+
+            {/* Unlock ping when ready */}
+            {showReady && !reduced && (
+              <motion.div
+                className="absolute rounded-full pointer-events-none"
+                style={{ inset: 0, border: "1px solid rgba(212,175,55,0.35)" }}
+                animate={{ scale: [1, 1.18], opacity: [0.6, 0] }}
+                transition={{ duration: 3.4, repeat: Infinity, ease: "easeOut" }}
+              />
+            )}
+          </div>
+
+          {/* Wordmark */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-center mb-1"
+          >
+            <p className="font-mono text-[9px] tracking-[0.28em] uppercase mb-2" style={{ color: "rgba(212,175,55,0.45)" }}>
+              Operator Workspace
+            </p>
+            <h1 className="font-serif font-normal tracking-[0.12em] uppercase" style={{
+              fontSize: "clamp(1.3rem, 3.5vw, 1.75rem)",
+              background: "linear-gradient(105deg, #c6a55a 38%, #f4e5b8 50%, #c6a55a 62%)",
+              backgroundSize: "240% 100%",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 0 24px rgba(212,175,55,0.3))",
+            }}>
+              The Milano Seal™
+            </h1>
+            <p className="font-mono text-[9px] tracking-[0.25em] uppercase mt-1.5" style={{ color: "rgba(212,175,55,0.5)" }}>
+              Sealing Trust With Every Signature™
+            </p>
+          </motion.div>
+
+          {/* Divider */}
+          <motion.div
+            initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex items-center gap-2 mb-5" style={{ width: 280 }}
+          >
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.35), transparent)" }} />
+            <span style={{ color: "rgba(212,175,55,0.6)", fontSize: 7 }}>◆</span>
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.35), transparent)" }} />
+          </motion.div>
+
+          {/* Checklist */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.55 }}
+            style={{ width: "min(100%, 340px)", padding: "0 16px" }}
+          >
+            <p className="font-mono text-center mb-3" style={{ fontSize: 8, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(176,176,176,0.38)" }}>
+              Structuring Execution Environment
+            </p>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+              {CHECKLIST.map((item, i) => {
+                const done = step > i;
+                return (
+                  <li key={item} style={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 11,
+                    fontSize: 12,
+                    fontFamily: "system-ui, sans-serif",
+                    color: done ? "rgba(212,175,55,0.85)" : "rgba(176,176,176,0.3)",
+                    transition: "color 0.4s ease",
+                  }}>
+                    {/* Connector line */}
+                    {i > 0 && (
+                      <div style={{
+                        position: "absolute",
+                        left: 7.5,
+                        top: -8,
+                        width: 1,
+                        height: 8,
+                        background: done ? "rgba(212,175,55,0.4)" : "rgba(176,176,176,0.12)",
+                        transition: "background 0.4s ease",
+                      }} />
+                    )}
+                    {done
+                      ? <CheckCircle2 size={16} style={{ flexShrink: 0, color: "#d4af37" }} />
+                      : <Circle size={16} style={{ flexShrink: 0, color: "rgba(176,176,176,0.2)" }} />
+                    }
+                    <span>{item}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </motion.div>
+
+          {/* Footer */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: showReady ? 1 : 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2 mt-6"
+            style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: "0.38em", textTransform: "uppercase", color: "rgba(212,175,55,0.7)" }}
+          >
+            <ShieldCheck size={14} style={{ color: "#d4af37" }} />
+            <span>Workspace Ready</span>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
