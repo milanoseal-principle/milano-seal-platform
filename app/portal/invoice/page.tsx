@@ -5,6 +5,7 @@ import { usePortal } from "@/components/portal/portal-context";
 import { formatCurrency } from "@/lib/format";
 import { PricingBreakdown } from "@/components/shared/PricingBreakdown";
 import type { PricingBreakdownData } from "@/components/shared/PricingBreakdown";
+import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
 
 export default function ClientInvoicePage() {
   const { deal, isLoading } = usePortal();
@@ -73,10 +74,10 @@ export default function ClientInvoicePage() {
     deal.payment_status === "payment_confirmed" ||
     deal.is_paid_and_released;
 
-  const schedulingLocked = !paid;
-
-  // Generate a deterministic Wise reference from the matter ID
-  const wiseRef = `milano-seal-${(deal.display_id ?? deal.id).slice(0, 8).toLowerCase()}`;
+  // Use the stored wise_reference from the API, fall back to a deterministic reference
+  const wiseRef =
+    deal.wise_reference ??
+    `MS-${(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}`;
 
   const pricingData: PricingBreakdownData = {
     lane: deal.assigned_lane ?? null,
@@ -153,62 +154,16 @@ export default function ClientInvoicePage() {
         />
       </div>
 
-      {/* Scheduling lock status */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "10px 16px",
-          borderRadius: 4,
-          marginBottom: 24,
-          background: schedulingLocked
-            ? "rgba(198,165,90,0.05)"
-            : "rgba(74,158,107,0.05)",
-          border: schedulingLocked
-            ? "1px solid rgba(198,165,90,0.2)"
-            : "1px solid rgba(74,158,107,0.2)",
-        }}
-      >
-        <span
-          style={{
-            fontSize: 13,
-            color: schedulingLocked ? "#C6A55A" : "#4a9e6b",
-            lineHeight: 1,
-          }}
-        >
-          {schedulingLocked ? "⬤" : "✓"}
-        </span>
-        <div>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: "monospace",
-              letterSpacing: "0.06em",
-              color: schedulingLocked ? "#C6A55A" : "#4a9e6b",
-            }}
-          >
-            {schedulingLocked
-              ? "Scheduling Locked — Complete payment to unlock"
-              : "Scheduling Unlocked ✓"}
-          </div>
-          {schedulingLocked && (
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-              Use reference{" "}
-              <span
-                style={{
-                  fontFamily: "monospace",
-                  color: "rgba(255,255,255,0.55)",
-                  userSelect: "all",
-                }}
-              >
-                {wiseRef}
-              </span>{" "}
-              when sending payment via Wise.
-            </div>
-          )}
-        </div>
+      {/* Wise payment card */}
+      <div style={{ marginBottom: 24 }}>
+        <WisePaymentCard
+          amountDue={subtotal}
+          currency={deal.currency ?? "USD"}
+          paymentStatus={deal.payment_status ?? (paid ? "paid" : "awaiting_payment")}
+          wiseReference={wiseRef}
+          wisePaymentUrl={deal.wise_payment_url ?? null}
+          paidAt={deal.paid_at ?? null}
+        />
       </div>
 
       <div className="ci-shell">
