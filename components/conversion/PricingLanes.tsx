@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, XCircle, Info } from "lucide-react";
-import { PRICING_LANES, PRICING_ADD_ONS, COURIER_STRUCTURE, PAYMENT_STRUCTURE, PRICING_DISCLAIMER } from "@/lib/config/pricing";
+import { PRICING_LANES, PRICING_ADD_ONS, COURIER_PRICING, COURIER_STRUCTURE, PAYMENT_STRUCTURE, PRICING_DISCLAIMER } from "@/lib/config/pricing";
 
 const GOLD = "rgba(212,175,55,1)";
 const GOLD_DIM = "rgba(212,175,55,0.45)";
