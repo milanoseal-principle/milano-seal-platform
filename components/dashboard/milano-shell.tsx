@@ -31,6 +31,11 @@ import {
   FileText,
   Zap,
   Layers,
+  Radio,
+  Activity,
+  PlayCircle,
+  AlertOctagon,
+  ScrollText,
 } from "lucide-react";
 
 const NAV = [
@@ -55,6 +60,11 @@ const NAV = [
   { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
   { href: "/dashboard/docs/human-touch-trust-engine", label: "Trust Engine", icon: FileText },
   { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
+  { href: "/dashboard/build-center", label: "Build Center", icon: Radio },
+  { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
+  { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
+  { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
+  { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
