@@ -18,6 +18,7 @@ export interface PortalSafeMatter {
   currency: string | null;
   paid_at: string | null;
   invoice_status: string | null;
+  is_platform_fee_only: boolean;
 }
 
 export function projectMatterForPortal(deal: {
@@ -36,6 +37,8 @@ export function projectMatterForPortal(deal: {
   currency?: string | null;
   paid_at?: string | null;
   invoice_status?: string | null;
+  discount_type?: string | null;
+  service_fee_waived?: boolean | null;
 }): PortalSafeMatter {
   return {
     id: deal.id,
@@ -54,6 +57,7 @@ export function projectMatterForPortal(deal: {
     currency: deal.currency ?? "USD",
     paid_at: deal.paid_at ?? null,
     invoice_status: deal.invoice_status ?? null,
+    is_platform_fee_only: deal.discount_type === "platform_fee_only" || deal.service_fee_waived === true,
   };
 }
 

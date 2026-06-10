@@ -31,13 +31,13 @@ export interface PortalClientMatter {
   invoice_status: string | null;
   wise_reference: string | null;
   wise_payment_url: string | null;
-  is_platform_fee_only: boolean;
   courier_tracking_id: string | null;
   courier_carrier: string | null;
   delivery_status: string | null;
   delivery_eta: string | null;
   delivery_timestamp: string | null;
   is_paid_and_released: boolean;
+  is_platform_fee_only: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -78,13 +78,13 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     invoice_status: (raw.invoice_status as string | null) ?? null,
     wise_reference: (raw.wise_reference as string | null) ?? null,
     wise_payment_url: (raw.wise_payment_url as string | null) ?? null,
-    is_platform_fee_only: (raw.is_platform_fee_only as boolean) ?? false,
     courier_tracking_id: (raw.courier_tracking_id as string | null) ?? (raw.tracking_number as string | null) ?? null,
     courier_carrier: (raw.courier_carrier as string | null) ?? (raw.carrier as string | null) ?? null,
     delivery_status: (raw.delivery_status as string | null) ?? null,
     delivery_eta: (raw.delivery_eta as string | null) ?? null,
     delivery_timestamp: (raw.delivery_timestamp as string | null) ?? null,
     is_paid_and_released: (raw.is_paid_and_released as boolean) ?? false,
+    is_platform_fee_only: (raw.is_platform_fee_only as boolean) ?? false,
     created_at: (raw.created_at as string | null) ?? null,
     updated_at: (raw.updated_at as string | null) ?? null,
   };

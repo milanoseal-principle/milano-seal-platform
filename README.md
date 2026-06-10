@@ -4,6 +4,60 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v
 
 ---
 
+## The Milano Seal™ — Production Architecture
+
+> "The Milano Seal™ is a controlled execution environment for high-trust document movement. Every intake, payment, signature, apostille, courier handoff, and release event reinforces the same standard: secure, visible, premium, and operationally precise."
+
+### Platform Summary
+
+The Milano Seal™ is a U.S.-based document execution and international logistics platform operating at the intersection of high-trust legal logistics and professional relationship management.
+
+**Engine A — Premium International:** Apostille coordination, embassy/consular legalization, courier release, multi-country document strategy. Tiered pricing: Signature, Priority, Executive lanes.
+
+**Engine B — Domestic Relationship:** Remote Online Notarization (RON), identity verification, professional relationship support. Entry-level standardized pricing.
+
+### Production Module Index
+
+See full specs: `docs/system/FINAL_PRODUCTION_MODULES.md`
+
+| Module | Status | Doc |
+|---|---|---|
+| Intake + DB write | Gate check required | `docs/runbooks/FIRST_REAL_MATTER_RUNBOOK.md` |
+| Founder Discount Override | Built — `014a245` | `/dashboard/founder-pricing` |
+| Payment / Invoice Safety | Wired | Portal invoice page |
+| Audit Ledger | Spec ready | `docs/system/AUDIT_LEDGER.md` |
+| Security & RLS | Enforced + spec | `docs/security/RLS_HARDENING.md` |
+| Concierge Lead Alerts | Spec ready | `docs/ops/HIGH_VALUE_LEAD_ALERTS.md` |
+| Execution Pipeline | Spec ready | `docs/ops/EXECUTION_PIPELINE.md` |
+| Progress Passport | Spec ready | `docs/ops/PROGRESS_PASSPORT.md` |
+| GBP Review Capture | Partially built | `docs/ops/REVIEW_CAPTURE.md` |
+| PIP Recovery Engine | Built — `419f38a` | `/pip-reports` (founder_admin only) |
+
+### Deployment Gate
+
+Do not declare production-ready until:
+1. Vercel build green
+2. `GET /api/admin/db-health` → `deals_write.ok = true`
+3. `founder_admin` role verified on auth user
+4. Migration `027_founder_discount_override.sql` applied in Supabase
+5. Migration `028_pip_intelligence_upgrade.sql` applied in Supabase
+6. Portal internal-data scan passes
+7. First real matter processed intake → completion
+
+### Required Vercel Env Vars
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+WISE_API_TOKEN
+WISE_PROFILE_ID
+NEXT_PUBLIC_SITE_URL=https://themilanoseal.com
+NEXT_PUBLIC_GBP_REVIEW_URL=https://g.page/r/YOUR_REAL_GBP_LINK/review
+```
+
+---
+
 ## THE MILANO SEAL™ LAUNCH LOCK
 
 The production codebase has completed P0 hardening in-repo.

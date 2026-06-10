@@ -69,7 +69,6 @@ export default function ClientInvoicePage() {
 
   // Use payment_amount_due from the safe API — no internal cost/margin fields
   const subtotal = Number(deal.payment_amount_due ?? deal.amount_due ?? 0);
-  const isPlatformFeeOnly = deal.is_platform_fee_only === true;
   const paid =
     deal.payment_status === "paid" ||
     deal.payment_status === "confirmed" ||
@@ -82,26 +81,20 @@ export default function ClientInvoicePage() {
     `MS-${(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}`;
 
   const pricingData: PricingBreakdownData = {
-    lane: isPlatformFeeOnly ? "Platform Fee Only" : deal.assigned_lane ?? null,
+    lane: deal.assigned_lane ?? null,
     basePrice: subtotal > 0 ? subtotal : null,
     retainerPaid: null,
     addOns: [],
-    included: isPlatformFeeOnly
-      ? [
-          "Required platform/state fee",
-          "Milano Seal service fee waived",
-          "External platform payment",
-        ]
-      : [
-          "Remote Online Notarization (RON)",
-          "Apostille coordination",
-          "International courier release",
-          "Custody chain documentation",
-        ],
+    included: [
+      "Remote Online Notarization (RON)",
+      "Apostille coordination",
+      "International courier release",
+      "Custody chain documentation",
+    ],
     total: subtotal > 0 ? subtotal : null,
     balanceDue: paid ? 0 : subtotal > 0 ? subtotal : null,
     paymentStatus: deal.payment_status,
-    wiseReference: !paid && !isPlatformFeeOnly ? wiseRef : null,
+    wiseReference: !paid ? wiseRef : null,
   };
 
   return (
@@ -155,47 +148,36 @@ export default function ClientInvoicePage() {
       <div style={{ marginBottom: 16 }}>
         <PricingBreakdown
           data={pricingData}
-          showPaymentButton={!paid && !isPlatformFeeOnly && subtotal > 0}
+          showPaymentButton={!paid && subtotal > 0}
           onPaymentAction={() => {
             window.location.href = "/portal/messages";
           }}
         />
       </div>
 
-      {isPlatformFeeOnly ? (
-        <div
-          style={{
-            marginBottom: 24,
-            border: "1px solid rgba(198,165,90,.28)",
-            borderRadius: 18,
-            padding: 20,
-            background: "rgba(198,165,90,.06)",
-            color: "rgba(255,255,255,.86)",
-          }}
-        >
-          <div
-            style={{
-              color: "#C6A55A",
-              fontSize: 11,
-              letterSpacing: ".16em",
-              textTransform: "uppercase",
-              marginBottom: 8,
-            }}
-          >
-            External Platform Payment
+      {/* Payment card — Wise suppressed for platform-fee-only matters */}
+      <div style={{ marginBottom: 24 }}>
+        {deal.is_platform_fee_only ? (
+          <div style={{
+            background: "rgba(198,165,90,0.06)",
+            border: "1px solid rgba(198,165,90,0.18)",
+            borderRadius: 8,
+            padding: "20px 24px",
+          }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(198,165,90,0.6)", marginBottom: 12 }}>
+              Platform Fee Payment
+            </div>
+            <div style={{ fontSize: 14, color: "#E5E5E5", marginBottom: 6 }}>
+              Required platform/state fee: <strong style={{ color: "#C6A55A" }}>${subtotal.toFixed(2)}</strong>
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 14 }}>
+              Milano Seal service fee: <span style={{ color: "rgba(198,165,90,0.7)" }}>waived</span>
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
+              Payment method: External platform. Your coordinator will send a direct payment link.
+            </div>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>
-            {formatCurrency(subtotal)} required platform/state fee
-          </div>
-          <div style={{ color: "rgba(255,255,255,.62)", lineHeight: 1.6 }}>
-            Founder courtesy pricing applied. The Milano Seal service fee is waived.
-            You are only responsible for the required platform/state fee shown for
-            this notarization. Payment is completed through the external notary
-            platform link provided by your coordinator.
-          </div>
-        </div>
-      ) : (
-        <div style={{ marginBottom: 24 }}>
+        ) : (
           <WisePaymentCard
             amountDue={subtotal}
             currency={deal.currency ?? "USD"}
@@ -211,8 +193,8 @@ export default function ClientInvoicePage() {
             }
             paidAt={deal.paid_at ?? null}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="ci-shell">
         <div className="ci-paper">
@@ -254,17 +236,11 @@ export default function ClientInvoicePage() {
                 <span>{deal.document_type ?? "Document execution"}</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              {isPlatformFeeOnly && (
-                <div className="ci-row">
-                  <span>Milano Seal service fee</span>
-                  <span>Waived</span>
-                </div>
-              )}
             </div>
 
             {!paid && subtotal > 0 && (
               <div className="ci-total">
-                <span>{isPlatformFeeOnly ? "Platform Fee Due" : "Amount Due"}</span>
+                <span>Amount Due</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
             )}
