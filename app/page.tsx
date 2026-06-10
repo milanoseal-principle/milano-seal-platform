@@ -14,6 +14,7 @@ import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { JurisdictionComplianceLookup } from "@/components/landing/jurisdiction-compliance-lookup";
 import { HowItWorks } from "@/components/landing/how-it-works";
+import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 
 export default function HomePage() {
   return (
@@ -21,6 +22,7 @@ export default function HomePage() {
       <RitualOverlay />
       <Header />
       <IntelligenceRail />
+      <CorridorTimeStrip />
       <CinematicStage>
         {/* 1. Hero — globe replaces founder card */}
         <Hero />
