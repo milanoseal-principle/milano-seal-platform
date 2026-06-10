@@ -30,6 +30,7 @@ import {
   BookOpen,
   FileText,
   Zap,
+  Layers,
 } from "lucide-react";
 
 const NAV = [
@@ -53,6 +54,7 @@ const NAV = [
   { href: "/dashboard/tools", label: "Tools", icon: Wrench },
   { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
   { href: "/dashboard/docs/human-touch-trust-engine", label: "Trust Engine", icon: FileText },
+  { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
