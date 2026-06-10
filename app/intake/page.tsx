@@ -16,6 +16,7 @@ function IntakeContent({
 }: {
   searchParams: Promise<{
     tier?: string;
+    lane?: string;
     country?: string;
     document?: string;
     useCase?: string;
@@ -34,6 +35,7 @@ async function IntakeWizardWrapper({
 }: {
   searchParams: Promise<{
     tier?: string;
+    lane?: string;
     country?: string;
     document?: string;
     useCase?: string;
@@ -46,7 +48,7 @@ async function IntakeWizardWrapper({
     document: params.document || "",
     useCase: params.useCase || params.matter || "",
   };
-  const tier = params.tier as
+  const tier = (params.tier || params.lane) as
     | "signature"
     | "priority"
     | "executive"
@@ -64,6 +66,7 @@ export default function IntakePage({
 }: {
   searchParams: Promise<{
     tier?: string;
+    lane?: string;
     country?: string;
     document?: string;
     useCase?: string;

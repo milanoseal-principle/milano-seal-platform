@@ -13,8 +13,19 @@ import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { JurisdictionComplianceLookup } from "@/components/landing/jurisdiction-compliance-lookup";
+import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
+import { PricingLanes } from "@/components/conversion/PricingLanes";
+import { PublicFAQ } from "@/components/conversion/PublicFAQ";
+import { TrustProof } from "@/components/conversion/TrustProof";
+import { FinalCTA } from "@/components/conversion/FinalCTA";
+
+export const metadata: Metadata = {
+  title: "The Milano Seal™ | International Notary, Apostille & Document Execution",
+  description:
+    "Premium international document execution support for apostille coordination, notarization, secure intake, matter tracking, and document release.",
+};
 
 export default function HomePage() {
   return (
@@ -78,6 +89,11 @@ export default function HomePage() {
 
       {/* 10. Ready to Execute CTA */}
       <HighTrustClose />
+
+      <PricingLanes />
+      <TrustProof />
+      <PublicFAQ />
+      <FinalCTA />
 
       <Footer />
     </main>
