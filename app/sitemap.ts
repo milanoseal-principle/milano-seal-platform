@@ -15,20 +15,17 @@ const corePages: SitemapEntry[] = [
   { path: "/map", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services", priority: 0.9, changeFrequency: "monthly" },
   { path: "/countries", priority: 0.85, changeFrequency: "monthly" },
-  { path: "/documents", priority: 0.85, changeFrequency: "monthly" },
+  // /documents and /guides do not have index pages; individual slugs are listed below
 ];
 
 const servicePages: SitemapEntry[] = [
+  // Static service pages (have dedicated page.tsx files)
   { path: "/services/apostille", priority: 0.9, changeFrequency: "monthly" },
-  { path: "/services/international-notary", priority: 0.9, changeFrequency: "monthly" },
   { path: "/services/remote-online-notary", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/mobile-notary", priority: 0.8, changeFrequency: "monthly" },
-  { path: "/services/power-of-attorney", priority: 0.85, changeFrequency: "monthly" },
-  { path: "/services/affidavits", priority: 0.8, changeFrequency: "monthly" },
-  { path: "/services/vital-records", priority: 0.85, changeFrequency: "monthly" },
-  { path: "/services/corporate-documents", priority: 0.85, changeFrequency: "monthly" },
-  { path: "/services/courier-tracking", priority: 0.8, changeFrequency: "monthly" },
-
+  { path: "/services/florida-apostille-courier", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/services/immigration-documents", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/services/international-execution", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/yacht-document-apostille", priority: 0.9, changeFrequency: "monthly" },
   { path: "/services/equine-document-apostille", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/medical-document-apostille", priority: 0.85, changeFrequency: "monthly" },
@@ -37,6 +34,13 @@ const servicePages: SitemapEntry[] = [
   { path: "/services/luxury-asset-document-apostille", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/private-client-apostille", priority: 0.9, changeFrequency: "monthly" },
   { path: "/services/hnwi-document-execution", priority: 0.85, changeFrequency: "monthly" },
+  // Dynamic [service] route also handles: international-notary, power-of-attorney, affidavits, vital-records, corporate-documents, courier-tracking
+  { path: "/services/international-notary", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/services/power-of-attorney", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/affidavits", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/services/vital-records", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/corporate-documents", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/courier-tracking", priority: 0.8, changeFrequency: "monthly" },
 ];
 
 const documentPages: SitemapEntry[] = [

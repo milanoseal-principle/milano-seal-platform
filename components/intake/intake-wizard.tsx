@@ -31,6 +31,13 @@ interface IntakeData {
   source_detail: string;
   attribution: string;
   notes: string;
+  // Optional extended fields
+  matter_category: string;
+  ron_preferred: string;
+  wet_ink_required: string;
+  receiving_authority: string;
+  deadline_or_closing_date: string;
+  courier_required: string;
 }
 
 interface IntakePrefill {
@@ -175,6 +182,13 @@ const INITIAL_DATA: IntakeData = {
   source_detail: "",
   attribution: "",
   notes: "",
+  // Optional extended fields
+  matter_category: "",
+  ron_preferred: "",
+  wet_ink_required: "",
+  receiving_authority: "",
+  deadline_or_closing_date: "",
+  courier_required: "",
 };
 
 const inputCls = `w-full px-4 py-3 bg-[#0A0A0A] border border-[rgba(198,165,90,0.15)]
@@ -488,6 +502,12 @@ export function IntakeWizard({
       source_detail: data.source_detail,
       attribution: data.attribution,
       notes: data.notes,
+      matter_category: data.matter_category || undefined,
+      ron_preferred: data.ron_preferred || undefined,
+      wet_ink_required: data.wet_ink_required || undefined,
+      receiving_authority: data.receiving_authority || undefined,
+      deadline_or_closing_date: data.deadline_or_closing_date || undefined,
+      courier_required: data.courier_required || undefined,
       name_match: true,
       files_uploaded: files.length > 0,
     };
@@ -1285,6 +1305,129 @@ export function IntakeWizard({
                       className={`${inputCls} resize-none`}
                     />
                   </FieldGroup>
+
+                  <SectionLabel>Matter Details (Optional)</SectionLabel>
+
+                  <FieldGroup>
+                    <label className={labelCls}>
+                      Matter Category{" "}
+                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        (optional)
+                      </span>
+                    </label>
+                    <select
+                      value={data.matter_category}
+                      onChange={(e) => set("matter_category", e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">— Select —</option>
+                      <option>General apostille / notary</option>
+                      <option>Citizenship / residency</option>
+                      <option>Power of attorney</option>
+                      <option>Business / corporate</option>
+                      <option>Yacht / marine</option>
+                      <option>Equine</option>
+                      <option>Medical / healthcare</option>
+                      <option>Regenerative medicine</option>
+                      <option>Gems / diamonds / jewelry</option>
+                      <option>Luxury assets</option>
+                      <option>Private client / HNWI</option>
+                      <option>Real estate</option>
+                      <option>Other / not sure</option>
+                    </select>
+                  </FieldGroup>
+
+                  <FieldRow>
+                    <FieldGroup>
+                      <label className={labelCls}>
+                        Remote online notarization preferred?{" "}
+                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                          (optional)
+                        </span>
+                      </label>
+                      <select
+                        value={data.ron_preferred}
+                        onChange={(e) => set("ron_preferred", e.target.value)}
+                        className={selectCls}
+                      >
+                        <option value="">— Select —</option>
+                        <option>Yes</option>
+                        <option>No</option>
+                        <option>Not sure</option>
+                      </select>
+                    </FieldGroup>
+                    <FieldGroup>
+                      <label className={labelCls}>
+                        Wet ink required?{" "}
+                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                          (optional)
+                        </span>
+                      </label>
+                      <select
+                        value={data.wet_ink_required}
+                        onChange={(e) => set("wet_ink_required", e.target.value)}
+                        className={selectCls}
+                      >
+                        <option value="">— Select —</option>
+                        <option>Yes</option>
+                        <option>No</option>
+                        <option>Not sure</option>
+                      </select>
+                    </FieldGroup>
+                  </FieldRow>
+
+                  <FieldGroup>
+                    <label className={labelCls}>
+                      Receiving Authority{" "}
+                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        (optional)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={data.receiving_authority}
+                      onChange={(e) => set("receiving_authority", e.target.value)}
+                      placeholder="Consulate, court, registry office, bank, port authority, or other receiving party"
+                      className={inputCls}
+                    />
+                  </FieldGroup>
+
+                  <FieldRow>
+                    <FieldGroup>
+                      <label className={labelCls}>
+                        Deadline or Closing Date{" "}
+                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                          (optional)
+                        </span>
+                      </label>
+                      <input
+                        type="date"
+                        value={data.deadline_or_closing_date}
+                        onChange={(e) => set("deadline_or_closing_date", e.target.value)}
+                        className={inputCls}
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <label className={labelCls}>
+                        Courier tracking needed?{" "}
+                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                          (optional)
+                        </span>
+                      </label>
+                      <select
+                        value={data.courier_required}
+                        onChange={(e) => set("courier_required", e.target.value)}
+                        className={selectCls}
+                      >
+                        <option value="">— Select —</option>
+                        <option>Yes</option>
+                        <option>No</option>
+                        <option>Not sure</option>
+                      </select>
+                    </FieldGroup>
+                  </FieldRow>
+
+                  <SectionLabel>Notes</SectionLabel>
 
                   <FieldGroup>
                     <label className={labelCls}>
