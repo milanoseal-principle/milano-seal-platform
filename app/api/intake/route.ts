@@ -316,6 +316,11 @@ export async function POST(req: NextRequest) {
       source,
       payment_link,
       access_token,
+      // Wise payment fields — surfaced to client portal for payment flow
+      wise_reference: deal_id, // e.g. MS-2025-1234
+      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,
+      amount_due: pricing.total,
+      currency: "USD",
     };
 
     const supabase = createAdminClient();

@@ -24,6 +24,13 @@ export interface PortalClientMatter {
   client_facing_status: string | null; // human-readable status copy
   payment_status: string | null;
   payment_amount_due: number | null;
+  amount_due: number | null;
+  payment_confirmed: boolean;
+  paid_at: string | null;
+  currency: string | null;
+  invoice_status: string | null;
+  wise_reference: string | null;
+  wise_payment_url: string | null;
   courier_tracking_id: string | null;
   courier_carrier: string | null;
   delivery_status: string | null;
@@ -63,6 +70,13 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     client_facing_status: (raw.client_facing_status as string | null) ?? null,
     payment_status: (raw.payment_status as string | null) ?? null,
     payment_amount_due: (raw.payment_amount_due as number | null) ?? null,
+    amount_due: (raw.amount_due as number | null) ?? (raw.payment_amount_due as number | null) ?? null,
+    payment_confirmed: (raw.payment_confirmed as boolean) ?? false,
+    paid_at: (raw.paid_at as string | null) ?? null,
+    currency: (raw.currency as string | null) ?? "USD",
+    invoice_status: (raw.invoice_status as string | null) ?? null,
+    wise_reference: (raw.wise_reference as string | null) ?? null,
+    wise_payment_url: (raw.wise_payment_url as string | null) ?? null,
     courier_tracking_id: (raw.courier_tracking_id as string | null) ?? (raw.tracking_number as string | null) ?? null,
     courier_carrier: (raw.courier_carrier as string | null) ?? (raw.carrier as string | null) ?? null,
     delivery_status: (raw.delivery_status as string | null) ?? null,

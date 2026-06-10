@@ -10,7 +10,14 @@ export interface PortalSafeMatter {
   total_price: number | null;
   courier_tracking_id: string | null;
   is_paid_and_released: boolean;
-  // Deliberately absent: internal notes, Wise refs, operator ledger, admin actions, revenue metrics
+  // Payment fields visible to clients
+  wise_reference: string | null;
+  wise_payment_url: string | null;
+  payment_confirmed: boolean;
+  amount_due: number | null;
+  currency: string | null;
+  paid_at: string | null;
+  invoice_status: string | null;
 }
 
 export function projectMatterForPortal(deal: {
@@ -21,6 +28,14 @@ export function projectMatterForPortal(deal: {
   destination_country?: string | null;
   total_price?: number | null;
   courier_tracking_id?: string | null;
+  wise_reference?: string | null;
+  wise_payment_url?: string | null;
+  payment_confirmed?: boolean | null;
+  amount_due?: number | null;
+  payment_amount_due?: number | null;
+  currency?: string | null;
+  paid_at?: string | null;
+  invoice_status?: string | null;
 }): PortalSafeMatter {
   return {
     id: deal.id,
@@ -32,13 +47,20 @@ export function projectMatterForPortal(deal: {
     courier_tracking_id: deal.courier_tracking_id ?? null,
     is_paid_and_released:
       deal.payment_status === "paid" && deal.status === "completed",
+    wise_reference: deal.wise_reference ?? null,
+    wise_payment_url: deal.wise_payment_url ?? null,
+    payment_confirmed: deal.payment_confirmed ?? deal.payment_status === "paid",
+    amount_due: deal.amount_due ?? deal.payment_amount_due ?? deal.total_price ?? null,
+    currency: deal.currency ?? "USD",
+    paid_at: deal.paid_at ?? null,
+    invoice_status: deal.invoice_status ?? null,
   };
 }
 
 // These fields must NEVER appear in portal-facing API responses:
 export const PORTAL_BLOCKED_FIELDS = [
-  // Payment internals
-  "wise_reference",
+  // Payment internals — NOTE: wise_reference and wise_payment_url are intentionally
+  // NOT blocked; clients need their reference and payment URL to complete payment.
   "wise_transfer_id",
   "wise_account_id",
   "wise_payload",
