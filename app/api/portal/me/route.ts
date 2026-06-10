@@ -26,6 +26,7 @@ const PORTAL_SAFE_FIELDS = new Set([
   "invoice_status",
   "wise_reference",
   "wise_payment_url",
+  "is_platform_fee_only",
   "courier_tracking_id",
   "courier_carrier",
   "delivery_status",
@@ -35,6 +36,10 @@ const PORTAL_SAFE_FIELDS = new Set([
   "created_at",
   "updated_at",
 ]);
+
+function isPlatformFeeOnly(record: Record<string, unknown>): boolean {
+  return record.discount_type === "platform_fee_only";
+}
 
 function applySafeProjection(record: Record<string, unknown>): Record<string, unknown> {
   const safe: Record<string, unknown> = {};
@@ -92,6 +97,7 @@ export async function GET(req: NextRequest) {
     const projected = projectMatterForPortal(activeDeal);
     safeMatter = applySafeProjection(projected as unknown as Record<string, unknown>);
   }
+  safeMatter.is_platform_fee_only = isPlatformFeeOnly(activeDeal as unknown as Record<string, unknown>);
 
   // 5. Fetch client-safe timeline events
   const { data: timelineRows } = await admin
@@ -105,11 +111,13 @@ export async function GET(req: NextRequest) {
   const ledger = await getLedger(activeDeal.id);
 
   // 7. Build matter list for portal switcher (safe projection only)
-  const matters = ctx.deals.map((d) =>
-    applySafeProjection(
+  const matters = ctx.deals.map((d) => {
+    const projected = applySafeProjection(
       projectMatterForPortal(d) as unknown as Record<string, unknown>,
-    ),
-  );
+    );
+    projected.is_platform_fee_only = isPlatformFeeOnly(d as unknown as Record<string, unknown>);
+    return projected;
+  });
 
   return NextResponse.json({
     success: true,
