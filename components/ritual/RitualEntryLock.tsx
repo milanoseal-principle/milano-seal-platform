@@ -7,6 +7,7 @@ import { WorldMapCanvas } from "@/components/rituals/WorldMapCanvas";
 import { RitualMedallion } from "@/components/ritual/RitualMedallion";
 import { RitualProgressRail } from "@/components/ritual/RitualProgressRail";
 import { RitualChecklist } from "@/components/ritual/RitualChecklist";
+import { HomepageRitualAssembler } from "@/components/ritual/HomepageRitualAssembler";
 
 interface RitualEntryLockProps {
   eyebrow?: string;
@@ -102,7 +103,7 @@ export function RitualEntryLock({
       <AnimatePresence>
         {!exiting && (
           <motion.div
-            key="ritual-home-reference"
+            key="ritual-home-reference-assembled"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.018, filter: "blur(7px)" }}
@@ -121,93 +122,7 @@ export function RitualEntryLock({
               justifyContent: "center",
             }}
           >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(ellipse 65% 75% at 50% 42%, rgba(212,175,55,0.08), rgba(5,5,7,0.86) 68%, #050507 100%)",
-              }}
-            />
-
-            {!reduced && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0.18, 0.34, 0.22] }}
-                transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  position: "absolute",
-                  inset: "-4%",
-                  zIndex: 1,
-                  pointerEvents: "none",
-                  mixBlendMode: "screen",
-                  filter: "saturate(1.2) brightness(1.05)",
-                }}
-              >
-                <WorldMapCanvas />
-              </motion.div>
-            )}
-
-            {!reduced && (
-              <motion.div
-                animate={{ opacity: [0.28, 0.55, 0.28] }}
-                transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "min(58vw, 520px)",
-                  height: "52vh",
-                  zIndex: 2,
-                  pointerEvents: "none",
-                  background:
-                    "radial-gradient(ellipse at top, rgba(255,218,130,0.34) 0%, rgba(212,175,55,0.14) 36%, transparent 76%)",
-                  mixBlendMode: "screen",
-                }}
-              />
-            )}
-
-            <motion.img
-              src="/ritual:milano-ritual-reference.png"
-              alt=""
-              draggable={false}
-              initial={reduced ? {} : { opacity: 0, y: 10, scale: 0.985 }}
-              animate={reduced ? { opacity: 1 } : { opacity: [0.985, 1, 0.992], y: 0, scale: 1 }}
-              transition={reduced ? { duration: 0.12 } : { duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: "relative",
-                zIndex: 3,
-                height: "100vh",
-                maxHeight: "100vh",
-                width: "auto",
-                maxWidth: "100vw",
-                objectFit: "contain",
-                userSelect: "none",
-                WebkitUserSelect: "none",
-                filter: "drop-shadow(0 0 32px rgba(212,175,55,0.14))",
-              }}
-            />
-
-            {!reduced && (
-              <motion.div
-                initial={{ x: "-130%", opacity: 0 }}
-                animate={{ x: ["-130%", "130%"], opacity: [0, 0.42, 0] }}
-                transition={{ duration: 3.6, repeat: Infinity, repeatDelay: 1.6, ease: "easeInOut" }}
-                style={{
-                  position: "absolute",
-                  zIndex: 4,
-                  top: 0,
-                  bottom: 0,
-                  width: "32vw",
-                  pointerEvents: "none",
-                  background:
-                    "linear-gradient(105deg, transparent 0%, rgba(255,238,180,0.08) 42%, rgba(255,238,180,0.28) 50%, rgba(212,175,55,0.08) 58%, transparent 100%)",
-                  mixBlendMode: "screen",
-                  filter: "blur(3px)",
-                }}
-              />
-            )}
+            <HomepageRitualAssembler reduced={reduced} />
           </motion.div>
         )}
       </AnimatePresence>
