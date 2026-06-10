@@ -72,8 +72,7 @@ export default function YachtDocumentApostillePage() {
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed">
-              I am not an attorney. Legal services are provided by Demesmin &amp; Dover PLLC. Final document acceptance rests with the receiving foreign authority.
-            </p>
+              The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide yacht brokerage, vessel valuation, maritime legal advice, customs brokerage, or title opinions.</p>
           </div>
         </section>
         <Footer />
