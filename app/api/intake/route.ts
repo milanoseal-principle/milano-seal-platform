@@ -404,7 +404,13 @@ export async function POST(req: NextRequest) {
                 code: "INTAKE_DB_INSERT_FAILED",
                 supabase_code: e3.code ?? e2.code ?? e.code ?? null,
                 attempt1_code: e.code ?? null,
+                attempt1_msg: e.message ?? null,
                 attempt2_code: e2.code ?? null,
+                attempt2_msg: e2.message ?? null,
+                attempt3_code: e3.code ?? null,
+                attempt3_msg: e3.message ?? null,
+                hint: e3.hint ?? e2.hint ?? e.hint ?? null,
+                details: e3.details ?? e2.details ?? e.details ?? null,
               },
               { status: 500 },
             );
