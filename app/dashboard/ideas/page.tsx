@@ -32,7 +32,7 @@ const IDEAS: Idea[] = [
   },
   // Product
   {
-    title: "Mobile Client Portal",
+    title: "Mobile Secure Matter Portal",
     description: "Lightweight mobile experience for clients to track matter status, upload documents, and receive notifications.",
     category: "Product",
     status: "Planned",

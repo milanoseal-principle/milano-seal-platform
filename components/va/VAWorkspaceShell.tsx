@@ -258,7 +258,7 @@ export function VAWorkspaceShell({ children }: { children: ReactNode }) {
             className="hidden sm:inline text-[9px] font-mono tracking-wider"
             style={{ color: "rgba(255,255,255,0.18)" }}
           >
-            RESTRICTED ACCESS · VA PORTAL
+            RESTRICTED ACCESS · OPERATIONS DESK
           </span>
         </div>
 

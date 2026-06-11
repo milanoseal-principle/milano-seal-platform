@@ -29,7 +29,7 @@ export default async function VADashboardPage() {
             fontFamily: "var(--font-playfair),Georgia,serif",
           }}
         >
-          VA Workspace
+          Operations Desk
         </h1>
         <p
           className="text-[10px] font-mono mt-1"

@@ -60,13 +60,13 @@ const stages = [
     number: "05",
     icon: Eye,
     title: "Chain-of-Custody Visibility",
-    headline: "Real-Time Status Through the Client Portal",
-    body: "From execution through final delivery, matter status is maintained in the client portal. Every transit event, authentication step, and courier handoff is logged and visible. This is one of The Milano Seal™'s strongest trust differentiators.",
+    headline: "Real-Time Status Through the Secure Matter Portal",
+    body: "From execution through final delivery, matter status is maintained in the Secure Matter Portal. Every transit event, authentication step, and courier handoff is logged and visible. This is one of The Milano Seal™'s strongest trust differentiators.",
     details: [
       "Matter status updated at each authentication and transit stage",
-      "Courier tracking integrated for physical document transit",
+      "Custody Rail integrated for physical document transit",
       "Audit trail available for all matter events",
-      "Client portal access provided at matter initiation",
+      "Secure Matter Portal access provided at matter initiation",
     ],
   },
   {
