@@ -31,7 +31,6 @@ See full specs: `docs/system/FINAL_PRODUCTION_MODULES.md`
 | Execution Pipeline | Spec ready | `docs/ops/EXECUTION_PIPELINE.md` |
 | Progress Passport | Spec ready | `docs/ops/PROGRESS_PASSPORT.md` |
 | GBP Review Capture | Partially built | `docs/ops/REVIEW_CAPTURE.md` |
-| PIP Recovery Engine | Built — `419f38a` | `/pip-reports` (founder_admin only) |
 
 ### Deployment Gate
 
@@ -40,8 +39,7 @@ Do not declare production-ready until:
 2. `GET /api/admin/db-health` → `deals_write.ok = true`
 3. `founder_admin` role verified on auth user
 4. Migration `027_founder_discount_override.sql` applied in Supabase
-5. Migration `028_pip_intelligence_upgrade.sql` applied in Supabase
-6. Portal internal-data scan passes
+5. Portal internal-data scan passes
 7. First real matter processed intake → completion
 
 ### Required Vercel Env Vars
