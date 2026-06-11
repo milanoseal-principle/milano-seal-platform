@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useApi } from "@/hooks/useApi";
@@ -133,6 +134,145 @@ function Field({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>{value}</p>
+    </div>
+  );
+}
+
+const STATUS_MACHINE = [
+  "intake_received",
+  "under_review",
+  "quoted",
+  "awaiting_payment",
+  "scheduled",
+  "in_execution",
+  "apostille_processing",
+  "in_transit",
+  "delivered",
+  "completed",
+] as const;
+
+function OperatorActions({ matter }: { matter: MatterDetail }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [nextStatus, setNextStatus] = useState<string>(matter.deal_status);
+
+  const paid =
+    matter.payment_status === "paid" ||
+    matter.payment_status === "payment_confirmed" ||
+    matter.payment_status === "confirmed";
+
+  async function confirmPayment() {
+    setBusy("payment");
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/matters/${matter.id}/confirm-payment`, {
+        method: "POST",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setMsg(json.message || json.code || "Failed to confirm payment.");
+      } else {
+        setMsg("Payment confirmed — scheduling unlocked. Refresh to update.");
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Network error.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function advanceStatus() {
+    setBusy("status");
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/matters/${matter.id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setMsg(json.message || json.code || "Failed to advance status.");
+      } else {
+        setMsg(`Status set to ${json.status}. Refresh to update.`);
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Network error.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div>
+      <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.875rem" }}>
+        Operator Actions
+      </p>
+
+      <button
+        onClick={() => void confirmPayment()}
+        disabled={busy !== null || paid}
+        style={{
+          width: "100%",
+          background: paid ? "rgba(34,197,94,0.06)" : "rgba(198,165,90,0.1)",
+          border: paid ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(198,165,90,0.4)",
+          color: paid ? "rgba(34,197,94,0.85)" : gold,
+          fontSize: 11,
+          fontFamily: "monospace",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          padding: "10px 14px",
+          cursor: busy !== null || paid ? "not-allowed" : "pointer",
+          marginBottom: "0.75rem",
+        }}
+      >
+        {paid ? "Payment Confirmed" : busy === "payment" ? "Confirming…" : "Confirm Payment"}
+      </button>
+
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <select
+          value={nextStatus}
+          onChange={(e) => setNextStatus(e.target.value)}
+          style={{
+            flex: 1,
+            background: "#0b0b0b",
+            border: "1px solid rgba(198,165,90,0.25)",
+            color: "rgba(255,255,255,0.8)",
+            fontSize: 11,
+            fontFamily: "monospace",
+            padding: "8px 10px",
+          }}
+        >
+          {STATUS_MACHINE.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => void advanceStatus()}
+          disabled={busy !== null}
+          style={{
+            background: "rgba(198,165,90,0.1)",
+            border: "1px solid rgba(198,165,90,0.4)",
+            color: gold,
+            fontSize: 11,
+            fontFamily: "monospace",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "8px 14px",
+            cursor: busy !== null ? "not-allowed" : "pointer",
+          }}
+        >
+          {busy === "status" ? "Saving…" : "Set"}
+        </button>
+      </div>
+
+      {msg && (
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: "0.5rem" }}>
+          {msg}
+        </p>
+      )}
     </div>
   );
 }
@@ -314,6 +454,9 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
             Last updated {timeAgo(matter.updated_at)}
           </p>
         </div>
+
+        {/* Operator Actions — manual payment confirmation + status advance */}
+        <OperatorActions matter={matter} />
       </div>
     </div>
   );
