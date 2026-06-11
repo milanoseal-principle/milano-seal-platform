@@ -123,33 +123,48 @@ function LoginInner() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Render-time diagnostic: if the public Supabase URL isn't available to the
+    // browser bundle, sign-in will fail with an opaque network error. Surface
+    // the real cause instead of "Failed to fetch".
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      setError("Supabase URL not configured. Contact Nicholas Milano.");
+      return;
+    }
+
     setLoading(true);
 
-    const supabase = createClient();
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-    setLoading(false);
+      if (authError) {
+        setError(
+          authError.message === "Invalid login credentials"
+            ? "Incorrect email or password. Please try again."
+            : authError.message,
+        );
+        return;
+      }
 
-    if (authError) {
-      setError(
-        authError.message === "Invalid login credentials"
-          ? "Incorrect email or password. Please try again."
-          : authError.message,
-      );
-      return;
+      const role = ((data.user?.user_metadata?.role ?? data.user?.app_metadata?.role) as string) ?? "";
+
+      if (!role) {
+        setError("Access profile missing. Contact Nicholas Milano.");
+        return;
+      }
+
+      router.replace(safeNext || destForRole(role, "/dashboard"));
+    } catch (err) {
+      // Surface the actual exception (e.g. missing env config, network/CORS)
+      // rather than the browser's generic "Failed to fetch".
+      setError(err instanceof Error ? err.message : "Unexpected sign-in error. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const role = ((data.user?.user_metadata?.role ?? data.user?.app_metadata?.role) as string) ?? "";
-
-    if (!role) {
-      setError("Access profile missing. Contact Nicholas Milano.");
-      return;
-    }
-
-    router.replace(safeNext || destForRole(role, "/dashboard"));
   };
 
   return (
