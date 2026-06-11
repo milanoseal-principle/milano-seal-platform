@@ -23,7 +23,7 @@ const DURATION = 0.58;
 const STAGES = [
   { key: "INTAKE", label: "Intake\n& Review", countKey: "reviewing_count" as const },
   { key: "PAYMENT", label: "Payment\nGate", countKey: "awaiting_payment" as const, isBlocker: true },
-  { key: "SCHEDULING", label: "Scheduling", countKey: "scheduled_count" as const },
+  { key: "SCHEDULING", label: "Signing Room", countKey: "scheduled_count" as const },
   { key: "EXECUTION", label: "Execution", countKey: "in_execution" as const },
   { key: "APOSTILLE", label: "Apostille\n/ Auth", countKey: "apostille_count" as const },
   { key: "COURIER", label: "Courier\nRelease", countKey: "shipped_count" as const },
