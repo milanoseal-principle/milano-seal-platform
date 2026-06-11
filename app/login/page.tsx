@@ -159,9 +159,11 @@ function LoginInner() {
 
       router.replace(safeNext || destForRole(role, "/dashboard"));
     } catch (err) {
-      // Surface the actual exception (e.g. missing env config, network/CORS)
-      // rather than the browser's generic "Failed to fetch".
-      setError(err instanceof Error ? err.message : "Unexpected sign-in error. Please try again.");
+      const msg = err instanceof Error ? err.message : "Unexpected sign-in error.";
+      const urlHint = process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? ` [URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL.slice(0, 35)}…]`
+        : " [URL: NOT IN BUNDLE]";
+      setError(msg + urlHint);
     } finally {
       setLoading(false);
     }
