@@ -115,7 +115,7 @@ export function ReadinessSummaryCard() {
           marginBottom: 24,
         }}
       >
-        <div style={{ fontSize: 9, letterSpacing: "0.26em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.4)", marginBottom: 12 }}>
+        <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.5)", marginBottom: 12 }}>
           Execution Readiness
         </div>
         <div style={{ height: 72, display: "flex", alignItems: "center" }}>
@@ -145,7 +145,7 @@ export function ReadinessSummaryCard() {
       }}
     >
       {/* Header */}
-      <div style={{ fontSize: 9, letterSpacing: "0.26em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.5)", marginBottom: 16 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.6)", marginBottom: 16 }}>
         Execution Readiness
       </div>
 
@@ -269,12 +269,12 @@ export function ReadinessSummaryCard() {
       {readiness.timeline && readiness.timeline !== "To be determined" && (
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: 16 }}>
           <div>
-            <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Est. Timeline</div>
+            <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Est. Timeline</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{readiness.timeline}</div>
           </div>
           {hasMissing && (
             <div>
-              <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Outstanding</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Outstanding</div>
               <div style={{ fontSize: 12, color: GOLD }}>{readiness.missingItems.length} item{readiness.missingItems.length > 1 ? "s" : ""}</div>
             </div>
           )}

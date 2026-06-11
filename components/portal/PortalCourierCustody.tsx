@@ -100,11 +100,11 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
     >
       <div
         style={{
-          fontSize: 9,
-          letterSpacing: "0.26em",
+          fontSize: 11,
+          letterSpacing: "0.18em",
           textTransform: "uppercase",
           fontFamily: "monospace",
-          color: "rgba(198,165,90,0.5)",
+          color: "rgba(198,165,90,0.6)",
           marginBottom: 16,
         }}
       >
@@ -253,19 +253,19 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px" }}>
               {cs.carrier && (
                 <div>
-                  <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Carrier</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Carrier</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" }}>{cs.carrier}</div>
                 </div>
               )}
               {cs.tracking_number_display && (
                 <div>
-                  <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Tracking</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Tracking</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{cs.tracking_number_display}</div>
                 </div>
               )}
               {isDelivered && cs.delivered_at && (
                 <div>
-                  <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Delivered</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Delivered</div>
                   <div style={{ fontSize: 12, color: EMERALD }}>
                     {new Date(cs.delivered_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                   </div>
@@ -273,7 +273,7 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
               )}
               {!isDelivered && intel.delivery_eta && (
                 <div>
-                  <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Est. Arrival</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Est. Arrival</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
                     {new Date(intel.delivery_eta).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                   </div>
@@ -281,7 +281,7 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
               )}
               {cs.last_updated && (
                 <div>
-                  <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>Last Updated</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>Last Updated</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>
                     {new Date(cs.last_updated).toLocaleString()}
                   </div>

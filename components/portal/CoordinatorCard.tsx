@@ -21,11 +21,11 @@ export function CoordinatorCard() {
       {/* Header */}
       <div
         style={{
-          fontSize: 8,
-          letterSpacing: "0.22em",
+          fontSize: 11,
+          letterSpacing: "0.16em",
           textTransform: "uppercase",
           fontFamily: "monospace",
-          color: "rgba(198,165,90,0.45)",
+          color: "rgba(198,165,90,0.55)",
           marginBottom: 14,
         }}
       >

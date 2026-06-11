@@ -191,7 +191,7 @@ export function PortalStatusRail({ matterStatus, paymentStatus }: Props) {
                       style={{
                         marginTop: 3,
                         fontSize: 11.5,
-                        color: active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.22)",
+                        color: active ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)",
                         lineHeight: 1.5,
                       }}
                     >

@@ -56,7 +56,7 @@ export default function ClientInvoicePage() {
 
   if (isLoading) {
     return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>Loading invoice…</div>
+      <div style={{ color: "rgba(255,255,255,.4)" }}>Verifying matter state…</div>
     );
   }
   if (!deal) {

@@ -190,12 +190,12 @@ function StagePip({
       <div
         style={{
           marginTop: 8,
-          fontSize: 9,
+          fontSize: 11,
           fontFamily: "monospace",
-          letterSpacing: "0.08em",
+          letterSpacing: "0.06em",
           textTransform: "uppercase",
           textAlign: "center",
-          color: active ? GOLD : done ? "rgba(198,165,90,0.55)" : "rgba(255,255,255,0.2)",
+          color: active ? GOLD : done ? "rgba(198,165,90,0.55)" : "rgba(255,255,255,0.3)",
           fontWeight: active ? 600 : 400,
           transition: reduced ? "none" : "color 0.3s",
           whiteSpace: "nowrap",
@@ -307,22 +307,22 @@ function WorkflowIntelBlock({
       }}
     >
       <div>
-        <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>Route</div>
+        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>Route</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{workflow.routeType}</div>
       </div>
       <div>
-        <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>Est. Timeline</div>
+        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>Est. Timeline</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{workflow.estimatedTimeline}</div>
       </div>
       <div>
-        <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>Authority</div>
+        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>Authority</div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
           {workflow.apostilleAuthority ?? `${country.name} Consulate`}
         </div>
       </div>
       {workflow.translationRequired && (
         <div>
-          <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>Translation</div>
+          <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>Translation</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
             {workflow.translationLanguage ?? "Required"}
             {workflow.certifiedTranslationRequired ? " · Certified" : ""}
@@ -507,11 +507,11 @@ export function MatterJourneyCard({ deal }: Props) {
         >
           <div
             style={{
-              fontSize: 8,
-              letterSpacing: "0.2em",
+              fontSize: 10,
+              letterSpacing: "0.16em",
               textTransform: "uppercase",
               fontFamily: "monospace",
-              color: "rgba(255,255,255,0.3)",
+              color: "rgba(255,255,255,0.4)",
               marginBottom: 6,
             }}
           >

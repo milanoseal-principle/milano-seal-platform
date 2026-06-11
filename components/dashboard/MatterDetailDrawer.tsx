@@ -377,7 +377,7 @@ export function MatterDetailDrawer({ matterId, onClose }: Props) {
                   fontFamily: "monospace",
                 }}
               >
-                Loading matter…
+                Preparing Execution Center…
               </div>
             )}
             {!isLoading && !data && (

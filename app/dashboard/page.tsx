@@ -236,7 +236,8 @@ export default function Dashboard() {
           animate={{ opacity: entryComplete ? 1 : 0 }}
           transition={{ duration: 0.4 }}
         >
-      <div className="space-y-8">
+      <div className="space-y-8" role="status" aria-label="Preparing Execution Center…">
+        <p className="text-[11px] font-mono tracking-widest" style={{ color: "rgba(198,165,90,0.5)", marginBottom: 8 }}>Preparing Execution Center…</p>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div className="space-y-2">
             <Skeleton className="h-3 w-44" />

@@ -285,14 +285,14 @@ function MatterIntelligenceCard() {
         marginBottom: 24,
       }}
     >
-      <div style={{ fontSize: 9, letterSpacing: "0.26em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.45)", marginBottom: 16 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "monospace", color: "rgba(198,165,90,0.55)", marginBottom: 16 }}>
         Matter Intelligence
       </div>
 
       {/* Execution Path */}
       {intel.execution_path.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>Execution Path</div>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Execution Path</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {intel.execution_path.map((step, i) => (
               <span
@@ -318,7 +318,7 @@ function MatterIntelligenceCard() {
       {/* Flags row */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", marginBottom: intel.timeline_note ? 14 : 0 }}>
         <div>
-          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Translation</div>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Translation</div>
           <span style={{ fontSize: 11, color: intel.translation_required ? GOLD_MI : EMERALD_MI }}>
             {intel.translation_required
               ? `Required${intel.translation_language ? ` — ${intel.translation_language}` : ""}${intel.translation_certified ? " (Certified)" : ""}`
@@ -326,20 +326,20 @@ function MatterIntelligenceCard() {
           </span>
         </div>
         <div>
-          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Witnesses</div>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Witnesses</div>
           <span style={{ fontSize: 11, color: intel.witnesses_required ? GOLD_MI : "rgba(255,255,255,0.45)" }}>
             {intel.witnesses_required ? "Required" : "Not required"}
           </span>
         </div>
         <div>
-          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Apostille</div>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Apostille</div>
           <span style={{ fontSize: 11, color: intel.apostille_required ? GOLD_MI : "rgba(255,255,255,0.45)" }}>
             {intel.apostille_required ? "Required" : "Not required"}
           </span>
         </div>
         {intel.timeline_note && (
           <div>
-            <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>Est. Timeline</div>
+            <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Est. Timeline</div>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{intel.timeline_note}</span>
           </div>
         )}
@@ -441,7 +441,10 @@ export default function MyMatterPage() {
 
   if (isLoading) {
     return (
-      <div style={{ paddingTop: 8 }}>
+      <div style={{ paddingTop: 8 }} role="status" aria-label="Verifying matter state…">
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "rgba(198,165,90,0.45)", marginBottom: 16, letterSpacing: "0.1em" }}>
+          Verifying matter state…
+        </div>
         {[55, 36, 80, 55].map((w, i) => (
           <div
             key={i}

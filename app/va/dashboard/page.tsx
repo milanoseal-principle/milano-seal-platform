@@ -17,8 +17,8 @@ export default async function VADashboardPage() {
       {/* Role header */}
       <div>
         <p
-          className="text-[9px] font-mono tracking-[0.3em]"
-          style={{ color: "rgba(212,175,55,0.4)" }}
+          className="text-[11px] font-mono tracking-[0.22em]"
+          style={{ color: "rgba(212,175,55,0.5)" }}
         >
           {role.replace(/_/g, " ").toUpperCase()} · RESTRICTED ENVIRONMENT
         </p>
@@ -32,8 +32,8 @@ export default async function VADashboardPage() {
           Operations Desk
         </h1>
         <p
-          className="text-[10px] font-mono mt-1"
-          style={{ color: "rgba(255,255,255,0.25)" }}
+          className="text-[11px] font-mono mt-1"
+          style={{ color: "rgba(255,255,255,0.4)" }}
         >
           Assigned coordination tasks and execution queue.
         </p>
