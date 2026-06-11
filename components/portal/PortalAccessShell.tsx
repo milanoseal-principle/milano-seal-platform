@@ -42,7 +42,7 @@ const ROUTE_MAP: Record<string, RouteInfo> = {
     ],
   },
   "/portal/documents": {
-    label: "Document Vault",
+    label: "The Vault",
     purpose: "Upload required documents and access executed, apostilled, and released files.",
     features: [
       "Secure document upload",

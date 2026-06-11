@@ -50,7 +50,7 @@ const MATTER_STATUS_LABELS: Record<string, string> = {
 const NAV = [
   { href: "/portal", label: "My Matter", icon: ClipboardList },
   { href: "/portal/invoice", label: "Invoice", icon: Receipt },
-  { href: "/portal/tracking", label: "Tracking", icon: Truck },
+  { href: "/portal/tracking", label: "Custody Rail", icon: Truck },
   { href: "/portal/documents", label: "Documents", icon: FolderOpen },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
 ];

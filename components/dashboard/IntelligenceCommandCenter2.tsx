@@ -76,7 +76,7 @@ export function IntelligenceCommandCenter2() {
           marginBottom: 20,
         }}
       >
-        Intelligence Command Center 2.0
+        Execution Center 2.0
       </div>
 
       {loading && (

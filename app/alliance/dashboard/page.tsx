@@ -190,7 +190,7 @@ export default async function AllianceDashboardPage() {
         <div style={{ background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 8, overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(198,166,91,0.08)" }}>
             <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", color: "#A8A29A" }}>
-              Activity Log
+              Operational Ledger
             </div>
           </div>
           <AllianceActivityLedger entries={[]} />

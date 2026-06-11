@@ -897,7 +897,7 @@ export default function DealDetail() {
 
           <Card className="bg-card border-gold">
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Activity Log</CardTitle>
+              <CardTitle className="font-serif text-xl">Operational Ledger</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 max-h-96 overflow-y-auto">
               {!activity || activity.length === 0 ? (
@@ -1349,7 +1349,7 @@ export default function DealDetail() {
               {deal.translation && <Row label="Translation" value="Yes" />}
               {deal.multi_country && <Row label="Multi-country" value="Yes" />}
               {deal.tracking_number && (
-                <Row label="Tracking" value={deal.tracking_number} />
+                <Row label="Custody Rail" value={deal.tracking_number} />
               )}
               <Row
                 label="Conversion score"

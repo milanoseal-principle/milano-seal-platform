@@ -196,7 +196,7 @@ function getConciergeCopy(status: string): string {
       return "Your documents are in transit via international courier.";
     case "delivered":
     case "completed":
-      return "Your documents have been delivered. Review your Document Vault for release records.";
+      return "Your documents have been delivered. Review your The Vault for release records.";
     default:
       return "";
   }
@@ -538,7 +538,7 @@ export default function MyMatterPage() {
                       PAID &amp; RELEASED
                     </div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>
-                      Your documents have been released. Review your Document Vault for records.
+                      Your documents have been released. Review your The Vault for records.
                     </div>
                   </div>
                 </div>

@@ -103,8 +103,21 @@ export function RitualEntryLock({
   return (
     <AnimatePresence>
       {!exiting && (
+        <>
+        {/* CSS keyframes for entrance animation */}
+        <style>{`
+          @keyframes ritualEntrance {
+            0%   { opacity: 0; transform: scale(0.985); }
+            65%  { opacity: 1; transform: scale(1.005); }
+            100% { opacity: 1; transform: scale(1.0); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .ritual-entry-lock-root { animation: none !important; opacity: 1 !important; }
+          }
+        `}</style>
         <motion.div
           key="ritual-entry-lock"
+          className="ritual-entry-lock-root"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={
@@ -129,6 +142,7 @@ export function RitualEntryLock({
             cursor: readyForExit ? "pointer" : "default",
             paddingTop: "var(--sa-top, 0px)",
             paddingBottom: "var(--sa-bottom, 0px)",
+            animation: reduced ? "none" : "ritualEntrance 0.55s cubic-bezier(0.22,1,0.36,1) both",
           }}
           onClick={() => readyForExit && dismiss()}
           aria-hidden="true"
@@ -326,6 +340,7 @@ export function RitualEntryLock({
             <span>{footerText}</span>
           </motion.div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

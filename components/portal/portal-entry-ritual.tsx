@@ -13,7 +13,7 @@ const STEPS = [
 export function PortalEntryRitual({ onComplete }: { onComplete: () => void }) {
   return (
     <RitualEntryLock
-      eyebrow="Secure Client Portal"
+      eyebrow="Secure Matter Portal"
       steps={STEPS}
       sectionLabel="Preparing your matter portal"
       footerText="SECURE WORKSPACE READY"

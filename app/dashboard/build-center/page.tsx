@@ -72,7 +72,7 @@ const SERVICES: ServiceCard[] = [
   },
   {
     id: "document-vault",
-    label: "Document Vault",
+    label: "The Vault",
     category: "Storage",
     state: "Nominal",
     note: "Secure document storage — operator access only, no public exposure",

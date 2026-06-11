@@ -65,7 +65,7 @@ const MONITORS: MonitorTarget[] = [
   },
   {
     id: "document-vault",
-    label: "Document Vault",
+    label: "The Vault",
     category: "Storage",
     state: "Unknown",
     note: "Secure document storage endpoint — operator access only",

@@ -40,7 +40,7 @@ export function FinalCTA() {
               border: "1px solid rgba(212,175,55,0.5)",
             }}
           >
-            Open Client Portal
+            Open Secure Matter Portal
           </Link>
         </div>
       </div>

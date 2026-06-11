@@ -71,7 +71,7 @@ const CANONICAL_RULES = [
   { id: "r07", rule: "CTA language locked (4 approved variants)", enforced: "Begin Secure Intake | Request Execution Coordination | Discuss Your Document | Begin Engagement", status: "pass" },
   { id: "r08", rule: "No commodity notary language", enforced: "No: cheap, fast stamp, notary near me, buy now, low-cost", status: "pass" },
   { id: "r09", rule: "UX palette locked — matte black, metallic gold, parchment cream", enforced: "globals.css: milano-black, milano-gold, milano-parchment", status: "pass" },
-  { id: "r10", rule: "Dashboard internal name: Command Center", enforced: "Client surfaces: Matter Control Portal", status: "pass" },
+  { id: "r10", rule: "Dashboard internal name: Execution Center", enforced: "Client surfaces: Matter Control Portal", status: "pass" },
   { id: "r11", rule: "No internal mechanics exposed publicly", enforced: "Runner model, margin logic, discount logic: private only", status: "pass" },
   { id: "r12", rule: "Logo asset switched to PNG (binary-safe for Git)", enforced: "/public/milano-seal-crest-icon.png", status: "pass" },
   { id: "r13", rule: "Global Intel data schema complete", enforced: "slug, name, flag, hague_status, apostille_req, demand_score, translation_req, execution_path, common_docs, doc_links, use_case_routing, seo_meta", status: "pass" },
@@ -567,7 +567,7 @@ export default function MilanoSealMergeValidator() {
       <div style={S.main}>
 
         <div style={{ marginBottom: "8px" }}>
-          <div style={S.sectionLabel}>Internal Command Center · Sovereign OS v1</div>
+          <div style={S.sectionLabel}>Internal Execution Center · Sovereign OS v1</div>
           <h1 style={S.heroTitle}>
             Merge <span style={S.heroGold}>Validation</span> Report
           </h1>

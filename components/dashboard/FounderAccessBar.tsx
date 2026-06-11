@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const PORTALS = [
   { label: "Operator Dashboard", href: "/dashboard", tag: "OPS" },
-  { label: "Client Portal", href: "/portal", tag: "CLIENT" },
+  { label: "Secure Matter Portal", href: "/portal", tag: "CLIENT" },
   { label: "Alliance Dashboard", href: "/alliance/dashboard", tag: "ALLIANCE" },
-  { label: "VA Dashboard", href: "/va/dashboard", tag: "VA" },
+  { label: "Operations Desk", href: "/va/dashboard", tag: "VA" },
 ];
 
 export function FounderAccessBar() {

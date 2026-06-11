@@ -539,7 +539,7 @@ export function CommandCenter({
               fontWeight: 400,
             }}
           >
-            Command Center
+            Execution Center
           </span>
         </div>
         <div style={{ display: "flex", gap: 20, alignItems: "center" }}>

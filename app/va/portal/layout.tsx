@@ -5,7 +5,7 @@ import { requireVAAccess } from "@/lib/vaAuth";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "VA Portal | The Milano Seal™",
+  title: "Operations Desk | The Milano Seal™",
   robots: { index: false, follow: false },
 };
 

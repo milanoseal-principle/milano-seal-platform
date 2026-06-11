@@ -291,7 +291,7 @@ function LoginInner() {
           {/* Access type selector */}
           <div style={{ display: "flex", gap: 6, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
             {([
-              { key: "portal", label: "Client Portal" },
+              { key: "portal", label: "Secure Matter Portal" },
               { key: "dashboard", label: "Operator" },
               { key: "alliance", label: "Alliance" },
               { key: "va", label: "VA" },

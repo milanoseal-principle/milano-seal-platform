@@ -140,7 +140,7 @@ export function IntelligenceCommandCenter() {
             className="text-[9px] font-mono uppercase tracking-[0.28em] mb-1"
             style={{ color: "rgba(198,165,90,0.5)" }}
           >
-            Intelligence Command Center
+            Execution Center
           </p>
           <h2
             className="font-serif text-xl font-light"
