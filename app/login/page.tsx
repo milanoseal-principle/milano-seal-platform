@@ -124,46 +124,25 @@ function LoginInner() {
     e.preventDefault();
     setError(null);
 
-    // Render-time diagnostic: if the public Supabase URL isn't available to the
-    // browser bundle, sign-in will fail with an opaque network error. Surface
-    // the real cause instead of "Failed to fetch".
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setError("Supabase URL not configured. Contact Nicholas Milano.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
       });
 
-      if (authError) {
-        setError(
-          authError.message === "Invalid login credentials"
-            ? "Incorrect email or password. Please try again."
-            : authError.message,
-        );
+      const json = await res.json() as { ok: boolean; error?: string; redirect?: string };
+
+      if (!json.ok) {
+        setError(json.error ?? "Sign-in failed. Please try again.");
         return;
       }
 
-      const role = ((data.user?.user_metadata?.role ?? data.user?.app_metadata?.role) as string) ?? "";
-
-      if (!role) {
-        setError("Access profile missing. Contact Nicholas Milano.");
-        return;
-      }
-
-      router.replace(safeNext || destForRole(role, "/dashboard"));
+      router.replace(json.redirect ?? "/dashboard");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unexpected sign-in error.";
-      const urlHint = process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? ` [URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL.slice(0, 35)}…]`
-        : " [URL: NOT IN BUNDLE]";
-      setError(msg + urlHint);
+      setError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
