@@ -280,9 +280,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           fill="url(#ms-disc-sheen)"
           style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.32s both" }}
         />
-        <circle
-          cx={CX} cy={CY} r="63"
-        {/* Gold rim only — no background fill, fully transparent disc */}
+        {/* Gold rim */}
         <circle
           cx={CX} cy={CY} r="63"
           fill="none" stroke="rgba(212,175,55,0.5)" strokeWidth="1.2"
