@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { isVARole } from "@/lib/vaAuth";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,13 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    await recordSecurityEvent({
+      event_name: "VA_ACTION_DENIED",
+      severity: "warning",
+      route: "/api/va/me",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,6 +26,14 @@ export async function GET() {
     ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   if (!isVARole(role)) {
+    await recordSecurityEvent({
+      event_name: "VA_ACTION_DENIED",
+      severity: "warning",
+      actor: user.email ?? user.id,
+      route: "/api/va/me",
+      client_safe: false,
+      metadata: { role: String(role), reason: "insufficient_role" },
+    });
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
