@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface RitualMedallionProps {
   reduced?: boolean;
 }
@@ -341,31 +339,27 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         )}
       </svg>
 
-      {/* ── Canonical PNG — centered over disc ── */}
-      <div
+      {/* ── Canonical orb PNG — plain img, percentage-sized to container, always on top ── */}
+      {/* next/image fill breaks when parent is position:absolute — use img directly */}
+      <img
+        src="/milano-seal-orb-v2.png"
+        alt=""
+        aria-hidden="true"
         style={{
           position: "absolute",
           left: "50%",
           top: "50%",
           transform: "translate(-50%, -50%)",
-          width: "clamp(118px, 16vw, 188px)",
-          height: "clamp(118px, 16vw, 188px)",
+          width: "34%",
+          height: "34%",
+          objectFit: "contain",
           zIndex: 2,
           pointerEvents: "none",
-          ...(reduced ? {} : {
-            opacity: 0,
-            animation: "msRevealOrb 0.55s cubic-bezier(0.22,1,0.36,1) 0.55s both",
-          }),
+          ...(reduced
+            ? {}
+            : { animation: "msRevealOrb 0.55s cubic-bezier(0.22,1,0.36,1) 0.55s both" }),
         }}
-      >
-        <Image
-          src="/milano-seal-orb-v2.png"
-          alt="Milano Seal"
-          fill
-          style={{ objectFit: "contain" }}
-          priority
-        />
-      </div>
+      />
     </div>
   );
 }
