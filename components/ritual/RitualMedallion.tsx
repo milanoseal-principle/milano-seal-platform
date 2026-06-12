@@ -157,16 +157,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <radialGradient id="ms-disc-bg" cx="45%" cy="38%" r="60%">
-            <stop offset="0%"   stopColor="#10100c" />
-            <stop offset="55%"  stopColor="#060604" />
-            <stop offset="100%" stopColor="#020201" />
-          </radialGradient>
-          <radialGradient id="ms-disc-sheen" cx="38%" cy="28%" r="65%">
-            <stop offset="0%"   stopColor="rgba(212,175,55,0.10)" />
-            <stop offset="60%"  stopColor="rgba(212,175,55,0.03)" />
-            <stop offset="100%" stopColor="rgba(212,175,55,0)" />
-          </radialGradient>
         </defs>
 
         {/* Outer ambient glow */}
@@ -263,23 +253,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           );
         })}
 
-        {/* Dark disc background */}
-        <circle
-          cx={CX} cy={CY} r="66"
-          fill="none" stroke="rgba(212,175,55,0.25)" strokeWidth="1"
-          filter="url(#ms-glow)"
-          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.4s ease-out 0.3s both" }}
-        />
-        <circle
-          cx={CX} cy={CY} r="63"
-          fill="url(#ms-disc-bg)"
-          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.3s both" }}
-        />
-        <circle
-          cx={CX} cy={CY} r="63"
-          fill="url(#ms-disc-sheen)"
-          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.32s both" }}
-        />
+        {/* Gold rim only — no background fill, fully transparent disc */}
         <circle
           cx={CX} cy={CY} r="63"
           fill="none" stroke="rgba(212,175,55,0.5)" strokeWidth="1.2"
