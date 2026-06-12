@@ -120,32 +120,13 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 ms-orb-halo-breathe pointer-events-none" />
             <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.08] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
 
-            {/* Obsidian disc */}
-            <svg width="64" height="64" viewBox="0 0 64 64" className="absolute inset-0">
-              {/* Gold rim */}
-              <circle cx="32" cy="32" r="30" fill="none" stroke="#C6A55A" strokeWidth="1.2" opacity="0.6" />
-              {/* Orbital ring */}
-              <circle cx="32" cy="32" r="24" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.25" strokeDasharray="2 4" />
-              {/* Base disc */}
-              <circle cx="32" cy="32" r="29" fill="#050507" />
-              {/* Inner glow */}
-              <circle cx="32" cy="32" r="28" fill="url(#orbGradient)" />
-              {/* 8 orbital node dots */}
-              {NODE_ANGLES.map((angle, i) => {
-                const rad = (angle * Math.PI) / 180;
-                const nx = 32 + 24 * Math.cos(rad);
-                const ny = 32 + 24 * Math.sin(rad);
-                return <circle key={i} cx={nx} cy={ny} r="1.5" fill="#C6A55A" opacity="0.5" />;
-              })}
-              {/* M monogram */}
-              <text x="32" y="36.5" textAnchor="middle" fontFamily="serif" fontSize="16" fill="#C6A55A" opacity="0.85" fontWeight="500">M</text>
-              <defs>
-                <radialGradient id="orbGradient" cx="50%" cy="35%" r="60%">
-                  <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="#050507" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-            </svg>
+            {/* Feather-M orb PNG — no background, transparent */}
+            <img
+              src="/milano-seal-feather-m-orb.png"
+              alt="Milano Seal Assistant"
+              className="ms-assistant-orb-image"
+              style={{ width: 64, height: 64, objectFit: "contain", background: "none" }}
+            />
           </motion.button>
         ) : (
           /* ── PANEL ── */
@@ -168,10 +149,12 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 {/* Mini orb */}
-                <svg width="28" height="28" viewBox="0 0 28 28">
-                  <circle cx="14" cy="14" r="13" fill="#050507" stroke="#C6A55A" strokeWidth="0.8" opacity="0.6" />
-                  <text x="14" y="18" textAnchor="middle" fontFamily="serif" fontSize="10" fill="#C6A55A" opacity="0.85">M</text>
-                </svg>
+                <img
+                  src="/milano-seal-feather-m-orb.png"
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: 28, height: 28, objectFit: "contain", background: "none" }}
+                />
                 <div className="flex flex-col">
                   <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
                   <span className="text-[7px] text-zinc-500 tracking-wider uppercase">{roleMode === 'PUBLIC' ? 'Secure Execution Desk' : roleMode + ' MODE'}</span>
