@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOperatorAtlasSignals } from "@/lib/atlas/atlas-pathway";
 
 export type MatterSignal = {
   label: string;
@@ -71,20 +72,30 @@ export function getOperatorMatterSignals(matter: {
   matter_status: string | null;
 }): MatterSignal[] {
   const signals: MatterSignal[] = [];
-  const country = (matter.destination_country ?? "").toLowerCase();
   const docType = (matter.document_type ?? "").toLowerCase();
 
-  if (country === "italy" || country === "greece" || country === "spain" || country === "portugal")
-    signals.push({ label: "Apostille", value: "Likely required — Hague member", type: "info" });
+  // Atlas-sourced pathway signals — covers all registered countries
+  const atlas = getOperatorAtlasSignals(matter.destination_country);
 
-  if (country === "uae" || country === "saudi arabia" || country === "china")
-    signals.push({ label: "Legalization", value: "Consular legalization may be required", type: "warning" });
+  if (atlas.pathwayLabel) {
+    const isLegalization = atlas.pathwayLabel.includes("Legalization");
+    signals.push({
+      label: isLegalization ? "Legalization" : "Apostille",
+      value: isLegalization
+        ? `${atlas.pathwayLabel} — consular chain may apply`
+        : `${atlas.pathwayLabel} — review required`,
+      type: isLegalization ? "warning" : "info",
+    });
+  }
+
+  if (atlas.translationLikely)
+    signals.push({ label: "Translation", value: "Certified translation likely needed for this destination", type: "suggestion" });
+
+  if (atlas.ronLikelihood === "limited" || atlas.ronLikelihood === "not_available")
+    signals.push({ label: "RON", value: "Remote Online Notarization may be limited — confirm signing method", type: "warning" });
 
   if (docType.includes("affidavit") || docType.includes("power of attorney") || docType.includes("poa"))
     signals.push({ label: "Signer ID", value: "Identity verification required before execution", type: "info" });
-
-  if (docType.includes("translate") || country === "brazil" || country === "mexico" || country === "vietnam")
-    signals.push({ label: "Translation", value: "Certified translation likely needed", type: "suggestion" });
 
   if (!matter.assigned_lane)
     signals.push({ label: "Lane", value: "No lane assigned yet", type: "warning" });

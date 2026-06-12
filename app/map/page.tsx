@@ -6,9 +6,17 @@ import { RoutingIntelligenceSection } from "@/components/landing/routing-intelli
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 
 export const metadata: Metadata = {
-  title: "Global Routing Intelligence | The Milano Seal™",
-  description: "Active document execution corridors from Florida into high-demand international jurisdictions. Italy, Spain, Portugal, UAE, Brazil, Mexico, and more.",
+  title: "Global Document Intelligence Atlas | The Milano Seal™",
+  description: "Review international document execution pathways, apostille routing, jurisdiction intelligence, and secure U.S. document coordination through The Milano Seal™.",
   robots: { index: true, follow: true },
+  openGraph: {
+    title: "Global Document Intelligence Atlas | The Milano Seal™",
+    description: "Review international document execution pathways, apostille routing, jurisdiction intelligence, and secure U.S. document coordination through The Milano Seal™.",
+    url: "https://themilanoseal.com/map",
+    siteName: "The Milano Seal™",
+    type: "website",
+  },
+  alternates: { canonical: "https://themilanoseal.com/map" },
 };
 
 export default function MapPage() {
