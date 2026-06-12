@@ -70,12 +70,17 @@ function LoginInner() {
 
   // Redirect already-authenticated users — must be before any conditional return
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
-      router.replace(safeNext || destForRole(role, "/dashboard"));
-    });
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (!data.user) return;
+        const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
+        router.replace(safeNext || destForRole(role, "/dashboard"));
+      }).catch(() => { /* ignore — non-blocking redirect check */ });
+    } catch {
+      // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
+      // This is non-fatal for the login page — user can still sign in via the API route.
+    }
   }, [router, safeNext]);
 
   useEffect(() => {
