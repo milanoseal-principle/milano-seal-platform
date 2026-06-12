@@ -99,10 +99,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             0%   { opacity: 0; transform: scale(0.7); }
             100% { opacity: 1; transform: scale(1); }
           }
-          @keyframes msRevealOrb {
-            0%   { opacity: 0; transform: scale(0.82) translateY(6px); filter: blur(14px); }
-            100% { opacity: 1; transform: scale(1)   translateY(0px);  filter: blur(0px); }
-          }
           @keyframes msTraceRing {
             0%   { stroke-dashoffset: 440; opacity: 0; }
             30%  { opacity: 0.9; }
@@ -181,7 +177,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         aria-hidden="true"
       >
         <defs>
-          {/* Single shared glow filter */}
           <filter id="ms-glow" x="-80%" y="-80%" width="260%" height="260%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
             <feMerge>
@@ -307,18 +302,14 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
                 }),
               } as React.CSSProperties}
             >
-              {/* Outer halo */}
               <circle cx={x} cy={y} r={n.s + 6} fill="rgba(212,175,55,0.12)" />
-              {/* Ring */}
               <circle cx={x} cy={y} r={n.s} fill="none" stroke="rgba(212,175,55,0.7)" strokeWidth="0.8" />
-              {/* Core */}
               <circle cx={x} cy={y} r={n.s * 0.42} fill="#fffbe8" opacity="0.95" />
             </g>
           );
         })}
 
-        {/* ── Dark orb disc — behind PNG, no checkerboard ── */}
-        {/* Outer ambient border */}
+        {/* ── Dark orb disc — behind PNG ── */}
         <circle
           cx={CX} cy={CY} r="66"
           fill="none"
@@ -330,7 +321,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             animation: "msAssembleDisc 0.4s ease-out 0.3s both",
           }}
         />
-        {/* Dark background disc */}
         <circle
           cx={CX} cy={CY} r="63"
           fill="url(#ms-disc-bg)"
@@ -339,7 +329,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             animation: "msAssembleDisc 0.35s ease-out 0.3s both",
           }}
         />
-        {/* Sheen overlay */}
         <circle
           cx={CX} cy={CY} r="63"
           fill="url(#ms-disc-sheen)"
@@ -348,7 +337,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             animation: "msAssembleDisc 0.35s ease-out 0.32s both",
           }}
         />
-        {/* Gold rim */}
         <circle
           cx={CX} cy={CY} r="63"
           fill="none"
@@ -360,7 +348,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           }}
         />
 
-        {/* ── Unlock pulse ring (fires once at end of assembly) ── */}
+        {/* ── Unlock pulse ring ── */}
         {!reduced && (
           <circle
             cx={CX} cy={CY} r="66"
