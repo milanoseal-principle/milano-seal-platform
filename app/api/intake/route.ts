@@ -18,6 +18,7 @@ import {
   checkAffidavitFederalConflict,
   formatApostillePath,
 } from "@/lib/intake/routing-normalizer";
+import { safeText } from "@/lib/security/app-guards";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -125,6 +126,12 @@ export async function POST(req: NextRequest) {
         apostille: raw.apostille ?? parsed.apostille_needed,
       };
     }
+
+    // Sanitize free-text fields before any processing
+    if (raw.name)        raw.name        = safeText(raw.name);
+    if (raw.client_name) raw.client_name = safeText(raw.client_name);
+    if (raw.notes)       raw.notes       = safeText(raw.notes);
+    if (raw.message)     raw.message     = safeText(raw.message);
 
     const data = normalizeMatter(raw);
 

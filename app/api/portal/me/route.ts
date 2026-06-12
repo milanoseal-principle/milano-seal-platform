@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllClientDeals } from "@/lib/portalAuth";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 import { getLedger } from "@/lib/custodyLedger";
 import { projectMatterForPortal, PORTAL_BLOCKED_FIELDS } from "@/lib/portalProjection";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -57,6 +58,13 @@ export async function GET(req: NextRequest) {
   // 1. Verify authenticated session
   const ctx = await getAllClientDeals();
   if (!ctx) {
+    await recordSecurityEvent({
+      event_name: "UNAUTHORIZED_PORTAL_ACCESS_ATTEMPT",
+      severity: "warning",
+      route: "/api/portal/me",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -110,6 +118,34 @@ export async function GET(req: NextRequest) {
   // 6. Fetch custody ledger (already client-safe)
   const ledger = await getLedger(activeDeal.id);
 
+  // 6b. Fetch active legacy client credit if present — client-safe fields only
+  let legacyCredit: {
+    credit_name: string;
+    discount_percent: number;
+    applies_to: string;
+    client_safe_note: string;
+    status: string;
+  } | null = null;
+  try {
+    const { data: creditRow } = await admin
+      .from("legacy_client_credits")
+      .select("credit_name, discount_percent, applies_to, client_safe_note, status")
+      .eq("matter_id", activeDeal.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (creditRow) {
+      legacyCredit = {
+        credit_name: String(creditRow.credit_name ?? ""),
+        discount_percent: Number(creditRow.discount_percent ?? 50),
+        applies_to: String(creditRow.applies_to ?? "service_fee_only"),
+        client_safe_note: String(creditRow.client_safe_note ?? ""),
+        status: "active",
+      };
+    }
+  } catch {
+    // Table may not exist yet — graceful fallback
+  }
+
   // 7. Build matter list for portal switcher (safe projection only)
   const matters = ctx.deals.map((d) => {
     const projected = applySafeProjection(
@@ -118,6 +154,10 @@ export async function GET(req: NextRequest) {
     projected.is_platform_fee_only = isPlatformFeeOnly(d as unknown as Record<string, unknown>);
     return projected;
   });
+
+  if (legacyCredit) {
+    safeMatter.legacy_client_credit = legacyCredit;
+  }
 
   return NextResponse.json({
     success: true,

@@ -7,6 +7,9 @@ import { useApi } from "@/hooks/useApi";
 import { stageLabel, timeAgo } from "@/lib/format";
 import { getWorkflowOrDerive } from "@/data/intelligence";
 import type { Workflow } from "@/data/intelligence";
+import { PaymentIntegrityPanel } from "@/components/dashboard/PaymentIntegrityPanel";
+import { FinalSealReviewPanel } from "@/components/dashboard/FinalSealReviewPanel";
+import { ExecutionQAMatrix } from "@/components/dashboard/ExecutionQAMatrix";
 
 interface MatterDetail {
   id: string;
@@ -16,6 +19,8 @@ interface MatterDetail {
   destination_country: string;
   deal_status: string;
   payment_status: string | null;
+  payment_confirmed?: boolean | null;
+  is_platform_fee_only?: boolean | null;
   tier: string | null;
   courier_tracking_id: string | null;
   courier_carrier: string | null;
@@ -457,6 +462,46 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
 
         {/* Operator Actions — manual payment confirmation + status advance */}
         <OperatorActions matter={matter} />
+
+        {/* Payment Integrity — founder/operator view of payment gate state */}
+        <div>
+          <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            Payment Integrity
+          </p>
+          <PaymentIntegrityPanel
+            matter={{
+              payment_confirmed: matter.payment_confirmed === true,
+              is_platform_fee_only: matter.is_platform_fee_only === true,
+              payment_status: matter.payment_status,
+            }}
+          />
+        </div>
+
+        {/* Execution QA Matrix — pre-flight check state */}
+        <div>
+          <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            Execution QA
+          </p>
+          <ExecutionQAMatrix
+            matter={{
+              client_name: matter.client_name,
+              destination_country: matter.destination_country,
+              document_type: matter.document_type,
+              payment_confirmed: matter.payment_confirmed === true,
+            }}
+          />
+        </div>
+
+        {/* Final Seal Review — release gate checklist */}
+        <div>
+          <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            Final Seal Review
+          </p>
+          <FinalSealReviewPanel
+            matter={{ id: matter.id, destination_country: matter.destination_country }}
+            founderMode
+          />
+        </div>
       </div>
     </div>
   );

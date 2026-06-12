@@ -40,6 +40,13 @@ export interface PortalClientMatter {
   is_platform_fee_only: boolean;
   created_at: string | null;
   updated_at: string | null;
+  legacy_client_credit?: {
+    credit_name: string;
+    discount_percent: number;
+    applies_to: string;
+    client_safe_note: string;
+    status: string;
+  } | null;
 }
 
 // @deprecated — kept for shell compat during transition
