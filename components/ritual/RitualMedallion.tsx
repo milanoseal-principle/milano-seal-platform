@@ -4,13 +4,11 @@ interface RitualMedallionProps {
   reduced?: boolean;
 }
 
-// Precomputed outside render — stable refs, no Math.random in render
 const CX = 200;
 const CY = 200;
 
 const RING_RADII = [68, 96, 124];
 
-// Portugal-style route arcs: [startAngleDeg, sweepDeg, radius, opacity]
 const ARCS: { sa: number; sw: number; r: number; op: number; delay: number }[] = [
   { sa: -20,  sw: 110, r: 114, op: 0.55, delay: 0    },
   { sa: 140,  sw: 95,  r: 114, op: 0.40, delay: 0.18 },
@@ -21,7 +19,6 @@ const ARCS: { sa: number; sw: number; r: number; op: number; delay: number }[] =
   { sa: 160,  sw: 90,  r: 152, op: 0.18, delay: 0.50 },
 ];
 
-// Glowing route nodes: angle deg, ring index, size, delay
 const NODES: { a: number; ri: number; s: number; d: number }[] = [
   { a: 85,  ri: 0, s: 5.5, d: 0.00 },
   { a: 200, ri: 0, s: 5.5, d: 0.12 },
@@ -34,35 +31,24 @@ const NODES: { a: number; ri: number; s: number; d: number }[] = [
   { a: 250, ri: 2, s: 3.5, d: 0.96 },
 ];
 
-];
+const DUST: { x: number; y: number; r: number; op: number; d: number }[] = Array.from(
+  { length: 24 },
+  (_, i) => {
+    const ang = (i / 24) * Math.PI * 2;
+    const dist = 74 + (i % 3) * 14;
+    return {
+      x: Math.round(CX + dist * Math.cos(ang)),
+      y: Math.round(CY + dist * Math.sin(ang)),
+      r: i % 5 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0,
+      op: i % 5 === 0 ? 0.5 : i % 3 === 0 ? 0.3 : 0.18,
+      d: (i * 0.08) % 1.8,
+    };
+  },
+);
 
-// Glowing route nodes: angle deg, ring index, size, delay
-const NODES: { a: number; ri: number; s: number; d: number }[] = [
-  { a: 85,  ri: 0, s: 5.5, d: 0.00 },
-  { a: 200, ri: 0, s: 5.5, d: 0.12 },
-  { a: 320, ri: 0, s: 5.5, d: 0.24 },
-  { a: 30,  ri: 1, s: 4.5, d: 0.36 },
-  { a: 145, ri: 1, s: 4.5, d: 0.48 },
-  { a: 265, ri: 1, s: 4.5, d: 0.60 },
-  { a: 10,  ri: 2, s: 3.5, d: 0.72 },
-  { a: 130, ri: 2, s: 3.5, d: 0.84 },
-  { a: 250, ri: 2, s: 3.5, d: 0.96 },
-];
-
-// Particle dust — fixed positions around orb
-const DUST: { x: number; y: number; r: number; op: number; d: number }[] = Array.from({ length: 24 }, (_, i) => {
-  const ang = (i / 24) * Math.PI * 2;
-  const dist = 74 + (i % 3) * 14;
-  return {
-    x: Math.round(CX + dist * Math.cos(ang)),
-    y: Math.round(CY + dist * Math.sin(ang)),
-    r: i % 5 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0,
-    op: i % 5 === 0 ? 0.5 : i % 3 === 0 ? 0.3 : 0.18,
-    d: (i * 0.08) % 1.8,
-  };
-});
-
-function arcPath(cx: number, cy: number, r: number, startDeg: number, sweepDeg: number): string {
+function arcPath(
+  cx: number, cy: number, r: number, startDeg: number, sweepDeg: number,
+): string {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const sx = cx + r * Math.cos(toRad(startDeg));
   const sy = cy + r * Math.sin(toRad(startDeg));
@@ -92,7 +78,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         justifyContent: "center",
       }}
     >
-      {/* ── CSS keyframes ── */}
       {!reduced && (
         <style>{`
           @keyframes msAssembleDisc {
@@ -102,7 +87,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           @keyframes msTraceRing {
             0%   { stroke-dashoffset: 440; opacity: 0; }
             30%  { opacity: 0.9; }
-            100% { stroke-dashoffset: 0;   opacity: 0.7; }
+            100% { stroke-dashoffset: 0; opacity: 0.7; }
           }
           @keyframes msDrawArc {
             0%   { stroke-dashoffset: 600; opacity: 0; }
@@ -121,49 +106,23 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           }
           @keyframes msNodePulse {
             0%, 100% { opacity: 0.75; }
-            50%       { opacity: 1; }
+            50%      { opacity: 1; }
           }
           @keyframes msRingOrbit {
             from { transform: rotate(0deg); }
             to   { transform: rotate(360deg); }
           }
-          @keyframes msRingOrbitRev {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(-360deg); }
-          }
           @keyframes msDustDrift {
             0%, 100% { opacity: var(--d-op); transform: translate(0,0) scale(1); }
-            50%       { opacity: calc(var(--d-op) * 1.8); transform: translate(0,-2px) scale(1.3); }
+            50%      { opacity: calc(var(--d-op) * 1.8); transform: translate(0,-2px) scale(1.3); }
           }
           @keyframes msArcPulse {
             0%, 100% { opacity: var(--a-op); }
-            50%       { opacity: calc(var(--a-op) * 1.5); }
-          }
-          @keyframes msRevealCore {
-            0%   { opacity: 0; transform: scale(0.78); filter: blur(12px); }
-            100% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          }
-          @keyframes msDrawLogo {
-            0% {
-              opacity: 0;
-              stroke-dashoffset: 140;
-              fill-opacity: 0;
-              transform: scale(0.94) translateY(4px);
-            }
-            50% {
-              opacity: 1;
-            }
-            100% {
-              opacity: 1;
-              stroke-dashoffset: 0;
-              fill-opacity: 1;
-              transform: scale(1) translateY(0);
-            }
+            50%      { opacity: calc(var(--a-op) * 1.5); }
           }
         `}</style>
       )}
 
-      {/* ── SVG route-energy layer (behind orb PNG) ── */}
       <svg
         viewBox="0 0 400 400"
         style={{
@@ -208,22 +167,17 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             <stop offset="60%"  stopColor="rgba(212,175,55,0.03)" />
             <stop offset="100%" stopColor="rgba(212,175,55,0)" />
           </radialGradient>
-          <clipPath id="ms-orb-clip">
-            <circle cx={CX} cy={CY} r="62" />
-          </clipPath>
         </defs>
 
-        {/* ── Outer ambient glow disc ── */}
+        {/* Outer ambient glow */}
         <circle
           cx={CX} cy={CY} r="76"
           fill="rgba(212,175,55,0.07)"
           filter="url(#ms-disc-glow)"
-          style={reduced ? undefined : {
-            animation: "msAssembleDisc 0.3s ease-out 0s both",
-          }}
+          style={reduced ? undefined : { animation: "msAssembleDisc 0.3s ease-out 0s both" }}
         />
 
-        {/* ── Route arcs — Portugal style ── */}
+        {/* Route arcs */}
         {ARCS.map((arc, i) => {
           const pathLen = (arc.sw / 360) * 2 * Math.PI * arc.r;
           return (
@@ -248,7 +202,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           );
         })}
 
-        {/* ── Orbital rings ── */}
+        {/* Orbital rings */}
         {RING_RADII.map((r, i) => {
           const circ = 2 * Math.PI * r;
           return (
@@ -264,7 +218,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
                 opacity: reduced ? 0.7 : 0,
                 strokeDashoffset: reduced ? 0 : circ,
                 ...(reduced ? {} : {
-                  animation: `msTraceRing 1.0s cubic-bezier(0.22,1,0.36,1) ${0.9 + i * 0.22}s both${i === 2 ? `, msRingOrbit 32s linear ${2.5}s infinite` : ""}`,
+                  animation: `msTraceRing 1.0s cubic-bezier(0.22,1,0.36,1) ${0.9 + i * 0.22}s both${i === 2 ? `, msRingOrbit 32s linear 2.5s infinite` : ""}`,
                   transformOrigin: `${CX}px ${CY}px`,
                 }),
               } as React.CSSProperties}
@@ -272,7 +226,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           );
         })}
 
-        {/* ── Particle dust ── */}
+        {/* Particle dust */}
         {DUST.map((d, i) => (
           <circle
             key={`dust-${i}`}
@@ -288,7 +242,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           />
         ))}
 
-        {/* ── Glowing route nodes ── */}
+        {/* Glowing route nodes */}
         {NODES.map((n, i) => {
           const { x, y } = nodePos(n.ri, n.a);
           return (
@@ -309,63 +263,39 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           );
         })}
 
-        {/* ── Dark orb disc — behind PNG ── */}
+        {/* Dark disc background */}
         <circle
           cx={CX} cy={CY} r="66"
-          fill="none"
-          stroke="rgba(212,175,55,0.25)"
-          strokeWidth="1"
+          fill="none" stroke="rgba(212,175,55,0.25)" strokeWidth="1"
           filter="url(#ms-glow)"
-          style={reduced ? undefined : {
-            opacity: 0,
-            animation: "msAssembleDisc 0.4s ease-out 0.3s both",
-          }}
+          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.4s ease-out 0.3s both" }}
         />
         <circle
           cx={CX} cy={CY} r="63"
           fill="url(#ms-disc-bg)"
-          style={reduced ? undefined : {
-            opacity: 0,
-            animation: "msAssembleDisc 0.35s ease-out 0.3s both",
-          }}
+          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.3s both" }}
         />
         <circle
           cx={CX} cy={CY} r="63"
           fill="url(#ms-disc-sheen)"
-          style={reduced ? undefined : {
-            opacity: 0,
-            animation: "msAssembleDisc 0.35s ease-out 0.32s both",
-          }}
+          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.32s both" }}
         />
         <circle
           cx={CX} cy={CY} r="63"
-          fill="none"
-          stroke="rgba(212,175,55,0.5)"
-          strokeWidth="1.2"
-          style={reduced ? undefined : {
-            opacity: 0,
-            animation: "msAssembleDisc 0.35s ease-out 0.3s both",
-          }}
+          fill="none" stroke="rgba(212,175,55,0.5)" strokeWidth="1.2"
+          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.3s both" }}
         />
 
-        {/* ── Unlock pulse ring ── */}
         {!reduced && (
           <circle
             cx={CX} cy={CY} r="66"
-            fill="none"
-            stroke="rgba(212,175,55,0.6)"
-            strokeWidth="2"
-            style={{
-              opacity: 0,
-              animation: "msUnlockPulse 0.7s ease-out 3.6s 1 both",
-            }}
+            fill="none" stroke="rgba(212,175,55,0.6)" strokeWidth="2"
+            style={{ opacity: 0, animation: "msUnlockPulse 0.7s ease-out 3.6s 1 both" }}
           />
         )}
       </svg>
 
-      {/* ── Canonical orb PNG — plain img, always visible ── */}
-      {/* Parent motion.div in RitualEntryLock already animates the whole medallion in. */}
-      {/* Do NOT use fill-mode:both here — it holds opacity:0 and the image never appears. */}
+      {/* Orb PNG — always visible, parent motion.div provides entrance animation */}
       <img
         src="/milano-seal-orb-v2.png"
         alt=""
@@ -383,159 +313,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           pointerEvents: "none",
         }}
       />
-
-        {/* ── Unlock pulse ring (fires once at end of assembly) ── */}
-        {!reduced && (
-          <circle
-            cx={CX} cy={CY} r="66"
-            fill="none"
-            stroke="rgba(212,175,55,0.6)"
-            strokeWidth="2"
-            style={{
-              opacity: 0,
-              animation: "msUnlockPulse 0.7s ease-out 3.6s 1 both",
-            }}
-          />
-        )}
-      </svg>
-
-      {/* ── Black-hole core seal logo — forms from the central orb ── */}
-      <svg
-        viewBox="0 0 100 100"
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "clamp(118px, 16vw, 188px)",
-          height: "clamp(118px, 16vw, 188px)",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-        aria-hidden="true"
-      >
-        <defs>
-          <radialGradient id="ms-core-bg" cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stopColor="#050504" />
-            <stop offset="40%" stopColor="#060604" />
-            <stop offset="100%" stopColor="#020201" />
-          </radialGradient>
-        </defs>
-
-        <circle cx="50" cy="50" r="30" fill="url(#ms-core-bg)" />
-        <circle
-          cx="50"
-          cy="50"
-          r="22"
-          fill="#090908"
-          style={
-            reduced
-              ? undefined
-              : {
-                  opacity: 0,
-                  transformOrigin: "50% 50%",
-                  animation: "msRevealCore 0.45s ease-out 0.55s both",
-                }
-          }
-        />
-
-        <g
-          style={{
-            opacity: reduced ? 1 : 0,
-            transformOrigin: "50% 50%",
-            ...(reduced
-              ? {}
-              : {
-                  animation: "msDrawLogo 0.85s cubic-bezier(0.22,1,0.36,1) 0.85s both",
-                }),
-          }}
-        >
-          <path
-            d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z"
-            fill="#d4af37"
-            fillOpacity={reduced ? 1 : 0}
-            stroke="#d4af37"
-            strokeWidth="1.5"
-            style={{
-              strokeDasharray: 120,
-              strokeDashoffset: reduced ? 0 : 120,
-              transition: reduced ? undefined : "none",
-            }}
-          />
-          <path
-            d="M22,72 L22,28 L50,53"
-            fill="none"
-            stroke="#d4af37"
-            strokeWidth="5"
-            strokeLinecap="butt"
-            strokeLinejoin="miter"
-            style={{
-              strokeDasharray: 120,
-              strokeDashoffset: reduced ? 0 : 120,
-            }}
-          />
-          <path
-            d="M78,72 L78,28 L50,53"
-            fill="none"
-            stroke="#d4af37"
-            strokeWidth="5"
-            strokeLinecap="butt"
-            strokeLinejoin="miter"
-            style={{
-              strokeDasharray: 120,
-              strokeDashoffset: reduced ? 0 : 120,
-            }}
-          />
-          <line
-            x1="15"
-            y1="28"
-            x2="29"
-            y2="28"
-            stroke="#d4af37"
-            strokeWidth="3.5"
-            style={{
-              strokeDasharray: 42,
-              strokeDashoffset: reduced ? 0 : 42,
-            }}
-          />
-          <line
-            x1="15"
-            y1="72"
-            x2="29"
-            y2="72"
-            stroke="#d4af37"
-            strokeWidth="3.5"
-            style={{
-              strokeDasharray: 42,
-              strokeDashoffset: reduced ? 0 : 42,
-            }}
-          />
-          <line
-            x1="71"
-            y1="28"
-            x2="85"
-            y2="28"
-            stroke="#d4af37"
-            strokeWidth="3.5"
-            style={{
-              strokeDasharray: 42,
-              strokeDashoffset: reduced ? 0 : 42,
-            }}
-          />
-          <line
-            x1="71"
-            y1="72"
-            x2="85"
-            y2="72"
-            stroke="#d4af37"
-            strokeWidth="3.5"
-            style={{
-              strokeDasharray: 42,
-              strokeDashoffset: reduced ? 0 : 42,
-            }}
-          />
-        </g>
-      </svg>
     </div>
   );
 }
