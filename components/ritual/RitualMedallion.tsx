@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface RitualMedallionProps {
   reduced?: boolean;
 }
@@ -129,6 +127,27 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           @keyframes msArcPulse {
             0%, 100% { opacity: var(--a-op); }
             50%       { opacity: calc(var(--a-op) * 1.5); }
+          }
+          @keyframes msRevealCore {
+            0%   { opacity: 0; transform: scale(0.78); filter: blur(12px); }
+            100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          }
+          @keyframes msDrawLogo {
+            0% {
+              opacity: 0;
+              stroke-dashoffset: 140;
+              fill-opacity: 0;
+              transform: scale(0.94) translateY(4px);
+            }
+            50% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 1;
+              stroke-dashoffset: 0;
+              fill-opacity: 1;
+              transform: scale(1) translateY(0);
+            }
           }
         `}</style>
       )}
@@ -341,8 +360,9 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         )}
       </svg>
 
-      {/* ── Canonical PNG — centered over disc ── */}
-      <div
+      {/* ── Black-hole core seal logo — forms from the central orb ── */}
+      <svg
+        viewBox="0 0 100 100"
         style={{
           position: "absolute",
           left: "50%",
@@ -352,20 +372,131 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           height: "clamp(118px, 16vw, 188px)",
           zIndex: 2,
           pointerEvents: "none",
-          ...(reduced ? {} : {
-            opacity: 0,
-            animation: "msRevealOrb 0.55s cubic-bezier(0.22,1,0.36,1) 0.55s both",
-          }),
         }}
+        aria-hidden="true"
       >
-        <Image
-          src="/milano-seal-orb-v2.png"
-          alt="Milano Seal"
-          fill
-          style={{ objectFit: "contain" }}
-          priority
+        <defs>
+          <radialGradient id="ms-core-bg" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stopColor="#050504" />
+            <stop offset="40%" stopColor="#060604" />
+            <stop offset="100%" stopColor="#020201" />
+          </radialGradient>
+        </defs>
+
+        <circle cx="50" cy="50" r="30" fill="url(#ms-core-bg)" />
+        <circle
+          cx="50"
+          cy="50"
+          r="22"
+          fill="#090908"
+          style={
+            reduced
+              ? undefined
+              : {
+                  opacity: 0,
+                  transformOrigin: "50% 50%",
+                  animation: "msRevealCore 0.45s ease-out 0.55s both",
+                }
+          }
         />
-      </div>
+
+        <g
+          style={{
+            opacity: reduced ? 1 : 0,
+            transformOrigin: "50% 50%",
+            ...(reduced
+              ? {}
+              : {
+                  animation: "msDrawLogo 0.85s cubic-bezier(0.22,1,0.36,1) 0.85s both",
+                }),
+          }}
+        >
+          <path
+            d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z"
+            fill="#d4af37"
+            fillOpacity={reduced ? 1 : 0}
+            stroke="#d4af37"
+            strokeWidth="1.5"
+            style={{
+              strokeDasharray: 120,
+              strokeDashoffset: reduced ? 0 : 120,
+              transition: reduced ? undefined : "none",
+            }}
+          />
+          <path
+            d="M22,72 L22,28 L50,53"
+            fill="none"
+            stroke="#d4af37"
+            strokeWidth="5"
+            strokeLinecap="butt"
+            strokeLinejoin="miter"
+            style={{
+              strokeDasharray: 120,
+              strokeDashoffset: reduced ? 0 : 120,
+            }}
+          />
+          <path
+            d="M78,72 L78,28 L50,53"
+            fill="none"
+            stroke="#d4af37"
+            strokeWidth="5"
+            strokeLinecap="butt"
+            strokeLinejoin="miter"
+            style={{
+              strokeDasharray: 120,
+              strokeDashoffset: reduced ? 0 : 120,
+            }}
+          />
+          <line
+            x1="15"
+            y1="28"
+            x2="29"
+            y2="28"
+            stroke="#d4af37"
+            strokeWidth="3.5"
+            style={{
+              strokeDasharray: 42,
+              strokeDashoffset: reduced ? 0 : 42,
+            }}
+          />
+          <line
+            x1="15"
+            y1="72"
+            x2="29"
+            y2="72"
+            stroke="#d4af37"
+            strokeWidth="3.5"
+            style={{
+              strokeDasharray: 42,
+              strokeDashoffset: reduced ? 0 : 42,
+            }}
+          />
+          <line
+            x1="71"
+            y1="28"
+            x2="85"
+            y2="28"
+            stroke="#d4af37"
+            strokeWidth="3.5"
+            style={{
+              strokeDasharray: 42,
+              strokeDashoffset: reduced ? 0 : 42,
+            }}
+          />
+          <line
+            x1="71"
+            y1="72"
+            x2="85"
+            y2="72"
+            stroke="#d4af37"
+            strokeWidth="3.5"
+            style={{
+              strokeDasharray: 42,
+              strokeDashoffset: reduced ? 0 : 42,
+            }}
+          />
+        </g>
+      </svg>
     </div>
   );
 }
