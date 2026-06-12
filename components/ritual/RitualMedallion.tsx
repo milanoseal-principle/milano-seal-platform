@@ -1,42 +1,139 @@
 "use client";
 
+import Image from "next/image";
+
 interface RitualMedallionProps {
   reduced?: boolean;
 }
 
-const NODES: { angle: number; ring: number; size: number; delay: number }[] = [
-  { angle: 90,  ring: 1, size: 9,   delay: 0    },
-  { angle: 210, ring: 1, size: 9,   delay: 0.55 },
-  { angle: 330, ring: 1, size: 9,   delay: 1.1  },
-  { angle: 30,  ring: 2, size: 7,   delay: 0.28 },
-  { angle: 150, ring: 2, size: 7,   delay: 0.83 },
-  { angle: 270, ring: 2, size: 7,   delay: 1.38 },
-  { angle: 0,   ring: 3, size: 5.5, delay: 0.14 },
-  { angle: 120, ring: 3, size: 5.5, delay: 0.69 },
-  { angle: 240, ring: 3, size: 5.5, delay: 1.24 },
+// Precomputed outside render — stable refs, no Math.random in render
+const CX = 200;
+const CY = 200;
+
+const RING_RADII = [68, 96, 124];
+
+// Portugal-style route arcs: [startAngleDeg, sweepDeg, radius, opacity]
+const ARCS: { sa: number; sw: number; r: number; op: number; delay: number }[] = [
+  { sa: -20,  sw: 110, r: 114, op: 0.55, delay: 0    },
+  { sa: 140,  sw: 95,  r: 114, op: 0.40, delay: 0.18 },
+  { sa: 280,  sw: 70,  r: 114, op: 0.30, delay: 0.32 },
+  { sa: 55,   sw: 130, r: 138, op: 0.35, delay: 0.08 },
+  { sa: 220,  sw: 100, r: 138, op: 0.28, delay: 0.24 },
+  { sa: -40,  sw: 80,  r: 152, op: 0.22, delay: 0.40 },
+  { sa: 160,  sw: 90,  r: 152, op: 0.18, delay: 0.50 },
 ];
 
-function polarToXY(cx: number, cy: number, r: number, angleDeg: number) {
+// Glowing route nodes: angle deg, ring index, size, delay
+const NODES: { a: number; ri: number; s: number; d: number }[] = [
+  { a: 85,  ri: 0, s: 5.5, d: 0.00 },
+  { a: 200, ri: 0, s: 5.5, d: 0.12 },
+  { a: 320, ri: 0, s: 5.5, d: 0.24 },
+  { a: 30,  ri: 1, s: 4.5, d: 0.36 },
+  { a: 145, ri: 1, s: 4.5, d: 0.48 },
+  { a: 265, ri: 1, s: 4.5, d: 0.60 },
+  { a: 10,  ri: 2, s: 3.5, d: 0.72 },
+  { a: 130, ri: 2, s: 3.5, d: 0.84 },
+  { a: 250, ri: 2, s: 3.5, d: 0.96 },
+];
+
+// Particle dust — fixed positions around orb
+const DUST: { x: number; y: number; r: number; op: number; d: number }[] = Array.from({ length: 24 }, (_, i) => {
+  const ang = (i / 24) * Math.PI * 2;
+  const dist = 74 + (i % 3) * 14;
+  return {
+    x: Math.round(CX + dist * Math.cos(ang)),
+    y: Math.round(CY + dist * Math.sin(ang)),
+    r: i % 5 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0,
+    op: i % 5 === 0 ? 0.5 : i % 3 === 0 ? 0.3 : 0.18,
+    d: (i * 0.08) % 1.8,
+  };
+});
+
+function arcPath(cx: number, cy: number, r: number, startDeg: number, sweepDeg: number): string {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const sx = cx + r * Math.cos(toRad(startDeg));
+  const sy = cy + r * Math.sin(toRad(startDeg));
+  const ex = cx + r * Math.cos(toRad(startDeg + sweepDeg));
+  const ey = cy + r * Math.sin(toRad(startDeg + sweepDeg));
+  const large = sweepDeg > 180 ? 1 : 0;
+  return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
+}
+
+function nodePos(ri: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  const r = RING_RADII[ri];
+  return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
 }
 
 export function RitualMedallion({ reduced }: RitualMedallionProps) {
-  const cx = 200;
-  const cy = 200;
-  const radii = [72, 102, 132];
+  const size = "clamp(260px, 38vw, 420px)";
 
   return (
     <div
       style={{
         position: "relative",
-        width: "clamp(260px, 36vw, 400px)",
-        height: "clamp(260px, 36vw, 400px)",
+        width: size,
+        height: size,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
+      {/* ── CSS keyframes ── */}
+      {!reduced && (
+        <style>{`
+          @keyframes msAssembleDisc {
+            0%   { opacity: 0; transform: scale(0.7); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes msRevealOrb {
+            0%   { opacity: 0; transform: scale(0.82) translateY(6px); filter: blur(14px); }
+            100% { opacity: 1; transform: scale(1)   translateY(0px);  filter: blur(0px); }
+          }
+          @keyframes msTraceRing {
+            0%   { stroke-dashoffset: 440; opacity: 0; }
+            30%  { opacity: 0.9; }
+            100% { stroke-dashoffset: 0;   opacity: 0.7; }
+          }
+          @keyframes msDrawArc {
+            0%   { stroke-dashoffset: 600; opacity: 0; }
+            20%  { opacity: 1; }
+            100% { stroke-dashoffset: 0; }
+          }
+          @keyframes msIgniteNode {
+            0%   { opacity: 0; transform: scale(0.3); }
+            60%  { opacity: 1; transform: scale(1.25); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes msUnlockPulse {
+            0%   { opacity: 0; transform: scale(0.9); }
+            40%  { opacity: 0.6; transform: scale(1.12); }
+            100% { opacity: 0; transform: scale(1.35); }
+          }
+          @keyframes msNodePulse {
+            0%, 100% { opacity: 0.75; }
+            50%       { opacity: 1; }
+          }
+          @keyframes msRingOrbit {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes msRingOrbitRev {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(-360deg); }
+          }
+          @keyframes msDustDrift {
+            0%, 100% { opacity: var(--d-op); transform: translate(0,0) scale(1); }
+            50%       { opacity: calc(var(--d-op) * 1.8); transform: translate(0,-2px) scale(1.3); }
+          }
+          @keyframes msArcPulse {
+            0%, 100% { opacity: var(--a-op); }
+            50%       { opacity: calc(var(--a-op) * 1.5); }
+          }
+        `}</style>
+      )}
+
+      {/* ── SVG route-energy layer (behind orb PNG) ── */}
       <svg
         viewBox="0 0 400 400"
         style={{
@@ -45,315 +142,230 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           width: "100%",
           height: "100%",
           overflow: "visible",
+          pointerEvents: "none",
         }}
         aria-hidden="true"
       >
         <defs>
-          {/* Node glow */}
-          <filter id="nodeGlow" x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          {/* Outer ring glow */}
-          <filter id="outerGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          {/* Central orb glow */}
-          <filter id="orbGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          {/* M text glow */}
-          <filter id="mGlow" x="-60%" y="-60%" width="220%" height="220%">
+          {/* Single shared glow filter */}
+          <filter id="ms-glow" x="-80%" y="-80%" width="260%" height="260%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-
-          {/* Gold gradients */}
-          <radialGradient id="nodeCore" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#FFF8DC" />
-            <stop offset="40%" stopColor="#FFD966" />
-            <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
+          <filter id="ms-glow-sm" x="-120%" y="-120%" width="340%" height="340%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="ms-disc-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <radialGradient id="ms-disc-bg" cx="45%" cy="38%" r="60%">
+            <stop offset="0%"   stopColor="#10100c" />
+            <stop offset="55%"  stopColor="#060604" />
+            <stop offset="100%" stopColor="#020201" />
           </radialGradient>
-
-          <radialGradient id="orbBg" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#1a1208" />
-            <stop offset="50%" stopColor="#0d0d0f" />
-            <stop offset="100%" stopColor="#050507" />
-          </radialGradient>
-
-          <radialGradient id="orbSheen" cx="35%" cy="25%" r="70%">
-            <stop offset="0%" stopColor="rgba(212,175,55,0.12)" />
-            <stop offset="60%" stopColor="rgba(212,175,55,0.03)" />
+          <radialGradient id="ms-disc-sheen" cx="38%" cy="28%" r="65%">
+            <stop offset="0%"   stopColor="rgba(212,175,55,0.10)" />
+            <stop offset="60%"  stopColor="rgba(212,175,55,0.03)" />
             <stop offset="100%" stopColor="rgba(212,175,55,0)" />
           </radialGradient>
-
-          <linearGradient id="goldM" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFF0A0" />
-            <stop offset="30%" stopColor="#E4C879" />
-            <stop offset="65%" stopColor="#C6A55A" />
-            <stop offset="100%" stopColor="#A0813A" />
-          </linearGradient>
-
-          <linearGradient id="quillGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E4C879" />
-            <stop offset="100%" stopColor="#8B6914" />
-          </linearGradient>
-
-          {/* Clipping for orb */}
-          <clipPath id="orbClip">
-            <circle cx={cx} cy={cy} r="58" />
+          <clipPath id="ms-orb-clip">
+            <circle cx={CX} cy={CY} r="62" />
           </clipPath>
         </defs>
 
-        {/* ── World-dot background halo ── */}
-        {Array.from({ length: 64 }, (_, i) => {
-          const { x, y } = polarToXY(cx, cy, 158, (i / 64) * 360);
+        {/* ── Outer ambient glow disc ── */}
+        <circle
+          cx={CX} cy={CY} r="76"
+          fill="rgba(212,175,55,0.07)"
+          filter="url(#ms-disc-glow)"
+          style={reduced ? undefined : {
+            animation: "msAssembleDisc 0.3s ease-out 0s both",
+          }}
+        />
+
+        {/* ── Route arcs — Portugal style ── */}
+        {ARCS.map((arc, i) => {
+          const pathLen = (arc.sw / 360) * 2 * Math.PI * arc.r;
           return (
-            <circle
-              key={`halo-${i}`}
-              cx={x}
-              cy={y}
-              r="1.1"
-              fill={`rgba(212,175,55,${i % 4 === 0 ? 0.38 : i % 2 === 0 ? 0.18 : 0.08})`}
+            <path
+              key={`arc-${i}`}
+              d={arcPath(CX, CY, arc.r, arc.sa, arc.sw)}
+              fill="none"
+              stroke="#d4af37"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              filter="url(#ms-glow-sm)"
+              style={{
+                "--a-op": arc.op,
+                opacity: reduced ? arc.op : 0,
+                strokeDasharray: pathLen,
+                strokeDashoffset: reduced ? 0 : pathLen,
+                ...(reduced ? {} : {
+                  animation: `msDrawArc 0.9s cubic-bezier(0.22,1,0.36,1) ${1.4 + arc.delay + i * 0.15}s both, msArcPulse 5s ease-in-out ${3.2 + i * 0.3}s infinite`,
+                }),
+              } as React.CSSProperties}
             />
           );
         })}
 
-        {/* ── Faint world-map latitude dots ── */}
-        {Array.from({ length: 30 }, (_, i) => {
-          const { x, y } = polarToXY(cx, cy, 148, (i / 30) * 360);
+        {/* ── Orbital rings ── */}
+        {RING_RADII.map((r, i) => {
+          const circ = 2 * Math.PI * r;
           return (
-            <circle key={`lat-${i}`} cx={x} cy={y} r="0.7" fill="rgba(212,175,55,0.08)" />
+            <circle
+              key={`ring-${i}`}
+              cx={CX} cy={CY} r={r}
+              fill="none"
+              stroke="rgba(212,175,55,0.38)"
+              strokeWidth={i === 0 ? 1.4 : i === 1 ? 1.0 : 0.7}
+              strokeDasharray={i === 2 ? "5 9" : undefined}
+              filter={i === 0 ? "url(#ms-glow)" : undefined}
+              style={{
+                opacity: reduced ? 0.7 : 0,
+                strokeDashoffset: reduced ? 0 : circ,
+                ...(reduced ? {} : {
+                  animation: `msTraceRing 1.0s cubic-bezier(0.22,1,0.36,1) ${0.9 + i * 0.22}s both${i === 2 ? `, msRingOrbit 32s linear ${2.5}s infinite` : ""}`,
+                  transformOrigin: `${CX}px ${CY}px`,
+                }),
+              } as React.CSSProperties}
+            />
           );
         })}
 
-        {/* ── 3 orbital rings (ring[2] rotates slowly) ── */}
-        {/* Outer static ring with glow */}
-        <circle
-          cx={cx} cy={cy} r={radii[0]}
-          fill="none"
-          stroke="rgba(212,175,55,0.42)"
-          strokeWidth="1.4"
-          filter="url(#outerGlow)"
-        />
-        {/* Middle ring */}
-        <circle
-          cx={cx} cy={cy} r={radii[1]}
-          fill="none"
-          stroke="rgba(212,175,55,0.28)"
-          strokeWidth="0.9"
-        />
-        {/* Inner dashed ring — rotates */}
-        <circle
-          cx={cx} cy={cy} r={radii[2]}
-          fill="none"
-          stroke="rgba(212,175,55,0.20)"
-          strokeWidth="0.9"
-          strokeDasharray="4 8"
-          style={reduced ? undefined : {
-            transformOrigin: `${cx}px ${cy}px`,
-            animation: "ringSpinSlow 28s linear infinite",
-          }}
-        />
+        {/* ── Particle dust ── */}
+        {DUST.map((d, i) => (
+          <circle
+            key={`dust-${i}`}
+            cx={d.x} cy={d.y} r={d.r}
+            fill="#d4af37"
+            style={{
+              "--d-op": d.op,
+              opacity: d.op,
+              ...(reduced ? {} : {
+                animation: `msDustDrift ${3.2 + d.d}s ease-in-out ${d.d}s infinite`,
+              }),
+            } as React.CSSProperties}
+          />
+        ))}
 
-        {/* ── Tilted ellipse rails ── */}
-        <ellipse cx={cx} cy={cy} rx={102} ry={34} fill="none"
-          stroke="rgba(212,175,55,0.13)" strokeWidth="0.7"
-          transform={`rotate(-32 ${cx} ${cy})`}
-          style={reduced ? undefined : {
-            transformOrigin: `${cx}px ${cy}px`,
-            animation: "ringSpinMed 42s linear infinite",
-          }}
-        />
-        <ellipse cx={cx} cy={cy} rx={102} ry={34} fill="none"
-          stroke="rgba(212,175,55,0.09)" strokeWidth="0.7"
-          transform={`rotate(32 ${cx} ${cy})`}
-          style={reduced ? undefined : {
-            transformOrigin: `${cx}px ${cy}px`,
-            animation: "ringSpinMedRev 38s linear infinite reverse",
-          }}
-        />
-
-        {/* ── Glowing orbital nodes ── */}
+        {/* ── Glowing route nodes ── */}
         {NODES.map((n, i) => {
-          const { x, y } = polarToXY(cx, cy, radii[n.ring - 1], n.angle);
+          const { x, y } = nodePos(n.ri, n.a);
           return (
             <g
               key={`node-${i}`}
-              filter="url(#nodeGlow)"
-              style={reduced ? undefined : {
-                animation: `nodePulse 3.2s ease-in-out ${n.delay}s infinite`,
-              }}
+              filter="url(#ms-glow)"
+              style={{
+                opacity: reduced ? 1 : 0,
+                ...(reduced ? {} : {
+                  animation: `msIgniteNode 0.45s cubic-bezier(0.22,1,0.36,1) ${2.6 + n.d}s both, msNodePulse 3.8s ease-in-out ${3.6 + n.d}s infinite`,
+                }),
+              } as React.CSSProperties}
             >
-              <circle cx={x} cy={y} r={n.size + 5} fill="url(#nodeCore)" opacity="0.4" />
-              <circle cx={x} cy={y} r={n.size} fill="none"
-                stroke="rgba(212,175,55,0.55)" strokeWidth="0.9" />
-              <circle cx={x} cy={y} r={n.size * 0.48} fill="#FFF8DC" opacity="0.92" />
+              {/* Outer halo */}
+              <circle cx={x} cy={y} r={n.s + 6} fill="rgba(212,175,55,0.12)" />
+              {/* Ring */}
+              <circle cx={x} cy={y} r={n.s} fill="none" stroke="rgba(212,175,55,0.7)" strokeWidth="0.8" />
+              {/* Core */}
+              <circle cx={x} cy={y} r={n.s * 0.42} fill="#fffbe8" opacity="0.95" />
             </g>
           );
         })}
 
-        {/* ── Central orb disc ── */}
-        {/* Outer ambient glow ring */}
-        <circle cx={cx} cy={cy} r={68}
+        {/* ── Dark orb disc — behind PNG, no checkerboard ── */}
+        {/* Outer ambient border */}
+        <circle
+          cx={CX} cy={CY} r="66"
           fill="none"
-          stroke="rgba(212,175,55,0.22)"
+          stroke="rgba(212,175,55,0.25)"
           strokeWidth="1"
-          filter="url(#orbGlow)"
-        />
-
-        {/* Dark orb body */}
-        <circle cx={cx} cy={cy} r="60"
-          fill="url(#orbBg)"
-        />
-
-        {/* Orb inner sheen */}
-        <circle cx={cx} cy={cy} r="60"
-          fill="url(#orbSheen)"
-        />
-
-        {/* Orb border ring */}
-        <circle cx={cx} cy={cy} r="60"
-          fill="none"
-          stroke="rgba(212,175,55,0.45)"
-          strokeWidth="1.2"
-        />
-
-        {/* ── Milano "M" mark — full SVG path, no font dependency ── */}
-        {/* M constructed as 5 vertical strokes + diagonals */}
-        <g filter="url(#mGlow)"
+          filter="url(#ms-glow)"
           style={reduced ? undefined : {
-            animation: "mBreath 4s ease-in-out infinite",
+            opacity: 0,
+            animation: "msAssembleDisc 0.4s ease-out 0.3s both",
           }}
-        >
-          {/* Left vertical stroke */}
-          <rect x="164" y="175" width="7" height="46" rx="2" fill="url(#goldM)" />
-          {/* Right vertical stroke */}
-          <rect x="229" y="175" width="7" height="46" rx="2" fill="url(#goldM)" />
-          {/* Left diagonal (down-right) */}
-          <polygon
-            points="164,175 171,175 200,207 200,215"
-            fill="url(#goldM)"
-            opacity="0.95"
-          />
-          {/* Right diagonal (down-left) */}
-          <polygon
-            points="236,175 229,175 200,207 200,215"
-            fill="url(#goldM)"
-            opacity="0.95"
-          />
-          {/* Center peak diamond */}
-          <polygon
-            points="200,207 195,215 200,220 205,215"
-            fill="#FFD966"
-            opacity="0.9"
-          />
-
-          {/* Quill feather — diagonal below M, right side */}
-          <g opacity="0.72" transform={`translate(${cx}, ${cy})`}>
-            {/* Quill shaft */}
-            <line x1="14" y1="22" x2="28" y2="38"
-              stroke="url(#quillGold)" strokeWidth="1.5" strokeLinecap="round" />
-            {/* Quill barbs */}
-            {[0, 1, 2, 3].map((b) => (
-              <line key={b}
-                x1={16 + b * 3.5} y1={24 + b * 4}
-                x2={22 + b * 2.5} y2={20 + b * 4}
-                stroke="#C6A55A" strokeWidth="0.8" strokeLinecap="round" opacity="0.7"
-              />
-            ))}
-            {[0, 1, 2, 3].map((b) => (
-              <line key={`r${b}`}
-                x1={16 + b * 3.5} y1={24 + b * 4}
-                x2={12 + b * 2} y2={20 + b * 4.5}
-                stroke="#C6A55A" strokeWidth="0.8" strokeLinecap="round" opacity="0.5"
-              />
-            ))}
-          </g>
-        </g>
-
-        {/* Seal of Authenticity text arc — inner ring */}
-        <defs>
-          <path id="textArcTop"
-            d={`M ${cx - 50},${cy} A 50,50 0 0,1 ${cx + 50},${cy}`}
-          />
-          <path id="textArcBot"
-            d={`M ${cx - 44},${cy + 8} A 44,44 0 0,0 ${cx + 44},${cy + 8}`}
-          />
-        </defs>
-        <text fontSize="6.5" fill="rgba(198,165,90,0.55)" letterSpacing="0.22em" fontFamily="Georgia, serif">
-          <textPath href="#textArcTop" startOffset="8%">THE MILANO SEAL™</textPath>
-        </text>
-        <text fontSize="5.5" fill="rgba(198,165,90,0.38)" letterSpacing="0.18em" fontFamily="Georgia, serif">
-          <textPath href="#textArcBot" startOffset="12%">SEALING TRUST IN EVERY SIGNATURE</textPath>
-        </text>
-
-        {/* ── Mini M badge at bottom ── */}
-        <circle cx={cx} cy={cy + 82} r="16"
-          fill="#050507"
-          stroke="rgba(212,175,55,0.6)"
-          strokeWidth="1.4"
         />
-        <circle cx={cx} cy={cy + 82} r="16"
+        {/* Dark background disc */}
+        <circle
+          cx={CX} cy={CY} r="63"
+          fill="url(#ms-disc-bg)"
+          style={reduced ? undefined : {
+            opacity: 0,
+            animation: "msAssembleDisc 0.35s ease-out 0.3s both",
+          }}
+        />
+        {/* Sheen overlay */}
+        <circle
+          cx={CX} cy={CY} r="63"
+          fill="url(#ms-disc-sheen)"
+          style={reduced ? undefined : {
+            opacity: 0,
+            animation: "msAssembleDisc 0.35s ease-out 0.32s both",
+          }}
+        />
+        {/* Gold rim */}
+        <circle
+          cx={CX} cy={CY} r="63"
           fill="none"
-          stroke="rgba(212,175,55,0.15)"
-          strokeWidth="4"
-          filter="url(#outerGlow)"
+          stroke="rgba(212,175,55,0.5)"
+          strokeWidth="1.2"
+          style={reduced ? undefined : {
+            opacity: 0,
+            animation: "msAssembleDisc 0.35s ease-out 0.3s both",
+          }}
         />
-        <text
-          x={cx} y={cy + 87}
-          textAnchor="middle"
-          fontFamily="Georgia, serif"
-          fontSize="13"
-          fontWeight="600"
-          fill="#C6A55A"
-        >
-          M
-        </text>
+
+        {/* ── Unlock pulse ring (fires once at end of assembly) ── */}
+        {!reduced && (
+          <circle
+            cx={CX} cy={CY} r="66"
+            fill="none"
+            stroke="rgba(212,175,55,0.6)"
+            strokeWidth="2"
+            style={{
+              opacity: 0,
+              animation: "msUnlockPulse 0.7s ease-out 3.6s 1 both",
+            }}
+          />
+        )}
       </svg>
 
-      {/* CSS keyframes */}
-      {!reduced && (
-        <style>{`
-          @keyframes nodePulse {
-            0%, 100% { opacity: 0.78; transform: scale(1); }
-            50%       { opacity: 1;    transform: scale(1.12); }
-          }
-          @keyframes ringSpinSlow {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-          }
-          @keyframes ringSpinMed {
-            from { transform: rotate(-32deg); }
-            to   { transform: rotate(328deg); }
-          }
-          @keyframes ringSpinMedRev {
-            from { transform: rotate(32deg); }
-            to   { transform: rotate(392deg); }
-          }
-          @keyframes mBreath {
-            0%, 100% { opacity: 0.88; filter: url(#mGlow); }
-            50%       { opacity: 1;    filter: url(#mGlow) brightness(1.15); }
-          }
-        `}</style>
-      )}
+      {/* ── Canonical PNG — centered over disc ── */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "clamp(118px, 16vw, 188px)",
+          height: "clamp(118px, 16vw, 188px)",
+          zIndex: 2,
+          pointerEvents: "none",
+          ...(reduced ? {} : {
+            opacity: 0,
+            animation: "msRevealOrb 0.55s cubic-bezier(0.22,1,0.36,1) 0.55s both",
+          }),
+        }}
+      >
+        <Image
+          src="/milano-seal-orb-v2.png"
+          alt="Milano Seal"
+          fill
+          style={{ objectFit: "contain" }}
+          priority
+        />
+      </div>
     </div>
   );
 }
