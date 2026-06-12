@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllClientDeals } from "@/lib/portalAuth";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 import { getLedger } from "@/lib/custodyLedger";
 import { projectMatterForPortal, PORTAL_BLOCKED_FIELDS } from "@/lib/portalProjection";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -57,6 +58,13 @@ export async function GET(req: NextRequest) {
   // 1. Verify authenticated session
   const ctx = await getAllClientDeals();
   if (!ctx) {
+    await recordSecurityEvent({
+      event_name: "UNAUTHORIZED_PORTAL_ACCESS_ATTEMPT",
+      severity: "warning",
+      route: "/api/portal/me",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

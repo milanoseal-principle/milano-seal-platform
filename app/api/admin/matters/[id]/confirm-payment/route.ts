@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { logActivity } from "@/lib/activity";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const runtime = "nodejs";
 
@@ -21,11 +22,26 @@ export async function POST(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      route: "/api/admin/matters/[id]/confirm-payment",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
     return NextResponse.json({ ok: false, code: "UNAUTHORIZED" }, { status: 401 });
   }
 
   const role = user.app_metadata?.role ?? user.user_metadata?.role;
   if (role !== "founder_admin") {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      actor: user.email ?? user.id,
+      route: "/api/admin/matters/[id]/confirm-payment",
+      client_safe: false,
+      metadata: { role: String(role), reason: "insufficient_role" },
+    });
     return NextResponse.json(
       { ok: false, code: "FOUNDER_ONLY" },
       { status: 403 },
@@ -39,6 +55,16 @@ export async function POST(
   const admin = createAdminClient();
   const actorEmail = user.email ?? user.id;
   const now = new Date().toISOString();
+
+  // Idempotency guard — if already confirmed, return success without re-writing
+  const { data: current } = await admin
+    .from("deals")
+    .select("payment_confirmed, payment_status")
+    .eq("id", id)
+    .single();
+  if (current?.payment_confirmed === true) {
+    return NextResponse.json({ ok: true, already_confirmed: true });
+  }
 
   const { error } = await admin
     .from("deals")

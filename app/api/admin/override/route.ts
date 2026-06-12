@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const runtime = "nodejs";
 
@@ -16,6 +18,34 @@ type OverrideAction =
 // POST /api/admin/override — audited manual admin control
 // Every override writes an audit event. Blocked overrides are rejected.
 export async function POST(req: NextRequest) {
+  // Auth gate — founder_admin only
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      route: "/api/admin/override",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  if (role !== "founder_admin") {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      actor: user.email ?? user.id,
+      route: "/api/admin/override",
+      client_safe: false,
+      metadata: { role: String(role), reason: "insufficient_role" },
+    });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const admin = createAdminClient();
 
   let body: {
