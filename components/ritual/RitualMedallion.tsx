@@ -339,8 +339,9 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         )}
       </svg>
 
-      {/* ── Canonical orb PNG — plain img, percentage-sized to container, always on top ── */}
-      {/* next/image fill breaks when parent is position:absolute — use img directly */}
+      {/* ── Canonical orb PNG — plain img, always visible ── */}
+      {/* Parent motion.div in RitualEntryLock already animates the whole medallion in. */}
+      {/* Do NOT use fill-mode:both here — it holds opacity:0 and the image never appears. */}
       <img
         src="/milano-seal-orb-v2.png"
         alt=""
@@ -354,10 +355,8 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           height: "34%",
           objectFit: "contain",
           zIndex: 2,
+          opacity: 1,
           pointerEvents: "none",
-          ...(reduced
-            ? {}
-            : { animation: "msRevealOrb 0.55s cubic-bezier(0.22,1,0.36,1) 0.55s both" }),
         }}
       />
     </div>
