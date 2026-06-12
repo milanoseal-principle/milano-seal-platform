@@ -120,9 +120,9 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 ms-orb-halo-breathe pointer-events-none" />
             <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.08] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
 
-            {/* Feather-M orb PNG — no background, transparent */}
+            {/* Feather-M orb SVG — transparent, no background disc */}
             <img
-              src="/milano-seal-feather-m-orb.png"
+              src="/milano-seal-feather-m-orb.svg"
               alt="Milano Seal Assistant"
               className="ms-assistant-orb-image"
               style={{ width: 64, height: 64, objectFit: "contain", background: "none" }}
@@ -150,7 +150,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               <div className="flex items-center gap-3">
                 {/* Mini orb */}
                 <img
-                  src="/milano-seal-feather-m-orb.png"
+                  src="/milano-seal-feather-m-orb.svg"
                   alt=""
                   aria-hidden="true"
                   style={{ width: 28, height: 28, objectFit: "contain", background: "none" }}
