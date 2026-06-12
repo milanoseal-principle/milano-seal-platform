@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSMS } from "@/lib/twilio";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const runtime = "nodejs";
 
@@ -17,12 +19,40 @@ const CLOSE_MESSAGES: Record<string, (name: string, amount: number) => string> =
   };
 
 export async function POST(req: NextRequest) {
+  // Auth gate — founder_admin only
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      route: "/api/admin/close",
+      client_safe: false,
+      metadata: { reason: "unauthenticated" },
+    });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  if (role !== "founder_admin") {
+    await recordSecurityEvent({
+      event_name: "ADMIN_ACTION_DENIED",
+      severity: "high",
+      actor: user.email ?? user.id,
+      route: "/api/admin/close",
+      client_safe: false,
+      metadata: { role: String(role), reason: "insufficient_role" },
+    });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { deal_id, message_type = "payment" } = await req.json();
   if (!deal_id)
     return NextResponse.json({ error: "deal_id required" }, { status: 400 });
 
-  const supabase = createAdminClient();
-  const { data: deal } = await supabase
+  const admin = createAdminClient();
+  const { data: deal } = await admin
     .from("deals")
     .select("*")
     .eq("deal_id", deal_id)
