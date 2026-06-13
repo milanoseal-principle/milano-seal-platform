@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Globe2, CheckCircle2, XCircle, AlertTriangle } from 
 import Link from "next/link";
 
 // ── Registry data ──────────────────────────────────────────────────────────────
-// Pattern: Global Document Registry Match (extracted from Liaison OS architecture)
+// Pattern: Global Document Registry Match
 
 type HaguePath = "apostille" | "legalization" | "both" | "neither";
 type RONEligibility = "yes" | "no" | "conditional";
