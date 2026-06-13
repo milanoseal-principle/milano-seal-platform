@@ -361,16 +361,54 @@ export function GlobalDocumentGlobe() {
                 style={{ animation: "msCoreOutPulse 0.9s ease-out both" }}
               />
             )}
-            {/* M-feather mark */}
-            <image
-              href="/milano-seal-core-brain-feather.svg"
-              x="46" y="46" width="8" height="8"
+            {/* M-feather mark — inline so animations fire natively */}
+            <g
+              transform="translate(50,50) scale(0.0078) translate(-512,-512)"
               style={{
                 opacity: hoveredId ? 0.82 : 0.22,
                 transition: "opacity 0.7s ease",
-                filter: hoveredId ? "drop-shadow(0 0 1.5px rgba(214,170,69,0.7))" : "none",
+                filter: hoveredId ? "drop-shadow(0 0 200px rgba(214,170,69,0.7))" : "none",
               }}
-            />
+            >
+              {/* Orbit ellipses */}
+              <ellipse fill="none" stroke="url(#msCGold)" strokeWidth="3" strokeLinecap="round" opacity="0.72"
+                cx="512" cy="512" rx="410" ry="118" transform="rotate(-14 512 512)" />
+              <circle fill="none" stroke="url(#msCGold)" strokeWidth="4" strokeLinecap="round" opacity="0.65"
+                cx="512" cy="512" r="350" />
+              {/* Brain outline */}
+              <path fill="none" stroke="url(#msCGold)" strokeWidth="6" strokeLinecap="round" opacity="0.85"
+                d="M501 260 C455 215 376 229 345 286 C289 293 253 340 260 397 C213 425 210 493 254 532 C222 600 261 666 327 676 C344 742 425 767 501 707" />
+              <path fill="none" stroke="url(#msCGold)" strokeWidth="6" strokeLinecap="round" opacity="0.85"
+                d="M523 260 C569 215 648 229 679 286 C735 293 771 340 764 397 C811 425 814 493 770 532 C802 600 763 666 697 676 C680 742 599 767 523 707" />
+              {/* Center stem */}
+              <path fill="none" stroke="url(#msCGold)" strokeWidth="9" strokeLinecap="round" opacity="0.85"
+                d="M512 224 L512 800" />
+              {/* M letter */}
+              <text x="314" y="655"
+                style={{ fontFamily: "Georgia,'Times New Roman',serif", fontWeight: 600, fontSize: 330, letterSpacing: "-0.08em", fill: "url(#msCGold)" }}>M</text>
+              {/* Feather */}
+              <path fill="url(#msCGold)"
+                d="M493 690 C520 598 566 496 654 330 C610 374 568 431 531 505 C503 561 485 620 493 690Z" />
+              {/* Nodes */}
+              <circle fill="url(#msCNode)" stroke="#fff2b8" strokeWidth="3" cx="512" cy="158" r="20" />
+              <circle fill="url(#msCNode)" stroke="#fff2b8" strokeWidth="3" cx="512" cy="866" r="20" />
+              <circle fill="url(#msCNode)" stroke="#fff2b8" strokeWidth="3" cx="146" cy="512" r="20" />
+              <circle fill="url(#msCNode)" stroke="#fff2b8" strokeWidth="3" cx="878" cy="512" r="20" />
+              {/* Gradient defs — scoped inside this g */}
+              <defs>
+                <linearGradient id="msCGold" x1="8%" y1="8%" x2="94%" y2="92%">
+                  <stop offset="0%" stopColor="#fff5bf" />
+                  <stop offset="34%" stopColor="#a96f18" />
+                  <stop offset="52%" stopColor="#fff0aa" />
+                  <stop offset="100%" stopColor="#6d430c" />
+                </linearGradient>
+                <radialGradient id="msCNode" cx="50%" cy="42%" r="58%">
+                  <stop offset="0%" stopColor="#fff7c8" />
+                  <stop offset="42%" stopColor="#f4c85f" />
+                  <stop offset="100%" stopColor="#3a2105" />
+                </radialGradient>
+              </defs>
+            </g>
           </g>
 
           {/* ── Florida origin node ─────────────────────────────────── */}
