@@ -120,15 +120,16 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 ms-orb-halo-breathe pointer-events-none" />
             <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.08] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
 
-            {/* Feather-M orb SVG — transparent, no background disc */}
-            <img
-              src="/milano-seal-feather-m-orb.svg"
-              alt=""
+            {/* Feather-M orb — object tag lets SVG animations run */}
+            <object
+              data="/milano-seal-feather-m-orb.svg"
+              type="image/svg+xml"
               aria-hidden="true"
-              className="ms-assistant-orb-image"
-              style={{ display: "block", width: 64, height: 64, objectFit: "contain", background: "none" }}
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-            />
+              tabIndex={-1}
+              style={{ display: "block", width: 64, height: 64, pointerEvents: "none", background: "none" }}
+            >
+              <img src="/milano-seal-feather-m-orb.png" alt="" width={64} height={64} style={{ objectFit: "contain" }} />
+            </object>
           </motion.button>
         ) : (
           /* ── PANEL ── */
@@ -151,12 +152,15 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 {/* Mini orb */}
-                <img
-                  src="/milano-seal-feather-m-orb.svg"
-                  alt=""
+                <object
+                  data="/milano-seal-feather-m-orb.svg"
+                  type="image/svg+xml"
                   aria-hidden="true"
-                  style={{ width: 28, height: 28, objectFit: "contain", background: "none" }}
-                />
+                  tabIndex={-1}
+                  style={{ display: "block", width: 28, height: 28, pointerEvents: "none", background: "none", flexShrink: 0 }}
+                >
+                  <img src="/milano-seal-feather-m-orb.png" alt="" width={28} height={28} style={{ objectFit: "contain" }} />
+                </object>
                 <div className="flex flex-col">
                   <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
                   <span className="text-[7px] text-zinc-500 tracking-wider uppercase">{roleMode === 'PUBLIC' ? 'Secure Execution Desk' : roleMode + ' MODE'}</span>
