@@ -1,89 +1,174 @@
 # Milano Seal OS Canonical Intelligence
-Status: Canonical internal source
+Status: Canonical internal source — FINAL
 Scope: The Milano Seal™ only
+Source: The_Milano_Seal_Canonical_System
 Exclusion: Not Liaison OS, not D&D PIP Intelligence, not provider recovery reporting
 
 ============================================================
-LOCKED SEPARATION RULE
+COPY BLOCK 1 — FINAL AUDIT DECISION
 ============================================================
 
-Milano Seal is separate from Liaison OS.
+STATUS: ACCEPTED AS CANONICAL MILANO SEAL SYSTEM SOURCE.
 
-Milano Seal is:
-Global Document Execution Infrastructure.
+CONTROL:
+The Milano Seal™ is now treated as a separate production operating system from Liaison OS.
 
-Milano Seal is not:
-- Liaison OS
-- D&D PIP Intelligence
-- provider recovery reporting
-- carrier posture reporting
-- law firm liaison workflow
-- SigningOS clone
+The Milano Seal™ = Global Document Execution Infrastructure.
+Liaison OS = Provider / PIP Intelligence Operating System.
 
-No PIP/provider/carrier language may appear in Milano Seal production routes unless explicitly scoped to a separate founder-only experimental module.
+DO NOT MERGE.
+DO NOT CROSS-CONTAMINATE.
+DO NOT REUSE LIAISON OS LANGUAGE IN MILANO SEAL PUBLIC ROUTES.
 
-============================================================
-LOCKED BRAND RULE
-============================================================
-
-Brand:
-The Milano Seal™
-
-Legal:
-Milano Seal International LLC dba The Milano Seal
-
-Tagline:
-Sealing Trust with Every Signature.
-
-Visual standard:
-- black shell
-- gold accents
-- premium international trust
-- cinematic but controlled
-- concierge-level execution
-- secure document infrastructure
-
-Avoid:
-- cheap notary clipart
-- generic stamp graphics
-- checkerboard logo backgrounds
-- fake legal advice
-- chaotic SaaS UI
-- provider recovery language
-
-============================================================
-LOCKED CORE PRODUCT RULE
-============================================================
-
-The Milano Seal coordinates:
-- notarization
-- RON/mobile notary support
+MILANO SEAL IS:
+- secure document execution
+- notary / RON coordination
 - apostille preparation
 - international document routing
 - payment-gated scheduling
 - chain-of-custody visibility
+- secure client portal
+- operator execution center
+- Atlas intelligence
+- final release review
+- identifier exact-match safety
+- cinematic premium trust interface
+
+MILANO SEAL IS NOT:
+- PIP recovery
+- provider intelligence
+- carrier posture reporting
+- claimant tracking
+- D&D liaison workflow
+- chiropractic audit reporting
+- demand package recovery system
+- Body Shop reporting engine
+
+FINAL RULE:
+Any module involving document execution, apostille, notary, RON, client portal, custody, or release belongs to The Milano Seal.
+Any module involving providers, PIP, carriers, posture, claimants, or recovery belongs to Liaison OS.
+
+============================================================
+COPY BLOCK 2 — CANONICAL IDENTITY SOP
+============================================================
+
+LEGAL:
+Milano Seal International LLC dba The Milano Seal.
+
+BRAND:
+The Milano Seal™
+
+TAGLINE:
+Sealing Trust with Every Signature.
+
+CATEGORY:
+Global Document Execution Infrastructure.
+
+POSITIONING:
+The Milano Seal coordinates secure execution, notarization, apostille preparation, international routing, payment-gated scheduling, custody visibility, portal access, and final-release integrity for high-trust documents.
+
+PUBLIC TONE:
+- premium
+- calm
+- international
+- secure
+- concierge-level
+- execution-focused
+- trust-centered
+
+VISUAL STANDARD:
+- OLED black shell
+- gold accents
+- cinematic but controlled
+- black/gold ritual energy
+- luxury document-infrastructure feel
+- no cartoon UI
+- no cheap SaaS look
+- no generic notary clipart
+- no PIP/provider language
+
+FORBIDDEN PUBLIC LANGUAGE:
+- PIP
+- carrier posture
+- provider recovery
+- claimant recovery
+- suit filed
+- benefits exhausted
+- paid correctly
+- Body Shop
+- D&D
+- chiropractic audit
+- demand packet recovery
+
+ALLOWED PUBLIC LANGUAGE:
+- secure document execution
+- apostille preparation
+- notarization coordination
+- Remote Online Notarization review
+- international document pathway
+- chain-of-custody visibility
+- payment-gated scheduling
+- final release review
 - document vault
-- client portal
-- operator dashboard
-- final release controls
+- Global Document Intelligence Atlas
 
-Primary routes:
+============================================================
+COPY BLOCK 3 — CORE PLATFORM SOP
+============================================================
+
+PRIMARY ROUTES:
+
 /
+Landing page
+
 /intake
+Smart and structured intake
+
 /map
+Global Document Intelligence Atlas
+
 /portal
+Secure Matter Portal
+
 /dashboard
+Execution Center
 
-Portal subroutes:
-/portal/tracking
-/portal/invoice
-/portal/documents
+/va/portal
+Operations Desk
+
+/verify
+Public-safe verification shell
+
+PRIMARY MODULES:
+1. Landing / Trust Entry
+2. Smart Intake
+3. Atlas
+4. Secure Matter Portal
+5. Execution Center
+6. VA Operations Desk
+7. Payment Integrity Gate
+8. Identifier Exact-Match Gate
+9. Final Seal Review
+10. Execution QA Matrix
+11. Custody Rail
+12. Verification Shell
+13. Legacy Client Credit
+14. Ritual Lock / Assistant Orb
+
+PLATFORM RULE:
+Every module must support the same matter lifecycle, same payment gate, same final release logic, same client-safe projection, and same operator-only/internal boundary.
+
+NO LOGIC DRIFT:
+Do not create alternate state names.
+Do not create alternate payment rules.
+Do not create alternate release conditions.
+Do not create alternate client portal projections.
 
 ============================================================
-LOCKED MATTER MODEL
+COPY BLOCK 4 — MATTER MODEL SOP
 ============================================================
 
-Matter states:
+MATTER STATE MACHINE:
 intake_received
 under_review
 quoted
@@ -95,7 +180,34 @@ in_transit
 delivered
 completed
 
-Event ledger:
+PAYMENT REFERENCE:
+MS-YYYY-####
+
+CORE MATTER FIELDS:
+- matter_id
+- client_name
+- client_email
+- document_type
+- destination_country
+- origin_jurisdiction
+- signer_location
+- signer_count
+- document_count
+- apostille_required
+- urgency
+- selected_lane
+- price
+- payment_status
+- payment_confirmed
+- scheduling_unlocked
+- execution_status
+- apostille_status
+- custody_status
+- delivery_status
+- release_status
+- verification_id
+
+LEDGER EVENTS:
 SMART_REQUEST_PARSED
 STRUCTURED_INTAKE_CREATED
 MATTER_CREATED
@@ -105,6 +217,7 @@ INVOICE_CREATED
 INVOICE_SENT
 PAYMENT_LINK_CREATED
 PAYMENT_CONFIRMED
+PAYMENT_CONFIRMED_MANUAL
 SCHEDULING_UNLOCKED
 EXECUTION_SCHEDULED
 RON_COMPLETED
@@ -113,43 +226,427 @@ APOSTILLE_COMPLETED
 COURIER_RELEASED
 DELIVERY_CONFIRMED
 PAID_AND_RELEASED
+FINAL_RELEASE_BLOCKED
+FINAL_RELEASE_APPROVED
+IDENTIFIER_MISMATCH_BLOCKED
+IDENTIFIER_EXACT_MATCH_CONFIRMED
+FOUNDER_RELEASE_OVERRIDE
 
-Do not create alternate state names.
+RULE:
+No matter may skip payment gate, identifier gate, final review gate, or founder release gate when those checks apply.
 
 ============================================================
-LOCKED PAYMENT RULE
+COPY BLOCK 5 — PRICING / PAYMENT SOP
 ============================================================
 
-Payment provider:
+LOCKED LANES:
+Signature Lane: $750
+Priority Lane: $975
+Executive Lane: $1,850
+
+ADD-ONS:
+Apostille: +$250
+Rush: +$400
+Extra signer: +$150
+
+PAYMENT PROVIDER:
 Wise Business payment links / references.
 
-Stripe is not part of the locked payment flow unless explicitly re-added later.
-
-Matter payment reference:
+PAYMENT REFERENCE FORMAT:
 MS-YYYY-####
 
-Payment confirmation unlocks:
-- scheduling
-- execution
-- release where payment-gated release applies
+PAYMENT RULE:
+Scheduling, execution, and final release remain locked until payment_confirmed = true.
 
-Pricing:
-Signature Lane = $750
-Priority Lane = $975
-Executive Lane = $1,850
+PLATFORM-FEE-ONLY EXCEPTION:
+For domestic platform-only RON matters:
+- Wise is hidden
+- Milano Seal service fee may be waived
+- external platform fee can still show
+- scheduling can unlock only after platform_fee_only is confirmed/approved
 
-Add-ons:
-Apostille = +$250
-Rush = +$400
-Extra signer = +$150
+MANUAL CONFIRMATION:
+Only founder_admin may manually confirm payment.
+
+IDEMPOTENCY:
+Duplicate payment confirmation must return ok without double-writing events or unlocking twice.
+
+EVENTS:
+PAYMENT_GATE_CREATED
+PAYMENT_CONFIRMED
+PAYMENT_CONFIRMED_MANUAL
+PAYMENT_GATE_UNLOCKED
+PAYMENT_CONFIRMATION_REJECTED
+PLATFORM_FEE_ONLY_CONFIRMED
+
+CLIENT PORTAL MAY SHOW:
+- payment status
+- invoice state
+- Wise reference if applicable
+- scheduling unlocked status
+- platform-fee-only state if applicable
+
+CLIENT PORTAL MUST NEVER SHOW:
+- raw webhook payload
+- service role key
+- internal payment notes
+- margin
+- net margin
+- discount reason
+- internal reason
 
 ============================================================
-LOCKED SAFETY RULE
+COPY BLOCK 6 — SMART INTAKE SOP
 ============================================================
 
-Every matter must preserve exact critical fields.
+ROUTE:
+/intake
 
-Critical fields:
+PURPOSE:
+Convert client request into a structured matter without making final legal/compliance promises.
+
+INTAKE CAPTURES:
+- client name
+- client email
+- phone
+- document type
+- destination country
+- origin jurisdiction
+- signer location
+- signer count
+- document count
+- apostille needed
+- urgency
+- translation likely
+- RON possible
+- notes
+- uploaded document if available
+
+SMART INTAKE OUTPUT:
+- estimated lane
+- estimated price
+- recommended pathway
+- RON review flag
+- apostille/legalization flag
+- translation flag
+- operator review flag
+
+AI RULE:
+AI may classify and recommend.
+AI may not confirm compliance.
+AI may not alter identifiers.
+AI may not shorten foreign IDs.
+AI may not confirm payment.
+AI may not release a document.
+AI may not create final apostille authority.
+
+SANITIZATION:
+All free-text fields must pass safeText().
+Destination params must pass safeDestinationParam().
+Country slugs must be validated against Atlas.
+
+CLIENT COPY:
+Keep intake calm, secure, premium, and non-legal-advice.
+
+BLOCK:
+Any request containing critical foreign identifiers must be flagged for exact-match review before release.
+
+============================================================
+COPY BLOCK 7 — ATLAS SOP
+============================================================
+
+ROUTE:
+/map
+
+PURPOSE:
+Provide client-safe country and pathway intelligence for international document execution.
+
+ATLAS FUNCTION:
+- country selection
+- Florida origin routing
+- Hague/non-Hague status
+- apostille/legalization pathway
+- RON likelihood
+- translation likelihood
+- common document types
+- intake prefill
+- SEO authority
+
+PRIMARY COUNTRIES:
+Italy
+Spain
+France
+Germany
+Portugal
+Greece
+UAE
+Brazil
+Mexico
+United Kingdom
+Canada
+Colombia
+Chile
+Argentina
+Australia
+
+FALLBACK:
+Other / Not sure
+
+PUBLIC DRAWER MAY SHOW:
+- country
+- region
+- Hague status
+- apostille/legalization pathway
+- common documents
+- RON review
+- translation likely
+- client-safe summary
+- Begin Secure Intake CTA
+
+PUBLIC DRAWER MUST NEVER SHOW:
+- operatorSummary
+- internal confidence notes
+- revenue score
+- source uncertainty
+- private compliance notes
+- raw records
+
+CTA:
+Begin Secure Intake → /intake?destination=[country_slug]
+
+SEO PRIORITY PAGES:
+- Italy apostille
+- Greece apostille
+- Portugal apostille
+- Spain apostille
+- UAE legalization
+- Brazil apostille
+- Mexico apostille
+- United Kingdom apostille
+- Canada apostille
+- France apostille
+
+RULE:
+Atlas educates and routes. It does not provide legal advice or acceptance guarantees.
+
+============================================================
+COPY BLOCK 8 — CLIENT PORTAL SOP
+============================================================
+
+ROUTE:
+/portal
+
+PURPOSE:
+Give clients clean, safe, controlled visibility into their matter.
+
+PORTAL MAY SHOW:
+- matter status
+- document type
+- destination country
+- current state
+- next action
+- payment status
+- invoice state
+- Wise reference if applicable
+- scheduling unlocked status
+- vault document status
+- custody timeline
+- tracking-safe status
+- release status
+- legacy client credit if active
+
+PORTAL MUST NEVER SHOW:
+- internal_notes
+- operator_notes
+- raw_webhook
+- raw_payload
+- margin
+- net_margin
+- shipping_cost
+- label_url
+- discount_reason
+- internal_reason
+- service role data
+- operatorSummary
+- revenue scoring
+- founder override notes
+
+SECURITY:
+All portal data must pass projectMatterForClient().
+All portal payloads must pass assertNoForbiddenClientFields().
+Client must only access their own matter.
+
+PORTAL SUBROUTES:
+/portal/tracking
+/portal/invoice
+/portal/documents
+
+PORTAL STYLE:
+- premium black/gold
+- client-safe
+- calm
+- not technical
+- no raw system errors
+- no backend jargon
+
+RULE:
+The portal is client visibility, not operator control.
+
+============================================================
+COPY BLOCK 9 — EXECUTION CENTER SOP
+============================================================
+
+ROUTE:
+/dashboard
+
+PURPOSE:
+Founder/operator command center for payment, matter control, QA, release, custody, and ledger visibility.
+
+DASHBOARD MUST SHOW:
+- KPI cards
+- intake review queue
+- pipeline
+- payment ledger
+- matter drawer
+- Payment Integrity Panel
+- Matter Intelligence Panel
+- Execution QA Matrix
+- Final Seal Review Panel
+- Identifier Lock status
+- chain-of-custody timeline
+- operational ledger
+
+OPERATIONAL LEDGER COLUMNS:
+Time
+Matter
+Event
+Actor
+Status
+
+FOUNDER-ONLY ACTIONS:
+- manual payment confirmation
+- release override
+- final document release
+- legacy credit creation
+- price/lane override
+- close matter
+- founder final approval
+- view internal reasons
+
+OPERATOR MAY:
+- review matter
+- prepare workflow
+- update non-founder fields if permitted
+- manage execution queue
+- review QA status
+
+DASHBOARD MAY SHOW:
+- internal notes
+- operator notes
+- release blockers
+- identifier mismatch reasons
+- payment reconciliation
+- custody internal status
+- revenue segment
+
+DASHBOARD MUST PROTECT:
+- service role keys
+- raw webhook details unless server-only/protected
+- client data boundaries
+- founder-only overrides
+
+RULE:
+The dashboard blocks mistakes before the client sees them.
+
+============================================================
+COPY BLOCK 10 — VA OPERATIONS DESK SOP
+============================================================
+
+ROUTE:
+/va/portal
+
+PURPOSE:
+Preparation-only workspace for assigned support tasks.
+
+VA CAN:
+- view assigned tasks
+- view pre-flight checklist
+- prepare intake summary
+- check visible client fields
+- prepare delivery checklist
+- request founder review
+- mark prep item ready
+
+VA CANNOT:
+- confirm payment
+- release documents
+- close matters
+- create legacy credits
+- edit pricing
+- override safety gates
+- view margin
+- view internal payment notes
+- view founder-only release notes
+- change compliance pathway
+
+REQUIRED COMPONENT:
+FinalReleasePrepPanel
+
+PANEL MUST SHOW:
+- client name reviewed
+- destination reviewed
+- document type reviewed
+- signer count reviewed
+- apostille question reviewed
+- attachments checked
+- page count prepared
+- shipping details prepared
+- founder approval needed
+
+EVENT ON BLOCK:
+VA_ACTION_DENIED
+
+RULE:
+VA supports execution prep. Founder controls payment, release, and closure.
+
+============================================================
+COPY BLOCK 11 — FINAL RELEASE SAFETY SOP
+============================================================
+
+PURPOSE:
+Prevent document release errors before documents leave Milano Seal control.
+
+FINAL RELEASE IS BLOCKED UNLESS:
+- payment confirmed or platform-fee-only approved
+- final seal review passed
+- identifier exact-match passed
+- apostille/legalization pathway reviewed
+- document packet reviewed
+- delivery recipient confirmed
+- final PDF locked
+- founder approval completed when required
+
+FINAL SEAL REVIEW CHECKS:
+- client name exact match
+- destination country
+- document type
+- origin jurisdiction
+- signer location
+- apostille/legalization status
+- notarial block
+- signature blocks
+- witness blocks
+- page count
+- attachments/exhibits
+- foreign identifiers
+- shipping recipient
+- final PDF lock
+- founder approval
+
+ITALY HARD RULE:
+If destination_country = Italy and codice fiscale exists, Codice Fiscale Lock is required before final release.
+
+IDENTIFIER LOCKS:
 - codice fiscale
 - tax ID
 - passport number
@@ -160,29 +657,34 @@ Critical fields:
 - invoice number
 - account number
 - tracking number
-- addresses
-- dates
-- destination-country identifiers
 
-Rules:
-- no silent deletion
-- no identifier shortening
-- no character normalization that changes meaning
-- no final release if identifier length changes
-- no final release if foreign-use field is missing
-- no AI output allowed to alter identifiers
-- client/founder confirmation required before final release
+IDENTIFIER RULE:
+No shortening.
+No silent deletion.
+No AI normalization.
+No character removal.
+No release if length/order/value changed.
 
-Italian hard rule:
-If destination_country = Italy and codice fiscale exists, Codice Fiscale Lock is required before apostille/international release.
+EVENTS:
+FINAL_SEAL_REVIEW_STARTED
+FINAL_SEAL_REVIEW_PASSED
+FINAL_RELEASE_BLOCKED
+FINAL_RELEASE_APPROVED
+IDENTIFIER_MISMATCH_BLOCKED
+IDENTIFIER_EXACT_MATCH_CONFIRMED
+FOUNDER_RELEASE_OVERRIDE
+
+RULE:
+No document leaves operator control until payment, identifier, QA, custody, and final release gates pass.
 
 ============================================================
-LOCKED EXECUTION QA RULE
+COPY BLOCK 12 — EXECUTION QA SOP
 ============================================================
 
-No packet leaves operator control until Execution QA passes.
+PURPOSE:
+Prevent missed signatures, initials, notarial blocks, witness fields, signer data, apostille defects, and courier packet failures.
 
-Execution QA checks:
+QA CHECKS:
 - signature present
 - initials complete
 - notarial block complete
@@ -196,196 +698,365 @@ Execution QA checks:
 - page count checked
 - attachments/exhibits checked
 - foreign identifiers checked
+- destination country checked
+- delivery recipient checked
+
+QA STATUSES:
+clear
+needs_review
+blocked
+founder_approved
+
+BLOCKING CONDITIONS:
+- missed signature
+- missing notarial block
+- incomplete witness field
+- incomplete signer data
+- missing apostille document
+- missing courier packet item
+- foreign identifier mismatch
+- page count mismatch
+- client name mismatch
+- destination mismatch
+
+FOUNDER OVERRIDE:
+Allowed only for founder_admin.
+Requires reason.
+Writes FOUNDER_RELEASE_OVERRIDE.
+Never visible to client.
+
+RULE:
+QA exists to prevent embarrassment, legal rejection, courier failure, and client trust damage.
 
 ============================================================
-LOCKED PORTAL RULE
+COPY BLOCK 13 — RITUAL / ORB / ASSISTANT SOP
 ============================================================
 
-Client portal must show:
-- matter status
-- pre-flight checks
-- invoice panel with Wise reference when applicable
-- document vault
-- tracking timeline
-- final paid-and-released state
-- client-safe next action
+PURPOSE:
+Create a cinematic premium entry experience that reinforces trust without blocking conversion.
 
-Client portal must never show:
-- internal_notes
-- operator_notes
-- raw_webhook
-- raw_payload
-- margin
-- net_margin
-- discount_reason
-- internal_reason
-- label_url
-- shipping_cost
-- service role data
-- operatorSummary
+RITUAL LOCK MAY STAY IF:
+- it loads fast
+- no checkerboard appears
+- no empty medallion appears
+- login is not blocked
+- mobile layout is clean
+- reduced motion works
+- production build stays green
 
-============================================================
-LOCKED DASHBOARD RULE
-============================================================
+MAIN RITUAL ORB:
+public/milano-seal-orb-v2.png
 
-Operator dashboard must show:
-- KPI cards
-- pipeline
-- payment ledger
-- chain-of-custody log
-- operational ledger
-- matter state tracking
-- intake review queue
-- payment status
-- scheduling unlock status
-- shipping / delivery status
-- Execution QA
-- Final Seal Review
-- Payment Integrity
-- Identifier Lock status
+BOTTOM-RIGHT ASSISTANT ORB:
+public/milano-seal-feather-m-orb.svg
+or
+public/milano-seal-feather-m-orb.png
 
-Operational Ledger columns:
-Time
-Matter
-Event
-Actor
-Status
+REFERENCE ONLY:
+public/ORB_RITUAL_LOCK.png
 
-============================================================
-LOCKED ATLAS RULE
-============================================================
+NEVER IMPORT:
+ORB_RITUAL_LOCK.png
 
-Atlas route:
-/map
-
-Atlas purpose:
-- global document intelligence
-- jurisdiction/destination pathway
-- Hague/non-Hague review
-- apostille/legalization pathway
-- country click to intake
-
-Atlas must not provide legal advice.
-Atlas must not overpromise acceptance.
-Atlas must not expose operatorSummary or revenue scoring publicly.
-
-Priority countries:
-Italy
-Spain
-France
-Germany
-Portugal
-Greece
-
-Fallback:
-Other / Not sure
-
-============================================================
-LOCKED RITUAL RULE
-============================================================
-
-Current ritual lock cinematics may stay because the cinematic system has been corrected.
-
-Do not remove RitualEntryLock by default.
-
-Only remove or bypass RitualEntryLock if:
-- it breaks login
-- it blocks conversion
-- it causes bad asset display
-- it harms performance
-- it shows checkerboard/incorrect logo
-- founder explicitly orders removal
-
-Current accepted ritual requirements:
+RITUAL REQUIREMENTS:
+- world map background preserved
+- gold route energy preserved
+- black/gold premium look
 - no checkerboard
-- no static broken logo
-- no white/gray square
-- main ritual orb uses public/milano-seal-orb-v2.png
-- bottom-right assistant orb uses public/milano-seal-feather-m-orb.png
-- ORB_RITUAL_LOCK.png is reference only, never imported
+- no square logo background
+- no broken SVG tags
+- no empty disc
+- no static broken overlay
+- no forced dark disc if transparent design is intended
+
+ASSISTANT ORB:
+- fixed bottom-right
+- feather-M crest
+- soft gold breathing glow
+- hover lift
+- click opens assistant panel
+- UI-only until AI is explicitly added
+- no client data access
+- no Supabase access
+- no live AI call
+
+ASSISTANT PANEL:
+Title:
+The Seal Assistant
+
+Greeting:
+How can I help route this document?
+
+Actions:
+Start Intake → /intake
+Review Country Pathway → /map
+Check Apostille Requirement → /intake
+Track Matter → /portal
+Contact Operator → /intake
+
+RULE:
+The orb is a premium assistant dock, not a chatbot mascot.
 
 ============================================================
-LOCKED CASE STUDY LESSONS
+COPY BLOCK 14 — SECURITY CONTROL SOP
 ============================================================
 
-First Italian client:
-- client paid $750
-- international use case validated
-- Wise became stronger payment path
-- final apostille detail failure occurred because codice fiscale lost two digits
-- system now requires exact-field preservation and final release gate
-
-System outcome:
-- Identifier Exact-Match Gate
-- Codice Fiscale Lock
-- Payment Integrity Gate
-- Final Seal Review
-- Execution QA Matrix
-- Legacy Client Courtesy Credit
-
-Do not expose internal case-study failure language to clients.
-
-Client-facing legacy language:
-First Client Legacy Courtesy Credit
-50% off next eligible Milano Seal service fee
-Third-party, platform, courier, state, government, and filing fees excluded
-
-============================================================
-LOCKED AUTH RULE
-============================================================
-
-Auth uses role-based routing.
-
-Required role:
+ACCESS ROLES:
 founder_admin
+operator
+va
+client
+public
 
-Role storage:
+ROLE STORAGE:
 auth.users.raw_app_meta_data.role
 
-Allowed routing:
+ROUTING:
 founder_admin → /dashboard
 operator → /dashboard
 client → /portal
 va → /va/portal
 
-Do not rely on client-provided role.
+DO NOT TRUST:
+- client-provided role
+- client-provided matter_id without ownership check
+- raw request body role
+- unauthenticated portal access
+
+SECURITY MODULES:
+access-control
+client-projection
+payment-security
+release-integrity
+app-guards
+security-events
+ai-safety
+
+SECURITY EVENTS:
+UNAUTHORIZED_PORTAL_ACCESS_ATTEMPT
+ADMIN_ACTION_DENIED
+VA_ACTION_DENIED
+CLIENT_FIELD_PROJECTION_BLOCKED
+PAYMENT_CONFIRMATION_REJECTED
+FINAL_RELEASE_BLOCKED
+IDENTIFIER_MISMATCH_BLOCKED
+RAW_PAYLOAD_EXPOSURE_PREVENTED
+INVALID_DESTINATION_PARAM_IGNORED
+AI_IDENTIFIER_CHANGE_BLOCKED
+
+SEVERITY:
+info
+warning
+high
+critical
+
+RULE:
+Security logs must never store secrets or raw private payloads in exposed client surfaces.
 
 ============================================================
-LOCKED DEPLOYMENT RULE
+COPY BLOCK 15 — LEGACY CLIENT CREDIT SOP
 ============================================================
 
-Production must be Next.js / Vercel safe.
+PURPOSE:
+Client-safe courtesy credit for the first Italian client relationship.
 
-Known historical fixes:
-- proxy.ts must export function named proxy in Next.js 16
-- avoid duplicate export const dynamic
-- avoid route conflicts
-- avoid broken JSX tags
-- do not commit node_modules
-- do not commit .next
-- do not commit package-lock.json if pnpm is source of truth
+CREDIT NAME:
+First Client Legacy Courtesy Credit
+
+CLIENT-SAFE COPY:
+You have a 50% courtesy credit available toward your next eligible Milano Seal service fee as one of our first legacy clients.
+
+DISCLAIMER:
+Third-party, platform, courier, state, government, and filing fees remain separate.
+
+CTA:
+Start Next Matter
+
+CTA HREF:
+/intake?legacy_client=true&destination=italy
+
+CREDIT APPLIES TO:
+Milano Seal service fee only.
+
+CREDIT DOES NOT APPLY TO:
+- third-party platform fees
+- courier fees
+- state fees
+- government fees
+- filing fees
+- apostille authority fees
+- external notary platform charges
+
+PORTAL MAY SHOW:
+- credit name
+- discount percent
+- applies_to
+- status
+- client_safe_note
+
+PORTAL MUST NEVER SHOW:
+- internal_reason
+- operator_note
+- discount_reason
+- AI error
+- clerical error detail
+- blame language
+
+FOUNDER DASHBOARD MAY SHOW:
+- internal reason
+- creation history
+- use status
+- source matter
+- created_by
+
+RULE:
+Client sees gratitude. Founder sees context. System protects margin.
+
+============================================================
+COPY BLOCK 16 — SEO / GO-TO-MARKET SOP
+============================================================
+
+PRIMARY COMMERCIAL LANES:
+- Signature Lane
+- Priority Lane
+- Executive Lane
+- Apostille add-on
+- Rush add-on
+- Extra signer add-on
+- platform-fee-only domestic RON
+- attorney / family office workflow
+- Italy dual-citizenship document pathway
+- real estate POA workflow
+- corporate authorization workflow
+- immigration support documents
+- academic/vital record pathway
+
+PRIORITY PAGES:
+1. Italy Apostille & Document Execution
+2. Florida International Notary
+3. Secure Document Execution
+4. Apostille Preparation
+5. Remote Online Notarization Review
+6. Power of Attorney for International Use
+7. Affidavit for International Use
+8. Vital Records Apostille
+9. Corporate Authorization Apostille
+10. Attorney / Family Office Document Execution
+
+SEO RULES:
+- no legal advice
+- no guaranteed acceptance
+- no fake government affiliation
+- no overpromising speed
+- no unverified Hague claims
+- clear client-safe education
+- strong intake CTA
+- internal links to Atlas and Intake
+
+SALES LAUNCH:
+- send legacy client message
+- publish Italy page
+- publish pricing page
+- outreach to attorneys
+- outreach to immigration professionals
+- outreach to real estate contacts
+- outreach to family office / executive client lanes
+
+============================================================
+COPY BLOCK 17 — FINAL PRODUCTION BUILD PLAN
+============================================================
+
+PHASE 1 — PRODUCTION VERIFICATION
+- confirm Vercel deployment green
+- confirm themilanoseal.com loads
+- confirm login works
+- confirm founder_admin routes to dashboard
+- confirm client routes to portal
+- confirm db-health passes
+- rotate exposed password
+
+PHASE 2 — RITUAL / VISUAL QA
+- ritual lock loads
+- orb visible
+- no checkerboard
+- no empty center
+- no broken JSX
+- assistant orb asset loads
+- mobile no overflow
+- reduced motion works
+
+PHASE 3 — CLIENT FLOW TEST
+- submit intake
+- create matter
+- assign lane
+- generate invoice
+- confirm payment
+- unlock scheduling
+- portal reflects payment
+- vault displays safely
+- custody timeline works
+- verify shell works
+
+PHASE 4 — RELEASE SAFETY TEST
+- create Italy test matter
+- add codice fiscale full value
+- test missing two characters
+- release blocked
+- event logged
+- correct value
+- exact-match passes
+- final seal review passes
+- founder approval required
+- release approved
+
+PHASE 5 — LEGACY CLIENT
+- credit row exists
+- portal banner visible
+- internal reason hidden
+- Start Next Matter opens /intake?legacy_client=true&destination=italy
+- founder sends message personally
+
+PHASE 6 — SEO + SALES
+- publish Italy page
+- publish Florida international notary page
+- publish pricing page
+- publish apostille preparation page
+- start attorney/immigration/real estate outreach
+- push $750 / $975 / $1,850 lanes
 
 ============================================================
 VALIDATION
 ============================================================
 
-After any production change, run:
+After any production change:
 
 pnpm build
 pnpm lint || true
 git diff --check
 
-Contamination check:
-
-rg -n "Liaison OS|D&D|PIP|provider recovery|carrier posture" app components lib docs/system
+Contamination scan:
+rg -n "Liaison OS|D&D|PIP|provider recovery|carrier posture|Body Shop|claimant|benefits exhausted|paid correctly" app components lib docs/system
 
 Allowed:
-- docs/system/MILANO_SEAL_OS_CANONICAL_INTEL.md only if documenting separation
-- founder-only notes if clearly marked not for production UI
+- docs/system/MILANO_SEAL_OS_CANONICAL_INTEL.md only for separation documentation
+- founder-only notes clearly marked not for production UI
 
 Not allowed:
 - public Milano Seal routes
 - portal
 - intake
 - Atlas public copy
-- dashboard unless explicitly separate experimental module
+- dashboard
+- any client-facing page
+
+============================================================
+FINAL LOCK
+============================================================
+
+THE MILANO SEAL = DOCUMENT EXECUTION INFRASTRUCTURE.
+
+NO LIAISON OS.
+NO PIP.
+NO PROVIDER RECOVERY.
+
+SHIP CLEAN.
