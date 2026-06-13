@@ -306,7 +306,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           width: "52%",
           height: "52%",
           borderRadius: "9999px",
-          background: "#050507",
           zIndex: 2,
           pointerEvents: "none",
         }}
