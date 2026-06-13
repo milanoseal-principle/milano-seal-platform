@@ -3104,3 +3104,57 @@ h4 {
   0%, 100% { opacity: 0.18; transform: scale(1); }
   50% { opacity: 0.38; transform: scale(1.04); }
 }
+
+/* ── Reduced-motion: stop all unguarded infinite animations ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Utility animations */
+  .ms-skeleton,
+  .animate-pulse-gold,
+  .animate-spin-slow,
+  .animate-status-ping,
+
+  /* Ritual overlay */
+  .ritual-overlay--ready .ritual-overlay__seal-wrap::after,
+  .rings-active .ritual-overlay__seal-bloom,
+  .ritual-overlay__seal-disc,
+  .ritual-overlay__hint,
+
+  /* Ticker / rail */
+  .ticker-track,
+  .ticker-anim,
+  .ticker-anim-reverse,
+  .rail-sweep,
+
+  /* Lock / CTA shimmer */
+  .ms-lock-glow .ms-lock-icon,
+  .ms-cta-vault::after,
+
+  /* Globe elements */
+  .ms-globe-bloom,
+  .ms-globe-sphere--rotating,
+  .ms-globe-dots-layer,
+  .ms-globe-dest-node--pulse,
+  .ms-orbit-ring--main,
+  .ms-orbit-ring--outer,
+  .ms-globe-arc-glow--flowing,
+  .ms-globe-arc-body--flowing,
+  .ms-globe-arc-head--flowing,
+  .ms-globe-arc-tip--flowing,
+  .ms-globe-glass-cap,
+  .ms-globe-rim-ring,
+  .ms-globe-crest-glow,
+  .ms-globe-dest-bloom,
+  .ms-globe-selected-ring,
+
+  /* Assistant orb */
+  .ms-orb-halo-breathe {
+    animation: none !important;
+    transition: none !important;
+  }
+}

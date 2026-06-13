@@ -1626,6 +1626,8 @@ export function IntakeWizard({
                         src="/nicholas-milano.jpeg"
                         alt="Nicholas Milano"
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                         onError={(e) => {
                           const t = e.currentTarget;
                           t.style.display = "none";

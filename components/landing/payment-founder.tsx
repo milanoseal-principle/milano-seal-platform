@@ -99,7 +99,7 @@ export function PaymentFounder() {
                 fill
                 sizes="(max-width: 768px) 100vw, 42vw"
                 className="object-cover object-top"
-                priority
+                loading="lazy"
               />
               <div className="absolute inset-0 md:bg-gradient-to-r from-transparent via-transparent to-[#0D0D0D]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-transparent md:bg-none" />
