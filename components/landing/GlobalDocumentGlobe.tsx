@@ -136,18 +136,12 @@ function latParams(y: number) {
   return { rx: 46 * ratio, ry: Math.max(1.5, 5.5 * ratio) };
 }
 
-/* ── Route cycle order ───────────────────────────────────────────────────── */
-const ROUTE_CYCLE = ["italy","portugal","spain","greece","uae","canada","mexico","brazil","colombia","united-kingdom"];
-
 /* ── Component ───────────────────────────────────────────────────────────── */
 export function GlobalDocumentGlobe() {
-  const [hoveredId,        setHoveredId]        = useState<string | null>(null);
-  const [mounted,          setMounted]          = useState(false);
-  const [reduced,          setReduced]          = useState(false);
-  const [isMobile,         setIsMobile]         = useState(false);
-  const [activeRouteIndex, setActiveRouteIndex] = useState(0);
-  const [isAutoPaused,     setIsAutoPaused]     = useState(false);
-  const resumeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [mounted,   setMounted]   = useState(false);
+  const [reduced,   setReduced]   = useState(false);
+  const [isMobile,  setIsMobile]  = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -162,27 +156,8 @@ export function GlobalDocumentGlobe() {
     return () => { mq.removeEventListener("change", onRM); mob.removeEventListener("change", onMob); };
   }, []);
 
-  // Route cycling — 14000ms per destination, pauses on hover
-  useEffect(() => {
-    if (reduced || isAutoPaused) return;
-    const id = setInterval(() => {
-      setActiveRouteIndex(i => (i + 1) % ROUTE_CYCLE.length);
-    }, 14000);
-    return () => clearInterval(id);
-  }, [reduced, isAutoPaused]);
-
-  const handleHoverEnter = (destId: string) => {
-    setHoveredId(destId);
-    setIsAutoPaused(true);
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-  };
-  const handleHoverLeave = () => {
-    setHoveredId(null);
-    resumeTimer.current = setTimeout(() => setIsAutoPaused(false), 2000);
-  };
-
-  // Active route: hovered takes priority, then auto-cycle
-  const activeId = hoveredId ?? ROUTE_CYCLE[activeRouteIndex];
+  // Route only activates on hover — no auto-cycle
+  const activeId = hoveredId;
 
   const visibleDests = isMobile
     ? DESTINATIONS.filter(d => MOBILE_IDS.has(d.id))
@@ -279,7 +254,7 @@ export function GlobalDocumentGlobe() {
                 {/* Active arc — draws on activation */}
                 {mounted && !reduced && (
                   <path
-                    key={`${dest.id}-active-${activeRouteIndex}`}
+                    key={`${dest.id}-active`}
                     d={arcPath(dest)}
                     fill="none"
                     stroke={arc}
@@ -310,10 +285,10 @@ export function GlobalDocumentGlobe() {
                 tabIndex={0}
                 aria-label={`Florida to ${dest.country} — ${dest.routeLabel}`}
                 style={{ cursor: "pointer", outline: "none" }}
-                onMouseEnter={() => handleHoverEnter(dest.id)}
-                onMouseLeave={() => handleHoverLeave()}
-                onFocus={() => handleHoverEnter(dest.id)}
-                onBlur={() => handleHoverLeave()}
+                onMouseEnter={() => setHoveredId(dest.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onFocus={() => setHoveredId(dest.id)}
+                onBlur={() => setHoveredId(null)}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setHoveredId(dest.id); }}
               >
                 {/* Outer glow */}
