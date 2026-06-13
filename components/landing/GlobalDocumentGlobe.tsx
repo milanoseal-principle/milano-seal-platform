@@ -162,12 +162,12 @@ export function GlobalDocumentGlobe() {
     return () => { mq.removeEventListener("change", onRM); mob.removeEventListener("change", onMob); };
   }, []);
 
-  // Route cycling — 9500ms per destination, pauses on hover
+  // Route cycling — 14000ms per destination, pauses on hover
   useEffect(() => {
     if (reduced || isAutoPaused) return;
     const id = setInterval(() => {
       setActiveRouteIndex(i => (i + 1) % ROUTE_CYCLE.length);
-    }, 9500);
+    }, 14000);
     return () => clearInterval(id);
   }, [reduced, isAutoPaused]);
 
@@ -273,7 +273,7 @@ export function GlobalDocumentGlobe() {
                   stroke={arc}
                   strokeWidth="0.35"
                   strokeDasharray={dashed ? "1.4 1.4" : undefined}
-                  opacity={isActive ? 0 : 0.12}
+                  opacity={isActive ? 0 : 0.06}
                   style={{ transition: "opacity 0.8s ease" }}
                 />
                 {/* Active arc — draws on activation */}
@@ -289,7 +289,7 @@ export function GlobalDocumentGlobe() {
                     style={{
                       opacity: isActive ? 0.82 : 0,
                       strokeDashoffset: isActive ? undefined : "1",
-                      animation: isActive ? "msRouteDraw 2.8s cubic-bezier(0.16,1,0.3,1) 0.2s both" : "none",
+                      animation: isActive ? "msRouteDraw 4.5s cubic-bezier(0.16,1,0.3,1) 0.4s both" : "none",
                       transition: "opacity 0.8s ease",
                     }}
                   />
@@ -357,7 +357,7 @@ export function GlobalDocumentGlobe() {
               cx="50" cy="50" r="7"
               fill="rgba(214,170,69,0.07)"
               style={{
-                animation: reduced ? "none" : (activeId ? "msCoreWake 0.7s ease-out both" : "msCoreIdle 6s ease-in-out infinite"),
+                animation: reduced ? "none" : (activeId ? "msCoreWake 1.4s ease-out both" : "msCoreIdle 10s ease-in-out infinite"),
               }}
             />
             {/* Inner orbit ring — draws on activate */}
@@ -371,7 +371,7 @@ export function GlobalDocumentGlobe() {
                 opacity: activeId ? 0.7 : 0.15,
                 transition: "opacity 0.7s ease",
                 transformOrigin: "50px 50px",
-                animation: reduced ? "none" : (activeId ? "msCoreRingDraw 1.2s ease-out both" : "none"),
+                animation: reduced ? "none" : (activeId ? "msCoreRingDraw 2.2s ease-out both" : "none"),
               }}
             />
             {/* Outward pulse on activate */}
@@ -439,7 +439,7 @@ export function GlobalDocumentGlobe() {
             {/* Pulse ring */}
             <circle cx={ORIGIN.x} cy={ORIGIN.y} r="6"
               fill="none" stroke="rgba(212,175,55,0.22)" strokeWidth="0.35"
-              style={{ animation: reduced ? "none" : "msOriginPulse 5s ease-in-out infinite" }}
+              style={{ animation: reduced ? "none" : "msOriginPulse 10s ease-in-out infinite" }}
             />
             {/* Mid glow */}
             <circle cx={ORIGIN.x} cy={ORIGIN.y} r="3.8" fill="rgba(212,175,55,0.14)" />
