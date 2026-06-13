@@ -307,7 +307,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           height: "32%",
           borderRadius: "9999px",
           overflow: "hidden",
-          background: "radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(5,4,3,0.97) 52%, rgba(198,160,89,0.10) 78%, rgba(0,0,0,0) 100%)",
+          background: "#050507",
           zIndex: 2,
           pointerEvents: "none",
         }}
@@ -322,8 +322,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            background: "transparent",
-            mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
             opacity: reduced ? 1 : 0,
             ...(reduced ? {} : {
               animation: "msCrestEmerge 0.9s cubic-bezier(0.16,1,0.3,1) 1.6s both",
