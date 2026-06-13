@@ -327,6 +327,52 @@ export function GlobalDocumentGlobe() {
             );
           })}
 
+          {/* ── Seal Core — routing intelligence brain ─────────────── */}
+          <g aria-hidden="true" style={{ pointerEvents: "none" }}>
+            {/* Radial glow behind mark */}
+            <circle
+              cx="50" cy="50" r="7"
+              fill="rgba(214,170,69,0.07)"
+              style={{
+                animation: reduced ? "none" : (hoveredId ? "msCoreWake 0.7s ease-out both" : "msCoreIdle 6s ease-in-out infinite"),
+              }}
+            />
+            {/* Inner orbit ring — draws on activate */}
+            <circle
+              cx="50" cy="50" r="5.5"
+              fill="none"
+              stroke="rgba(214,170,69,0.35)"
+              strokeWidth="0.3"
+              strokeDasharray="1 0.6"
+              style={{
+                opacity: hoveredId ? 0.7 : 0.15,
+                transition: "opacity 0.7s ease",
+                transformOrigin: "50px 50px",
+                animation: reduced ? "none" : (hoveredId ? "msCoreRingDraw 1.2s ease-out both" : "none"),
+              }}
+            />
+            {/* Outward pulse on activate */}
+            {hoveredId && !reduced && (
+              <circle
+                cx="50" cy="50" r="6"
+                fill="none"
+                stroke="rgba(214,170,69,0.45)"
+                strokeWidth="0.4"
+                style={{ animation: "msCoreOutPulse 0.9s ease-out both" }}
+              />
+            )}
+            {/* M-feather mark */}
+            <image
+              href="/milano-seal-core-brain-feather.svg"
+              x="46" y="46" width="8" height="8"
+              style={{
+                opacity: hoveredId ? 0.82 : 0.22,
+                transition: "opacity 0.7s ease",
+                filter: hoveredId ? "drop-shadow(0 0 1.5px rgba(214,170,69,0.7))" : "none",
+              }}
+            />
+          </g>
+
           {/* ── Florida origin node ─────────────────────────────────── */}
           <g aria-label="Florida Execution Hub — U.S. notarization and apostille coordination">
             {/* Pulse ring */}
