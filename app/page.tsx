@@ -11,7 +11,7 @@ import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
-import { GlobalDocumentGlobe } from "@/components/landing/GlobalDocumentGlobe";
+import { GlobalMap } from "@/components/landing/global-map";
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
@@ -65,10 +65,9 @@ export default function HomePage() {
           <HowItWorks />
         </div>
 
-        {/* 6. Globe map — interactive route intelligence */}
-        <div id="map" className="py-16 px-4 max-w-2xl mx-auto">
-          <p className="text-center text-[9px] tracking-[0.3em] uppercase mb-6" style={{ color: "rgba(212,175,55,0.5)" }}>GLOBAL TRUST CORE™</p>
-          <GlobalDocumentGlobe />
+        {/* 6. Interactive map — Global Document Intelligence */}
+        <div id="map">
+          <GlobalMap />
         </div>
 
         {/* 6. What Are You Executing — document type grid */}
