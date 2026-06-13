@@ -123,9 +123,11 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Feather-M orb SVG — transparent, no background disc */}
             <img
               src="/milano-seal-feather-m-orb.svg"
-              alt="Milano Seal Assistant"
+              alt=""
+              aria-hidden="true"
               className="ms-assistant-orb-image"
-              style={{ width: 64, height: 64, objectFit: "contain", background: "none" }}
+              style={{ display: "block", width: 64, height: 64, objectFit: "contain", background: "none" }}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
           </motion.button>
         ) : (
