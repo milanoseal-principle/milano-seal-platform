@@ -136,12 +136,18 @@ function latParams(y: number) {
   return { rx: 46 * ratio, ry: Math.max(1.5, 5.5 * ratio) };
 }
 
+/* ── Route cycle order ───────────────────────────────────────────────────── */
+const ROUTE_CYCLE = ["italy","portugal","spain","greece","uae","canada","mexico","brazil","colombia","united-kingdom"];
+
 /* ── Component ───────────────────────────────────────────────────────────── */
 export function GlobalDocumentGlobe() {
-  const [hoveredId, setHoveredId]     = useState<string | null>(null);
-  const [mounted,   setMounted]       = useState(false);
-  const [reduced,   setReduced]       = useState(false);
-  const [isMobile,  setIsMobile]      = useState(false);
+  const [hoveredId,        setHoveredId]        = useState<string | null>(null);
+  const [mounted,          setMounted]          = useState(false);
+  const [reduced,          setReduced]          = useState(false);
+  const [isMobile,         setIsMobile]         = useState(false);
+  const [activeRouteIndex, setActiveRouteIndex] = useState(0);
+  const [isAutoPaused,     setIsAutoPaused]     = useState(false);
+  const resumeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -155,6 +161,28 @@ export function GlobalDocumentGlobe() {
     mob.addEventListener("change", onMob);
     return () => { mq.removeEventListener("change", onRM); mob.removeEventListener("change", onMob); };
   }, []);
+
+  // Route cycling — 9500ms per destination, pauses on hover
+  useEffect(() => {
+    if (reduced || isAutoPaused) return;
+    const id = setInterval(() => {
+      setActiveRouteIndex(i => (i + 1) % ROUTE_CYCLE.length);
+    }, 9500);
+    return () => clearInterval(id);
+  }, [reduced, isAutoPaused]);
+
+  const handleHoverEnter = (destId: string) => {
+    setHoveredId(destId);
+    setIsAutoPaused(true);
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  };
+  const handleHoverLeave = () => {
+    setHoveredId(null);
+    resumeTimer.current = setTimeout(() => setIsAutoPaused(false), 2000);
+  };
+
+  // Active route: hovered takes priority, then auto-cycle
+  const activeId = hoveredId ?? ROUTE_CYCLE[activeRouteIndex];
 
   const visibleDests = isMobile
     ? DESTINATIONS.filter(d => MOBILE_IDS.has(d.id))
@@ -231,43 +259,38 @@ export function GlobalDocumentGlobe() {
           {/* Specular highlight */}
           <ellipse cx="41" cy="31" rx="9" ry="5.5" fill="rgba(255,255,255,0.025)" />
 
-          {/* ── Route arcs ─────────────────────────────────────────── */}
+          {/* ── Route arcs — one primary active at a time ───────── */}
           {visibleDests.map(dest => {
             const { arc, dashed } = hagueStyle(dest.hagueStatus);
-            const isActive = hoveredId === dest.id;
-            const anim = mounted && !reduced;
+            const isActive = activeId === dest.id;
 
             return (
               <g key={dest.id} style={{ pointerEvents: "none" }}>
-                {/* Trail arc */}
+                {/* Always-visible idle arc — very faint */}
                 <path
                   d={arcPath(dest)}
                   fill="none"
                   stroke={arc}
-                  strokeWidth={isActive ? 0.75 : 0.45}
+                  strokeWidth="0.35"
                   strokeDasharray={dashed ? "1.4 1.4" : undefined}
-                  opacity={isActive ? 0.78 : 0.38}
-                  pathLength="1"
-                  strokeDashoffset={anim ? undefined : "0"}
-                  style={{
-                    animation: anim
-                      ? `msRouteDraw 1.8s cubic-bezier(0.16,1,0.3,1) ${dest.delay}s both`
-                      : "none",
-                    transition: "opacity 0.25s ease, stroke-width 0.25s ease",
-                  }}
+                  opacity={isActive ? 0 : 0.12}
+                  style={{ transition: "opacity 0.8s ease" }}
                 />
-                {/* Shimmer sweep */}
-                {anim && (
+                {/* Active arc — draws on activation */}
+                {mounted && !reduced && (
                   <path
+                    key={`${dest.id}-active-${activeRouteIndex}`}
                     d={arcPath(dest)}
                     fill="none"
-                    stroke="#E3C46F"
-                    strokeWidth="1"
-                    strokeDasharray="0.18 0.82"
-                    opacity="0"
+                    stroke={arc}
+                    strokeWidth="0.72"
+                    strokeDasharray={dashed ? "1.4 1.4" : undefined}
                     pathLength="1"
                     style={{
-                      animation: `msRouteSweep 9s ease-in-out ${dest.delay + 2.5}s infinite`,
+                      opacity: isActive ? 0.82 : 0,
+                      strokeDashoffset: isActive ? undefined : "1",
+                      animation: isActive ? "msRouteDraw 2.8s cubic-bezier(0.16,1,0.3,1) 0.2s both" : "none",
+                      transition: "opacity 0.8s ease",
                     }}
                   />
                 )}
@@ -287,10 +310,10 @@ export function GlobalDocumentGlobe() {
                 tabIndex={0}
                 aria-label={`Florida to ${dest.country} — ${dest.routeLabel}`}
                 style={{ cursor: "pointer", outline: "none" }}
-                onMouseEnter={() => setHoveredId(dest.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                onFocus={() => setHoveredId(dest.id)}
-                onBlur={() => setHoveredId(null)}
+                onMouseEnter={() => handleHoverEnter(dest.id)}
+                onMouseLeave={() => handleHoverLeave()}
+                onFocus={() => handleHoverEnter(dest.id)}
+                onBlur={() => handleHoverLeave()}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setHoveredId(dest.id); }}
               >
                 {/* Outer glow */}
@@ -334,7 +357,7 @@ export function GlobalDocumentGlobe() {
               cx="50" cy="50" r="7"
               fill="rgba(214,170,69,0.07)"
               style={{
-                animation: reduced ? "none" : (hoveredId ? "msCoreWake 0.7s ease-out both" : "msCoreIdle 6s ease-in-out infinite"),
+                animation: reduced ? "none" : (activeId ? "msCoreWake 0.7s ease-out both" : "msCoreIdle 6s ease-in-out infinite"),
               }}
             />
             {/* Inner orbit ring — draws on activate */}
@@ -345,14 +368,14 @@ export function GlobalDocumentGlobe() {
               strokeWidth="0.3"
               strokeDasharray="1 0.6"
               style={{
-                opacity: hoveredId ? 0.7 : 0.15,
+                opacity: activeId ? 0.7 : 0.15,
                 transition: "opacity 0.7s ease",
                 transformOrigin: "50px 50px",
-                animation: reduced ? "none" : (hoveredId ? "msCoreRingDraw 1.2s ease-out both" : "none"),
+                animation: reduced ? "none" : (activeId ? "msCoreRingDraw 1.2s ease-out both" : "none"),
               }}
             />
             {/* Outward pulse on activate */}
-            {hoveredId && !reduced && (
+            {activeId && !reduced && (
               <circle
                 cx="50" cy="50" r="6"
                 fill="none"
@@ -365,9 +388,9 @@ export function GlobalDocumentGlobe() {
             <g
               transform="translate(50,50) scale(0.0078) translate(-512,-512)"
               style={{
-                opacity: hoveredId ? 0.82 : 0.22,
+                opacity: activeId ? 0.82 : 0.22,
                 transition: "opacity 0.7s ease",
-                filter: hoveredId ? "drop-shadow(0 0 200px rgba(214,170,69,0.7))" : "none",
+                filter: activeId ? "drop-shadow(0 0 200px rgba(214,170,69,0.7))" : "none",
               }}
             >
               {/* Orbit ellipses */}
