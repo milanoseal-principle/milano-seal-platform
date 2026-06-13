@@ -249,7 +249,7 @@ export function GlobalDocumentGlobe() {
                   strokeWidth="0.35"
                   strokeDasharray={dashed ? "1.4 1.4" : undefined}
                   opacity={isActive ? 0 : 0.06}
-                  style={{ transition: "opacity 0.8s ease" }}
+                  style={{ transition: isActive ? "opacity 0.3s cubic-bezier(0.2,0,0,1)" : "opacity 1.4s ease-out" }}
                 />
                 {/* Active arc — draws on activation */}
                 {mounted && !reduced && (
@@ -264,8 +264,8 @@ export function GlobalDocumentGlobe() {
                     style={{
                       opacity: isActive ? 0.82 : 0,
                       strokeDashoffset: isActive ? undefined : "1",
-                      animation: isActive ? "msRouteDraw 4.5s cubic-bezier(0.16,1,0.3,1) 0.4s both" : "none",
-                      transition: "opacity 0.8s ease",
+                      animation: isActive ? "msRouteDraw 0.8s cubic-bezier(0.4,0,0.2,1) 0.05s both" : "none",
+                      transition: isActive ? "opacity 0.3s cubic-bezier(0.2,0,0,1)" : "opacity 1.4s ease-out",
                     }}
                   />
                 )}
@@ -369,7 +369,7 @@ export function GlobalDocumentGlobe() {
               fill="rgba(212,175,55,0.9)"
               style={{
                 opacity: activeId ? 0.85 : 0.2,
-                transition: "opacity 0.7s ease",
+                transition: activeId ? "opacity 0.3s cubic-bezier(0.2,0,0,1)" : "opacity 1.4s ease-out",
                 filter: activeId ? "drop-shadow(0 0 1px rgba(212,175,55,0.8))" : "none",
                 pointerEvents: "none",
               }}
