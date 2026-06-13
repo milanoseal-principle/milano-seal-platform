@@ -120,6 +120,16 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
             0%, 100% { opacity: var(--a-op); }
             50%      { opacity: calc(var(--a-op) * 1.5); }
           }
+          @keyframes msCrestEmerge {
+            0%   { opacity: 0; transform: scale(0.88); }
+            60%  { opacity: 0.92; }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes msLightSweep {
+            0%   { opacity: 0; transform: translateX(-110%) skewX(-18deg); }
+            45%  { opacity: 1; }
+            100% { opacity: 0; transform: translateX(110%) skewX(-18deg); }
+          }
         `}</style>
       )}
 
@@ -286,25 +296,55 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
         )}
       </svg>
 
-      {/* Orb PNG — always visible, parent motion.div provides entrance animation */}
-      <img
-        src="/milano-seal-orb-v2.png"
-        alt=""
-        aria-hidden="true"
+      {/* Medallion core — native disc creates the dark field; crest art fuses via screen blend */}
+      <div
         style={{
           position: "absolute",
           left: "50%",
           top: "50%",
           transform: "translate(-50%, -50%)",
-          width: "33%",
-          height: "33%",
-          objectFit: "cover",
-          borderRadius: "50%",
+          width: "32%",
+          height: "32%",
+          borderRadius: "9999px",
+          overflow: "hidden",
+          background: "radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(5,4,3,0.97) 52%, rgba(198,160,89,0.10) 78%, rgba(0,0,0,0) 100%)",
           zIndex: 2,
-          opacity: 1,
           pointerEvents: "none",
         }}
-      />
+      >
+        {/* Crest art — screen blend dissolves PNG dark areas, gold details emerge through */}
+        <img
+          src="/milano-seal-orb-v2.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            background: "transparent",
+            mixBlendMode: "screen" as React.CSSProperties["mixBlendMode"],
+            opacity: reduced ? 1 : 0,
+            ...(reduced ? {} : {
+              animation: "msCrestEmerge 0.9s cubic-bezier(0.16,1,0.3,1) 1.6s both",
+            }),
+          }}
+        />
+        {/* Light sweep — single pass, then gone */}
+        {!reduced && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(115deg, transparent 20%, rgba(212,175,55,0.22) 50%, transparent 80%)",
+              opacity: 0,
+              pointerEvents: "none",
+              animation: "msLightSweep 0.65s ease-out 2.55s 1 both",
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
