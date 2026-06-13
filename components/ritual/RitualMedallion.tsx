@@ -270,16 +270,6 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
           filter="url(#ms-glow)"
           style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.4s ease-out 0.3s both" }}
         />
-        <circle
-          cx={CX} cy={CY} r="63"
-          fill="url(#ms-disc-bg)"
-          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.3s both" }}
-        />
-        <circle
-          cx={CX} cy={CY} r="63"
-          fill="url(#ms-disc-sheen)"
-          style={reduced ? undefined : { opacity: 0, animation: "msAssembleDisc 0.35s ease-out 0.32s both" }}
-        />
         {/* Gold rim */}
         <circle
           cx={CX} cy={CY} r="63"
