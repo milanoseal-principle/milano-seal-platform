@@ -20,6 +20,7 @@ export interface CountryComplianceProfile {
   lng?: number;
   region: string;
   notes?: string; // operator-only, never exposed to client
+  verificationStatus?: "VERIFIED" | "VERIFICATION_REQUIRED";
   // SEO
   seoTitle: string;
   seoDescription: string;
@@ -136,11 +137,13 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     lat: 24.4539,
     lng: 54.3773,
     region: "Middle East",
+    verificationStatus: "VERIFICATION_REQUIRED",
+    notes: "Receiving-authority review is required before confirming an apostille or consular pathway.",
     seoTitle: "Apostille for UAE | The Milano Seal™",
-    seoDescription: "Florida apostille preparation for the UAE. The UAE joined the Hague Convention in 2024. Document notarization, apostille routing, and courier custody.",
+    seoDescription: "UAE document execution and authentication pathway review. Requirements are confirmed against the document type and receiving authority before release.",
     faqs: [
-      { q: "Does the UAE accept US apostilles?", a: "Yes. The UAE joined the Hague Apostille Convention effective September 5, 2024. Florida-apostilled documents are now generally accepted, replacing the prior consular legalization process." },
-      { q: "What changed when UAE joined the Hague Convention?", a: "Prior to September 2024, documents required consular legalization through UAE consulates. Hague membership simplified this to a standard apostille process." },
+      { q: "What authentication pathway applies for the UAE?", a: "The pathway must be verified against the document type and receiving authority. The Milano Seal does not treat every UAE matter as universally apostille-only or consular-only." },
+      { q: "Will the receiving authority accept my document?", a: "Acceptance requirements vary. An operator confirms the current authority pathway before execution or international release." },
     ],
   },
   {

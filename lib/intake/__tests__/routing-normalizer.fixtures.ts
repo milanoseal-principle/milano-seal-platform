@@ -90,7 +90,7 @@ const FIXTURES: FixtureCase[] = [
 
   // ── Case 5: Florida Power of Attorney + RON + UAE ─────────────────────────
   {
-    name: "Florida Power of Attorney + RON + UAE → requires_operator_review=true, consular_legalization",
+    name: "Florida Power of Attorney + RON + UAE → requires_operator_review=true, operator_review",
     payload: {
       document_type: "Power of Attorney",
       execution_type: "RON",
@@ -100,8 +100,9 @@ const FIXTURES: FixtureCase[] = [
     expect: {
       // Not a One-and-Same, so it stays as state_issued_document
       origin_authority_type: "state_issued_document",
-      apostille_path: "consular_legalization",
+      apostille_path: "operator_review",
       requires_operator_review: true,
+      hasWarning: "pathway verification is required",
     },
   },
 
