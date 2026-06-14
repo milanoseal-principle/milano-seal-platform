@@ -43,7 +43,6 @@ import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
 import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
 import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
 import { MatterQueue } from "@/components/dashboard/MatterQueue";
-import { QuickActionIntelligenceMenu } from "@/components/dashboard/QuickActionIntelligenceMenu";
 
 interface DashboardSummary {
   total_deals: number;
@@ -843,15 +842,6 @@ export default function Dashboard() {
           <TopDocumentsPanel />
         </div>
       </div>
-
-      {/* Quick Action Intelligence Menu */}
-      <Card className="bg-card border-gold overflow-hidden">
-        <QuickActionIntelligenceMenu
-          isOpen={actionPanelOpen}
-          onClose={() => setActionPanelOpen(false)}
-          matterId={selectedMatterId ?? undefined}
-        />
-      </Card>
 
       {/* Service Lanes */}
       <Card className="bg-card border-gold">
