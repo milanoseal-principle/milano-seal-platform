@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Globe, ArrowRight, CheckCircle } from "lucide-react";
+import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 
 export const metadata: Metadata = {
   title: "Participating Countries — Hague Convention Directory | The Milano Seal™",
@@ -11,24 +13,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://themilanoseal.com/countries" },
 };
 
-const featured = [
-  { name: "Italy", slug: "italy", hague: true },
-  { name: "Spain", slug: "spain", hague: true },
-  { name: "Germany", slug: "germany", hague: true },
-  { name: "Portugal", slug: "portugal", hague: true },
-  { name: "United Arab Emirates", slug: "uae", hague: false },
-  { name: "Mexico", slug: "mexico", hague: true },
-  { name: "Brazil", slug: "brazil", hague: true },
-  { name: "Greece", slug: "greece", hague: true },
-  { name: "France", slug: "france", hague: true },
-  { name: "United Kingdom", slug: "united-kingdom", hague: true },
-  { name: "Australia", slug: "australia", hague: true },
-  { name: "Canada", slug: "canada", hague: false },
-  { name: "Japan", slug: "japan", hague: true },
-  { name: "Argentina", slug: "argentina", hague: true },
-  { name: "Saudi Arabia", slug: "saudi-arabia", hague: false },
-  { name: "Philippines", slug: "philippines", hague: true },
-];
+const FEATURED_SLUGS = [
+  "italy", "spain", "germany", "portugal", "uae", "mexico", "brazil",
+  "greece", "france", "united-kingdom", "australia", "canada",
+] as const;
+
+const featured = FEATURED_SLUGS.map((slug) =>
+  DESTINATIONS.find((destination) => destination.slug === slug),
+).filter((destination): destination is Destination => Boolean(destination));
 
 export default function CountriesPage() {
   return (
@@ -64,25 +56,13 @@ export default function CountriesPage() {
       </section>
 
       <section className="py-8 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {featured.map((country) => (
-            <Link
+            <DestinationIntelligenceCard
               key={country.slug}
-              href={`/countries/${country.slug}`}
-              className="group flex items-center justify-between p-4 bg-[#111111] border border-[#2A2A2A] rounded-xl hover:border-[#C6A55A]/30 transition-all duration-300 min-h-[64px]"
-            >
-              <div className="flex items-center gap-3">
-                {country.hague ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                ) : (
-                  <span className="w-4 h-4 rounded-full border border-[#4A4A4A] flex-shrink-0 inline-block" />
-                )}
-                <span className="text-[#B0B0B0] text-sm group-hover:text-white transition-colors font-medium">
-                  {country.name}
-                </span>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[#C6A55A]/20 group-hover:text-[#C6A55A]/60 transition-all duration-300 group-hover:translate-x-0.5 flex-shrink-0" />
-            </Link>
+              destination={country}
+              variant="countryDirectory"
+            />
           ))}
         </div>
         <p className="text-center mt-8 text-sm text-[#6A6A6A]">

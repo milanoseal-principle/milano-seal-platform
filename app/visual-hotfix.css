@@ -8,10 +8,10 @@
   position: absolute;
   inset: 5px;
   border-radius: 50%;
-  background-image: url("/milano-seal-feather-m-orb.png");
+  background-image: url("/milano-seal-feather-m-orb.svg");
+  background-size: 118% 118%;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
   filter: drop-shadow(0 0 9px rgba(244, 207, 114, 0.28));
 }
 
@@ -31,8 +31,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #050507 url("/milano-seal-feather-m-orb.svg") center / contain no-repeat;
-  background: #050507 url("/milano-seal-feather-m-orb.png") center / contain no-repeat;
+  background: #050507 url("/milano-seal-feather-m-orb.svg") center / 128% 128% no-repeat;
   box-shadow: 0 0 24px rgba(198, 165, 90, 0.18);
 }
 
@@ -40,7 +39,7 @@
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  background-size: contain;
+  background-size: 132% 132%;
 }
 
 @media (max-width: 640px) {
