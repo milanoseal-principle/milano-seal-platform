@@ -177,7 +177,7 @@ export default function ClientDocumentsPage() {
       <div className="rounded-xl border border-[#2A2A2A] bg-[#0D0D0D] overflow-hidden">
         <div className="px-6 py-4 border-b border-[#1A1A1A] flex items-center justify-between">
           <div>
-            <h2 className="text-white text-sm font-medium">Submit Supporting Documents</h2>
+            <h2 className="text-white text-sm font-medium">Submit Supporting Records</h2>
             <p className="text-[#5A5A5A] text-xs mt-0.5">
               PDF, JPEG, PNG, or TIFF · Max 25 MB · Encrypted in transit and at rest
             </p>
@@ -307,8 +307,8 @@ export default function ClientDocumentsPage() {
 
       {/* Document list */}
       <div className="cd-card">
-        <div className="cd-eyebrow">Your Documents</div>
-        <h1 className="cd-h1">Files &amp; Uploads</h1>
+        <div className="cd-eyebrow">Controlled Records</div>
+        <h1 className="cd-h1">Secure Record Exchange</h1>
         {files.length === 0 ? (
           <div className="cd-empty">
             No documents yet. Files you upload above or that we complete (notarized PDF, apostille certificate) will appear here once released by your operator.

@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
 import { getCorridorIntel, type MatterVector } from "@/data/corridor-intel";
+import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 
 const GlobalIntelMapInteractive = dynamic(
   () =>
@@ -265,11 +266,11 @@ export function GlobalMap() {
           >
             <div className="flex items-center gap-4">
               <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70">
-                THE SYSTEM IN MOTION
+                GLOBAL DOCUMENT INTELLIGENCE ATLAS
               </span>
               <span className="text-[#2A2A2A]">·</span>
               <h2 className="font-serif text-sm text-white/90 font-normal tracking-wide">
-                Global Document Intelligence™
+                Execution Vector Workspace
               </h2>
             </div>
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-[#C6A55A]/20 rounded-full"
@@ -450,7 +451,7 @@ export function GlobalMap() {
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 8, scale: 0.99 }}
                     transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col h-full p-5 lg:p-6 relative overflow-hidden"
+                    className="flex flex-col h-full p-5 lg:p-6 relative overflow-y-auto"
                   >
                     {/* Single-pass scanning line on entry */}
                     <div className="terminal-scan-line" key={`scan-${selectedDest.slug}`} />
@@ -478,23 +479,12 @@ export function GlobalMap() {
                       </button>
                     </div>
 
-                    {/* Jurisdictional framework */}
-                    <div className="bg-black/60 border border-[#D4AF37]/10 rounded-lg p-3.5 mb-4"
-                      style={{ boxShadow: "0 0 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(212,175,55,0.05)" }}
-                    >
-                      <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
-                        JURISDICTIONAL FRAMEWORK
-                      </span>
-                      <span className={`inline-block font-mono text-[9px] px-2.5 py-1 rounded border ${
-                        selectedDest.hague
-                          ? "border-green-500/25 text-green-400/80 bg-green-500/[0.05]"
-                          : "border-amber-500/25 text-amber-400/80 bg-amber-500/[0.05]"
-                      }`}>
-                        {selectedDest.hague
-                          ? "HAGUE ROUTE AVAILABLE"
-                          : "LEGALIZATION REVIEW REQUIRED"}
-                      </span>
-                    </div>
+                    <DestinationIntelligenceCard
+                      destination={selectedDest}
+                      variant="atlas"
+                      matter={activeMatter?.label}
+                      className="mb-4"
+                    />
 
                     {/* Intelligence metadata row */}
                     {corridorIntel && (
@@ -508,7 +498,7 @@ export function GlobalMap() {
                         {corridorIntel.translationRequired && (
                           <div className="flex items-center gap-1.5">
                             <Languages className="w-3 h-3 text-[#C6A55A]/70 flex-shrink-0" />
-                            <span className="font-mono text-[9px] text-[#555]">Translation required</span>
+                            <span className="font-mono text-[9px] text-[#555]">Translation review likely</span>
                           </div>
                         )}
                       </div>
@@ -518,7 +508,7 @@ export function GlobalMap() {
                     {corridorIntel && corridorIntel.matterVectors.length > 0 && (
                       <div className="mb-4">
                         <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
-                          SELECT MATTER TYPE
+                          MATTER TYPE
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {corridorIntel.matterVectors.map((mv) => {
@@ -550,7 +540,7 @@ export function GlobalMap() {
                     <div className="mb-4 flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666]">
-                          {activeMatter ? `${activeMatter.label.toUpperCase()} SEQUENCE` : "PROCEDURAL SEQUENCE"}
+                          {activeMatter ? `${activeMatter.label.toUpperCase()} PROCEDURAL SEQUENCE` : "PROCEDURAL SEQUENCE"}
                         </span>
                         {activeMatter && (
                           <button
@@ -666,15 +656,6 @@ export function GlobalMap() {
                       Procedural guidance only. Requirements confirmed with receiving authority before execution.
                     </p>
 
-                    {/* Execution CTA — preloaded with country + matter */}
-                    <Link
-                      href={`/intake?country=${encodeURIComponent(selectedDest.name)}${activeMatter ? `&matter=${encodeURIComponent(activeMatter.label)}` : ""}`}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.14em] text-[10px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors duration-200"
-                    >
-                      Begin Secure Intake
-                      {activeMatter && <span className="opacity-70">· {activeMatter.label}</span>}
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -733,12 +714,12 @@ export function GlobalMap() {
                       to preview the execution path
                     </span>
 
-                    {/* Live status indicators */}
+                    {/* Workspace capability indicators — no fabricated metrics */}
                     <div className="flex flex-col gap-2 w-full max-w-[200px]">
                       {[
-                        { label: "HAGUE ROUTES", value: "38 ACTIVE" },
-                        { label: "CORRIDORS", value: "LIVE" },
-                        { label: "ORIGIN", value: "FL · CLEARED" },
+                        { label: "FRAMEWORK", value: "AUTHORITY REVIEW" },
+                        { label: "VECTORS", value: "MATTER-SPECIFIC" },
+                        { label: "ORIGIN", value: "FLORIDA" },
                       ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between px-3 py-1.5 border border-white/[0.04] rounded bg-white/[0.015]">
                           <span className="font-mono text-[8px] tracking-[0.08em] text-[#666]">{label}</span>
@@ -812,7 +793,7 @@ export function GlobalMap() {
                     {hi.translationRequired && (
                       <>
                         <span className="text-[#333]">·</span>
-                        <span className="font-mono text-[8px] text-[#555]">Translation required</span>
+                        <span className="font-mono text-[8px] text-[#555]">Translation review likely</span>
                       </>
                     )}
                     {hi.matterVectors.length > 0 && (
