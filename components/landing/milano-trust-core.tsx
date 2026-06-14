@@ -122,10 +122,11 @@ export function MilanoTrustCore() {
         <div className="lg:hidden">
           <div className="flex flex-col items-center text-center mb-10">
             <div
-              className="w-14 h-14 rounded-full border border-[#C6A55A]/30 flex items-center justify-center mb-5"
-              style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, transparent 70%)" }}
+              className="w-14 h-14 rounded-full border border-[#C6A55A]/30 flex items-center justify-center mb-5 overflow-hidden"
+              style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, rgba(5,5,7,0.98) 70%)" }}
             >
-              <span className="font-serif text-[#C6A55A] text-2xl font-medium leading-none">M</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/milano-seal-feather-m-orb.svg" alt="" aria-hidden="true" draggable={false} style={{ width: 48, height: 48, objectFit: "contain" }} />
             </div>
             <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
               Our Platform Principles
@@ -244,18 +245,20 @@ export function MilanoTrustCore() {
               <div className="absolute w-[160px] h-[160px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.22)" }} />
               {/* Core */}
               <div
-                className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center"
+                className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center overflow-hidden"
                 style={{
-                  background: "radial-gradient(circle, rgba(198,165,90,0.13) 0%, rgba(6,6,8,0.97) 70%)",
+                  background: "radial-gradient(circle, rgba(198,165,90,0.10) 0%, rgba(5,5,7,0.98) 70%)",
                   boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
                 }}
               >
-                <span
-                  className="font-serif text-[#C6A55A] text-5xl font-medium leading-none select-none"
-                  style={{ textShadow: "0 0 32px rgba(198,165,90,0.5)" }}
-                >
-                  M
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/milano-seal-feather-m-orb.svg"
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  style={{ width: 100, height: 100, objectFit: "contain", filter: "drop-shadow(0 0 14px rgba(198,165,90,0.4))" }}
+                />
               </div>
             </motion.div>
 

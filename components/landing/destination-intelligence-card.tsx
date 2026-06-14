@@ -246,22 +246,22 @@ export function DestinationIntelligenceCard({
         {data.seoLine}
       </p>
 
-      <div className={`mt-4 flex ${compact ? "gap-2" : "flex-col gap-2 sm:flex-row"}`}>
+      <div className={`mt-4 flex flex-wrap gap-2 ${!compact && !directory ? "sm:flex-nowrap" : ""}`}>
         <Link
           href={intakeHref}
           onClick={onPrimaryAction}
           aria-label={`Start secure intake for ${data.name}`}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#C6A55A] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
+          className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#C6A55A] font-mono font-bold uppercase text-[#050507] transition-colors hover:bg-[#D4B76A] ${compact ? "px-3 py-2 text-[7px] tracking-[0.1em]" : "px-3 py-2.5 text-[8px] tracking-[0.11em]"}`}
         >
-          Start Secure Intake
-          <ArrowRight className="h-3 w-3" />
+          {compact ? "Intake" : "Start Secure Intake"}
+          <ArrowRight className="h-3 w-3 shrink-0" />
         </Link>
         <Link
           href={secondaryHref}
           aria-label={`${secondaryLabel} for ${data.name}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#C6A55A]/22 px-3 py-2.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[#C6A55A]/78 transition-colors hover:border-[#C6A55A]/50 hover:text-[#C6A55A]"
+          className={`inline-flex min-h-10 items-center justify-center rounded-lg border border-[#C6A55A]/22 font-mono uppercase text-[#C6A55A]/78 transition-colors hover:border-[#C6A55A]/50 hover:text-[#C6A55A] ${compact ? "px-3 py-2 text-[7px] tracking-[0.08em]" : "px-3 py-2.5 text-[8px] tracking-[0.1em]"}`}
         >
-          {secondaryLabel}
+          {directory ? "Details" : secondaryLabel}
         </Link>
       </div>
     </article>
