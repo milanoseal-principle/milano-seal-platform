@@ -1,0 +1,52 @@
+/* Cinematic sequential-feel routing pass for Global Trust Core. Keeps routes calm, premium, and readable. */
+.ms-globe-arcs-svg .ms-globe-arc-glow--flowing,
+.ms-globe-arcs-svg .ms-globe-arc-body--flowing,
+.ms-globe-arcs-svg .ms-globe-arc-head--flowing{
+  animation-name:ms-route-cinematic-pass!important;
+  animation-duration:9.5s!important;
+  animation-timing-function:cubic-bezier(.22,1,.36,1)!important;
+  animation-iteration-count:infinite!important;
+}
+.ms-globe-arcs-svg .ms-globe-arc-tip--flowing{
+  animation-name:ms-route-cinematic-tip!important;
+  animation-duration:9.5s!important;
+  animation-timing-function:cubic-bezier(.22,1,.36,1)!important;
+  animation-iteration-count:infinite!important;
+}
+.ms-globe-arcs-svg .ms-globe-arc-glow--flowing{stroke-dasharray:92 520!important;opacity:.08!important}
+.ms-globe-arcs-svg .ms-globe-arc-body--flowing{stroke-dasharray:58 554!important;opacity:.72!important}
+.ms-globe-arcs-svg .ms-globe-arc-head--flowing{stroke-dasharray:12 600!important;opacity:.82!important}
+.ms-globe-arcs-svg .ms-globe-arc-tip--flowing{stroke-dasharray:4 608!important;opacity:.9!important}
+.ms-globe-arcs-svg text{transition:opacity .7s ease,filter .7s ease!important}
+.ms-globe-dest-bloom{animation:ms-node-cinematic-breathe 9.5s ease-in-out infinite!important}
+@keyframes ms-route-cinematic-pass{
+  0%{stroke-dashoffset:620;opacity:0}
+  7%{opacity:.18}
+  15%{opacity:.75}
+  42%{opacity:.9}
+  68%{opacity:.5}
+  82%{opacity:.14}
+  100%{stroke-dashoffset:-620;opacity:0}
+}
+@keyframes ms-route-cinematic-tip{
+  0%{stroke-dashoffset:620;opacity:0}
+  10%{opacity:0}
+  18%{opacity:.95}
+  42%{opacity:1}
+  72%{opacity:.92}
+  90%{opacity:0}
+  100%{stroke-dashoffset:-620;opacity:0}
+}
+@keyframes ms-node-cinematic-breathe{
+  0%,100%{opacity:.16;transform:scale(.92);transform-origin:center}
+  28%{opacity:.58;transform:scale(1.02);transform-origin:center}
+  48%{opacity:.86;transform:scale(1.08);transform-origin:center}
+  70%{opacity:.34;transform:scale(.98);transform-origin:center}
+}
+@media(prefers-reduced-motion:reduce){
+  .ms-globe-arcs-svg .ms-globe-arc-glow--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-body--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-head--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-tip--flowing,
+  .ms-globe-dest-bloom{animation:none!important}
+}
