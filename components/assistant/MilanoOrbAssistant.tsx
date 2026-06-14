@@ -117,14 +117,15 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <div className="absolute inset-[-6px] rounded-full border border-amber-500/16 ms-orb-halo-breathe pointer-events-none" />
             <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.06] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
 
-            <span className="relative flex flex-col items-center justify-center leading-none">
-              <span className="font-serif text-[18px] text-[#D8BA63] tracking-[0.02em] drop-shadow-[0_0_8px_rgba(212,175,55,0.34)]">
-                ?
-              </span>
-              <span className="mt-0.5 text-[6px] font-bold tracking-[0.22em] text-[#9E8547] uppercase">
-                Help
-              </span>
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/milano-seal-orb-v2.png"
+              alt=""
+              aria-hidden="true"
+              width={56}
+              height={56}
+              style={{ display: "block", objectFit: "contain", borderRadius: "50%" }}
+            />
           </motion.button>
         ) : (
           /* ── PANEL ── */
@@ -146,10 +147,15 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Header */}
             <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                {/* Utility badge — not the globe/brand brain asset */}
-                <span className="grid h-7 w-7 place-items-center rounded-full border border-[#C6A55A]/35 bg-[#070707] text-[9px] font-bold uppercase tracking-[0.08em] text-[#D8BA63] shadow-[inset_0_0_10px_rgba(0,0,0,0.82),0_0_14px_rgba(198,165,90,0.12)] flex-shrink-0">
-                  AI
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/milano-seal-orb-v2.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={28}
+                  height={28}
+                  style={{ display: "block", objectFit: "contain", flexShrink: 0 }}
+                />
                 <div className="flex flex-col">
                   <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
                   <span className="text-[7px] text-zinc-500 tracking-wider uppercase">{roleMode === 'PUBLIC' ? 'Secure Execution Desk' : roleMode + ' MODE'}</span>

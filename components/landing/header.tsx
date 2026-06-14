@@ -41,11 +41,15 @@ export function Header() {
                 className="group flex-shrink-0 select-none flex items-center gap-4 min-w-[290px]"
                 aria-label="The Milano Seal home"
               >
-                <span className="relative grid h-11 w-11 place-items-center rounded-full border border-[#C6A55A]/55 bg-[radial-gradient(circle_at_50%_38%,rgba(212,175,55,0.16),rgba(10,10,10,0.96)_62%,#050505_100%)] shadow-[0_0_26px_rgba(198,165,90,0.16),inset_0_0_18px_rgba(0,0,0,0.72)] transition-all duration-300 group-hover:border-[#D4AF37]/80 group-hover:shadow-[0_0_34px_rgba(212,175,55,0.24),inset_0_0_18px_rgba(0,0,0,0.72)]">
-                  <span className="font-serif text-[23px] leading-none text-[#D8BA63] tracking-[-0.08em] drop-shadow-[0_0_8px_rgba(212,175,55,0.30)]">
-                    MS
-                  </span>
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/milano-seal-orb-v2.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={44}
+                  height={44}
+                  style={{ display: "block", objectFit: "contain" }}
+                />
                 <span className="flex flex-col leading-none">
                   <span className="font-serif text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">
                     The Milano Seal
