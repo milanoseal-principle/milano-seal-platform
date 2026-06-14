@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { MilanoOrbAssistant } from "@/components/assistant/MilanoOrbAssistant";
 import { NavigationLoader } from "@/components/NavigationLoader";
 import "./globals.css";
+import "./globe-core-fixes.css";
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to have
 // non-zero values on iOS Safari (notch, Dynamic Island, home indicator).
