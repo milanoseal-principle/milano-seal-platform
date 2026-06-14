@@ -1,0 +1,66 @@
+@import "./globe-tool-upgrade.css";
+/* Hover-driven routing lock. No automatic timed route sweep. */
+.ms-globe-arcs-svg .ms-globe-arc-glow--flowing,
+.ms-globe-arcs-svg .ms-globe-arc-body--flowing,
+.ms-globe-arcs-svg .ms-globe-arc-head--flowing,
+.ms-globe-arcs-svg .ms-globe-arc-tip--flowing{
+  animation:none!important;
+  stroke-dashoffset:0!important;
+  opacity:0!important;
+  transition:opacity .55s cubic-bezier(.22,1,.36,1),stroke-width .35s ease!important;
+}
+.ms-globe-arcs-svg>g:hover .ms-globe-arc-glow--flowing,
+.ms-globe-arcs-svg>g:focus-within .ms-globe-arc-glow--flowing{
+  animation:ms-route-cinematic-pass 3.8s cubic-bezier(.22,1,.36,1) 1!important;
+  stroke-dasharray:92 520!important;
+  opacity:.12!important;
+}
+.ms-globe-arcs-svg>g:hover .ms-globe-arc-body--flowing,
+.ms-globe-arcs-svg>g:focus-within .ms-globe-arc-body--flowing{
+  animation:ms-route-cinematic-pass 3.8s cubic-bezier(.22,1,.36,1) 1!important;
+  stroke-dasharray:58 554!important;
+  opacity:.86!important;
+}
+.ms-globe-arcs-svg>g:hover .ms-globe-arc-head--flowing,
+.ms-globe-arcs-svg>g:focus-within .ms-globe-arc-head--flowing{
+  animation:ms-route-cinematic-pass 3.8s cubic-bezier(.22,1,.36,1) 1!important;
+  stroke-dasharray:12 600!important;
+  opacity:1!important;
+}
+.ms-globe-arcs-svg>g:hover .ms-globe-arc-tip--flowing,
+.ms-globe-arcs-svg>g:focus-within .ms-globe-arc-tip--flowing{
+  animation:ms-route-cinematic-tip 3.8s cubic-bezier(.22,1,.36,1) 1!important;
+  stroke-dasharray:4 608!important;
+  opacity:1!important;
+}
+.ms-globe-arcs-svg>g:hover text,
+.ms-globe-arcs-svg>g:focus-within text{
+  filter:drop-shadow(0 0 8px rgba(212,175,55,.55));
+  opacity:1!important;
+}
+.ms-globe-dest-bloom{animation:none!important;opacity:.22!important;transition:opacity .55s ease,transform .55s ease!important;transform-origin:center!important}
+.ms-globe-arcs-svg>g:hover .ms-globe-dest-bloom,
+.ms-globe-arcs-svg>g:focus-within .ms-globe-dest-bloom{opacity:.82!important;transform:scale(1.08)!important}
+@keyframes ms-route-cinematic-pass{
+  0%{stroke-dashoffset:620;opacity:0}
+  9%{opacity:.24}
+  18%{opacity:.92}
+  50%{opacity:1}
+  78%{opacity:.78}
+  100%{stroke-dashoffset:-620;opacity:.18}
+}
+@keyframes ms-route-cinematic-tip{
+  0%{stroke-dashoffset:620;opacity:0}
+  12%{opacity:0}
+  22%{opacity:1}
+  54%{opacity:1}
+  82%{opacity:.92}
+  100%{stroke-dashoffset:-620;opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .ms-globe-arcs-svg .ms-globe-arc-glow--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-body--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-head--flowing,
+  .ms-globe-arcs-svg .ms-globe-arc-tip--flowing,
+  .ms-globe-dest-bloom{animation:none!important;transition:none!important}
+}

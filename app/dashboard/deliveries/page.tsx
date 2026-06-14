@@ -35,9 +35,8 @@ export default async function DeliveryLogPage() {
   const rows = (data ?? []) as DeliveryLogRow[];
 
   return (
-    <main className="ms-os-page ms-safe-bottom min-h-screen bg-[#080808] px-4 py-6 text-white sm:px-6 sm:py-8">
-      <div className="ms-os-atmosphere" aria-hidden="true" />
-      <div className="relative z-10 mx-auto max-w-7xl">
+    <main className="min-h-screen bg-[#080808] px-4 py-8 text-white sm:px-6">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.32em] text-[#C6A55A]/60">
@@ -72,7 +71,7 @@ export default async function DeliveryLogPage() {
             </p>
           </div>
         ) : (
-          <div className="ms-os-panel overflow-x-auto rounded border border-[#C6A55A]/10 bg-[#0D0B08]">
+          <div className="overflow-x-auto rounded border border-[#C6A55A]/10 bg-[#0D0B08]">
             <table className="w-full min-w-[1050px] text-left text-xs">
               <thead className="border-b border-[#C6A55A]/10 font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/55">
                 <tr>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
@@ -37,17 +36,27 @@ export function Header() {
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
-                <Image
-                  src="/milano-seal-gold-transparent-512.png"
-                  alt="The Milano Seal"
-                  width={38}
-                  height={38}
-                  className="object-contain"
-                  priority
+              <Link
+                href="/"
+                className="group flex-shrink-0 select-none flex items-center gap-3"
+                aria-label="The Milano Seal home"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/milano-seal-orb-v2.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={40}
+                  height={40}
+                  style={{ display: "block", objectFit: "contain", flexShrink: 0 }}
                 />
-                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
-                  The Milano Seal
+                <span className="flex flex-col leading-none">
+                  <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">
+                    The Milano Seal
+                  </span>
+                  <span className="hidden sm:block mt-1.5 text-[7px] md:text-[8px] uppercase tracking-[0.32em] text-[#8B743C]">
+                    Global Document Execution
+                  </span>
                 </span>
               </Link>
 
@@ -100,7 +109,7 @@ export function Header() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-x-0 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
-            style={{ top: "calc(168px + var(--sa-top))" }}
+            style={{ top: "calc(148px + var(--sa-top))" }}
           >
             <nav className="flex flex-col p-6 space-y-4">
               {navLinks.map((link) => (
