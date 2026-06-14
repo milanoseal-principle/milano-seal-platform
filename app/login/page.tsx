@@ -34,12 +34,17 @@ function destForRole(role: string, fallback: string): string {
   return fallback;
 }
 
-function LogoMark() {
+function MilanoSealOrb() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 20L3 6L12 15L21 6L21 20" stroke="#C6A55A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z" fill="#C6A55A" opacity="0.88" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/milano-seal-feather-m-orb.svg"
+      alt="The Milano Seal"
+      width={52}
+      height={52}
+      style={{ display: "block", width: 52, height: 52, objectFit: "contain" }}
+      draggable={false}
+    />
   );
 }
 
@@ -278,7 +283,7 @@ function LoginInner() {
         <div className="ms-glow" />
 
         <div className="ms-card">
-          <div className="ms-ring"><LogoMark /></div>
+          <div className="ms-ring"><MilanoSealOrb /></div>
 
           <div className="ms-eyebrow">The Milano Seal™</div>
           <h1 className="ms-title">Secure Access</h1>

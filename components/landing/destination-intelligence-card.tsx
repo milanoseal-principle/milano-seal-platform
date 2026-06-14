@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { Destination } from "@/data/destinations";
 import { getCorridorIntel } from "@/data/corridor-intel";
+import { CountryFlagMedallion } from "@/components/ui/country-flag-medallion";
 
 export type DestinationCardVariant =
   | "globePreview"
@@ -155,16 +156,18 @@ export function DestinationIntelligenceCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           {data.flag && (
-            <span className={compact ? "text-xl" : "text-3xl"} aria-hidden="true">
-              {data.flag}
-            </span>
+            <CountryFlagMedallion
+              flag={data.flag}
+              name={data.name}
+              size={compact ? "sm" : "lg"}
+            />
           )}
           <div className="min-w-0">
             <p className="font-mono text-[8px] uppercase tracking-[0.22em] text-[#C6A55A]/55">
               {directory ? "Priority Corridor" : "Destination Review"}
             </p>
             <h3
-              className={`${compact ? "text-lg" : "text-2xl"} mt-1 truncate font-serif text-white`}
+              className={`${compact ? "text-lg" : "text-2xl"} mt-1 font-serif text-white leading-tight`}
             >
               {data.name}
             </h3>
