@@ -32,28 +32,26 @@ const featured = [
 
 export default function CountriesPage() {
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <main className="min-h-screen bg-[#0A0A0A] overflow-x-hidden">
       <Header />
 
-      {/* Hero */}
-      <section className="pt-32 pb-16 px-6">
+      <section className="pt-28 pb-8 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-4">
             <Globe className="w-4 h-4 text-[#C6A55A]" />
             <span className="text-sm text-[#C6A55A] font-medium">Participating Countries</span>
           </div>
-          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
+          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
             Hague Convention Country Directory
           </h1>
-          <p className="text-lg text-[#B0B0B0] mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg text-[#B0B0B0] mb-5 max-w-2xl mx-auto leading-relaxed">
             Select your destination country to view jurisdiction-specific apostille requirements, authentication paths, common documents, and processing timelines.
           </p>
         </div>
       </section>
 
-      {/* Legend */}
-      <section className="pb-4 px-6">
-        <div className="max-w-5xl mx-auto flex flex-wrap gap-6 justify-center text-sm text-[#6A6A6A]">
+      <section className="pb-3 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto flex flex-wrap gap-4 md:gap-6 justify-center text-sm text-[#6A6A6A]">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-500" />
             <span>Hague Convention member — apostille accepted</span>
@@ -65,8 +63,7 @@ export default function CountriesPage() {
         </div>
       </section>
 
-      {/* Country Grid */}
-      <section className="py-12 px-6">
+      <section className="py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {featured.map((country) => (
             <Link
@@ -97,8 +94,7 @@ export default function CountriesPage() {
         </p>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 px-6 bg-[#111111]">
+      <section className="py-12 px-4 sm:px-6 bg-[#111111]">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4">
             Ready to Begin?
@@ -113,8 +109,6 @@ export default function CountriesPage() {
             <span>Start Matter Intake</span>
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
-          <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide legal advice. Legal questions should be handled by a licensed attorney.</p>
         </div>
       </section>
 
