@@ -12,22 +12,24 @@ Define the protocol for locking, versioning, and delivering PDFs so that every d
 
 ---
 
-## Version Naming Convention
+## Client Delivery Naming Convention
 
 ```
-MS-[MATTER_ID]-[DOCUMENT_TYPE]-v[VERSION]-[DATE].pdf
+MS-[INVOICE#]_[DOCUMENT_TYPE]_[STATUS]_[LASTNAME_OR_ENTITY]_[YYYYMMDD].pdf
 
 Examples:
-MS-2026-0001-APOSTILLE-v1-2026-06-11.pdf
-MS-2026-0001-POA-EXECUTED-v1-2026-06-11.pdf
-MS-2026-0001-RON-CERTIFICATE-v1-2026-06-11.pdf
+MS-2026-03-012_Affidavit_ProForma_Rossi_20260315.pdf
+MS-2026-03-012_Affidavit_FinalInvoice_Rossi_20260318.pdf
+MS-2026-03-012_Affidavit_PaidReleased_Rossi_20260320.pdf
 ```
 
 **Rules:**
-- Version starts at `v1`. Re-executions increment: `v2`, `v3`
-- Date format: `YYYY-MM-DD`
+- Status must be `ProForma`, `FinalInvoice`, or `PaidReleased`
+- Date format: `YYYYMMDD`
 - No spaces in filename
-- Document type is uppercase snake-case
+- Use underscores between file-name segments
+- Always include invoice number, document type, status, client/entity label, and date
+- A sent file is immutable and must never be overwritten
 
 ---
 
@@ -66,8 +68,8 @@ Before locking:
 
 | Scenario | Action |
 |---|---|
-| Minor correction pre-delivery | Overwrite v1, log correction reason |
-| Re-execution required | Create v2, retain v1 in vault (archived) |
+| Minor correction pre-delivery | Generate a new file and log the correction reason |
+| Re-execution required | Generate a new dated file and retain the prior file in the vault |
 | Client requests a copy post-delivery | Generate new signed URL — do not re-upload |
 | Document recalled / voided | Mark `vault_status = "voided"`, log `DOCUMENT_VOIDED`, notify client |
 
@@ -75,7 +77,7 @@ Before locking:
 
 ## Digital Delivery Checklist
 
-- [ ] File named per convention
+- [ ] File named with invoice, document type, status, client/entity, and compact date
 - [ ] All pages present
 - [ ] Form fields flattened
 - [ ] Editing locked (print-only)

@@ -404,12 +404,13 @@ function resolveDestinationApostillePath(
   destination: string,
   warnings: string[],
 ): ApostillePath {
-  // UAE is non-Hague → consular legalization
+  // UAE pathways remain receiving-authority specific. Do not automatically
+  // classify every matter as either apostille-only or consular-only.
   if (isUAEDestination(destination)) {
     warnings.push(
-      "UAE is not a Hague Convention member. Consular legalization required instead of apostille.",
+      "UAE pathway verification is required. Confirm the current receiving-authority requirements before selecting apostille or consular legalization.",
     );
-    return "consular_legalization";
+    return "operator_review";
   }
   return defaultPath;
 }

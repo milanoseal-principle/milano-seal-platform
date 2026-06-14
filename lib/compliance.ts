@@ -403,7 +403,7 @@ const COMPLIANCE_MAP: Record<
       "Hague member since 2016",
     ],
     notes:
-      "Brazil joined Hague Convention 2016. Portuguese translation required. Corporate + citizenship demand.",
+      "Brazil joined the Hague Convention in 2016. Portuguese or sworn translation review may be required by the receiving authority. Corporate + citizenship demand.",
     execution_path: [
       "Notarization",
       "Apostille via FL Dept of State",
