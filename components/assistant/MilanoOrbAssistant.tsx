@@ -13,9 +13,6 @@ interface MilanoOrbAssistantProps {
   roleMode?: AssistantRoleMode;
 }
 
-// 8 orbital node positions around a circle
-const NODE_ANGLES = Array.from({ length: 8 }, (_, i) => (i * 360) / 8);
-
 export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -33,6 +30,10 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
   // Spring for panel mount with overshoot
   const panelY = useSpring(isOpen ? 0 : 20, { stiffness: 260, damping: 22, mass: 1.1 });
   useEffect(() => { panelY.set(isOpen ? 0 : 20); }, [isOpen, panelY]);
+
+  const hideBrokenImage = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    event.currentTarget.style.display = 'none';
+  };
 
   const handleOpen = useCallback(() => {
     orbShearSpring.set(1);
@@ -123,12 +124,13 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Feather-M orb */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milano-seal-feather-m-orb.png"
+              src="/milano-seal-feather-m-orb.svg"
               alt=""
               aria-hidden="true"
               width={64}
               height={64}
-              style={{ display: "block", objectFit: "contain", background: "none" }}
+              onError={hideBrokenImage}
+              style={{ display: "block", objectFit: "contain", background: "transparent" }}
             />
           </motion.button>
         ) : (
@@ -154,12 +156,13 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
                 {/* Mini orb */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/milano-seal-feather-m-orb.png"
+                  src="/milano-seal-feather-m-orb.svg"
                   alt=""
                   aria-hidden="true"
                   width={28}
                   height={28}
-                  style={{ display: "block", objectFit: "contain", background: "none", flexShrink: 0 }}
+                  onError={hideBrokenImage}
+                  style={{ display: "block", objectFit: "contain", background: "transparent", flexShrink: 0 }}
                 />
                 <div className="flex flex-col">
                   <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
