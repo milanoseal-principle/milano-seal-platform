@@ -124,7 +124,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Feather-M orb */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milano-seal-feather-m-orb.svg"
+              src="/milano-seal-feather-m-orb.png"
               alt=""
               aria-hidden="true"
               width={64}
@@ -156,7 +156,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
                 {/* Mini orb */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/milano-seal-feather-m-orb.svg"
+                  src="/milano-seal-feather-m-orb.png"
                   alt=""
                   aria-hidden="true"
                   width={28}
