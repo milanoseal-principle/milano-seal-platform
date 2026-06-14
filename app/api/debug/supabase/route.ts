@@ -1,19 +1,31 @@
 import { NextResponse } from "next/server";
+import dns from "node:dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 export const runtime = "nodejs";
 
 function safeHost(value: string | undefined) {
   if (!value) return null;
   try {
-    return new URL(value).host;
+    return new URL(value.trim()).host;
   } catch {
     return "INVALID_URL";
   }
 }
 
+function safeCause(error: unknown) {
+  if (error instanceof Error && "cause" in error) {
+    const cause = (error as Error & { cause?: unknown }).cause;
+    if (cause instanceof Error) return cause.message;
+    if (cause) return String(cause);
+  }
+  return null;
+}
+
 export async function GET() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   const result: Record<string, unknown> = {
     supabaseUrlSet: Boolean(supabaseUrl),
@@ -48,6 +60,7 @@ export async function GET() {
         ok: false,
         ...result,
         fetchError: error instanceof Error ? error.message : "Unknown fetch error",
+        fetchCause: safeCause(error),
       },
       { status: 500 },
     );
