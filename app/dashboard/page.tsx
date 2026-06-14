@@ -847,8 +847,8 @@ export default function Dashboard() {
       {/* Quick Action Intelligence Menu */}
       <Card className="bg-card border-gold overflow-hidden">
         <QuickActionIntelligenceMenu
-          isOpen={true}
-          onClose={() => {}}
+          isOpen={actionPanelOpen}
+          onClose={() => setActionPanelOpen(false)}
           matterId={selectedMatterId ?? undefined}
         />
       </Card>
