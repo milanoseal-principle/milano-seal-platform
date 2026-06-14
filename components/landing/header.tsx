@@ -41,7 +41,7 @@ export function Header() {
                 <Image
                   src="/milano-seal-gold-transparent-512.png"
                   alt="The Milano Seal"
-                  width={38}
+                  width={50}
                   height={38}
                   className="object-contain"
                   priority

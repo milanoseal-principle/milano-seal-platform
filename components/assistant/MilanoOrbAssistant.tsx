@@ -124,13 +124,12 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Feather-M orb */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milano-seal-feather-m-orb.png"
+              src="/milano-seal-core-brain-feather.png"
               alt=""
               aria-hidden="true"
               width={64}
               height={64}
-              onError={hideBrokenImage}
-              style={{ display: "block", objectFit: "contain", background: "transparent" }}
+              style={{ display: "block", objectFit: "contain" }}
             />
           </motion.button>
         ) : (
@@ -156,7 +155,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
                 {/* Mini orb */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/milano-seal-feather-m-orb.png"
+                  src="/milano-seal-core-brain-feather.png"
                   alt=""
                   aria-hidden="true"
                   width={28}
