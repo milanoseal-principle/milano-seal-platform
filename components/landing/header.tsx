@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
@@ -37,17 +36,23 @@ export function Header() {
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
-                <Image
-                  src="/milano-seal-gold-transparent-512.png"
-                  alt="The Milano Seal"
-                  width={50}
-                  height={38}
-                  className="object-contain"
-                  priority
-                />
-                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
-                  The Milano Seal
+              <Link
+                href="/"
+                className="group flex-shrink-0 select-none flex items-center gap-4 min-w-[290px]"
+                aria-label="The Milano Seal home"
+              >
+                <span className="relative grid h-11 w-11 place-items-center rounded-full border border-[#C6A55A]/55 bg-[radial-gradient(circle_at_50%_38%,rgba(212,175,55,0.16),rgba(10,10,10,0.96)_62%,#050505_100%)] shadow-[0_0_26px_rgba(198,165,90,0.16),inset_0_0_18px_rgba(0,0,0,0.72)] transition-all duration-300 group-hover:border-[#D4AF37]/80 group-hover:shadow-[0_0_34px_rgba(212,175,55,0.24),inset_0_0_18px_rgba(0,0,0,0.72)]">
+                  <span className="font-serif text-[23px] leading-none text-[#D8BA63] tracking-[-0.08em] drop-shadow-[0_0_8px_rgba(212,175,55,0.30)]">
+                    MS
+                  </span>
+                </span>
+                <span className="flex flex-col leading-none">
+                  <span className="font-serif text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">
+                    The Milano Seal
+                  </span>
+                  <span className="mt-1.5 text-[8px] uppercase tracking-[0.36em] text-[#8B743C]">
+                    Global Document Execution
+                  </span>
                 </span>
               </Link>
 
