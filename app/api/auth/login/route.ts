@@ -62,9 +62,14 @@ export async function POST(request: Request) {
       redirect: safeNext || destForRole(role),
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Supabase unreachable — env vars missing or wrong project URL
+    const isNetworkErr = msg === "fetch failed" || msg.includes("ENOTFOUND") || msg.includes("ECONNREFUSED") || msg.includes("not configured");
     return NextResponse.json({
       ok: false,
-      error: err instanceof Error ? err.message : "Unexpected error. Please try again.",
+      error: isNetworkErr
+        ? "Authentication service unavailable. Environment configuration required."
+        : msg || "Unexpected error. Please try again.",
     }, { status: 500 });
   }
 }
