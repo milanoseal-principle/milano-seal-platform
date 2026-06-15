@@ -14,44 +14,37 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  // Read enum values for discount_type from Postgres system catalog
-  const query = `
-    SELECT e.enumlabel AS value, t.typname AS type_name
-    FROM pg_enum e
-    JOIN pg_type t ON e.enumtypid = t.oid
-    ORDER BY t.typname, e.enumsortorder
-  `;
+  // Step 1: get the UDT name for discount_type column
+  const { data: colData, error: colErr } = await (admin as ReturnType<typeof createAdminClient>)
+    .schema("information_schema")
+    .from("columns")
+    .select("udt_name, data_type, udt_schema")
+    .eq("table_schema", "public")
+    .eq("table_name", "discount_codes")
+    .eq("column_name", "discount_type")
+    .single();
 
-  // Use service role to call a raw SQL query via the REST API
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Step 2: get enum values via pg_catalog schema
+  const { data: enumData, error: enumErr } = await (admin as ReturnType<typeof createAdminClient>)
+    .schema("pg_catalog" as never)
+    .from("pg_enum")
+    .select("enumlabel, enumsortorder")
+    .limit(200);
 
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ error: "Env not configured" }, { status: 500 });
-  }
-
-  // Try via admin client rpc if a helper exists, otherwise return columns we can inspect
-  const { data: cols, error: colErr } = await admin
-    .from("discount_codes")
-    .select("discount_type")
-    .limit(1);
-
-  // Also try inserting a known-bad value to get the enum hint from Postgres
-  const { error: insertErr } = await admin.from("discount_codes").insert({
-    code: "__SCHEMA_PROBE__",
-    discount_type: "__PROBE__",
-    discount_value: 0,
-    status: "ACTIVE",
-    created_by: user.id,
-  });
+  // Step 3: get type OIDs to cross-reference
+  const { data: typeData, error: typeErr } = await (admin as ReturnType<typeof createAdminClient>)
+    .schema("pg_catalog" as never)
+    .from("pg_type")
+    .select("oid, typname")
+    .ilike("typname", "%discount%")
+    .limit(20);
 
   return NextResponse.json({
-    note: "Read the insert_error.message — it lists valid enum values",
-    existing_rows_sample: cols ?? null,
-    col_error: colErr?.message ?? null,
-    insert_error: insertErr?.message ?? null,
-    insert_hint: insertErr?.hint ?? null,
-    insert_detail: insertErr?.details ?? null,
-    sql: query,
+    column_info: colData ?? null,
+    column_error: colErr?.message ?? null,
+    enum_values: enumData ?? null,
+    enum_error: enumErr?.message ?? null,
+    type_matches: typeData ?? null,
+    type_error: typeErr?.message ?? null,
   });
 }
