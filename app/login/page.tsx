@@ -114,7 +114,8 @@ function LoginInner() {
   // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
   // and reveals the login form below, rather than navigating away.
   const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
-  if (isPortalEntry && !portalShellDismissed) {
+  const hasErrorParam = !!searchParams.get("error");
+  if (isPortalEntry && !portalShellDismissed && !hasErrorParam) {
     return (
       <div
         onClick={(e) => {
