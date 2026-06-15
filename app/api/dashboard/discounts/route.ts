@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("discount_codes").insert({
     code: body.code.toUpperCase().trim(),
-    discount_type: body.discount_type,
+    discount_type: body.discount_type === "percent" ? "PERCENTAGE" : body.discount_type === "flat" ? "FLAT_AMOUNT" : body.discount_type,
     discount_value: body.discount_value,
     applies_to: body.applies_to ?? null,
     usage_limit: body.usage_limit ?? null,
