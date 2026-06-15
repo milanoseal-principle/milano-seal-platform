@@ -539,7 +539,7 @@ export default function ClientTrackingPage() {
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
       <div className="ct-eyebrow">Shipment Tracking</div>
-      <h1 className="ct-h1">Carrier &amp; Delivery</h1>
+      <h1 className="ct-h1">Courier Release Tracking</h1>
 
       <ExecutionReadiness matterStatus={deal.matter_status ?? ""} />
 

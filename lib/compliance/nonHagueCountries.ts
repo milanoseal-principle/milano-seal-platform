@@ -10,7 +10,6 @@ export const nonHagueCountries: NonHagueCountry[] = [
   { iso2: "CN", iso3: "CHN", name: "China", legalizationPath: "consular_legalization" },
   { iso2: "VN", iso3: "VNM", name: "Vietnam", legalizationPath: "consular_legalization" },
   { iso2: "SA", iso3: "SAU", name: "Saudi Arabia", legalizationPath: "operator_review_required" },
-  { iso2: "AE", iso3: "ARE", name: "United Arab Emirates", legalizationPath: "operator_review_required" },
   { iso2: "KW", iso3: "KWT", name: "Kuwait", legalizationPath: "operator_review_required" },
   { iso2: "QA", iso3: "QAT", name: "Qatar", legalizationPath: "operator_review_required" },
   { iso2: "EG", iso3: "EGY", name: "Egypt", legalizationPath: "consular_legalization" },

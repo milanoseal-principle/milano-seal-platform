@@ -40,10 +40,14 @@ export function RitualEntryLock({
       : false;
 
   useEffect(() => {
-    if (sessionKey && typeof sessionStorage !== "undefined") {
-      if (sessionStorage.getItem(sessionKey)) {
+    if (sessionKey && typeof window !== "undefined") {
+      try {
+        if (window.sessionStorage.getItem(sessionKey)) {
+          setGone(true);
+          return;
+        }
+      } catch {
         setGone(true);
-        return;
       }
     }
   }, [sessionKey]);
@@ -51,8 +55,12 @@ export function RitualEntryLock({
   const dismiss = useCallback(() => {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
-    if (sessionKey && typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(sessionKey, "1");
+    if (sessionKey && typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem(sessionKey, "1");
+      } catch {
+        // Storage can be unavailable in privacy-restricted browsers.
+      }
     }
     setExiting(true);
     setTimeout(
@@ -66,8 +74,12 @@ export function RitualEntryLock({
 
   useEffect(() => {
     if (gone) return;
-    if (sessionKey && typeof sessionStorage !== "undefined") {
-      if (sessionStorage.getItem(sessionKey)) return;
+    if (sessionKey && typeof window !== "undefined") {
+      try {
+        if (window.sessionStorage.getItem(sessionKey)) return;
+      } catch {
+        // Continue without session persistence when storage is unavailable.
+      }
     }
 
     const ts: ReturnType<typeof setTimeout>[] = [];

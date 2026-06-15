@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import {
+  Component,
+  Suspense,
+  useState,
+  useEffect,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
@@ -17,7 +24,7 @@ const GATEWAY_STEPS = [
 ];
 
 function destForRole(role: string, fallback: string): string {
-  if (role === "founder_admin" || role === "admin" || role === "admin_operator" ||
+  if (role === "founder" || role === "founder_admin" || role === "admin" || role === "admin_operator" ||
       role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
       role === "apostille_coordinator" || role === "finance_operator" || role === "client_support") {
     return "/dashboard";
@@ -43,6 +50,52 @@ function LogoMark() {
   );
 }
 
+interface LoginErrorBoundaryState {
+  hasError: boolean;
+}
+
+class LoginErrorBoundary extends Component<
+  { children: ReactNode },
+  LoginErrorBoundaryState
+> {
+  state: LoginErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): LoginErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Deliberately avoid logging auth state, URL parameters, or credentials.
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#070504] px-6 text-center">
+        <div className="w-full max-w-md border border-[#C6A55A]/20 bg-[#0C0904] p-8 shadow-[0_32px_96px_rgba(0,0,0,.7)]">
+          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/75">
+            Secure Access Recovery
+          </div>
+          <h1 className="mt-4 font-serif text-2xl text-white">
+            The access gateway could not initialize.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-white/50">
+            Reload the secure sign-in page. No credentials were submitted.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign("/login")}
+            className="mt-6 min-h-11 w-full bg-[#C6A55A] px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070504]"
+          >
+            Reload Secure Access
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 function LoginInner() {
   const [accessType, setAccessType] = useState<"portal"|"dashboard"|"alliance"|"va">("portal");
   const [email, setEmail] = useState("");
@@ -53,7 +106,11 @@ function LoginInner() {
   const [portalShellDismissed, setPortalShellDismissed] = useState(false);
   const [gatewayDone, setGatewayDone] = useState(() => {
     if (typeof window === "undefined") return true;
-    return !!sessionStorage.getItem(GATEWAY_KEY);
+    try {
+      return !!window.sessionStorage.getItem(GATEWAY_KEY);
+    } catch {
+      return true;
+    }
   });
 
   const router = useRouter();
@@ -74,7 +131,7 @@ function LoginInner() {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) return;
-        const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
+        const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
         router.replace(safeNext || destForRole(role, "/dashboard"));
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
@@ -397,7 +454,9 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginInner />
+      <LoginErrorBoundary>
+        <LoginInner />
+      </LoginErrorBoundary>
     </Suspense>
   );
 }

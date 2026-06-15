@@ -108,7 +108,7 @@ export default function ClientInvoicePage() {
           marginBottom: 0,
         }}
       >
-        <h1 className="ci-h1">Invoice</h1>
+        <h1 className="ci-h1">Invoice &amp; Payment Authorization</h1>
         <button
           onClick={print}
           style={{

@@ -13,9 +13,9 @@ export default async function VADashboardPage() {
   const { role } = await requireVAAccess();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="ms-safe-bottom mx-auto max-w-7xl space-y-6">
       {/* Role header */}
-      <div>
+      <div className="ms-os-panel rounded-lg p-5 sm:p-6">
         <p
           className="text-[11px] font-mono tracking-[0.22em]"
           style={{ color: "rgba(212,175,55,0.5)" }}
