@@ -8,11 +8,13 @@ export default function NotaryJoinPage() {
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "",
     state_commissioned: "", commission_number: "", commission_expiration: "",
-    ron_authorized: false, ron_platforms: "", bluenotary_experience: "",
-    eo_provider: "", eo_policy_limit: "", background_check_status: "",
-    languages: "", availability: "", mobile_notary: false,
-    apostille_experience: false, international_doc_experience: false,
-    shipping_dropoff_access: false, preferred_service_area: "", notes: "",
+    ron_authorized: false, ron_platforms_used: "", blue_notary_experience: "",
+    remote_online_notary_certification: "",
+    e_and_o_insurance_provider: "", e_and_o_policy_limit: "",
+    background_check_status: "", languages: "", availability: "",
+    mobile_notary_available: false, apostille_experience: false,
+    international_document_experience: false, shipping_dropoff_access: false,
+    preferred_service_area: "", notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message?: string; error?: string } | null>(null);
@@ -112,8 +114,9 @@ export default function NotaryJoinPage() {
                   <input type="checkbox" className={chk} checked={form.ron_authorized} onChange={e => set("ron_authorized", e.target.checked)} />
                   <span className="text-sm text-white/70">RON Authorized</span>
                 </label>
-                <div><label className={lbl}>RON Platforms Used</label><input className={inp} value={form.ron_platforms} onChange={e => set("ron_platforms", e.target.value)} placeholder="Notarize, Proof, BlueNotary…" /></div>
-                <div><label className={lbl}>BlueNotary Experience</label><input className={inp} value={form.bluenotary_experience} onChange={e => set("bluenotary_experience", e.target.value)} placeholder="Sessions completed, role, etc." /></div>
+                <div><label className={lbl}>RON Platforms Used</label><input className={inp} value={form.ron_platforms_used} onChange={e => set("ron_platforms_used", e.target.value)} placeholder="Notarize, Proof, BlueNotary…" /></div>
+                <div><label className={lbl}>BlueNotary Experience</label><input className={inp} value={form.blue_notary_experience} onChange={e => set("blue_notary_experience", e.target.value)} placeholder="Sessions completed, role, etc." /></div>
+                <div><label className={lbl}>RON Certification Details</label><input className={inp} value={form.remote_online_notary_certification} onChange={e => set("remote_online_notary_certification", e.target.value)} placeholder="Certification body, date…" /></div>
               </div>
             </section>
 
@@ -121,8 +124,8 @@ export default function NotaryJoinPage() {
             <section>
               <p className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/50 mb-5 pb-2 border-b border-[#C6A55A]/10">Insurance & Background</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className={lbl}>E&amp;O Provider</label><input className={inp} value={form.eo_provider} onChange={e => set("eo_provider", e.target.value)} /></div>
-                <div><label className={lbl}>E&amp;O Policy Limit</label><input className={inp} value={form.eo_policy_limit} onChange={e => set("eo_policy_limit", e.target.value)} placeholder="$25,000" /></div>
+                <div><label className={lbl}>E&amp;O Insurance Provider</label><input className={inp} value={form.e_and_o_insurance_provider} onChange={e => set("e_and_o_insurance_provider", e.target.value)} /></div>
+                <div><label className={lbl}>E&amp;O Policy Limit</label><input className={inp} value={form.e_and_o_policy_limit} onChange={e => set("e_and_o_policy_limit", e.target.value)} placeholder="$25,000" /></div>
                 <div><label className={lbl}>Background Check Status</label><input className={inp} value={form.background_check_status} onChange={e => set("background_check_status", e.target.value)} placeholder="Cleared, Pending, Not completed" /></div>
               </div>
             </section>
@@ -133,9 +136,9 @@ export default function NotaryJoinPage() {
               <div className="space-y-4">
                 <div><label className={lbl}>Languages</label><input className={inp} value={form.languages} onChange={e => set("languages", e.target.value)} placeholder="English, Spanish…" /></div>
                 <div><label className={lbl}>Availability</label><input className={inp} value={form.availability} onChange={e => set("availability", e.target.value)} placeholder="Weekdays 9am–5pm, evenings by request…" /></div>
-                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.mobile_notary} onChange={e => set("mobile_notary", e.target.checked)} /><span className="text-sm text-white/70">Mobile notary available</span></label>
+                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.mobile_notary_available} onChange={e => set("mobile_notary_available", e.target.checked)} /><span className="text-sm text-white/70">Mobile notary available</span></label>
                 <label className={chkLabel}><input type="checkbox" className={chk} checked={form.apostille_experience} onChange={e => set("apostille_experience", e.target.checked)} /><span className="text-sm text-white/70">Apostille coordination experience</span></label>
-                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.international_doc_experience} onChange={e => set("international_doc_experience", e.target.checked)} /><span className="text-sm text-white/70">International document experience</span></label>
+                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.international_document_experience} onChange={e => set("international_document_experience", e.target.checked)} /><span className="text-sm text-white/70">International document experience</span></label>
                 <label className={chkLabel}><input type="checkbox" className={chk} checked={form.shipping_dropoff_access} onChange={e => set("shipping_dropoff_access", e.target.checked)} /><span className="text-sm text-white/70">Shipping / dropoff access</span></label>
                 <div><label className={lbl}>Preferred Service Area</label><input className={inp} value={form.preferred_service_area} onChange={e => set("preferred_service_area", e.target.value)} placeholder="Tampa Bay, Hillsborough County…" /></div>
               </div>

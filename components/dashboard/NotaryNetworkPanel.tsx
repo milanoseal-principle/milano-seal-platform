@@ -11,17 +11,29 @@ interface NotaryApplication {
   commission_number: string;
   commission_expiration: string | null;
   ron_authorized: boolean;
-  eo_provider: string | null;
+  e_and_o_insurance_provider: string | null;
+  e_and_o_policy_limit: string | null;
   status: string;
   created_at: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "border-yellow-500/30 text-yellow-400/70",
-  approved: "border-green-500/30 text-green-400/70",
-  rejected: "border-red-500/20 text-red-400/50",
-  review: "border-[#C6A55A]/30 text-[#C6A55A]/70",
+  APPLICATION_RECEIVED: "border-yellow-500/30 text-yellow-400/70",
+  DOCUMENTS_PENDING: "border-yellow-500/20 text-yellow-400/50",
+  CREDENTIAL_REVIEW: "border-[#C6A55A]/30 text-[#C6A55A]/70",
+  INTERVIEW_REQUIRED: "border-blue-500/30 text-blue-400/60",
+  APPROVED: "border-green-500/30 text-green-400/70",
+  ACTIVE: "border-green-500/40 text-green-400/80",
+  SUSPENDED: "border-orange-500/30 text-orange-400/60",
+  REJECTED: "border-red-500/20 text-red-400/50",
+  EXPIRED_CREDENTIALS: "border-red-500/15 text-red-400/40",
 };
+
+const VALID_STATUSES = [
+  "APPLICATION_RECEIVED", "DOCUMENTS_PENDING", "CREDENTIAL_REVIEW",
+  "INTERVIEW_REQUIRED", "APPROVED", "ACTIVE", "SUSPENDED",
+  "REJECTED", "EXPIRED_CREDENTIALS",
+];
 
 export function NotaryNetworkPanel() {
   const [applications, setApplications] = useState<NotaryApplication[]>([]);
@@ -54,6 +66,7 @@ export function NotaryNetworkPanel() {
     await load();
   }
 
+  const statusGroups = ["all", "APPLICATION_RECEIVED", "CREDENTIAL_REVIEW", "APPROVED", "ACTIVE", "REJECTED"];
   const filtered = filter === "all" ? applications : applications.filter(a => a.status === filter);
 
   return (
@@ -67,15 +80,15 @@ export function NotaryNetworkPanel() {
           <p className="mt-2 text-sm text-white/40">Review notary applications and manage credentialed network.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["all", "pending", "review", "approved", "rejected"].map(s => (
+          {statusGroups.map(s => (
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.12em] rounded border transition-colors ${
+              className={`px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.1em] rounded border transition-colors ${
                 filter === s ? "border-[#C6A55A]/50 text-[#C6A55A] bg-[#C6A55A]/[0.06]" : "border-white/[0.06] text-white/30 hover:border-white/20"
               }`}
             >
-              {s}
+              {s === "all" ? "All" : s.replace(/_/g, " ")}
             </button>
           ))}
         </div>
@@ -92,7 +105,7 @@ export function NotaryNetworkPanel() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded border border-[#C6A55A]/10 bg-[#0D0B08]">
-          <table className="w-full min-w-[900px] text-left text-xs">
+          <table className="w-full min-w-[1000px] text-left text-xs">
             <thead className="border-b border-[#C6A55A]/10 font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/55">
               <tr>
                 <th className="px-4 py-3">Name</th>
@@ -101,9 +114,9 @@ export function NotaryNetworkPanel() {
                 <th className="px-4 py-3">Commission #</th>
                 <th className="px-4 py-3">Expiry</th>
                 <th className="px-4 py-3">RON</th>
-                <th className="px-4 py-3">E&amp;O</th>
+                <th className="px-4 py-3">E&amp;O Provider</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">Update Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -119,24 +132,23 @@ export function NotaryNetworkPanel() {
                       {a.ron_authorized ? "Yes" : "No"}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-white/40">{a.eo_provider ?? "—"}</td>
+                  <td className="px-4 py-4 text-white/40">{a.e_and_o_insurance_provider ?? "—"}</td>
                   <td className="px-4 py-4">
-                    <span className={`font-mono text-[9px] px-2 py-0.5 rounded border uppercase ${STATUS_COLORS[a.status] ?? "border-white/10 text-white/30"}`}>
-                      {a.status}
+                    <span className={`font-mono text-[8px] px-2 py-0.5 rounded border uppercase ${STATUS_COLORS[a.status] ?? "border-white/10 text-white/30"}`}>
+                      {a.status.replace(/_/g, " ")}
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex gap-2">
-                      {a.status !== "approved" && (
-                        <button onClick={() => { void updateStatus(a.id, "approved"); }} className="font-mono text-[8px] uppercase tracking-[0.1em] text-green-400/60 hover:text-green-400 transition-colors">Approve</button>
-                      )}
-                      {a.status !== "review" && (
-                        <button onClick={() => { void updateStatus(a.id, "review"); }} className="font-mono text-[8px] uppercase tracking-[0.1em] text-[#C6A55A]/60 hover:text-[#C6A55A] transition-colors">Review</button>
-                      )}
-                      {a.status !== "rejected" && (
-                        <button onClick={() => { void updateStatus(a.id, "rejected"); }} className="font-mono text-[8px] uppercase tracking-[0.1em] text-red-400/50 hover:text-red-400 transition-colors">Reject</button>
-                      )}
-                    </div>
+                    <select
+                      className="bg-[#0D0B08] border border-[#C6A55A]/15 px-2 py-1 font-mono text-[8px] text-white/60 outline-none focus:border-[#C6A55A]/40 rounded-sm"
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) { void updateStatus(a.id, e.target.value); e.target.value = ""; } }}
+                    >
+                      <option value="">— set status —</option>
+                      {VALID_STATUSES.filter(s => s !== a.status).map(s => (
+                        <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               ))}

@@ -9,12 +9,32 @@ interface Incident {
   status: string;
   matter_id: string | null;
   release_frozen: boolean;
+  summary: string | null;
   client_safe_message: string | null;
   internal_notes: string | null;
+  correction_plan: string | null;
+  founder_review_status: string | null;
+  counsel_review_status: string | null;
+  insurance_review_status: string | null;
+  closed_at: string | null;
   created_at: string;
   updated_at: string | null;
-  resolved_at: string | null;
 }
+
+const INCIDENT_STATUSES = [
+  "INCIDENT_OPENED",
+  "RECORDS_PRESERVED",
+  "ROOT_CAUSE_REVIEW",
+  "CLIENT_IMPACT_REVIEW",
+  "CORRECTION_PLAN_DRAFTED",
+  "FOUNDER_APPROVED_RESPONSE",
+  "CLIENT_NOTIFIED",
+  "CORRECTION_EXECUTED",
+  "DISCOUNT_OR_COURTESY_REVIEW",
+  "FINAL_QA_COMPLETED",
+  "MATTER_RESTORED_OR_CLOSED",
+  "CLOSED",
+];
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: "border-red-500/50 text-red-400",
@@ -30,10 +50,13 @@ export function ComplianceIncidentCenter() {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Incident | null>(null);
   const [form, setForm] = useState({
-    incident_type: "", severity: "medium", matter_id: "",
-    release_frozen: false, client_safe_message: "", internal_notes: "",
+    incident_type: "", severity: "medium", summary: "", matter_id: "",
+    release_frozen: true, client_safe_message: "", internal_notes: "", correction_plan: "",
   });
-  const [patchData, setPatchData] = useState({ status: "", client_safe_message: "", internal_notes: "" });
+  const [patchData, setPatchData] = useState({
+    status: "", client_safe_message: "", internal_notes: "", correction_plan: "",
+    founder_review_status: "", release_frozen: true,
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
@@ -62,15 +85,17 @@ export function ComplianceIncidentCenter() {
         body: JSON.stringify({
           incident_type: form.incident_type,
           severity: form.severity,
+          summary: form.summary,
           matter_id: form.matter_id || null,
           release_frozen: form.release_frozen,
           client_safe_message: form.client_safe_message || null,
           internal_notes: form.internal_notes || null,
+          correction_plan: form.correction_plan || null,
         }),
       });
       if (res.ok) {
         setCreating(false);
-        setForm({ incident_type: "", severity: "medium", matter_id: "", release_frozen: false, client_safe_message: "", internal_notes: "" });
+        setForm({ incident_type: "", severity: "medium", summary: "", matter_id: "", release_frozen: true, client_safe_message: "", internal_notes: "", correction_plan: "" });
         await load();
       }
     } finally {
@@ -118,9 +143,9 @@ export function ComplianceIncidentCenter() {
         <form onSubmit={(e) => { void handleCreate(e); }} className="mb-8 rounded border border-red-500/15 bg-[#0D0B08] p-6">
           <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-red-400/60 mb-5">New Compliance Incident</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div><label className={lbl}>Incident Type</label><input className={inp} value={form.incident_type} onChange={e => setForm(f => ({ ...f, incident_type: e.target.value }))} placeholder="Document error, Delivery failure, Auth issue…" required /></div>
+            <div><label className={lbl}>Incident Type *</label><input className={inp} value={form.incident_type} onChange={e => setForm(f => ({ ...f, incident_type: e.target.value }))} placeholder="Document error, Delivery failure, Auth issue…" required /></div>
             <div>
-              <label className={lbl}>Severity</label>
+              <label className={lbl}>Severity *</label>
               <select className={inp} value={form.severity} onChange={e => setForm(f => ({ ...f, severity: e.target.value }))}>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -128,6 +153,7 @@ export function ComplianceIncidentCenter() {
                 <option value="critical">Critical</option>
               </select>
             </div>
+            <div className="sm:col-span-2"><label className={lbl}>Summary *</label><textarea className={`${inp} min-h-[60px]`} value={form.summary} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} placeholder="Brief description of the incident" required /></div>
             <div><label className={lbl}>Matter ID (optional)</label><input className={inp} value={form.matter_id} onChange={e => setForm(f => ({ ...f, matter_id: e.target.value }))} placeholder="MSL-XXXX" /></div>
             <div className="flex items-center gap-3 pt-5">
               <input type="checkbox" id="freeze" checked={form.release_frozen} onChange={e => setForm(f => ({ ...f, release_frozen: e.target.checked }))} className="accent-red-500" />
@@ -135,6 +161,7 @@ export function ComplianceIncidentCenter() {
             </div>
             <div className="sm:col-span-2"><label className={lbl}>Client-Safe Message</label><textarea className={`${inp} min-h-[60px]`} value={form.client_safe_message} onChange={e => setForm(f => ({ ...f, client_safe_message: e.target.value }))} placeholder="We are reviewing your matter and will update you shortly." /></div>
             <div className="sm:col-span-2"><label className={lbl}>Internal Notes (not shown to client)</label><textarea className={`${inp} min-h-[60px]`} value={form.internal_notes} onChange={e => setForm(f => ({ ...f, internal_notes: e.target.value }))} /></div>
+            <div className="sm:col-span-2"><label className={lbl}>Correction Plan</label><textarea className={`${inp} min-h-[60px]`} value={form.correction_plan} onChange={e => setForm(f => ({ ...f, correction_plan: e.target.value }))} /></div>
           </div>
           <button type="submit" disabled={submitting} className="px-5 py-2.5 bg-red-600 text-white font-mono text-[10px] uppercase tracking-[0.18em] rounded disabled:opacity-50">
             {submitting ? "Opening…" : "Open Incident"}
@@ -153,14 +180,25 @@ export function ComplianceIncidentCenter() {
               <label className={lbl}>Status</label>
               <select className={inp} value={patchData.status} onChange={e => setPatchData(p => ({ ...p, status: e.target.value }))}>
                 <option value="">— no change —</option>
-                <option value="open">Open</option>
-                <option value="investigating">Investigating</option>
-                <option value="remediation">Remediation</option>
-                <option value="resolved">Resolved</option>
+                {INCIDENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div><label className={lbl}>Client-Safe Message</label><textarea className={`${inp} min-h-[60px]`} value={patchData.client_safe_message} onChange={e => setPatchData(p => ({ ...p, client_safe_message: e.target.value }))} /></div>
+            <div className="flex items-center gap-3 pt-5">
+              <input type="checkbox" id="patch-freeze" checked={patchData.release_frozen} onChange={e => setPatchData(p => ({ ...p, release_frozen: e.target.checked }))} className="accent-red-500" />
+              <label htmlFor="patch-freeze" className="font-mono text-[10px] text-red-400/80 uppercase tracking-[0.1em]">Release frozen</label>
+            </div>
+            <div className="sm:col-span-2"><label className={lbl}>Client-Safe Message</label><textarea className={`${inp} min-h-[60px]`} value={patchData.client_safe_message} onChange={e => setPatchData(p => ({ ...p, client_safe_message: e.target.value }))} /></div>
             <div className="sm:col-span-2"><label className={lbl}>Internal Notes</label><textarea className={`${inp} min-h-[60px]`} value={patchData.internal_notes} onChange={e => setPatchData(p => ({ ...p, internal_notes: e.target.value }))} /></div>
+            <div className="sm:col-span-2"><label className={lbl}>Correction Plan</label><textarea className={`${inp} min-h-[60px]`} value={patchData.correction_plan} onChange={e => setPatchData(p => ({ ...p, correction_plan: e.target.value }))} /></div>
+            <div>
+              <label className={lbl}>Founder Review Status</label>
+              <select className={inp} value={patchData.founder_review_status} onChange={e => setPatchData(p => ({ ...p, founder_review_status: e.target.value }))}>
+                <option value="">—</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="ESCALATED">Escalated</option>
+              </select>
+            </div>
           </div>
           <button onClick={() => { void handlePatch(selected.id); }} disabled={submitting} className="px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] font-mono text-[10px] uppercase tracking-[0.18em] rounded disabled:opacity-50">
             {submitting ? "Saving…" : "Save Update"}
@@ -189,12 +227,13 @@ export function ComplianceIncidentCenter() {
                   {inc.matter_id && <span className="font-mono text-[9px] text-[#C6A55A]/50">{inc.matter_id}</span>}
                 </div>
                 <button
-                  onClick={() => { setSelected(inc); setPatchData({ status: inc.status, client_safe_message: inc.client_safe_message ?? "", internal_notes: inc.internal_notes ?? "" }); }}
+                  onClick={() => { setSelected(inc); setPatchData({ status: inc.status, client_safe_message: inc.client_safe_message ?? "", internal_notes: inc.internal_notes ?? "", correction_plan: inc.correction_plan ?? "", founder_review_status: inc.founder_review_status ?? "", release_frozen: inc.release_frozen }); }}
                   className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#C6A55A]/60 hover:text-[#C6A55A] transition-colors"
                 >
                   Update
                 </button>
               </div>
+              {inc.summary && <p className="text-xs text-white/50 mb-1">{inc.summary}</p>}
               <p className="font-mono text-[9px] text-white/25">{new Date(inc.created_at).toLocaleString()}</p>
               {inc.internal_notes && (
                 <p className="mt-2 text-xs text-white/40 font-mono leading-relaxed border-l border-[#C6A55A]/15 pl-3">{inc.internal_notes}</p>

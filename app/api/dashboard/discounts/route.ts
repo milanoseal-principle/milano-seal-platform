@@ -20,7 +20,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("discount_codes")
-    .select("id,code,discount_type,discount_value,client_label,internal_reason,active,created_at,expires_at,uses,max_uses")
+    .select("id,code,discount_type,discount_value,applies_to,client_id,attorney_profile_id,matter_id,usage_limit,usage_count,expiration_date,internal_reason,client_label,status,created_at,updated_at")
     .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data });
@@ -32,7 +32,8 @@ export async function POST(request: Request) {
 
   const body = await request.json() as {
     code?: string; discount_type?: string; discount_value?: number;
-    client_label?: string; internal_reason?: string; max_uses?: number; expires_at?: string;
+    applies_to?: string; usage_limit?: number; expiration_date?: string;
+    internal_reason?: string; client_label?: string;
   };
 
   if (!body.code || !body.discount_type || body.discount_value === undefined) {
@@ -44,11 +45,12 @@ export async function POST(request: Request) {
     code: body.code.toUpperCase().trim(),
     discount_type: body.discount_type,
     discount_value: body.discount_value,
-    client_label: body.client_label ?? null,
+    applies_to: body.applies_to ?? null,
+    usage_limit: body.usage_limit ?? null,
+    expiration_date: body.expiration_date ?? null,
     internal_reason: body.internal_reason ?? null,
-    max_uses: body.max_uses ?? null,
-    expires_at: body.expires_at ?? null,
-    active: true,
+    client_label: body.client_label ?? null,
+    status: "ACTIVE",
     created_by: auth.user.id,
   }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -59,11 +61,21 @@ export async function PATCH(request: Request) {
   if (!await requireFounderOrAdmin()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
-  const body = await request.json() as { id?: string; active?: boolean };
+  const body = await request.json() as {
+    id?: string; status?: string; expiration_date?: string;
+    usage_limit?: number; client_label?: string; internal_reason?: string;
+  };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  const update: Record<string, unknown> = {};
+  if (body.status !== undefined) update.status = body.status;
+  if (body.expiration_date !== undefined) update.expiration_date = body.expiration_date;
+  if (body.usage_limit !== undefined) update.usage_limit = body.usage_limit;
+  if (body.client_label !== undefined) update.client_label = body.client_label;
+  if (body.internal_reason !== undefined) update.internal_reason = body.internal_reason;
+
   const admin = createAdminClient();
-  const { error } = await admin.from("discount_codes").update({ active: body.active }).eq("id", body.id);
+  const { error } = await admin.from("discount_codes").update(update).eq("id", body.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

@@ -7,13 +7,14 @@ interface DiscountCode {
   code: string;
   discount_type: string;
   discount_value: number;
+  applies_to: string | null;
   client_label: string | null;
   internal_reason: string | null;
-  active: boolean;
+  status: string;
   created_at: string;
-  expires_at: string | null;
-  uses: number | null;
-  max_uses: number | null;
+  expiration_date: string | null;
+  usage_count: number | null;
+  usage_limit: number | null;
 }
 
 export function DiscountCodeManager() {
@@ -23,7 +24,8 @@ export function DiscountCodeManager() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
     code: "", discount_type: "percent", discount_value: "",
-    client_label: "", internal_reason: "", max_uses: "", expires_at: "",
+    applies_to: "", client_label: "", internal_reason: "",
+    usage_limit: "", expiration_date: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -57,15 +59,16 @@ export function DiscountCodeManager() {
           code: form.code,
           discount_type: form.discount_type,
           discount_value: parseFloat(form.discount_value),
+          applies_to: form.applies_to || null,
           client_label: form.client_label || null,
           internal_reason: form.internal_reason || null,
-          max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-          expires_at: form.expires_at || null,
+          usage_limit: form.usage_limit ? parseInt(form.usage_limit) : null,
+          expiration_date: form.expiration_date || null,
         }),
       });
       const json = await res.json() as { error?: string };
       if (!res.ok) { setFormError(json.error ?? "Failed to create"); return; }
-      setForm({ code: "", discount_type: "percent", discount_value: "", client_label: "", internal_reason: "", max_uses: "", expires_at: "" });
+      setForm({ code: "", discount_type: "percent", discount_value: "", applies_to: "", client_label: "", internal_reason: "", usage_limit: "", expiration_date: "" });
       setCreating(false);
       await load();
     } finally {
@@ -73,11 +76,11 @@ export function DiscountCodeManager() {
     }
   }
 
-  async function toggleActive(id: string, active: boolean) {
+  async function setStatus(id: string, status: string) {
     await fetch("/api/dashboard/discounts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, active: !active }),
+      body: JSON.stringify({ id, status }),
     });
     await load();
   }
@@ -93,7 +96,7 @@ export function DiscountCodeManager() {
             Founder / Admin Access Only
           </p>
           <h1 className="font-serif text-3xl text-[#E4D2A4]">Discount Codes</h1>
-          <p className="mt-2 text-sm text-white/40">Create and manage promotional discount codes for matter intake.</p>
+          <p className="mt-2 text-sm text-white/40">Create and manage Milano Seal courtesy adjustments for matter intake.</p>
         </div>
         <button
           onClick={() => setCreating(!creating)}
@@ -116,10 +119,11 @@ export function DiscountCodeManager() {
               </select>
             </div>
             <div><label className={lbl}>Value</label><input className={inp} type="number" step="0.01" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))} placeholder="10" /></div>
-            <div><label className={lbl}>Client Label (public)</label><input className={inp} value={form.client_label} onChange={e => setForm(f => ({ ...f, client_label: e.target.value }))} placeholder="10% off apostille" /></div>
+            <div><label className={lbl}>Applies To (service type)</label><input className={inp} value={form.applies_to} onChange={e => setForm(f => ({ ...f, applies_to: e.target.value }))} placeholder="apostille, notarization, all…" /></div>
+            <div><label className={lbl}>Client Label (Milano Seal courtesy adjustment)</label><input className={inp} value={form.client_label} onChange={e => setForm(f => ({ ...f, client_label: e.target.value }))} placeholder="10% courtesy adjustment" /></div>
             <div><label className={lbl}>Internal Reason (private)</label><input className={inp} value={form.internal_reason} onChange={e => setForm(f => ({ ...f, internal_reason: e.target.value }))} placeholder="Partner referral Q2" /></div>
-            <div><label className={lbl}>Max Uses</label><input className={inp} type="number" value={form.max_uses} onChange={e => setForm(f => ({ ...f, max_uses: e.target.value }))} placeholder="Unlimited" /></div>
-            <div><label className={lbl}>Expires At</label><input className={inp} type="date" value={form.expires_at} onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))} /></div>
+            <div><label className={lbl}>Usage Limit</label><input className={inp} type="number" value={form.usage_limit} onChange={e => setForm(f => ({ ...f, usage_limit: e.target.value }))} placeholder="Unlimited" /></div>
+            <div><label className={lbl}>Expiration Date</label><input className={inp} type="date" value={form.expiration_date} onChange={e => setForm(f => ({ ...f, expiration_date: e.target.value }))} /></div>
           </div>
           {formError && <p className="text-red-400/80 text-xs font-mono mb-3">{formError}</p>}
           <button type="submit" disabled={submitting} className="px-5 py-2.5 bg-[#C6A55A] text-[#0A0A0A] font-mono text-[10px] uppercase tracking-[0.18em] rounded disabled:opacity-50">
@@ -138,14 +142,14 @@ export function DiscountCodeManager() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded border border-[#C6A55A]/10 bg-[#0D0B08]">
-          <table className="w-full min-w-[800px] text-left text-xs">
+          <table className="w-full min-w-[900px] text-left text-xs">
             <thead className="border-b border-[#C6A55A]/10 font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/55">
               <tr>
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Value</th>
                 <th className="px-4 py-3">Client Label</th>
-                <th className="px-4 py-3">Uses</th>
+                <th className="px-4 py-3">Usage</th>
                 <th className="px-4 py-3">Expires</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Action</th>
@@ -158,19 +162,19 @@ export function DiscountCodeManager() {
                   <td className="px-4 py-4 font-mono text-[10px]">{c.discount_type}</td>
                   <td className="px-4 py-4">{c.discount_type === "percent" ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
                   <td className="px-4 py-4 text-white/40">{c.client_label ?? "—"}</td>
-                  <td className="px-4 py-4">{c.uses ?? 0}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
-                  <td className="px-4 py-4">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}</td>
+                  <td className="px-4 py-4">{c.usage_count ?? 0}{c.usage_limit ? ` / ${c.usage_limit}` : ""}</td>
+                  <td className="px-4 py-4">{c.expiration_date ? new Date(c.expiration_date).toLocaleDateString() : "Never"}</td>
                   <td className="px-4 py-4">
-                    <span className={`font-mono text-[9px] px-2 py-0.5 rounded border ${c.active ? "border-green-500/30 text-green-400/70" : "border-red-500/20 text-red-400/50"}`}>
-                      {c.active ? "Active" : "Inactive"}
+                    <span className={`font-mono text-[9px] px-2 py-0.5 rounded border ${c.status === "ACTIVE" ? "border-green-500/30 text-green-400/70" : "border-red-500/20 text-red-400/50"}`}>
+                      {c.status}
                     </span>
                   </td>
                   <td className="px-4 py-4">
                     <button
-                      onClick={() => { void toggleActive(c.id, c.active); }}
+                      onClick={() => { void setStatus(c.id, c.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"); }}
                       className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#C6A55A]/60 hover:text-[#C6A55A] transition-colors"
                     >
-                      {c.active ? "Deactivate" : "Activate"}
+                      {c.status === "ACTIVE" ? "Deactivate" : "Reactivate"}
                     </button>
                   </td>
                 </tr>
