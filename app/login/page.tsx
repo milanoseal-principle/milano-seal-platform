@@ -73,8 +73,11 @@ function LoginInner() {
       ? rawNext
       : null;
 
-  // Redirect already-authenticated users — must be before any conditional return
+  // Redirect already-authenticated users — must be before any conditional return.
+  // Skip when ?error=access_denied: the server already rejected this user for the
+  // requested destination, so auto-redirecting them back would cause an infinite loop.
   useEffect(() => {
+    if (searchParams.get("error") === "access_denied") return;
     try {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
@@ -86,7 +89,7 @@ function LoginInner() {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
       // This is non-fatal for the login page — user can still sign in via the API route.
     }
-  }, [router, safeNext]);
+  }, [router, safeNext, searchParams]);
 
   useEffect(() => {
     const err = searchParams.get("error");
