@@ -32,6 +32,32 @@ import { CredentialsModule } from "@/components/dashboard/modules/credentials";
 import { IdeasModule } from "@/components/dashboard/modules/ideas";
 import { AssetsModule } from "@/components/dashboard/modules/assets";
 import { AutomationModule } from "@/components/dashboard/modules/automation";
+import { ComplianceIncidentCenter } from "@/components/dashboard/ComplianceIncidentCenter";
+import { DiscountCodeManager } from "@/components/dashboard/DiscountCodeManager";
+import { NotaryNetworkPanel } from "@/components/dashboard/NotaryNetworkPanel";
+
+// Wrapper components for the module router
+function IncidentsModuleWrapper() {
+  return (
+    <div className="p-6">
+      <ComplianceIncidentCenter />
+    </div>
+  );
+}
+function DiscountsModuleWrapper() {
+  return (
+    <div className="p-6">
+      <DiscountCodeManager />
+    </div>
+  );
+}
+function NotaryNetworkModuleWrapper() {
+  return (
+    <div className="p-6">
+      <NotaryNetworkPanel />
+    </div>
+  );
+}
 
 const MODULE_MAP: Record<string, React.ComponentType<any>> = {
   deals: DealsModule,
@@ -61,6 +87,9 @@ const MODULE_MAP: Record<string, React.ComponentType<any>> = {
   ideas: IdeasModule,
   assets: AssetsModule,
   automation: AutomationModule,
+  incidents: IncidentsModuleWrapper,
+  discounts: DiscountsModuleWrapper,
+  "notary-network": NotaryNetworkModuleWrapper,
 };
 
 export default async function ModulePage({
