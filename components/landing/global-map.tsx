@@ -218,6 +218,7 @@ export function GlobalMap() {
           className="mb-4 border border-white/[0.06] rounded-xl overflow-hidden"
           style={{ boxShadow: "0 0 56px rgba(0,0,0,0.78), inset 0 1px 0 rgba(198,165,90,0.06)" }}
         >
+          {/* Panel top bar — header + origin badge collapsed into single strip */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 md:px-5 py-3 border-b border-white/[0.05]" style={{ background: "rgba(3,3,5,0.90)" }}>
             <div className="flex items-center gap-3 min-w-0">
               <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 whitespace-nowrap">GLOBAL DOCUMENT INTELLIGENCE ATLAS</span>

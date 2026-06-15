@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveServerRole } from "@/lib/auth/server-role";
 import { redirect } from "next/navigation";
 
 const ADMIN_ROLES = new Set([
+  "founder",
   "founder_admin",
   "admin_operator",
   "virtual_assistant",
@@ -18,8 +20,7 @@ export async function requireDashboardAccess(): Promise<{
 
   if (!user) redirect("/login?next=/dashboard");
 
-  const role =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const role = await resolveServerRole(user);
 
   if (!ADMIN_ROLES.has(role)) {
     redirect("/login?error=access_denied");
