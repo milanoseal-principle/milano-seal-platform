@@ -126,7 +126,15 @@ export default function NotaryJoinPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className={lbl}>E&amp;O Insurance Provider</label><input className={inp} value={form.e_and_o_insurance_provider} onChange={e => set("e_and_o_insurance_provider", e.target.value)} /></div>
                 <div><label className={lbl}>E&amp;O Policy Limit</label><input className={inp} value={form.e_and_o_policy_limit} onChange={e => set("e_and_o_policy_limit", e.target.value)} placeholder="$25,000" /></div>
-                <div><label className={lbl}>Background Check Status</label><input className={inp} value={form.background_check_status} onChange={e => set("background_check_status", e.target.value)} placeholder="Cleared, Pending, Not completed" /></div>
+                <div><label className={lbl}>Background Check Status</label>
+                  <select className={inp} value={form.background_check_status} onChange={e => set("background_check_status", e.target.value)}>
+                    <option value="">— Select —</option>
+                    <option value="Cleared">Cleared</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Not completed">Not completed</option>
+                    <option value="Will provide upon approval">Will provide upon approval</option>
+                  </select>
+                </div>
               </div>
             </section>
 
