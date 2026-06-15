@@ -219,17 +219,6 @@ export function GlobalMap() {
           style={{ boxShadow: "0 0 56px rgba(0,0,0,0.78), inset 0 1px 0 rgba(198,165,90,0.06)" }}
         >
           {/* Panel top bar — header + origin badge collapsed into single strip */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.05]"
-            style={{ background: "rgba(3,3,5,0.90)" }}
-          >
-            <div className="flex items-center gap-4">
-              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70">
-                GLOBAL DOCUMENT INTELLIGENCE ATLAS
-              </span>
-              <span className="text-[#2A2A2A]">·</span>
-              <h2 className="font-serif text-sm text-white/90 font-normal tracking-wide">
-                Execution Vector Workspace
-              </h2>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 md:px-5 py-3 border-b border-white/[0.05]" style={{ background: "rgba(3,3,5,0.90)" }}>
             <div className="flex items-center gap-3 min-w-0">
               <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 whitespace-nowrap">GLOBAL DOCUMENT INTELLIGENCE ATLAS</span>

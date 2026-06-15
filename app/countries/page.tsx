@@ -27,8 +27,6 @@ export default function CountriesPage() {
     <main className="min-h-screen bg-[#0A0A0A] overflow-x-hidden">
       <Header />
 
-      {/* Hero */}
-      <section className="px-6 pb-10 pt-24">
       <section className="pt-28 pb-8 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-4">
@@ -57,9 +55,6 @@ export default function CountriesPage() {
         </div>
       </section>
 
-      {/* Country Grid */}
-      <section className="px-6 py-10">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       <section className="py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {featured.map((country) => (
