@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 
 const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
@@ -55,7 +54,6 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [portalShellDismissed, setPortalShellDismissed] = useState(false);
   const [gatewayDone, setGatewayDone] = useState(() => {
     if (typeof window === "undefined") return true;
     return !!sessionStorage.getItem(GATEWAY_KEY);
@@ -113,26 +111,7 @@ function LoginInner() {
     );
   }
 
-  // Show PortalAccessShell as the entry gate for portal clients before the login form.
-  // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
-  // and reveals the login form below, rather than navigating away.
-  const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
   const hasErrorParam = !!searchParams.get("error");
-  if (isPortalEntry && !portalShellDismissed && !hasErrorParam) {
-    return (
-      <div
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("a")) {
-            e.preventDefault();
-            setPortalShellDismissed(true);
-          }
-        }}
-      >
-        <PortalAccessShell nextPath={safeNext ?? "/portal"} />
-      </div>
-    );
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
