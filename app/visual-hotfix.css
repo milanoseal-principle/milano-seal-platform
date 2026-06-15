@@ -31,7 +31,6 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #050507 url("/milano-seal-feather-m-orb.svg") center / contain no-repeat;
   background: #050507 url("/milano-seal-feather-m-orb.svg") center / 128% 128% no-repeat;
   box-shadow: 0 0 24px rgba(198, 165, 90, 0.18);
 }
@@ -40,7 +39,6 @@
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  background-size: contain;
   background-size: 132% 132%;
 }
 

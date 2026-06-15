@@ -22,6 +22,18 @@ function destForRole(role: string): string {
   return "/dashboard";
 }
 
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  if (!next) return false;
+  const destination = destForRole(role);
+
+  if (destination === "/dashboard") return next.startsWith("/dashboard");
+  if (destination === "/portal") return next.startsWith("/portal");
+  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
+  if (destination === "/va/dashboard") return next.startsWith("/va");
+
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { email?: string; password?: string; next?: string };
@@ -53,14 +65,16 @@ export async function POST(request: Request) {
 
     // Validate safe redirect
     const raw = body.next ?? "";
-    const safeNext =
+    const requestedNext =
       raw.startsWith("/portal") || raw.startsWith("/alliance") ||
       raw.startsWith("/va") || raw.startsWith("/dashboard")
         ? raw : null;
 
     return NextResponse.json({
       ok: true,
-      redirect: safeNext || destForRole(role),
+      redirect: isNextAllowedForRole(requestedNext, role)
+        ? requestedNext
+        : destForRole(role),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
