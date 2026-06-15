@@ -1,134 +1,83 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateCourtesyCode, validateCodeRedeemable, computeDiscountAmount } from "@/lib/discountCodes";
 
-function isFounder(req: NextRequest): boolean {
-  const role = req.headers.get("x-ms-role");
-  return role === "founder" || role === "admin";
+export const runtime = "nodejs";
+
+async function requireFounderOrAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const role = ((user.app_metadata?.role ?? user.user_metadata?.role) as string) ?? "";
+  const allowed = new Set(["founder", "founder_admin", "admin", "admin_operator", "ops_manager"]);
+  return allowed.has(role) ? { user, role } : null;
 }
 
-export async function GET(req: NextRequest) {
-  const supabase = createAdminClient();
-  try {
-    const { searchParams } = new URL(req.url);
-    const code = searchParams.get("code");
-    const deal_id = searchParams.get("deal_id");
-
-    if (code) {
-      const { data, error } = await supabase
-        .from("discount_codes")
-        .select("*")
-        .eq("code", code.toUpperCase())
-        .single();
-
-      if (error || !data) {
-        return NextResponse.json({ valid: false, error: "Code not found" });
-      }
-
-      const check = validateCodeRedeemable(data, deal_id ?? undefined);
-      if (!check.ok) return NextResponse.json({ valid: false, error: check.error });
-
-      return NextResponse.json({ valid: true, code: data });
-    }
-
-    const { data, error } = await supabase
-      .from("discount_codes")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return NextResponse.json({ codes: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+export async function GET() {
+  if (!await requireFounderOrAdmin()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("discount_codes")
+    .select("id,code,discount_type,discount_value,applies_to,client_id,attorney_profile_id,matter_id,usage_limit,usage_count,expiration_date,internal_reason,client_label,status,created_at,updated_at")
+    .order("created_at", { ascending: false });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data });
 }
 
-export async function POST(req: NextRequest) {
-  if (!isFounder(req)) {
-    return NextResponse.json({ error: "Founder access required" }, { status: 403 });
+export async function POST(request: Request) {
+  const auth = await requireFounderOrAdmin();
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+  const body = await request.json() as {
+    code?: string; discount_type?: string; discount_value?: number;
+    applies_to?: string; usage_limit?: number; expiration_date?: string;
+    internal_reason?: string; client_label?: string;
+  };
+
+  if (!body.code || !body.discount_type || body.discount_value === undefined) {
+    return NextResponse.json({ error: "code, discount_type, and discount_value are required" }, { status: 400 });
   }
-  const supabase = createAdminClient();
-  try {
-    const body = await req.json();
-    const { label, discount_type, discount_value, max_uses, valid_until,
-            notes, deal_id_restriction, single_use, custom_code } = body;
 
-    const code = (custom_code ?? generateCourtesyCode()).toUpperCase();
-
-    const { data, error } = await supabase
-      .from("discount_codes")
-      .insert({
-        code,
-        label,
-        discount_type,
-        discount_value: discount_value ?? 0,
-        max_uses: max_uses ?? null,
-        valid_until: valid_until ?? null,
-        notes,
-        deal_id_restriction: deal_id_restriction ?? null,
-        single_use: single_use ?? false,
-        created_by: "founder",
-        active: true,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return NextResponse.json({ code: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("discount_codes").insert({
+    code: body.code.toUpperCase().trim(),
+    discount_type: body.discount_type === "PERCENTAGE" || body.discount_type === "percent" ? "percentage"
+      : body.discount_type === "FLAT_AMOUNT" || body.discount_type === "flat" || body.discount_type === "fixed" ? "fixed_amount"
+      : body.discount_type,
+    discount_value: body.discount_value,
+    applies_to: body.applies_to ?? "service_fee",
+    usage_limit: body.usage_limit ?? null,
+    expiration_date: body.expiration_date ?? null,
+    internal_reason: body.internal_reason ?? "",
+    client_label: body.client_label ?? "Milano Seal courtesy adjustment",
+    status: "ACTIVE",
+    created_by: auth.user.id,
+  }).select().single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data }, { status: 201 });
 }
 
-export async function PATCH(req: NextRequest) {
-  const supabase = createAdminClient();
-  try {
-    const body = await req.json();
-    const { code, deal_id, original_amount, redeemed_by } = body;
-
-    const { data: codeRecord, error: fetchErr } = await supabase
-      .from("discount_codes")
-      .select("*")
-      .eq("code", code.toUpperCase())
-      .single();
-
-    if (fetchErr || !codeRecord) {
-      return NextResponse.json({ error: "Code not found" }, { status: 404 });
-    }
-
-    const check = validateCodeRedeemable(codeRecord, deal_id);
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
-
-    const discount_amount = computeDiscountAmount(codeRecord, original_amount ?? 0);
-    const final_amount = Math.max(0, (original_amount ?? 0) - discount_amount);
-
-    await supabase
-      .from("discount_codes")
-      .update({ uses_count: codeRecord.uses_count + 1 })
-      .eq("id", codeRecord.id);
-
-    const { data: redemption } = await supabase
-      .from("discount_redemptions")
-      .insert({ code_id: codeRecord.id, deal_id, redeemed_by, discount_applied: discount_amount, original_amount, final_amount })
-      .select()
-      .single();
-
-    return NextResponse.json({ redemption, discount_amount, final_amount });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+export async function PATCH(request: Request) {
+  if (!await requireFounderOrAdmin()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
-}
+  const body = await request.json() as {
+    id?: string; status?: string; expiration_date?: string;
+    usage_limit?: number; client_label?: string; internal_reason?: string;
+  };
+  if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-export async function DELETE(req: NextRequest) {
-  if (!isFounder(req)) {
-    return NextResponse.json({ error: "Founder access required" }, { status: 403 });
-  }
-  const supabase = createAdminClient();
-  try {
-    const { id } = await req.json();
-    await supabase.from("discount_codes").update({ active: false }).eq("id", id);
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  const update: Record<string, unknown> = {};
+  if (body.status !== undefined) update.status = body.status;
+  if (body.expiration_date !== undefined) update.expiration_date = body.expiration_date;
+  if (body.usage_limit !== undefined) update.usage_limit = body.usage_limit;
+  if (body.client_label !== undefined) update.client_label = body.client_label;
+  if (body.internal_reason !== undefined) update.internal_reason = body.internal_reason;
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("discount_codes").update(update).eq("id", body.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }

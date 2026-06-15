@@ -17,9 +17,10 @@ export function AllianceShell({
 }: AllianceShellProps) {
   return (
     <div
+      className="ms-os-page"
       style={{
         display: "flex",
-        minHeight: "100vh",
+        minHeight: "100svh",
         background: "#050505",
         color: "#F6F1E6",
       }}
@@ -36,7 +37,7 @@ export function AllianceShell({
           firmName={firmName}
           routingEligible={routingEligible}
         />
-        <main style={{ flex: 1, padding: "28px 28px 48px", maxWidth: 1200 }}>
+        <main className="ms-alliance-content ms-safe-bottom" style={{ flex: 1, maxWidth: 1200, width: "100%" }}>
           {children}
         </main>
       </div>

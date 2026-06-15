@@ -119,7 +119,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milano-seal-orb-v2.png"
+              src="/milano-seal-feather-m-orb.svg"
               alt=""
               aria-hidden="true"
               width={56}
@@ -149,7 +149,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/milano-seal-orb-v2.png"
+                  src="/milano-seal-feather-m-orb.svg"
                   alt=""
                   aria-hidden="true"
                   width={28}
@@ -163,8 +163,8 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-emerald-500/5 border border-emerald-500/20 px-2 py-0.5 rounded-sm">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[6.5px] text-emerald-400 font-bold tracking-widest uppercase">LIVE</span>
+                  <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                  <span className="text-[6.5px] text-emerald-400 font-bold tracking-widest uppercase">AVAILABLE</span>
                 </div>
                 <button
                   onClick={handleClose}

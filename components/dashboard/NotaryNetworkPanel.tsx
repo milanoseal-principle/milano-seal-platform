@@ -1,208 +1,160 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Users, CheckCircle, Clock, Star, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 
 interface NotaryApplication {
   id: string;
   full_name: string;
   email: string;
-  state_of_commission: string;
-  is_ron_certified: boolean;
-  is_mobile_notary: boolean;
-  partner_type: string;
+  phone: string | null;
+  state_commissioned: string;
+  commission_number: string;
+  commission_expiration: string | null;
+  ron_authorized: boolean;
+  e_and_o_insurance_provider: string | null;
+  e_and_o_policy_limit: string | null;
   status: string;
-  years_experience: number;
-  has_eo_insurance: boolean;
-  specialties: string[];
   created_at: string;
 }
 
-interface NotaryCredential {
-  id: string;
-  full_name: string;
-  email: string;
-  state_of_commission: string;
-  partner_type: string;
-  confidence_score: number;
-  matters_completed: number;
-  active: boolean;
-  is_ron_certified: boolean;
-  is_mobile_notary: boolean;
-}
-
-const PARTNER_TYPE_LABELS: Record<string, string> = {
-  NOTARY_PARTNER: "Notary Partner",
-  RON_NOTARY: "RON Notary",
-  MOBILE_NOTARY: "Mobile Notary",
-  HYBRID: "Hybrid (RON + Mobile)",
+const STATUS_COLORS: Record<string, string> = {
+  APPLICATION_RECEIVED: "border-yellow-500/30 text-yellow-400/70",
+  DOCUMENTS_PENDING: "border-yellow-500/20 text-yellow-400/50",
+  CREDENTIAL_REVIEW: "border-[#C6A55A]/30 text-[#C6A55A]/70",
+  INTERVIEW_REQUIRED: "border-blue-500/30 text-blue-400/60",
+  APPROVED: "border-green-500/30 text-green-400/70",
+  ACTIVE: "border-green-500/40 text-green-400/80",
+  SUSPENDED: "border-orange-500/30 text-orange-400/60",
+  REJECTED: "border-red-500/20 text-red-400/50",
+  EXPIRED_CREDENTIALS: "border-red-500/15 text-red-400/40",
 };
 
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-500/10 text-yellow-400",
-  UNDER_REVIEW: "bg-blue-500/10 text-blue-400",
-  APPROVED: "bg-emerald-500/10 text-emerald-400",
-  REJECTED: "bg-red-500/10 text-red-400",
-  WAITLISTED: "bg-[#C6A55A]/10 text-[#C6A55A]",
-};
+const VALID_STATUSES = [
+  "APPLICATION_RECEIVED", "DOCUMENTS_PENDING", "CREDENTIAL_REVIEW",
+  "INTERVIEW_REQUIRED", "APPROVED", "ACTIVE", "SUSPENDED",
+  "REJECTED", "EXPIRED_CREDENTIALS",
+];
 
 export function NotaryNetworkPanel() {
   const [applications, setApplications] = useState<NotaryApplication[]>([]);
-  const [credentials, setCredentials] = useState<NotaryCredential[]>([]);
-  const [tab, setTab] = useState<"applications" | "active">("applications");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState("all");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
-    const [appsRes, credsRes] = await Promise.all([
-      fetch("/api/notary/apply"),
-      fetch("/api/notary/credentials").catch(() => ({ json: async () => ({ credentials: [] }) })),
-    ]);
-    const appsJson = await appsRes.json();
-    const credsJson = await credsRes.json();
-    setApplications(appsJson.applications ?? []);
-    setCredentials(credsJson.credentials ?? []);
-    setLoading(false);
-  }
+    try {
+      const res = await fetch("/api/notary/credentials");
+      const json = await res.json() as { data?: NotaryApplication[]; error?: string };
+      if (!res.ok) setError(json.error ?? "Failed to load");
+      else setApplications(json.data ?? []);
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
-  async function updateStatus(id: string, status: string, rejection_reason?: string) {
-    await fetch("/api/notary/apply", {
+  async function updateStatus(id: string, status: string) {
+    await fetch("/api/notary/credentials", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status, reviewed_by: "founder", rejection_reason }),
+      body: JSON.stringify({ id, status }),
     });
-    load();
+    await load();
   }
 
-  const pendingCount = applications.filter(a => a.status === "PENDING").length;
-  const activeCount = credentials.filter(c => c.active).length;
+  const statusGroups = ["all", "APPLICATION_RECEIVED", "CREDENTIAL_REVIEW", "APPROVED", "ACTIVE", "REJECTED"];
+  const filtered = filter === "all" ? applications : applications.filter(a => a.status === filter);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-[#C6A55A]" />
-          <h2 className="text-white font-semibold text-lg">Alliance Notary Network</h2>
-          {pendingCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-mono">
-              {pendingCount} pending review
-            </span>
-          )}
+    <div className="relative z-10 mx-auto max-w-5xl">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.32em] text-[#C6A55A]/60">
+            Notary Network / Credential Review
+          </p>
+          <h1 className="font-serif text-3xl text-[#E4D2A4]">Notary Network</h1>
+          <p className="mt-2 text-sm text-white/40">Review notary applications and manage credentialed network.</p>
         </div>
-        <div className="flex gap-2">
-          <span className="flex items-center gap-1.5 text-xs text-[#6A6A6A]">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-            {activeCount} active notaries
-          </span>
+        <div className="flex gap-2 flex-wrap">
+          {statusGroups.map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.1em] rounded border transition-colors ${
+                filter === s ? "border-[#C6A55A]/50 text-[#C6A55A] bg-[#C6A55A]/[0.06]" : "border-white/[0.06] text-white/30 hover:border-white/20"
+              }`}
+            >
+              {s === "all" ? "All" : s.replace(/_/g, " ")}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Tab */}
-      <div className="flex gap-1 p-1 bg-[#0A0A0A] border border-[#1A1A1A] rounded-xl w-fit">
-        {(["applications", "active"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              tab === t ? "bg-[#C6A55A] text-[#0A0A0A]" : "text-[#6A6A6A] hover:text-white"
-            }`}
-          >
-            {t === "applications" ? `Applications (${applications.length})` : `Active Network (${activeCount})`}
-          </button>
-        ))}
       </div>
 
       {loading ? (
-        <div className="text-[#4A4A4A] text-sm py-6 text-center">Loading…</div>
-      ) : tab === "applications" ? (
-        applications.length === 0 ? (
-          <div className="text-[#4A4A4A] text-sm py-8 text-center border border-[#1A1A1A] rounded-xl">
-            No applications received yet.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {applications.map((app) => (
-              <div key={app.id} className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-white font-medium">{app.full_name}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${STATUS_STYLES[app.status] ?? "bg-[#2A2A2A] text-[#6A6A6A]"}`}>
-                        {app.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-[#6A6A6A] flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {app.state_of_commission}
-                      </span>
-                      <span>{PARTNER_TYPE_LABELS[app.partner_type] ?? app.partner_type}</span>
-                      {app.years_experience > 0 && <span>{app.years_experience}yr exp</span>}
-                      {app.is_ron_certified && <span className="text-emerald-400">RON Certified</span>}
-                      {app.is_mobile_notary && <span className="text-blue-400">Mobile</span>}
-                      {app.has_eo_insurance && <span className="text-[#C6A55A]">E&amp;O Insured</span>}
-                    </div>
-                    <p className="text-[#4A4A4A] text-xs mt-1">{app.email} · Applied {new Date(app.created_at).toLocaleDateString()}</p>
-                  </div>
-                  {app.status === "PENDING" && (
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => updateStatus(app.id, "APPROVED")}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => updateStatus(app.id, "UNDER_REVIEW")}
-                        className="px-3 py-1.5 border border-blue-500/40 text-blue-400 text-xs rounded-lg hover:bg-blue-500/10"
-                      >
-                        Review
-                      </button>
-                      <button
-                        onClick={() => updateStatus(app.id, "REJECTED", "Does not meet current requirements.")}
-                        className="px-3 py-1.5 border border-red-500/30 text-red-400 text-xs rounded-lg hover:bg-red-500/10"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )
+        <p className="font-mono text-[10px] text-[#C6A55A]/40 uppercase tracking-widest">Loading…</p>
+      ) : error ? (
+        <div className="rounded border border-red-500/20 bg-red-500/5 p-5 text-sm text-red-200/70">{error}</div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded border border-[#C6A55A]/10 bg-[#0D0B08] p-10 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#C6A55A]/40">No applications</p>
+          <p className="mt-3 text-sm text-white/25">Applications submitted via /notary/join appear here.</p>
+        </div>
       ) : (
-        credentials.length === 0 ? (
-          <div className="text-[#4A4A4A] text-sm py-8 text-center border border-[#1A1A1A] rounded-xl">
-            No active notaries in network yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {credentials.filter(c => c.active).map((cred) => (
-              <div key={cred.id} className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-white font-medium text-sm">{cred.full_name}</p>
-                    <p className="text-[#6A6A6A] text-xs mt-0.5">{PARTNER_TYPE_LABELS[cred.partner_type]} · {cred.state_of_commission}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-[#C6A55A]">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-xs font-mono">{cred.confidence_score}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 mt-3 text-xs text-[#4A4A4A]">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    {cred.matters_completed} completed
-                  </span>
-                  {cred.is_ron_certified && <span className="text-emerald-400">RON</span>}
-                  {cred.is_mobile_notary && <span className="text-blue-400">Mobile</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )
+        <div className="overflow-x-auto rounded border border-[#C6A55A]/10 bg-[#0D0B08]">
+          <table className="w-full min-w-[1000px] text-left text-xs">
+            <thead className="border-b border-[#C6A55A]/10 font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/55">
+              <tr>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">State</th>
+                <th className="px-4 py-3">Commission #</th>
+                <th className="px-4 py-3">Expiry</th>
+                <th className="px-4 py-3">RON</th>
+                <th className="px-4 py-3">E&amp;O Provider</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Update Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filtered.map(a => (
+                <tr key={a.id} className="text-white/60">
+                  <td className="px-4 py-4 text-white/80">{a.full_name}</td>
+                  <td className="px-4 py-4 font-mono text-[10px]">{a.email}</td>
+                  <td className="px-4 py-4 font-mono">{a.state_commissioned}</td>
+                  <td className="px-4 py-4 font-mono text-[10px]">{a.commission_number}</td>
+                  <td className="px-4 py-4">{a.commission_expiration ? new Date(a.commission_expiration).toLocaleDateString() : "—"}</td>
+                  <td className="px-4 py-4">
+                    <span className={`font-mono text-[9px] ${a.ron_authorized ? "text-green-400/70" : "text-white/20"}`}>
+                      {a.ron_authorized ? "Yes" : "No"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-white/40">{a.e_and_o_insurance_provider ?? "—"}</td>
+                  <td className="px-4 py-4">
+                    <span className={`font-mono text-[8px] px-2 py-0.5 rounded border uppercase ${STATUS_COLORS[a.status] ?? "border-white/10 text-white/30"}`}>
+                      {a.status.replace(/_/g, " ")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <select
+                      className="bg-[#0D0B08] border border-[#C6A55A]/15 px-2 py-1 font-mono text-[8px] text-white/60 outline-none focus:border-[#C6A55A]/40 rounded-sm"
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) { void updateStatus(a.id, e.target.value); e.target.value = ""; } }}
+                    >
+                      <option value="">— set status —</option>
+                      {VALID_STATUSES.filter(s => s !== a.status).map(s => (
+                        <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

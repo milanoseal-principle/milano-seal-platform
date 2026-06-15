@@ -48,10 +48,10 @@ const MATTER_STATUS_LABELS: Record<string, string> = {
 };
 
 const NAV = [
-  { href: "/portal", label: "My Matter", icon: ClipboardList },
-  { href: "/portal/invoice", label: "Invoice", icon: Receipt },
-  { href: "/portal/tracking", label: "Custody Rail", icon: Truck },
-  { href: "/portal/documents", label: "Documents", icon: FolderOpen },
+  { href: "/portal", label: "Matter Control", icon: ClipboardList },
+  { href: "/portal/invoice", label: "Invoice & Payment", icon: Receipt },
+  { href: "/portal/tracking", label: "Courier Release Tracking", icon: Truck },
+  { href: "/portal/documents", label: "Controlled Records", icon: FolderOpen },
   { href: "/portal/messages", label: "Messages", icon: MessageCircle },
 ];
 
@@ -278,7 +278,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <main className="ps-content" style={{ minWidth: 0, overflowX: "hidden" }}>{children}</main>
+        <main className="ps-content ms-safe-bottom" style={{ minWidth: 0, overflowX: "hidden" }}>{children}</main>
       </div>
     </div>
   );
