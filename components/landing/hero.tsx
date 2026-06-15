@@ -33,8 +33,7 @@ function HomepageMicroInit() {
       animate={{ opacity: visible ? 1 : 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
-      className="absolute top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
-      style={{ whiteSpace: "nowrap" }}
+      className="absolute top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[90vw] text-center overflow-hidden"
     >
       <motion.span
         key={phraseIdx}
@@ -88,7 +87,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] lg:h-[100svh] pt-[136px] md:pt-[144px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-[100svh] lg:h-[100svh] pt-[148px] md:pt-[156px] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
