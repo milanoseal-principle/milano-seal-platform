@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 
-function destForRole(role: string, fallback: string): string {
+function destForRole(role: string): string {
   if (role === "founder" || role === "founder_admin" || role === "admin" || role === "admin_operator" ||
       role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
       role === "apostille_coordinator" || role === "finance_operator" || role === "client_support") {
@@ -27,7 +27,19 @@ function destForRole(role: string, fallback: string): string {
       role === "escalation_assistant") {
     return "/va/dashboard";
   }
-  return fallback;
+  return "/login?error=access_denied";
+}
+
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  if (!next) return false;
+  const destination = destForRole(role);
+
+  if (destination === "/dashboard") return next.startsWith("/dashboard");
+  if (destination === "/portal") return next.startsWith("/portal");
+  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
+  if (destination === "/va/dashboard") return next.startsWith("/va");
+
+  return false;
 }
 
 interface RitualConfig {
@@ -189,7 +201,7 @@ function LoginInner() {
         if (!data.user) return;
         const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
         if (!role) return;
-        router.replace(safeNext || destForRole(role, "/dashboard"));
+        router.replace(isNextAllowedForRole(safeNext, role) ? safeNext : destForRole(role));
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
