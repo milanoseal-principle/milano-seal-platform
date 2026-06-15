@@ -12,16 +12,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 
-const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
-
-const GATEWAY_STEPS = [
-  "Verifying access environment",
-  "Connecting to secure workspace",
-  "Resolving role access",
-  "Preparing entry gateway",
-  "Ready",
-];
-
 function destForRole(role: string, fallback: string): string {
   if (role === "founder" || role === "founder_admin" || role === "admin" || role === "admin_operator" ||
       role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
@@ -38,6 +28,74 @@ function destForRole(role: string, fallback: string): string {
     return "/va/dashboard";
   }
   return fallback;
+}
+
+interface RitualConfig {
+  eyebrow: string;
+  steps: string[];
+  sectionLabel: string;
+  statusText: string;
+  footerText: string;
+}
+
+function ritualForDestination(destination: string): RitualConfig {
+  if (destination.startsWith("/dashboard")) {
+    return {
+      eyebrow: "Execution Intelligence",
+      steps: [
+        "Verifying credentials",
+        "Loading matter pipeline",
+        "Resolving operator access",
+        "Syncing execution workspace",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing execution workspace",
+      statusText: "Preparing your execution workspace.",
+      footerText: "EXECUTION WORKSPACE READY",
+    };
+  }
+  if (destination.startsWith("/alliance")) {
+    return {
+      eyebrow: "Alliance Partner Access",
+      steps: [
+        "Verifying alliance credentials",
+        "Loading referral matters",
+        "Syncing commission visibility",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing alliance workspace",
+      statusText: "Preparing your alliance partner workspace.",
+      footerText: "ALLIANCE ACCESS GRANTED",
+    };
+  }
+  if (destination.startsWith("/va")) {
+    return {
+      eyebrow: "VA Workspace",
+      steps: [
+        "Verifying VA credentials",
+        "Loading assigned tasks",
+        "Syncing matter queue",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing VA workspace",
+      statusText: "Preparing your VA workspace.",
+      footerText: "VA WORKSPACE READY",
+    };
+  }
+  // portal / client / default
+  return {
+    eyebrow: "Secure Matter Portal",
+    steps: [
+      "Verifying your identity",
+      "Loading your active matter",
+      "Connecting document specialist",
+      "Preparing portal workspace",
+      "Ready",
+    ],
+    sectionLabel: "Preparing your secure portal",
+    statusText: "Your matter portal is being prepared.",
+    footerText: "MATTER PORTAL READY",
+  };
 }
 
 function MilanoSealOrb() {
@@ -107,14 +165,7 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [gatewayDone, setGatewayDone] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      return !!window.sessionStorage.getItem(GATEWAY_KEY);
-    } catch {
-      return true;
-    }
-  });
+  const [pendingNav, setPendingNav] = useState<{ redirect: string } | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,7 +179,7 @@ function LoginInner() {
       ? rawNext
       : null;
 
-  // Redirect already-authenticated users.
+  // Redirect already-authenticated users (no ritual — they're already in).
   // Skip on ?error=access_denied — server rejected this session, auto-redirecting causes a loop.
   useEffect(() => {
     if (searchParams.get("error") === "access_denied") return;
@@ -154,16 +205,17 @@ function LoginInner() {
     }
   }, [searchParams]);
 
-  // One-time ritual lock — plays once per session before the login form.
-  // ?error=* skips the ritual to show the login form immediately with the error.
-  if (!gatewayDone && !searchParams.get("error")) {
+  // After auth succeeds, show ritual then navigate.
+  if (pendingNav) {
+    const ritual = ritualForDestination(pendingNav.redirect);
     return (
       <RitualEntryLock
-        eyebrow="Access Gateway"
-        steps={GATEWAY_STEPS}
-        sectionLabel="Preparing secure access environment"
-        sessionKey={GATEWAY_KEY}
-        onComplete={() => setGatewayDone(true)}
+        eyebrow={ritual.eyebrow}
+        steps={ritual.steps}
+        sectionLabel={ritual.sectionLabel}
+        statusText={ritual.statusText}
+        footerText={ritual.footerText}
+        onComplete={() => router.replace(pendingNav.redirect)}
       />
     );
   }
@@ -183,7 +235,8 @@ function LoginInner() {
         setError(json.error ?? "Sign-in failed. Please try again.");
         return;
       }
-      router.replace(json.redirect ?? "/dashboard");
+      // Auth succeeded — play ritual then navigate.
+      setPendingNav({ redirect: json.redirect ?? "/dashboard" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
