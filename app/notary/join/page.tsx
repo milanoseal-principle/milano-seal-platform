@@ -8,8 +8,8 @@ export default function NotaryJoinPage() {
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "",
     state_commissioned: "", commission_number: "", commission_expiration: "",
-    ron_authorized: false, ron_platforms_used: "", blue_notary_experience: "",
-    remote_online_notary_certification: "",
+    ron_authorized: false, ron_platforms_used: "", blue_notary_experience: false,
+    remote_online_notary_certification: false,
     e_and_o_insurance_provider: "", e_and_o_policy_limit: "",
     background_check_status: "", languages: "", availability: "",
     mobile_notary_available: false, apostille_experience: false,
@@ -115,8 +115,8 @@ export default function NotaryJoinPage() {
                   <span className="text-sm text-white/70">RON Authorized</span>
                 </label>
                 <div><label className={lbl}>RON Platforms Used</label><input className={inp} value={form.ron_platforms_used} onChange={e => set("ron_platforms_used", e.target.value)} placeholder="Notarize, Proof, BlueNotary…" /></div>
-                <div><label className={lbl}>BlueNotary Experience</label><input className={inp} value={form.blue_notary_experience} onChange={e => set("blue_notary_experience", e.target.value)} placeholder="Sessions completed, role, etc." /></div>
-                <div><label className={lbl}>RON Certification Details</label><input className={inp} value={form.remote_online_notary_certification} onChange={e => set("remote_online_notary_certification", e.target.value)} placeholder="Certification body, date…" /></div>
+                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.blue_notary_experience} onChange={e => set("blue_notary_experience", e.target.checked)} /><span className="text-sm text-white/70">BlueNotary experience</span></label>
+                <label className={chkLabel}><input type="checkbox" className={chk} checked={form.remote_online_notary_certification} onChange={e => set("remote_online_notary_certification", e.target.checked)} /><span className="text-sm text-white/70">RON certified</span></label>
               </div>
             </section>
 

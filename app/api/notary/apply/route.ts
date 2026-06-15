@@ -23,13 +23,17 @@ export async function POST(request: Request) {
       commission_number: body.commission_number,
       commission_expiration: body.commission_expiration ?? null,
       ron_authorized: body.ron_authorized ?? false,
-      ron_platforms_used: body.ron_platforms_used ?? null,
-      blue_notary_experience: body.blue_notary_experience ?? null,
-      remote_online_notary_certification: body.remote_online_notary_certification ?? null,
+      ron_platforms_used: typeof body.ron_platforms_used === "string"
+        ? (body.ron_platforms_used as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+        : (body.ron_platforms_used as string[] | null) ?? [],
+      blue_notary_experience: Boolean(body.blue_notary_experience),
+      remote_online_notary_certification: Boolean(body.remote_online_notary_certification),
       e_and_o_insurance_provider: body.e_and_o_insurance_provider ?? null,
       e_and_o_policy_limit: body.e_and_o_policy_limit ?? null,
       background_check_status: body.background_check_status ?? null,
-      languages: body.languages ?? null,
+      languages: typeof body.languages === "string"
+        ? (body.languages as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+        : (body.languages as string[] | null) ?? [],
       availability: body.availability ?? null,
       mobile_notary_available: body.mobile_notary_available ?? false,
       apostille_experience: body.apostille_experience ?? false,

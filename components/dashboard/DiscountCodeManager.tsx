@@ -23,7 +23,7 @@ export function DiscountCodeManager() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
-    code: "", discount_type: "PERCENTAGE", discount_value: "",
+    code: "", discount_type: "percentage", discount_value: "",
     applies_to: "", client_label: "", internal_reason: "",
     usage_limit: "", expiration_date: "",
   });
@@ -68,7 +68,7 @@ export function DiscountCodeManager() {
       });
       const json = await res.json() as { error?: string };
       if (!res.ok) { setFormError(json.error ?? "Failed to create"); return; }
-      setForm({ code: "", discount_type: "PERCENTAGE", discount_value: "", applies_to: "", client_label: "", internal_reason: "", usage_limit: "", expiration_date: "" });
+      setForm({ code: "", discount_type: "percentage", discount_value: "", applies_to: "", client_label: "", internal_reason: "", usage_limit: "", expiration_date: "" });
       setCreating(false);
       await load();
     } finally {
@@ -114,8 +114,8 @@ export function DiscountCodeManager() {
             <div>
               <label className={lbl}>Type</label>
               <select className={inp} value={form.discount_type} onChange={e => setForm(f => ({ ...f, discount_type: e.target.value }))}>
-                <option value="PERCENTAGE">Percent (%)</option>
-                <option value="FLAT_AMOUNT">Flat ($)</option>
+                <option value="percentage">Percent (%)</option>
+                <option value="fixed_amount">Flat ($)</option>
               </select>
             </div>
             <div><label className={lbl}>Value</label><input className={inp} type="number" step="0.01" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))} placeholder="10" /></div>
@@ -160,7 +160,7 @@ export function DiscountCodeManager() {
                 <tr key={c.id} className="text-white/60">
                   <td className="px-4 py-4 font-mono font-bold text-[#C6A55A]">{c.code}</td>
                   <td className="px-4 py-4 font-mono text-[10px]">{c.discount_type}</td>
-                  <td className="px-4 py-4">{c.discount_type === "PERCENTAGE" ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
+                  <td className="px-4 py-4">{c.discount_type === "percentage" ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
                   <td className="px-4 py-4 text-white/40">{c.client_label ?? "—"}</td>
                   <td className="px-4 py-4">{c.usage_count ?? 0}{c.usage_limit ? ` / ${c.usage_limit}` : ""}</td>
                   <td className="px-4 py-4">{c.expiration_date ? new Date(c.expiration_date).toLocaleDateString() : "Never"}</td>

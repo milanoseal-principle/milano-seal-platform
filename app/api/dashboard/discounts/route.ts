@@ -43,13 +43,15 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("discount_codes").insert({
     code: body.code.toUpperCase().trim(),
-    discount_type: body.discount_type === "percent" ? "PERCENTAGE" : body.discount_type === "flat" ? "FLAT_AMOUNT" : body.discount_type,
+    discount_type: body.discount_type === "PERCENTAGE" || body.discount_type === "percent" ? "percentage"
+      : body.discount_type === "FLAT_AMOUNT" || body.discount_type === "flat" || body.discount_type === "fixed" ? "fixed_amount"
+      : body.discount_type,
     discount_value: body.discount_value,
-    applies_to: body.applies_to ?? null,
+    applies_to: body.applies_to ?? "service_fee",
     usage_limit: body.usage_limit ?? null,
     expiration_date: body.expiration_date ?? null,
-    internal_reason: body.internal_reason ?? null,
-    client_label: body.client_label ?? null,
+    internal_reason: body.internal_reason ?? "",
+    client_label: body.client_label ?? "Milano Seal courtesy adjustment",
     status: "ACTIVE",
     created_by: auth.user.id,
   }).select().single();
