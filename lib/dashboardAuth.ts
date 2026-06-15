@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 const ADMIN_ROLES = new Set([
+  "founder",
   "founder_admin",
   "admin",
   "admin_operator",
