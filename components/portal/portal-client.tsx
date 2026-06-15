@@ -149,7 +149,7 @@ function EmailGate({
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <img
-            src="/milano-seal-gold-transparent-512.png"
+            src="/milano-seal-feather-m-orb.svg"
             alt="The Milano Seal"
             className="w-16 h-16 mx-auto mb-6 opacity-90"
           />
@@ -479,7 +479,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/milano-seal-gold-transparent-512.png"
+              src="/milano-seal-feather-m-orb.svg"
               alt="The Milano Seal"
               className="w-8 h-8"
             />

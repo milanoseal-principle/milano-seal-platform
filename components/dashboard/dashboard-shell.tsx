@@ -121,7 +121,7 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
       <div className="px-4 py-5 border-b border-[#1A1A1A]">
         <Link href="/" className="flex items-center gap-3">
           <img
-            src="/milano-seal-gold-transparent-512.png"
+            src="/milano-seal-feather-m-orb.svg"
             alt=""
             className="w-8 h-8"
           />
