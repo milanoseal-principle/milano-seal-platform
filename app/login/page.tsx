@@ -10,7 +10,6 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 
 const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
@@ -41,12 +40,17 @@ function destForRole(role: string, fallback: string): string {
   return fallback;
 }
 
-function LogoMark() {
+function MilanoSealOrb() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 20L3 6L12 15L21 6L21 20" stroke="#C6A55A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z" fill="#C6A55A" opacity="0.88" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/milano-seal-feather-m-orb.svg"
+      alt="The Milano Seal"
+      width={52}
+      height={52}
+      style={{ display: "block", width: 52, height: 52, objectFit: "contain" }}
+      draggable={false}
+    />
   );
 }
 
@@ -103,7 +107,6 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [portalShellDismissed, setPortalShellDismissed] = useState(false);
   const [gatewayDone, setGatewayDone] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -125,20 +128,22 @@ function LoginInner() {
       ? rawNext
       : null;
 
-  // Redirect already-authenticated users — must be before any conditional return
+  // Redirect already-authenticated users.
+  // Skip on ?error=access_denied — server already rejected this session, auto-redirecting causes a loop.
   useEffect(() => {
+    if (searchParams.get("error") === "access_denied") return;
     try {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) return;
         const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
+        if (!role) return;
         router.replace(safeNext || destForRole(role, "/dashboard"));
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
-      // This is non-fatal for the login page — user can still sign in via the API route.
     }
-  }, [router, safeNext]);
+  }, [router, safeNext, searchParams]);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -149,8 +154,9 @@ function LoginInner() {
     }
   }, [searchParams]);
 
-  // Access gateway ritual — plays once per session for all login visitors.
-  if (!gatewayDone) {
+  // One-time ritual lock plays once per session — shows before the login form.
+  // ?error=access_denied skips the ritual to show the login form immediately.
+  if (!gatewayDone && !searchParams.get("error")) {
     return (
       <RitualEntryLock
         eyebrow="Access Gateway"
@@ -162,46 +168,21 @@ function LoginInner() {
     );
   }
 
-  // Show PortalAccessShell as the entry gate for portal clients before the login form.
-  // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
-  // and reveals the login form below, rather than navigating away.
-  const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
-  if (isPortalEntry && !portalShellDismissed) {
-    return (
-      <div
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("a")) {
-            e.preventDefault();
-            setPortalShellDismissed(true);
-          }
-        }}
-      >
-        <PortalAccessShell nextPath={safeNext ?? "/portal"} />
-      </div>
-    );
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
       });
-
       const json = await res.json() as { ok: boolean; error?: string; redirect?: string };
-
       if (!json.ok) {
         setError(json.error ?? "Sign-in failed. Please try again.");
         return;
       }
-
       router.replace(json.redirect ?? "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
@@ -335,7 +316,7 @@ function LoginInner() {
         <div className="ms-glow" />
 
         <div className="ms-card">
-          <div className="ms-ring"><LogoMark /></div>
+          <div className="ms-ring"><MilanoSealOrb /></div>
 
           <div className="ms-eyebrow">The Milano Seal™</div>
           <h1 className="ms-title">Secure Access</h1>
@@ -346,7 +327,6 @@ function LoginInner() {
             {accessType === "va" && "VA workspace for assigned tasks, document coordination, and matter support."}
           </p>
 
-          {/* Access type selector */}
           <div style={{ display: "flex", gap: 6, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
             {([
               { key: "portal", label: "Secure Matter Portal" },
@@ -377,7 +357,7 @@ function LoginInner() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => { void handleSubmit(e); }}>
             <div style={{ marginBottom: 12 }}>
               <label htmlFor="ms-email" className="ms-flbl">Email Address</label>
               <input
