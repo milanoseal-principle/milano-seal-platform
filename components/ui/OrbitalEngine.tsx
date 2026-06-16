@@ -54,7 +54,7 @@ export default function OrbitalEngine() {
             style={{ width: "100%", height: "100%" }}
           >
             <Image
-              src="/milano-seal-feather-m-orb.svg"
+              src="/milano-seal-orb-v2.png"
               alt="The Milano Seal"
               fill
               priority

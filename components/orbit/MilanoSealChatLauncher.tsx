@@ -43,7 +43,7 @@ export function MilanoSealChatLauncher() {
             <div className="absolute inset-[-4px] rounded-full border border-amber-500/10 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
             <div className="absolute inset-0 rounded-full bg-gradient-to-t from-amber-500/5 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             <motion.img
-              src="/milano-seal-feather-m-orb.svg"
+              src="/milano-seal-orb-v2.png"
               alt="The Milano Seal Orb"
               animate={{ rotate: 360 }}
               transition={{ duration: 220, ease: "linear", repeat: Infinity }}
@@ -76,7 +76,7 @@ export function MilanoSealChatLauncher() {
               <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 border border-amber-500/20 rounded-full flex items-center justify-center bg-zinc-950 shrink-0">
-                    <img src="/milano-seal-feather-m-orb.svg" className="w-5 h-5 object-contain rounded-full" alt="" />
+                    <img src="/milano-seal-orb-v2.png" className="w-5 h-5 object-contain rounded-full" alt="" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Concierge</span>
@@ -96,7 +96,7 @@ export function MilanoSealChatLauncher() {
               >
                 <div className="flex items-start space-x-3">
                   <div className="w-5 h-5 border border-zinc-800 rounded-full flex items-center justify-center bg-zinc-950 mt-0.5 shrink-0">
-                    <img src="/milano-seal-feather-m-orb.svg" className="w-4 h-4 object-contain rounded-full" alt="" />
+                    <img src="/milano-seal-orb-v2.png" className="w-4 h-4 object-contain rounded-full" alt="" />
                   </div>
                   {/* text-[10px] kept — not an input field, no zoom risk */}
                   <div className="bg-zinc-900/40 border border-zinc-900 p-3 rounded-sm text-[10px] text-zinc-300 leading-relaxed tracking-wide max-w-[85%]">

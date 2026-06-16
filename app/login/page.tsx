@@ -113,7 +113,7 @@ function MilanoSealOrb() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/milano-seal-feather-m-orb.svg"
+      src="/milano-seal-orb-v2.png"
       alt="The Milano Seal"
       width={52}
       height={52}

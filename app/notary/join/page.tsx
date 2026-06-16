@@ -55,7 +55,7 @@ export default function NotaryJoinPage() {
             <div className="w-16 h-16 rounded-full border border-[#C6A55A]/40 flex items-center justify-center mx-auto mb-6"
               style={{ background: "rgba(198,165,90,0.06)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/milano-seal-feather-m-orb.svg" alt="" aria-hidden width={36} height={36} />
+              <img src="/milano-seal-orb-v2.png" alt="" aria-hidden width={36} height={36} />
             </div>
             <p className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#C6A55A]/70 mb-4">Application Received</p>
             <h1 className="font-serif text-2xl text-white mb-4">Thank you for applying</h1>
