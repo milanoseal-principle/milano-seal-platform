@@ -48,7 +48,7 @@ export function Header() {
                   aria-hidden="true"
                   width={64}
                   height={64}
-                  style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(48px, 5vw, 64px)", height: "clamp(48px, 5vw, 64px)" }}
+                  style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(56px, 6vw, 72px)", height: "clamp(56px, 6vw, 72px)" }}
                 />
                 <span className="flex flex-col leading-none">
                   <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">

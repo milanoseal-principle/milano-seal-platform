@@ -35,19 +35,18 @@ export function MilanoSealChatLauncher() {
             exit={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => setIsOpen(true)}
-            // 56px = w-14 h-14 — comfortably above 44px iOS minimum
-            className="relative w-14 h-14 bg-[#050507] border border-amber-500/20 rounded-full flex items-center justify-center cursor-pointer group shadow-[0_0_50px_rgba(0,0,0,0.85)] focus:outline-none touch-manipulation"
+            // 64px standalone orb — no dark circle, orb-v2 fills the space
+            className="relative w-16 h-16 bg-transparent border-none flex items-center justify-center cursor-pointer group focus:outline-none touch-manipulation"
             aria-label="Open Milano Seal Concierge"
           >
-            <div className="absolute inset-0 rounded-full border border-amber-500/30 animate-ping opacity-20 pointer-events-none [animation-duration:3s]" />
-            <div className="absolute inset-[-4px] rounded-full border border-amber-500/10 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-t from-amber-500/5 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 animate-ping opacity-15 pointer-events-none [animation-duration:3s]" />
+            <div className="absolute inset-[-12px] rounded-full border border-amber-500/8 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
             <motion.img
-              src="/brand/milano-seal-feather-m-orb.png"
+              src="/brand/milano-seal-orb-v2.png"
               alt="The Milano Seal Orb"
               animate={{ rotate: 360 }}
               transition={{ duration: 220, ease: "linear", repeat: Infinity }}
-              className="w-11 h-11 object-contain rounded-full relative z-10"
+              className="w-16 h-16 object-contain relative z-10 drop-shadow-[0_0_18px_rgba(212,175,55,0.55)] group-hover:drop-shadow-[0_0_28px_rgba(212,175,55,0.75)] transition-all duration-500"
             />
           </motion.button>
         ) : (
