@@ -1,0 +1,80 @@
+name: Milano Seal Production Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: "Production URL to test, for example https://themilanoseal.com"
+        required: true
+        type: string
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Build
+        run: pnpm build
+
+      - name: Route smoke test
+        env:
+          BASE_URL: ${{ inputs.production_url }}
+        run: |
+          set -e
+
+          ROUTES=(
+            "/login"
+            "/login?error=access_denied"
+            "/login?next=/dashboard"
+            "/dashboard"
+            "/dashboard/deliveries"
+            "/dashboard/discounts"
+            "/dashboard/incidents"
+            "/dashboard/notary-network"
+            "/notary/join"
+            "/map"
+            "/countries"
+            "/portal"
+            "/portal/tracking"
+            "/portal/trackingNow"
+          )
+
+          for route in "${ROUTES[@]}"; do
+            url="${BASE_URL}${route}"
+            echo "Testing $url"
+
+            status=$(curl -L -s -o /tmp/page.html -w "%{http_code}" "$url")
+
+            if [ "$status" -ge 500 ]; then
+              echo "FAIL $route returned $status"
+              exit 1
+            fi
+
+            if grep -qi "404: This page could not be found\|Page Not Found" /tmp/page.html; then
+              echo "FAIL $route returned page-not-found content"
+              exit 1
+            fi
+
+            echo "PASS $route returned $status"
+          done
