@@ -46,9 +46,9 @@ export function Header() {
                   src="/brand/milano-seal-feather-m-orb.png"
                   alt=""
                   aria-hidden="true"
-                  width={40}
-                  height={40}
-                  style={{ display: "block", objectFit: "contain", flexShrink: 0 }}
+                  width={64}
+                  height={64}
+                  style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(48px, 5vw, 64px)", height: "clamp(48px, 5vw, 64px)" }}
                 />
                 <span className="flex flex-col leading-none">
                   <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">

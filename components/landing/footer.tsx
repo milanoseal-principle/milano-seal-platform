@@ -127,14 +127,19 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-6">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6">
               <Image
-                src="/milano-seal-gold-transparent-512.png"
-                alt="The Milano Seal"
-                width={160}
+                src="/brand/milano-seal-feather-m-orb.png"
+                alt=""
+                aria-hidden="true"
+                width={52}
                 height={52}
-                style={{ height: "52px", width: "auto" }}
+                style={{ width: 52, height: 52, objectFit: "contain", flexShrink: 0 }}
               />
+              <span className="flex flex-col leading-none">
+                <span className="font-serif text-[15px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em]">The Milano Seal</span>
+                <span className="mt-1 text-[7px] uppercase tracking-[0.3em] text-[#8B743C]">Global Document Execution</span>
+              </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
               U.S. Document Execution & Apostille Liaison. Sealing trust with
