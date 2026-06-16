@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DASHBOARD_MODULES,
-  MODULE_GROUPS,
+  getRoleFamilyModules,
+  getModuleGroups,
   type DashboardModule,
+  type RoleFamily,
 } from "@/lib/dashboard-modules";
 import { IntelligenceRail } from "@/components/dashboard/IntelligenceRail";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
@@ -107,13 +108,16 @@ function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
   );
 }
 
-export function DashboardShell({ children, activeMatterId }: { children: React.ReactNode; activeMatterId?: string }) {
+export function DashboardShell({ children, activeMatterId, roleFamily = "operator" }: { children: React.ReactNode; activeMatterId?: string; roleFamily?: RoleFamily }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [actionPanelOpen, setActionPanelOpen] = useState(false);
 
   const segments = pathname.split("/").filter(Boolean);
   const activeModule = segments[1] ?? "deals";
+
+  const visibleModules = getRoleFamilyModules(roleFamily);
+  const visibleGroups = getModuleGroups(visibleModules);
 
   const sidebar = (
     <aside className="w-64 flex-shrink-0 bg-[#080808] border-r border-[#1A1A1A] h-full flex flex-col">
@@ -138,8 +142,8 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {MODULE_GROUPS.map((group) => {
-          const mods = DASHBOARD_MODULES.filter((m) => m.group === group);
+        {visibleGroups.map((group) => {
+          const mods = visibleModules.filter((m) => m.group === group);
           return (
             <div key={group}>
               <p className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#4A4A4A] px-3 mb-2">

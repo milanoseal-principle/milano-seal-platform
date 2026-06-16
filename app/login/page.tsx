@@ -19,13 +19,13 @@ function destForRole(role: string): string {
     return "/dashboard";
   }
   if (role === "client") return "/portal";
-  if (role === "alliance" || role === "alliance_partner" || role === "alliance_member") return "/alliance/dashboard";
+  if (role === "alliance" || role === "alliance_partner" || role === "alliance_member") return "/dashboard";
   if (role === "virtual_assistant" || role === "va_manager" || role === "intake_assistant" ||
       role === "scheduling_assistant" || role === "document_coordinator" ||
       role === "translation_coordinator" || role === "courier_assistant" ||
       role === "followup_coordinator" || role === "alliance_support_assistant" ||
       role === "escalation_assistant") {
-    return "/va/dashboard";
+    return "/dashboard";
   }
   return "/login?error=access_denied";
 }
@@ -36,8 +36,7 @@ function isNextAllowedForRole(next: string | null, role: string): next is string
 
   if (destination === "/dashboard") return next.startsWith("/dashboard");
   if (destination === "/portal") return next.startsWith("/portal");
-  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
-  if (destination === "/va/dashboard") return next.startsWith("/va");
+  if (destination === "/portal") return next.startsWith("/portal");
 
   return false;
 }
@@ -50,23 +49,14 @@ interface RitualConfig {
   footerText: string;
 }
 
-function ritualForDestination(destination: string): RitualConfig {
-  if (destination.startsWith("/dashboard")) {
-    return {
-      eyebrow: "Execution Intelligence",
-      steps: [
-        "Verifying credentials",
-        "Loading matter pipeline",
-        "Resolving operator access",
-        "Syncing execution workspace",
-        "Access granted",
-      ],
-      sectionLabel: "Preparing execution workspace",
-      statusText: "Preparing your execution workspace.",
-      footerText: "EXECUTION WORKSPACE READY",
-    };
-  }
-  if (destination.startsWith("/alliance")) {
+function ritualForDestination(destination: string, role?: string): RitualConfig {
+  const isAlliance = role === "alliance" || role === "alliance_partner" || role === "alliance_member";
+  const isVA = role === "virtual_assistant" || role === "va_manager" || role === "intake_assistant" ||
+    role === "scheduling_assistant" || role === "document_coordinator" || role === "translation_coordinator" ||
+    role === "courier_assistant" || role === "followup_coordinator" || role === "alliance_support_assistant" ||
+    role === "escalation_assistant";
+
+  if (destination.startsWith("/dashboard") && isAlliance) {
     return {
       eyebrow: "Alliance Partner Access",
       steps: [
@@ -80,7 +70,7 @@ function ritualForDestination(destination: string): RitualConfig {
       footerText: "ALLIANCE ACCESS GRANTED",
     };
   }
-  if (destination.startsWith("/va")) {
+  if (destination.startsWith("/dashboard") && isVA) {
     return {
       eyebrow: "VA Workspace",
       steps: [
@@ -92,6 +82,21 @@ function ritualForDestination(destination: string): RitualConfig {
       sectionLabel: "Preparing VA workspace",
       statusText: "Preparing your VA workspace.",
       footerText: "VA WORKSPACE READY",
+    };
+  }
+  if (destination.startsWith("/dashboard")) {
+    return {
+      eyebrow: "Execution Intelligence",
+      steps: [
+        "Verifying credentials",
+        "Loading matter pipeline",
+        "Resolving operator access",
+        "Syncing execution workspace",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing execution workspace",
+      statusText: "Preparing your execution workspace.",
+      footerText: "EXECUTION WORKSPACE READY",
     };
   }
   // portal / client / default
@@ -177,7 +182,7 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pendingNav, setPendingNav] = useState<{ redirect: string } | null>(null);
+  const [pendingNav, setPendingNav] = useState<{ redirect: string; role?: string } | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -219,7 +224,7 @@ function LoginInner() {
 
   // After auth succeeds, show ritual then navigate.
   if (pendingNav) {
-    const ritual = ritualForDestination(pendingNav.redirect);
+    const ritual = ritualForDestination(pendingNav.redirect, pendingNav.role);
     return (
       <RitualEntryLock
         eyebrow={ritual.eyebrow}
@@ -242,13 +247,13 @@ function LoginInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
       });
-      const json = await res.json() as { ok: boolean; error?: string; redirect?: string };
+      const json = await res.json() as { ok: boolean; error?: string; redirect?: string; role?: string };
       if (!json.ok) {
         setError(json.error ?? "Sign-in failed. Please try again.");
         return;
       }
       // Auth succeeded — play ritual then navigate.
-      setPendingNav({ redirect: json.redirect ?? "/dashboard" });
+      setPendingNav({ redirect: json.redirect ?? "/dashboard", role: json.role });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
