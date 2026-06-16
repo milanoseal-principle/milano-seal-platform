@@ -117,7 +117,7 @@ function MilanoSealOrb() {
       alt="The Milano Seal"
       width={88}
       height={88}
-      style={{ display: "block", width: 88, height: 88, objectFit: "contain" }}
+      style={{ display: "block", width: 88, height: 88, objectFit: "contain", mixBlendMode: "screen" }}
       draggable={false}
     />
   );

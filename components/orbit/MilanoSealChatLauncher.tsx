@@ -46,7 +46,11 @@ export function MilanoSealChatLauncher() {
               alt="The Milano Seal Orb"
               animate={{ rotate: 360 }}
               transition={{ duration: 220, ease: "linear", repeat: Infinity }}
-              className="w-16 h-16 object-contain relative z-10 drop-shadow-[0_0_18px_rgba(212,175,55,0.55)] group-hover:drop-shadow-[0_0_28px_rgba(212,175,55,0.75)] transition-all duration-500"
+              className="w-16 h-16 object-contain relative z-10 transition-all duration-500"
+              style={{
+                mixBlendMode: "screen",
+                filter: "drop-shadow(0 0 18px rgba(212,175,55,0.7)) drop-shadow(0 0 36px rgba(212,175,55,0.35))",
+              }}
             />
           </motion.button>
         ) : (
