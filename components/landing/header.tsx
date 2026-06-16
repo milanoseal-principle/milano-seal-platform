@@ -43,7 +43,7 @@ export function Header() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/brand/milano-mini-orb.png"
+                  src="/brand/milano-seal-feather-m-orb.png"
                   alt=""
                   aria-hidden="true"
                   width={40}

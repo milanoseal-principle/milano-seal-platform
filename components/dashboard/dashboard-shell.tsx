@@ -125,7 +125,7 @@ export function DashboardShell({ children, activeMatterId, roleFamily = "operato
       <div className="px-4 py-5 border-b border-[#1A1A1A]">
         <Link href="/" className="flex items-center gap-3">
           <img
-            src="/brand/milano-mini-orb.png"
+            src="/brand/milano-seal-feather-m-orb.png"
             alt=""
             className="w-8 h-8"
           />

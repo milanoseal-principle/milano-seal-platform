@@ -312,7 +312,7 @@ export function RitualMedallion({ reduced }: RitualMedallionProps) {
       >
         {/* Crest art — screen blend dissolves PNG dark areas, gold details emerge through */}
         <img
-          src="/brand/milano-crest-orbit.png"
+          src="/brand/milano-seal-orb-v2.png"
           alt=""
           aria-hidden="true"
           style={{

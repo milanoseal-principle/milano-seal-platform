@@ -119,7 +119,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/milano-mini-orb.png"
+              src="/brand/milano-seal-feather-m-orb.png"
               alt=""
               aria-hidden="true"
               width={56}
@@ -149,7 +149,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/brand/milano-mini-orb.png"
+                  src="/brand/milano-seal-feather-m-orb.png"
                   alt=""
                   aria-hidden="true"
                   width={28}
