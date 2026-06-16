@@ -302,17 +302,36 @@ All `/dashboard/*` routes require authentication. Unauthenticated requests redir
 
 ---
 
-## 11. Not Currently Implemented (Planned)
+## 11. Role Routing Matrix
+
+| Role Family | Login → | Post-Auth Ritual | Landing |
+|---|---|---|---|
+| `client` | `/login` | Secure Matter Portal ritual | `/portal` |
+| `alliance` / `alliance_partner` / `alliance_member` | `/login` | Alliance Partner Access ritual | `/alliance/dashboard` |
+| `virtual_assistant` / VA roles | `/login` | VA Workspace ritual | `/va/dashboard` |
+| `founder` / `admin` / `operator` roles | `/login` | Execution Intelligence ritual | `/dashboard` |
+| unknown / missing role | `/login` | — | `/login?error=access_denied` |
+
+**Safe next path rules:**
+
+| Role Family | Allowed `?next=` prefixes |
+|---|---|
+| operator/founder | `/dashboard`, `/dashboard/*`, `/workspace/*`, `/today` |
+| client | `/portal`, `/portal/*` |
+| alliance | `/alliance`, `/alliance/*` |
+| va | `/va`, `/va/*` |
+
+---
+
+## 12. Not Currently Implemented (Planned)
 
 | Route | Notes |
 |---|---|
-| `/today` | Planned operator daily briefing — not yet built |
-| `/workspace/release` | Planned release QA workspace — not yet built |
 | `/portal/payment` | Payment handled via Wise off-platform |
 
 ---
 
-## 12. Production Smoke Test Summary
+## 13. Production Smoke Test Summary
 
 **PASS criteria:**
 - Public: `200`
@@ -324,9 +343,11 @@ All `/dashboard/*` routes require authentication. Unauthenticated requests redir
 | Group | Routes | Count |
 |---|---|---|
 | Public | `/` `/login` `/login?error=access_denied` `/login?next=/dashboard` `/intake` `/map` `/countries` `/notary/join` | 8 |
+| Operator (protected) | `/today` `/workspace/release` | 2 |
 | Dashboard (protected) | `/dashboard` `/dashboard/admin` `/dashboard/deliveries` `/dashboard/discounts` `/dashboard/incidents` `/dashboard/notary-network` `/dashboard/truth` | 7 |
-| Portal (protected) | `/portal` `/portal/tracking` `/portal/trackingNow` `/portal/invoice` `/portal/documents` `/portal/release` | 6 |
+| Client Portal (protected) | `/portal` `/portal/tracking` `/portal/trackingNow` `/portal/invoice` `/portal/documents` `/portal/release` | 6 |
+| Alliance (protected) | `/alliance/dashboard` | 1 |
 | VA (protected) | `/va/dashboard` `/va/portal` | 2 |
 | Protected API | `/api/dashboard/discounts` `/api/dashboard/incidents` `/api/notary/credentials` | 3 |
 | Public API | `/api/health` | 1 |
-| **Total** | | **27** |
+| **Total** | | **30** |

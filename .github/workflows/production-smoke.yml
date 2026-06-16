@@ -47,6 +47,8 @@ jobs:
             app/map/page.tsx
             app/countries/page.tsx
             app/notary/join/page.tsx
+            app/today/page.tsx
+            app/workspace/release/page.tsx
             app/dashboard/page.tsx
             app/dashboard/deliveries/page.tsx
             app/dashboard/discounts/page.tsx
@@ -59,6 +61,7 @@ jobs:
             app/portal/invoice/page.tsx
             app/portal/documents/page.tsx
             app/portal/release/page.tsx
+            app/alliance/dashboard/page.tsx
             app/va/dashboard/page.tsx
             app/va/portal/page.tsx
             app/api/auth/login/route.ts
@@ -67,6 +70,8 @@ jobs:
             app/api/notary/apply/route.ts
             app/api/notary/credentials/route.ts
             app/api/health/route.ts
+            lib/auth/server-role.ts
+            lib/dashboardAuth.ts
           )
           FAIL=0
           for f in "${REQUIRED[@]}"; do
@@ -201,6 +206,8 @@ jobs:
           check_public "/map"
           check_public "/countries"
           check_public "/notary/join"
+          check_protected "/today"
+          check_protected "/workspace/release"
 
           echo ""
           echo "══════════════════════════════════════════════"
@@ -223,6 +230,12 @@ jobs:
           check_protected "/portal/invoice"
           check_protected "/portal/documents"
           check_protected "/portal/release"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " ALLIANCE ROUTES (protected)"
+          echo "══════════════════════════════════════════════"
+          check_protected "/alliance/dashboard"
 
           echo ""
           echo "══════════════════════════════════════════════"
