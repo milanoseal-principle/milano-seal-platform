@@ -114,7 +114,7 @@ export function ReleaseCertificateRenderer({
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/milano-seal-orb-v2.png"
+          src="/brand/milano-formal-seal.png"
           alt="Milano Seal Crest"
           style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 12 }}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
