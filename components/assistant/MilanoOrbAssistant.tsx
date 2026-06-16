@@ -110,7 +110,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             style={{ scaleY: orbScaleY, scaleX: orbScaleX, width: 64, height: 64 }}
             onClick={handleOpen}
-            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation rounded-full border border-[#C6A55A]/35 bg-[#050507]/92 shadow-[0_0_28px_rgba(198,165,90,0.16),inset_0_0_18px_rgba(0,0,0,0.88)] hover:border-[#D4AF37]/65 hover:shadow-[0_0_36px_rgba(212,175,55,0.24),inset_0_0_18px_rgba(0,0,0,0.88)] transition-all duration-300"
+            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation bg-transparent border-none shadow-none"
             aria-label="Open Milano Seal Assistant"
           >
             {/* Utility halo */}
@@ -124,7 +124,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               aria-hidden="true"
               width={56}
               height={56}
-              style={{ display: "block", objectFit: "contain", borderRadius: "50%" }}
+              style={{ display: "block", objectFit: "contain" }}
             />
           </motion.button>
         ) : (
