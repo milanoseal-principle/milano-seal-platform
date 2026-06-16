@@ -323,11 +323,51 @@ All `/dashboard/*` routes require authentication. Unauthenticated requests redir
 
 ---
 
-## 12. Not Currently Implemented (Planned)
+## 12. CLIENT FULL WIRE PATH
 
-| Route | Notes |
+Complete client journey from login through all portal sub-routes.
+
+### Access Level
+- **Role required:** `client`
+- **Auth guard:** `app/portal/layout.tsx` — checks Supabase session; redirects non-client roles to their home; unauthenticated → `/login?next=/portal`
+- **Visibility:** Client-safe fields only. No `label_url`, `shipping_cost`, `margin`, `base_cost`, `operator_notes`, `internal_notes`, or raw webhook data.
+
+### Full Wire Path
+
+| Step | Route | File | Description |
+|---|---|---|---|
+| 1 | `/login` | `app/login/page.tsx` | Client enters email + password. Login API resolves role. `client` role → `/portal`. |
+| 2 | `/portal` | `app/portal/page.tsx` | Matter Control Portal. Execution progress, coordinator contact, matter details, custody timeline, messages. |
+| 3 | `/portal/invoice` | `app/portal/invoice/page.tsx` | Invoice & Payment Authorization. Amount due, Wise reference, payment status, printable invoice. |
+| 4 | `/portal/payment` | `app/portal/payment/page.tsx` | Payment Status. Wise reference, payment confirmation status, release gate status. Client-safe labels only. |
+| 5 | `/portal/tracking` | `app/portal/tracking/page.tsx` | Courier & tracking overview. |
+| 6 | `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | Live courier custody view. |
+| 7 | `/portal/documents` | `app/portal/documents/page.tsx` | Document Vault. Client-accessible document records. |
+| 8 | `/portal/release` | `app/portal/release/page.tsx` | Release Desk. Release status and final delivery confirmation. |
+
+### Client-Safe Status Labels
+
+| Internal State | Client-Visible Label |
 |---|---|
-| `/portal/payment` | Payment handled via Wise off-platform |
+| `new` / `intake_received` | Intake received |
+| `under_review` / `compliance_review` | Under review |
+| `awaiting_payment` | Payment pending |
+| `payment_confirmed` / `scheduled` | Execution scheduled |
+| `in_execution` | In execution |
+| `apostille_processing` | Apostille processing |
+| `courier_ready` / `shipped` | In transit |
+| `delivered` / `completed` | Delivered |
+| `is_paid_and_released` | Paid & Released |
+
+### Role Routing (Login → Destination)
+
+| Role | Destination |
+|---|---|
+| `client` | `/portal` |
+| `founder` / `admin` / operator roles | `/dashboard` |
+| `alliance` / `alliance_partner` / `alliance_member` | `/alliance/dashboard` |
+| `virtual_assistant` / VA roles | `/va/dashboard` |
+| unknown / missing | `/login?error=access_denied` |
 
 ---
 

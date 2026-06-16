@@ -60,6 +60,7 @@ jobs:
             app/portal/trackingNow/page.tsx
             app/portal/invoice/page.tsx
             app/portal/documents/page.tsx
+            app/portal/payment/page.tsx
             app/portal/release/page.tsx
             app/alliance/dashboard/page.tsx
             app/va/dashboard/page.tsx
@@ -201,6 +202,7 @@ jobs:
           check_public "/"
           check_public "/login"
           check_public "/login?error=access_denied"
+          check_public "/login?next=/portal"
           check_public "/login?next=/dashboard"
           check_public "/intake"
           check_public "/map"
@@ -229,6 +231,7 @@ jobs:
           check_protected "/portal/trackingNow"
           check_protected "/portal/invoice"
           check_protected "/portal/documents"
+          check_protected "/portal/payment"
           check_protected "/portal/release"
 
           echo ""
