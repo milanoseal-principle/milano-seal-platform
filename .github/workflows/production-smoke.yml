@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       production_url:
-        description: "Production URL to test, for example https://themilanoseal.com"
+        description: "Production URL to test, e.g. https://themilanoseal.com"
         required: true
         type: string
 
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Enable Corepack
@@ -37,44 +37,216 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # ── Route file existence check ──────────────────────────────────────────────────────
+      - name: Verify canonical route files exist
+        run: |
+          set -e
+          REQUIRED=(
+            app/login/page.tsx
+            app/intake/page.tsx
+            app/map/page.tsx
+            app/countries/page.tsx
+            app/notary/join/page.tsx
+            app/dashboard/page.tsx
+            app/dashboard/deliveries/page.tsx
+            app/dashboard/discounts/page.tsx
+            app/dashboard/incidents/page.tsx
+            app/dashboard/notary-network/page.tsx
+            app/dashboard/truth/page.tsx
+            app/portal/page.tsx
+            app/portal/tracking/page.tsx
+            app/portal/trackingNow/page.tsx
+            app/portal/invoice/page.tsx
+            app/portal/documents/page.tsx
+            app/portal/release/page.tsx
+            app/va/dashboard/page.tsx
+            app/va/portal/page.tsx
+            app/api/auth/login/route.ts
+            app/api/dashboard/discounts/route.ts
+            app/api/dashboard/incidents/route.ts
+            app/api/notary/apply/route.ts
+            app/api/notary/credentials/route.ts
+            app/api/health/route.ts
+          )
+          FAIL=0
+          for f in "${REQUIRED[@]}"; do
+            if [ -f "$f" ]; then
+              echo "✅ $f"
+            else
+              echo "❌ MISSING $f"
+              FAIL=1
+            fi
+          done
+          if [ "$FAIL" -eq 1 ]; then
+            echo "One or more required route files are missing."
+            exit 1
+          fi
+
+      # ── Route smoke test ───────────────────────────────────────────────────────────
       - name: Route smoke test
         env:
           BASE_URL: ${{ inputs.production_url }}
         run: |
           set -e
+          PASS=0
+          FAIL=0
 
-          ROUTES=(
-            "/login"
-            "/login?error=access_denied"
-            "/login?next=/dashboard"
-            "/dashboard"
-            "/dashboard/deliveries"
-            "/dashboard/discounts"
-            "/dashboard/incidents"
-            "/dashboard/notary-network"
-            "/notary/join"
-            "/map"
-            "/countries"
-            "/portal"
-            "/portal/tracking"
-            "/portal/trackingNow"
-          )
-
-          for route in "${ROUTES[@]}"; do
-            url="${BASE_URL}${route}"
-            echo "Testing $url"
-
+          check_public() {
+            local route="$1"
+            local url="${BASE_URL}${route}"
+            local status
             status=$(curl -L -s -o /tmp/page.html -w "%{http_code}" "$url")
+            local final_url
+            final_url=$(curl -Ls -o /dev/null -w "%{url_effective}" "$url")
 
             if [ "$status" -ge 500 ]; then
-              echo "FAIL $route returned $status"
-              exit 1
+              echo "❌ FAIL [public] $route → $status (final: $final_url)"
+              FAIL=$((FAIL+1))
+              return
             fi
-
-            if grep -qi "404: This page could not be found\|Page Not Found" /tmp/page.html; then
-              echo "FAIL $route returned page-not-found content"
-              exit 1
+            if grep -qi "404: This page could not be found\|Page Not Found\|NOT_FOUND" /tmp/page.html; then
+              echo "❌ FAIL [public] $route → 404 content (status: $status)"
+              FAIL=$((FAIL+1))
+              return
             fi
+            if [ "$status" -ge 400 ]; then
+              echo "❌ FAIL [public] $route → $status (expected 200)"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            echo "✅ PASS [public] $route → $status (final: $final_url)"
+            PASS=$((PASS+1))
+          }
 
-            echo "PASS $route returned $status"
-          done
+          check_protected() {
+            local route="$1"
+            local url="${BASE_URL}${route}"
+            local status
+            status=$(curl -s -o /tmp/page.html -w "%{http_code}" "$url")
+            local final_url
+            final_url=$(curl -Ls -o /dev/null -w "%{url_effective}" "$url")
+
+            if [ "$status" -ge 500 ]; then
+              echo "❌ FAIL [protected] $route → $status"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            if grep -qi "404: This page could not be found\|Page Not Found\|NOT_FOUND" /tmp/page.html; then
+              echo "❌ FAIL [protected] $route → 404 content (status: $status)"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            echo "✅ PASS [protected] $route → $status (final: $final_url)"
+            PASS=$((PASS+1))
+          }
+
+          check_protected_api() {
+            local route="$1"
+            local url="${BASE_URL}${route}"
+            local status
+            status=$(curl -s -o /tmp/api.json -w "%{http_code}" "$url")
+
+            if [ "$status" -ge 500 ]; then
+              echo "❌ FAIL [api:protected] $route → $status"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            if [ "$status" -eq 404 ]; then
+              echo "❌ FAIL [api:protected] $route → 404 (route missing)"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            echo "✅ PASS [api:protected] $route → $status"
+            PASS=$((PASS+1))
+          }
+
+          check_public_api() {
+            local route="$1"
+            local url="${BASE_URL}${route}"
+            local status
+            status=$(curl -s -o /tmp/api.json -w "%{http_code}" "$url")
+
+            if [ "$status" -ge 500 ]; then
+              echo "❌ FAIL [api:public] $route → $status"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            if [ "$status" -eq 404 ]; then
+              echo "❌ FAIL [api:public] $route → 404"
+              FAIL=$((FAIL+1))
+              return
+            fi
+            echo "✅ PASS [api:public] $route → $status"
+            PASS=$((PASS+1))
+          }
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " PUBLIC ROUTES"
+          echo "══════════════════════════════════════════════"
+          check_public "/"
+          check_public "/login"
+          check_public "/login?error=access_denied"
+          check_public "/login?next=/dashboard"
+          check_public "/intake"
+          check_public "/map"
+          check_public "/countries"
+          check_public "/notary/join"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " DASHBOARD ROUTES (protected)"
+          echo "══════════════════════════════════════════════"
+          check_protected "/dashboard"
+          check_protected "/dashboard/deliveries"
+          check_protected "/dashboard/discounts"
+          check_protected "/dashboard/incidents"
+          check_protected "/dashboard/notary-network"
+          check_protected "/dashboard/truth"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " CLIENT PORTAL ROUTES (protected)"
+          echo "══════════════════════════════════════════════"
+          check_protected "/portal"
+          check_protected "/portal/tracking"
+          check_protected "/portal/trackingNow"
+          check_protected "/portal/invoice"
+          check_protected "/portal/documents"
+          check_protected "/portal/release"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " VA ROUTES (protected)"
+          echo "══════════════════════════════════════════════"
+          check_protected "/va/dashboard"
+          check_protected "/va/portal"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " PROTECTED API ROUTES (expect 401/403)"
+          echo "══════════════════════════════════════════════"
+          check_protected_api "/api/dashboard/discounts"
+          check_protected_api "/api/dashboard/incidents"
+          check_protected_api "/api/notary/credentials"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " PUBLIC API HEALTH"
+          echo "══════════════════════════════════════════════"
+          check_public_api "/api/health"
+
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo " SUMMARY"
+          echo "══════════════════════════════════════════════"
+          echo "PASS: $PASS"
+          echo "FAIL: $FAIL"
+          echo ""
+
+          if [ "$FAIL" -gt 0 ]; then
+            echo "Smoke test FAILED — $FAIL route(s) need attention."
+            exit 1
+          else
+            echo "All routes PASSED."
+          fi
