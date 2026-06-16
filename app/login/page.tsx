@@ -115,9 +115,9 @@ function MilanoSealOrb() {
     <img
       src="/brand/milano-seal-orb-v2.png"
       alt="The Milano Seal"
-      width={88}
-      height={88}
-      style={{ display: "block", width: 88, height: 88, objectFit: "contain", filter: "drop-shadow(0 0 16px rgba(212,175,55,0.6))" }}
+      width={52}
+      height={52}
+      style={{ display: "block", width: 52, height: 52, objectFit: "contain" }}
       draggable={false}
     />
   );
@@ -300,11 +300,12 @@ function LoginInner() {
           background:linear-gradient(90deg,transparent,rgba(198,165,90,.7),transparent);
         }
         .ms-ring {
-          width:88px; height:88px;
+          width:72px; height:72px; border-radius:50%;
+          border:1px solid rgba(198,165,90,.35);
           display:flex; align-items:center; justify-content:center;
           margin:0 auto 24px;
-          filter:drop-shadow(0 0 18px rgba(198,165,90,.55));
           animation:ms-goldPulse 4s ease-in-out infinite;
+          box-shadow:0 0 32px rgba(198,165,90,.12);
         }
         .ms-eyebrow {
           font-size:9.5px; letter-spacing:.28em; text-transform:uppercase;
