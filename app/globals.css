@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@import "../styles/components/milano-orbit.css";
 @import "../styles/components/portal-shell.css";
 @import "../styles/pages/admin-dashboard.css";
 @import "../styles/pages/invoices.css";
