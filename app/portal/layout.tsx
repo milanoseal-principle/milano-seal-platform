@@ -8,7 +8,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const DASHBOARD_ROLES = new Set(["founder_admin", "admin_operator"]);
+const FOUNDER_PREVIEW_ROLES = new Set(["founder", "founder_admin", "admin_operator"]);
 const ALLIANCE_ROLES = new Set(["alliance", "alliance_partner", "alliance_member"]);
 const VA_ROLES = new Set(["virtual_assistant"]);
 
@@ -20,9 +20,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   const role = ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
-  if (DASHBOARD_ROLES.has(role)) redirect("/dashboard");
-  if (ALLIANCE_ROLES.has(role)) redirect("/alliance/dashboard");
-  if (VA_ROLES.has(role)) redirect("/va/dashboard");
+  // Founder/admin may preview the client portal — do not bounce them.
+  // Real VA / alliance roles remain locked to their own dashboard.
+  if (!FOUNDER_PREVIEW_ROLES.has(role)) {
+    if (ALLIANCE_ROLES.has(role)) redirect("/alliance/dashboard");
+    if (VA_ROLES.has(role)) redirect("/va/dashboard");
+  }
 
   return <PortalFrame>{children}</PortalFrame>;
 }
