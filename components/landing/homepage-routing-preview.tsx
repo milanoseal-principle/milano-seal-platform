@@ -5,6 +5,10 @@ import Link from "next/link";
 import { ArrowRight, Route } from "lucide-react";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
+import { buildHomeCorridor } from "@/lib/intelligence/homeCorridors";
+import { MiniCorridorMapPreview } from "@/components/home/MiniCorridorMapPreview";
+import { HomeExecutionPathCards } from "@/components/home/HomeExecutionPathCards";
+import { HomeShippingCorridorPanel } from "@/components/home/HomeShippingCorridorPanel";
 
 const PRIORITY_SLUGS = [
   "italy",
@@ -25,6 +29,8 @@ export function HomepageRoutingPreview() {
   const [selected, setSelected] = useState<Destination>(
     PRIORITY_DESTINATIONS[0],
   );
+
+  const corridor = buildHomeCorridor(selected);
 
   return (
     <section className="relative overflow-hidden bg-[#050507] py-14 md:py-18">
@@ -107,12 +113,34 @@ export function HomepageRoutingPreview() {
             </div>
           </div>
 
-          <div className="p-5 sm:p-6 lg:p-8">
+          <div className="space-y-6 p-5 sm:p-6 lg:p-8">
+            <MiniCorridorMapPreview corridor={corridor} />
             <DestinationIntelligenceCard
               key={selected.slug}
               destination={selected}
               variant="homepagePreview"
             />
+            <HomeExecutionPathCards />
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-6">
+          <HomeShippingCorridorPanel corridor={corridor} />
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={corridor.intakeHref}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#C6A55A] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[#C6A55A]/90"
+            >
+              Start Secure Intake
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              href={`/countries/${corridor.slug}`}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#C6A55A]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]/60"
+            >
+              View Country Requirements
+            </Link>
           </div>
         </div>
       </div>
