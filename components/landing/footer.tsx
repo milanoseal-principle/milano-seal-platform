@@ -129,12 +129,12 @@ export function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-3 mb-6">
               <Image
-                src="/brand/milano-seal-feather-m-orb.png"
+                src="/brand/milano-seal-orb-v2.png"
                 alt=""
                 aria-hidden="true"
-                width={52}
-                height={52}
-                style={{ width: 52, height: 52, objectFit: "contain", flexShrink: 0 }}
+                width={96}
+                height={96}
+                style={{ width: 96, height: 96, objectFit: "contain", flexShrink: 0 }}
               />
               <span className="flex flex-col leading-none">
                 <span className="font-serif text-[15px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em]">The Milano Seal</span>
