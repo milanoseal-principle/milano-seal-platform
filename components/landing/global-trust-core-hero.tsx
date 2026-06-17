@@ -147,6 +147,7 @@ export function GlobalTrustCoreHero() {
   const [arcsDone,    setArcsDone]    = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [selectedId,  setSelectedId]  = useState<string|null>(null);
+  const [hoveredId,   setHoveredId]   = useState<string|null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const selectedDest  = DESTINATIONS.find(d=>d.id===selectedId) ?? null;
@@ -177,14 +178,13 @@ export function GlobalTrustCoreHero() {
     setReducedMotion(reduced);
     // Layer 9: reduced motion fast-path
     if (reduced) { setPhase("rotating"); setArcsDone(true); return; }
-    timers.current.push(setTimeout(()=>setPhase("settled"), 80));
-    timers.current.push(setTimeout(()=>setPhase("arcs"),    600));
-    timers.current.push(setTimeout(()=>{ setArcsDone(true); setPhase("rotating"); }, 900));
+    timers.current.push(setTimeout(()=>{ setPhase("rotating"); setArcsDone(true); }, 80));
     return ()=>timers.current.forEach(clearTimeout);
   }, []);
 
   const isSettled  = phase !== "idle";
-  const showArcs   = phase === "arcs" || phase === "rotating";
+  const activeId   = hoveredId ?? selectedId;
+  const showArcs   = !!activeId;
   const isRotating = phase === "rotating" && !selectedId;
 
   // Popover placement
@@ -357,8 +357,8 @@ export function GlobalTrustCoreHero() {
           {DESTINATIONS.map((dest,i)=>{
             const { arc, dot } = hagueColor(dest.hagueStatus);
             const path       = makeCurvedPath(FLORIDA, {x:dest.x,y:dest.y});
-            const isSelected = selectedId===dest.id;
-            const isDimmed   = !!selectedId && !isSelected;
+            const isSelected = activeId===dest.id;
+            const isDimmed   = !!activeId && !isSelected;
 
             // Layer 3: Spatial depth defocus
             const depth       = getDepthFactor(dest.x, dest.y);
@@ -504,6 +504,8 @@ export function GlobalTrustCoreHero() {
                   aria-label={`${dest.label} routing information`}
                   data-auth-node="FLORIDA_ORIGIN"
                   data-target-vector={dest.isoCode}
+                  onMouseEnter={() => { if (arcsDone) setHoveredId(dest.id); }}
+                  onMouseLeave={() => { setHoveredId(null); }}
                   onClick={e=>{ e.stopPropagation(); handleSelect(dest.id); }}
                   onKeyDown={e=>{ if(e.key==="Enter"||e.key===" ") handleSelect(dest.id); }}
                 >
