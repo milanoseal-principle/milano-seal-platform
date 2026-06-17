@@ -504,9 +504,6 @@ export function GlobalTrustCoreHero() {
                   aria-label={`${dest.label} routing information`}
                   data-auth-node="FLORIDA_ORIGIN"
                   data-target-vector={dest.isoCode}
-                  onMouseEnter={() => {
-                    if (arcsDone && selectedId !== dest.id) setSelectedId(dest.id);
-                  }}
                   onClick={e=>{ e.stopPropagation(); handleSelect(dest.id); }}
                   onKeyDown={e=>{ if(e.key==="Enter"||e.key===" ") handleSelect(dest.id); }}
                 >
