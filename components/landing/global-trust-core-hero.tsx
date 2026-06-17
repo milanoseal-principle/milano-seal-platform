@@ -405,18 +405,18 @@ export function GlobalTrustCoreHero() {
                 <path d={path} stroke={bodyStroke}
                   strokeWidth={isSelected ? 2.0 : 1.4} fill="none"
                   filter={bodyFilter}
-                  className={`ms-globe-arc-body${showArcs ? " ms-globe-arc-body--flowing" : ""}`}
+                  className={`ms-globe-arc-body${isSelected ? " ms-globe-arc-body--flowing" : ""}`}
                   style={{ animationDuration:animDur, animationDelay:animDelay,
-                    opacity: isDimmed ? 0.10 : 1,
+                    opacity: isSelected ? 1 : 0,
                     transition:"opacity 0.4s ease, stroke-width 0.3s ease"
                   } as React.CSSProperties} />
 
                 {/* L4: Bright head */}
                 <path d={path} stroke={headStroke}
                   strokeWidth={isSelected ? 4.5 : 3.2} fill="none"
-                  className={`ms-globe-arc-head${showArcs ? " ms-globe-arc-head--flowing" : ""}`}
+                  className={`ms-globe-arc-head${isSelected ? " ms-globe-arc-head--flowing" : ""}`}
                   style={{ animationDuration:animDur, animationDelay:animDelay,
-                    opacity: isDimmed ? 0 : 1,
+                    opacity: isSelected ? 1 : 0,
                     transition:"opacity 0.4s ease"
                   } as React.CSSProperties} />
 
@@ -424,14 +424,14 @@ export function GlobalTrustCoreHero() {
                 <path d={path} stroke="#FFFFFF"
                   strokeWidth={isSelected ? 2.2 : 1.4} fill="none"
                   filter={isSelected ? "url(#anamorphic-bloom)" : undefined}
-                  className={`ms-globe-arc-tip${showArcs ? " ms-globe-arc-tip--flowing" : ""}`}
+                  className={`ms-globe-arc-tip${isSelected ? " ms-globe-arc-tip--flowing" : ""}`}
                   style={{ animationDuration:tipDur, animationDelay:animDelay,
-                    opacity: isDimmed ? 0 : 0.9,
+                    opacity: isSelected ? 0.9 : 0,
                     transition:"opacity 0.4s ease"
                   } as React.CSSProperties} />
 
                 {/* animateMotion particle */}
-                {showArcs && !reducedMotion && !isDimmed && (
+                {isSelected && !reducedMotion && (
                   <circle r="2.5" fill="#FFF8DC" opacity="0.95" filter="url(#gtc-glow-soft)">
                     <animateMotion dur={animDur} begin={animDelay} repeatCount="indefinite">
                       <mpath href={`#gtc-arc-${dest.id}`}/>
