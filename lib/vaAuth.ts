@@ -14,8 +14,11 @@ const VA_ROLES = new Set([
   "escalation_assistant",
 ]);
 
+// Founder/admin may preview the VA workspace (aligned with dashboard/portal guards).
+const FOUNDER_PREVIEW_ROLES = new Set(["founder", "founder_admin", "admin", "admin_operator"]);
+
 export function isVARole(role: string): boolean {
-  return role === "founder_admin" || VA_ROLES.has(role);
+  return FOUNDER_PREVIEW_ROLES.has(role) || VA_ROLES.has(role);
 }
 
 export async function requireVAAccess(): Promise<{

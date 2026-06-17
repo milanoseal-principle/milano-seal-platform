@@ -8,7 +8,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const FOUNDER_PREVIEW_ROLES = new Set(["founder", "founder_admin", "admin_operator"]);
+const FOUNDER_PREVIEW_ROLES = new Set(["founder", "founder_admin", "admin", "admin_operator"]);
 const ALLIANCE_ROLES = new Set(["alliance", "alliance_partner", "alliance_member"]);
 const VA_ROLES = new Set(["virtual_assistant"]);
 
