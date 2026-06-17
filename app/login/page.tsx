@@ -226,7 +226,17 @@ function LoginInner() {
         sectionLabel={ritual.sectionLabel}
         statusText={ritual.statusText}
         footerText={ritual.footerText}
-        onComplete={() => router.replace(pendingNav.redirect)}
+        onComplete={() => {
+          // Mark each workspace ritual as seen so the shell doesn't play a second one.
+          try {
+            const dest = pendingNav.redirect;
+            if (dest.startsWith("/va")) sessionStorage.setItem("ms_va_ritual_seen", "1");
+            else if (dest.startsWith("/portal")) sessionStorage.setItem("ms-portal-entry", "1");
+            else if (dest.startsWith("/dashboard")) sessionStorage.setItem("ms-operator-entry", "1");
+            else if (dest.startsWith("/alliance")) sessionStorage.setItem("ms_alliance_ritual_seen", "1");
+          } catch { /* storage unavailable */ }
+          router.replace(pendingNav.redirect);
+        }}
       />
     );
   }
