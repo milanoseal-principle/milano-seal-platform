@@ -66,7 +66,7 @@ export default async function CountryPage({ params }: PageProps) {
       )}
 
       <Header />
-      <main className="min-h-screen bg-[#050507] text-white pt-[116px]">
+      <main className="min-h-screen bg-[#050507] text-white pt-[var(--header-total-height)]">
 
         {/* Breadcrumb */}
         <nav className="max-w-5xl mx-auto px-6 pt-8 flex items-center gap-2" aria-label="Breadcrumb">
