@@ -200,7 +200,7 @@ function LoginInner() {
         if (!data.user) return;
         const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
         if (!role) return;
-        router.replace(isNextAllowedForRole(safeNext, role) ? safeNext : destForRole(role));
+        // Already authed — don't auto-redirect so founder can pick a tab
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
@@ -239,7 +239,7 @@ function LoginInner() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext, tabHint: accessType }),
       });
       const json = await res.json() as { ok: boolean; error?: string; redirect?: string; role?: string };
       if (!json.ok) {
