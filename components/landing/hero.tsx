@@ -87,7 +87,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] lg:h-[100svh] pt-[var(--header-total-height)] flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-[100svh] lg:min-h-[100svh] pt-[var(--header-total-height)] pb-16 lg:pb-20 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
@@ -140,11 +140,11 @@ export function Hero() {
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            <p className={`ms-hero-line text-sm text-white/50 mb-10 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-sm text-white/50 mb-6 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
             </p>
 
-            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-8${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-6${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
