@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./styles/milano-theme.css";
 
 @import "../styles/components/milano-orbit.css";
 @import "../styles/components/portal-shell.css";
@@ -258,7 +259,7 @@ html {
   --ring-hsl: 38 47% 56%;
 
   /* Brand */
-  --gold: #c6a55a;
+  --gold: var(--ms-gold);
   --gold-light: #d4b76a;
   --gold-dim: #8a7240;
   --gold-muted: rgba(198, 165, 90, 0.15);
@@ -900,7 +901,7 @@ h4 {
   }
   .bg-await {
     background: rgba(198, 165, 90, 0.12);
-    color: #c6a55a;
+    color: var(--ms-gold);
     border-color: rgba(198, 165, 90, 0.35);
   }
   .bg-critical {
@@ -1282,9 +1283,9 @@ h4 {
 .ritual-overlay__text-area--show .ritual-overlay__wordmark {
   background: linear-gradient(
     105deg,
-    #c6a55a 38%,
+    var(--ms-gold) 38%,
     #f4e5b8 50%,
-    #c6a55a 62%
+    var(--ms-gold) 62%
   );
   background-size: 240% 100%;
   background-position: -50% 0;
@@ -2142,7 +2143,7 @@ h4 {
 /* ── "Borders" metallic gradient text ───────────────────────── */
 .ms-hero-borders-gradient {
   /* Sharp polished-metal transitions: pearl → champagne → antique gold → warm gold → back to pearl */
-  background: linear-gradient(135deg, #FFFFFF 8%, #F4E5B8 32%, #D4AF37 52%, #C6A65B 68%, #FFFFFF 92%);
+  background: linear-gradient(135deg, #FFFFFF 8%, #F4E5B8 32%, #D4AF37 52%, var(--ms-gold) 68%, #FFFFFF 92%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2970,7 +2971,7 @@ h4 {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #C6A55A;
+  background: var(--ms-gold);
   flex-shrink: 0;
   opacity: 0.8;
 }
@@ -3048,7 +3049,7 @@ h4 {
 }
 
 .ms-founder-card__close:hover {
-  color: #C6A55A;
+  color: var(--ms-gold);
   border-color: rgba(198, 165, 90, 0.4);
   background: rgba(198, 165, 90, 0.06);
 }
@@ -3076,7 +3077,7 @@ h4 {
   justify-content: center;
   font-size: 14px;
   font-weight: 700;
-  color: #C6A55A;
+  color: var(--ms-gold);
   letter-spacing: 0.05em;
   flex-shrink: 0;
 }
@@ -3090,7 +3091,7 @@ h4 {
 
 .ms-founder-card__title {
   font-size: 12px;
-  color: #C6A55A;
+  color: var(--ms-gold);
   margin: 0;
 }
 
@@ -3223,7 +3224,7 @@ h4 {
   --ms-black-card: #111111;
   --ms-black-panel: #141414;
   --ms-gold: #C5A059;
-  --ms-gold-soft: #C6A65B;
+  --ms-gold-soft: var(--ms-gold);
   --ms-gold-light: #D8BE73;
   --ms-antique-gold: #8F7740;
   --ms-text: #E5E5E5;

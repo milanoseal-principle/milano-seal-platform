@@ -68,7 +68,7 @@ const NAV = [
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
-  const g = "#C6A55A";
+  const g = "var(--ms-gold)";
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
       <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
@@ -173,7 +173,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
             style={{
               background: "hsl(38 47% 56% / .15)",
               border: "1px solid hsl(38 47% 56% / .35)",
-              color: "#C6A55A",
+              color: "var(--ms-gold)",
             }}
           >
             NM

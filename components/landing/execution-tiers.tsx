@@ -65,7 +65,7 @@ export function ExecutionTiers() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
+          <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
             Execution Lanes
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
@@ -92,7 +92,7 @@ export function ExecutionTiers() {
               {/* Highlight badge */}
               {tier.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="px-4 py-1 text-xs font-medium text-[#0A0A0A] bg-[#C6A55A] rounded-full">
+                  <span className="px-4 py-1 text-xs font-medium text-[#0A0A0A] bg-[var(--ms-gold)] rounded-full">
                     Most Requested
                   </span>
                 </div>
@@ -101,8 +101,8 @@ export function ExecutionTiers() {
               <div
                 className={`bg-[#111111] border rounded-xl p-8 h-full transition-all duration-300 ${
                   tier.highlight
-                    ? "border-[#C6A55A]/50 gold-glow"
-                    : "border-[#2A2A2A] hover:border-[#C6A55A]/30 gold-glow-hover"
+                    ? "border-[var(--ms-gold)]/50 gold-glow"
+                    : "border-[#2A2A2A] hover:border-[var(--ms-gold)]/30 gold-glow-hover"
                 }`}
               >
                 {/* Header */}
@@ -110,7 +110,7 @@ export function ExecutionTiers() {
                   <h3 className="font-serif text-2xl font-medium text-white mb-1">
                     {tier.name}
                   </h3>
-                  <p className="text-sm text-[#C6A55A] leading-snug">{tier.tagline}</p>
+                  <p className="text-sm text-[var(--ms-gold)] leading-snug">{tier.tagline}</p>
                 </div>
 
                 {/* Timeline anchor */}
@@ -132,7 +132,7 @@ export function ExecutionTiers() {
                 <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-[#C6A55A] mt-0.5 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-[var(--ms-gold)] mt-0.5 flex-shrink-0" />
                       <span className="text-sm text-[#B0B0B0]">{feature}</span>
                     </li>
                   ))}
@@ -143,8 +143,8 @@ export function ExecutionTiers() {
                   href={`/intake?tier=${tier.name.toLowerCase()}`}
                   className={`group/btn w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                     tier.highlight
-                      ? "bg-[#C6A55A] text-[#0A0A0A] hover:bg-[#D4B76A]"
-                      : "bg-[#1A1A1A] text-white border border-[#2A2A2A] hover:border-[#C6A55A]/50 hover:bg-[#C6A55A]/10"
+                      ? "bg-[var(--ms-gold)] text-[#0A0A0A] hover:bg-[#D4B76A]"
+                      : "bg-[#1A1A1A] text-white border border-[#2A2A2A] hover:border-[var(--ms-gold)]/50 hover:bg-[var(--ms-gold)]/10"
                   }`}
                 >
                   <span>Select {tier.name}</span>

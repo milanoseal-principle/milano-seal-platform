@@ -85,9 +85,9 @@ export default function IntakePage({
         <div className="max-w-7xl mx-auto">
           {/* Page header */}
           <div className="relative z-10 mb-10 text-center sm:mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
-              <Shield className="w-4 h-4 text-[#C6A55A]" />
-              <span className="text-sm text-[#C6A55A] font-medium">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-6">
+              <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
+              <span className="text-sm text-[var(--ms-gold)] font-medium">
               Secure Records Intake
               </span>
             </div>

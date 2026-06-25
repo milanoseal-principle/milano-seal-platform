@@ -46,11 +46,11 @@ export function HomepageRoutingPreview() {
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6">
         <div className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
-            <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-[#C6A55A]/65">
+            <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">
               Smart Intake Routing
             </p>
             <h2 className="font-serif text-3xl text-white md:text-4xl">
-              Routing <em className="text-[#C6A55A]">Preview</em>
+              Routing <em className="text-[var(--ms-gold)]">Preview</em>
             </h2>
             <p className="mt-4 text-sm leading-7 text-white/45 md:text-base">
               Select a priority corridor to prepare a secure intake pathway.
@@ -58,7 +58,7 @@ export function HomepageRoutingPreview() {
           </div>
           <Link
             href="/map"
-            className="inline-flex min-h-11 items-center gap-2 self-start border-b border-[#C6A55A]/30 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]"
+            className="inline-flex min-h-11 items-center gap-2 self-start border-b border-[var(--ms-gold)]/30 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)]"
           >
             Open Full Intelligence Map
             <ArrowRight className="h-3.5 w-3.5" />
@@ -69,7 +69,7 @@ export function HomepageRoutingPreview() {
           <div className="space-y-6 border-b border-white/[0.06] p-5 sm:p-6 lg:border-b-0 lg:border-r">
             <div>
               <div className="mb-5 flex items-center justify-between">
-                <span className="font-mono text-[8px] uppercase tracking-[0.24em] text-[#C6A55A]/55">
+                <span className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/55">
                   Priority Destination Corridors
                 </span>
                 <span className="font-mono text-[8px] text-white/25">
@@ -87,8 +87,8 @@ export function HomepageRoutingPreview() {
                       onClick={() => setSelected(destination)}
                       className={`min-h-12 rounded-lg border px-3 py-2 text-left transition-all ${
                         active
-                          ? "border-[#C6A55A]/55 bg-[#C6A55A]/[0.08] text-white"
-                          : "border-white/[0.06] bg-white/[0.015] text-white/45 hover:border-[#C6A55A]/25 hover:text-white/70"
+                          ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.08] text-white"
+                          : "border-white/[0.06] bg-white/[0.015] text-white/45 hover:border-[var(--ms-gold)]/25 hover:text-white/70"
                       }`}
                       aria-pressed={active}
                     >
@@ -99,16 +99,16 @@ export function HomepageRoutingPreview() {
                 })}
               </div>
 
-              <div className="mt-4 rounded-xl border border-[#C6A55A]/10 bg-[#C6A55A]/[0.025] p-4">
+              <div className="mt-4 rounded-xl border border-[var(--ms-gold)]/10 bg-[var(--ms-gold)]/[0.025] p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <Route className="h-3.5 w-3.5 text-[#C6A55A]" />
-                  <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-[#C6A55A]/70">
+                  <Route className="h-3.5 w-3.5 text-[var(--ms-gold)]" />
+                  <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">
                     Simplified Corridor Logic
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-white/55">
                   <span>Florida</span>
-                  <span className="h-px flex-1 bg-gradient-to-r from-[#C6A55A]/20 via-[#C6A55A]/70 to-[#C6A55A]/20" />
+                  <span className="h-px flex-1 bg-gradient-to-r from-[var(--ms-gold)]/20 via-[var(--ms-gold)]/70 to-[var(--ms-gold)]/20" />
                   <span className="text-white/85">{selected.name}</span>
                 </div>
               </div>
@@ -133,14 +133,14 @@ export function HomepageRoutingPreview() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href={corridor.intakeHref}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#C6A55A] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[#C6A55A]/90"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[var(--ms-gold)]/90"
             >
               Start Secure Intake
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
             <Link
               href={`/countries/${corridor.slug}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#C6A55A]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]/60"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)]/60"
             >
               View Country Requirements
             </Link>

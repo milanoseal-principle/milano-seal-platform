@@ -14,7 +14,7 @@ export default function Error({
       <h1 className="text-xl mb-4">System Error</h1>
       <button
         onClick={() => reset()}
-        className="px-4 py-2 bg-[#C6A55A] text-black cursor-pointer"
+        className="px-4 py-2 bg-[var(--ms-gold)] text-black cursor-pointer"
       >
         Retry
       </button>

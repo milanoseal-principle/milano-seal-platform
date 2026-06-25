@@ -95,10 +95,10 @@ export function Hero() {
         style={{ background: "radial-gradient(circle at 65% 50%, rgba(212,175,55,0.05) 0%, rgba(16,16,20,0) 65%)" }}
       />
       <motion.div style={{ y }} className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#C6A55A]/[0.03] rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#C6A55A]/[0.025] rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--ms-gold)]/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[var(--ms-gold)]/[0.025] rounded-full blur-3xl" />
       </motion.div>
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/30 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)]/30 to-transparent" />
       <HomepageMicroInit />
 
       <motion.div
@@ -112,12 +112,12 @@ export function Hero() {
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
             <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
-              <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C6A55A]/20 bg-[#C6A55A]/5 max-w-fit [isolation:isolate]">
+              <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/5 max-w-fit [isolation:isolate]">
                 <span className="relative flex h-2 w-2 flex-shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-60" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C6A55A]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ms-gold)] opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--ms-gold)]" />
                 </span>
-                <span className="text-[#C6A55A] text-xs font-semibold tracking-[0.08em] uppercase whitespace-nowrap">
+                <span className="text-[var(--ms-gold)] text-xs font-semibold tracking-[0.08em] uppercase whitespace-nowrap">
                   The Milano Seal™
                 </span>
               </div>
@@ -147,14 +147,14 @@ export function Hero() {
             <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-6${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
-                className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
+                className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
               >
                 Begin Secure Intake
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }} />
               </Link>
               <Link
                 href="/map"
-                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[#C6A55A]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[#C6A55A]/60 hover:text-white hover:bg-[#C6A55A]/5"
+                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[var(--ms-gold)]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)]/60 hover:text-white hover:bg-[var(--ms-gold)]/5"
               >
                 <Globe className="w-4 h-4" />
                 Explore Global Document Intelligence
@@ -162,7 +162,7 @@ export function Hero() {
             </div>
 
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
-              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#C6A55A]/45 mb-3 text-center lg:text-left">
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--ms-gold)]/45 mb-3 text-center lg:text-left">
                 What You Get
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
@@ -175,13 +175,13 @@ export function Hero() {
                   { icon: "eye", label: "Track Every Step\nIntake to Release" },
                 ].map(({ icon, label }) => (
                   <div key={label} className="flex flex-col items-center gap-1.5 group">
-                    <div className="w-9 h-9 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04] flex items-center justify-center group-hover:border-[#C6A55A]/40 transition-colors">
-                      {icon === "shield" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
-                      {icon === "monitor" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
-                      {icon === "check" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>}
-                      {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
-                      {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-                      {icon === "eye" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6A55A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                    <div className="w-9 h-9 rounded-lg border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.04] flex items-center justify-center group-hover:border-[var(--ms-gold)]/40 transition-colors">
+                      {icon === "shield" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                      {icon === "monitor" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
+                      {icon === "check" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>}
+                      {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
+                      {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                      {icon === "eye" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                     </div>
                     <span className="font-mono text-[8px] text-[#4A4A4A] tracking-wide leading-tight text-center whitespace-pre-line group-hover:text-[#6A6A6A] transition-colors">
                       {label}
@@ -212,15 +212,15 @@ export function Hero() {
               className="hidden lg:block text-center"
               style={{ maxWidth: 320 }}
             >
-              <p style={{ color: "#C6A55A", fontSize: 10, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>
+              <p style={{ color: "var(--ms-gold)", fontSize: 10, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>
                 Founder-Led Document Execution
               </p>
               <p style={{ color: "rgba(176,176,176,0.6)", fontSize: 12, lineHeight: 1.55, marginBottom: 10 }}>
                 Florida Notary Public &amp; Remote Online Notary. Apostille coordination, international execution, and secure release.
               </p>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                <a href="/founder" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Meet the Founder →</a>
-                <a href="/intake" style={{ color: "#C6A55A", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Begin Intake →</a>
+                <a href="/founder" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Meet the Founder →</a>
+                <a href="/intake" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Begin Intake →</a>
               </div>
             </motion.div>
           </div>

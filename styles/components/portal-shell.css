@@ -96,7 +96,7 @@
   letter-spacing: 0.06em;
 }
 .ps-chevron {
-  color: #c6a55a;
+  color: var(--ms-gold);
   flex-shrink: 0;
   margin-left: 6px;
   transition: transform 0.2s;
@@ -174,9 +174,9 @@
   background: rgba(255, 255, 255, 0.03);
 }
 .ps-btn.active {
-  color: #c6a55a;
+  color: var(--ms-gold);
   background: rgba(198, 165, 90, 0.1);
-  border-left-color: #c6a55a;
+  border-left-color: var(--ms-gold);
 }
 
 /* Status card */
@@ -198,7 +198,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c6a55a;
+  background: var(--ms-gold);
   flex-shrink: 0;
   animation: psPulse 2s infinite;
 }
@@ -213,7 +213,7 @@
 }
 .ps-status-l {
   font-size: 10px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -240,11 +240,11 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1.5px solid #c6a55a;
+  border: 1.5px solid var(--ms-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 14px;
   font-weight: 600;
@@ -287,7 +287,7 @@
   border-radius: 2px;
 }
 .ps-signout:hover {
-  color: #c6a55a;
+  color: var(--ms-gold);
   background: rgba(198, 165, 90, 0.05);
 }
 
@@ -359,7 +359,7 @@
   font-weight: 600;
   padding: 4px 10px;
   background: rgba(198, 165, 90, 0.12);
-  color: #c6a55a;
+  color: var(--ms-gold);
   border: 1px solid rgba(198, 165, 90, 0.28);
   border-radius: 2px;
 }
@@ -391,7 +391,7 @@
     padding: 6px;
     background: transparent;
     border: 0;
-    color: #c6a55a;
+    color: var(--ms-gold);
     cursor: pointer;
   }
 }
@@ -404,7 +404,7 @@
 
 .ps-logomark {
   border-radius: 50%;
-  border: 1.5px solid #c6a55a;
+  border: 1.5px solid var(--ms-gold);
   display: flex;
   align-items: center;
   justify-content: center;

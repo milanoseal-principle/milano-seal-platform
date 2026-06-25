@@ -56,7 +56,7 @@ const NAV = [
 ];
 
 function LogoMark({ size = 32 }: { size?: number }) {
-  const g = "#C6A55A";
+  const g = "var(--ms-gold)";
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
       <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
@@ -126,7 +126,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                         : "transparent",
                     borderLeft:
                       d.id === activeDealId
-                        ? "2px solid #C6A55A"
+                        ? "2px solid var(--ms-gold)"
                         : "2px solid transparent",
                   }}
                 >
@@ -140,7 +140,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                   <span
                     className="ps-switcher-item-status"
                     style={{
-                      color: d.matter_status === "completed" ? "#4a9e6b" : "#C6A55A",
+                      color: d.matter_status === "completed" ? "#4a9e6b" : "var(--ms-gold)",
                     }}
                   >
                     {MATTER_STATUS_LABELS[d.matter_status ?? ""] ?? (d.matter_status ?? "").replace(/_/g, " ")}
@@ -163,7 +163,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           return (
             <Link key={item.href} href={item.href} onClick={onNav}>
               <div className={`ps-btn ${active ? "active" : ""}`}>
-                <Icon className="w-4 h-4" style={{ color: "#C6A55A" }} />
+                <Icon className="w-4 h-4" style={{ color: "var(--ms-gold)" }} />
                 {item.label}
               </div>
             </Link>

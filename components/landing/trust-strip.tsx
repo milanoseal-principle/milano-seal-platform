@@ -59,7 +59,7 @@ export function TrustStrip() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#C6A55A]/45 text-center mb-6"
+          className="font-mono text-[9px] tracking-[0.25em] uppercase text-[var(--ms-gold)]/45 text-center mb-6"
         >
           Credentials &amp; Operational Infrastructure
         </motion.p>
@@ -79,8 +79,8 @@ export function TrustStrip() {
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
               <Link href={href} className="flex items-center gap-3 group min-h-[44px]">
-                <div className="p-2 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#C6A55A]" />
+                <div className="p-2 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] transition-all duration-300 group-hover:border-[var(--ms-gold)]/30 group-hover:bg-[var(--ms-gold)]/5 flex-shrink-0">
+                  <Icon className="w-4 h-4 text-[var(--ms-gold)]" />
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-[#B0B0B0] group-hover:text-white transition-colors duration-300 leading-tight">

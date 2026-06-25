@@ -78,8 +78,8 @@ function formatBytes(b: number) {
 
 function FileIcon({ type }: { type: string }) {
   if (type?.startsWith("image/"))
-    return <ImageIcon className="w-5 h-5 text-[#C6A55A]" />;
-  return <FileText className="w-5 h-5 text-[#C6A55A]" />;
+    return <ImageIcon className="w-5 h-5 text-[var(--ms-gold)]" />;
+  return <FileText className="w-5 h-5 text-[var(--ms-gold)]" />;
 }
 
 // ── EMAIL GATE ─────────────────────────────────────────────────
@@ -153,7 +153,7 @@ function EmailGate({
             alt="The Milano Seal"
             className="w-16 h-16 mx-auto mb-6 opacity-90"
           />
-          <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-semibold mb-3">
+          <p className="text-[var(--ms-gold)] text-xs tracking-[0.3em] uppercase font-semibold mb-3">
             The Milano Seal™
           </p>
           <h1 className="font-serif text-2xl text-white mb-2">
@@ -170,7 +170,7 @@ function EmailGate({
           {step === "email" ? (
             <>
               <div className="flex items-center gap-2 mb-2">
-                <Mail className="w-4 h-4 text-[#C6A55A]" />
+                <Mail className="w-4 h-4 text-[var(--ms-gold)]" />
                 <label className="text-xs font-semibold tracking-[0.1em] uppercase text-[#8A8A8A]">
                   Email Address
                 </label>
@@ -181,12 +181,12 @@ function EmailGate({
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendOtp()}
                 placeholder="your@email.com"
-                className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A]/50 transition-colors mb-4"
+                className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl text-white text-sm placeholder:text-[#8A8A8A] focus:outline-none focus:border-[var(--ms-gold)]/50 transition-colors mb-4"
               />
               <button
                 onClick={sendOtp}
                 disabled={loading || !email.trim()}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -199,7 +199,7 @@ function EmailGate({
           ) : (
             <>
               <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-4 h-4 text-[#C6A55A]" />
+                <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
                 <label className="text-xs font-semibold tracking-[0.1em] uppercase text-[#8A8A8A]">
                   Access Code
                 </label>
@@ -218,12 +218,12 @@ function EmailGate({
                 onKeyDown={(e) => e.key === "Enter" && confirmOtp()}
                 placeholder="A1B2C3"
                 maxLength={6}
-                className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl text-white text-sm text-center font-mono text-2xl tracking-[0.4em] placeholder:text-[#8A8A8A] focus:outline-none focus:border-[#C6A55A]/50 transition-colors mb-4"
+                className="w-full px-4 py-3 bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl text-white text-sm text-center font-mono text-2xl tracking-[0.4em] placeholder:text-[#8A8A8A] focus:outline-none focus:border-[var(--ms-gold)]/50 transition-colors mb-4"
               />
               <button
                 onClick={confirmOtp}
                 disabled={loading || otp.length < 6}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all disabled:opacity-50 mb-3"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all disabled:opacity-50 mb-3"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -353,8 +353,8 @@ function DropZone({
         onClick={() => !uploading && inputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
           dragging
-            ? "border-[#C6A55A] bg-[#C6A55A]/8 scale-[1.01]"
-            : "border-[#2A2A2A] hover:border-[#C6A55A]/50 hover:bg-[#C6A55A]/4"
+            ? "border-[var(--ms-gold)] bg-[var(--ms-gold)]/8 scale-[1.01]"
+            : "border-[#2A2A2A] hover:border-[var(--ms-gold)]/50 hover:bg-[var(--ms-gold)]/4"
         } ${uploading ? "pointer-events-none" : ""}`}
       >
         <input
@@ -367,11 +367,11 @@ function DropZone({
 
         {uploading ? (
           <div className="space-y-4">
-            <Loader2 className="w-8 h-8 text-[#C6A55A] mx-auto animate-spin" />
+            <Loader2 className="w-8 h-8 text-[var(--ms-gold)] mx-auto animate-spin" />
             <p className="text-[#B0B0B0] text-sm">Uploading {preview?.name}…</p>
             <div className="w-full bg-[#1A1A1A] rounded-full h-1.5">
               <div
-                className="bg-[#C6A55A] h-1.5 rounded-full transition-all duration-300"
+                className="bg-[var(--ms-gold)] h-1.5 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -385,7 +385,7 @@ function DropZone({
           </div>
         ) : (
           <>
-            <Upload className="w-8 h-8 text-[#C6A55A] mx-auto mb-4 opacity-70" />
+            <Upload className="w-8 h-8 text-[var(--ms-gold)] mx-auto mb-4 opacity-70" />
             <p className="text-[#B0B0B0] text-sm mb-1">
               {dragging ? "Drop to upload" : "Drag & drop your document here"}
             </p>
@@ -498,7 +498,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         {/* Greeting */}
         <div>
-          <p className="text-[#C6A55A] text-xs tracking-[0.2em] uppercase font-semibold mb-1">
+          <p className="text-[var(--ms-gold)] text-xs tracking-[0.2em] uppercase font-semibold mb-1">
             Welcome
           </p>
           <h1 className="font-serif text-2xl text-white">
@@ -546,10 +546,10 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
         </div>
 
         {(retainerDue || balanceDue) && (
-          <div className="bg-[#0A0A0A] border border-[#C6A55A]/30 rounded-2xl p-6">
+          <div className="bg-[#0A0A0A] border border-[var(--ms-gold)]/30 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-3">
-              <CreditCard className="w-4 h-4 text-[#C6A55A]" />
-              <p className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+              <CreditCard className="w-4 h-4 text-[var(--ms-gold)]" />
+              <p className="text-[var(--ms-gold)] text-xs font-semibold tracking-[0.2em] uppercase">
                 {retainerDue ? "Retainer Due" : "Balance Due"}
               </p>
             </div>
@@ -581,7 +581,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all"
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#D4B76A] transition-all"
               >
                 Pay with Wise
                 <ArrowRight className="w-4 h-4" />
@@ -603,7 +603,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
         {/* Progress tracker */}
         <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+            <p className="text-[var(--ms-gold)] text-xs font-semibold tracking-[0.2em] uppercase">
               Execution Progress
             </p>
             <span className="text-[#8A8A8A] text-xs">
@@ -612,7 +612,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
           </div>
           <div className="w-full bg-[#1A1A1A] rounded-full h-1 mb-6">
             <div
-              className="bg-gradient-to-r from-[#C6A55A] to-[#D4B76A] h-1 rounded-full transition-all duration-1000"
+              className="bg-gradient-to-r from-[var(--ms-gold)] to-[#D4B76A] h-1 rounded-full transition-all duration-1000"
               style={{ width: `${pctComplete}%` }}
             />
           </div>
@@ -626,7 +626,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                   key={step.key}
                   className={`relative text-center p-2 rounded-lg border transition-all ${
                     active
-                      ? "border-[#C6A55A] bg-[#C6A55A]/10"
+                      ? "border-[var(--ms-gold)] bg-[var(--ms-gold)]/10"
                       : done
                         ? "border-[#2A2A2A] bg-[#0A0A0A]"
                         : "border-[#1A1A1A] bg-transparent opacity-40"
@@ -636,8 +636,8 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                     <CheckCircle className="w-3.5 h-3.5 text-green-400 mx-auto mb-1" />
                   ) : active ? (
                     <div className="relative mx-auto w-3.5 h-3.5 mb-1">
-                      <div className="absolute inset-0 rounded-full bg-[#C6A55A] animate-ping opacity-60" />
-                      <div className="relative w-3.5 h-3.5 rounded-full bg-[#C6A55A]" />
+                      <div className="absolute inset-0 rounded-full bg-[var(--ms-gold)] animate-ping opacity-60" />
+                      <div className="relative w-3.5 h-3.5 rounded-full bg-[var(--ms-gold)]" />
                     </div>
                   ) : (
                     <div className="w-3.5 h-3.5 rounded-full border border-[#2A2A2A] mx-auto mb-1" />
@@ -645,7 +645,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                   <p
                     className={`text-[9px] leading-tight font-medium ${
                       active
-                        ? "text-[#C6A55A]"
+                        ? "text-[var(--ms-gold)]"
                         : done
                           ? "text-[#8A8A8A]"
                           : "text-[#4A4A4A]"
@@ -661,7 +661,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
 
         {/* Documents */}
         <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6">
-          <p className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase mb-5">
+          <p className="text-[var(--ms-gold)] text-xs font-semibold tracking-[0.2em] uppercase mb-5">
             Controlled Records
           </p>
           {files.length === 0 ? (
@@ -691,7 +691,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
                     href={f.signed_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-xs text-[#C6A55A] hover:border-[#C6A55A]/40 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-xs text-[var(--ms-gold)] hover:border-[var(--ms-gold)]/40 transition-colors"
                   >
                     <Download className="w-3 h-3" />
                     Download
@@ -728,7 +728,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
         {/* Footer */}
         <div className="text-center text-[#8A8A8A] text-xs space-y-1 pb-4">
           <p>Questions? Contact Nicholas Milano directly.</p>
-          <p className="text-[#C6A55A]">themilanoseal.com</p>
+          <p className="text-[var(--ms-gold)]">themilanoseal.com</p>
         </div>
       </div>
     </div>

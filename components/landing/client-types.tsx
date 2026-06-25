@@ -54,7 +54,7 @@ export function ClientTypes() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
+          <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
             Who We Serve
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
@@ -79,22 +79,22 @@ export function ClientTypes() {
             >
               <Link
                 href={type.href}
-                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[#C6A55A]/30 gold-glow-hover"
+                className="group flex flex-col h-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-300 hover:border-[var(--ms-gold)]/30 gold-glow-hover"
               >
-                <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 self-start">
-                  <type.icon className="w-6 h-6 text-[#C6A55A]" />
+                <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[var(--ms-gold)]/30 group-hover:bg-[var(--ms-gold)]/5 self-start">
+                  <type.icon className="w-6 h-6 text-[var(--ms-gold)]" />
                 </div>
 
                 <div className="flex items-start justify-between mb-3 flex-1">
                   <div>
-                    <h3 className="font-serif text-xl font-medium text-white mb-3 group-hover:text-[#C6A55A] transition-colors duration-300">
+                    <h3 className="font-serif text-xl font-medium text-white mb-3 group-hover:text-[var(--ms-gold)] transition-colors duration-300">
                       {type.title}
                     </h3>
                     <p className="text-[#B0B0B0] text-sm leading-relaxed">
                       {type.description}
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-[#C6A55A]/30 group-hover:text-[#C6A55A] transition-all duration-300 group-hover:translate-x-1 flex-shrink-0 ml-4 mt-1" />
+                  <ArrowRight className="w-4 h-4 text-[var(--ms-gold)]/30 group-hover:text-[var(--ms-gold)] transition-all duration-300 group-hover:translate-x-1 flex-shrink-0 ml-4 mt-1" />
                 </div>
               </Link>
             </motion.div>
@@ -117,7 +117,7 @@ export function ClientTypes() {
               >
                 <div className="flex items-center gap-4">
                   <div className="p-2.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] flex-shrink-0">
-                    <type.icon className="w-5 h-5 text-[#C6A55A]" />
+                    <type.icon className="w-5 h-5 text-[var(--ms-gold)]" />
                   </div>
                   <div>
                     <h4 className="font-serif text-base font-medium text-white leading-tight">
@@ -128,7 +128,7 @@ export function ClientTypes() {
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#C6A55A]/60 flex-shrink-0 ml-3" />
+                <ArrowRight className="w-4 h-4 text-[var(--ms-gold)]/60 flex-shrink-0 ml-3" />
               </Link>
             </motion.div>
           ))}

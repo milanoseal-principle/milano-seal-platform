@@ -239,7 +239,7 @@ export function RitualEntryLock({
                 textTransform: "uppercase",
                 fontSize: "clamp(1.2rem, 3vw, 1.6rem)",
                 background:
-                  "linear-gradient(105deg, #c6a55a 38%, #f4e5b8 50%, #c6a55a 62%)",
+                  "linear-gradient(105deg, var(--ms-gold) 38%, #f4e5b8 50%, var(--ms-gold) 62%)",
                 backgroundSize: "240% 100%",
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",

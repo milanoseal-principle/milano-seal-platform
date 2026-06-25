@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-const GOLD = "#C6A55A";
+const GOLD = "var(--ms-gold)";
 const EMERALD = "#4a9e6b";
 
 export interface PricingBreakdownData {

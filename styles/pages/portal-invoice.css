@@ -2,7 +2,7 @@
   font-size: 9px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-weight: 600;
   margin-bottom: 8px;
   display: flex;
@@ -13,7 +13,7 @@
   content: "";
   width: 18px;
   height: 1px;
-  background: #c6a55a;
+  background: var(--ms-gold);
 }
 .ci-h1 {
   font-family: var(--font-playfair), Georgia, serif;
@@ -41,7 +41,7 @@
 .ci-brand {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 11px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-align: center;
@@ -80,7 +80,7 @@
   padding: 8px 0;
   font-size: 14px;
   font-weight: 700;
-  border-top: 1px solid #c6a55a;
+  border-top: 1px solid var(--ms-gold);
   margin-top: 6px;
 }
 .ci-stamp {
@@ -90,7 +90,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #c6a55a;
+  background: var(--ms-gold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,7 +165,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1.5px solid #c6a55a;
+  border: 1.5px solid var(--ms-gold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@
 .ci-coord-initial {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 18px;
-  color: #c6a55a;
+  color: var(--ms-gold);
 }
 .ci-coord-name {
   font-family: var(--font-playfair), Georgia, serif;

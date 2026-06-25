@@ -28,7 +28,7 @@
   font-size: 9px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #C6A55A;
+  color: var(--ms-gold);
   font-weight: 700;
   margin-bottom: 5px;
   display: flex;
@@ -40,7 +40,7 @@
   content: "";
   width: 18px;
   height: 1px;
-  background: #C6A55A;
+  background: var(--ms-gold);
   flex-shrink: 0;
 }
 
@@ -142,7 +142,7 @@
 }
 
 .ea-tab.ea-tab-on {
-  color: #C6A55A;
+  color: var(--ms-gold);
   background: rgba(198, 165, 90, 0.06);
 }
 
@@ -153,7 +153,7 @@
   left: 12%;
   right: 12%;
   height: 1px;
-  background: #C6A55A;
+  background: var(--ms-gold);
 }
 
 .ea-tab-badge {
@@ -215,7 +215,7 @@
 }
 
 .ea-stat-gold {
-  color: #C6A55A;
+  color: var(--ms-gold);
 }
 
 /* Skeleton */
@@ -278,7 +278,7 @@
 
 .ea-sev-medium {
   background: rgba(198, 165, 90, 0.12);
-  color: #C6A55A;
+  color: var(--ms-gold);
   border: 1px solid rgba(198, 165, 90, 0.25);
 }
 
@@ -326,7 +326,7 @@
 .ea-stage-count {
   font-size: 12px;
   font-weight: 500;
-  color: #C6A55A;
+  color: var(--ms-gold);
 }
 
 /* Custody */
@@ -364,7 +364,7 @@
   padding: 9px 14px;
   background: rgba(198, 165, 90, 0.1);
   border: 1px solid rgba(198, 165, 90, 0.22);
-  color: #C6A55A;
+  color: var(--ms-gold);
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -545,7 +545,7 @@
 }
 
 .ea-card-mark {
-  color: #C6A55A;
+  color: var(--ms-gold);
   font-size: 11px;
   flex-shrink: 0;
 }
@@ -602,7 +602,7 @@
 
 .ea-chip:hover:not(:disabled) {
   border-color: rgba(198, 165, 90, 0.42);
-  color: #C6A55A;
+  color: var(--ms-gold);
   background: rgba(198, 165, 90, 0.05);
 }
 
@@ -651,7 +651,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #C6A55A;
+  background: var(--ms-gold);
   border: none;
   color: #0a0a0a;
   cursor: pointer;

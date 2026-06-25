@@ -11,6 +11,11 @@
   --ms-ivory-parchment: #f6f1e6; /* Embassy Parchment */
   --ms-signature-white: #ffffff; /* Clean White */
 
+  /* Short aliases — use these in UI components */
+  --ms-gold: #c6a65b;
+  --ms-black: #0a0a0a;
+  --ms-parchment: #f6f1e6;
+
   /* Legacy gold alias — existing UI uses #C6A55A (near-identical). */
   --ms-gold-legacy: #c6a55a;
 

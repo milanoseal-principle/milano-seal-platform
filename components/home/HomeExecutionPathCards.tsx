@@ -29,9 +29,9 @@ export function HomeExecutionPathCards() {
       {CARDS.map(({ icon: Icon, title, body }) => (
         <div
           key={title}
-          className="rounded-xl border border-[#C6A55A]/20 bg-[#070709] p-4"
+          className="rounded-xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4"
         >
-          <Icon className="h-4 w-4 text-[#C6A55A]" />
+          <Icon className="h-4 w-4 text-[var(--ms-gold)]" />
           <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.16em] text-white/80">
             {title}
           </p>

@@ -2,7 +2,7 @@
   font-size: 9px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-weight: 600;
   margin-bottom: 8px;
   display: flex;
@@ -13,7 +13,7 @@
   content: "";
   width: 18px;
   height: 1px;
-  background: #c6a55a;
+  background: var(--ms-gold);
 }
 .inv-h1 {
   font-family: var(--font-playfair), Georgia, serif;
@@ -75,7 +75,7 @@
 .inv-list-amt {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 13px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   margin-top: 3px;
 }
 .inv-list-empty {
@@ -101,9 +101,9 @@
   border-radius: 2px;
 }
 .inv-tab[data-active="true"] {
-  background: #c6a55a;
+  background: var(--ms-gold);
   color: #0a0a0a;
-  border-color: #c6a55a;
+  border-color: var(--ms-gold);
 }
 .inv-toolbar {
   display: flex;
@@ -121,7 +121,7 @@
   font-weight: 600;
   background: transparent;
   border: 1px solid rgba(198, 165, 90, 0.4);
-  color: #c6a55a;
+  color: var(--ms-gold);
   cursor: pointer;
   border-radius: 2px;
 }
@@ -159,7 +159,7 @@
 .inv-brand {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 11px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-align: center;
@@ -226,7 +226,7 @@
   padding: 8px 0;
   font-size: 14px;
   font-weight: 700;
-  border-top: 1px solid #c6a55a;
+  border-top: 1px solid var(--ms-gold);
   margin-top: 6px;
 }
 .inv-paid-status {
@@ -239,7 +239,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #c6a55a;
+  background: var(--ms-gold);
   display: flex;
   align-items: center;
   justify-content: center;

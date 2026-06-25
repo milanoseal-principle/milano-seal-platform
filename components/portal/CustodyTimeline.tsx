@@ -71,7 +71,7 @@ function resolveStageCompletion(deal: PortalClientMatter): number {
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
-const GOLD = "#C6A55A";
+const GOLD = "var(--ms-gold)";
 const GOLD_MID = "rgba(198,165,90,0.4)";
 const GOLD_FAINT = "rgba(198,165,90,0.1)";
 const DIM = "rgba(255,255,255,0.08)";

@@ -194,7 +194,7 @@ const INITIAL_DATA: IntakeData = {
 
 const inputCls = `w-full px-4 py-3 bg-[#0A0A0A] border border-[rgba(198,165,90,0.15)]
   rounded-sm text-white text-sm font-light placeholder:text-[#B0B0B0]/40
-  focus:outline-none focus:border-[#C6A55A] transition-colors duration-200`;
+  focus:outline-none focus:border-[var(--ms-gold)] transition-colors duration-200`;
 
 const selectCls = `${inputCls} appearance-none cursor-pointer`;
 
@@ -222,7 +222,7 @@ function FieldRow({ children }: { children: React.ReactNode }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-4 mt-7 first:mt-0">
-      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A]/60">
+      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]/60">
         {children}
       </span>
       <div className="flex-1 h-px bg-[rgba(198,165,90,0.12)]" />
@@ -246,7 +246,7 @@ function CheckRow({
       <div
         className={`mt-0.5 w-4 h-4 rounded-sm border flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
           checked
-            ? "bg-[#C6A55A] border-[#C6A55A]"
+            ? "bg-[var(--ms-gold)] border-[var(--ms-gold)]"
             : "border-[rgba(198,165,90,0.3)] bg-transparent"
         }`}
       >
@@ -295,12 +295,12 @@ function RadioGroup({
           <div
             className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
               value === opt.value
-                ? "border-[#C6A55A]"
+                ? "border-[var(--ms-gold)]"
                 : "border-[rgba(198,165,90,0.3)]"
             }`}
           >
             {value === opt.value && (
-              <div className="w-1.5 h-1.5 rounded-full bg-[#C6A55A]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--ms-gold)]" />
             )}
           </div>
           <input
@@ -648,7 +648,7 @@ export function IntakeWizard({
                         setAnalysisNote(null);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
-                      className="text-[11px] text-[#C6A55A] underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
+                      className="text-[11px] text-[var(--ms-gold)] underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
                     >
                       Go to Step {analysisNote.targetStep} →
                     </button>
@@ -669,7 +669,7 @@ export function IntakeWizard({
       <div className="mb-10 relative">
         <div className="absolute top-3.5 left-0 right-0 h-px bg-[rgba(198,165,90,0.12)]" />
         <motion.div
-          className="absolute top-3.5 left-0 h-px bg-gradient-to-r from-[#C6A55A] to-[#D4BB7A]"
+          className="absolute top-3.5 left-0 h-px bg-gradient-to-r from-[var(--ms-gold)] to-[#D4BB7A]"
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         />
@@ -683,8 +683,8 @@ export function IntakeWizard({
                 <motion.div
                   animate={{
                     borderColor:
-                      done || active ? "#C6A55A" : "rgba(198,165,90,0.2)",
-                    backgroundColor: done || active ? "#C6A55A" : "transparent",
+                      done || active ? "var(--ms-gold)" : "rgba(198,165,90,0.2)",
+                    backgroundColor: done || active ? "var(--ms-gold)" : "transparent",
                     boxShadow: active
                       ? "0 0 16px rgba(198,165,90,0.35)"
                       : "none",
@@ -704,7 +704,7 @@ export function IntakeWizard({
                 <span
                   className={`hidden sm:block text-[9px] tracking-[0.08em] uppercase font-medium transition-colors whitespace-nowrap ${
                     active
-                      ? "text-[#C6A55A]"
+                      ? "text-[var(--ms-gold)]"
                       : done
                         ? "text-[rgba(198,165,90,0.5)]"
                         : "text-[rgba(244,239,230,0.25)]"
@@ -720,7 +720,7 @@ export function IntakeWizard({
 
       <div className="relative bg-[#F4EFE6] border border-[rgba(198,165,90,0.18)] rounded-sm shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
         {/* Gold top line */}
-        <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#C6A55A] to-transparent opacity-40" />
+        <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)] to-transparent opacity-40" />
 
         <div className="px-8 py-10 md:px-12 md:py-12">
           <AnimatePresence mode="wait">
@@ -739,7 +739,7 @@ export function IntakeWizard({
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
                     Your primary details for this matter.
                   </p>
-                  <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldRow>
                     <FieldGroup>
@@ -828,7 +828,7 @@ export function IntakeWizard({
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
                     Tell us about the document or matter to be coordinated.
                   </p>
-                  <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldGroup>
                     <label className={labelCls}>
@@ -1036,7 +1036,7 @@ export function IntakeWizard({
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
                     Indicate which services are needed for this matter.
                   </p>
-                  <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <SectionLabel>Authentication &amp; Translation</SectionLabel>
 
@@ -1146,7 +1146,7 @@ export function IntakeWizard({
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
                     Upload documents and let us know how you found us.
                   </p>
-                  <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldGroup>
                     <label className={labelCls}>
@@ -1389,7 +1389,7 @@ export function IntakeWizard({
                   <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
                     Confirm your matter details before sending.
                   </p>
-                  <div className="w-10 h-px bg-[#C6A55A] opacity-50 mb-8" />
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <div className="bg-[rgba(255,255,255,0.5)] border border-[rgba(26,18,8,0.08)] rounded-sm overflow-hidden mb-5">
                     <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)]">
@@ -1560,7 +1560,7 @@ export function IntakeWizard({
                     const total = items.reduce((s, i) => s + i.price, 0);
                     const retainer = Math.round(total * 0.5);
                     return (
-                      <div className="bg-[rgba(10,10,10,0.03)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[#C6A55A] rounded-sm mb-5">
+                      <div className="bg-[rgba(10,10,10,0.03)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] rounded-sm mb-5">
                         <div className="px-4 py-2.5 border-b border-[rgba(198,165,90,0.1)]">
                           <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
                             Estimated Investment
@@ -1608,7 +1608,7 @@ export function IntakeWizard({
                     );
                   })()}
 
-                  <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[#C6A55A] px-5 py-4 rounded-sm mb-6">
+                  <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] px-5 py-4 rounded-sm mb-6">
                     <p className="text-[12px] text-[#4A4030] leading-relaxed font-light">
                       All matters are reviewed by Nicholas Milano before
                       execution is scheduled. Submission of this form does not
@@ -1633,7 +1633,7 @@ export function IntakeWizard({
                           t.style.display = "none";
                           const parent = t.parentElement;
                           if (parent) {
-                            parent.innerHTML = '<span class="text-[#C6A55A] text-lg font-serif">N</span>';
+                            parent.innerHTML = '<span class="text-[var(--ms-gold)] text-lg font-serif">N</span>';
                           }
                         }}
                       />
@@ -1693,7 +1693,7 @@ export function IntakeWizard({
               {step < TOTAL ? (
                 <button
                   onClick={goNext}
-                  className="group flex items-center cursor-pointer gap-2.5 px-9 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-9 py-3.5 bg-[var(--ms-gold)] hover:bg-[#D4BB7A] text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   Continue
                   <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -1702,7 +1702,7 @@ export function IntakeWizard({
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="group flex items-center cursor-pointer gap-2.5 px-10 py-3.5 bg-[#C6A55A] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
+                  className="group flex items-center cursor-pointer gap-2.5 px-10 py-3.5 bg-[var(--ms-gold)] hover:bg-[#D4BB7A] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F1A24] text-[10px] font-semibold tracking-[0.2em] uppercase rounded-sm transition-all duration-200 hover:shadow-[0_6px_24px_rgba(198,165,90,0.3)] hover:-translate-y-px"
                 >
                   {isSubmitting ? (
                     <>
