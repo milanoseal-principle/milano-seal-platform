@@ -328,7 +328,7 @@ export function PricingLanes() {
           })}
         </div>
 
-        {/* Custom Matter */}
+        {/* Other Legal Document / Custom Matter — Review path, not a lane */}
         <div
           className="rounded-sm p-6 mb-4"
           style={{ border: "1px solid rgba(212,175,55,0.12)", background: SURFACE }}
@@ -336,29 +336,30 @@ export function PricingLanes() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: GOLD_DIM, letterSpacing: "0.2em", marginBottom: 6 }}>
-                CUSTOM MATTER
+                OTHER LEGAL DOCUMENT / CUSTOM MATTER
               </div>
               <div
                 style={{
                   fontFamily: "var(--font-playfair, Georgia, serif)",
-                  fontSize: "1.4rem",
+                  fontSize: "1.2rem",
                   color: "#f4e5b8",
                   marginBottom: 8,
                 }}
               >
-                Scoped After Review
+                Review Required — Price Confirmed After Intake
               </div>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, maxWidth: 520 }}>
-                For multi-document, multi-jurisdiction, corporate, estate, or attorney-led matters.
-                Destination, document class, signer count, urgency, and custody requirements reviewed before quoting.
+                Multi-document, multi-jurisdiction, corporate, estate, or attorney-led matters require
+                a dedicated intake review before a lane is assigned. Every matter is processed through
+                Signature, Priority, or Executive — final pricing confirmed after review.
               </p>
             </div>
             <Link
-              href="/intake?lane=custom"
+              href="/intake"
               className="inline-block text-center rounded-sm py-2.5 px-6 text-[10px] tracking-widest transition-colors hover:opacity-90 self-start"
               style={{ border: `1px solid ${BORDER}`, color: GOLD_DIM }}
             >
-              REQUEST CUSTOM QUOTE
+              REQUEST REVIEW
             </Link>
           </div>
         </div>
