@@ -1,0 +1,53 @@
+/*
+ * THE MILANO SEAL™ — Canonical Visual Theme Tokens
+ * LOCKED brand system. Source: Milano Seal Final Brand Board + Master Report.
+ * Import where brand tokens are needed; do not redefine these values elsewhere.
+ */
+
+:root {
+  /* ── Core Visual System ───────────────────────────────── */
+  --ms-matte-black: #0a0a0a; /* Archive Black */
+  --ms-milano-gold: #c6a65b; /* Antique Gold — canonical */
+  --ms-ivory-parchment: #f6f1e6; /* Embassy Parchment */
+  --ms-signature-white: #ffffff; /* Clean White */
+
+  /* Legacy gold alias — existing UI uses #C6A55A (near-identical). */
+  --ms-gold-legacy: #c6a55a;
+
+  /* ── Typography ───────────────────────────────────────── */
+  --ms-font-primary: "Trajan Pro", "Cinzel", Georgia, serif; /* Display / logo */
+  --ms-font-secondary: "Cinzel", Georgia, serif; /* Refined caps */
+  --ms-font-body: "Playfair Display", Georgia, serif; /* Body */
+
+  /* ── Tagline treatment ────────────────────────────────── */
+  --ms-tagline-tracking: 0.28em;
+}
+
+/*
+ * Tagline usage — always all-caps, letter-spaced, gold or white on dark.
+ * Never alter the wording: SEALING TRUST IN EVERY SIGNATURE.
+ */
+.ms-tagline {
+  text-transform: uppercase;
+  letter-spacing: var(--ms-tagline-tracking);
+  color: var(--ms-milano-gold);
+  font-family: var(--ms-font-secondary);
+}
+
+.ms-tagline--on-light {
+  color: var(--ms-matte-black);
+}
+
+.ms-surface-black {
+  background: var(--ms-matte-black);
+  color: var(--ms-ivory-parchment);
+}
+
+.ms-surface-parchment {
+  background: var(--ms-ivory-parchment);
+  color: var(--ms-matte-black);
+}
+
+.ms-text-gold {
+  color: var(--ms-milano-gold);
+}
