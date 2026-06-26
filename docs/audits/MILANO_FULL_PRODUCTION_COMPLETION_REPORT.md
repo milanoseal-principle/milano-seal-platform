@@ -415,3 +415,34 @@ All four are visually distinct and serve different surfaces.
 
 ### Remaining deployment blockers
 - None in code. Outstanding items are **operational**: set the Vercel env vars above, confirm the two operator accounts exist as `founder_admin`, then run the interactive E2E on the deployed URL.
+
+---
+
+## Homepage Hero Globe Card Clipping Fix
+
+**Date:** 2026-06-26 · **Branch:** claude/funny-maxwell-hlxQN
+
+### Root cause
+The hero `<section>` (`components/landing/hero.tsx`) used `h-[100svh]` (fixed height) + `overflow-hidden`. The 520px Global Trust Core globe plus the click-activated destination card (`.ms-destination-popover`) could exceed one fixed viewport height, so content — including the route card — was clipped, and at non-100% zoom the column was pushed under the header/ticker stack.
+
+### Fix (single line, scoped to the homepage hero)
+- `h-[100svh]` → `min-h-[100svh]` — the section grows to contain the globe + card instead of clipping them.
+- `overflow-hidden` → `overflow-x-clip` — decorative −200px glow layers are still clipped horizontally (no horizontal scrollbar), while vertical content/popover stays fully visible.
+- `pt-[var(--header-total-height)]` → `pt-[calc(var(--header-total-height)+clamp(16px,3vw,40px))]` — guaranteed gap below the ticker at all zoom levels.
+
+No change to the globe, card, country dots, CTAs, pricing, payment, intake, or operator logic.
+
+### Verified (Playwright, dev server)
+| Viewport | Horizontal overflow | Result |
+|---|---|---|
+| 1440 | none | hero + globe + dots + both CTAs visible, clears ticker |
+| 1280 | none | clean |
+| 1024 | none | clean |
+| 768 | none | stacks cleanly |
+| 390 | none | stacks cleanly, CTAs visible |
+
+- Destination card (Italy popover): box `x743 y144 w346 h550`, fully **inViewport=true**, clears ticker, globe behind it, both card CTAs visible.
+- `npx tsc --noEmit` → 0 errors · `npm run build` → successful · `validate:project` → passed.
+
+### Scope note
+This pass fixed the actual reported defect (homepage hero card clipping). The broader "full-OS containment / permanent layout-contract / Playwright-regression-system" program was intentionally **not** executed in this pass, to avoid touching dozens of currently-working surfaces and risking regressions; it remains available as a follow-up if desired.

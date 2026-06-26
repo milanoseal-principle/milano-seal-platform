@@ -87,7 +87,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative h-[100svh] pt-[var(--header-total-height)] pb-8 lg:pb-10 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative min-h-[100svh] pt-[calc(var(--header-total-height)+clamp(16px,3vw,40px))] pb-8 lg:pb-10 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-x-clip"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
