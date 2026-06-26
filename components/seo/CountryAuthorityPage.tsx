@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { CountryComplianceProfile } from "@/lib/compliance/countries";
 import { CLIENT_COPY } from "@/lib/compliance/clientCopy";
 import { DOCUMENT_TAXONOMY } from "@/lib/compliance/documents";
+import { GlobalRouteGlobe } from "@/components/globe/GlobalRouteGlobe";
+import { SeoCorridorMapPreview } from "@/components/map/SeoCorridorMapPreview";
 
 interface Props {
   country: CountryComplianceProfile;
@@ -29,7 +31,35 @@ export function CountryAuthorityPage({ country, authMode = "apostille" }: Props)
         {memberNote}
       </p>
 
-      <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", marginBottom: 40 }} />
+      <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", marginBottom: 32 }} />
+
+      {/* Authority globe + corridor preview */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-10">
+        <div className="flex-1 min-w-0">
+          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">Authority Coverage</p>
+          <GlobalRouteGlobe selectedSlug={country.slug} className="w-full max-w-[400px]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">Corridor Preview</p>
+          <SeoCorridorMapPreview slug={country.slug} className="w-full" />
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div className="flex flex-wrap gap-3 mb-10">
+        <Link
+          href={`/intake?destination=${country.slug}&country=${encodeURIComponent(country.name)}`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#050507] font-bold text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-[#D4B76A] transition-colors"
+        >
+          Begin {country.name} Intake →
+        </Link>
+        <Link
+          href={`/map?country=${country.slug}`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase tracking-[0.1em] rounded-lg hover:border-[#C6A55A] transition-colors"
+        >
+          View in Atlas →
+        </Link>
+      </div>
 
       {/* Document matrix */}
       <div className="mb-12">

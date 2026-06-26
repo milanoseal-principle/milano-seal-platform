@@ -44,7 +44,7 @@ export default async function ApostilleCountryDocumentPage({ params }: Props) {
   return (
     <>
       <Header />
-      <main className="bg-[#060606] min-h-screen pt-24 pb-16">
+      <main className="bg-[#060606] min-h-screen pb-16" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4">
             {country.name} · {doc.category.replace("-", " ")}
