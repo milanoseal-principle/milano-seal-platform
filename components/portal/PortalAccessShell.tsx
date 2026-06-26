@@ -85,7 +85,7 @@ export function PortalAccessShell({ nextPath = "/portal" }: Props) {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         background: "#050505",
         display: "flex",
         alignItems: "center",

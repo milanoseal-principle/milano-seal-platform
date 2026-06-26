@@ -140,6 +140,7 @@ export function CustodyTimeline({ deal }: Props) {
 
   return (
     <div
+      data-critical-card=""
       style={{
         background: "rgba(255,255,255,0.01)",
         border: "1px solid rgba(198,165,90,0.14)",

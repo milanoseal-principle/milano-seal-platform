@@ -114,7 +114,7 @@ export default function PortalMessagesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-[calc(100vh-120px)] max-h-[calc(100vh-120px)]">
+    <div className="flex flex-col h-full min-h-[calc(100dvh-120px)] max-h-[calc(100dvh-120px)]">
       {/* Header */}
       <div className="border-b border-[#1A1A1A] px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div>

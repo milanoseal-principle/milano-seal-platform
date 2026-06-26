@@ -21,7 +21,7 @@ export function ClientDocumentStatusCard({
   const isReleased = lifecycleStatus === "RELEASED";
 
   return (
-    <div style={{
+    <div data-critical-card="" style={{
       background: "rgba(10,10,12,0.96)",
       border: "1px solid rgba(198,165,90,0.18)",
       borderRadius: 10,

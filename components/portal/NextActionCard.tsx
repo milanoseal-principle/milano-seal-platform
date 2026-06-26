@@ -27,6 +27,7 @@ export function NextActionCard({ matter }: NextActionCardProps) {
 
   return (
     <div
+      data-critical-card=""
       style={{
         background: "rgba(10,10,10,0.7)",
         border: "1px solid rgba(198,165,90,0.28)",

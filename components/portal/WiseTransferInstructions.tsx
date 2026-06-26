@@ -13,6 +13,7 @@ export function WiseTransferInstructions({
 }: WiseTransferInstructionsProps) {
   return (
     <div
+      data-critical-card=""
       style={{
         background: "rgba(198,165,90,0.04)",
         border: "1px solid rgba(198,165,90,0.18)",

@@ -184,7 +184,7 @@ export default function ClientInvoicePage() {
       </div>
 
       {/* Digital pricing summary — not included in print layout */}
-      <div style={{ marginBottom: 16 }}>
+      <div data-critical-card="" style={{ marginBottom: 16 }}>
         <PricingBreakdown
           data={pricingData}
           showPaymentButton={!paid && subtotal > 0}
@@ -196,7 +196,7 @@ export default function ClientInvoicePage() {
 
       {/* Discount code entry — only shown when matter is unpaid */}
       {!paid && !discountResult && (
-        <div style={{
+        <div data-critical-card="" style={{
           marginBottom: 16,
           background: "rgba(198,165,90,0.04)",
           border: "1px solid rgba(198,165,90,0.14)",
@@ -287,7 +287,7 @@ export default function ClientInvoicePage() {
       )}
 
       {/* Payment card — Wise suppressed for platform-fee-only matters */}
-      <div style={{ marginBottom: 24 }}>
+      <div data-critical-card="" style={{ marginBottom: 24 }}>
         {deal.is_platform_fee_only ? (
           <div style={{
             background: "rgba(198,165,90,0.06)",

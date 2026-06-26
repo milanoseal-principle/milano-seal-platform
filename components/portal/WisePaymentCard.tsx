@@ -56,6 +56,7 @@ export function WisePaymentCard({
   if (isPaid) {
     return (
       <div
+        data-critical-card=""
         style={{
           background: "#0A0A0A",
           border: "1px solid rgba(34,197,94,0.25)",
@@ -186,6 +187,7 @@ export function WisePaymentCard({
 
   return (
     <div
+      data-critical-card=""
       style={{
         background: "#0A0A0A",
         border: "1px solid rgba(198,165,90,0.2)",
