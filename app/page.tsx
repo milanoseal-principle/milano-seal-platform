@@ -11,7 +11,7 @@ import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
-import { GlobalMap } from "@/components/landing/global-map";
+import { HomepageRoutingPreview } from "@/components/landing/homepage-routing-preview";
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
@@ -65,9 +65,9 @@ export default function HomePage() {
           <HowItWorks />
         </div>
 
-        {/* 6. Interactive map — Global Document Intelligence */}
+        {/* 6. Guided routing preview — full workspace remains on /map */}
         <div id="map">
-          <GlobalMap />
+          <HomepageRoutingPreview />
         </div>
 
         {/* 6. What Are You Executing — document type grid */}

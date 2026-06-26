@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Inter, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { MilanoOrbAssistant } from "@/components/assistant/MilanoOrbAssistant";
@@ -16,23 +15,7 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
+const fontVariables = "font-sans";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://themilanoseal.com"),
@@ -155,7 +138,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geist.variable} ${inter.variable} ${playfair.variable} font-sans antialiased`}
+        className={`${fontVariables} antialiased`}
       >
         <script
           type="application/ld+json"

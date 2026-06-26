@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getHomeRouteForRole, isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -32,6 +33,12 @@ function isProtected(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  if (pathname.startsWith("/dashboard/alliance")) {
+    const allianceUrl = request.nextUrl.clone();
+    allianceUrl.pathname = "/alliance/dashboard";
+    return NextResponse.redirect(allianceUrl);
+  }
 
   if (PUBLIC_AUTH_PATHS.has(pathname)) {
     return NextResponse.next();
@@ -84,6 +91,23 @@ export async function proxy(request: NextRequest) {
     loginUrl.search = "";
     loginUrl.searchParams.set("next", pathname + (search || ""));
     return NextResponse.redirect(loginUrl);
+  }
+
+  const role = ((user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined) ?? null;
+
+  if (!pathname.startsWith("/api/") && !isRouteAllowedForRole(pathname, role)) {
+    const roleUrl = request.nextUrl.clone();
+    roleUrl.pathname = getHomeRouteForRole(role);
+    roleUrl.search = "";
+    return NextResponse.redirect(roleUrl);
+  }
+
+  if (pathname.startsWith("/api/dashboard") && !isRouteAllowedForRole("/dashboard", role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (pathname.startsWith("/api/va") && !isRouteAllowedForRole("/va/dashboard", role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return response;

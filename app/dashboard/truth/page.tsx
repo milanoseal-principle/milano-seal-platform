@@ -28,6 +28,8 @@ export interface HealthScore {
   label: "STRONG" | "GOOD" | "DEVELOPING" | "EARLY" | "CRITICAL";
   note: string;
   route: string;
+  dataAvailable: boolean;
+  source: string;
 }
 
 function scoreLabel(score: number): HealthScore["label"] {
@@ -81,9 +83,9 @@ export default async function TruthPage() {
     }
     scores.push({
       category: "Revenue Health",
-      score: revenueScore,
-      label: scoreLabel(revenueScore),
-      note: `${paid.length} paid matters. Pipeline conversion avg ${
+      score: total === 0 ? 0 : revenueScore,
+      label: total === 0 ? "EARLY" : scoreLabel(revenueScore),
+      note: total === 0 ? "No paid or active unpaid matters are available to score." : `${paid.length} paid matters. Pipeline conversion avg ${
         unpaid.length > 0
           ? Math.round(
               unpaid.reduce((s, d) => s + (d.conversion_score ?? 0), 0) /
@@ -92,6 +94,8 @@ export default async function TruthPage() {
           : 0
       }%.`,
       route: "/dashboard/financials",
+      dataAvailable: total > 0,
+      source: "deals.payment_status + deals.conversion_score",
     });
   } catch {
     scores.push({
@@ -100,6 +104,8 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/financials",
+      dataAvailable: false,
+      source: "deals",
     });
   }
 
@@ -129,10 +135,12 @@ export default async function TruthPage() {
     }
     scores.push({
       category: "Execution Health",
-      score: executionScore,
-      label: scoreLabel(executionScore),
-      note: `${activePaid.length} active paid matters in execution.`,
+      score: activePaid.length === 0 ? 0 : executionScore,
+      label: activePaid.length === 0 ? "EARLY" : scoreLabel(executionScore),
+      note: activePaid.length === 0 ? "No active paid matters are available to score." : `${activePaid.length} active paid matters in execution.`,
       route: "/dashboard/execution-control",
+      dataAvailable: activePaid.length > 0,
+      source: "deals.matter_status + deals.updated_at + deals.apostille_at",
     });
   } catch {
     scores.push({
@@ -141,6 +149,8 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/execution-control",
+      dataAvailable: false,
+      source: "deals",
     });
   }
 
@@ -164,6 +174,8 @@ export default async function TruthPage() {
       label: scoreLabel(authorityScore),
       note: `${verified.length} of ${active.length} active authorities verified.`,
       route: "/dashboard/authorities",
+      dataAvailable: active.length > 0,
+      source: "receiving authorities registry",
     });
   } catch {
     scores.push({
@@ -172,6 +184,8 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/authorities",
+      dataAvailable: false,
+      source: "receiving authorities registry",
     });
   }
 
@@ -194,6 +208,8 @@ export default async function TruthPage() {
       label: scoreLabel(trustScore),
       note: `${completed.length} completed of ${totalPaid.length} paid matters.`,
       route: "/dashboard/trust",
+      dataAvailable: totalPaid.length > 0,
+      source: "deals.payment_status + deals.matter_status",
     });
   } catch {
     scores.push({
@@ -202,6 +218,8 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/trust",
+      dataAvailable: false,
+      source: "deals",
     });
   }
 
@@ -219,6 +237,8 @@ export default async function TruthPage() {
       label: scoreLabel(partnerScore),
       note: `${uniqueSources} unique referral sources tracked.`,
       route: "/dashboard/referral",
+      dataAvailable: withReferral.length > 0,
+      source: "deals.referral_source",
     });
   } catch {
     scores.push({
@@ -227,6 +247,8 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/referral",
+      dataAvailable: false,
+      source: "deals.referral_source",
     });
   }
 
@@ -237,6 +259,8 @@ export default async function TruthPage() {
     label: "CRITICAL",
     note: "Pending operator verification — see /dashboard/deployment",
     route: "/dashboard/deployment",
+    dataAvailable: false,
+    source: "operator deployment checklist",
   });
 
   // 7. Corridor Health
@@ -255,6 +279,8 @@ export default async function TruthPage() {
       label: scoreLabel(corridorScore),
       note: `${completedCorridors} unique completed corridors.`,
       route: "/dashboard/corridors",
+      dataAvailable: completedCorridors > 0,
+      source: "completed deals destination_country + document_type",
     });
   } catch {
     scores.push({
@@ -263,12 +289,18 @@ export default async function TruthPage() {
       label: "CRITICAL",
       note: "Score calculation failed.",
       route: "/dashboard/corridors",
+      dataAvailable: false,
+      source: "completed deals",
     });
   }
 
-  const overallScore = Math.round(
-    scores.reduce((sum, s) => sum + s.score, 0) / scores.length
-  );
+  const scored = scores.filter((score) => score.dataAvailable);
+  const overallScore =
+    scored.length === 0
+      ? null
+      : Math.round(
+          scored.reduce((sum, score) => sum + score.score, 0) / scored.length,
+        );
 
   return (
     <>

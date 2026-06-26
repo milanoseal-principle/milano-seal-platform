@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PortalClient } from "@/components/portal/portal-client";
 
 export const metadata: Metadata = {
-  title: "Document Portal — The Milano Seal™",
+  title: "Matter Control Portal — The Milano Seal™",
   description: "Access your matter status and documents.",
   robots: { index: false, follow: false },
 };
