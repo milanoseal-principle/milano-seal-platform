@@ -80,7 +80,7 @@ export default function IntakePage({
     <main className="ms-os-page min-h-screen bg-[#0A0A0A]">
       <Header />
 
-      <section className="relative overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-28 sm:px-6 sm:pt-32">
+      <section className="relative overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 1.5rem)" }}>
         <div className="ms-os-atmosphere" aria-hidden="true" />
         <div className="max-w-7xl mx-auto">
           {/* Page header */}

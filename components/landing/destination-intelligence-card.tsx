@@ -164,7 +164,7 @@ export function DestinationIntelligenceCard({
               {directory ? "Priority Corridor" : "Destination Review"}
             </p>
             <h3
-              className={`${compact ? "text-lg" : "text-2xl"} mt-1 truncate font-serif text-white`}
+              className={`${compact ? "text-lg" : "text-2xl"} mt-1 font-serif text-white`}
             >
               {data.name}
             </h3>

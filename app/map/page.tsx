@@ -19,11 +19,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://themilanoseal.com/map" },
 };
 
-export default function MapPage() {
+export default async function MapPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
+  const { country } = await searchParams
   return (
     <>
       <Header />
-      <main className="bg-[#060606] min-h-screen pt-20 pb-0 overflow-x-hidden">
+      <main className="bg-[#060606] min-h-screen pb-0 overflow-x-hidden" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
           <div className="mb-4 md:mb-6">
             <p className="text-[#C6A55A] text-[10px] md:text-xs tracking-[0.24em] md:tracking-[0.3em] uppercase font-medium mb-2 md:mb-4">
@@ -40,7 +41,7 @@ export default function MapPage() {
           </div>
         </div>
 
-        <GlobalMap />
+        <GlobalMap initialCountry={country} />
         <RoutingIntelligenceSection />
         <CorridorTimeStrip />
       </main>

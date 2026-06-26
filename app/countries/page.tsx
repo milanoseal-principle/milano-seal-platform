@@ -27,7 +27,7 @@ export default function CountriesPage() {
     <main className="min-h-screen bg-[#0A0A0A] overflow-x-hidden">
       <Header />
 
-      <section className="pt-28 pb-8 px-4 sm:px-6">
+      <section className="pb-8 px-4 sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 1.5rem)" }}>
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-4">
             <Globe className="w-4 h-4 text-[#C6A55A]" />

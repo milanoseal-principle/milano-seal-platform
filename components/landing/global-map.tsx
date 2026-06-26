@@ -95,7 +95,7 @@ function useCorridorMemory() {
   return { storedSlug, storedMatter, saveCountry, saveMatter };
 }
 
-export function GlobalMap() {
+export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
@@ -114,6 +114,12 @@ export function GlobalMap() {
       setShowMemoryBanner(true);
     }
   }, [storedSlug]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!initialCountry) return;
+    const dest = DESTINATIONS.find(d => d.slug === initialCountry) ?? null;
+    if (dest) setSelectedDest(dest);
+  }, [initialCountry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectDest = useCallback((dest: Destination | null) => {
     setSelectedDest(dest);
