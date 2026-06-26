@@ -127,14 +127,19 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-6">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6">
               <Image
-                src="/milano-seal-gold-transparent-512.png"
-                alt="The Milano Seal"
-                width={160}
-                height={52}
-                style={{ height: "52px", width: "auto" }}
+                src="/brand/milano-seal-orb-v2.png"
+                alt=""
+                aria-hidden="true"
+                width={96}
+                height={96}
+                style={{ width: 96, height: 96, objectFit: "contain", flexShrink: 0 }}
               />
+              <span className="flex flex-col leading-none">
+                <span className="font-serif text-[15px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em]">The Milano Seal</span>
+                <span className="mt-1 text-[7px] uppercase tracking-[0.3em] text-[#8B743C]">Global Document Execution</span>
+              </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
               U.S. Document Execution & Apostille Liaison. Sealing trust with
@@ -142,11 +147,11 @@ export function Footer() {
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
-                <MapPin className="w-4 h-4 text-[#C6A55A]" />
+                <MapPin className="w-4 h-4 text-[var(--ms-gold)]" />
                 <span>Florida, United States</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
-                <Mail className="w-4 h-4 text-[#C6A55A]" />
+                <Mail className="w-4 h-4 text-[var(--ms-gold)]" />
                 <a
                   href="mailto:contact@themilanoseal.com"
                   className="hover:text-white transition-colors"
@@ -155,7 +160,7 @@ export function Footer() {
                 </a>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
-                <Phone className="w-4 h-4 text-[#C6A55A]" />
+                <Phone className="w-4 h-4 text-[var(--ms-gold)]" />
                 <span>Available upon intake</span>
               </div>
             </div>
@@ -169,7 +174,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
+                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -186,7 +191,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
+                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -203,7 +208,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[#C6A55A] transition-colors"
+                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -224,7 +229,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#2A2A2A] text-[#8A8A8A] hover:text-[#C6A55A] hover:border-[#C6A55A]/40 hover:bg-[#C6A55A]/5 transition-all duration-200"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#2A2A2A] text-[#8A8A8A] hover:text-[var(--ms-gold)] hover:border-[var(--ms-gold)]/40 hover:bg-[var(--ms-gold)]/5 transition-all duration-200"
               >
                 {Icon ? (
                   <Icon className="w-3.5 h-3.5" />

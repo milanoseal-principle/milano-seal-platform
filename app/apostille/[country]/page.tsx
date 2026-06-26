@@ -37,7 +37,7 @@ export default async function ApostilleCountryPage({ params }: Props) {
   return (
     <>
       <Header />
-      <main className="bg-[#060606] min-h-screen pt-24 pb-16">
+      <main className="bg-[#060606] min-h-screen pb-16" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}

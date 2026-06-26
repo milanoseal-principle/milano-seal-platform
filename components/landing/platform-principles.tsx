@@ -45,9 +45,9 @@ export function PlatformPrinciples() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.45, delay: i * 0.07 }}
-              className="flex items-start gap-4 bg-[#0D0D0D] border border-[#1E1E1E] rounded-xl p-5 hover:border-[#C6A55A]/20 transition-colors duration-300"
+              className="flex items-start gap-4 bg-[#0D0D0D] border border-[#1E1E1E] rounded-xl p-5 hover:border-[var(--ms-gold)]/20 transition-colors duration-300"
             >
-              <span className="font-mono text-[#C6A55A]/40 text-xl font-medium leading-none flex-shrink-0 mt-0.5">
+              <span className="font-mono text-[var(--ms-gold)]/40 text-xl font-medium leading-none flex-shrink-0 mt-0.5">
                 {num}
               </span>
               <span className="text-[#B0B0B0] text-sm font-medium leading-snug">

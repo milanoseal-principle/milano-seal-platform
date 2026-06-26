@@ -1,14 +1,17 @@
-# milano-seal-platform       
+<p align="center">
+  <img src="public/milano-seal-gold-transparent-512.png" alt="The Milano Seal™" width="120">
+</p>
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+<h1 align="center">The Milano Seal™</h1>
+
+<p align="center">
+  U.S. Document Execution for International Use — Remote Online Notarization,
+  Apostille Coordination, and structured international document routing.
+</p>
 
 ---
 
-## The Milano Seal™ — Production Architecture
-
-> "The Milano Seal™ is a controlled execution environment for high-trust document movement. Every intake, payment, signature, apostille, courier handoff, and release event reinforces the same standard: secure, visible, premium, and operationally precise."
-
-### Platform Summary
+## Platform Summary
 
 The Milano Seal™ is a U.S.-based document execution and international logistics platform operating at the intersection of high-trust legal logistics and professional relationship management.
 
@@ -16,33 +19,23 @@ The Milano Seal™ is a U.S.-based document execution and international logistic
 
 **Engine B — Domestic Relationship:** Remote Online Notarization (RON), identity verification, professional relationship support. Entry-level standardized pricing.
 
-### Production Module Index
+## Stack
 
-See full specs: `docs/system/FINAL_PRODUCTION_MODULES.md`
+- Next.js App Router · React · TypeScript · Tailwind CSS
+- Supabase (PostgreSQL + Auth + Storage)
+- Vercel deployment
+- Geist · Inter · Playfair Display fonts
 
-| Module | Status | Doc |
-|---|---|---|
-| Intake + DB write | Gate check required | `docs/runbooks/FIRST_REAL_MATTER_RUNBOOK.md` |
-| Founder Discount Override | Built — `014a245` | `/dashboard/founder-pricing` |
-| Payment / Invoice Safety | Wired | Portal invoice page |
-| Audit Ledger | Spec ready | `docs/system/AUDIT_LEDGER.md` |
-| Security & RLS | Enforced + spec | `docs/security/RLS_HARDENING.md` |
-| Concierge Lead Alerts | Spec ready | `docs/ops/HIGH_VALUE_LEAD_ALERTS.md` |
-| Execution Pipeline | Spec ready | `docs/ops/EXECUTION_PIPELINE.md` |
-| Progress Passport | Spec ready | `docs/ops/PROGRESS_PASSPORT.md` |
-| GBP Review Capture | Partially built | `docs/ops/REVIEW_CAPTURE.md` |
+## Run locally
 
-### Deployment Gate
+```bash
+npm install
+npm run dev
+```
 
-Do not declare production-ready until:
-1. Vercel build green
-2. `GET /api/admin/db-health` → `deals_write.ok = true`
-3. `founder_admin` role verified on auth user
-4. Migration `027_founder_discount_override.sql` applied in Supabase
-5. Portal internal-data scan passes
-7. First real matter processed intake → completion
+Open `http://localhost:3000`.
 
-### Required Vercel Env Vars
+## Required environment variables
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
@@ -54,141 +47,34 @@ NEXT_PUBLIC_SITE_URL=https://themilanoseal.com
 NEXT_PUBLIC_GBP_REVIEW_URL=https://g.page/r/YOUR_REAL_GBP_LINK/review
 ```
 
----
+## Deployment gate
 
-## THE MILANO SEAL™ LAUNCH LOCK
+Do not declare production-ready until:
 
-The production codebase has completed P0 hardening in-repo.
+1. Vercel build green
+2. `GET /api/admin/db-health` → `deals_write.ok = true`
+3. `founder_admin` role verified on auth user
+4. Migration `027_founder_discount_override.sql` applied in Supabase
+5. Portal internal-data scan passes
+6. First real matter processed intake → completion
 
-The platform is **not** considered live-cleared until remote infrastructure confirms:
+## Production module index
 
-| Item | Required |
-|---|---|
-| Migration `009_notifications_table.sql` applied | YES |
-| Migration `010_operator_file_isolation.sql` applied | YES |
-| Migration `011_alliance_tracking_schema.sql` applied | **NO — P1 gated** |
-| Migration `012_country_registry.sql` applied | **NO — P1 gated** |
-| `documents` Supabase storage bucket set to Private | YES |
-| `PORTAL_SESSION_SECRET` seeded in Vercel | YES |
-| Vercel production build passed | YES |
-| `scripts/smoke-test.sh` passed | YES |
-| Manual intake test passed | YES |
-| Portal OTP + HMAC session test passed | YES |
+| Module | Status | Doc |
+|---|---|---|
+| Intake + DB write | Gate check required | `docs/runbooks/FIRST_REAL_MATTER_RUNBOOK.md` |
+| Founder Discount Override | Built | `/dashboard/founder-pricing` |
+| Payment / Invoice Safety | Wired | Portal invoice page |
+| Audit Ledger | Spec ready | `docs/system/AUDIT_LEDGER.md` |
+| Security & RLS | Enforced | `docs/security/RLS_HARDENING.md` |
+| Execution Pipeline | Spec ready | `docs/ops/EXECUTION_PIPELINE.md` |
+| Progress Passport | Spec ready | `docs/ops/PROGRESS_PASSPORT.md` |
 
-No P1 or P2 system may be activated until this checklist is clean.
+## Architecture references
 
-**Launch runbook:** `docs/REMOTE_P0_CLEARANCE.md`  
-**Go-live checklist:** `docs/go-live-checklist.md`  
-**Final launch report:** `docs/final-launch-report-template.md`  
-**Vercel env reference:** `docs/vercel-env-production.md`  
-**Supabase clearance steps:** `docs/supabase-remote-clearance.md`
+- `docs/system/FINAL_PRODUCTION_MODULES.md` — module index
+- `docs/REMOTE_P0_CLEARANCE.md` — launch runbook
+- `docs/go-live-checklist.md` — go-live checklist
+- `docs/architecture/` — Layer 1.7 expansion, destination intelligence, CTO handoff, sovereign backlog
 
----
-
-## Current Project Status
-
-See: `docs/PROJECT_STATUS_INDEX.md`
-
-This file is the current operator index for completed repo work, staged systems, and required remote launch clearance steps.
-
----
-
-## Architecture References
-
-### Layer 1.7 Master Expansion Reference
-
-The Layer 1.7 Master True Full Expansion is retained as a future architecture validation layer covering system flow expansion, API contracts, field behavior, decision engine logic, chained events, failure and edge cases, strict state transitions, SOP branching logic, data relationships, automation, payment, document generation, and deployment planning.
-
-This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
-
-**Location:** `docs/architecture/LAYER_1_7_MASTER_EXPANSION_REFERENCE.md`
-
-### Destination Intelligence Registry
-
-Future architecture note for all Hague and non-Hague destination routing, country localities, translation languages, certified translation expectations, and document routing rules. Source authority: HCCH (129 Hague Apostille Convention contracting states — verify before production import).
-
-This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
-
-**Location:** `docs/architecture/DESTINATION_INTELLIGENCE_REGISTRY.md`
-
-### Ultra CTO Handoff Reference
-
-The Ultra CTO Handoff System Spec is retained as a future architecture validation layer covering API schemas, relational schema planning, field mapping, state machine rules, event engine behavior, failure escalation, command center wiring, backend architecture, and alliance system planning.
-
-This reference is documentation-only. It does not override the Master Reconciliation Matrix, the P0 launch lock, remote P0 clearance requirements, or active repository reality.
-
-**Location:** `docs/architecture/ULTRA_CTO_HANDOFF_REFERENCE.md`
-
-### Avvocato Sovereign Intelligence Backlog
-
-Locked client-perspective backlog for future sovereign execution features, including VA attribution, stagnation alerts, attested evidence packets, alliance health scoring, corridor SEO, asset-class intake intelligence, verification posture, jurisdictional alerting, operator knowledge graph, execution reconciliation center, client return engine, and Trust Engine 2.0.
-
-**Location:** `docs/architecture/AVVOCATO_SOVEREIGN_INTELLIGENCE_BACKLOG.md`
-
-**Status:** STAGED ONLY — do not implement until P0 live verification passes.
-
-### Final Production Launch Report
-
-Live production readiness state, manual courier operating mode, Shippo go-live requirements, post-launch hardening backlog, and Revenue Phase gate. Locks the exact production state so future branches do not reopen completed architecture.
-
-**Location:** `docs/final-production-launch-report.md`
-
-**Status:** PRODUCTION READY WITH MANUAL COURIER — do not transition to Revenue Phase until live smoke test is complete.
-
-### P1/P2 Architecture Notes
-
-Acquisition entry flow, smart intake parser, portal terminal UX, health latency targets, logger security rules, and shipping 501 guard specifications.
-
-**Location:** `docs/p1-p2-architecture-notes.md`
-
-### Final SOP + Command Center Runbook
-
-The Final SOP + Deployment + Command Center Runbook is retained as an operator governance layer covering phase-lock workflow, Command Center tab architecture, Strategic tab requirements, Alliance Onboarding, Alliance Tool Belt qualification, compliance gates, backend mapping, testing protocol, and deployment reference logic.
-
-This reference is documentation-only. It does not override the Master Reconciliation Matrix, P0 launch lock, remote P0 clearance requirements, or active repository reality.
-
-**Location:** `docs/operations/FINAL_SOP_COMMAND_CENTER_RUNBOOK.md`
-
-### Avvocato Sovereign Intelligence Backlog
-
-The complete staged backlog for The Milano Seal™ platform intelligence expansion. Contains 21 sections across 13 backlog categories (A–M) plus 8 numbered artifacts covering full system architecture, test sequences, upgrade paths, intelligence surface design, governance interlock, SOP taxonomy, sovereign operational interlock (P0 clearance), and the client communication tone matrix.
-
-**Status:** STAGED BACKLOG ONLY — no production behavior changes, no code, no migrations, no auth, no payment touched.
-
-**Build gate:** POST P0 LIVE VERIFICATION COMPLETE.
-
-**Location:** `docs/architecture/AVVOCATO_SOVEREIGN_INTELLIGENCE_BACKLOG.md`
-
----
-
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_5unbojWp9IqEETScJrzTH5h6KxkH)
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/milanoseal-principle/milano-seal-platform" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+All architecture documents are documentation-only and do not override the P0 launch lock or active repository reality.

@@ -39,7 +39,7 @@ export default function FamilyOfficesPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#050507] text-white pt-[116px]">
+      <main className="min-h-screen bg-[#050507] text-white pt-[var(--header-total-height)]">
         {/* Breadcrumb */}
         <nav className="max-w-5xl mx-auto px-6 pt-8 flex items-center gap-2" aria-label="Breadcrumb">
           <Link href="/" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Home</Link>

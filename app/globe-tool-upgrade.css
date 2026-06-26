@@ -1,0 +1,12 @@
+/* Globe crest fill + useful routing tool panel upgrade. */
+.ms-globe-crest{width:60px!important;height:60px!important}
+.ms-globe-crest::before{inset:0!important;background-image:url("/brand/milano-seal-core-brain-feather.png")!important;background-size:148% 148%!important;background-position:center!important;background-repeat:no-repeat!important;filter:drop-shadow(0 0 12px rgba(244,207,114,.36))!important}
+.ms-globe-crest::after{border-color:rgba(198,165,90,.34)!important;box-shadow:inset 0 0 14px rgba(0,0,0,.88),0 0 30px rgba(198,165,90,.18)!important}
+.ms-destination-popover>div{border-radius:10px!important;padding:18px 18px 16px!important;background:linear-gradient(180deg,rgba(5,5,7,.98),rgba(8,7,5,.96))!important;box-shadow:0 0 0 1px rgba(198,165,90,.08),0 20px 62px rgba(0,0,0,.96),0 0 40px rgba(198,165,90,.12)!important}
+.ms-destination-popover>div::before{content:"ROUTING INTELLIGENCE TOOL";display:block;margin-bottom:10px;color:rgba(212,175,55,.72);font-family:monospace;font-size:7px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.ms-destination-popover>div::after{content:"VERIFY AUTHORITY  •  CHECK PATH  •  START INTAKE";display:block;margin-top:12px;padding-top:10px;border-top:1px solid rgba(198,165,90,.12);color:rgba(245,241,232,.36);font-family:monospace;font-size:6.5px;letter-spacing:.13em;text-transform:uppercase;line-height:1.45}
+.ms-destination-popover a{border-radius:5px!important;background:linear-gradient(135deg,rgba(212,175,55,.13),rgba(198,165,90,.05))!important}
+.ms-destination-popover p:nth-of-type(1){font-size:12px!important;letter-spacing:.11em!important}
+.ms-destination-popover p:nth-of-type(2){color:rgba(245,241,232,.58)!important}
+.ms-destination-popover p:nth-of-type(3){color:rgba(245,241,232,.42)!important}
+@media(max-width:640px){.ms-globe-crest{width:46px!important;height:46px!important}.ms-globe-crest::before{background-size:152% 152%!important}}

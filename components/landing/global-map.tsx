@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
 import { getCorridorIntel, type MatterVector } from "@/data/corridor-intel";
+import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 
 const GlobalIntelMapInteractive = dynamic(
   () =>
@@ -17,7 +18,7 @@ const GlobalIntelMapInteractive = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[480px] bg-[#07070A] animate-pulse" />
+      <div className="w-full h-[420px] md:h-[480px] bg-[#07070A] animate-pulse" />
     ),
   }
 );
@@ -63,7 +64,6 @@ const REGION_FLY_TARGETS: Partial<Record<RegionTab, { lat: number; lng: number; 
   "Asia Pacific": { lat: 20, lng: 115, zoom: 4 },
 };
 
-// ── Corridor Memory (sessionStorage) ─────────────────────────────────────────
 function useCorridorMemory() {
   const [storedSlug, setStoredSlug] = useState<string | null>(null);
   const [storedMatter, setStoredMatter] = useState<string | null>(null);
@@ -95,20 +95,18 @@ function useCorridorMemory() {
   return { storedSlug, storedMatter, saveCountry, saveMatter };
 }
 
-export function GlobalMap() {
+export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
 
-  // Sprint One — intelligence layer state
   const [activeMatter, setActiveMatter] = useState<MatterVector | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const { storedSlug, storedMatter, saveCountry, saveMatter } = useCorridorMemory();
   const [showMemoryBanner, setShowMemoryBanner] = useState(false);
 
-  // Restore from corridor memory on mount
   useEffect(() => {
     if (!storedSlug) return;
     const dest = DESTINATIONS.find(d => d.slug === storedSlug) ?? null;
@@ -117,7 +115,12 @@ export function GlobalMap() {
     }
   }, [storedSlug]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When selected destination changes, save to memory + reset matter/step
+  useEffect(() => {
+    if (!initialCountry) return;
+    const dest = DESTINATIONS.find(d => d.slug === initialCountry) ?? null;
+    if (dest) setSelectedDest(dest);
+  }, [initialCountry]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSelectDest = useCallback((dest: Destination | null) => {
     setSelectedDest(dest);
     setActiveMatter(null);
@@ -126,14 +129,12 @@ export function GlobalMap() {
     if (!dest) saveMatter(null);
   }, [saveCountry, saveMatter]);
 
-  // When matter changes, save to memory
   const handleSelectMatter = useCallback((mv: MatterVector | null) => {
     setActiveMatter(mv);
     setExpandedStep(null);
     saveMatter(mv?.label ?? null);
   }, [saveMatter]);
 
-  // Restore memory session
   function resumeMemorySession() {
     const dest = DESTINATIONS.find(d => d.slug === storedSlug) ?? null;
     if (!dest) return;
@@ -152,12 +153,10 @@ export function GlobalMap() {
   }, []);
   const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
 
-  // Derived corridor intelligence for selected destination
   const corridorIntel = selectedDest
     ? getCorridorIntel(selectedDest.slug, selectedDest.hague)
     : null;
 
-  // Active execution path: matter-specific or generic
   const activePath = activeMatter?.path ?? selectedDest?.executionPath ?? [];
   const activeTimeline = activeMatter?.timeline ?? corridorIntel?.timeline ?? null;
 
@@ -168,51 +167,29 @@ export function GlobalMap() {
 
   return (
     <motion.section
-      className="relative py-10 md:py-14 bg-[#050507] overflow-hidden"
-      initial={{ opacity: 0, y: 20 }}
+      className="relative py-3 md:py-5 bg-[#050507] overflow-hidden"
+      initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.08 }}
-      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* Ambient vault glow */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.04) 0%, rgba(5,5,7,0) 70%)" }}
+        style={{ background: "radial-gradient(ellipse at 50% 55%, rgba(212,175,55,0.035) 0%, rgba(5,5,7,0) 68%)" }}
       />
-      {/* Animated grid background */}
-      <div className="absolute inset-0 opacity-[0.07]">
+      <div className="absolute inset-0 opacity-[0.055]">
         <svg viewBox="0 0 1200 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
           <defs>
-            <linearGradient id="goldCorridorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1A1A1A" />
-              <stop offset="50%" stopColor="#D4AF37" stopOpacity="1" />
-              <stop offset="100%" stopColor="#0A0A0A" />
-            </linearGradient>
-            <filter id="softGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
             <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C6A55A" strokeWidth="0.5" opacity="0.3" />
-              <animateTransform
-                attributeName="patternTransform"
-                type="translate"
-                from="0 0"
-                to="40 40"
-                dur="22s"
-                repeatCount="indefinite"
-              />
+              <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="40 40" dur="22s" repeatCount="indefinite" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#map-grid)" />
         </svg>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Corridor Memory Banner */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         <AnimatePresence>
           {showMemoryBanner && storedSlug && (
             <motion.div
@@ -220,7 +197,7 @@ export function GlobalMap() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
-              className="mb-5 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04]"
+              className="mb-3 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04]"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-[#C6A55A] text-base leading-none flex-shrink-0">
@@ -232,49 +209,29 @@ export function GlobalMap() {
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={resumeMemorySession}
-                  className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#C6A55A] hover:text-[#D4B76A] transition-colors px-2.5 py-1 border border-[#C6A55A]/30 rounded hover:border-[#C6A55A]/60"
-                >
-                  Resume
-                </button>
-                <button
-                  onClick={() => setShowMemoryBanner(false)}
-                  className="text-[#444] hover:text-[#666] transition-colors"
-                  aria-label="Dismiss"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                <button onClick={resumeMemorySession} className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#C6A55A] hover:text-[#D4B76A] transition-colors px-2.5 py-1 border border-[#C6A55A]/30 rounded hover:border-[#C6A55A]/60">Resume</button>
+                <button onClick={() => setShowMemoryBanner(false)} className="text-[#444] hover:text-[#666] transition-colors" aria-label="Dismiss"><X className="w-3 h-3" /></button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* THREE-COLUMN EXECUTION DECK: How It Works | map canvas | dock */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-6 border border-white/[0.06] rounded-xl overflow-hidden"
-          style={{ boxShadow: "0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(198,165,90,0.06)" }}
+          transition={{ duration: 0.55 }}
+          className="mb-4 border border-white/[0.06] rounded-xl overflow-hidden"
+          style={{ boxShadow: "0 0 56px rgba(0,0,0,0.78), inset 0 1px 0 rgba(198,165,90,0.06)" }}
         >
           {/* Panel top bar — header + origin badge collapsed into single strip */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.05]"
-            style={{ background: "rgba(3,3,5,0.90)" }}
-          >
-            <div className="flex items-center gap-4">
-              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70">
-                THE SYSTEM IN MOTION
-              </span>
-              <span className="text-[#2A2A2A]">·</span>
-              <h2 className="font-serif text-sm text-white/90 font-normal tracking-wide">
-                Global Document Intelligence™
-              </h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 md:px-5 py-3 border-b border-white/[0.05]" style={{ background: "rgba(3,3,5,0.90)" }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 whitespace-nowrap">GLOBAL DOCUMENT INTELLIGENCE ATLAS</span>
+              <span className="hidden sm:inline text-[#2A2A2A]">·</span>
+              <h2 className="font-serif text-sm text-white/90 font-normal tracking-wide truncate">Execution Vector Workspace</h2>
             </div>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-[#C6A55A]/20 rounded-full"
-              style={{ background: "rgba(198,165,90,0.04)" }}
-            >
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-[#C6A55A]/20 rounded-full" style={{ background: "rgba(198,165,90,0.04)" }}>
               <MapPin className="w-3 h-3 text-[#C6A55A]/70" />
               <span className="font-mono text-[9px] tracking-wider text-white/60">Florida, United States</span>
               <span className="text-[#333]">·</span>
@@ -283,26 +240,12 @@ export function GlobalMap() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12">
-
-            {/* LEFT: How It Works steps — desktop only */}
-            <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/[0.05]"
-              style={{
-                background: "rgba(3,3,5,0.75)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-              }}
-            >
-              {/* Corner crosshairs */}
-              <div className="absolute top-3 left-3 w-4 h-4 border-l border-t border-[#C6A55A]/10 pointer-events-none" />
-
+            <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/[0.05]" style={{ background: "rgba(3,3,5,0.75)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
               <div className="p-5 flex flex-col h-full">
                 <div className="mb-5">
-                  <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 block mb-1">
-                    HOW IT WORKS
-                  </span>
+                  <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#C6A55A]/70 block mb-1">HOW IT WORKS</span>
                   <div className="w-8 h-px bg-[#C6A55A]/20 mt-2" />
                 </div>
-
                 <div className="flex flex-col gap-0 flex-1">
                   {[
                     { n: "1", title: "Submit Your Matter", desc: "Verified identity & document upload.", activeAt: null },
@@ -315,36 +258,21 @@ export function GlobalMap() {
                     const lit = step.activeAt === "dest" && !!selectedDest;
                     return (
                       <div key={step.n} className={`relative group flex items-start gap-3 py-3 border-b border-white/[0.04] last:border-0 transition-all duration-500 ${lit ? "bg-[#C6A55A]/[0.03]" : ""}`}>
-                        {i < 5 && (
-                          <div className={`absolute left-[18px] top-[34px] bottom-0 w-px transition-colors duration-500 ${lit ? "bg-[#C6A55A]/30" : "bg-[#C6A55A]/08"}`} />
-                        )}
+                        {i < 5 && <div className={`absolute left-[18px] top-[34px] bottom-0 w-px transition-colors duration-500 ${lit ? "bg-[#C6A55A]/30" : "bg-[#C6A55A]/08"}`} />}
                         {lit && <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />}
-                        <div
-                          className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center mt-0.5 transition-all duration-500 ${lit ? "border-[#C6A55A]/60 bg-[#C6A55A]/10" : "border-[#C6A55A]/20 bg-[rgba(198,165,90,0.03)] group-hover:border-[#C6A55A]/40"}`}
-                        >
-                          <span className={`font-mono text-[8px] leading-none transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-[#C6A55A]/50 group-hover:text-[#C6A55A]/80"}`}>
-                            {step.n}
-                          </span>
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center mt-0.5 transition-all duration-500 ${lit ? "border-[#C6A55A]/60 bg-[#C6A55A]/10" : "border-[#C6A55A]/20 bg-[rgba(198,165,90,0.03)] group-hover:border-[#C6A55A]/40"}`}>
+                          <span className={`font-mono text-[8px] leading-none transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-[#C6A55A]/50 group-hover:text-[#C6A55A]/80"}`}>{step.n}</span>
                         </div>
                         <div className="min-w-0 pt-0.5">
-                          <div className={`text-[11px] font-medium leading-snug mb-0.5 transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-white/70 group-hover:text-white/90"}`}>
-                            {step.title}
-                          </div>
-                          <div className={`text-[10px] leading-snug transition-colors duration-500 ${lit ? "text-[#6A5520]" : "text-[#3A3A3A] group-hover:text-[#5A5A5A]"}`}>
-                            {step.desc}
-                          </div>
+                          <div className={`text-[11px] font-medium leading-snug mb-0.5 transition-colors duration-500 ${lit ? "text-[#C6A55A]" : "text-white/70 group-hover:text-white/90"}`}>{step.title}</div>
+                          <div className={`text-[10px] leading-snug transition-colors duration-500 ${lit ? "text-[#6A5520]" : "text-[#3A3A3A] group-hover:text-[#5A5A5A]"}`}>{step.desc}</div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {/* CTA at bottom */}
                 <div className="mt-4 pt-4 border-t border-white/[0.04]">
-                  <Link
-                    href="/intake"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/25 text-[#C6A55A]/80 hover:text-[#C6A55A] hover:border-[#C6A55A]/45 hover:bg-[#C6A55A]/[0.04] rounded-lg transition-all duration-200"
-                  >
+                  <Link href="/intake" className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/25 text-[#C6A55A]/80 hover:text-[#C6A55A] hover:border-[#C6A55A]/45 hover:bg-[#C6A55A]/[0.04] rounded-lg transition-all duration-200">
                     <span className="font-mono text-xs tracking-[0.08em] uppercase">Begin Intake</span>
                     <ArrowRight className="w-3 h-3" />
                   </Link>
@@ -352,74 +280,17 @@ export function GlobalMap() {
               </div>
             </div>
 
-            {/* CENTER: Interactive map canvas */}
-            <div className="lg:col-span-6 lg:border-r border-white/[0.04] relative">
-              <GlobalIntelMapInteractive
-                onSelect={handleSelectDest}
-                selectedDest={selectedDest}
-                externalFlyTarget={mapFlyTarget}
-              />
-
-              {/* Mobile bottom-sheet: slides up inside the map when a destination is selected */}
+            <div className="lg:col-span-6 lg:border-r border-white/[0.04] relative min-h-[420px] md:min-h-[480px]">
+              <GlobalIntelMapInteractive onSelect={handleSelectDest} selectedDest={selectedDest} externalFlyTarget={mapFlyTarget} />
               <AnimatePresence>
                 {selectedDest && (
-                  <motion.div
-                    key={`mobile-sheet-${selectedDest.slug}`}
-                    initial={{ y: "100%", opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: "100%", opacity: 0 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute bottom-0 left-0 right-0 z-[600] lg:hidden"
-                    style={{
-                      background: "rgba(3,3,5,0.92)",
-                      backdropFilter: "blur(16px)",
-                      WebkitBackdropFilter: "blur(16px)",
-                      borderTop: "1px solid rgba(212,175,55,0.18)",
-                      boxShadow: "0 -8px 40px rgba(0,0,0,0.7)",
-                    }}
-                  >
+                  <motion.div key={`mobile-sheet-${selectedDest.slug}`} initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="absolute bottom-0 left-0 right-0 z-[600] lg:hidden" style={{ background: "rgba(3,3,5,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: "1px solid rgba(212,175,55,0.18)", boxShadow: "0 -8px 40px rgba(0,0,0,0.7)" }}>
                     <div className="flex items-center justify-between px-4 py-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span>
-                            <span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${
-                              selectedDest.hague
-                                ? "border-green-500/30 text-green-400/70"
-                                : "border-amber-500/30 text-amber-400/70"
-                            }`}>
-                              {selectedDest.hague ? "HAGUE" : "NON-HAGUE"}
-                            </span>
-                          </div>
-                          <span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">
-                            FL ORIGIN → {selectedDest.name.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
+                      <div className="flex items-center gap-3 min-w-0"><span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span><div className="min-w-0"><div className="flex items-center gap-2 mb-0.5"><span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span><span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${selectedDest.hague ? "border-green-500/30 text-green-400/70" : "border-amber-500/30 text-amber-400/70"}`}>{selectedDest.hague ? "HAGUE" : "NON-HAGUE"}</span></div><span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">FL ORIGIN → {selectedDest.name.toUpperCase()}</span></div></div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && (
-                          <button
-                            onClick={() => openCompliance(selectedDest.slug)}
-                            className="p-1.5 rounded border border-[#C6A55A]/25 text-[#C6A55A]/60 hover:text-[#C6A55A] hover:border-[#C6A55A]/50 transition-colors"
-                            aria-label="View compliance details"
-                          >
-                            <Shield className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <Link
-                          href={`/intake?country=${encodeURIComponent(selectedDest.name)}`}
-                          className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg"
-                        >
-                          Begin Intake
-                        </Link>
-                        <button
-                          onClick={() => handleSelectDest(null)}
-                          className="p-1.5 rounded hover:bg-white/[0.08] text-[#555] hover:text-[#888] transition-colors"
-                          aria-label="Clear selection"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && <button onClick={() => openCompliance(selectedDest.slug)} className="p-1.5 rounded border border-[#C6A55A]/25 text-[#C6A55A]/60 hover:text-[#C6A55A] hover:border-[#C6A55A]/50 transition-colors" aria-label="View compliance details"><Shield className="w-3.5 h-3.5" /></button>}
+                        <Link href={`/intake?country=${encodeURIComponent(selectedDest.name)}`} className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg">Begin Intake</Link>
+                        <button onClick={() => handleSelectDest(null)} className="p-1.5 rounded hover:bg-white/[0.08] text-[#555] hover:text-[#888] transition-colors" aria-label="Clear selection"><X className="w-4 h-4" /></button>
                       </div>
                     </div>
                   </motion.div>
@@ -427,21 +298,7 @@ export function GlobalMap() {
               </AnimatePresence>
             </div>
 
-            {/* RIGHT: Execution dock — desktop only */}
-            <div className="hidden lg:flex lg:col-span-3 relative flex-col"
-              style={{
-                background: "rgba(3,3,5,0.82)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                boxShadow: "inset 0 0 0 1px rgba(212,175,55,0.08), 0 0 40px rgba(0,0,0,0.6)",
-              }}
-            >
-              {/* Corner crosshairs */}
-              <div className="absolute top-3 left-3 w-4 h-4 border-l border-t border-[#C6A55A]/15 pointer-events-none" />
-              <div className="absolute top-3 right-3 w-4 h-4 border-r border-t border-[#C6A55A]/15 pointer-events-none" />
-              <div className="absolute bottom-3 left-3 w-4 h-4 border-l border-b border-[#C6A55A]/15 pointer-events-none" />
-              <div className="absolute bottom-3 right-3 w-4 h-4 border-r border-b border-[#C6A55A]/15 pointer-events-none" />
-
+            <div className="hidden lg:flex lg:col-span-3 relative flex-col" style={{ background: "rgba(3,3,5,0.82)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "inset 0 0 0 1px rgba(212,175,55,0.08), 0 0 40px rgba(0,0,0,0.6)" }}>
               <AnimatePresence mode="wait">
                 {selectedDest ? (
                   <motion.div
@@ -450,51 +307,20 @@ export function GlobalMap() {
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 8, scale: 0.99 }}
                     transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col h-full p-5 lg:p-6 relative overflow-hidden"
+                    className="flex flex-col h-full p-5 lg:p-6 relative overflow-y-auto"
                   >
-                    {/* Single-pass scanning line on entry */}
                     <div className="terminal-scan-line" key={`scan-${selectedDest.slug}`} />
-
-                    {/* Dock header */}
                     <div className="flex items-start justify-between mb-5">
-                      <div>
-                        <span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#D4AF37]/40 block mb-2">
-                          TRACKED CORRIDOR
-                        </span>
-                        <div className="flex items-center gap-2.5 mb-1">
-                          <span className="text-xl leading-none">{selectedDest.flag}</span>
-                          <h3 className="font-serif text-xl text-white leading-tight">{selectedDest.name}</h3>
-                        </div>
-                        <span className="font-mono text-[9px] text-[#C6A55A]/50 tracking-wider">
-                          FL ORIGIN → {selectedDest.name.toUpperCase()} VECTOR
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleSelectDest(null)}
-                        className="p-1.5 rounded hover:bg-white/[0.05] text-[#444] hover:text-[#888] transition-colors flex-shrink-0"
-                        aria-label="Clear selection"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      <div><span className="font-mono text-[8px] tracking-[0.32em] uppercase text-[#D4AF37]/40 block mb-2">TRACKED CORRIDOR</span><div className="flex items-center gap-2.5 mb-1"><span className="text-xl leading-none">{selectedDest.flag}</span><h3 className="font-serif text-xl text-white leading-tight">{selectedDest.name}</h3></div><span className="font-mono text-[9px] text-[#C6A55A]/50 tracking-wider">FL ORIGIN → {selectedDest.name.toUpperCase()} VECTOR</span></div>
+                      <button onClick={() => handleSelectDest(null)} className="p-1.5 rounded hover:bg-white/[0.05] text-[#444] hover:text-[#888] transition-colors flex-shrink-0" aria-label="Clear selection"><X className="w-3.5 h-3.5" /></button>
                     </div>
 
-                    {/* Jurisdictional framework */}
-                    <div className="bg-black/60 border border-[#D4AF37]/10 rounded-lg p-3.5 mb-4"
-                      style={{ boxShadow: "0 0 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(212,175,55,0.05)" }}
-                    >
-                      <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
-                        JURISDICTIONAL FRAMEWORK
-                      </span>
-                      <span className={`inline-block font-mono text-[9px] px-2.5 py-1 rounded border ${
-                        selectedDest.hague
-                          ? "border-green-500/25 text-green-400/80 bg-green-500/[0.05]"
-                          : "border-amber-500/25 text-amber-400/80 bg-amber-500/[0.05]"
-                      }`}>
-                        {selectedDest.hague
-                          ? "HAGUE ROUTE AVAILABLE"
-                          : "LEGALIZATION REVIEW REQUIRED"}
-                      </span>
-                    </div>
+                    <DestinationIntelligenceCard
+                      destination={selectedDest}
+                      variant="atlas"
+                      matter={activeMatter?.label}
+                      className="mb-4"
+                    />
 
                     {/* Intelligence metadata row */}
                     {corridorIntel && (
@@ -508,7 +334,7 @@ export function GlobalMap() {
                         {corridorIntel.translationRequired && (
                           <div className="flex items-center gap-1.5">
                             <Languages className="w-3 h-3 text-[#C6A55A]/70 flex-shrink-0" />
-                            <span className="font-mono text-[9px] text-[#555]">Translation required</span>
+                            <span className="font-mono text-[9px] text-[#555]">Translation review likely</span>
                           </div>
                         )}
                       </div>
@@ -518,7 +344,7 @@ export function GlobalMap() {
                     {corridorIntel && corridorIntel.matterVectors.length > 0 && (
                       <div className="mb-4">
                         <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666] block mb-2">
-                          SELECT MATTER TYPE
+                          MATTER TYPE
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {corridorIntel.matterVectors.map((mv) => {
@@ -550,7 +376,7 @@ export function GlobalMap() {
                     <div className="mb-4 flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-mono text-[8px] tracking-[0.08em] uppercase text-[#666]">
-                          {activeMatter ? `${activeMatter.label.toUpperCase()} SEQUENCE` : "PROCEDURAL SEQUENCE"}
+                          {activeMatter ? `${activeMatter.label.toUpperCase()} PROCEDURAL SEQUENCE` : "PROCEDURAL SEQUENCE"}
                         </span>
                         {activeMatter && (
                           <button
@@ -666,15 +492,6 @@ export function GlobalMap() {
                       Procedural guidance only. Requirements confirmed with receiving authority before execution.
                     </p>
 
-                    {/* Execution CTA — preloaded with country + matter */}
-                    <Link
-                      href={`/intake?country=${encodeURIComponent(selectedDest.name)}${activeMatter ? `&matter=${encodeURIComponent(activeMatter.label)}` : ""}`}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.14em] text-[10px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors duration-200"
-                    >
-                      Begin Secure Intake
-                      {activeMatter && <span className="opacity-70">· {activeMatter.label}</span>}
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -733,12 +550,12 @@ export function GlobalMap() {
                       to preview the execution path
                     </span>
 
-                    {/* Live status indicators */}
+                    {/* Workspace capability indicators — no fabricated metrics */}
                     <div className="flex flex-col gap-2 w-full max-w-[200px]">
                       {[
-                        { label: "HAGUE ROUTES", value: "38 ACTIVE" },
-                        { label: "CORRIDORS", value: "LIVE" },
-                        { label: "ORIGIN", value: "FL · CLEARED" },
+                        { label: "FRAMEWORK", value: "AUTHORITY REVIEW" },
+                        { label: "VECTORS", value: "MATTER-SPECIFIC" },
+                        { label: "ORIGIN", value: "FLORIDA" },
                       ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between px-3 py-1.5 border border-white/[0.04] rounded bg-white/[0.015]">
                           <span className="font-mono text-[8px] tracking-[0.08em] text-[#666]">{label}</span>
@@ -753,44 +570,12 @@ export function GlobalMap() {
           </div>
         </motion.div>
 
-        {/* Region filter tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="flex items-center gap-2 mb-4 overflow-x-auto pb-1"
-        >
-          {REGION_TABS.map((region) => (
-            <button
-              key={region}
-              onClick={() => {
-                setActiveRegion(region);
-                if (region !== "All" && REGION_FLY_TARGETS[region]) {
-                  setMapFlyTarget(REGION_FLY_TARGETS[region]!);
-                }
-              }}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-sm font-mono text-xs tracking-[0.08em] uppercase transition-all duration-200 border ${
-                activeRegion === region
-                  ? "border-[#C6A55A]/40 text-[#C6A55A] bg-[#C6A55A]/[0.06]"
-                  : "border-white/[0.05] text-[#444] hover:border-white/[0.1] hover:text-[#666]"
-              }`}
-            >
-              {region}
-            </button>
-          ))}
+        <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.1 }} className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+          {REGION_TABS.map((region) => <button key={region} onClick={() => { setActiveRegion(region); if (region !== "All" && REGION_FLY_TARGETS[region]) setMapFlyTarget(REGION_FLY_TARGETS[region]!); }} className={`flex-shrink-0 px-3 py-1.5 rounded-sm font-mono text-xs tracking-[0.08em] uppercase transition-all duration-200 border ${activeRegion === region ? "border-[#C6A55A]/40 text-[#C6A55A] bg-[#C6A55A]/[0.06]" : "border-white/[0.05] text-[#444] hover:border-white/[0.1] hover:text-[#666]"}`}>{region}</button>)}
         </motion.div>
 
-        {/* Dense destination token grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="border border-white/[0.04] rounded-xl overflow-hidden mb-8"
-        >
-          {/* Token grid header — with dynamic hover preview */}
-          <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between min-h-[44px]">
+        <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.15 }} className="border border-white/[0.04] rounded-xl overflow-hidden mb-5">
+          <div className="px-4 md:px-5 py-3 border-b border-white/[0.04] flex items-center justify-between min-h-[44px]">
             <AnimatePresence mode="wait">
               {hoveredToken ? (() => {
                 const hd = teaser.find(d => d.slug === hoveredToken);
@@ -812,7 +597,7 @@ export function GlobalMap() {
                     {hi.translationRequired && (
                       <>
                         <span className="text-[#333]">·</span>
-                        <span className="font-mono text-[8px] text-[#555]">Translation required</span>
+                        <span className="font-mono text-[8px] text-[#555]">Translation review likely</span>
                       </>
                     )}
                     {hi.matterVectors.length > 0 && (
@@ -839,88 +624,18 @@ export function GlobalMap() {
                 </motion.span>
               )}
             </AnimatePresence>
-            <span className="font-mono text-[8px] text-[#333] flex-shrink-0 ml-3">
-              {TEASER_LIMIT} OF 150 ACTIVE
-            </span>
+            <span className="font-mono text-[8px] text-[#333] flex-shrink-0 ml-3">{TEASER_LIMIT} OF 150 ACTIVE</span>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4">
-            {teaser.map((d) => (
-              <button
-                key={d.slug}
-                onClick={() => {
-                  const next = selectedDest?.slug === d.slug ? null : d;
-                  handleSelectDest(next);
-                  if (next?.lat && next?.lng) {
-                    setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 });
-                  }
-                }}
-                onMouseEnter={() => setHoveredToken(d.slug)}
-                onMouseLeave={() => setHoveredToken(null)}
-                className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${
-                  selectedDest?.slug === d.slug
-                    ? "bg-[#C6A55A]/[0.06]"
-                    : selectedDest
-                      ? "opacity-40 hover:opacity-70 hover:bg-white/[0.02]"
-                      : "hover:bg-white/[0.02]"
-                }`}
-                style={selectedDest?.slug === d.slug ? {
-                  boxShadow: "inset 0 0 24px rgba(212,175,55,0.04)",
-                } : undefined}
-              >
-                {/* Active left accent */}
-                {selectedDest?.slug === d.slug && (
-                  <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />
-                )}
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm leading-none">{d.flag}</span>
-                    <span className={`font-mono text-[10px] font-semibold tracking-wider ${
-                      selectedDest?.slug === d.slug ? "text-[#C6A55A]" : "text-white/80"
-                    }`}>
-                      {d.name.toUpperCase()}
-                    </span>
-                  </div>
-                  <span className={`font-mono text-[7px] px-1.5 py-0.5 rounded border ${
-                    d.hague
-                      ? "border-green-500/20 text-green-500/50"
-                      : "border-amber-500/20 text-amber-500/50"
-                  }`}>
-                    {d.hague ? "HAGUE" : "NON-HAGUE"}
-                  </span>
-                </div>
-                <div className="font-mono text-[9px] text-[#4A4A4A] tracking-wide truncate">
-                  {d.note}
-                </div>
-              </button>
-            ))}
+            {teaser.map((d) => <button key={d.slug} onClick={() => { const next = selectedDest?.slug === d.slug ? null : d; handleSelectDest(next); if (next?.lat && next?.lng) setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 }); }} onMouseEnter={() => setHoveredToken(d.slug)} onMouseLeave={() => setHoveredToken(null)} className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${selectedDest?.slug === d.slug ? "bg-[#C6A55A]/[0.06]" : selectedDest ? "opacity-40 hover:opacity-70 hover:bg-white/[0.02]" : "hover:bg-white/[0.02]"}`}>{selectedDest?.slug === d.slug && <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />}<div className="flex items-center justify-between mb-1.5"><div className="flex items-center gap-2"><span className="text-sm leading-none">{d.flag}</span><span className={`font-mono text-[10px] font-semibold tracking-wider ${selectedDest?.slug === d.slug ? "text-[#C6A55A]" : "text-white/80"}`}>{d.name.toUpperCase()}</span></div><span className={`font-mono text-[7px] px-1.5 py-0.5 rounded border ${d.hague ? "border-green-500/20 text-green-500/50" : "border-amber-500/20 text-amber-500/50"}`}>{d.hague ? "HAGUE" : "NON-HAGUE"}</span></div><div className="font-mono text-[9px] text-[#4A4A4A] tracking-wide truncate">{d.note}</div></button>)}
           </div>
         </motion.div>
 
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3"
-        >
-          <Link
-            href="/map"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover"
-          >
-            Explore Global Document Intelligence
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/intake"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors"
-          >
-            Begin Secure Intake
-          </Link>
+        <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link href="/map" className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover">Explore Global Document Intelligence<ArrowRight className="w-4 h-4" /></Link>
+          <Link href="/intake" className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors">Begin Secure Intake</Link>
         </motion.div>
       </div>
-      {/* Country compliance modal — available for all 5 PRIMARY_ROUTES */}
       <CountryComplianceCard countryId={complianceCountryId} onClose={closeCompliance} />
     </motion.section>
   );

@@ -35,19 +35,21 @@ export function MilanoSealChatLauncher() {
             exit={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => setIsOpen(true)}
-            // 56px = w-14 h-14 — comfortably above 44px iOS minimum
-            className="relative w-14 h-14 bg-[#050507] border border-amber-500/20 rounded-full flex items-center justify-center cursor-pointer group shadow-[0_0_50px_rgba(0,0,0,0.85)] focus:outline-none touch-manipulation"
+            // 64px standalone orb — no dark circle, orb-v2 fills the space
+            className="relative w-16 h-16 bg-transparent border-none flex items-center justify-center cursor-pointer group focus:outline-none touch-manipulation"
             aria-label="Open Milano Seal Concierge"
           >
-            <div className="absolute inset-0 rounded-full border border-amber-500/30 animate-ping opacity-20 pointer-events-none [animation-duration:3s]" />
-            <div className="absolute inset-[-4px] rounded-full border border-amber-500/10 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-t from-amber-500/5 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 animate-ping opacity-15 pointer-events-none [animation-duration:3s]" />
+            <div className="absolute inset-[-12px] rounded-full border border-amber-500/8 animate-ping opacity-10 pointer-events-none [animation-duration:4.5s]" />
             <motion.img
-              src="/milano-seal-orb-v2.png"
+              src="/brand/milano-seal-orb-v2.png"
               alt="The Milano Seal Orb"
               animate={{ rotate: 360 }}
               transition={{ duration: 220, ease: "linear", repeat: Infinity }}
-              className="w-11 h-11 object-contain rounded-full relative z-10"
+              className="w-24 h-24 object-contain relative z-10 transition-all duration-500"
+              style={{
+                filter: "drop-shadow(0 0 20px rgba(212,175,55,0.75)) drop-shadow(0 0 40px rgba(212,175,55,0.35))",
+              }}
             />
           </motion.button>
         ) : (
@@ -76,7 +78,7 @@ export function MilanoSealChatLauncher() {
               <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 border border-amber-500/20 rounded-full flex items-center justify-center bg-zinc-950 shrink-0">
-                    <img src="/milano-seal-orb-v2.png" className="w-5 h-5 object-contain rounded-full" alt="" />
+                    <img src="/brand/milano-seal-feather-m-orb.png" className="w-5 h-5 object-contain rounded-full" alt="" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Concierge</span>
@@ -96,7 +98,7 @@ export function MilanoSealChatLauncher() {
               >
                 <div className="flex items-start space-x-3">
                   <div className="w-5 h-5 border border-zinc-800 rounded-full flex items-center justify-center bg-zinc-950 mt-0.5 shrink-0">
-                    <img src="/milano-seal-orb-v2.png" className="w-4 h-4 object-contain rounded-full" alt="" />
+                    <img src="/brand/milano-seal-feather-m-orb.png" className="w-4 h-4 object-contain rounded-full" alt="" />
                   </div>
                   {/* text-[10px] kept — not an input field, no zoom risk */}
                   <div className="bg-zinc-900/40 border border-zinc-900 p-3 rounded-sm text-[10px] text-zinc-300 leading-relaxed tracking-wide max-w-[85%]">

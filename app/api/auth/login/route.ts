@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveServerRole } from "@/lib/auth/server-role";
 
 export const runtime = "nodejs";
 
 function destForRole(role: string): string {
   if (
-    role === "founder_admin" || role === "admin" || role === "admin_operator" ||
+    role === "founder" || role === "founder_admin" || role === "admin" || role === "admin_operator" ||
     role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
     role === "apostille_coordinator" || role === "finance_operator" || role === "client_support"
   ) return "/dashboard";
@@ -21,9 +22,33 @@ function destForRole(role: string): string {
   return "/dashboard";
 }
 
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  if (!next) return false;
+  const destination = destForRole(role);
+
+  if (destination === "/dashboard") return next.startsWith("/dashboard");
+  if (destination === "/portal") return next.startsWith("/portal");
+  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
+  if (destination === "/va/dashboard") return next.startsWith("/va");
+  return false;
+}
+
+const FOUNDER_ROLES = new Set([
+  "founder", "founder_admin", "admin", "admin_operator",
+  "ops_manager", "finance", "execution_coordinator",
+  "apostille_coordinator", "finance_operator", "client_support",
+]);
+
+const TAB_DEST: Record<string, string> = {
+  portal: "/portal",
+  dashboard: "/dashboard",
+  alliance: "/alliance/dashboard",
+  va: "/va/dashboard",
+};
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { email?: string; password?: string; next?: string };
+    const body = await request.json() as { email?: string; password?: string; next?: string; tabHint?: string };
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
 
@@ -44,27 +69,40 @@ export async function POST(request: Request) {
     }
 
     const user = data.user;
-    const role = ((user?.user_metadata?.role ?? user?.app_metadata?.role) as string) ?? "";
+    const role = user ? await resolveServerRole(user) : "";
 
     if (!role) {
       return NextResponse.json({ ok: false, error: "Access profile missing. Contact Nicholas Milano." }, { status: 403 });
     }
 
-    // Validate safe redirect
+    // Founder/admin: honor tab selection to preview any workspace
+    if (FOUNDER_ROLES.has(role) && body.tabHint && TAB_DEST[body.tabHint]) {
+      return NextResponse.json({ ok: true, role, redirect: TAB_DEST[body.tabHint] });
+    }
+
+    // All other roles: validate safe redirect, then route by role
     const raw = body.next ?? "";
-    const safeNext =
+    const requestedNext =
       raw.startsWith("/portal") || raw.startsWith("/alliance") ||
       raw.startsWith("/va") || raw.startsWith("/dashboard")
         ? raw : null;
 
     return NextResponse.json({
       ok: true,
-      redirect: safeNext || destForRole(role),
+      role,
+      redirect: isNextAllowedForRole(requestedNext, role)
+        ? requestedNext
+        : destForRole(role),
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Supabase unreachable — env vars missing or wrong project URL
+    const isNetworkErr = msg === "fetch failed" || msg.includes("ENOTFOUND") || msg.includes("ECONNREFUSED") || msg.includes("not configured");
     return NextResponse.json({
       ok: false,
-      error: err instanceof Error ? err.message : "Unexpected error. Please try again.",
+      error: isNetworkErr
+        ? "Authentication service unavailable. Environment configuration required."
+        : msg || "Unexpected error. Please try again.",
     }, { status: 500 });
   }
 }

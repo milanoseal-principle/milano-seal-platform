@@ -105,11 +105,11 @@ export function RoutingIntelligenceSection() {
                 />
 
                 <div className="flex items-center gap-2">
-                  <Icon className="w-3.5 h-3.5 text-[#3A3A3A] group-hover:text-[#C6A55A] transition-colors duration-300 flex-shrink-0" />
+                  <Icon className="w-3.5 h-3.5 text-[#3A3A3A] group-hover:text-[var(--ms-gold)] transition-colors duration-300 flex-shrink-0" />
                 </div>
 
                 <span className="flex flex-col leading-tight">
-                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300 whitespace-nowrap">
+                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[var(--ms-gold)] transition-colors duration-300 whitespace-nowrap">
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300 whitespace-nowrap">
@@ -139,10 +139,10 @@ export function RoutingIntelligenceSection() {
                   transition={{ duration: 3, repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
                 />
 
-                <Icon className="w-3.5 h-3.5 text-[#3A3A3A] group-hover:text-[#C6A55A] transition-colors duration-300" />
+                <Icon className="w-3.5 h-3.5 text-[#3A3A3A] group-hover:text-[var(--ms-gold)] transition-colors duration-300" />
 
                 <span className="flex flex-col leading-tight mt-1">
-                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[#C6A55A] transition-colors duration-300">
+                  <span className="text-[10px] tracking-[0.08em] uppercase text-[#8A8A8A] group-hover:text-[var(--ms-gold)] transition-colors duration-300">
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300">

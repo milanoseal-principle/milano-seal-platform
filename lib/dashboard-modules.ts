@@ -4,9 +4,11 @@ export interface DashboardModule {
   icon: string;
   description: string;
   group: string;
+  roles?: string[]; // if set, only show to these role families; omit = operator+founder only
 }
 
 export const DASHBOARD_MODULES: DashboardModule[] = [
+  // ── ADMIN ────────────────────────────────────────────────────────────────
   {
     name: "Command",
     route: "command",
@@ -57,13 +59,27 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Admin",
   },
   {
+    name: "Invoice Studio",
+    route: "invoices",
+    icon: "Receipt",
+    description: "Matter invoices and payment records",
+    group: "Admin",
+  },
+  {
+    name: "Discounts",
+    route: "discounts",
+    icon: "Tag",
+    description: "Discount code manager",
+    group: "Admin",
+  },
+  {
     name: "Global Document Intelligence",
     route: "compliance",
     icon: "Globe",
     description: "Hague + RON + witness rules per jurisdiction",
     group: "Admin",
   },
-  // CORE
+  // ── CORE ─────────────────────────────────────────────────────────────────
   {
     name: "KPI Dashboard",
     route: "kpi",
@@ -78,7 +94,21 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Lifetime value & relationship intel",
     group: "Core",
   },
-  // PIPELINE
+  {
+    name: "Analytics",
+    route: "analytics",
+    icon: "BarChart3",
+    description: "Revenue, destinations, documents, growth signals",
+    group: "Core",
+  },
+  {
+    name: "Opportunities",
+    route: "opportunities",
+    icon: "Target",
+    description: "Global vertical opportunity engine — 22 B2B ecosystems",
+    group: "Core",
+  },
+  // ── PIPELINE ─────────────────────────────────────────────────────────────
   {
     name: "Leads",
     route: "leads",
@@ -107,7 +137,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Deal revenue, cost & profitability",
     group: "Pipeline",
   },
-  // EXECUTION
+  // ── EXECUTION ────────────────────────────────────────────────────────────
   {
     name: "Apostille",
     route: "apostille",
@@ -136,7 +166,163 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Daily & weekly operator playbook",
     group: "Execution",
   },
-  // OUTREACH
+  // ── OPERATIONS ───────────────────────────────────────────────────────────
+  {
+    name: "Execution Control",
+    route: "execution-control",
+    icon: "AlertTriangle",
+    description: "Real-time matter escalation and execution queue",
+    group: "Operations",
+  },
+  {
+    name: "Deliveries",
+    route: "deliveries",
+    icon: "Package",
+    description: "Shipment tracking and delivery status",
+    group: "Operations",
+  },
+  {
+    name: "Courier",
+    route: "courier",
+    icon: "Truck",
+    description: "Courier management and label generation",
+    group: "Operations",
+  },
+  {
+    name: "Shipping",
+    route: "shipping",
+    icon: "Send",
+    description: "Shipping labels and Shippo integration",
+    group: "Operations",
+  },
+  {
+    name: "Releases",
+    route: "releases",
+    icon: "Send",
+    description: "Document release queue and courier readiness",
+    group: "Operations",
+  },
+  {
+    name: "Release Certificates",
+    route: "releases/certificates",
+    icon: "Award",
+    description: "Generate and print release and completion certificates",
+    group: "Operations",
+  },
+  {
+    name: "Rejections",
+    route: "rejections",
+    icon: "XCircle",
+    description: "Rejection intelligence and institutional memory",
+    group: "Operations",
+  },
+  {
+    name: "Incidents",
+    route: "incidents",
+    icon: "ShieldAlert",
+    description: "Compliance incident center",
+    group: "Operations",
+  },
+  {
+    name: "Notary Network",
+    route: "notary-network",
+    icon: "BadgeCheck",
+    description: "Notary network applications and credentials",
+    group: "Operations",
+  },
+  {
+    name: "Execution QA",
+    route: "execution-qa",
+    icon: "CheckSquare",
+    description: "Matter execution quality assurance",
+    group: "Operations",
+  },
+  {
+    name: "Execution Jobs",
+    route: "execution-jobs",
+    icon: "Zap",
+    description: "Active execution job queue",
+    group: "Operations",
+  },
+  {
+    name: "Needs Review",
+    route: "needs-review",
+    icon: "AlertCircle",
+    description: "Matters flagged for review",
+    group: "Operations",
+  },
+  {
+    name: "Exceptions",
+    route: "exceptions",
+    icon: "AlertTriangle",
+    description: "Exception handling and escalation log",
+    group: "Operations",
+  },
+  {
+    name: "Witness Network",
+    route: "witness-network",
+    icon: "Users",
+    description: "RON witness availability and scheduling",
+    group: "Operations",
+  },
+  {
+    name: "Packet Builder",
+    route: "packet-builder",
+    icon: "Package",
+    description: "Document packet assembly",
+    group: "Operations",
+  },
+  {
+    name: "Tools",
+    route: "tools",
+    icon: "Wrench",
+    description: "Operator tools and utilities",
+    group: "Operations",
+  },
+  {
+    name: "SOPs",
+    route: "sops",
+    icon: "BookOpen",
+    description: "Standard operating procedures",
+    group: "Operations",
+  },
+  // ── MATTER INTELLIGENCE ──────────────────────────────────────────────────
+  {
+    name: "Matter Intelligence",
+    route: "matter-intelligence",
+    icon: "Brain",
+    description: "Per-matter execution intelligence and routing",
+    group: "Matter Intelligence",
+  },
+  {
+    name: "Reconciliation",
+    route: "matter-intelligence/reconciliation",
+    icon: "GitMerge",
+    description: "Payment and status reconciliation",
+    group: "Matter Intelligence",
+  },
+  {
+    name: "Packet Review",
+    route: "matter-intelligence/packet-review",
+    icon: "FileSearch",
+    description: "Document packet review queue",
+    group: "Matter Intelligence",
+  },
+  {
+    name: "Routing Rules",
+    route: "matter-intelligence/routing-rules",
+    icon: "Route",
+    description: "Execution routing rule engine",
+    group: "Matter Intelligence",
+  },
+  {
+    name: "Operational Ledger",
+    route: "ledger",
+    icon: "BookOpen",
+    description: "Operational financial ledger",
+    group: "Matter Intelligence",
+  },
+  // ── OUTREACH ─────────────────────────────────────────────────────────────
   {
     name: "Scripts",
     route: "scripts",
@@ -165,7 +351,14 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Post-completion reputation system",
     group: "Outreach",
   },
-  // GROWTH
+  {
+    name: "Outreach",
+    route: "outreach",
+    icon: "Send",
+    description: "Professional outreach templates for attorneys, partners, authorities",
+    group: "Outreach",
+  },
+  // ── GROWTH ───────────────────────────────────────────────────────────────
   {
     name: "Content",
     route: "content",
@@ -194,7 +387,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Trigger rules & automation engine",
     group: "Growth",
   },
-  // INTELLIGENCE
+  // ── INTELLIGENCE ─────────────────────────────────────────────────────────
   {
     name: "Executive",
     route: "executive",
@@ -245,72 +438,6 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Intelligence",
   },
   {
-    name: "Compliance",
-    route: "compliance",
-    icon: "Shield",
-    description: "License & renewal alert engine",
-    group: "Intelligence",
-  },
-  // OPERATIONS
-  {
-    name: "Execution Control",
-    route: "execution-control",
-    icon: "AlertTriangle",
-    description: "Real-time matter escalation and execution queue",
-    group: "Operations",
-  },
-  {
-    name: "Releases",
-    route: "releases",
-    icon: "Send",
-    description: "Document release queue and courier readiness",
-    group: "Operations",
-  },
-  {
-    name: "Rejections",
-    route: "rejections",
-    icon: "XCircle",
-    description: "Rejection intelligence and institutional memory",
-    group: "Operations",
-  },
-  // SYSTEM
-  {
-    name: "Legal",
-    route: "legal",
-    icon: "Scale",
-    description: "Entity, banking & compliance records",
-    group: "System",
-  },
-  {
-    name: "Credentials",
-    route: "credentials",
-    icon: "Lock",
-    description: "Platform logins — operator only",
-    group: "System",
-  },
-  {
-    name: "Ideas",
-    route: "ideas",
-    icon: "Sparkles",
-    description: "Product, revenue & system upgrades",
-    group: "System",
-  },
-  {
-    name: "Analytics",
-    route: "analytics",
-    icon: "BarChart3",
-    description: "Revenue, destinations, documents, growth signals",
-    group: "Core",
-  },
-  {
-    name: "Assets",
-    route: "assets",
-    icon: "FolderOpen",
-    description: "Drive folder index & asset map",
-    group: "System",
-  },
-  // INTELLIGENCE — moat layer
-  {
     name: "Corridors",
     route: "corridors",
     icon: "Route",
@@ -345,37 +472,6 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Institutional memory — incidents, corrections, known patterns",
     group: "Intelligence",
   },
-  // SYSTEM — moat layer
-  {
-    name: "Deployment",
-    route: "deployment",
-    icon: "Server",
-    description: "Infrastructure and deployment validation",
-    group: "System",
-  },
-  // OPERATIONS — certificates
-  {
-    name: "Release Certificates",
-    route: "releases/certificates",
-    icon: "Award",
-    description: "Generate and print release and completion certificates",
-    group: "Operations",
-  },
-  {
-    name: "Opportunities",
-    route: "opportunities",
-    icon: "Target",
-    description: "Global vertical opportunity engine — 22 B2B ecosystems",
-    group: "Core",
-  },
-  {
-    name: "Outreach",
-    route: "outreach",
-    icon: "Send",
-    description: "Professional outreach templates for attorneys, partners, authorities",
-    group: "Outreach",
-  },
-  // INTELLIGENCE — authority moat layer
   {
     name: "Authority Acquisition",
     route: "authority-acquisition",
@@ -411,6 +507,110 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Priority corridor certification program",
     group: "Intelligence",
   },
+  // ── VA OPERATIONS ────────────────────────────────────────────────────────
+  {
+    name: "VA Hub",
+    route: "va",
+    icon: "Users",
+    description: "Virtual assistant management",
+    group: "VA Operations",
+  },
+  // ── ALLIANCE ─────────────────────────────────────────────────────────────
+  {
+    name: "Alliance",
+    route: "alliance",
+    icon: "Network",
+    description: "Alliance partner management",
+    group: "Alliance",
+    roles: ["alliance"],
+  },
+  {
+    name: "Alliance Dispatch",
+    route: "alliance/dispatch",
+    icon: "Send",
+    description: "Alliance job dispatch",
+    group: "Alliance",
+    roles: ["alliance"],
+  },
+  {
+    name: "Alliance Referrals",
+    route: "alliance/referrals",
+    icon: "Share2",
+    description: "Alliance referral management",
+    group: "Alliance",
+    roles: ["alliance"],
+  },
+  // ── SYSTEM ───────────────────────────────────────────────────────────────
+  {
+    name: "Legal",
+    route: "legal",
+    icon: "Scale",
+    description: "Entity, banking & compliance records",
+    group: "System",
+  },
+  {
+    name: "Credentials",
+    route: "credentials",
+    icon: "Lock",
+    description: "Platform logins — operator only",
+    group: "System",
+  },
+  {
+    name: "Ideas",
+    route: "ideas",
+    icon: "Sparkles",
+    description: "Product, revenue & system upgrades",
+    group: "System",
+  },
+  {
+    name: "Assets",
+    route: "assets",
+    icon: "FolderOpen",
+    description: "Drive folder index & asset map",
+    group: "System",
+  },
+  {
+    name: "Deployment",
+    route: "deployment",
+    icon: "Server",
+    description: "Infrastructure and deployment validation",
+    group: "System",
+  },
+  {
+    name: "Monitoring",
+    route: "monitoring",
+    icon: "Activity",
+    description: "System monitoring and health checks",
+    group: "System",
+  },
+  {
+    name: "Build Center",
+    route: "build-center",
+    icon: "Wrench",
+    description: "Platform build and release management",
+    group: "System",
+  },
+  {
+    name: "Terminal",
+    route: "terminal",
+    icon: "Terminal",
+    description: "Operator terminal",
+    group: "System",
+  },
+  {
+    name: "Human Touch Trust Engine",
+    route: "docs/human-touch-trust-engine",
+    icon: "Heart",
+    description: "Human touch delivery and trust documentation",
+    group: "System",
+  },
+  {
+    name: "Security",
+    route: "security",
+    icon: "Shield",
+    description: "Security audit and access controls",
+    group: "System",
+  },
 ];
 
 export const MODULE_GROUPS = [
@@ -419,8 +619,49 @@ export const MODULE_GROUPS = [
   "Pipeline",
   "Execution",
   "Operations",
+  "Matter Intelligence",
+  "Intelligence",
+  "VA Operations",
+  "Alliance",
   "Outreach",
   "Growth",
-  "Intelligence",
   "System",
 ];
+
+// Role families for nav filtering
+export type RoleFamily = "operator" | "alliance" | "va" | "founder";
+
+export function getRoleFamilyModules(roleFamily: RoleFamily): DashboardModule[] {
+  if (roleFamily === "founder") return DASHBOARD_MODULES;
+  if (roleFamily === "operator") {
+    return DASHBOARD_MODULES.filter(
+      (m) => !m.roles || m.roles.includes("operator")
+    );
+  }
+  if (roleFamily === "alliance") {
+    const ALLIANCE_ROUTES = new Set([
+      "alliance", "alliance/dispatch", "alliance/referrals",
+      "alliance/trust-graph", "alliance/vault",
+    ]);
+    return DASHBOARD_MODULES.filter(
+      (m) => ALLIANCE_ROUTES.has(m.route) || (m.roles && m.roles.includes("alliance"))
+    );
+  }
+  if (roleFamily === "va") {
+    const VA_ROUTES = new Set([
+      "va", "deals", "follow-ups", "sops", "tools",
+    ]);
+    return DASHBOARD_MODULES.filter((m) => VA_ROUTES.has(m.route));
+  }
+  return [];
+}
+
+export function getModuleGroups(modules: DashboardModule[]): string[] {
+  const seen = new Set<string>();
+  return MODULE_GROUPS.filter((g) => {
+    const has = modules.some((m) => m.group === g);
+    if (has && !seen.has(g)) { seen.add(g); return true; }
+    return false;
+  });
+}
+

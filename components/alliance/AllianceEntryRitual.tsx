@@ -73,12 +73,12 @@ export function AllianceEntryRitual() {
                       border: isDone ? "1px solid rgba(198,165,90,0.4)" : isCurrent ? "1px solid rgba(198,165,90,0.55)" : "1px solid rgba(255,255,255,0.06)",
                       background: isDone ? "rgba(198,165,90,0.1)" : "transparent",
                     }}>
-                      {isDone && <span style={{ color: "#C6A55A", fontSize: 8, fontWeight: 700 }}>✓</span>}
+                      {isDone && <span style={{ color: "var(--ms-gold)", fontSize: 8, fontWeight: 700 }}>✓</span>}
                       {isCurrent && (
                         <motion.div
                           animate={{ opacity: [0.4, 1, 0.4] }}
                           transition={{ duration: 1.1, repeat: Infinity }}
-                          style={{ width: 4, height: 4, borderRadius: "50%", background: "#C6A55A" }}
+                          style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ms-gold)" }}
                         />
                       )}
                     </div>

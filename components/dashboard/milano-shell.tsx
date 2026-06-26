@@ -68,7 +68,7 @@ const NAV = [
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
-  const g = "#C6A55A";
+  const g = "var(--ms-gold)";
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true">
       <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
@@ -173,7 +173,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
             style={{
               background: "hsl(38 47% 56% / .15)",
               border: "1px solid hsl(38 47% 56% / .35)",
-              color: "#C6A55A",
+              color: "var(--ms-gold)",
             }}
           >
             NM
@@ -214,7 +214,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
       {/* ── Desktop sidebar — starts below ticker + safe-area ── */}
       <aside
         className="hidden lg:fixed lg:flex lg:bottom-0 lg:left-0 lg:z-40 lg:w-56 flex-col border-r border-border bg-background"
-        style={{ top: "calc(2.25rem + var(--sa-top))" }}
+        style={{ top: "calc(3.25rem + var(--sa-top))" }}
       >
         {sidebarContent()}
       </aside>
@@ -232,7 +232,7 @@ export function MilanoShell({ children }: { children: ReactNode }) {
         className={`fixed bottom-0 left-0 z-50 w-64 flex flex-col border-r border-border bg-background transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ top: "calc(2.25rem + var(--sa-top))" }}
+        style={{ top: "calc(3.25rem + var(--sa-top))" }}
       >
         <button
           onClick={() => setMobileOpen(false)}
@@ -246,12 +246,12 @@ export function MilanoShell({ children }: { children: ReactNode }) {
       {/* ── Main area — offset sidebar width + ticker + safe-area ── */}
       <div
         className="flex-1 flex flex-col min-w-0 lg:ml-56"
-        style={{ paddingTop: "calc(2.25rem + var(--sa-top))" }}
+        style={{ paddingTop: "calc(3.25rem + var(--sa-top))" }}
       >
         {/* Mobile top bar — sticks below global ticker + safe-area */}
         <div
           className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background sticky z-30"
-          style={{ top: "calc(2.25rem + var(--sa-top))" }}
+          style={{ top: "calc(3.25rem + var(--sa-top))" }}
         >
           <button
             onClick={() => setMobileOpen(true)}

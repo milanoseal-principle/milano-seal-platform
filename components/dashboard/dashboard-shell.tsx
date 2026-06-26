@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DASHBOARD_MODULES,
-  MODULE_GROUPS,
+  getRoleFamilyModules,
+  getModuleGroups,
   type DashboardModule,
+  type RoleFamily,
 } from "@/lib/dashboard-modules";
 import { IntelligenceRail } from "@/components/dashboard/IntelligenceRail";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
@@ -90,24 +91,24 @@ function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
       href={`/dashboard/${mod.route}`}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 group ${
         active
-          ? "bg-[#C6A55A]/12 text-[#C6A55A] border border-[#C6A55A]/20"
+          ? "bg-[var(--ms-gold)]/12 text-[var(--ms-gold)] border border-[var(--ms-gold)]/20"
           : "text-[#8A8A8A] hover:text-white hover:bg-[#1A1A1A]"
       }`}
     >
       <Icon
         className={`w-4 h-4 flex-shrink-0 ${
           active
-            ? "text-[#C6A55A]"
+            ? "text-[var(--ms-gold)]"
             : "text-[#8A8A8A] group-hover:text-[#B0B0B0]"
         }`}
       />
       <span className="font-medium truncate">{mod.name}</span>
-      {active && <ChevronRight className="w-3 h-3 ml-auto text-[#C6A55A]" />}
+      {active && <ChevronRight className="w-3 h-3 ml-auto text-[var(--ms-gold)]" />}
     </Link>
   );
 }
 
-export function DashboardShell({ children, activeMatterId }: { children: React.ReactNode; activeMatterId?: string }) {
+export function DashboardShell({ children, activeMatterId, roleFamily = "operator" }: { children: React.ReactNode; activeMatterId?: string; roleFamily?: RoleFamily }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [actionPanelOpen, setActionPanelOpen] = useState(false);
@@ -115,13 +116,16 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
   const segments = pathname.split("/").filter(Boolean);
   const activeModule = segments[1] ?? "deals";
 
+  const visibleModules = getRoleFamilyModules(roleFamily);
+  const visibleGroups = getModuleGroups(visibleModules);
+
   const sidebar = (
     <aside className="w-64 flex-shrink-0 bg-[#080808] border-r border-[#1A1A1A] h-full flex flex-col">
       {/* Header */}
       <div className="px-4 py-5 border-b border-[#1A1A1A]">
         <Link href="/" className="flex items-center gap-3">
           <img
-            src="/milano-seal-gold-transparent-512.png"
+            src="/brand/milano-seal-feather-m-orb.png"
             alt=""
             className="w-8 h-8"
           />
@@ -129,7 +133,7 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
             <p className="text-white text-sm font-medium leading-tight">
               The Milano Seal™
             </p>
-            <p className="text-[#C6A55A] text-[10px] tracking-[0.15em] uppercase">
+            <p className="text-[var(--ms-gold)] text-[10px] tracking-[0.15em] uppercase">
               Admin OS
             </p>
           </div>
@@ -138,8 +142,8 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {MODULE_GROUPS.map((group) => {
-          const mods = DASHBOARD_MODULES.filter((m) => m.group === group);
+        {visibleGroups.map((group) => {
+          const mods = visibleModules.filter((m) => m.group === group);
           return (
             <div key={group}>
               <p className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#4A4A4A] px-3 mb-2">
@@ -208,7 +212,7 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
           </p>
           <button
             onClick={() => setActionPanelOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0D0D0D] border border-[#252525] rounded text-[9px] font-mono tracking-[0.2em] uppercase text-[#C6A55A] hover:border-[#C6A55A]/40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0D0D0D] border border-[#252525] rounded text-[9px] font-mono tracking-[0.2em] uppercase text-[var(--ms-gold)] hover:border-[var(--ms-gold)]/40 transition-colors"
           >
             <Zap className="w-3 h-3" />
             <span className="hidden sm:inline">Actions</span>
@@ -222,7 +226,7 @@ export function DashboardShell({ children, activeMatterId }: { children: React.R
           </div>
           <button
             onClick={() => setActionPanelOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 border-l border-[#1A1A1A] text-[9px] font-mono tracking-[0.2em] uppercase text-[#6A5520] hover:text-[#C6A55A] hover:bg-[#0D0D0D] transition-colors whitespace-nowrap flex-shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 border-l border-[#1A1A1A] text-[9px] font-mono tracking-[0.2em] uppercase text-[#6A5520] hover:text-[var(--ms-gold)] hover:bg-[#0D0D0D] transition-colors whitespace-nowrap flex-shrink-0"
           >
             <Zap className="w-3 h-3" />
             Quick Actions

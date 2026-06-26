@@ -16,7 +16,7 @@ export function HighTrustClose() {
     <section className="relative py-24 md:py-32 bg-[#111111] overflow-hidden">
       {/* Background accent */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-radial from-[#C6A55A] to-transparent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-radial from-[var(--ms-gold)] to-transparent" />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
@@ -27,9 +27,9 @@ export function HighTrustClose() {
           transition={{ duration: 0.6 }}
         >
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-8">
-            <Shield className="w-4 h-4 text-[#C6A55A]" />
-            <span className="text-sm text-[#C6A55A] font-medium">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-8">
+            <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
+            <span className="text-sm text-[var(--ms-gold)] font-medium">
               The Milano Seal™
             </span>
           </div>
@@ -56,7 +56,7 @@ export function HighTrustClose() {
                 transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
                 className="flex items-center gap-2 px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg"
               >
-                <CheckCircle className="w-4 h-4 text-[#C6A55A]" />
+                <CheckCircle className="w-4 h-4 text-[var(--ms-gold)]" />
                 <span className="text-sm text-[#B0B0B0]">{point}</span>
               </motion.div>
             ))}
@@ -71,7 +71,7 @@ export function HighTrustClose() {
           >
             <Link
               href="/intake"
-              className="group inline-flex items-center gap-3 px-10 py-5 bg-[#C6A55A] text-[#0A0A0A] font-medium text-lg rounded-xl transition-all duration-300 hover:bg-[#D4B76A] gold-glow-hover"
+              className="group inline-flex items-center gap-3 px-10 py-5 bg-[var(--ms-gold)] text-[#0A0A0A] font-medium text-lg rounded-xl transition-all duration-300 hover:bg-[#D4B76A] gold-glow-hover"
             >
               <span>Begin Secure Intake</span>
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

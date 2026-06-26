@@ -1,23 +1,19 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import {
+  Component,
+  Suspense,
+  useState,
+  useEffect,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 
-const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
-
-const GATEWAY_STEPS = [
-  "Verifying access environment",
-  "Connecting to secure workspace",
-  "Resolving role access",
-  "Preparing entry gateway",
-  "Ready",
-];
-
-function destForRole(role: string, fallback: string): string {
-  if (role === "founder_admin" || role === "admin" || role === "admin_operator" ||
+function destForRole(role: string): string {
+  if (role === "founder" || role === "founder_admin" || role === "admin" || role === "admin_operator" ||
       role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
       role === "apostille_coordinator" || role === "finance_operator" || role === "client_support") {
     return "/dashboard";
@@ -31,16 +27,146 @@ function destForRole(role: string, fallback: string): string {
       role === "escalation_assistant") {
     return "/va/dashboard";
   }
-  return fallback;
+  return "/login?error=access_denied";
 }
 
-function LogoMark() {
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  if (!next) return false;
+  const destination = destForRole(role);
+
+  if (destination === "/dashboard") return next.startsWith("/dashboard");
+  if (destination === "/portal") return next.startsWith("/portal");
+  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
+  if (destination === "/va/dashboard") return next.startsWith("/va");
+  return false;
+}
+
+interface RitualConfig {
+  eyebrow: string;
+  steps: string[];
+  sectionLabel: string;
+  statusText: string;
+  footerText: string;
+}
+
+function ritualForDestination(destination: string, _role?: string): RitualConfig {
+  if (destination.startsWith("/alliance")) {
+    return {
+      eyebrow: "Alliance Partner Access",
+      steps: [
+        "Verifying alliance credentials",
+        "Loading referral matters",
+        "Syncing commission visibility",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing alliance workspace",
+      statusText: "Preparing your alliance partner workspace.",
+      footerText: "ALLIANCE ACCESS GRANTED",
+    };
+  }
+  if (destination.startsWith("/va")) {
+    return {
+      eyebrow: "VA Workspace",
+      steps: [
+        "Verifying VA credentials",
+        "Loading assigned tasks",
+        "Syncing matter queue",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing VA workspace",
+      statusText: "Preparing your VA workspace.",
+      footerText: "VA WORKSPACE READY",
+    };
+  }
+  if (destination.startsWith("/dashboard")) {
+    return {
+      eyebrow: "Execution Intelligence",
+      steps: [
+        "Verifying credentials",
+        "Loading matter pipeline",
+        "Resolving operator access",
+        "Syncing execution workspace",
+        "Access granted",
+      ],
+      sectionLabel: "Preparing execution workspace",
+      statusText: "Preparing your execution workspace.",
+      footerText: "EXECUTION WORKSPACE READY",
+    };
+  }
+  // portal / client / default
+  return {
+    eyebrow: "Secure Matter Portal",
+    steps: [
+      "Verifying your identity",
+      "Loading your active matter",
+      "Connecting document specialist",
+      "Preparing portal workspace",
+      "Ready",
+    ],
+    sectionLabel: "Preparing your secure portal",
+    statusText: "Your matter portal is being prepared.",
+    footerText: "MATTER PORTAL READY",
+  };
+}
+
+function MilanoSealOrb() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 20L3 6L12 15L21 6L21 20" stroke="#C6A55A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 6C14 2,19 3,20 8C17 5,13 6,12 10Z" fill="#C6A55A" opacity="0.88" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/milano-seal-orb-v2.png"
+      alt="The Milano Seal"
+      width={88}
+      height={88}
+      style={{ display: "block", width: 88, height: 88, objectFit: "contain", filter: "drop-shadow(0 0 16px rgba(212,175,55,0.6))" }}
+      draggable={false}
+    />
   );
+}
+
+interface LoginErrorBoundaryState {
+  hasError: boolean;
+}
+
+class LoginErrorBoundary extends Component<
+  { children: ReactNode },
+  LoginErrorBoundaryState
+> {
+  state: LoginErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): LoginErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Deliberately avoid logging auth state, URL parameters, or credentials.
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#070504] px-6 text-center">
+        <div className="w-full max-w-md border border-[var(--ms-gold)]/20 bg-[#0C0904] p-8 shadow-[0_32px_96px_rgba(0,0,0,.7)]">
+          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/75">
+            Secure Access Recovery
+          </div>
+          <h1 className="mt-4 font-serif text-2xl text-white">
+            The access gateway could not initialize.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-white/50">
+            Reload the secure sign-in page. No credentials were submitted.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign("/login")}
+            className="mt-6 min-h-11 w-full bg-[var(--ms-gold)] px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070504]"
+          >
+            Reload Secure Access
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
 
 function LoginInner() {
@@ -50,11 +176,7 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [portalShellDismissed, setPortalShellDismissed] = useState(false);
-  const [gatewayDone, setGatewayDone] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return !!sessionStorage.getItem(GATEWAY_KEY);
-  });
+  const [pendingNav, setPendingNav] = useState<{ redirect: string; role?: string } | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,20 +190,22 @@ function LoginInner() {
       ? rawNext
       : null;
 
-  // Redirect already-authenticated users — must be before any conditional return
+  // Redirect already-authenticated users (no ritual — they're already in).
+  // Skip on ?error=access_denied — server rejected this session, auto-redirecting causes a loop.
   useEffect(() => {
+    if (searchParams.get("error") === "access_denied") return;
     try {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) return;
-        const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
-        router.replace(safeNext || destForRole(role, "/dashboard"));
+        const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
+        if (!role) return;
+        // Already authed — don't auto-redirect so founder can pick a tab
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
-      // This is non-fatal for the login page — user can still sign in via the API route.
     }
-  }, [router, safeNext]);
+  }, [router, safeNext, searchParams]);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -92,60 +216,48 @@ function LoginInner() {
     }
   }, [searchParams]);
 
-  // Access gateway ritual — plays once per session for all login visitors.
-  if (!gatewayDone) {
+  // After auth succeeds, show ritual then navigate.
+  if (pendingNav) {
+    const ritual = ritualForDestination(pendingNav.redirect, pendingNav.role);
     return (
       <RitualEntryLock
-        eyebrow="Access Gateway"
-        steps={GATEWAY_STEPS}
-        sectionLabel="Preparing secure access environment"
-        sessionKey={GATEWAY_KEY}
-        onComplete={() => setGatewayDone(true)}
-      />
-    );
-  }
-
-  // Show PortalAccessShell as the entry gate for portal clients before the login form.
-  // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
-  // and reveals the login form below, rather than navigating away.
-  const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
-  if (isPortalEntry && !portalShellDismissed) {
-    return (
-      <div
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("a")) {
-            e.preventDefault();
-            setPortalShellDismissed(true);
-          }
+        eyebrow={ritual.eyebrow}
+        steps={ritual.steps}
+        sectionLabel={ritual.sectionLabel}
+        statusText={ritual.statusText}
+        footerText={ritual.footerText}
+        onComplete={() => {
+          // Mark each workspace ritual as seen so the shell doesn't play a second one.
+          try {
+            const dest = pendingNav.redirect;
+            if (dest.startsWith("/va")) sessionStorage.setItem("ms_va_ritual_seen", "1");
+            else if (dest.startsWith("/portal")) sessionStorage.setItem("ms-portal-entry", "1");
+            else if (dest.startsWith("/dashboard")) sessionStorage.setItem("ms-operator-entry", "1");
+            else if (dest.startsWith("/alliance")) sessionStorage.setItem("ms_alliance_ritual_seen", "1");
+          } catch { /* storage unavailable */ }
+          router.replace(pendingNav.redirect);
         }}
-      >
-        <PortalAccessShell nextPath={safeNext ?? "/portal"} />
-      </div>
+      />
     );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext, tabHint: accessType }),
       });
-
-      const json = await res.json() as { ok: boolean; error?: string; redirect?: string };
-
+      const json = await res.json() as { ok: boolean; error?: string; redirect?: string; role?: string };
       if (!json.ok) {
         setError(json.error ?? "Sign-in failed. Please try again.");
         return;
       }
-
-      router.replace(json.redirect ?? "/dashboard");
+      // Auth succeeded — play ritual then navigate.
+      setPendingNav({ redirect: json.redirect ?? "/dashboard", role: json.role });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
@@ -198,12 +310,11 @@ function LoginInner() {
           background:linear-gradient(90deg,transparent,rgba(198,165,90,.7),transparent);
         }
         .ms-ring {
-          width:72px; height:72px; border-radius:50%;
-          border:1px solid rgba(198,165,90,.35);
+          width:88px; height:88px;
           display:flex; align-items:center; justify-content:center;
           margin:0 auto 24px;
+          filter:drop-shadow(0 0 18px rgba(198,165,90,.55));
           animation:ms-goldPulse 4s ease-in-out infinite;
-          box-shadow:0 0 32px rgba(198,165,90,.12);
         }
         .ms-eyebrow {
           font-size:9.5px; letter-spacing:.28em; text-transform:uppercase;
@@ -231,7 +342,7 @@ function LoginInner() {
           box-sizing:border-box;
         }
         .ms-fi::placeholder { color:rgba(255,255,255,.32); }
-        .ms-fi:focus { border-color:#C6A55A; background:rgba(198,165,90,.04); }
+        .ms-fi:focus { border-color:var(--ms-gold); background:rgba(198,165,90,.04); }
         .ms-pwd-wrap { position:relative; }
         .ms-pwd-wrap .ms-fi { padding-right:52px; }
         .ms-show-pwd {
@@ -240,9 +351,9 @@ function LoginInner() {
           font-size:8.5px; letter-spacing:.12em; text-transform:uppercase;
           cursor:pointer; padding:4px;
         }
-        .ms-show-pwd:hover { color:#C6A55A; }
+        .ms-show-pwd:hover { color:var(--ms-gold); }
         .ms-submit-btn {
-          width:100%; padding:13px; background:#C6A55A; color:#0a0a0a;
+          width:100%; padding:13px; background:var(--ms-gold); color:#0a0a0a;
           border:none;
           font-family:var(--font-geist,system-ui),sans-serif;
           font-size:9.5px; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
@@ -278,7 +389,7 @@ function LoginInner() {
         <div className="ms-glow" />
 
         <div className="ms-card">
-          <div className="ms-ring"><LogoMark /></div>
+          <div className="ms-ring"><MilanoSealOrb /></div>
 
           <div className="ms-eyebrow">The Milano Seal™</div>
           <h1 className="ms-title">Secure Access</h1>
@@ -289,7 +400,6 @@ function LoginInner() {
             {accessType === "va" && "VA workspace for assigned tasks, document coordination, and matter support."}
           </p>
 
-          {/* Access type selector */}
           <div style={{ display: "flex", gap: 6, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
             {([
               { key: "portal", label: "Secure Matter Portal" },
@@ -306,7 +416,7 @@ function LoginInner() {
                   borderRadius: 2,
                   border: accessType === t.key ? "1px solid rgba(198,165,90,0.6)" : "1px solid rgba(198,165,90,0.15)",
                   background: accessType === t.key ? "rgba(198,165,90,0.1)" : "transparent",
-                  color: accessType === t.key ? "#C6A55A" : "rgba(255,255,255,0.3)",
+                  color: accessType === t.key ? "var(--ms-gold)" : "rgba(255,255,255,0.3)",
                   fontSize: 9,
                   fontWeight: 600,
                   letterSpacing: "0.18em",
@@ -320,7 +430,7 @@ function LoginInner() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => { void handleSubmit(e); }}>
             <div style={{ marginBottom: 12 }}>
               <label htmlFor="ms-email" className="ms-flbl">Email Address</label>
               <input
@@ -397,7 +507,9 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginInner />
+      <LoginErrorBoundary>
+        <LoginInner />
+      </LoginErrorBoundary>
     </Suspense>
   );
 }

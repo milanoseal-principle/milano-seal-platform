@@ -74,11 +74,11 @@ function Pillar({
         href={href}
         className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
       >
-        <div className="w-8 h-8 rounded-lg border border-[#C6A55A]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[#C6A55A]/40 transition-colors">
-          <Icon className="w-3.5 h-3.5 text-[#C6A55A]/70 group-hover:text-[#C6A55A] transition-colors" />
+        <div className="w-8 h-8 rounded-lg border border-[var(--ms-gold)]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[var(--ms-gold)]/40 transition-colors">
+          <Icon className="w-3.5 h-3.5 text-[var(--ms-gold)]/70 group-hover:text-[var(--ms-gold)] transition-colors" />
         </div>
         <div className="min-w-0">
-          <h3 className="font-serif text-[#E8DCC0] text-[15px] font-medium mb-1 leading-snug group-hover:text-[#C6A55A] transition-colors">{title}</h3>
+          <h3 className="font-serif text-[#E8DCC0] text-[15px] font-medium mb-1 leading-snug group-hover:text-[var(--ms-gold)] transition-colors">{title}</h3>
           <p className="text-[#8A8A8A] text-[13px] leading-relaxed group-hover:text-[#9A9A9A] transition-colors">
             {desc}
           </p>
@@ -105,7 +105,7 @@ export function MilanoTrustCore() {
         {[...Array(18)].map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-[#C6A55A]"
+            className="absolute rounded-full bg-[var(--ms-gold)]"
             style={{
               width: i % 3 === 0 ? 2 : 1,
               height: i % 3 === 0 ? 2 : 1,
@@ -122,12 +122,12 @@ export function MilanoTrustCore() {
         <div className="lg:hidden">
           <div className="flex flex-col items-center text-center mb-10">
             <div
-              className="w-14 h-14 rounded-full border border-[#C6A55A]/30 flex items-center justify-center mb-5"
+              className="w-14 h-14 rounded-full border border-[var(--ms-gold)]/30 flex items-center justify-center mb-5"
               style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, transparent 70%)" }}
             >
-              <span className="font-serif text-[#C6A55A] text-2xl font-medium leading-none">M</span>
+              <span className="font-serif text-[var(--ms-gold)] text-2xl font-medium leading-none">M</span>
             </div>
-            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
               Our Platform Principles
             </p>
             <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
@@ -151,7 +151,7 @@ export function MilanoTrustCore() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-10"
           >
-            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[#C6A55A]/70 mb-2">
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
               Our Platform Principles
             </p>
             <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
@@ -222,19 +222,19 @@ export function MilanoTrustCore() {
                 ))}
                 {/* Small node dots at pillar connection points */}
                 {[47, 140, 233].map((py, i) => (
-                  <circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
+                  <circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="var(--ms-gold)" fillOpacity="0.35" />
                 ))}
                 {[47, 140, 233].map((py, i) => (
-                  <circle key={`rd${i}`} cx={280} cy={py} r="2.5" fill="#C6A55A" fillOpacity="0.35" />
+                  <circle key={`rd${i}`} cx={280} cy={py} r="2.5" fill="var(--ms-gold)" fillOpacity="0.35" />
                 ))}
                 <defs>
                   <linearGradient id="connLeft" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
-                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0" />
-                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0.35" />
+                    <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0" />
+                    <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0.35" />
                   </linearGradient>
                   <linearGradient id="connRight" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
-                    <stop offset="0%" stopColor="#C6A55A" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#C6A55A" stopOpacity="0" />
+                    <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -244,14 +244,14 @@ export function MilanoTrustCore() {
               <div className="absolute w-[160px] h-[160px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.22)" }} />
               {/* Core */}
               <div
-                className="relative w-[130px] h-[130px] rounded-full border border-[#C6A55A]/40 flex items-center justify-center"
+                className="relative w-[130px] h-[130px] rounded-full border border-[var(--ms-gold)]/40 flex items-center justify-center"
                 style={{
                   background: "radial-gradient(circle, rgba(198,165,90,0.13) 0%, rgba(6,6,8,0.97) 70%)",
                   boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
                 }}
               >
                 <span
-                  className="font-serif text-[#C6A55A] text-5xl font-medium leading-none select-none"
+                  className="font-serif text-[var(--ms-gold)] text-5xl font-medium leading-none select-none"
                   style={{ textShadow: "0 0 32px rgba(198,165,90,0.5)" }}
                 >
                   M

@@ -7,7 +7,7 @@
   font-size: 9px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-weight: 600;
   margin-bottom: 8px;
   display: flex;
@@ -18,7 +18,7 @@
   content: "";
   width: 18px;
   height: 1px;
-  background: #c6a55a;
+  background: var(--ms-gold);
 }
 .ct-h1 {
   font-family: var(--font-playfair), Georgia, serif;
@@ -67,7 +67,7 @@
 .ct-kv-v.mono {
   font-family: monospace;
   font-size: 12px;
-  color: #c6a55a;
+  color: var(--ms-gold);
 }
 .ct-kv-v.light {
   font-weight: 400;
@@ -84,7 +84,7 @@
   background: transparent;
 }
 .ct-link {
-  color: #c6a55a;
+  color: var(--ms-gold);
   text-decoration: none;
   font-weight: 500;
 }
@@ -95,7 +95,7 @@
 .ct-link-btn {
   display: inline-block;
   padding: 10px 18px;
-  border: 1px solid #c6a55a;
+  border: 1px solid var(--ms-gold);
   border-radius: 2px;
   font-size: 9.5px;
   letter-spacing: 0.22em;
@@ -153,7 +153,7 @@
   letter-spacing: 0.14em;
 }
 .ct-viz-pct {
-  color: #C6A55A;
+  color: var(--ms-gold);
   font-weight: 600;
   font-family: monospace;
 }

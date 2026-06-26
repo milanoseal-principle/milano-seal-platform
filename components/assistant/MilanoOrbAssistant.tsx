@@ -22,7 +22,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
   const inputRef = useRef<HTMLInputElement>(null);
   const config = ROLE_PROMPT_REGISTRY[roleMode];
 
-  // Spring for orb inertial shear at open
+  // Spring for utility button inertial shear at open
   const orbShearSpring = useSpring(0, { stiffness: 300, damping: 18 });
   const orbScaleY = useTransform(orbShearSpring, [-1, 0, 1], [0.88, 1, 0.88]);
   const orbScaleX = useTransform(orbShearSpring, [-1, 0, 1], [1.06, 1, 1.06]);
@@ -30,10 +30,6 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
   // Spring for panel mount with overshoot
   const panelY = useSpring(isOpen ? 0 : 20, { stiffness: 260, damping: 22, mass: 1.1 });
   useEffect(() => { panelY.set(isOpen ? 0 : 20); }, [isOpen, panelY]);
-
-  const hideBrokenImage = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    event.currentTarget.style.display = 'none';
-  };
 
   const handleOpen = useCallback(() => {
     orbShearSpring.set(1);
@@ -83,6 +79,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
         right: "max(1.5rem, calc(1.5rem + env(safe-area-inset-right)))",
       }}
     >
+      <style>{`@keyframes ms-goldPulse{0%,100%{opacity:.55}50%{opacity:1}}`}</style>
       {/* Anamorphic bloom SVG filter */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
@@ -105,7 +102,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
 
       <AnimatePresence mode="wait">
         {!isOpen ? (
-          /* ── ORB BUTTON ── */
+          /* ── ASSISTANT UTILITY BUTTON — deliberately not the Feather-M / globe brain ── */
           <motion.button
             key="orb"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -114,23 +111,22 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             style={{ scaleY: orbScaleY, scaleX: orbScaleX, width: 64, height: 64 }}
             onClick={handleOpen}
-            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation"
+            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation bg-transparent border-none shadow-none"
             aria-label="Open Milano Seal Assistant"
           >
-            {/* Halo breathe */}
-            <div className="absolute inset-[-6px] rounded-full border border-amber-500/20 ms-orb-halo-breathe pointer-events-none" />
-            <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.08] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
-
-            {/* Feather-M orb */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milano-seal-feather-m-orb.svg"
+              src="/brand/milano-seal-feather-m-orb.png"
               alt=""
               aria-hidden="true"
               width={64}
               height={64}
-              onError={hideBrokenImage}
-              style={{ display: "block", objectFit: "contain", background: "transparent" }}
+              style={{
+                display: "block",
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 16px rgba(212,175,55,0.6)) drop-shadow(0 0 32px rgba(212,175,55,0.3))",
+                animation: "ms-goldPulse 4s ease-in-out infinite",
+              }}
             />
           </motion.button>
         ) : (
@@ -153,16 +149,14 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             {/* Header */}
             <div className="p-4 border-b border-zinc-900/80 bg-zinc-950/40 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                {/* Mini orb */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/milano-seal-feather-m-orb.svg"
+                  src="/brand/milano-seal-orb-v2.png"
                   alt=""
                   aria-hidden="true"
                   width={28}
                   height={28}
-                  onError={hideBrokenImage}
-                  style={{ display: "block", objectFit: "contain", background: "transparent", flexShrink: 0 }}
+                  style={{ display: "block", objectFit: "contain", flexShrink: 0 }}
                 />
                 <div className="flex flex-col">
                   <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
@@ -222,12 +216,8 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-zinc-900/50 border border-zinc-800 px-3 py-2 rounded-sm">
-                    <div className="flex gap-1 items-center">
-                      {[0, 1, 2].map(i => (
-                        <span key={i} className="w-1 h-1 rounded-full bg-amber-500/60 animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
-                      ))}
-                    </div>
+                  <div className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-sm text-zinc-500 text-[10px]">
+                    <span className="animate-pulse">Processing...</span>
                   </div>
                 </div>
               )}
@@ -235,35 +225,29 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             </div>
 
             {/* Input */}
-            <div className="p-3 border-t border-zinc-900/60 bg-zinc-950/20 shrink-0">
-              <div className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(inputValue); } }}
-                  placeholder="Ask about your documents..."
-                  className="flex-1 bg-zinc-900/40 border border-zinc-800 rounded-sm px-3 py-2 text-[10px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/30 transition-colors min-h-[40px]"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={() => sendMessage(inputValue)}
-                  disabled={isLoading || !inputValue.trim()}
-                  className="bg-amber-500/90 hover:bg-amber-400 disabled:opacity-30 text-zinc-950 text-[8px] font-bold tracking-widest uppercase px-3 rounded-sm transition-colors min-h-[40px] min-w-[44px] touch-manipulation"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-3 py-2 border-t border-zinc-900/40 flex justify-between items-center text-[6px] text-zinc-600 tracking-[0.2em] uppercase bg-zinc-950/10 shrink-0">
-              <span>FLORIDA LICENSED</span>
-              <span>•</span>
-              <span>PAYMENT-GATED</span>
-              <span>•</span>
-              <span>FOUNDER-LED</span>
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendMessage(inputValue);
+              }}
+              className="p-3 border-t border-zinc-900 bg-black/30 flex gap-2 shrink-0"
+            >
+              <input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Ask securely..."
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-sm px-3 py-2 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500/40"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputValue.trim()}
+                className="px-3 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-bold tracking-widest uppercase rounded-sm disabled:opacity-30 hover:bg-amber-500/15 transition-colors"
+              >
+                Send
+              </button>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>

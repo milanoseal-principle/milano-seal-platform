@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import { usePortal } from "@/components/portal/portal-context";
 import { formatCurrency } from "@/lib/format";
 import { PricingBreakdown } from "@/components/shared/PricingBreakdown";
@@ -8,9 +8,48 @@ import type { PricingBreakdownData } from "@/components/shared/PricingBreakdown"
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
 import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
 
+interface DiscountResult {
+  code: string;
+  client_label: string;
+  discount_type: string;
+  discount_value: number;
+  discount_amount: number;
+  original_amount: number;
+  final_amount: number;
+}
+
 export default function ClientInvoicePage() {
-  const { deal, isLoading } = usePortal();
+  const { deal, isLoading, refresh } = usePortal();
   const printRef = useRef<HTMLDivElement | null>(null);
+  const [discountInput, setDiscountInput] = useState("");
+  const [discountResult, setDiscountResult] = useState<DiscountResult | null>(null);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+
+  const applyDiscount = useCallback(async () => {
+    if (!deal?.id || !discountInput.trim()) return;
+    setDiscountLoading(true);
+    setDiscountError(null);
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/apply-discount`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: discountInput.trim().toUpperCase() }),
+      });
+      const json = await res.json() as DiscountResult & { error?: string };
+      if (!res.ok) {
+        setDiscountError(json.error ?? "Failed to apply discount code.");
+      } else {
+        setDiscountResult(json);
+        setDiscountInput("");
+        refresh?.();
+      }
+    } catch {
+      setDiscountError("Connection error. Please try again.");
+    } finally {
+      setDiscountLoading(false);
+    }
+  }, [deal?.id, discountInput, refresh]);
 
   const print = () => {
     if (!printRef.current) return;
@@ -154,6 +193,98 @@ export default function ClientInvoicePage() {
           }}
         />
       </div>
+
+      {/* Discount code entry — only shown when matter is unpaid */}
+      {!paid && !discountResult && (
+        <div style={{
+          marginBottom: 16,
+          background: "rgba(198,165,90,0.04)",
+          border: "1px solid rgba(198,165,90,0.14)",
+          borderRadius: 8,
+          padding: "16px 20px",
+        }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(198,165,90,0.6)", marginBottom: 10 }}>
+            Courtesy Code / Discount
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === "Enter" && applyDiscount()}
+              placeholder="Enter code"
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(198,165,90,0.22)",
+                borderRadius: 6,
+                padding: "9px 12px",
+                color: "#E5E5E5",
+                fontSize: 13,
+                fontFamily: "monospace",
+                letterSpacing: "0.06em",
+                outline: "none",
+              }}
+            />
+            <button
+              onClick={applyDiscount}
+              disabled={discountLoading || !discountInput.trim()}
+              style={{
+                background: discountLoading ? "rgba(198,165,90,0.06)" : "rgba(198,165,90,0.12)",
+                border: "1px solid rgba(198,165,90,0.35)",
+                borderRadius: 6,
+                color: "var(--ms-gold)",
+                fontSize: 11,
+                fontFamily: "monospace",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                padding: "9px 18px",
+                cursor: discountLoading ? "wait" : "pointer",
+                opacity: (!discountInput.trim() || discountLoading) ? 0.5 : 1,
+              }}
+            >
+              {discountLoading ? "Applying…" : "Apply"}
+            </button>
+          </div>
+          {discountError && (
+            <p style={{ marginTop: 8, fontSize: 11, color: "#E0876E" }}>{discountError}</p>
+          )}
+        </div>
+      )}
+
+      {/* Applied discount summary */}
+      {(discountResult ?? deal?.legacy_client_credit) && (
+        <div style={{
+          marginBottom: 16,
+          background: "rgba(74,142,107,0.07)",
+          border: "1px solid rgba(74,142,107,0.25)",
+          borderRadius: 8,
+          padding: "14px 20px",
+        }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(74,142,107,0.8)", marginBottom: 8 }}>
+            Discount Applied
+          </div>
+          {discountResult ? (
+            <>
+              <div style={{ fontSize: 13, color: "#E5E5E5", marginBottom: 4 }}>
+                {discountResult.client_label}{" "}
+                <span style={{ color: "rgba(198,165,90,0.8)", fontFamily: "monospace", fontSize: 11 }}>
+                  ({discountResult.code})
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.5)", flexWrap: "wrap" }}>
+                <span>Original: {formatCurrency(discountResult.original_amount)}</span>
+                <span style={{ color: "#4a8e6b" }}>Discount: −{formatCurrency(discountResult.discount_amount)}</span>
+                <span style={{ color: "#E5E5E5", fontWeight: 600 }}>Final: {formatCurrency(discountResult.final_amount)}</span>
+              </div>
+            </>
+          ) : deal?.legacy_client_credit ? (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              {deal.legacy_client_credit.client_safe_note}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Payment card — Wise suppressed for platform-fee-only matters */}
       <div style={{ marginBottom: 24 }}>

@@ -37,7 +37,7 @@ export function CinematicStage({ children }: { children: React.ReactNode }) {
           style={{ opacity: heroGlow }}
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[30%] w-[900px] h-[900px] rounded-full"
         >
-          <div className="w-full h-full rounded-full bg-[#C6A55A]/[0.06] blur-[100px]" />
+          <div className="w-full h-full rounded-full bg-[var(--ms-gold)]/[0.06] blur-[100px]" />
         </motion.div>
 
         {/* Map awakening pulse — emerges in lower runway */}
@@ -45,7 +45,7 @@ export function CinematicStage({ children }: { children: React.ReactNode }) {
           style={{ opacity: mapGlow }}
           className="absolute left-1/2 top-[70vh] -translate-x-1/2 w-[800px] h-[600px] rounded-full"
         >
-          <div className="w-full h-full rounded-full bg-[#C6A55A]/[0.05] blur-[80px]" />
+          <div className="w-full h-full rounded-full bg-[var(--ms-gold)]/[0.05] blur-[80px]" />
         </motion.div>
 
         {/* Gold axis filament — thin vertical thread connecting hero to map */}
@@ -53,7 +53,7 @@ export function CinematicStage({ children }: { children: React.ReactNode }) {
           style={{ opacity: filamentOpacity, scaleY: filamentScale, transformOrigin: "top center" }}
           className="absolute left-1/2 top-[20vh] -translate-x-1/2 w-px h-[55vh]"
         >
-          <div className="w-full h-full bg-gradient-to-b from-[#C6A55A]/60 via-[#C6A55A]/25 to-transparent" />
+          <div className="w-full h-full bg-gradient-to-b from-[var(--ms-gold)]/60 via-[var(--ms-gold)]/25 to-transparent" />
         </motion.div>
       </div>
 

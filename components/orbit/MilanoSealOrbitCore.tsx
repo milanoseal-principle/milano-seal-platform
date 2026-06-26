@@ -63,7 +63,7 @@ type MilanoSealOrbitCoreProps = {
   onClick?: () => void;
 };
 
-const CREST_SRC = "/milano-seal-crest-canonical.png";
+const CREST_SRC = "/brand/milano-seal-orb-v2.png";
 
 const INTERACTION_STATES = new Set<string>([
   "idle", "hover", "active", "verified", "warning",
