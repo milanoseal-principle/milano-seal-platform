@@ -87,7 +87,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] lg:min-h-[100svh] pt-[var(--header-total-height)] pb-16 lg:pb-20 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
+      className="relative h-[100svh] pt-[var(--header-total-height)] pb-8 lg:pb-10 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
@@ -111,7 +111,7 @@ export function Hero() {
           {/* LEFT: copy */}
           <div className="w-full lg:w-[52%] flex flex-col items-center lg:items-start text-center lg:text-left justify-center relative z-10 [isolation:isolate]">
 
-            <div className={`ms-hero-line mb-6${heroVisible[0] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line mb-4${heroVisible[0] ? " is-visible" : ""}`}>
               <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/5 max-w-fit [isolation:isolate]">
                 <span className="relative flex h-2 w-2 flex-shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ms-gold)] opacity-60" />
@@ -123,28 +123,28 @@ export function Hero() {
               </div>
             </div>
 
-            <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-3">
-              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[1] ? " is-visible" : ""}`}>
+            <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-2">
+              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3rem] xl:text-[3.5rem]${heroVisible[1] ? " is-visible" : ""}`}>
                 Sealing Trust
               </span>
-              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem]${heroVisible[2] ? " is-visible" : ""}`}>
+              <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3rem] xl:text-[3.5rem]${heroVisible[2] ? " is-visible" : ""}`}>
                 Across <span className="ms-hero-borders-gradient italic">Borders</span>
               </span>
             </h1>
 
-            <p className={`ms-hero-line text-lg md:text-xl lg:text-2xl text-white/70 font-normal mb-5 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-base md:text-lg lg:text-xl text-white/70 font-normal mb-3 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
               U.S. Document Execution for International Use
             </p>
 
-            <p className={`ms-hero-line text-sm md:text-base text-white/55 mb-3 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-sm text-white/55 mb-2 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
               Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
             </p>
 
-            <p className={`ms-hero-line text-sm text-white/50 mb-6 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
+            <p className={`ms-hero-line text-xs text-white/50 mb-4 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
               International use is subject to destination and receiving-authority requirements.
             </p>
 
-            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-6${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-4${heroVisible[6] ? " is-visible" : ""}`}>
               <Link
                 href="/intake"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
@@ -162,10 +162,10 @@ export function Hero() {
             </div>
 
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
-              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--ms-gold)]/45 mb-3 text-center lg:text-left">
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--ms-gold)]/45 mb-2 text-center lg:text-left">
                 What You Get
               </p>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-4 max-w-xl lg:max-w-none">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-3 max-w-xl lg:max-w-none">
                 {[
                   { icon: "shield", label: "Secure, Verified\nIntake" },
                   { icon: "monitor", label: "Notarize From\nAnywhere" },
