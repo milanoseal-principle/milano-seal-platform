@@ -16,4 +16,8 @@ export function AllianceDashboardShell({ children }: { children: React.ReactNode
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );
+import type { ReactNode } from "react";
+
+export function AllianceDashboardShell({ children }: { children: ReactNode }) {
+  return <div data-role-shell="alliance-partner-portal">{children}</div>;
 }

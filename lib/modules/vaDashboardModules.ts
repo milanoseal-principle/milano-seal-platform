@@ -4,3 +4,15 @@ export const vaDashboardModules = [
   { id: "documents", label: "Documents", href: "/va/dashboard/documents", icon: "FolderOpen" },
   { id: "messages", label: "Messages", href: "/va/dashboard/messages", icon: "MessageSquare" },
 ];
+  "assignedTasks",
+  "matterPrepChecklist",
+  "documentReadiness",
+  "apostillePacketChecklist",
+  "courierLabelChecklist",
+  "followUpTemplates",
+  "uploadStatus",
+  "qaFlags",
+  "taskCompletion",
+] as const;
+
+export type VADashboardModule = typeof vaDashboardModules[number];

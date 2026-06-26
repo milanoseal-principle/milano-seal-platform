@@ -17,6 +17,7 @@ import { PortalTrustOrbit } from "@/components/orbit/PortalTrustOrbit";
 import type { OrbitState } from "@/lib/orbit/orbitStateMap";
 import { StatusTransitionPill } from "@/components/animations/StatusTransitionPill";
 import { TrustConfirmSeal } from "@/components/animations/TrustConfirmSeal";
+import { clientPortalModules } from "@/lib/modules/clientPortalModules";
 
 // ─── Portal Assistant ────────────────────────────────────────────────────────
 
@@ -493,13 +494,16 @@ export default function MyMatterPage() {
         animate={{ opacity: entryDone ? 1 : 0 }}
         transition={{ duration: 0.35 }}
       >
-        <div className="pp-eyebrow">Your Matter</div>
+        <div className="pp-eyebrow">THE MILANO SEAL™</div>
         <h1 className="pp-h1">
-          Welcome back, {deal.client_name?.split(" ")[0] ?? "Client"}
+          Client Portal
         </h1>
         <div className="pp-sub" style={{ marginBottom: 20 }}>
-          {deal.document_type ?? "Document execution"} · <em>{deal.destination_country ?? "—"}</em>
+          Your matter, documents, payment status, and release tracking in one secure view.
+          <br />
+          Welcome back, {deal.client_name?.split(" ")[0] ?? "Client"} · {deal.document_type ?? "Document execution"} · <em>{deal.destination_country ?? "—"}</em>
         </div>
+        <div className="sr-only">{clientPortalModules.join(",")}</div>
 
         {/* Trust Orbit — visual trust state */}
         <PortalTrustOrbit

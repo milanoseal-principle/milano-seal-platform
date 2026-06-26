@@ -7,4 +7,15 @@ export function requireRole(role: string | null | undefined, pathname: string): 
     redirect(getHomeRouteForRole(normalized));
   }
   return normalized;
+import { getHomeRouteForRole, isRouteAllowedForRole } from "./roleRedirect";
+
+export function requireRoleForPath(
+  role: string | null | undefined,
+  pathname: string,
+) {
+  const allowed = isRouteAllowedForRole(pathname, role);
+
+  if (!allowed) {
+    redirect(getHomeRouteForRole(role));
+  }
 }

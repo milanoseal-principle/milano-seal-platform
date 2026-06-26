@@ -5,3 +5,13 @@ export const clientPortalModules = [
   { id: "messages", label: "Messages", href: "/portal/messages", icon: "MessageSquare" },
   { id: "payments", label: "Payments", href: "/portal/payments", icon: "CreditCard" },
 ];
+  "matterTimeline",
+  "invoiceStatus",
+  "documentVault",
+  "tracking",
+  "nextSteps",
+  "messages",
+  "paidReleased",
+] as const;
+
+export type ClientPortalModule = typeof clientPortalModules[number];

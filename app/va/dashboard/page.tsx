@@ -8,6 +8,7 @@ import { VAAssistant } from "@/components/va/VAAssistant";
 import { VADailyCompletionTracker } from "@/components/va/VADailyCompletionTracker";
 import { VAEscalationQueue } from "@/components/va/VAEscalationQueue";
 import { VASOPReference } from "@/components/va/VASOPReference";
+import { vaDashboardModules } from "@/lib/modules/vaDashboardModules";
 
 export default async function VADashboardPage() {
   const { role } = await requireVAAccess();
@@ -29,14 +30,15 @@ export default async function VADashboardPage() {
             fontFamily: "var(--font-playfair),Georgia,serif",
           }}
         >
-          Operations Desk
+          VA Execution Workbench
         </h1>
         <p
           className="text-[11px] font-mono mt-1"
           style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          Assigned coordination tasks and execution queue.
+          Assigned preparation, packet, upload, and follow-up tasks only.
         </p>
+        <div className="sr-only">{vaDashboardModules.join(",")}</div>
       </div>
 
       {/* Daily completion tracker */}
