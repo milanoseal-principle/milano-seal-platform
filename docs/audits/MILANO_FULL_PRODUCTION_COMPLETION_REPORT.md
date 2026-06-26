@@ -371,3 +371,47 @@ npx next build     → Build successful (wire-in pass)
 - `GlobalMap` / World Atlas (`/map`) — full interactive atlas with region tabs, compliance cards, matter vectors
 
 All four are visually distinct and serve different surfaces.
+
+---
+
+## Deployment Verification — Tiffany E2E Pass (commit 7ad3fd6 accepted)
+
+**Date:** 2026-06-26 · **Branch:** claude/funny-maxwell-hlxQN
+
+### Accepted state
+- Commit **7ad3fd6** accepted.
+- OS spine merge repair completed (botched `main` merge `54ad01a` fixed: package.json + 18 glued files restored to main's authoritative versions; `motionPresets.ts` unioned).
+
+### Local verification (this environment) — PASS
+| Check | Result |
+|---|---|
+| `npm run validate:project` | ✅ all checks passed |
+| `npx tsc --noEmit` | ✅ 0 errors |
+| `npm run build` | ✅ successful |
+
+### Public route smoke (dev server) — PASS (all 200)
+`/` · `/countries` · `/apostille/italy` · `/apostille/uae` · `/map?country=italy` · `/intake?destination=italy` · `/review`
+
+### Private route protection — VERIFIED BY CODE (live check env-limited)
+- `proxy.ts` `PROTECTED_PREFIXES` covers `/dashboard`, `/internal`, `/va`, `/alliance`, `/ops`, `/admin`, `/workspace` (+ `/api/admin`, `/api/dashboard`, `/api/va`). Unauthenticated → `redirect(/login?next=…)`.
+- Local live test returns **500 instead of redirect** ONLY because this container has no `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` — `createServerClient` throws before the redirect path. With Supabase env vars present (Vercel), the redirect executes. This is an environment limitation, not a code defect.
+
+### Tiffany E2E harness
+- **Finding + fix:** the merge repair had taken main's *static* `tiffany-e2e/page.tsx`, which orphaned the interactive `E2EDemoShell`. Re-wired the harness into the page, gated on `MILANO_E2E_DEMO_MODE=true`, with `robots: noindex`. Static pricing summary + final-packet checklist retained.
+- Demo pricing verified: Priority $975 + Apostille $275 = **$1,250**; TIFFANYTEST −$100 → **$1,150**; split 50/50 → deposit $575 / balance $575. (`calculateMilanoPricing` + seed route `MS-DEMO-2026-000001`.)
+
+### Core services — VERIFIED PRESENT & CORRECT
+- Pricing engine returns locked values ($750/$975/$1,850; apostille $275, rush $175, signer $75).
+- Compliance router / Trust Engine return Hague vs non-Hague routing + review flags (`lib/compliance/*`, `src/features/compliance/*`).
+- Discount service validates server-side, rejects after payment, writes DISCOUNT_APPLIED/REJECTED/REMOVED.
+- Payment gate blocks scheduling before payment and release before final payment (`src/features/payments/paymentGateService.ts`).
+- Wise/manual confirmation writes the event ledger; webhook signature verified (`verifyWiseSignature`).
+- Portal-safe mapper hides internal notes/costs/margins/admin fields (`lib/portalProjection.ts`).
+
+### Cannot be verified from this environment (require deployed Vercel + Supabase + credentials)
+- Live Vercel deploy success and env-var presence (`MILANO_E2E_DEMO_MODE`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, operator temp passwords).
+- `nicholas@themilanoseal.com` / `tiffany@bulbtech.io` live login + `founder_admin` resolution.
+- Interactive 23-step Tiffany E2E clickthrough (needs deployed env + demo mode + Supabase data).
+
+### Remaining deployment blockers
+- None in code. Outstanding items are **operational**: set the Vercel env vars above, confirm the two operator accounts exist as `founder_admin`, then run the interactive E2E on the deployed URL.

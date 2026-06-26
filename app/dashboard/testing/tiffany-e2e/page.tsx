@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { calculateMilanoPricing } from "@/src/features/pricing/pricingEngine";
 import { finalPacketChecklist } from "@/src/features/shipping/shippingService";
+import { E2EDemoShell } from "./_components/e2e-demo-shell";
+
+export const metadata: Metadata = {
+  title: "Tiffany E2E Demo Flow",
+  robots: { index: false, follow: false },
+};
 
 const steps = [
   "Start/reset demo matter",
@@ -23,6 +30,8 @@ const steps = [
 ];
 
 export default function TiffanyE2ETestPage() {
+  const demoEnabled = process.env.MILANO_E2E_DEMO_MODE === "true";
+
   const pricing = calculateMilanoPricing({
     lane: "priority",
     apostilleRequired: true,
@@ -37,7 +46,8 @@ export default function TiffanyE2ETestPage() {
         <p className="text-xs uppercase tracking-[0.28em] text-[#C6A65B]">THE MILANO SEAL™</p>
         <h1 className="mt-3 text-4xl font-semibold">Tiffany E2E Demo Flow</h1>
         <p className="mt-3 max-w-3xl text-sm text-[#d8cfbd]">
-          Controlled operator demo for the Milano Seal OS production spine. Enable with MILANO_E2E_DEMO_MODE=true before using live workflow actions.
+          Controlled operator demo for the Milano Seal OS production spine. Enable with
+          MILANO_E2E_DEMO_MODE=true before using live workflow actions.
         </p>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -74,6 +84,19 @@ export default function TiffanyE2ETestPage() {
               <div key={item} className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm">{item}</div>
             ))}
           </div>
+        </div>
+
+        {/* Interactive operator harness — gated on MILANO_E2E_DEMO_MODE */}
+        <div className="mt-8">
+          {demoEnabled ? (
+            <E2EDemoShell />
+          ) : (
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-6 text-sm text-amber-200/80">
+              Interactive demo actions are disabled. Set{" "}
+              <code className="font-mono text-amber-100">MILANO_E2E_DEMO_MODE=true</code> in the
+              environment to enable the live seed / discount / payment / lifecycle controls.
+            </div>
+          )}
         </div>
       </section>
     </main>
