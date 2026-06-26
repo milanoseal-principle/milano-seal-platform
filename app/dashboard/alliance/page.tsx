@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Network, Layers, Shield, ArrowRight, Eye, CheckCheck, Trash2, Inbox, Tag, UserCheck } from "lucide-react";
@@ -62,6 +63,7 @@ const MODULES = [
 ];
 
 export default async function AllianceIntelligencePage() {
+  redirect("/alliance/dashboard");
   await requireDashboardAccess();
   const summary = await getSummary();
 

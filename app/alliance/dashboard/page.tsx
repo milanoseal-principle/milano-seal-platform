@@ -8,6 +8,7 @@ import { AllianceComplianceGate } from "@/components/alliance/AllianceCompliance
 import { AllianceActivityLedger } from "@/components/alliance/AllianceActivityLedger";
 import { AllianceEmptyState } from "@/components/alliance/AllianceEmptyState";
 import { FileStack, GitBranch, Link2, Wallet } from "lucide-react";
+import { allianceDashboardModules } from "@/lib/modules/allianceDashboardModules";
 
 async function getPartnerData(userId: string) {
   const supabase = await createClient();
@@ -67,14 +68,15 @@ export default async function AllianceDashboardPage() {
         {/* Header */}
         <div>
           <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 8 }}>
-            Alliance Desk
+            THE MILANO SEAL™
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 400, fontFamily: "var(--font-playfair, Georgia, serif)", color: "#F6F1E6", margin: "0 0 8px" }}>
-            {p.firm_name ?? p.contact_name ?? "Welcome"}
+            Alliance Partner Portal
           </h1>
           <p style={{ fontSize: 13, color: "#A8A29A", margin: 0 }}>
-            Partner infrastructure for international document execution and referral coordination.
+            Referral submission, onboarding readiness, Tool Belt resources, and partner matter visibility.
           </p>
+          <div className="sr-only">{p.firm_name ?? p.contact_name ?? "Welcome"} · {allianceDashboardModules.join(",")}</div>
         </div>
 
         {/* Lifecycle rail */}
@@ -154,7 +156,7 @@ export default async function AllianceDashboardPage() {
             {[
               { href: "/alliance/referrals/new", icon: GitBranch, label: "Submit a Referral", sub: "New matter referral" },
               { href: "/alliance/matters", icon: FileStack, label: "View Matters", sub: "Partner matter queue" },
-              { href: "/alliance/payouts", icon: Wallet, label: "Commission Status", sub: "View payout history" },
+              { href: "/alliance/payouts", icon: Wallet, label: "Referral Payout Status", sub: "View payout history" },
               { href: "/alliance/toolbelt", icon: Link2, label: "Tool Belt", sub: "Partner readiness" },
             ].map((action) => {
               const Icon = action.icon;
@@ -190,7 +192,7 @@ export default async function AllianceDashboardPage() {
         <div style={{ background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 8, overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(198,166,91,0.08)" }}>
             <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", color: "#A8A29A" }}>
-              Operational Ledger
+              Referral Activity
             </div>
           </div>
           <AllianceActivityLedger entries={[]} />
