@@ -127,23 +127,14 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="group mb-6 inline-flex items-center gap-4">
+            <Link href="/" className="inline-block mb-6">
               <Image
-                src="/milano-seal-orb-v2.png"
+                src="/milano-seal-gold-transparent-512.png"
                 alt="The Milano Seal"
-                width={112}
-                height={112}
-                sizes="(max-width: 767px) 88px, 112px"
-                className="h-[clamp(72px,18vw,88px)] w-[clamp(72px,18vw,88px)] object-contain drop-shadow-[0_0_14px_rgba(210,166,74,0.45)] transition-[filter] duration-300 group-hover:drop-shadow-[0_0_20px_rgba(210,166,74,0.62)] md:h-[104px] md:w-[104px] lg:h-[112px] lg:w-[112px]"
+                width={160}
+                height={52}
+                style={{ height: "52px", width: "auto" }}
               />
-              <span className="flex flex-col">
-                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
-                  The Milano Seal
-                </span>
-                <span className="mt-2 text-[9px] font-medium uppercase tracking-[0.26em] text-white/42">
-                  Global Document Execution
-                </span>
-              </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
               U.S. Document Execution & Apostille Liaison. Sealing trust with
