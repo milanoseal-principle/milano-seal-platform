@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "validate:project": "npx tsx scripts/validate-project.ts",
-    "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts"
+    "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
+    "repair:operators": "npx tsx scripts/repair-operator-accounts.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

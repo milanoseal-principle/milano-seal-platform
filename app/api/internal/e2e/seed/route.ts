@@ -5,6 +5,9 @@ import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 
+// Portal token is stored as access_token on the deals row.
+// /portal/[token] queries deals.access_token — no separate portal_tokens table.
+
 function demoMatterRef() {
   return `MS-DEMO-${new Date().getFullYear()}-000001`;
 }
@@ -17,6 +20,11 @@ function requireDemoMode() {
     );
   }
   return null;
+}
+
+function generateAccessToken(): string {
+  const rand = () => Math.random().toString(36).slice(2);
+  return `demo-${rand()}${rand()}${rand()}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -72,14 +80,17 @@ export async function POST(req: NextRequest) {
   // --- Demo matter ---
   const { data: existing } = await admin
     .from("deals")
-    .select("id, deal_id, status, payment_status, discount_code_id")
+    .select("id, deal_id, status, payment_status, discount_code_id, access_token")
     .eq("deal_id", DEMO_REF)
     .maybeSingle();
 
   let dealId: string;
+  let accessToken: string;
 
   if (existing && body.reset) {
     // Hard reset: restore to awaiting_payment with original amount
+    // Preserve or regenerate access_token so portal link stays valid
+    accessToken = (existing.access_token as string) || generateAccessToken();
     await admin
       .from("deals")
       .update({
@@ -101,10 +112,10 @@ export async function POST(req: NextRequest) {
         shipped_at: null,
         completed_at: null,
         delivery_timestamp: null,
+        access_token: accessToken,
       })
       .eq("id", existing.id);
 
-    // Clear prior redemptions for this matter
     await admin.from("discount_redemptions").delete().eq("deal_id", existing.id);
 
     dealId = existing.id as string;
@@ -117,7 +128,15 @@ export async function POST(req: NextRequest) {
     });
   } else if (existing) {
     dealId = existing.id as string;
+    // Ensure access_token exists
+    if (!existing.access_token) {
+      accessToken = generateAccessToken();
+      await admin.from("deals").update({ access_token: accessToken }).eq("id", dealId);
+    } else {
+      accessToken = existing.access_token as string;
+    }
   } else {
+    accessToken = generateAccessToken();
     const { data: created, error: createErr } = await admin
       .from("deals")
       .insert({
@@ -139,6 +158,7 @@ export async function POST(req: NextRequest) {
         payment_amount_due: 1250,
         currency: "USD",
         apostille_required: true,
+        access_token: accessToken,
         internal_notes: "E2E demo matter — Tiffany operator confidence test",
       })
       .select("id")
@@ -156,7 +176,7 @@ export async function POST(req: NextRequest) {
       { action: "INTAKE_CREATED", detail: "Demo intake received from Tiffany E2E seed" },
       { action: "MATTER_CREATED", detail: `Matter ${DEMO_REF} created — Power of Attorney · Italy · Priority` },
       { action: "QUOTE_GENERATED", detail: "Quote generated: $975 base + $275 apostille = $1,250" },
-      { action: "PORTAL_LINK_CREATED", detail: "Client portal token issued for Tiffany Demo Client" },
+      { action: "PORTAL_LINK_CREATED", detail: "Client portal access_token issued for Tiffany Demo Client" },
       { action: "PAYMENT_INSTRUCTIONS_SENT", detail: "Wise payment instructions sent · Amount due: $1,250" },
     ];
     for (const evt of seedEvents) {
@@ -168,6 +188,7 @@ export async function POST(req: NextRequest) {
     success: true,
     deal_id: dealId,
     matter_ref: DEMO_REF,
+    portal_path: `/portal/${accessToken}`,
     reset: !!body.reset,
     discount_code_id: discountCodeId,
   });

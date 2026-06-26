@@ -5,14 +5,15 @@
  *
  * Creates (idempotent):
  *   - TIFFANYTEST discount code (fixed $100 off)
- *   - MS-DEMO-YYYY-000001 demo matter
- *   - Portal token for demo matter
+ *   - MS-DEMO-YYYY-000001 demo matter with access_token set on deals row
  *   - Seed activity log events
+ *
+ * Portal token architecture: token is stored as access_token on the deals row.
+ * The portal route /portal/[token] queries deals.access_token directly.
+ * There is no separate portal_tokens table.
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { join } from "node:path";
-import { config } from "node:process";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -75,12 +76,19 @@ async function upsertDiscountCode() {
   return data.id as string;
 }
 
+function generateAccessToken(): string {
+  const a = Math.random().toString(36).slice(2);
+  const b = Math.random().toString(36).slice(2);
+  const c = Math.random().toString(36).slice(2);
+  return `demo-${a}${b}${c}`;
+}
+
 async function upsertDemoMatter() {
   console.log("\n[2] Demo Matter — " + DEMO_MATTER_REF);
 
   const { data: existing } = await admin
     .from("deals")
-    .select("id, deal_id, status, payment_status")
+    .select("id, deal_id, status, payment_status, access_token")
     .eq("deal_id", DEMO_MATTER_REF)
     .maybeSingle();
 
@@ -88,8 +96,23 @@ async function upsertDemoMatter() {
     console.log(
       `  ✓ Already exists (id: ${existing.id}, status: ${existing.status}, payment: ${existing.payment_status})`,
     );
-    return existing.id as string;
+
+    // Ensure access_token is set so the portal link works
+    if (!existing.access_token) {
+      const token = generateAccessToken();
+      await admin
+        .from("deals")
+        .update({ access_token: token })
+        .eq("id", existing.id);
+      console.log(`  ✓ access_token set (token: ${token.slice(0, 12)}...)`);
+      return { id: existing.id as string, token };
+    }
+
+    console.log(`  ✓ access_token present (token: ${(existing.access_token as string).slice(0, 12)}...)`);
+    return { id: existing.id as string, token: existing.access_token as string };
   }
+
+  const token = generateAccessToken();
 
   const { data, error } = await admin
     .from("deals")
@@ -112,6 +135,7 @@ async function upsertDemoMatter() {
       payment_amount_due: 1250,
       currency: "USD",
       apostille_required: true,
+      access_token: token,
       internal_notes: "E2E demo matter — Tiffany operator confidence test",
     })
     .select("id")
@@ -122,59 +146,18 @@ async function upsertDemoMatter() {
     process.exit(1);
   }
 
-  console.log(`  ✓ Created (id: ${data.id})`);
-  return data.id as string;
-}
-
-async function upsertPortalToken(dealId: string) {
-  console.log("\n[3] Portal Token");
-
-  const { data: existing } = await admin
-    .from("portal_tokens")
-    .select("id, token")
-    .eq("deal_id", dealId)
-    .maybeSingle();
-
-  if (existing) {
-    console.log(`  ✓ Already exists (token: ${existing.token?.slice(0, 8)}...)`);
-    return existing.token as string;
-  }
-
-  const token =
-    "demo-" +
-    Math.random().toString(36).slice(2) +
-    Math.random().toString(36).slice(2);
-
-  const { data, error } = await admin
-    .from("portal_tokens")
-    .insert({
-      deal_id: dealId,
-      token,
-      client_email: DEMO_EMAIL,
-      active: true,
-    })
-    .select("token")
-    .single();
-
-  if (error) {
-    // Some schemas use a different table name
-    console.warn("  ⚠ portal_tokens insert failed:", error.message);
-    console.warn("  — Portal token may use a different table; check schema.");
-    return null;
-  }
-
-  console.log(`  ✓ Created (token: ${data.token?.slice(0, 8)}...)`);
-  return data.token as string;
+  console.log(`  ✓ Created (id: ${data.id}, token: ${token.slice(0, 12)}...)`);
+  return { id: data.id as string, token };
 }
 
 async function seedActivityEvents(dealId: string) {
-  console.log("\n[4] Seed Activity Events");
+  console.log("\n[3] Seed Activity Events");
 
   const events = [
     { action: "INTAKE_CREATED", detail: "Demo intake received from Tiffany E2E seed" },
     { action: "MATTER_CREATED", detail: `Matter ${DEMO_MATTER_REF} created — Power of Attorney · Italy · Priority` },
     { action: "QUOTE_GENERATED", detail: "Quote generated: $975 base + $275 apostille = $1,250" },
-    { action: "PORTAL_LINK_CREATED", detail: "Client portal token issued for Tiffany Demo Client" },
+    { action: "PORTAL_LINK_CREATED", detail: "Client portal access_token issued for Tiffany Demo Client" },
     { action: "PAYMENT_INSTRUCTIONS_SENT", detail: "Wise payment instructions sent · Amount due: $1,250" },
   ];
 
@@ -212,14 +195,14 @@ async function main() {
   console.log("══════════════════════════════════════════");
 
   await upsertDiscountCode();
-  const dealId = await upsertDemoMatter();
-  await upsertPortalToken(dealId);
+  const { id: dealId, token: accessToken } = await upsertDemoMatter();
   await seedActivityEvents(dealId);
 
   console.log("\n══════════════════════════════════════════");
   console.log("  ✓ Seed complete");
   console.log(`  Matter: ${DEMO_MATTER_REF}`);
   console.log(`  Deal ID: ${dealId}`);
+  console.log(`  Portal URL: /portal/${accessToken}`);
   console.log("══════════════════════════════════════════\n");
 }
 

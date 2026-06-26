@@ -48,6 +48,7 @@ interface DemoStatus {
   matter_ref: string;
   deal: DemoMatter | null;
   portal_token: string | null;
+  portal_path: string | null;
   activity: Array<{
     id: string;
     action: string;
@@ -438,16 +439,16 @@ export function E2EDemoShell() {
               >
                 Open Matter Detail <ExternalLink className="h-2.5 w-2.5" />
               </Link>
-              {demo?.portal_token && (
+              {demo?.portal_path && (
                 <Link
-                  href={`/portal/${demo.portal_token}`}
+                  href={demo.portal_path}
                   target="_blank"
                   className="text-[11px] text-blue-400 hover:underline flex items-center gap-1"
                 >
                   Open Client Portal <ExternalLink className="h-2.5 w-2.5" />
                 </Link>
               )}
-              {demo?.portal_token && (
+              {demo?.portal_path && (
                 <Link
                   href={`/portal/invoice`}
                   target="_blank"

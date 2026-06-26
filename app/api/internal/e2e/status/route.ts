@@ -5,7 +5,10 @@ import { getActivityForDeal } from "@/lib/activity";
 
 export const runtime = "nodejs";
 
-export async function GET(req: NextRequest) {
+// Portal token is stored as access_token on the deals row.
+// /portal/[token] queries deals.access_token directly.
+
+export async function GET(_req: NextRequest) {
   if (process.env.MILANO_E2E_DEMO_MODE !== "true") {
     return NextResponse.json({ error: "E2E demo mode is not enabled." }, { status: 403 });
   }
@@ -21,7 +24,7 @@ export async function GET(req: NextRequest) {
   const { data: deal } = await admin
     .from("deals")
     .select(
-      "id, deal_id, status, payment_status, payment_amount_due, amount_due, payment_reference, payment_amount_received, discount_code_id, tracking_number, carrier, scheduled_at, execution_at, apostille_at, shipped_at, completed_at, invoice_status, wise_reference, assigned_lane",
+      "id, deal_id, status, payment_status, payment_amount_due, amount_due, payment_reference, payment_amount_received, discount_code_id, tracking_number, carrier, scheduled_at, execution_at, apostille_at, shipped_at, completed_at, invoice_status, wise_reference, assigned_lane, access_token",
     )
     .eq("deal_id", DEMO_REF)
     .maybeSingle();
@@ -31,19 +34,14 @@ export async function GET(req: NextRequest) {
   }
 
   const activity = await getActivityForDeal(deal.deal_id as string, 50);
-
-  // Portal token
-  const { data: portalToken } = await admin
-    .from("portal_tokens")
-    .select("token")
-    .eq("deal_id", deal.id)
-    .maybeSingle();
+  const accessToken = deal.access_token as string | null;
 
   return NextResponse.json({
     exists: true,
     matter_ref: DEMO_REF,
     deal,
-    portal_token: portalToken?.token ?? null,
+    portal_token: accessToken,
+    portal_path: accessToken ? `/portal/${accessToken}` : null,
     activity: activity ?? [],
   });
 }
