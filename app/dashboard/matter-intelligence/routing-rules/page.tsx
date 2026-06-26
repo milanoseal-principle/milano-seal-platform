@@ -21,11 +21,12 @@ interface RegistryEntry {
   processing_days: string;
   notes: string;
   risk: "low" | "medium" | "high";
+  verification_required?: boolean;
 }
 
 const REGISTRY: RegistryEntry[] = [
   { destination_country: "Portugal", country_code: "PT", hague_member: true, path: "apostille", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "10–15", notes: "Apostille from FL Sec of State. Certified PT translation required.", risk: "low" },
-  { destination_country: "Brazil", country_code: "BR", hague_member: true, path: "apostille", ron_eligible: "conditional", translation_required: true, courier_required: true, processing_days: "14–21", notes: "Apostille required. Brazilian consulate may require sworn translation.", risk: "medium" },
+  { destination_country: "Brazil", country_code: "BR", hague_member: true, path: "apostille", ron_eligible: "conditional", translation_required: false, courier_required: true, processing_days: "14–21", notes: "Apostille review applies. Portuguese or sworn translation review may be required by the receiving authority.", risk: "medium" },
   { destination_country: "Mexico", country_code: "MX", hague_member: true, path: "apostille", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "10–14", notes: "Spanish translation required. Apostille from issuing state.", risk: "low" },
   { destination_country: "Italy", country_code: "IT", hague_member: true, path: "apostille", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "14–21", notes: "Italian translation required. Apostille from issuing state.", risk: "medium" },
   { destination_country: "Germany", country_code: "DE", hague_member: true, path: "apostille", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "10–14", notes: "German translation required by sworn translator.", risk: "low" },
@@ -34,7 +35,7 @@ const REGISTRY: RegistryEntry[] = [
   { destination_country: "Japan", country_code: "JP", hague_member: true, path: "apostille", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "14–21", notes: "Japanese translation required. Apostille from issuing state.", risk: "medium" },
   { destination_country: "Nigeria", country_code: "NG", hague_member: false, path: "legalization", ron_eligible: "no", translation_required: false, courier_required: true, processing_days: "21–35", notes: "Non-Hague. Requires US federal apostille + embassy legalization.", risk: "high" },
   { destination_country: "Senegal", country_code: "SN", hague_member: false, path: "legalization", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "25–40", notes: "Non-Hague. Embassy legalization + French translation.", risk: "high" },
-  { destination_country: "United Arab Emirates", country_code: "AE", hague_member: false, path: "legalization", ron_eligible: "no", translation_required: true, courier_required: true, processing_days: "21–35", notes: "Non-Hague. MOFA attestation required. Arabic translation for personal docs.", risk: "high" },
+  { destination_country: "United Arab Emirates", country_code: "AE", hague_member: false, path: "neither", ron_eligible: "conditional", translation_required: false, courier_required: true, processing_days: "Verification required", notes: "VERIFICATION_REQUIRED. Confirm the document type and receiving authority before selecting apostille, attestation, translation, or consular steps.", risk: "high", verification_required: true },
   { destination_country: "Canada", country_code: "CA", hague_member: true, path: "apostille", ron_eligible: "yes", translation_required: false, courier_required: false, processing_days: "5–10", notes: "RON accepted for most document types. Apostille from issuing state.", risk: "low" },
   { destination_country: "United Kingdom", country_code: "GB", hague_member: true, path: "apostille", ron_eligible: "conditional", translation_required: false, courier_required: false, processing_days: "7–10", notes: "RON accepted by most UK institutions. Apostille from issuing state.", risk: "low" },
   { destination_country: "Australia", country_code: "AU", hague_member: true, path: "apostille", ron_eligible: "conditional", translation_required: false, courier_required: true, processing_days: "10–14", notes: "Apostille accepted. RON acceptance varies by institution.", risk: "low" },

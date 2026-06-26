@@ -44,7 +44,7 @@ function HealthCard({
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setBarWidth(score.score);
+      setBarWidth(score.dataAvailable ? score.score : 0);
     }, 200 + index * 80);
     return () => clearTimeout(timer);
   }, [score.score, index]);
@@ -87,7 +87,7 @@ function HealthCard({
             lineHeight: 1,
           }}
         >
-          {score.score}
+          {score.dataAvailable ? score.score : "—"}
         </span>
       </div>
 
@@ -126,7 +126,7 @@ function HealthCard({
             opacity: 0.85,
           }}
         >
-          {score.label}
+          {score.dataAvailable ? score.label : "PENDING"}
         </span>
         <Link
           href={score.route}
@@ -154,6 +154,16 @@ function HealthCard({
         }}
       >
         {score.note}
+      </p>
+      <p
+        style={{
+          fontFamily: "monospace",
+          fontSize: 8,
+          color: "rgba(198,165,90,0.34)",
+          letterSpacing: "0.08em",
+        }}
+      >
+        Source: {score.source}
       </p>
     </motion.div>
   );
@@ -188,9 +198,9 @@ export function SystemHealth({
   overallScore,
 }: {
   scores: HealthScore[];
-  overallScore: number;
+  overallScore: number | null;
 }) {
-  const displayed = useCountUp(overallScore, 800);
+  const displayed = useCountUp(overallScore ?? 0, 800);
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -273,12 +283,12 @@ export function SystemHealth({
             fontFamily: "monospace",
             fontSize: 72,
             fontWeight: 700,
-            color: scoreColor(overallScore),
+            color: overallScore === null ? "rgba(255,255,255,0.35)" : scoreColor(overallScore),
             lineHeight: 1,
             marginBottom: 16,
           }}
         >
-          {displayed}
+          {overallScore === null ? "—" : displayed}
         </div>
         <p
           style={{
@@ -286,10 +296,10 @@ export function SystemHealth({
             fontSize: 11,
             letterSpacing: "0.28em",
             textTransform: "uppercase",
-            color: scoreColor(overallScore),
+            color: overallScore === null ? "rgba(255,255,255,0.35)" : scoreColor(overallScore),
           }}
         >
-          {overallLabel(overallScore)}
+          {overallScore === null ? "AWAITING SOURCE DATA" : overallLabel(overallScore)}
         </p>
       </div>
 

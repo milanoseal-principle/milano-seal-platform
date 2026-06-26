@@ -157,7 +157,7 @@ function EmailGate({
             The Milano Seal™
           </p>
           <h1 className="font-serif text-2xl text-white mb-2">
-            Document Portal
+            Matter Control Portal
           </h1>
           <p className="text-[#8A8A8A] text-sm font-light">
             {step === "email"
@@ -485,7 +485,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
             />
             <div>
               <p className="text-white font-medium text-sm">The Milano Seal™</p>
-              <p className="text-[#8A8A8A] text-xs">Document Portal</p>
+              <p className="text-[#8A8A8A] text-xs">Matter Control Portal</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#111111] border border-[#2A2A2A] rounded-full">
@@ -662,7 +662,7 @@ export function PortalClient({ token, deal }: { token: string; deal: Deal }) {
         {/* Documents */}
         <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6">
           <p className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase mb-5">
-            Your Documents
+            Controlled Records
           </p>
           {files.length === 0 ? (
             <p className="text-[#8A8A8A] text-sm italic text-center py-4">

@@ -57,8 +57,8 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
   ],
   uae: [
     {
-      q: "Does the UAE accept apostille documents from Florida?",
-      a: "Yes — since January 2021, when the UAE acceded to the Hague Apostille Convention. Prior to 2021, full consular legalization through the US State Department and UAE Embassy was required.",
+      q: "What pathway applies to Florida documents intended for the UAE?",
+      a: "The pathway requires verification against the document type and receiving authority. The Milano Seal confirms whether apostille, attestation, translation, or additional authority review applies before release.",
     },
     {
       q: "How long does UAE document authentication take?",
@@ -69,8 +69,8 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
       a: "Entity formation documents, bank mandate letters, real estate deeds, employment contracts, and corporate resolutions for DIFC and ADGM registrations.",
     },
     {
-      q: "Is the UAE part of the Hague Convention?",
-      a: "Yes. The UAE acceded to the Hague Convention on Private International Law's Apostille Convention effective January 11, 2021. Both Dubai's DIFC and Abu Dhabi's ADGM now formally recognize Hague apostilles.",
+      q: "Does every UAE receiving authority use the same authentication pathway?",
+      a: "No. Requirements can vary by document type, emirate, free zone, and receiving authority. UAE matters remain verification-required until the current pathway is confirmed.",
     },
   ],
   brazil: [
@@ -80,15 +80,15 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
     },
     {
       q: "How long does apostille processing take for Brazil?",
-      a: "5–7 business days through The Milano Seal™. Portuguese translation is required by most Brazilian receiving institutions.",
+      a: "5–7 business days through The Milano Seal™. Portuguese translation review may be required by the receiving authority.",
     },
     {
       q: "What documents are commonly apostilled for Brazil?",
       a: "Property deeds, CPF registration documents, corporate filings, inheritance records, powers of attorney, and Cartório-bound notarial acts.",
     },
     {
-      q: "Is Portuguese translation required for apostilled documents going to Brazil?",
-      a: "Yes, in most cases. While the apostille certificate itself is accepted, the underlying document must be translated into Portuguese by a certified translator for Brazilian legal and registry proceedings.",
+      q: "May Portuguese translation be required for apostilled documents going to Brazil?",
+      a: "Translation review may be required depending on the document type and receiving Brazilian authority. Requirements are confirmed before international release.",
     },
   ],
   mexico: [

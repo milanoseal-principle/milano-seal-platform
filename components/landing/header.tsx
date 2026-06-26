@@ -37,17 +37,23 @@ export function Header() {
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex-shrink-0 select-none flex items-center gap-3">
+              <Link href="/" className="group flex-shrink-0 select-none flex items-center gap-3">
                 <Image
-                  src="/milano-seal-gold-transparent-512.png"
+                  src="/milano-seal-orb-v2.png"
                   alt="The Milano Seal"
-                  width={38}
-                  height={38}
-                  className="object-contain"
+                  width={72}
+                  height={72}
+                  sizes="(max-width: 767px) 13vw, 6vw"
+                  className="h-[clamp(52px,13vw,68px)] w-[clamp(52px,13vw,68px)] object-contain drop-shadow-[0_0_14px_rgba(210,166,74,0.45)] transition-[filter] duration-300 group-hover:drop-shadow-[0_0_18px_rgba(210,166,74,0.62)] md:h-[clamp(56px,6vw,72px)] md:w-[clamp(56px,6vw,72px)]"
                   priority
                 />
-                <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
-                  The Milano Seal
+                <span className="flex flex-col leading-none">
+                  <span className="text-[13px] font-semibold uppercase text-[#C6A55A] tracking-[0.32em]">
+                    The Milano Seal
+                  </span>
+                  <span className="mt-1 text-[8px] font-medium uppercase tracking-[0.26em] text-white/42">
+                    Global Document Execution
+                  </span>
                 </span>
               </Link>
 

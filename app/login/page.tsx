@@ -1,37 +1,28 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import {
+  Component,
+  Suspense,
+  useState,
+  useEffect,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PortalAccessShell } from "@/components/portal/PortalAccessShell";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
-
-const GATEWAY_KEY = "milano_ritual_access_gateway_seen";
+import { getHomeRouteForRole, isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
 
 const GATEWAY_STEPS = [
-  "Verifying access environment",
-  "Connecting to secure workspace",
-  "Resolving role access",
-  "Preparing entry gateway",
+  "Identity verified",
+  "Secure session established",
+  "Role access resolved",
+  "Preparing protected workspace",
   "Ready",
 ];
 
-function destForRole(role: string, fallback: string): string {
-  if (role === "founder_admin" || role === "admin" || role === "admin_operator" ||
-      role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
-      role === "apostille_coordinator" || role === "finance_operator" || role === "client_support") {
-    return "/dashboard";
-  }
-  if (role === "client") return "/portal";
-  if (role === "alliance" || role === "alliance_partner" || role === "alliance_member") return "/alliance/dashboard";
-  if (role === "virtual_assistant" || role === "va_manager" || role === "intake_assistant" ||
-      role === "scheduling_assistant" || role === "document_coordinator" ||
-      role === "translation_coordinator" || role === "courier_assistant" ||
-      role === "followup_coordinator" || role === "alliance_support_assistant" ||
-      role === "escalation_assistant") {
-    return "/va/dashboard";
-  }
-  return fallback;
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  return !!next && isRouteAllowedForRole(next, role);
 }
 
 function LogoMark() {
@@ -43,6 +34,52 @@ function LogoMark() {
   );
 }
 
+interface LoginErrorBoundaryState {
+  hasError: boolean;
+}
+
+class LoginErrorBoundary extends Component<
+  { children: ReactNode },
+  LoginErrorBoundaryState
+> {
+  state: LoginErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): LoginErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Deliberately avoid logging auth state, URL parameters, or credentials.
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#070504] px-6 text-center">
+        <div className="w-full max-w-md border border-[#C6A55A]/20 bg-[#0C0904] p-8 shadow-[0_32px_96px_rgba(0,0,0,.7)]">
+          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/75">
+            Secure Access Recovery
+          </div>
+          <h1 className="mt-4 font-serif text-2xl text-white">
+            The access gateway could not initialize.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-white/50">
+            Reload the secure sign-in page. No credentials were submitted.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign("/login")}
+            className="mt-6 min-h-11 w-full bg-[#C6A55A] px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070504]"
+          >
+            Reload Secure Access
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 function LoginInner() {
   const [accessType, setAccessType] = useState<"portal"|"dashboard"|"alliance"|"va">("portal");
   const [email, setEmail] = useState("");
@@ -50,11 +87,7 @@ function LoginInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [portalShellDismissed, setPortalShellDismissed] = useState(false);
-  const [gatewayDone, setGatewayDone] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return !!sessionStorage.getItem(GATEWAY_KEY);
-  });
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,8 +107,8 @@ function LoginInner() {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) return;
-        const role = ((data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
-        router.replace(safeNext || destForRole(role, "/dashboard"));
+        const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
+        router.replace(isNextAllowedForRole(safeNext, role) ? safeNext : getHomeRouteForRole(role));
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
@@ -92,36 +125,17 @@ function LoginInner() {
     }
   }, [searchParams]);
 
-  // Access gateway ritual — plays once per session for all login visitors.
-  if (!gatewayDone) {
+  // The transition is intentionally post-authentication. The credentials form
+  // remains the only pre-authentication gateway.
+  if (redirectTarget) {
     return (
       <RitualEntryLock
-        eyebrow="Access Gateway"
+        eyebrow="Access Confirmed"
         steps={GATEWAY_STEPS}
-        sectionLabel="Preparing secure access environment"
-        sessionKey={GATEWAY_KEY}
-        onComplete={() => setGatewayDone(true)}
+        sectionLabel="Opening your protected workspace"
+        statusText="Authentication complete. Preparing role-authorized access."
+        onComplete={() => router.replace(redirectTarget)}
       />
-    );
-  }
-
-  // Show PortalAccessShell as the entry gate for portal clients before the login form.
-  // Clicking "Access My Matter" (the only <a> link in the shell) dismisses the shell
-  // and reveals the login form below, rather than navigating away.
-  const isPortalEntry = rawNext.startsWith("/portal") || rawNext === "";
-  if (isPortalEntry && !portalShellDismissed) {
-    return (
-      <div
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("a")) {
-            e.preventDefault();
-            setPortalShellDismissed(true);
-          }
-        }}
-      >
-        <PortalAccessShell nextPath={safeNext ?? "/portal"} />
-      </div>
     );
   }
 
@@ -145,7 +159,7 @@ function LoginInner() {
         return;
       }
 
-      router.replace(json.redirect ?? "/dashboard");
+      setRedirectTarget(json.redirect ?? "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
@@ -397,7 +411,9 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginInner />
+      <LoginErrorBoundary>
+        <LoginInner />
+      </LoginErrorBoundary>
     </Suspense>
   );
 }

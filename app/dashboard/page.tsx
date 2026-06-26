@@ -44,6 +44,7 @@ import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
 import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
 import { MatterQueue } from "@/components/dashboard/MatterQueue";
 import { QuickActionIntelligenceMenu } from "@/components/dashboard/QuickActionIntelligenceMenu";
+import { operatorDashboardModules } from "@/lib/modules/operatorDashboardModules";
 
 interface DashboardSummary {
   total_deals: number;
@@ -403,15 +404,18 @@ export default function Dashboard() {
       >
         <div>
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-            Execution Center
+            THE MILANO SEAL™
           </p>
           <h1 className="font-serif text-4xl text-foreground">
-            Today at the Seal
+            Command Center
           </h1>
           <p className="text-muted-foreground mt-2 max-w-xl">
-            Live snapshot of every matter in the international execution
-            pipeline — intake to apostille to delivery.
+            Internal execution control for intake, payment, scheduling,
+            apostille, custody, and release.
           </p>
+          <div className="sr-only">
+            {operatorDashboardModules.join(",")}
+          </div>
         </div>
         <Link href="/dashboard/intake">
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gold-glow">
@@ -456,7 +460,7 @@ export default function Dashboard() {
         </motion.div>
         <motion.div variants={cardVariants}>
           <Stat
-            label="Revenue (Week)"
+            label="Revenue Collected"
             value={formatCurrency(data.revenue_closed)}
             hint="Collected this week"
             icon={DollarSign}

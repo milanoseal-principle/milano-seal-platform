@@ -1,24 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { getHomeRouteForRole, isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
 
 export const runtime = "nodejs";
 
-function destForRole(role: string): string {
-  if (
-    role === "founder_admin" || role === "admin" || role === "admin_operator" ||
-    role === "ops_manager" || role === "finance" || role === "execution_coordinator" ||
-    role === "apostille_coordinator" || role === "finance_operator" || role === "client_support"
-  ) return "/dashboard";
-  if (role === "client") return "/portal";
-  if (role === "alliance" || role === "alliance_partner" || role === "alliance_member") return "/alliance/dashboard";
-  if (
-    role === "virtual_assistant" || role === "va_manager" || role === "intake_assistant" ||
-    role === "scheduling_assistant" || role === "document_coordinator" ||
-    role === "translation_coordinator" || role === "courier_assistant" ||
-    role === "followup_coordinator" || role === "alliance_support_assistant" ||
-    role === "escalation_assistant"
-  ) return "/va/dashboard";
-  return "/dashboard";
+function isNextAllowedForRole(next: string | null, role: string): next is string {
+  return !!next && isRouteAllowedForRole(next, role);
 }
 
 export async function POST(request: Request) {
@@ -44,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     const user = data.user;
-    const role = ((user?.user_metadata?.role ?? user?.app_metadata?.role) as string) ?? "";
+    const role = user ? await resolveServerRole(user) : "";
 
     if (!role) {
       return NextResponse.json({ ok: false, error: "Access profile missing. Contact Nicholas Milano." }, { status: 403 });
@@ -52,14 +40,16 @@ export async function POST(request: Request) {
 
     // Validate safe redirect
     const raw = body.next ?? "";
-    const safeNext =
+    const requestedNext =
       raw.startsWith("/portal") || raw.startsWith("/alliance") ||
       raw.startsWith("/va") || raw.startsWith("/dashboard")
         ? raw : null;
 
     return NextResponse.json({
       ok: true,
-      redirect: safeNext || destForRole(role),
+      redirect: isNextAllowedForRole(requestedNext, role)
+        ? requestedNext
+        : getHomeRouteForRole(role),
     });
   } catch (err) {
     return NextResponse.json({
