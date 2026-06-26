@@ -87,6 +87,7 @@ export function OperatorActionPanel({
 
             <motion.div
               key="drawer"
+              data-critical-card=""
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}

@@ -73,7 +73,7 @@ export function OperatorEventTimeline() {
     .slice(0, 24);
 
   return (
-    <div className="rounded-xl border border-white/[0.05] bg-[#050507] overflow-hidden">
+    <div data-critical-card="" className="rounded-xl border border-white/[0.05] bg-[#050507] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 rounded-full bg-[#C6A55A]/60" />

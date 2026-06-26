@@ -80,7 +80,7 @@ export function CertificatePanel({
 
   if (!isPaidAndReleased) {
     return (
-      <Card className="bg-card border-gold opacity-50">
+      <Card data-critical-card="" className="bg-card border-gold opacity-50">
         <CardHeader>
           <CardTitle className="font-serif text-xl flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-[#C6A55A]" />
@@ -97,7 +97,7 @@ export function CertificatePanel({
   }
 
   return (
-    <Card className="bg-card border-gold">
+    <Card data-critical-card="" className="bg-card border-gold">
       <CardHeader>
         <CardTitle className="font-serif text-xl flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-[#C6A55A]" />

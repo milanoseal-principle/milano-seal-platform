@@ -50,7 +50,7 @@ export function DocumentPacketBuilder() {
   );
 
   return (
-    <div className="rounded-lg p-4 space-y-4" style={{ background: "rgba(6,4,2,0.98)", border: "1px solid rgba(212,175,55,0.15)" }}>
+    <div data-critical-card="" className="rounded-lg p-4 space-y-4" style={{ background: "rgba(6,4,2,0.98)", border: "1px solid rgba(212,175,55,0.15)" }}>
       <div className="flex items-center justify-between">
         <p className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "rgba(212,175,55,0.6)" }}>
           Document Packet Builder

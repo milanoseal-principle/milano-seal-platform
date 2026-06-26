@@ -372,7 +372,7 @@ export function E2EDemoShell() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div data-critical-card="" className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

@@ -88,7 +88,7 @@ export default async function ApostillePage() {
         </div>
 
         {/* Table */}
-        <div style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)", borderRadius: 8, overflow: "hidden" }}>
+        <div data-critical-card="" style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)", borderRadius: 8, overflow: "hidden" }}>
           <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(212,175,55,0.08)" }}>
             <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: 0 }}>
               APOSTILLE-REQUIRED MATTERS

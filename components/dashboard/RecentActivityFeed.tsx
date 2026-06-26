@@ -54,6 +54,7 @@ export function RecentActivityFeed() {
 
   return (
     <div
+      data-critical-card=""
       className="rounded-lg border border-white/[0.06] p-5 flex flex-col gap-4"
       style={{ background: "rgba(3,3,5,0.90)" }}
     >

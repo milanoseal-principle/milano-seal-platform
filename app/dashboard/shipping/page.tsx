@@ -66,7 +66,7 @@ export default function ShippingPage() {
   }, []);
 
   return (
-    <div style={{ padding: "32px 28px", background: "#050505", minHeight: "100vh", color: "#f6f1e6" }}>
+    <div data-critical-card="" style={{ padding: "32px 28px", background: "#050505", minHeight: "100vh", color: "#f6f1e6" }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", marginBottom: 6 }}>

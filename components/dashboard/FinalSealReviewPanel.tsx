@@ -38,6 +38,7 @@ export function FinalSealReviewPanel({ matter, founderMode = false }: FinalSealR
 
   return (
     <div
+      data-critical-card=""
       style={{
         background: "rgba(6,13,20,0.65)",
         border: `1px solid ${result.released ? "rgba(100,200,120,0.2)" : "rgba(200,80,80,0.2)"}`,

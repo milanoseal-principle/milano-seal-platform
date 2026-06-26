@@ -69,7 +69,7 @@ export function MatterQueue({ onMatterClick }: Props) {
   const matters = data?.matters ?? [];
 
   return (
-    <div>
+    <div data-critical-card="">
       <div className="flex items-center justify-between mb-4">
         <p
           className="text-[9px] font-mono uppercase tracking-[0.28em]"

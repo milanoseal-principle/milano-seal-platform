@@ -18,6 +18,7 @@ export function PaymentGatePanel({ payment_status, balance_due, paid_and_release
   if (paid_and_released) {
     return (
       <motion.div
+        data-critical-card=""
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: EASE }}
@@ -55,6 +56,7 @@ export function PaymentGatePanel({ payment_status, balance_due, paid_and_release
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: EASE }}
+        data-critical-card=""
         style={{
           background: "rgba(34,197,94,0.03)",
           border: "1px solid rgba(34,197,94,0.15)",
@@ -86,6 +88,7 @@ export function PaymentGatePanel({ payment_status, balance_due, paid_and_release
   // Locked
   return (
     <motion.div
+      data-critical-card=""
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: EASE }}
