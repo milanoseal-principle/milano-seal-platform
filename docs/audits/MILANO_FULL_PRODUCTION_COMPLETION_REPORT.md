@@ -128,15 +128,79 @@
 
 ---
 
+## Route Protection — Confirmed (commit 31de424)
+
+**Architecture:** Next.js 16 uses `proxy.ts` (not `middleware.ts`) as the edge middleware layer. Both cannot coexist — `proxy.ts` is authoritative.
+
+### Protected Prefixes (proxy.ts `PROTECTED_PREFIXES`)
+
+| Prefix | Added | Status |
+|---|---|---|
+| `/dashboard` | existing | ✅ Protected |
+| `/portal` | existing | ✅ Protected |
+| `/alliance` | existing | ✅ Protected |
+| `/va` | existing | ✅ Protected |
+| `/internal` | 31de424 | ✅ Protected |
+| `/ops` | 31de424 | ✅ Protected |
+| `/workspace` | 31de424 | ✅ Protected |
+| `/admin` | 31de424 | ✅ Protected |
+| `/api/admin` | existing | ✅ Protected |
+| `/api/dashboard` | existing | ✅ Protected |
+| `/api/follow-ups` | existing | ✅ Protected |
+| `/api/compliance/list` | existing | ✅ Protected |
+| `/api/portal/me` | existing | ✅ Protected |
+| `/api/va` | existing | ✅ Protected |
+
+### Public Route Exclusions (always pass-through)
+
+- `/login`, `/admin/login`, `/operator/login`, `/auth/callback` — `PUBLIC_AUTH_PATHS`
+- `/auth/*`, `/api/auth/*` — `PUBLIC_AUTH_PREFIXES`
+- `/`, `/intake`, `/review`, `/verify/*`, all SEO/verticals/location pages — not in PROTECTED_PREFIXES
+- Static assets (`.svg`, `.png`, `.js`, `_next/*`) — excluded by matcher pattern
+
+### Behavior for unauthenticated requests
+
+- Private API routes → `401 Unauthorized` (JSON)
+- Private page routes → redirect to `/login?next=<pathname>`
+
+### Defense in depth
+
+Layout-level guards remain active on all protected routes independent of proxy:
+- `requireDashboardAccess()` on all `/dashboard` layouts
+- `requireVAAccess()` on all `/va` layouts
+- Portal context redirect on `/portal` layout
+- Alliance page-level self-guards on `/alliance` pages
+
+---
+
+## Pre-Build Validation Script (commit 31de424)
+
+`npm run validate:project` → `npx tsx scripts/validate-project.ts`
+
+| Check | Result |
+|---|---|
+| package.json valid JSON | ✅ PASS |
+| tsconfig.json valid JSON | ✅ PASS |
+| vercel.json valid JSON | ✅ PASS |
+| next.config.mjs single nextConfig export | ✅ PASS |
+| app/layout.tsx valid RootLayout export | ✅ PASS |
+| app/page.tsx default export | ✅ PASS |
+| No Survisure/HVAC/appliance patterns | ✅ PASS |
+| No Stripe Checkout patterns in payment/portal | ✅ PASS |
+
+---
+
 ## Commands Run
 
 ```
-npx tsc --noEmit   → 0 errors
-npx next build     → Build successful
+npx tsc --noEmit         → 0 errors
+npx next build           → Build successful (commit 222103b)
+npx tsx scripts/validate-project.ts → All 6 checks passed (commit 31de424)
+npx tsc --noEmit         → 0 errors (commit 31de424)
+npx next build           → Build successful — ƒ Proxy (Middleware) confirmed (commit 31de424)
 ```
 
 ## Deferred Items
 
-1. **Global `middleware.ts`** — No Next.js edge middleware. Layout-level guards are present on all protected routes. Edge middleware would add defense-in-depth but is not a production blocker given current layout guards.
-2. **Discount UI on `/portal/payment`** — Payment page also shows Wise instructions. Invoice page (`/portal/invoice`) is the primary payment UI and now has full discount support. Payment page is secondary.
-3. **200+ internal/SEO/ops brand token wiring** — Deferred per earlier decision. Public brand surfaces are wired; internal operational pages remain on legacy hex aliases.
+1. **Discount UI on `/portal/payment`** — Payment page also shows Wise instructions. Invoice page (`/portal/invoice`) is the primary payment UI and now has full discount support. Payment page is secondary.
+2. **200+ internal/SEO/ops brand token wiring** — Deferred per earlier decision. Public brand surfaces are wired; internal operational pages remain on legacy hex aliases.
