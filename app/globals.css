@@ -319,9 +319,10 @@ html {
   --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.6);
 
   /* Header layout tokens — single source of truth for the fixed header height.
-     Keep in sync with header.tsx: nav (h-20 = 80px) + CredentialTicker (~28px). */
+     Keep in sync with header.tsx: nav (h-20 = 80px) + CredentialTicker (~52px actual: 2×rail + separator). */
   --header-nav-height: 80px;
-  --header-ticker-height: 28px;
+  --header-ticker-height: 52px;
+  --dashboard-ticker-height: 52px;
   --header-total-height: calc(var(--header-nav-height) + var(--header-ticker-height));
 
   /* Tailwind compat */

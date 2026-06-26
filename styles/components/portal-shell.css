@@ -12,8 +12,8 @@
   display: flex;
   min-height: 100vh;
   min-height: 100svh;
-  /* Offset for fixed ticker (36px) + notch/Dynamic Island safe area */
-  padding-top: calc(36px + var(--sa-top));
+  /* Offset for fixed ticker (52px actual: 2×py-1.5 + text + separator) + notch safe area */
+  padding-top: calc(52px + var(--sa-top));
   background:
     radial-gradient(ellipse 90% 45% at 50% 0%, rgba(198, 165, 90, 0.04) 0%, transparent 55%),
     #0a0a0a;
@@ -28,8 +28,8 @@
   display: flex;
   flex-direction: column;
   position: fixed;
-  /* Align sidebar top with bottom edge of ticker (ticker grows with safe-area) */
-  top: calc(36px + var(--sa-top));
+  /* Align sidebar top with bottom edge of ticker */
+  top: calc(52px + var(--sa-top));
   bottom: 0;
   left: 0;
   right: auto;
