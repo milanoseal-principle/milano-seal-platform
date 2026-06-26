@@ -1,3 +1,21 @@
+"use client";
+import Link from "next/link";
+import { allianceDashboardModules } from "@/lib/modules/allianceDashboardModules";
+
+export function AllianceDashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] flex">
+      <aside className="w-60 shrink-0 border-r border-[#2A2A2A] flex flex-col py-8 px-4 gap-1">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#8B743C] mb-4 px-2">Alliance</p>
+        {allianceDashboardModules.map((m) => (
+          <Link key={m.id} href={m.href} className="px-3 py-2 rounded-lg text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/5 transition-all">
+            {m.label}
+          </Link>
+        ))}
+      </aside>
+      <main className="flex-1 overflow-y-auto">{children}</main>
+    </div>
+  );
 import type { ReactNode } from "react";
 
 export function AllianceDashboardShell({ children }: { children: ReactNode }) {

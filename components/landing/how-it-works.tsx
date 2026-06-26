@@ -67,7 +67,7 @@ export function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
+          <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
             Execution Path
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
@@ -91,21 +91,21 @@ export function HowItWorks() {
             >
               <Link
                 href={step.href}
-                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover ${step.highlight ? " border-[#C6A55A]/25 bg-[#0D0B08] hover:border-[#C6A55A]/50" : " border-[#2A2A2A] hover:border-[#C6A55A]/30"}`}
+                className={`block bg-[#0A0A0A] border rounded-xl p-8 h-full transition-all duration-300 gold-glow-hover ${step.highlight ? " border-[var(--ms-gold)]/25 bg-[#0D0B08] hover:border-[var(--ms-gold)]/50" : " border-[#2A2A2A] hover:border-[var(--ms-gold)]/30"}`}
               >
                 <div className="flex items-start justify-between">
-                  <span className="font-serif text-4xl font-medium text-[#C6A55A]/20 group-hover:text-[#C6A55A]/40 transition-colors duration-300">
+                  <span className="font-serif text-4xl font-medium text-[var(--ms-gold)]/20 group-hover:text-[var(--ms-gold)]/40 transition-colors duration-300">
                     {step.number}
                   </span>
                   <div className="flex items-center gap-2 mt-2">
                     {step.highlight && (
-                      <Lock className="ms-lock-icon w-4 h-4 text-[#C6A55A] opacity-70" />
+                      <Lock className="ms-lock-icon w-4 h-4 text-[var(--ms-gold)] opacity-70" />
                     )}
-                    <ArrowRight className="w-3.5 h-3.5 text-[#C6A55A]/20 group-hover:text-[#C6A55A]/60 transition-all duration-300 group-hover:translate-x-0.5" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[var(--ms-gold)]/20 group-hover:text-[var(--ms-gold)]/60 transition-all duration-300 group-hover:translate-x-0.5" />
                   </div>
                 </div>
 
-                <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3 group-hover:text-[#C6A55A] transition-colors duration-300">
+                <h3 className="font-serif text-xl font-medium text-white mt-4 mb-3 group-hover:text-[var(--ms-gold)] transition-colors duration-300">
                   {step.title}
                 </h3>
                 <p className="text-[#B0B0B0] text-sm leading-relaxed">

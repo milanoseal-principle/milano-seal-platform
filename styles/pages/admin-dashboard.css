@@ -26,7 +26,7 @@
   font-size: 9px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-weight: 600;
   margin-bottom: 8px;
   display: flex;
@@ -37,7 +37,7 @@
   content: "";
   width: 18px;
   height: 1px;
-  background: #c6a55a;
+  background: var(--ms-gold);
 }
 .ms-h1 {
   font-family: var(--font-playfair), Georgia, serif;
@@ -48,7 +48,7 @@
   line-height: 1.1;
 }
 .ms-h1 em {
-  color: #c6a55a;
+  color: var(--ms-gold);
   font-style: italic;
 }
 
@@ -90,7 +90,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #c6a55a, transparent);
+  background: linear-gradient(90deg, transparent, var(--ms-gold), transparent);
   opacity: 0.5;
 }
 .ms-stat-lbl {
@@ -110,12 +110,12 @@
 }
 .ms-stat-val span {
   font-size: 14px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   margin-right: 2px;
 }
 .ms-stat-sub {
   font-size: 9.5px;
-  color: #c6a55a;
+  color: var(--ms-gold);
   margin-top: 8px;
   letter-spacing: 0.04em;
 }
@@ -215,7 +215,7 @@
 .ms-kan-price {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 12px;
-  color: #c6a55a;
+  color: var(--ms-gold);
 }
 .ms-kan-footer {
   margin-top: 6px;
@@ -290,7 +290,7 @@
 .ms-tbl-value {
   font-family: var(--font-playfair), Georgia, serif;
   font-size: 13px;
-  color: #c6a55a;
+  color: var(--ms-gold);
 }
 .ms-tbl-empty {
   text-align: center;

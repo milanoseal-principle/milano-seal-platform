@@ -91,19 +91,19 @@ function NavItem({ mod, active }: { mod: DashboardModule; active: boolean }) {
       href={`/dashboard/${mod.route}`}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 group ${
         active
-          ? "bg-[#C6A55A]/12 text-[#C6A55A] border border-[#C6A55A]/20"
+          ? "bg-[var(--ms-gold)]/12 text-[var(--ms-gold)] border border-[var(--ms-gold)]/20"
           : "text-[#8A8A8A] hover:text-white hover:bg-[#1A1A1A]"
       }`}
     >
       <Icon
         className={`w-4 h-4 flex-shrink-0 ${
           active
-            ? "text-[#C6A55A]"
+            ? "text-[var(--ms-gold)]"
             : "text-[#8A8A8A] group-hover:text-[#B0B0B0]"
         }`}
       />
       <span className="font-medium truncate">{mod.name}</span>
-      {active && <ChevronRight className="w-3 h-3 ml-auto text-[#C6A55A]" />}
+      {active && <ChevronRight className="w-3 h-3 ml-auto text-[var(--ms-gold)]" />}
     </Link>
   );
 }
@@ -133,7 +133,7 @@ export function DashboardShell({ children, activeMatterId, roleFamily = "operato
             <p className="text-white text-sm font-medium leading-tight">
               The Milano Seal™
             </p>
-            <p className="text-[#C6A55A] text-[10px] tracking-[0.15em] uppercase">
+            <p className="text-[var(--ms-gold)] text-[10px] tracking-[0.15em] uppercase">
               Admin OS
             </p>
           </div>
@@ -212,7 +212,7 @@ export function DashboardShell({ children, activeMatterId, roleFamily = "operato
           </p>
           <button
             onClick={() => setActionPanelOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0D0D0D] border border-[#252525] rounded text-[9px] font-mono tracking-[0.2em] uppercase text-[#C6A55A] hover:border-[#C6A55A]/40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0D0D0D] border border-[#252525] rounded text-[9px] font-mono tracking-[0.2em] uppercase text-[var(--ms-gold)] hover:border-[var(--ms-gold)]/40 transition-colors"
           >
             <Zap className="w-3 h-3" />
             <span className="hidden sm:inline">Actions</span>
@@ -226,7 +226,7 @@ export function DashboardShell({ children, activeMatterId, roleFamily = "operato
           </div>
           <button
             onClick={() => setActionPanelOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 border-l border-[#1A1A1A] text-[9px] font-mono tracking-[0.2em] uppercase text-[#6A5520] hover:text-[#C6A55A] hover:bg-[#0D0D0D] transition-colors whitespace-nowrap flex-shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 border-l border-[#1A1A1A] text-[9px] font-mono tracking-[0.2em] uppercase text-[#6A5520] hover:text-[var(--ms-gold)] hover:bg-[#0D0D0D] transition-colors whitespace-nowrap flex-shrink-0"
           >
             <Zap className="w-3 h-3" />
             Quick Actions

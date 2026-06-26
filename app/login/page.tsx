@@ -146,8 +146,8 @@ class LoginErrorBoundary extends Component<
 
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#070504] px-6 text-center">
-        <div className="w-full max-w-md border border-[#C6A55A]/20 bg-[#0C0904] p-8 shadow-[0_32px_96px_rgba(0,0,0,.7)]">
-          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/75">
+        <div className="w-full max-w-md border border-[var(--ms-gold)]/20 bg-[#0C0904] p-8 shadow-[0_32px_96px_rgba(0,0,0,.7)]">
+          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/75">
             Secure Access Recovery
           </div>
           <h1 className="mt-4 font-serif text-2xl text-white">
@@ -159,7 +159,7 @@ class LoginErrorBoundary extends Component<
           <button
             type="button"
             onClick={() => window.location.assign("/login")}
-            className="mt-6 min-h-11 w-full bg-[#C6A55A] px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070504]"
+            className="mt-6 min-h-11 w-full bg-[var(--ms-gold)] px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#070504]"
           >
             Reload Secure Access
           </button>
@@ -200,7 +200,7 @@ function LoginInner() {
         if (!data.user) return;
         const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
         if (!role) return;
-        router.replace(isNextAllowedForRole(safeNext, role) ? safeNext : destForRole(role));
+        // Already authed — don't auto-redirect so founder can pick a tab
       }).catch(() => { /* ignore — non-blocking redirect check */ });
     } catch {
       // createClient() throws if NEXT_PUBLIC env vars are missing at browser runtime.
@@ -226,7 +226,17 @@ function LoginInner() {
         sectionLabel={ritual.sectionLabel}
         statusText={ritual.statusText}
         footerText={ritual.footerText}
-        onComplete={() => router.replace(pendingNav.redirect)}
+        onComplete={() => {
+          // Mark each workspace ritual as seen so the shell doesn't play a second one.
+          try {
+            const dest = pendingNav.redirect;
+            if (dest.startsWith("/va")) sessionStorage.setItem("ms_va_ritual_seen", "1");
+            else if (dest.startsWith("/portal")) sessionStorage.setItem("ms-portal-entry", "1");
+            else if (dest.startsWith("/dashboard")) sessionStorage.setItem("ms-operator-entry", "1");
+            else if (dest.startsWith("/alliance")) sessionStorage.setItem("ms_alliance_ritual_seen", "1");
+          } catch { /* storage unavailable */ }
+          router.replace(pendingNav.redirect);
+        }}
       />
     );
   }
@@ -239,7 +249,7 @@ function LoginInner() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, next: safeNext, tabHint: accessType }),
       });
       const json = await res.json() as { ok: boolean; error?: string; redirect?: string; role?: string };
       if (!json.ok) {
@@ -332,7 +342,7 @@ function LoginInner() {
           box-sizing:border-box;
         }
         .ms-fi::placeholder { color:rgba(255,255,255,.32); }
-        .ms-fi:focus { border-color:#C6A55A; background:rgba(198,165,90,.04); }
+        .ms-fi:focus { border-color:var(--ms-gold); background:rgba(198,165,90,.04); }
         .ms-pwd-wrap { position:relative; }
         .ms-pwd-wrap .ms-fi { padding-right:52px; }
         .ms-show-pwd {
@@ -341,9 +351,9 @@ function LoginInner() {
           font-size:8.5px; letter-spacing:.12em; text-transform:uppercase;
           cursor:pointer; padding:4px;
         }
-        .ms-show-pwd:hover { color:#C6A55A; }
+        .ms-show-pwd:hover { color:var(--ms-gold); }
         .ms-submit-btn {
-          width:100%; padding:13px; background:#C6A55A; color:#0a0a0a;
+          width:100%; padding:13px; background:var(--ms-gold); color:#0a0a0a;
           border:none;
           font-family:var(--font-geist,system-ui),sans-serif;
           font-size:9.5px; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
@@ -406,7 +416,7 @@ function LoginInner() {
                   borderRadius: 2,
                   border: accessType === t.key ? "1px solid rgba(198,165,90,0.6)" : "1px solid rgba(198,165,90,0.15)",
                   background: accessType === t.key ? "rgba(198,165,90,0.1)" : "transparent",
-                  color: accessType === t.key ? "#C6A55A" : "rgba(255,255,255,0.3)",
+                  color: accessType === t.key ? "var(--ms-gold)" : "rgba(255,255,255,0.3)",
                   fontSize: 9,
                   fontWeight: 600,
                   letterSpacing: "0.18em",

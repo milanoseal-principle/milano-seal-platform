@@ -95,7 +95,7 @@ export function Services() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="text-[#C6A55A] text-sm font-medium tracking-wider uppercase mb-4 block">
+          <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
             Our Services
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
@@ -120,17 +120,17 @@ export function Services() {
             >
               <Link
                 href={service.href}
-                className="group relative bg-[#111111] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-500 hover:border-[#C6A55A]/30 gold-glow-hover flex flex-col h-full"
+                className="group relative bg-[#111111] border border-[#2A2A2A] rounded-xl p-8 transition-all duration-500 hover:border-[var(--ms-gold)]/30 gold-glow-hover flex flex-col h-full"
               >
-                <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[#C6A55A]/30 group-hover:bg-[#C6A55A]/5 self-start">
-                  <service.icon className="w-6 h-6 text-[#C6A55A]" />
+                <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-6 transition-all duration-300 group-hover:border-[var(--ms-gold)]/30 group-hover:bg-[var(--ms-gold)]/5 self-start">
+                  <service.icon className="w-6 h-6 text-[var(--ms-gold)]" />
                 </div>
 
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-serif text-xl md:text-2xl font-medium text-white group-hover:text-[#C6A55A] transition-colors duration-300 pr-4">
+                  <h3 className="font-serif text-xl md:text-2xl font-medium text-white group-hover:text-[var(--ms-gold)] transition-colors duration-300 pr-4">
                     {service.title}
                   </h3>
-                  <ArrowRight className="w-4 h-4 text-[#C6A55A]/40 group-hover:text-[#C6A55A] transition-all duration-300 group-hover:translate-x-1 flex-shrink-0 mt-1.5" />
+                  <ArrowRight className="w-4 h-4 text-[var(--ms-gold)]/40 group-hover:text-[var(--ms-gold)] transition-all duration-300 group-hover:translate-x-1 flex-shrink-0 mt-1.5" />
                 </div>
 
                 <p className="text-[#B0B0B0] leading-relaxed mb-6 flex-1">
@@ -143,7 +143,7 @@ export function Services() {
                   ))}
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/0 to-transparent group-hover:via-[#C6A55A]/50 transition-all duration-500" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)]/0 to-transparent group-hover:via-[var(--ms-gold)]/50 transition-all duration-500" />
               </Link>
             </motion.div>
           ))}
@@ -165,14 +165,14 @@ export function Services() {
                 className="group block bg-[#111111] border border-[#2A2A2A] rounded-xl p-6 h-full active:scale-[0.98] transition-transform duration-150"
               >
                 <div className="inline-flex p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] mb-5">
-                  <service.icon className="w-5 h-5 text-[#C6A55A]" />
+                  <service.icon className="w-5 h-5 text-[var(--ms-gold)]" />
                 </div>
 
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-serif text-lg font-medium text-white pr-3">
                     {service.title}
                   </h3>
-                  <ArrowRight className="w-4 h-4 text-[#C6A55A]/60 flex-shrink-0 mt-0.5" />
+                  <ArrowRight className="w-4 h-4 text-[var(--ms-gold)]/60 flex-shrink-0 mt-0.5" />
                 </div>
 
                 <p className="text-[#B0B0B0] text-sm leading-relaxed mb-4">

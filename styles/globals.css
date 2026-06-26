@@ -6,7 +6,7 @@
 /* ── MILANO SEAL™ DESIGN SYSTEM ─────────────────────────────── */
 :root {
   /* Brand */
-  --gold: #c6a55a;
+  --gold: var(--ms-gold);
   --gold-light: #d4b76a;
   --gold-dim: #8a7240;
   --gold-muted: rgba(198, 165, 90, 0.15);

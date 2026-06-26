@@ -79,6 +79,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
         right: "max(1.5rem, calc(1.5rem + env(safe-area-inset-right)))",
       }}
     >
+      <style>{`@keyframes ms-goldPulse{0%,100%{opacity:.55}50%{opacity:1}}`}</style>
       {/* Anamorphic bloom SVG filter */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
@@ -110,21 +111,22 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             style={{ scaleY: orbScaleY, scaleX: orbScaleX, width: 64, height: 64 }}
             onClick={handleOpen}
-            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation rounded-full border border-[#C6A55A]/35 bg-[#050507]/92 shadow-[0_0_28px_rgba(198,165,90,0.16),inset_0_0_18px_rgba(0,0,0,0.88)] hover:border-[#D4AF37]/65 hover:shadow-[0_0_36px_rgba(212,175,55,0.24),inset_0_0_18px_rgba(0,0,0,0.88)] transition-all duration-300"
+            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation bg-transparent border-none shadow-none"
             aria-label="Open Milano Seal Assistant"
           >
-            {/* Utility halo */}
-            <div className="absolute inset-[-6px] rounded-full border border-amber-500/16 ms-orb-halo-breathe pointer-events-none" />
-            <div className="absolute inset-[-12px] rounded-full border border-amber-500/[0.06] ms-orb-halo-breathe pointer-events-none" style={{ animationDelay: '0.8s' }} />
-
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/milano-seal-orb-v2.png"
+              src="/brand/milano-seal-feather-m-orb.png"
               alt=""
               aria-hidden="true"
-              width={56}
-              height={56}
-              style={{ display: "block", objectFit: "contain", borderRadius: "50%" }}
+              width={64}
+              height={64}
+              style={{
+                display: "block",
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 16px rgba(212,175,55,0.6)) drop-shadow(0 0 32px rgba(212,175,55,0.3))",
+                animation: "ms-goldPulse 4s ease-in-out infinite",
+              }}
             />
           </motion.button>
         ) : (

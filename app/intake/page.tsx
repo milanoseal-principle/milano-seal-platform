@@ -80,14 +80,14 @@ export default function IntakePage({
     <main className="ms-os-page min-h-screen bg-[#0A0A0A]">
       <Header />
 
-      <section className="relative overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-28 sm:px-6 sm:pt-32">
+      <section className="relative overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 1.5rem)" }}>
         <div className="ms-os-atmosphere" aria-hidden="true" />
         <div className="max-w-7xl mx-auto">
           {/* Page header */}
           <div className="relative z-10 mb-10 text-center sm:mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
-              <Shield className="w-4 h-4 text-[#C6A55A]" />
-              <span className="text-sm text-[#C6A55A] font-medium">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-6">
+              <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
+              <span className="text-sm text-[var(--ms-gold)] font-medium">
               Secure Records Intake
               </span>
             </div>

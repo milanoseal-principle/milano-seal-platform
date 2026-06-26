@@ -33,9 +33,22 @@ function isNextAllowedForRole(next: string | null, role: string): next is string
   return false;
 }
 
+const FOUNDER_ROLES = new Set([
+  "founder", "founder_admin", "admin", "admin_operator",
+  "ops_manager", "finance", "execution_coordinator",
+  "apostille_coordinator", "finance_operator", "client_support",
+]);
+
+const TAB_DEST: Record<string, string> = {
+  portal: "/portal",
+  dashboard: "/dashboard",
+  alliance: "/alliance/dashboard",
+  va: "/va/dashboard",
+};
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { email?: string; password?: string; next?: string };
+    const body = await request.json() as { email?: string; password?: string; next?: string; tabHint?: string };
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
 
@@ -62,7 +75,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Access profile missing. Contact Nicholas Milano." }, { status: 403 });
     }
 
-    // Validate safe redirect
+    // Founder/admin: honor tab selection to preview any workspace
+    if (FOUNDER_ROLES.has(role) && body.tabHint && TAB_DEST[body.tabHint]) {
+      return NextResponse.json({ ok: true, role, redirect: TAB_DEST[body.tabHint] });
+    }
+
+    // All other roles: validate safe redirect, then route by role
     const raw = body.next ?? "";
     const requestedNext =
       raw.startsWith("/portal") || raw.startsWith("/alliance") ||

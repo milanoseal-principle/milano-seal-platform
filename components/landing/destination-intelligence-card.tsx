@@ -41,11 +41,11 @@ interface DestinationIntelligenceCardProps {
 
 const SURFACE_CLASSES: Record<DestinationCardVariant, string> = {
   globePreview:
-    "w-[min(310px,calc(100vw-2rem))] rounded-xl border border-[#C6A55A]/25 bg-[#050507]/95 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.78),inset_0_0_24px_rgba(198,165,90,0.035)]",
+    "w-[min(310px,calc(100vw-2rem))] rounded-xl border border-[var(--ms-gold)]/25 bg-[#050507]/95 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.78),inset_0_0_24px_rgba(198,165,90,0.035)]",
   homepagePreview:
-    "h-full rounded-2xl border border-[#C6A55A]/20 bg-[#070709]/95 p-5 sm:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.48),inset_0_0_28px_rgba(198,165,90,0.035)]",
+    "h-full rounded-2xl border border-[var(--ms-gold)]/20 bg-[#070709]/95 p-5 sm:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.48),inset_0_0_28px_rgba(198,165,90,0.035)]",
   atlas:
-    "rounded-xl border border-[#C6A55A]/16 bg-black/45 p-4 shadow-[inset_0_0_24px_rgba(198,165,90,0.025)]",
+    "rounded-xl border border-[var(--ms-gold)]/16 bg-black/45 p-4 shadow-[inset_0_0_24px_rgba(198,165,90,0.025)]",
   countryDirectory:
     "h-full rounded-2xl border border-white/[0.08] bg-[#0B0B0D] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28),inset_0_0_24px_rgba(198,165,90,0.025)]",
 };
@@ -147,7 +147,7 @@ export function DestinationIntelligenceCard({
 
   return (
     <article
-      className={`group relative overflow-hidden transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[#C6A55A]/38 hover:shadow-[0_24px_70px_rgba(0,0,0,0.5),inset_0_0_30px_rgba(198,165,90,0.05)] motion-reduce:transform-none motion-reduce:transition-none ${SURFACE_CLASSES[variant]} ${className}`}
+      className={`group relative overflow-hidden transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[var(--ms-gold)]/38 hover:shadow-[0_24px_70px_rgba(0,0,0,0.5),inset_0_0_30px_rgba(198,165,90,0.05)] motion-reduce:transform-none motion-reduce:transition-none ${SURFACE_CLASSES[variant]} ${className}`}
       aria-label={`${data.name} document routing preview`}
     >
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#E1C36F]/70 to-transparent opacity-70" />
@@ -160,11 +160,11 @@ export function DestinationIntelligenceCard({
             </span>
           )}
           <div className="min-w-0">
-            <p className="font-mono text-[8px] uppercase tracking-[0.22em] text-[#C6A55A]/55">
+            <p className="font-mono text-[8px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/55">
               {directory ? "Priority Corridor" : "Destination Review"}
             </p>
             <h3
-              className={`${compact ? "text-lg" : "text-2xl"} mt-1 truncate font-serif text-white`}
+              className={`${compact ? "text-lg" : "text-2xl"} mt-1 font-serif text-white`}
             >
               {data.name}
             </h3>
@@ -182,8 +182,8 @@ export function DestinationIntelligenceCard({
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <Route className="h-3.5 w-3.5 shrink-0 text-[#C6A55A]" />
-        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C6A55A]/80">
+        <Route className="h-3.5 w-3.5 shrink-0 text-[var(--ms-gold)]" />
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--ms-gold)]/80">
           {data.routeLabel}
         </p>
       </div>
@@ -198,7 +198,7 @@ export function DestinationIntelligenceCard({
             key={document}
             className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.018] px-2.5 py-1 text-[9px] text-white/55"
           >
-            <CheckCircle2 className="h-2.5 w-2.5 text-[#C6A55A]/65" />
+            <CheckCircle2 className="h-2.5 w-2.5 text-[var(--ms-gold)]/65" />
             {document}
           </span>
         ))}
@@ -211,7 +211,7 @@ export function DestinationIntelligenceCard({
               key={step}
               className="flex items-start gap-2 rounded-lg border border-white/[0.055] bg-white/[0.015] px-2.5 py-2"
             >
-              <span className="font-mono text-[8px] text-[#C6A55A]/65">
+              <span className="font-mono text-[8px] text-[var(--ms-gold)]/65">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <span className="text-[9px] leading-4 text-white/42">{step}</span>
@@ -232,14 +232,14 @@ export function DestinationIntelligenceCard({
             { Icon: PackageCheck, label: "Courier / release", active: data.courierReview },
           ].map(({ Icon, label, active }) => (
             <div key={label} className="rounded-lg border border-white/[0.055] p-2.5">
-              <Icon className={`h-3.5 w-3.5 ${active ? "text-[#C6A55A]" : "text-white/20"}`} />
+              <Icon className={`h-3.5 w-3.5 ${active ? "text-[var(--ms-gold)]" : "text-white/20"}`} />
               <p className="mt-2 text-[9px] leading-4 text-white/42">{label}</p>
             </div>
           ))}
         </div>
       )}
 
-      <p className="mt-4 text-[10px] leading-5 text-[#C6A55A]/48">
+      <p className="mt-4 text-[10px] leading-5 text-[var(--ms-gold)]/48">
         {data.seoLine}
       </p>
 
@@ -248,7 +248,7 @@ export function DestinationIntelligenceCard({
           href={intakeHref}
           onClick={onPrimaryAction}
           aria-label={`Start secure intake for ${data.name}`}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#C6A55A] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
         >
           Start Secure Intake
           <ArrowRight className="h-3 w-3" />
@@ -256,7 +256,7 @@ export function DestinationIntelligenceCard({
         <Link
           href={secondaryHref}
           aria-label={`${secondaryLabel} for ${data.name}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#C6A55A]/22 px-3 py-2.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[#C6A55A]/78 transition-colors hover:border-[#C6A55A]/50 hover:text-[#C6A55A]"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--ms-gold)]/22 px-3 py-2.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[var(--ms-gold)]/78 transition-colors hover:border-[var(--ms-gold)]/50 hover:text-[var(--ms-gold)]"
         >
           {secondaryLabel}
         </Link>

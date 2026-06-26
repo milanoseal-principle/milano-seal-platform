@@ -256,8 +256,8 @@ export const PRICING_LANES = [
   {
     id: "executive",
     name: "Executive Lane",
-    price: 1275,
-    priceLabel: "$1,275",
+    price: 1850,
+    priceLabel: "$1,850",
     description: "For complex international matters, multiple parties, or white-glove chain-of-custody coordination.",
     inclusions: [
       "Everything in Priority Lane",

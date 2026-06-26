@@ -61,7 +61,7 @@ export function resolveStepIndex(status: string | null | undefined): number {
   return idx === -1 ? 0 : idx;
 }
 
-const GOLD = "#C6A55A";
+const GOLD = "var(--ms-gold)";
 const GOLD_FAINT = "rgba(198,165,90,0.18)";
 const GOLD_MID = "rgba(198,165,90,0.45)";
 

@@ -230,7 +230,7 @@ export function WisePaymentCard({
               fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 22,
               fontWeight: 600,
-              color: "#C6A55A",
+              color: "var(--ms-gold)",
               letterSpacing: "0.02em",
             }}
           >
@@ -298,7 +298,7 @@ export function WisePaymentCard({
                 fontFamily: "monospace",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#C6A55A",
+                color: "var(--ms-gold)",
                 userSelect: "all",
                 letterSpacing: "0.05em",
               }}
@@ -339,7 +339,7 @@ export function WisePaymentCard({
               display: "block",
               width: "100%",
               textAlign: "center",
-              background: "#C6A55A",
+              background: "var(--ms-gold)",
               color: "#0A0A0A",
               padding: "12px 20px",
               borderRadius: 5,
@@ -367,8 +367,8 @@ export function WisePaymentCard({
               width: "100%",
               textAlign: "center",
               background: "transparent",
-              border: "1px solid #C6A55A",
-              color: "#C6A55A",
+              border: "1px solid var(--ms-gold)",
+              color: "var(--ms-gold)",
               padding: "12px 20px",
               borderRadius: 5,
               fontWeight: 700,
@@ -414,7 +414,7 @@ export function WisePaymentCard({
           borderRadius: 5,
         }}
       >
-        <span style={{ color: "#C6A55A", fontSize: 10, marginTop: 1, flexShrink: 0 }}>
+        <span style={{ color: "var(--ms-gold)", fontSize: 10, marginTop: 1, flexShrink: 0 }}>
           ●
         </span>
         <p

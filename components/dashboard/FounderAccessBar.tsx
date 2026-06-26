@@ -36,7 +36,7 @@ export function FounderAccessBar() {
           fontWeight: 600,
           letterSpacing: "0.16em",
           textTransform: "uppercase",
-          color: "#C6A55A",
+          color: "var(--ms-gold)",
           textDecoration: "none",
           transition: "background 0.15s",
         }}>
