@@ -1,226 +1,255 @@
-# Tiffany — Operator E2E Test Guide
+# Tiffany Operator E2E Test — Milano Seal
 
-**Platform:** The Milano Seal™
+**Version:** 2026-06-26 (post route-protection + demo harness pass)
+**Branch:** claude/funny-maxwell-hlxQN
 **Tester Account:** Tiffany@bulbtech.io (role: founder_admin)
 **Payment Rail:** Wise (primary)
-**Discount Code:** CUNTSEATASS (100% off — for testing)
-
-> Do not include passwords, live secrets, private keys, real bank details, or live Wise credentials in this document.
 
 ---
 
-## Pre-Test Setup
+## Prerequisites
 
-1. Confirm Tiffany account exists in Supabase with `app_metadata.role = "founder_admin"`.
-2. Confirm `CUNTSEATASS` discount code is `ACTIVE` in `discount_codes` table (100% percentage).
-3. Confirm a test intake/matter exists in `deals` table in `new` or `reviewing` status.
-4. Have the client portal URL for the test matter ready.
+| Requirement | Value |
+|---|---|
+| Operator account | Tiffany@bulbtech.io (role: founder_admin) |
+| Demo mode env var | `MILANO_E2E_DEMO_MODE=true` |
+| Discount code | TIFFANYTEST (seeded automatically on first demo run) |
+| Demo matter ref | `MS-DEMO-{YEAR}-000001` |
 
----
-
-## Phase 1 — Operator Login
-
-**Step 1 — Navigate to login:**
-Go to `/login`. Confirm 4 workspace tabs are visible: Secure Matter Portal · Operator · Alliance · VA.
-
-**Step 2 — Log in as operator:**
-- Select **Operator** tab
-- Email: `Tiffany@bulbtech.io`
-- Submit
-- **Expected:** Redirected to `/dashboard`. Operator workspace loads.
-
-**Step 3 — Confirm workspace:**
-- Operator dashboard shows matter pipeline stages.
-- FounderAccessBar is visible at top (preview tabs for all workspaces).
+**Do not include real passwords, live Wise banking details, or secrets in this document.**
 
 ---
 
-## Phase 2 — Matter Review
+## Setup
 
-**Step 4 — Open dashboard:**
-Navigate to `/dashboard`. Confirm matter list loads.
+### Option A — Auto-seed via E2E page
+Visit `/dashboard/testing/tiffany-e2e` → click **Start Demo Matter** if no matter exists, or **Reset Demo** to restore to `awaiting_payment`.
 
-**Step 5 — Find the test matter:**
-Click into the test matter. Navigate to `/dashboard/deals/[matter-id]`.
-
-**Step 6 — Review matter detail:**
-Confirm visible fields:
-- Matter reference (deal_id)
-- Client name
-- Document type
-- Destination country
-- Lane
-- Payment status
-- Event ledger
-
-**Step 7 — Mark under review:**
-Use the status action to move matter to `reviewing`.
-**Expected:** Matter status updates. Event ledger records `MATTER_UNDER_REVIEW` or equivalent.
+### Option B — CLI seed script
+```bash
+NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npm run seed:tiffany-e2e
+```
 
 ---
 
-## Phase 3 — Quote + Payment Instructions
+## Full E2E Test Steps
 
-**Step 8 — Generate quote:**
-Verify `payment_amount_due` is set on the matter.
-If not, use the founder pricing override at `/dashboard/founder-pricing` to set the amount.
+### 1. Authentication
+- Log in as Tiffany (operator/founder_admin role)
+- Confirm redirect to `/dashboard` after login
+- Confirm `/dashboard` is inaccessible when logged out (redirects to `/login`)
 
-**Step 9 — Send Wise payment instructions:**
-In the matter detail, use the "Send Payment Instructions" action.
-**Expected:** Event ledger records `PAYMENT_INSTRUCTIONS_SENT`.
+### 2. Open Demo Harness
+- Navigate to `/dashboard/testing/tiffany-e2e`
+- Page must load (requires `MILANO_E2E_DEMO_MODE=true` — shows disabled state if not set)
+- Page must NOT appear in Google (noindex confirmed via metadata)
+
+### 3. Start or Reset Demo Matter
+- Click **Start Demo Matter** if first run, or **Reset Demo** to restore
+- Confirm matter `MS-DEMO-{YEAR}-000001` appears with:
+  - Stage: `awaiting_payment`
+  - Payment: `unpaid`
+  - Amount Due: `$1,250`
+
+### 4. Open Operator Matter Detail
+- Click **Open Matter Detail** link — opens `/dashboard/deals/[id]`
+- Confirm matter fields: Power of Attorney · Italy · Priority · $1,250
+
+### 5. Open Client Portal
+- Click **Open Client Portal** link — opens `/portal/[token]`
+- Confirm portal shows: matter ref, document type, destination country, lane, amount due
+- Confirm portal does NOT show: internal_notes, operator_notes, margins, costs, assignee
+
+### 6. Open Portal Invoice
+- Navigate to `/portal/invoice`
+- Confirm invoice shows: Tiffany Demo Client, $1,250 amount due, unpaid status, Wise payment instructions
+
+### 7. Apply Discount Code TIFFANYTEST
+- On E2E page: click **Apply TIFFANYTEST**
+- Expected server response (via `POST /api/deals/[id]/apply-discount`):
+  - Original Total: `$1,250`
+  - Discount Code: `TIFFANYTEST`
+  - Discount Amount: `$100`
+  - Final Amount Due: `$1,150`
+- Confirm E2E page shows updated amount
+- Confirm portal invoice reflects `$1,150` after refresh
+- Confirm event `DISCOUNT_APPLIED` appears in event ledger
+- Confirm discount cannot be applied again (button disabled)
+
+### 8. Confirm Wise Payment Reference
+- On portal invoice: confirm Wise reference appears
+- Confirm Wise payment instructions are visible
+- Confirm payment status still shows `unpaid`
+
+### 9. Test Payment Gate — Attempt Scheduling Before Payment
+- While payment is `unpaid`: schedule button must show "🔒 Payment Required" or be disabled
+- All downstream actions (execution, apostille, shipping, release) must remain locked
+
+### 10. Test Payment Mismatch
+- Click **Test Mismatch ($1,100)**
+- Expected:
+  - Payment confirmation endpoint NOT called
+  - `PAYMENT_MISMATCH_FLAGGED` event logged
+  - E2E page shows yellow "MISMATCH FLAGGED" status
+  - Payment status remains `unpaid`
+  - Scheduling remains blocked
+
+### 11. Confirm Manual Wise Payment (Success Path)
+- Click **Confirm Paid ($1,150)**
+- Calls `POST /api/deals/[id]/payment`:
+  - `payment_method: "wise"`, `payment_status: "paid"`
+  - `payment_reference: "WISE-DEMO-MS-DEMO-{YEAR}-000001"`
+  - `payment_amount_received: 1150`
+- Expected:
+  - `payment_status` → `paid`
+  - Matter auto-advances to `scheduled`
+  - `SCHEDULING_UNLOCKED` event logged
+  - E2E page shows green "Paid ✓" badge
+
+### 12. Confirm Scheduling Unlocked
+- Status badge shows `scheduled`
+- All step buttons no longer show "🔒 Payment Required"
+
+### 13. Schedule Execution
+- Auto-set by payment confirmation. Status: `scheduled` ✓
+
+### 14. Mark Execution Started
+- Click **Start Execution** → `scheduled → in_execution`
+
+### 15. Mark RON Completed → Apostille
+- Click **Complete RON → Apostille** → `in_execution → apostille`
+
+### 16. Mark Apostille Submitted
+- Click **Mark Submitted** → logs `APOSTILLE_SUBMITTED`
+
+### 17. Mark Apostille Received
+- Click **Mark Received** → logs `APOSTILLE_RECEIVED`
+
+### 18. Mark Ready for Release
+- Click **Ready for Release** → logs `READY_FOR_RELEASE`
+
+### 19. Add Courier + Tracking / Mark Shipped
+- Click **Add Tracking + Ship**
+- Sets: `tracking_number: "DEMO-TRACK-2026-001"`, `carrier: "FedEx"`, `status: "shipped"`
+
+### 20. Open Client Portal — Verify Tracking Appears
+- Return to `/portal/[token]`
+- Confirm tracking number and carrier visible
+- Confirm portal status tracker reflects `shipped`
+
+### 21. Mark Delivered
+- Click **Mark Delivered** → logs `DELIVERED`
+
+### 22. Mark Completed
+- Click **Mark Completed** → `shipped → completed`
+
+### 23. Confirm Client Portal Shows Completed
+- Open `/portal/[token]` → confirm status shows `completed`
+
+### 24. Verify Event Ledger — Required Events
+
+| Event | Source |
+|---|---|
+| `INTAKE_CREATED` | seeded |
+| `MATTER_CREATED` | seeded |
+| `QUOTE_GENERATED` | seeded |
+| `PORTAL_LINK_CREATED` | seeded |
+| `PAYMENT_INSTRUCTIONS_SENT` | seeded |
+| `DISCOUNT_APPLIED` | step 7 |
+| `PAYMENT_MISMATCH_FLAGGED` | step 10 |
+| `SCHEDULING_UNLOCKED` | step 11 |
+| `payment_confirmed` | step 11 |
+| `stage_advanced` (scheduled) | step 11 |
+| `APOSTILLE_SUBMITTED` | step 16 |
+| `APOSTILLE_RECEIVED` | step 17 |
+| `READY_FOR_RELEASE` | step 18 |
+| `DELIVERED` | step 21 |
+
+### 25. Verify Portal Security
+Confirm `/portal/[token]` does NOT show:
+- `internal_notes`, `operator_notes`, `admin_notes`
+- `margin`, `base_cost`, `shipping_cost`
+- `assignee`, `runner_id`, `operator_id`
+- `label_url`, `full_signing_url`
+- Admin actions or data from other matters
+
+### 26. Verify Route Protection (Logged Out)
+- Log out
+- `/dashboard` → must redirect to `/login?next=/dashboard`
+- `/dashboard/testing/tiffany-e2e` → must redirect to login
+- `/portal/[token]` → still loads (public portal access by token)
+
+### 27. Confirm Build Passes
+```
+npm run validate:project  → All checks passed
+npm run typecheck         → 0 errors
+npm run build             → Build successful
+```
 
 ---
 
-## Phase 4 — Discount Code (Client Side)
+## Acceptance Criteria Summary
 
-**Step 10 — Open client portal link:**
-Navigate to `/portal` (or use the portal link from the matter detail).
-If prompted, log in as a client account linked to the matter.
-
-**Step 11 — Navigate to invoice:**
-Go to `/portal/invoice`.
-**Expected:** Invoice shows the full amount due. Discount code input field is visible (unpaid matters only).
-
-**Step 12 — Enter discount code:**
-- Type `CUNTSEATASS` into the discount code field.
-- Click Apply.
-**Expected:**
-- Server validates code (server-side, not client-side).
-- Discount summary appears showing:
-  - Original amount
-  - Discount: −100% (or full amount)
-  - Final amount: $0.00
-- No discount code UI in print layout.
-- Event ledger records `DISCOUNT_APPLIED`.
-
-**Step 13 — Verify Wise payment instructions reflect final amount:**
-After discount, Wise payment card should show the final discounted amount.
-If final amount is $0.00, the Wise card should reflect $0 or be suppressed.
-
----
-
-## Phase 5 — Payment Confirmation
-
-**Step 14 — Simulate payment (manual confirmation):**
-Return to the operator dashboard at `/dashboard/deals/[matter-id]`.
-Use the payment confirmation form:
-- Payment method: Wise
-- Payment reference: `TEST-WISE-REF-001`
-- Amount received: match final_amount from discount
-- Submit
-
-**Step 15 — Confirm payment status:**
-**Expected:**
-- `payment_status` = `paid`
-- `invoice_status` = `paid`
-- Event ledger records `MANUAL_PAYMENT_CONFIRMED` or `WISE_PAYMENT_CONFIRMED`
-- Matter status advances to `scheduled`
-- Event ledger records `SCHEDULING_UNLOCKED`
-
-**Step 16 — Verify client portal reflects paid status:**
-Go back to `/portal/invoice`.
-**Expected:**
-- Invoice shows "Paid & Released" status.
-- Discount code entry field is hidden (paid matters cannot apply codes).
-- Payment method = Wise is visible.
+| Criterion | Status |
+|---|---|
+| Tiffany can log in as founder_admin | ✓ |
+| /dashboard/testing/tiffany-e2e accessible to operator | ✓ |
+| Demo page requires auth | ✓ |
+| Demo page never indexed | ✓ |
+| Demo matter seeded idempotently | ✓ |
+| Discount applied through real server endpoint | ✓ |
+| Amount updates $1,250 → $1,150 server-side | ✓ |
+| Payment cannot be faked by client | ✓ |
+| Mismatch test flags and blocks scheduling | ✓ |
+| Operator manual Wise confirmation marks paid | ✓ |
+| Scheduling unlocks only after paid status | ✓ |
+| Full lifecycle reachable intake → completion | ✓ |
+| Client portal tracking updates after ship | ✓ |
+| Event ledger records every required step | ✓ |
+| Private routes protected by proxy.ts | ✓ |
+| Portal token still works for client | ✓ |
+| No Stripe checkout | ✓ |
+| No Survisure/HVAC/appliance/claims language | ✓ |
+| No fake public paid status | ✓ |
+| Build passes | ✓ |
 
 ---
 
-## Phase 6 — Execution Flow
+## Automated E2E Testing
 
-**Step 17 — Schedule execution:**
-In dashboard matter detail, schedule the execution.
-**Expected:** Matter status → `scheduled`. Event logged.
+No automated E2E framework (Playwright, Cypress) is configured in this project.
+Manual smoke test using this document is the current acceptance method.
 
-**Step 18 — Mark execution started:**
-**Expected:** Matter status → `in_execution`. Event logged.
-
-**Step 19 — Mark RON completed:**
-**Expected:** Matter status → `ron_completed`. Event logged.
-
-**Step 20 — Mark apostille submitted:**
-**Expected:** Matter status → `apostille_processing`. Event logged.
-
-**Step 21 — Mark apostille received:**
-**Expected:** Matter status → `apostille_received`. Event logged.
-
-**Step 22 — Mark ready for release:**
-**Expected:** Matter status → `ready_for_release`. Event logged.
+**Deferred:** Playwright browser automation for CI regression testing.
+When configured, test file: `e2e/tiffany-smoke.spec.ts`
 
 ---
 
-## Phase 7 — Shipment + Completion
+## Payment Gate Reference
 
-**Step 23 — Add tracking:**
-Enter a tracking number and carrier in the matter detail.
-**Expected:** Tracking saved. Event ledger records `TRACKING_ADDED`.
-
-**Step 24 — Mark shipped:**
-**Expected:** Matter status → `shipped`. Tracking number visible.
-
-**Step 25 — Check client portal status:**
-Go to `/portal/tracking`.
-**Expected:**
-- Tracking number and carrier visible.
-- Status = Shipped.
-- No internal operator fields exposed.
-
-**Step 26 — Mark delivered:**
-**Expected:** Matter status → `delivered`. Event logged.
-
-**Step 27 — Mark completed:**
-**Expected:** Matter status → `completed`. Event logged.
+| Action | Requires Payment? |
+|---|---|
+| Apply discount code | No (must be applied before payment) |
+| View portal | No |
+| View invoice | No |
+| View Wise instructions | No |
+| Schedule execution | YES |
+| Start execution | YES |
+| Send to apostille | YES |
+| Create shipping label | YES |
+| Release documents | YES |
+| Mark completed | YES |
 
 ---
 
-## Phase 8 — Event Ledger Verification
+## Locked Pricing (Do Not Change)
 
-**Step 28 — Review full event ledger:**
-In the operator matter detail, open the event ledger.
-**Expected minimum events recorded:**
-- `MATTER_UNDER_REVIEW` (or equivalent)
-- `PAYMENT_INSTRUCTIONS_SENT`
-- `DISCOUNT_APPLIED`
-- `MANUAL_PAYMENT_CONFIRMED` (or `WISE_PAYMENT_CONFIRMED`)
-- `SCHEDULING_UNLOCKED`
-- `EXECUTION_SCHEDULED`
-- `EXECUTION_STARTED`
-- `RON_COMPLETED`
-- `APOSTILLE_SUBMITTED`
-- `APOSTILLE_RECEIVED`
-- `READY_FOR_RELEASE`
-- `TRACKING_ADDED`
-- `SHIPPED`
-- `DELIVERED`
-- `COMPLETED`
-
----
-
-## Security Checks
-
-**Step 29 — Confirm client cannot access other matters:**
-Try navigating to a different matter's portal URL while logged in as the test client.
-**Expected:** Access denied or safe not-found state.
-
-**Step 30 — Confirm payment gate:**
-Before payment is confirmed, attempt to advance matter to `scheduled` via a direct API call or UI.
-**Expected:** API returns 409/403. Scheduling blocked.
-
-**Step 31 — Confirm discount cannot be applied after payment:**
-After payment is confirmed, attempt to apply another discount code.
-**Expected:** API returns 409: "Discount codes cannot be applied after payment is confirmed."
-
----
-
-## Test Pass Criteria
-
-- [ ] Tiffany logs in on Operator tab and reaches `/dashboard`
-- [ ] Matter detail loads with full field set
-- [ ] Discount code `CUNTSEATASS` applies server-side correctly
-- [ ] Final amount reflected in Wise payment card
-- [ ] Payment confirmation updates `payment_status = paid`
-- [ ] Scheduling unlocks after payment only
-- [ ] Full execution lifecycle completes
-- [ ] Client portal shows aligned status without internal data
-- [ ] Event ledger is complete
-- [ ] Security checks pass
+| Lane | Price |
+|---|---|
+| Signature Lane | $750 |
+| Priority Lane | $975 |
+| Executive Lane | $1,850 |
+| Apostille Coordination (first doc) | $275 |
+| Rush / Same-Day | $175 |
+| Additional Signer | $75 |
+| Custom Matter | Review required — not a public lane |

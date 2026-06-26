@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "validate:project": "npx tsx scripts/validate-project.ts"
+    "validate:project": "npx tsx scripts/validate-project.ts",
+    "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
