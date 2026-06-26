@@ -57,8 +57,9 @@ export function ShippingCorridorMiniMap({ slug, status = "preparing", className 
 
   return (
     <div
+      data-critical-card=""
       className={className}
-      style={{ width: 280, background: "#0A0A0A", border: "1px solid rgba(198,165,90,0.25)", borderRadius: 8, padding: 12, fontFamily: "monospace" }}
+      style={{ width: 280, maxWidth: "100%", background: "#0A0A0A", border: "1px solid rgba(198,165,90,0.25)", borderRadius: 8, padding: 12, fontFamily: "monospace" }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 18 }}>{route.flag}</span>

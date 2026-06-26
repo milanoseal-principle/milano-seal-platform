@@ -23,8 +23,9 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
 
   return (
     <div
+      data-critical-card=""
       className={className}
-      style={{ maxWidth: 400, background: "#0A0A0A", border: "1px solid rgba(198,165,90,0.35)", borderRadius: 10, padding: 16, fontFamily: "monospace" }}
+      style={{ maxWidth: 400, width: "100%", background: "#0A0A0A", border: "1px solid rgba(198,165,90,0.35)", borderRadius: 10, padding: 16, fontFamily: "monospace" }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <span style={{ fontSize: 24 }}>{route.flag}</span>

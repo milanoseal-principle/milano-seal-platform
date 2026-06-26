@@ -147,6 +147,7 @@ export function DestinationIntelligenceCard({
 
   return (
     <article
+      data-critical-card=""
       className={`group relative overflow-hidden transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[var(--ms-gold)]/38 hover:shadow-[0_24px_70px_rgba(0,0,0,0.5),inset_0_0_30px_rgba(198,165,90,0.05)] motion-reduce:transform-none motion-reduce:transition-none ${SURFACE_CLASSES[variant]} ${className}`}
       aria-label={`${data.name} document routing preview`}
     >
