@@ -302,3 +302,72 @@ npm test      → Not configured (no test runner in package.json)
 2. **200+ internal/SEO/ops brand token wiring** — Public brand surfaces are wired; internal operational pages remain on legacy hex aliases.
 3. **Playwright automated E2E** — Manual smoke test documented. Automated browser testing deferred.
 4. **`MILANO_E2E_DEMO_MODE` env var** — Must be set to `true` in Vercel/environment to activate E2E harness. Not enabled by default in production.
+
+---
+
+## Global Route Visual System — Wire-In Pass (commit cb77b40 + wire commit)
+
+**Date:** 2026-06-26
+
+### Components Built (cb77b40)
+
+| Component | Path | Purpose |
+|---|---|---|
+| `globalRouteData.ts` | `src/features/corridors/` | Shared data layer: DESTINATIONS + CorridorIntel merged, `getGlobalRoute()`, `HAGUE_ROUTES`, `ALL_ROUTES_SORTED` |
+| `GlobalRouteGlobe.tsx` | `components/globe/` | SVG authority globe: equirectangular projection, demand-sized dots, Florida→destination arcs, hover tooltips, no external lib |
+| `SeoCorridorMapPreview.tsx` | `components/map/` | Compact country SEO card: flag, name, route badge, timeline, execution path, SVG arc, intake CTA |
+| `ShippingCorridorMiniMap.tsx` | `components/map/` | 280px sidebar card: status dot (amber/blue/green), arc with animated traveler, ETA |
+
+### Components Wired Into Live Pages
+
+| Page | What Was Added |
+|---|---|
+| `/countries/[country]` | `GlobalRouteGlobe` (selectedSlug={slug}) + `SeoCorridorMapPreview` rendered above authority signal banner |
+| `/countries/[country]` sidebar | "View in Atlas" link → `/map?country={slug}` replaces "View Apostille Services" |
+| `/countries/[country]` bottom CTA | "View in Atlas" → `/map?country={slug}`, intake → `/intake?destination={slug}&country={name}` |
+| `/countries/[country]` document chips | intake links include `?destination={slug}` |
+| Homepage routing preview | `GlobalRouteGlobe` compact teaser (desktop only) with globe interaction → country selector sync |
+| `/countries` directory | "Open Full Atlas" button → `/map`, intake links use `?destination={slug}` via card component |
+
+### /map Query Param Flow
+
+- `/map?country=italy` → preselects Italy in World Atlas ✅
+- `/map?country=brazil` → preselects Brazil ✅
+- `/map?country=uae` → preselects UAE ✅
+- Implemented via `searchParams: Promise<{ country?: string }>` in `MapPage`, `initialCountry` prop on `GlobalMap`, `useEffect` on mount in `global-map.tsx`
+
+### Intake Prefill Verified
+
+- `/intake?destination=italy` → prefills `Italy` in destination field (via `resolveCountry` in intake wizard)
+- `/intake?destination=uae&country=UAE` → prefills UAE
+- `/intake?destination=mexico&route=consular_legalization` → `route` param not currently mapped but ignored safely (no error)
+- Server-side Trust Engine validates before scheduling regardless of prefill params
+
+### Header Offset Fixes
+
+- `/map` — `pt-20` → `calc(var(--header-total-height) + var(--sa-top))` = 132px + safe area
+- `/countries` — `pt-28` → `calc(var(--header-total-height) + var(--sa-top) + 1.5rem)`
+- `/intake` — `pt-28 sm:pt-32` → `calc(var(--header-total-height) + var(--sa-top) + 1.5rem)`
+- All public service pages using `pt-32` = 128px are within 4px of 132px — acceptable
+
+### Country Name Truncation Fix
+
+- Removed `truncate` from `DestinationIntelligenceCard` h3 → Spain, Portugal, Mexico now render full name in all card variants
+
+### Commands Run
+
+```
+npx tsc --noEmit   → 0 errors (cb77b40)
+npx next build     → Build successful (cb77b40)
+npx tsc --noEmit   → 0 errors (wire-in pass)
+npx next build     → Build successful (wire-in pass)
+```
+
+### Visual Hierarchy (Distinct)
+
+- `GlobalRouteGlobe` — full SVG sphere with route arcs, authority authority network, interactive dot click
+- `SeoCorridorMapPreview` — compact country card with arc, execution path, intake CTA (SEO tool)
+- `ShippingCorridorMiniMap` — 280px sidebar with status dot + traveler (operational, portal-facing)
+- `GlobalMap` / World Atlas (`/map`) — full interactive atlas with region tabs, compliance cards, matter vectors
+
+All four are visually distinct and serve different surfaces.

@@ -65,13 +65,22 @@ export default function CountriesPage() {
             />
           ))}
         </div>
-        <p className="text-center mt-8 text-sm text-[#6A6A6A]">
-          Don&apos;t see your country?{" "}
-          <Link href="/intake" className="text-[#C6A55A] hover:underline">
-            Contact us
-          </Link>{" "}
-          — we coordinate authentication for additional jurisdictions.
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+          <Link
+            href="/map"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] transition-colors"
+          >
+            <Globe className="w-4 h-4" />
+            Open Full Atlas
+          </Link>
+          <p className="text-sm text-[#6A6A6A]">
+            Don&apos;t see your country?{" "}
+            <Link href="/intake" className="text-[#C6A55A] hover:underline">
+              Contact us
+            </Link>{" "}
+            — we coordinate authentication for additional jurisdictions.
+          </p>
+        </div>
       </section>
 
       <section className="py-12 px-4 sm:px-6 bg-[#111111]">

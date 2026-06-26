@@ -3,10 +3,12 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Shield, Clock, FileCheck, CheckCircle, ChevronRight } from "lucide-react";
+import { ArrowRight, Shield, Clock, FileCheck, CheckCircle, ChevronRight, Map } from "lucide-react";
 import { COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
 import { DESTINATIONS } from "@/data/destinations";
 import { buildCountryJsonLd, COUNTRY_FAQS } from "@/lib/country-jsonld";
+import { GlobalRouteGlobe } from "@/components/globe/GlobalRouteGlobe";
+import { SeoCorridorMapPreview } from "@/components/map/SeoCorridorMapPreview";
 
 const COUNTRY_SLUGS = [
   "italy", "spain", "uae", "brazil", "mexico", "portugal", "greece", "germany",
@@ -112,6 +114,20 @@ export default async function CountryPage({ params }: PageProps) {
             </div>
           </div>
           <div className="h-px bg-gradient-to-r from-transparent via-[#C6A55A]/25 to-transparent" />
+        </section>
+
+        {/* Route Globe — authority coverage visualization */}
+        <section className="max-w-5xl mx-auto px-6 pb-6">
+          <div className="flex flex-col lg:flex-row items-start gap-6">
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#C6A55A]/60 mb-2">Authority Coverage</p>
+              <GlobalRouteGlobe selectedSlug={slug} className="w-full max-w-[400px]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#C6A55A]/60 mb-2">Corridor Preview</p>
+              <SeoCorridorMapPreview slug={slug} className="w-full" />
+            </div>
+          </div>
         </section>
 
         {/* Authority Signal Banner */}
@@ -223,16 +239,16 @@ export default async function CountryPage({ params }: PageProps) {
                 <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Begin Execution</p>
                 <p className="text-white font-serif text-lg leading-snug mb-4">{dest.name} Document Authentication</p>
                 <Link
-                  href={`/intake?country=${encodeURIComponent(dest.name)}`}
+                  href={`/intake?destination=${encodeURIComponent(dest.slug)}&country=${encodeURIComponent(dest.name)}`}
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.12em] text-[11px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors mb-3"
                 >
                   Begin {dest.name} Intake <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
-                  href="/services/apostille"
-                  className="flex items-center justify-center gap-2 w-full py-2.5 border border-white/[0.08] text-[#666] text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:border-[#C6A55A]/20 hover:text-[#888] transition-colors"
+                  href={`/map?country=${encodeURIComponent(dest.slug)}`}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/20 text-[#C6A55A]/70 text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:border-[#C6A55A]/50 hover:text-[#C6A55A] transition-colors"
                 >
-                  View Apostille Services
+                  <Map className="w-3 h-3" /> View in Atlas
                 </Link>
               </div>
 
@@ -258,7 +274,7 @@ export default async function CountryPage({ params }: PageProps) {
                   {(compliance?.documentTypes ?? dest.commonDocuments).map((doc) => (
                     <Link
                       key={doc}
-                      href={`/intake?country=${encodeURIComponent(dest.name)}&document=${encodeURIComponent(doc)}`}
+                      href={`/intake?destination=${encodeURIComponent(dest.slug)}&country=${encodeURIComponent(dest.name)}&document=${encodeURIComponent(doc)}`}
                       className="px-2.5 py-1 rounded-full border border-white/[0.07] bg-white/[0.02] text-[11px] text-[#666] hover:text-[#888] hover:border-white/[0.12] transition-colors"
                     >
                       {doc}
@@ -297,13 +313,13 @@ export default async function CountryPage({ params }: PageProps) {
               <p className="text-white font-serif text-lg">Florida notarization. Global authentication. Delivered.</p>
             </div>
             <div className="flex gap-3 flex-shrink-0">
-              <Link href={`/intake?country=${encodeURIComponent(dest.name)}`}
+              <Link href={`/intake?destination=${encodeURIComponent(dest.slug)}&country=${encodeURIComponent(dest.name)}`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#050507] font-bold text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-[#D4B76A] transition-colors">
                 Begin Intake <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-              <Link href="/map"
+              <Link href={`/map?country=${encodeURIComponent(dest.slug)}`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase tracking-[0.1em] rounded-lg hover:border-[#C6A55A] transition-colors">
-                All Countries
+                <Map className="w-3.5 h-3.5" /> View in Atlas
               </Link>
             </div>
           </div>
