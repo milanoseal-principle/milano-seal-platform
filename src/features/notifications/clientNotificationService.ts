@@ -1,0 +1,3 @@
+export const CLIENT_NOTIFICATION_EVENTS = ["CLIENT_UPDATE_SENT","CLIENT_ACTION_REQUIRED","DELAY_NOTICE_SENT","CORRECTION_REQUESTED","RESUBMISSION_STARTED","CUSTOMS_ACTION_NOTICE_SENT","DORMANT_FLAGGED","RESOLUTION_CONFIRMED"] as const;
+export const CLIENT_NOTIFICATION_TONE = ["calm","clear","premium","solution-oriented","no blame","no panic","no legal advice"] as const;
+export function buildClientNotification(reason: string) { return { subject: "Milano Seal matter update", body: `${reason}. We will keep the route controlled and update your Matter Control Portal when the next verified step is available.`, event: "CLIENT_UPDATE_SENT" }; }
