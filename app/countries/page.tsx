@@ -4,6 +4,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Globe, ArrowRight, CheckCircle } from "lucide-react";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { MilanoPublicCtaModule } from "@/components/conversion/MilanoPublicCtaModule";
 import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 
 export const metadata: Metadata = {
@@ -100,6 +101,8 @@ export default function CountriesPage() {
           </Link>
         </div>
       </section>
+
+      <MilanoPublicCtaModule className="pb-12" />
 
       <Footer />
     </main>

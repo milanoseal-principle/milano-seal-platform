@@ -14,7 +14,9 @@
     "smoke:responsive": "npx tsx scripts/smoke-responsive-routes.ts",
     "validate:intelligence": "node scripts/validate-country-intelligence.mjs",
     "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs",
-    "validate:intelligence-safety": "node scripts/validate-public-intelligence-safety.mjs"
+    "validate:intelligence-safety": "node scripts/validate-public-intelligence-safety.mjs",
+    "validate:sales-engine": "node scripts/validate-sales-engine.mjs",
+    "validate:revenue-copy": "node scripts/validate-revenue-copy.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

@@ -3,6 +3,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { GlobalMap } from "@/components/landing/global-map";
 import { RoutingIntelligenceSection } from "@/components/landing/routing-intelligence-section";
+import { MilanoPublicCtaModule } from "@/components/conversion/MilanoPublicCtaModule";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         <RoutingIntelligenceSection />
         <CorridorTimeStrip />
       </main>
+      <MilanoPublicCtaModule className="py-12" />
       <Footer />
     </>
   );

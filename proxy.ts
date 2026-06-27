@@ -29,7 +29,11 @@ const PUBLIC_AUTH_PATHS = new Set([
 // Prefix-match for auth paths that have dynamic suffixes
 const PUBLIC_AUTH_PREFIXES = ["/auth/", "/api/auth/"];
 
+// Public conversion funnel paths that live under otherwise-protected prefixes.
+const PUBLIC_FUNNEL_PATHS = new Set(["/alliance/apply", "/va/apply"]);
+
 function isProtected(pathname: string): boolean {
+  if (PUBLIC_FUNNEL_PATHS.has(pathname)) return false;
   return PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
