@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import type { Destination } from "@/data/destinations";
 import { getCorridorIntel } from "@/data/corridor-intel";
+import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
+import ExecutionComplianceBoundary from "@/components/intelligence/ExecutionComplianceBoundary";
 
 export type DestinationCardVariant =
   | "globePreview"
@@ -141,7 +143,7 @@ export function DestinationIntelligenceCard({
         : `/countries/${data.slug}`;
   const secondaryLabel =
     variant === "globePreview"
-      ? "Explore Full Map"
+      ? "Open Global Atlas"
       : variant === "homepagePreview"
         ? "View Country Requirements"
         : "View Requirements";
@@ -163,7 +165,7 @@ export function DestinationIntelligenceCard({
           )}
           <div className="min-w-0">
             <p className="font-mono text-[8px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/55">
-              {directory ? "Priority Corridor" : "Destination Review"}
+              {directory ? "Priority Corridor" : "Execution Intelligence"}
             </p>
             <h3
               className={`${compact ? "text-lg" : "text-2xl"} mt-1 font-serif text-white`}
@@ -245,14 +247,19 @@ export function DestinationIntelligenceCard({
         {data.seoLine}
       </p>
 
+      <ExecutionComplianceBoundary
+        text={getCountryExecutionIntelligence(data.slug, data.name).complianceBoundary}
+        className="mt-3"
+      />
+
       <div className={`mt-4 flex ${compact ? "gap-2" : "flex-col gap-2 sm:flex-row"}`}>
         <Link
           href={intakeHref}
           onClick={onPrimaryAction}
-          aria-label={`Start secure intake for ${data.name}`}
+          aria-label={`Start controlled intake for ${data.name}`}
           className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
         >
-          Start Secure Intake
+          Start Controlled Intake
           <ArrowRight className="h-3 w-3" />
         </Link>
         <Link

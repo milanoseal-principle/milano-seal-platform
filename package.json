@@ -11,7 +11,9 @@
     "validate:project": "npx tsx scripts/validate-project.ts",
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
-    "smoke:responsive": "npx tsx scripts/smoke-responsive-routes.ts"
+    "smoke:responsive": "npx tsx scripts/smoke-responsive-routes.ts",
+    "validate:intelligence": "node scripts/validate-country-intelligence.mjs",
+    "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
