@@ -187,12 +187,20 @@ export function GlobalTrustCoreHero() {
   const showArcs   = !!activeId;
   const isRotating = phase === "rotating" && !selectedId;
 
-  // Popover placement
-  const popLeft   = selectedDest ? `${Math.min(80, Math.max(5, (selectedDest.x/400)*100))}%` : "50%";
-  const popTop    = selectedDest ? `${Math.min(82, Math.max(12, (selectedDest.y/400)*100))}%` : "50%";
-  const popAnchor = selectedDest && selectedDest.x > 200
-    ? "translate(calc(-100% - 20px), -50%)"
-    : "translate(20px, -50%)";
+  // Popover placement — pinned to a viewport-safe zone (fixed, clamped) so it
+  // never clips or overflows on smaller / non-maximized windows or at any zoom.
+  const popoverStyle: React.CSSProperties = {
+    position: "fixed",
+    top: "calc(var(--header-total-height) + 16px + var(--sa-top, 0px))",
+    right: "clamp(12px, 3vw, 32px)",
+    left: "auto",
+    bottom: "auto",
+    width: "min(360px, calc(100vw - 24px))",
+    maxHeight: "calc(100dvh - var(--header-total-height) - 32px)",
+    overflowY: "auto",
+    zIndex: 60,
+    pointerEvents: "auto",
+  };
 
   return (
     <div
@@ -560,8 +568,7 @@ export function GlobalTrustCoreHero() {
       {selectedDest && (
           <div
             className="ms-destination-popover hidden md:block"
-            style={{ position:"absolute", left:popLeft, top:popTop,
-              transform:popAnchor, zIndex:50, pointerEvents:"auto" }}
+            style={popoverStyle}
             data-seo-intent={selectedDest.seoIntent}
             onClick={e=>e.stopPropagation()}
           >
