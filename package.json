@@ -13,7 +13,8 @@
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
     "smoke:responsive": "npx tsx scripts/smoke-responsive-routes.ts",
     "validate:intelligence": "node scripts/validate-country-intelligence.mjs",
-    "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs"
+    "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs",
+    "validate:intelligence-safety": "node scripts/validate-public-intelligence-safety.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

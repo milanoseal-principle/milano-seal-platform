@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { Destination } from "@/data/destinations";
 import { getCorridorIntel } from "@/data/corridor-intel";
-import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
+import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
 import ExecutionComplianceBoundary from "@/components/intelligence/ExecutionComplianceBoundary";
 
 export type DestinationCardVariant =
@@ -248,7 +248,7 @@ export function DestinationIntelligenceCard({
       </p>
 
       <ExecutionComplianceBoundary
-        text={getCountryExecutionIntelligence(data.slug, data.name).complianceBoundary}
+        text={getPublicCountryExecutionIntelligence(data.slug, data.name).complianceBoundary}
         className="mt-3"
       />
 
