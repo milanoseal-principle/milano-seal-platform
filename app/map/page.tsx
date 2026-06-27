@@ -27,14 +27,13 @@ export default function MapPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
           <div className="mb-10">
             <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4">
-              Global Routing Intelligence
+              Milano Seal Global Execution Atlas
             </p>
             <h1 className="font-serif text-3xl md:text-5xl font-medium text-white mb-5">
-              Priority Destination <em className="text-[#C6A55A]">Corridors</em>
+              Global Document <em className="text-[#C6A55A]">Execution Atlas</em>
             </h1>
             <p className="text-[#8A8A8A] text-base md:text-lg font-light max-w-2xl mb-6">
-              Active document execution pathways from Florida into high-demand international jurisdictions.
-              Each corridor reflects apostille routing, consular authentication requirements, and execution path review.
+              Understand the likely route for U.S.-origin documents used abroad. Choose a country, confirm the document type, and start controlled intake so The Milano Seal can review notarization, RON suitability, apostille/authentication routing, receiving-authority risk, and release requirements.
             </p>
             <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)" }} />
           </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Route } from "lucide-react";
 import type { Destination } from "@/data/destinations";
 import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
+import { getPublicCountryCompliance } from "@/data/global-compliance-atlas";
 
 export type DestinationCardVariant =
   | "globePreview"
@@ -24,6 +25,8 @@ export interface DestinationIntelligence {
   pathPreview: string[];
   primaryCtaLabel: string;
   secondaryCtaLabel: string;
+  publicRouteLabel?: string;
+  receivingAuthorityBoundary?: string;
 }
 
 interface DestinationIntelligenceCardProps {
@@ -53,6 +56,7 @@ export function buildDestinationIntelligence(
     destination.slug,
     destination.name,
   );
+  const compliance = getPublicCountryCompliance(destination.slug);
 
   return {
     slug: destination.slug,
@@ -73,6 +77,8 @@ export function buildDestinationIntelligence(
     pathPreview: intelligence.executionPath,
     primaryCtaLabel: intelligence.primaryCtaLabel,
     secondaryCtaLabel: intelligence.secondaryCtaLabel,
+    publicRouteLabel: compliance.publicRouteLabel,
+    receivingAuthorityBoundary: compliance.receivingAuthorityBoundary,
   };
 }
 
@@ -143,7 +149,7 @@ export function DestinationIntelligenceCard({
       <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#C6A55A]/10 bg-[#C6A55A]/[0.025] px-3 py-2">
         <Route className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" />
         <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C6A55A]/85">
-          {data.routeLabel}
+          {data.publicRouteLabel ?? data.routeLabel}
         </p>
       </div>
 
@@ -180,7 +186,7 @@ export function DestinationIntelligenceCard({
       )}
 
       <p className="mt-4 border-t border-white/[0.06] pt-3 text-[10px] leading-5 text-[#C6A55A]/55">
-        {data.seoLine}
+        {data.receivingAuthorityBoundary ?? data.seoLine}
       </p>
 
       <div className={`mt-4 flex ${compact ? "gap-2" : "flex-col gap-2 sm:flex-row"}`}>

@@ -4,11 +4,13 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import { Globe2, Send, Compass, FileCheck, Landmark, ShieldCheck } from "lucide-react";
+import { getPublicCountryCompliance } from "@/data/global-compliance-atlas";
 
 const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Italy",
+    slug: "italy",
     label: "Hague Convention Validation Route",
     href: "/apostille/italy",
     icon: Globe2,
@@ -16,6 +18,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Spain",
+    slug: "spain",
     label: "Apostille Review Pathway",
     href: "/apostille/spain",
     icon: Send,
@@ -23,6 +26,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "UAE",
+    slug: "uae",
     label: "Consular Authentication Workflow",
     href: "/apostille/uae",
     icon: Compass,
@@ -30,6 +34,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Brazil",
+    slug: "brazil",
     label: "International Release Corridor",
     href: "/apostille/brazil",
     icon: FileCheck,
@@ -37,6 +42,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Mexico",
+    slug: "mexico",
     label: "Cross-Border Legalization Path",
     href: "/apostille/mexico",
     icon: Landmark,
@@ -44,6 +50,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Portugal",
+    slug: "portugal",
     label: "Hague Apostille Review Path",
     href: "/apostille/portugal",
     icon: Globe2,
@@ -51,6 +58,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Greece",
+    slug: "greece",
     label: "Hague Convention Document Route",
     href: "/apostille/greece",
     icon: ShieldCheck,
@@ -89,6 +97,7 @@ export function RoutingIntelligenceSection() {
         <div className="hidden md:grid md:grid-cols-7 border border-[#1A1A1A] rounded-xl overflow-hidden">
           {CORRIDORS.map((c, i) => {
             const Icon = c.icon;
+            const atlas = getPublicCountryCompliance(c.slug);
             return (
               <Link
                 key={c.destination}
@@ -113,7 +122,7 @@ export function RoutingIntelligenceSection() {
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300 whitespace-nowrap">
-                    {c.label}
+                    {atlas.publicRouteLabel}
                   </span>
                 </span>
               </Link>
@@ -125,6 +134,7 @@ export function RoutingIntelligenceSection() {
         <div className="flex md:hidden gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 -mx-4 px-4">
           {CORRIDORS.map((c, i) => {
             const Icon = c.icon;
+            const atlas = getPublicCountryCompliance(c.slug);
             return (
               <Link
                 key={c.destination}
@@ -146,7 +156,7 @@ export function RoutingIntelligenceSection() {
                     {c.origin} → {c.destination}
                   </span>
                   <span className="mt-0.5 text-[8.5px] tracking-[0.12em] uppercase text-[#3A3A3A] group-hover:text-[#6A6A6A] transition-colors duration-300">
-                    {c.label}
+                    {atlas.publicRouteLabel}
                   </span>
                 </span>
               </Link>
@@ -156,7 +166,7 @@ export function RoutingIntelligenceSection() {
 
         {/* Disclaimer */}
         <p className="mt-5 text-[10px] text-[#3A3A3A] leading-relaxed max-w-2xl">
-          Displayed corridors represent priority routing pathways. Full destination review occurs during intake based on document type, issuing authority, and destination requirements.
+Routing snapshot only — final acceptance remains subject to the receiving authority.
         </p>
 
       </div>

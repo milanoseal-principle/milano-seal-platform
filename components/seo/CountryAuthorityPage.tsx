@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { CountryComplianceProfile } from "@/lib/compliance/countries";
 import { CLIENT_COPY } from "@/lib/compliance/clientCopy";
 import { DOCUMENT_TAXONOMY } from "@/lib/compliance/documents";
+import { getPublicCountryCompliance } from "@/data/global-compliance-atlas";
+import { getCountryRoleUseCase } from "@/data/country-role-use-cases";
 
 interface Props {
   country: CountryComplianceProfile;
@@ -15,6 +17,8 @@ export function CountryAuthorityPage({ country, authMode = "apostille" }: Props)
     : CLIENT_COPY.nonHagueMemberNote(country.name);
 
   const apostillableDocs = DOCUMENT_TAXONOMY.filter(d => d.commonlyApostilled);
+  const atlas = getPublicCountryCompliance(country.slug);
+  const lawyerUseCase = getCountryRoleUseCase(country.slug, "international_lawyer");
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -30,6 +34,27 @@ export function CountryAuthorityPage({ country, authMode = "apostille" }: Props)
       </p>
 
       <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", marginBottom: 40 }} />
+
+      <section className="mb-12 rounded-2xl border border-[#C6A55A]/20 bg-[#0D0D0D] p-6">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[#C6A55A]/70">Milano Seal Global Execution Atlas</p>
+        <h2 className="mb-3 font-serif text-2xl text-white">{atlas.publicRouteLabel}</h2>
+        <p className="mb-4 text-sm leading-6 text-[#B0B0B0]">{atlas.publicSummary}</p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {atlas.publicFlags.map((flag) => (
+            <span key={flag} className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-[#C6A55A]/75">{flag}</span>
+          ))}
+        </div>
+        <p className="text-xs leading-5 text-[#8A8A8A]">{atlas.receivingAuthorityBoundary}</p>
+        {lawyerUseCase && (
+          <p className="mt-4 text-xs leading-5 text-[#8A8A8A]">{lawyerUseCase.howTheyUseMilanoSeal}</p>
+        )}
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href={`/intake?destination=${country.slug}`} className="rounded-lg bg-[#C6A55A] px-4 py-2 text-xs font-medium text-[#0A0A0A]">Start Controlled Intake</Link>
+          <Link href="/lawyer-access" className="rounded-lg border border-[#C6A55A]/30 px-4 py-2 text-xs text-[#C6A55A]">Request Lawyer Access</Link>
+          <Link href="/access" className="rounded-lg border border-[#C6A55A]/30 px-4 py-2 text-xs text-[#C6A55A]">Request Private Client Review</Link>
+          <Link href="/alliance/apply" className="rounded-lg border border-[#C6A55A]/30 px-4 py-2 text-xs text-[#C6A55A]">Apply for Alliance Access</Link>
+        </div>
+      </section>
 
       {/* Document matrix */}
       <div className="mb-12">
@@ -65,7 +90,7 @@ export function CountryAuthorityPage({ country, authMode = "apostille" }: Props)
 
       {/* Disclaimer */}
       <div className="p-4 border border-white/5 bg-[#0A0A0A]">
-        <p className="text-[#5A5A5A] text-xs leading-relaxed">{CLIENT_COPY.disclaimer}</p>
+        <p className="text-[#5A5A5A] text-xs leading-relaxed">The Milano Seal provides document coordination, notarization support, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country, receiving-authority, document-type, and signer-location requirements.</p>
       </div>
     </div>
   );

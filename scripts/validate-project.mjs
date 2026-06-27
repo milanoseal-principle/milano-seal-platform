@@ -52,10 +52,15 @@ if (!packageJson.scripts?.["validate:project"]) failures.push("Missing validate:
 if (!packageJson.scripts?.typecheck) failures.push("Missing typecheck package script.");
 if (!packageJson.scripts?.["validate:intelligence"]) failures.push("Missing validate:intelligence package script.");
 if (!packageJson.scripts?.["smoke:responsive"]) failures.push("Missing smoke:responsive package script.");
+if (!packageJson.scripts?.["validate:global-compliance-atlas"]) failures.push("Missing validate:global-compliance-atlas package script.");
+if (!packageJson.scripts?.["validate:receiving-authority-rules"]) failures.push("Missing validate:receiving-authority-rules package script.");
+
 
 if (failures.length === 0) {
   try {
     execSync("node scripts/validate-country-intelligence.mjs", { stdio: "inherit" });
+    execSync("node scripts/validate-global-compliance-atlas.mjs", { stdio: "inherit" });
+    execSync("node scripts/validate-receiving-authority-rules.mjs", { stdio: "inherit" });
   } catch {
     failures.push("Country execution intelligence validation failed.");
   }
