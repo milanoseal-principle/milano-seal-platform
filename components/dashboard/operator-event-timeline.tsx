@@ -1,3 +1,4 @@
+/* ms-allow-critical-overflow-hidden: overflow-hidden here is decorative (rounded corners + top accent line); the card self-sizes and never clips its own content. */
 "use client";
 
 import { useApi } from "@/hooks/useApi";

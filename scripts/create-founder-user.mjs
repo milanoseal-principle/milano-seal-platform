@@ -15,7 +15,11 @@ if (!URL || !SERVICE_KEY) {
 }
 
 const EMAIL = "nicholas@themilanoseal.com";
-const PASSWORD = "Garydad01!";
+const PASSWORD = process.env.MILANO_FOUNDER_TEMP_PASSWORD;
+if (!PASSWORD) {
+  console.error("Set MILANO_FOUNDER_TEMP_PASSWORD in the environment before running this script.");
+  process.exit(1);
+}
 const ROLE = "founder_admin"; // routes to /dashboard; tab selection unlocks all workspaces
 
 const admin = createClient(URL, SERVICE_KEY, {

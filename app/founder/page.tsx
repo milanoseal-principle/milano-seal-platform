@@ -41,7 +41,7 @@ export default function FounderPage() {
       <Header />
       <main className="bg-[#0A0A0A] text-white min-h-screen">
         {/* Hero */}
-        <section className="relative pt-32 pb-24 px-6">
+        <section className="relative pb-24 px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div>

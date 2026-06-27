@@ -113,7 +113,7 @@ export default async function AuthorityDocumentPage({ params }: PageProps) {
       <Header />
 
       {/* Hero */}
-      <section className="pt-32 pb-16 px-6">
+      <section className="pb-16 px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
             <Globe className="w-4 h-4 text-[#C6A55A]" />

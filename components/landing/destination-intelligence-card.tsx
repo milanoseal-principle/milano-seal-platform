@@ -1,3 +1,4 @@
+/* ms-allow-critical-overflow-hidden: overflow-hidden here is decorative (rounded corners + top accent line); the card self-sizes and never clips its own content. */
 import Link from "next/link";
 import {
   ArrowRight,

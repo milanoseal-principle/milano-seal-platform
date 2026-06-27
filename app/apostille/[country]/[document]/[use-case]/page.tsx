@@ -63,7 +63,7 @@ export default async function UseCasePage({ params }: Props) {
       />
       <Header />
       <main className="bg-[#0A0A0A] min-h-screen">
-        <section className="max-w-4xl mx-auto px-6 pt-32 pb-16">
+        <section className="max-w-4xl mx-auto px-6 pb-16" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
           <div className="flex items-center gap-3 mb-6">
             <span className="text-3xl">{country.flag}</span>
             <p className="text-[#C6A55A] text-[10px] tracking-[0.3em] uppercase font-semibold">

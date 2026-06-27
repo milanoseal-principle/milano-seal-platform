@@ -39,7 +39,7 @@ export default function AboutPage() {
       <Header />
       <main className="bg-[#0A0A0A] text-white min-h-screen">
         {/* Hero */}
-        <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        <section className="relative pb-24 px-6 overflow-hidden" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
           <div className="absolute inset-0 bg-gradient-to-b from-[#C6A55A]/5 to-transparent pointer-events-none" />
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-6">

@@ -11,7 +11,7 @@
     "validate:project": "npx tsx scripts/validate-project.ts",
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
-    "smoke:responsive": "echo \"Responsive browser automation is not configured; use docs/testing/MILANO_RESPONSIVE_VISUAL_QA.md\""
+    "smoke:responsive": "npx tsx scripts/smoke-responsive-routes.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

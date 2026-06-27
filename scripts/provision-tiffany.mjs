@@ -14,7 +14,11 @@ if (!URL || !SERVICE_KEY) {
 }
 
 const EMAIL = "Tiffany@bulbtech.io";
-const PASSWORD = "Cunt123";
+const PASSWORD = process.env.BURTT_TIFFANY_TEMP_PASSWORD;
+if (!PASSWORD) {
+  console.error("Set BURTT_TIFFANY_TEMP_PASSWORD in the environment before running this script.");
+  process.exit(1);
+}
 const ROLE = "founder_admin";
 
 const DISCOUNT_CODE = "CUNTSEATASS";
