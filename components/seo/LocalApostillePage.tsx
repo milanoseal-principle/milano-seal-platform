@@ -86,7 +86,7 @@ export function LocalApostillePage({
               href="/intake"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
             >
-              <span>Start Secure Intake</span>
+              <span>Start Controlled Intake</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -210,7 +210,7 @@ export function LocalApostillePage({
                 href="/intake"
                 className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg"
               >
-                <span>Start Secure Intake</span>
+                <span>Start Controlled Intake</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="mt-6 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">

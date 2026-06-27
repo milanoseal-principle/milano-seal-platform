@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
+import {
+  DestinationIntelligenceCard,
+  type DestinationIntelligence,
+} from "@/components/landing/destination-intelligence-card";
+import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -18,17 +23,58 @@ interface Destination {
 }
 
 const DESTINATIONS: Destination[] = [
-  { id:"italy",    label:"Italy",    x:255,y:105, dur:4.8, startDelay:0.0, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/italy-apostille-coordination",              isoCode:"JURISDICTION_ISO_IT", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Citizenship","POA","Affidavit","Civil Records"],      safeSummary:"Florida-origin documents routed for Italian receiving-authority review." },
-  { id:"spain",    label:"Spain",    x:208,y:122, dur:5.5, startDelay:0.8, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/spain-international-release-coordination", isoCode:"JURISDICTION_ISO_ES", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Real Estate","Residency","POA","Corporate"],           safeSummary:"Structured U.S. execution support for Spanish destination use." },
-  { id:"portugal", label:"Portugal", x:192,y:134, dur:5.8, startDelay:1.4, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/portugal-apostille-coordination",           isoCode:"JURISDICTION_ISO_PT", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Residency","D8 Visa","POA","Banking"],                 safeSummary:"U.S. document execution support for Portugal residency and private-client matters." },
-  { id:"greece",   label:"Greece",   x:282,y:118, dur:5.2, startDelay:1.1, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/greece-apostille-coordination",             isoCode:"JURISDICTION_ISO_GR", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Citizenship","Property","Inheritance","Maritime"],     safeSummary:"Boutique U.S. execution coordination for Greek international matters." },
-  { id:"brazil",   label:"Brazil",   x:118,y:268, dur:6.0, startDelay:1.8, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/brazil-hague-convention-routing",           isoCode:"JURISDICTION_ISO_BR", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Corporate","Medical","POA","Academic"],               safeSummary:"Florida-origin documents routed for Brazilian receiving-authority review." },
-  { id:"uae",      label:"UAE",      x:330,y:192, dur:5.0, startDelay:0.4, framework:"CONSULAR AUTHENTICATION TRACK",  seoIntent:"/apostille/uae",                                           isoCode:"JURISDICTION_ISO_AE", routeLabel:"Consular Legalization Review", hagueStatus:"CONSULAR_REVIEW",  useCases:["Corporate","Private Wealth","Commercial","Authentication"], safeSummary:"Non-standard authentication and consular review may apply." },
-  { id:"mexico",   label:"Mexico",   x:62, y:222, dur:3.6, startDelay:2.6, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/mexico-hague-convention-routing",           isoCode:"JURISDICTION_ISO_MX", routeLabel:"Authority Review Required",   hagueStatus:"AUTHORITY_REVIEW", useCases:["Real Estate","Family","Corporate","Translation"],      safeSummary:"Cross-border U.S. execution coordination requiring destination-specific review." },
-  { id:"uk",       label:"UK",       x:228,y:88,  dur:5.0, startDelay:0.6, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/uk-apostille-coordination",                 isoCode:"JURISDICTION_ISO_GB", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Corporate","Estate","Academic","POA"],                 safeSummary:"U.S. document execution support for United Kingdom destination use." },
-  { id:"canada",   label:"Canada",   x:110,y:112, dur:3.0, startDelay:3.0, framework:"AUTHORITY REVIEW REQUIRED",      seoIntent:"/jurisdictions/canada-authentication",                     isoCode:"JURISDICTION_ISO_CA", routeLabel:"Authentication Review",       hagueStatus:"AUTHORITY_REVIEW", useCases:["Corporate","Academic","Immigration","Identity"],       safeSummary:"Destination-specific review required based on document type and receiving authority." },
-  { id:"colombia", label:"Colombia", x:96, y:252, dur:4.5, startDelay:2.2, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/colombia-apostille-coordination",           isoCode:"JURISDICTION_ISO_CO", routeLabel:"Hague Apostille Route",       hagueStatus:"HAGUE",            useCases:["Family","Real Estate","Corporate","POA"],              safeSummary:"U.S. execution coordination for Colombian destination matters." },
+  { id:"italy",    label:"Italy",    x:255,y:105, dur:4.8, startDelay:0.0, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/italy-apostille-coordination",              isoCode:"JURISDICTION_ISO_IT", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Citizenship","POA","Affidavit","Civil Records"],      safeSummary:"Florida-origin documents routed for Italian receiving-authority review." },
+  { id:"spain",    label:"Spain",    x:208,y:122, dur:5.5, startDelay:0.8, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/spain-international-release-coordination", isoCode:"JURISDICTION_ISO_ES", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Real Estate","Residency","POA","Corporate"],           safeSummary:"Structured U.S. execution support for Spanish destination use." },
+  { id:"portugal", label:"Portugal", x:192,y:134, dur:5.8, startDelay:1.4, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/portugal-apostille-coordination",           isoCode:"JURISDICTION_ISO_PT", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Residency","D8 Visa","POA","Banking"],                 safeSummary:"U.S. document execution support for Portugal residency and private-client matters." },
+  { id:"greece",   label:"Greece",   x:282,y:118, dur:5.2, startDelay:1.1, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/greece-apostille-coordination",             isoCode:"JURISDICTION_ISO_GR", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Citizenship","Property","Inheritance","Maritime"],     safeSummary:"Boutique U.S. execution coordination for Greek international matters." },
+  { id:"brazil",   label:"Brazil",   x:118,y:268, dur:6.0, startDelay:1.8, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/brazil-hague-convention-routing",           isoCode:"JURISDICTION_ISO_BR", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Corporate","Medical","POA","Academic"],               safeSummary:"Florida-origin documents routed for Brazilian receiving-authority review." },
+  { id:"uae",      label:"UAE",      x:330,y:192, dur:5.0, startDelay:0.4, framework:"CONSULAR AUTHENTICATION TRACK",  seoIntent:"/apostille/uae",                                           isoCode:"JURISDICTION_ISO_AE", routeLabel:"CONSULAR LEGALIZATION REVIEW ROUTE", hagueStatus:"CONSULAR_REVIEW",  useCases:["Corporate","Private Wealth","Commercial","Authentication"], safeSummary:"Non-standard authentication and consular review may apply." },
+  { id:"mexico",   label:"Mexico",   x:62, y:222, dur:3.6, startDelay:2.6, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/mexico-hague-convention-routing",           isoCode:"JURISDICTION_ISO_MX", routeLabel:"RECEIVING-AUTHORITY REVIEW ROUTE",   hagueStatus:"AUTHORITY_REVIEW", useCases:["Real Estate","Family","Corporate","Translation"],      safeSummary:"Cross-border U.S. execution coordination requiring destination-specific review." },
+  { id:"uk",       label:"UK",       x:228,y:88,  dur:5.0, startDelay:0.6, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/uk-apostille-coordination",                 isoCode:"JURISDICTION_ISO_GB", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Corporate","Estate","Academic","POA"],                 safeSummary:"U.S. document execution support for United Kingdom destination use." },
+  { id:"canada",   label:"Canada",   x:110,y:112, dur:3.0, startDelay:3.0, framework:"AUTHORITY REVIEW REQUIRED",      seoIntent:"/jurisdictions/canada-authentication",                     isoCode:"JURISDICTION_ISO_CA", routeLabel:"AUTHENTICATION REVIEW ROUTE",       hagueStatus:"AUTHORITY_REVIEW", useCases:["Corporate","Academic","Immigration","Identity"],       safeSummary:"Destination-specific review required based on document type and receiving authority." },
+  { id:"colombia", label:"Colombia", x:96, y:252, dur:4.5, startDelay:2.2, framework:"HAGUE CONVENTION ROUTING",       seoIntent:"/jurisdictions/colombia-apostille-coordination",           isoCode:"JURISDICTION_ISO_CO", routeLabel:"HAGUE APOSTILLE EXECUTION ROUTE",       hagueStatus:"HAGUE",            useCases:["Family","Real Estate","Corporate","POA"],              safeSummary:"U.S. execution coordination for Colombian destination matters." },
 ];
+
+const DESTINATION_FLAGS: Record<string, string> = {
+  italy: "🇮🇹",
+  spain: "🇪🇸",
+  portugal: "🇵🇹",
+  greece: "🇬🇷",
+  brazil: "🇧🇷",
+  uae: "🇦🇪",
+  mexico: "🇲🇽",
+  uk: "🇬🇧",
+  canada: "🇨🇦",
+  colombia: "🇨🇴",
+};
+
+function heroDestinationIntelligence(
+  destination: Destination,
+): DestinationIntelligence {
+  const slug = destination.id === "uk" ? "united-kingdom" : destination.id;
+  const intelligence = getCountryExecutionIntelligence(slug, destination.label);
+
+  return {
+    slug,
+    name: intelligence.shortName ?? destination.label,
+    flag: intelligence.flag ?? DESTINATION_FLAGS[destination.id],
+    eyebrow: intelligence.eyebrow,
+    routeLabel: intelligence.routeLabel,
+    statusLabel: intelligence.statusPill,
+    summary: intelligence.authoritySummary,
+    documents: intelligence.executionFlags,
+    seoLine: intelligence.trustLine,
+    translationReview: intelligence.executionFlags.some((item) =>
+      /translation/i.test(item),
+    ),
+    courierReview: intelligence.executionFlags.some((item) =>
+      /courier|release|custody/i.test(item),
+    ),
+    pathPreview: intelligence.executionPath,
+    primaryCtaLabel: intelligence.primaryCtaLabel,
+    secondaryCtaLabel: intelligence.secondaryCtaLabel,
+  };
+}
 
 function hagueColor(status: HagueStatus) {
   if (status === "HAGUE")            return { dot:"#D4AF37", badge:"#D4AF37", arc:"#C6A55A" };
@@ -91,46 +137,15 @@ const CONTINENT_REGIONS: Region[] = [
 const FRONT_DOTS = generateDots(CONTINENT_REGIONS);
 const ALL_DOTS   = [...FRONT_DOTS, ...FRONT_DOTS.map(d=>({...d, cx:d.cx+400}))];
 
-// ─── Layer 7: Velocity-linked scramble ───────────────────────────────────────
-function useScramble(text: string, active: boolean, tick: number, interval = 28): string {
-  const [display, setDisplay] = useState(text);
-  useEffect(() => {
-    setDisplay(text);
-    if (!active || !text) return;
-    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·/";
-    let frame = 0;
-    const FRAMES = 16;
-    const id = setInterval(() => {
-      frame++;
-      setDisplay(
-        text.split("").map((c, i) => {
-          if (c===" "||c==="/"||c==="-"||c==="."||c==="→") return c;
-          if (frame>=FRAMES || frame/FRAMES > i/text.length) return c;
-          return CHARS[Math.floor(Math.random()*CHARS.length)];
-        }).join("")
-      );
-      if (frame>=FRAMES) clearInterval(id);
-    }, interval);
-    return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, active, tick, interval]);
-  return display;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 export function GlobalTrustCoreHero() {
   const [phase,       setPhase]       = useState<"idle"|"settled"|"arcs"|"rotating">("idle");
   const [arcsDone,    setArcsDone]    = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [selectedId,  setSelectedId]  = useState<string|null>(null);
-  const [scrambleTick,setScrambleTick]= useState(0);
-  // Layer 7: scramble interval driven by spring velocity
-  const [scrambleInterval, setScrambleInterval] = useState(28);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const selectedDest  = DESTINATIONS.find(d=>d.id===selectedId) ?? null;
-  const scrambleText  = selectedDest ? `FLORIDA → ${selectedDest.label.toUpperCase()}` : "";
-  const scrambledText = useScramble(scrambleText, !!selectedDest, scrambleTick, reducedMotion ? 28 : scrambleInterval);
 
   // ── Spring physics camera (preserved from c255a13) ──────────────────────
   const rawNudgeX = selectedDest ? ((selectedDest.x - 200) / 200) * 12 : 0;
@@ -146,20 +161,10 @@ export function GlobalTrustCoreHero() {
   const bgDriftY  = useTransform(springY, (v) => v * -0.08);
   const gridSkewX = useTransform(springX, (v) => v * 0.02);
 
-  // ── Layer 7: Track spring velocity → drive scramble speed ───────────────
-  useEffect(() => {
-    if (reducedMotion) return;
-    const unsub = springX.on("change", () => {
-      const vel = Math.abs(springX.getVelocity());
-      setScrambleInterval(Math.round(Math.max(16, 120 - vel * 0.6)));
-    });
-    return unsub;
-  }, [springX, reducedMotion]);
-
   const handleSelect = (id: string) => {
     if (!arcsDone) return;
     if (selectedId===id) { setSelectedId(null); }
-    else { setSelectedId(id); setScrambleTick(t=>t+1); }
+    else { setSelectedId(id); }
   };
 
   useEffect(() => {
@@ -495,6 +500,9 @@ export function GlobalTrustCoreHero() {
                   aria-label={`${dest.label} routing information`}
                   data-auth-node="FLORIDA_ORIGIN"
                   data-target-vector={dest.isoCode}
+                  onMouseEnter={() => {
+                    if (arcsDone && selectedId !== dest.id) setSelectedId(dest.id);
+                  }}
                   onClick={e=>{ e.stopPropagation(); handleSelect(dest.id); }}
                   onKeyDown={e=>{ if(e.key==="Enter"||e.key===" ") handleSelect(dest.id); }}
                 >
@@ -528,21 +536,25 @@ export function GlobalTrustCoreHero() {
         <div className="ms-globe-rim-ring" />
         {/* Crest glow */}
         <div className="ms-globe-crest-glow" />
-        {/* M medallion */}
-        <div className="ms-globe-crest" aria-hidden="true" />
+        {/* Intelligence core — distinct from header and assistant assets */}
+        <Link
+          href="/map"
+          className="ms-globe-crest-link"
+          aria-label="Open Global Document Intelligence"
+          title="Open Global Document Intelligence"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="ms-globe-crest" aria-hidden="true" />
+          <span className="ms-globe-crest-tooltip" role="tooltip">
+            Open Global Document Intelligence
+          </span>
+        </Link>
         {/* Spotlight */}
         <div className="ms-globe-spotlight" />
       </motion.div>
 
       {/* ── Layer 6: Popover with spring cascade title → badge → CTA ────── */}
-      {selectedDest && (() => {
-        const { badge } = hagueColor(selectedDest.hagueStatus);
-        // spring cascade config
-        const titleSpring  = { type:"spring" as const, stiffness:420, damping:36, delay:0 };
-        const badgeSpring  = { type:"spring" as const, stiffness:400, damping:34, delay:0.05 };
-        const bodySpring   = { type:"spring" as const, stiffness:380, damping:32, delay:0.09 };
-        const ctaSpring    = { type:"spring" as const, stiffness:360, damping:30, delay:0.13 };
-        return (
+      {selectedDest && (
           <div
             className="ms-destination-popover hidden md:block"
             style={{ position:"absolute", left:popLeft, top:popTop,
@@ -554,98 +566,21 @@ export function GlobalTrustCoreHero() {
               initial={{ opacity:0, scale:0.90, filter:"blur(6px)" }}
               animate={{ opacity:1, scale:1.00, filter:"blur(0px)" }}
               transition={{ type:"spring", stiffness:320, damping:32 }}
-              style={{
-                width:"min(240px, calc(100vw - 3rem))",
-                background:"rgba(4,4,6,0.97)",
-                border:`1px solid ${badge}40`,
-                borderRadius:6,
-                padding:"15px 17px 13px",
-                backdropFilter:"blur(28px)",
-                WebkitBackdropFilter:"blur(28px)",
-                boxShadow:`0 0 0 1px rgba(0,0,0,0.6), 0 16px 48px rgba(0,0,0,0.92), 0 0 28px ${badge}14`,
-                position:"relative",
-              }}
+              className="relative"
             >
               <button
                 onClick={()=>setSelectedId(null)}
-                className="absolute top-2.5 right-3 font-mono text-[#3A3A3A] hover:text-[#888] transition-colors text-base leading-none w-6 h-6 flex items-center justify-center"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full font-mono text-base leading-none text-white/30 transition-colors hover:bg-white/[0.05] hover:text-white/70"
                 aria-label="Close"
               >×</button>
-
-              {/* Title — appears first */}
-              <motion.p
-                initial={{ opacity:0, y:4 }}
-                animate={{ opacity:1, y:0 }}
-                transition={titleSpring}
-                style={{ color:"#F5F1E8", fontSize:11, fontWeight:700,
-                  letterSpacing:"0.09em", textTransform:"uppercase",
-                  marginBottom:7, fontFamily:"system-ui,sans-serif" }}
-              >
-                {scrambledText}
-              </motion.p>
-
-              {/* Route badge — follows title */}
-              <motion.div
-                initial={{ opacity:0, y:4 }}
-                animate={{ opacity:1, y:0 }}
-                transition={badgeSpring}
-                style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}
-              >
-                <span style={{
-                  width:6, height:6, borderRadius:"50%", flexShrink:0,
-                  background: selectedDest.hagueStatus==="HAGUE" ? badge : "transparent",
-                  border: selectedDest.hagueStatus!=="HAGUE" ? `1.5px solid ${badge}` : "none",
-                }} />
-                <span style={{ color:badge, fontSize:8, letterSpacing:"0.13em",
-                  textTransform:"uppercase", fontFamily:"monospace" }}>
-                  {selectedDest.routeLabel.toUpperCase()}
-                </span>
-              </motion.div>
-
-              {/* Use cases + summary */}
-              <motion.div
-                initial={{ opacity:0, y:3 }}
-                animate={{ opacity:1, y:0 }}
-                transition={bodySpring}
-              >
-                <p style={{ color:"#8A8480", fontSize:9.5, marginBottom:7,
-                  fontFamily:"system-ui,sans-serif" }}>
-                  {selectedDest.useCases.slice(0,3).join(" · ")}
-                </p>
-                <p style={{ color:"#4E4A46", fontSize:8.5, lineHeight:1.6,
-                  marginBottom:11, fontFamily:"system-ui,sans-serif" }}>
-                  {selectedDest.safeSummary}
-                </p>
-              </motion.div>
-
-              {/* CTA — last to arrive */}
-              <motion.div
-                initial={{ opacity:0, y:4 }}
-                animate={{ opacity:1, y:0 }}
-                transition={ctaSpring}
-              >
-                <Link
-                  href="/intake"
-                  onClick={()=>setSelectedId(null)}
-                  style={{
-                    display:"block", textAlign:"center",
-                    background:`linear-gradient(135deg, ${badge}14, ${badge}08)`,
-                    border:`1px solid ${badge}38`,
-                    color:badge, fontSize:8, letterSpacing:"0.15em",
-                    textTransform:"uppercase", padding:"8px 10px",
-                    textDecoration:"none", borderRadius:3,
-                    fontFamily:"monospace",
-                    transition:"background 0.2s ease, border-color 0.2s ease",
-                    boxShadow:`0 4px 16px ${badge}14`,
-                  }}
-                >
-                  Begin Secure Intake →
-                </Link>
-              </motion.div>
+              <DestinationIntelligenceCard
+                intelligence={heroDestinationIntelligence(selectedDest)}
+                variant="globePreview"
+                onPrimaryAction={() => setSelectedId(null)}
+              />
             </motion.div>
           </div>
-        );
-      })()}
+      )}
 
       {/* Orbit rings */}
       <div className="ms-orbit-ring ms-orbit-ring--main" />

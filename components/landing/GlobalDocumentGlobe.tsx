@@ -26,7 +26,7 @@ const ORIGIN = { x: 32, y: 48 };
 const DESTINATIONS: GlobeDestination[] = [
   {
     id: "italy", country: "Italy", cityLabel: "Italy",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 72, y: 36, arcHeight: 34, delay: 0.1,
     hagueStatus: "HAGUE",
     useCases: ["Citizenship", "POA", "Affidavit", "Civil Records", "Real Estate"],
@@ -34,7 +34,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "spain", country: "Spain", cityLabel: "Spain",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 66, y: 42, arcHeight: 28, delay: 0.2,
     hagueStatus: "HAGUE",
     useCases: ["Real Estate", "Residency", "POA", "Corporate", "Family"],
@@ -42,7 +42,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "portugal", country: "Portugal", cityLabel: "Portugal",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 62, y: 44, arcHeight: 26, delay: 0.3,
     hagueStatus: "HAGUE",
     useCases: ["Residency", "D8", "POA", "Banking", "Private Client"],
@@ -50,7 +50,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "greece", country: "Greece", cityLabel: "Greece",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 78, y: 45, arcHeight: 36, delay: 0.4,
     hagueStatus: "HAGUE",
     useCases: ["Citizenship", "Property", "Inheritance", "Maritime", "Family Office"],
@@ -58,7 +58,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "brazil", country: "Brazil", cityLabel: "Brazil",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 58, y: 72, arcHeight: 32, delay: 0.5,
     hagueStatus: "HAGUE",
     useCases: ["Corporate", "Medical", "POA", "Academic", "Family"],
@@ -66,7 +66,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "mexico", country: "Mexico", cityLabel: "Mexico",
-    routeLabel: "Authority Review Required",
+    routeLabel: "RECEIVING-AUTHORITY REVIEW ROUTE",
     x: 36, y: 55, arcHeight: 18, delay: 0.6,
     hagueStatus: "AUTHORITY_REVIEW",
     useCases: ["Real Estate", "Family", "Corporate", "Consular Review", "Translation"],
@@ -74,7 +74,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "uae", country: "United Arab Emirates", cityLabel: "UAE",
-    routeLabel: "Consular Legalization Review",
+    routeLabel: "CONSULAR LEGALIZATION REVIEW ROUTE",
     x: 84, y: 50, arcHeight: 42, delay: 0.7,
     hagueStatus: "CONSULAR_REVIEW",
     useCases: ["Corporate", "Private Wealth", "Commercial", "Authentication", "Embassy Review"],
@@ -82,7 +82,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "united-kingdom", country: "United Kingdom", cityLabel: "UK",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 65, y: 30, arcHeight: 30, delay: 0.8,
     hagueStatus: "HAGUE",
     useCases: ["Corporate", "Estate", "Academic", "POA", "Identity"],
@@ -98,7 +98,7 @@ const DESTINATIONS: GlobeDestination[] = [
   },
   {
     id: "colombia", country: "Colombia", cityLabel: "Colombia",
-    routeLabel: "Hague Apostille Route",
+    routeLabel: "HAGUE APOSTILLE EXECUTION ROUTE",
     x: 45, y: 67, arcHeight: 24, delay: 1.0,
     hagueStatus: "HAGUE",
     useCases: ["Family", "Real Estate", "Corporate", "Academic", "POA"],

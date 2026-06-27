@@ -29,7 +29,7 @@ export function FinalCTA() {
               color: "#0A0A0A",
             }}
           >
-            Start Secure Intake
+            Start Controlled Intake
           </Link>
           <Link
             href="/portal"

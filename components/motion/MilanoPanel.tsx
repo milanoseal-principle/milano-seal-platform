@@ -1,0 +1,31 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { softScale, panelTransition } from "./motionPresets";
+
+type MilanoPanelProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function MilanoPanel({ children, className }: MilanoPanelProps) {
+  const reduceMotion = useReducedMotion();
+
+  if (reduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <motion.div
+      className={className}
+      variants={softScale}
+      initial="hidden"
+      animate="visible"
+      whileHover={{ y: -4 }}
+      transition={panelTransition}
+    >
+      {children}
+    </motion.div>
+  );
+}
