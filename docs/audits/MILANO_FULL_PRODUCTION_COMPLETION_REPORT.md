@@ -446,3 +446,36 @@ No change to the globe, card, country dots, CTAs, pricing, payment, intake, or o
 
 ### Scope note
 This pass fixed the actual reported defect (homepage hero card clipping). The broader "full-OS containment / permanent layout-contract / Playwright-regression-system" program was intentionally **not** executed in this pass, to avoid touching dozens of currently-working surfaces and risking regressions; it remains available as a follow-up if desired.
+
+---
+
+## Staged Responsive Containment Pass (public → portal → dashboard → guard)
+
+**Date:** 2026-06-26 · **Branch:** claude/funny-maxwell-hlxQN
+
+### Stage 1 — Public (commit ed6d8b2)
+- Added reusable layout-safety utilities: `components/layout/ViewportSafeSection.tsx` (min-height, header-stack offset, overflow-x-clip), `VisualLayerStack.tsx` (stable z-ladder: bg 0 / visual 10 / card 20 / actions 30), `CriticalCardFrame.tsx` (data-critical-card, overflow-visible, break-words, mobile-safe width).
+- Marked public critical cards with `data-critical-card`: `DestinationIntelligenceCard` (covers homepage preview, countries directory, globe popover, apostille pages), `SeoCorridorMapPreview`, `ShippingCorridorMiniMap`.
+- Homepage hero clipping already fixed in 7d67645 (min-h + overflow-x-clip).
+
+### Stage 2 — Portal (commit f848366)
+- Marked portal critical panels: Wise payment card (both paid/unpaid), Wise transfer instructions, document vault, courier custody tracker, custody timeline, next-action, matter journey, and invoice summary / discount / Wise blocks.
+- Switched portal shells from `100vh` to `100dvh` (mobile browser-chrome safe).
+
+### Stage 3 — Dashboard / operator (commit a308c01)
+- Marked operator critical panels: payment gate (all branches), payment integrity, operator action drawer, final seal review, document packet builder, operator event timeline, recent activity, matter queue, certificate panel, Tiffany E2E shell, apostille queue, shipping queue.
+- Dashboard shell offsets already correct (3.25rem ticker stack).
+
+### Stage 4 — Regression guard
+- `scripts/smoke-responsive-routes.ts` + `npm run smoke:responsive`: drives a running server across 6 viewports (390/768/900/1024/1280/1440) and asserts no horizontal overflow, every `data-critical-card` visible/non-zero/in-viewport, and no truncated country headings. Degrades gracefully (exit 0) when Playwright or a server is absent, so it never breaks a CI build without a preview server.
+- `scripts/validate-project.ts` extended with FAIL guards: country-name `truncate`, homepage hero fixed `h-[100svh]`, service-role-key in client code, hardcoded password literals; plus a non-failing advisory for public pages using bare `pt-20/24/28`.
+- Fixed the 4 remaining public pages flagged by the advisory (`document-authentication/[country]`, `documents/[document]`, `notary/join`, `partners/[segment]`) to use the header-total-height stack.
+
+### Commands
+- `npm run validate:project` → all checks passed (incl. new guards)
+- `npx tsc --noEmit` → 0 errors
+- `npm run build` → successful (per stage)
+- `npm run smoke:responsive` → run against local dev server (see result below)
+
+### Scope honored
+No pricing, Wise/payment, discount, intake, or operator-state-machine logic was changed in any stage. All edits were layout-safety markers, reusable utilities, viewport-unit fixes, and the regression tooling.

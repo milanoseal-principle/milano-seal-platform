@@ -70,7 +70,7 @@ export default function NotaryJoinPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#070504] pt-24 pb-20 px-4 sm:px-6">
+      <main className="min-h-screen bg-[#070504] pb-20 px-4 sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}>
         <div className="max-w-2xl mx-auto">
           <div className="mb-10">
             <p className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#C6A55A]/70 mb-3">

@@ -181,7 +181,7 @@ export default async function PartnerSegmentPage({ params }: Props) {
       <Header />
       <main className="bg-[#050507] min-h-screen">
         {/* Hero */}
-        <section className="pt-28 pb-16 px-6 border-b border-[#1A1A1A]">
+        <section className="pb-16 px-6 border-b border-[#1A1A1A]" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 1rem)" }}>
           <div className="max-w-4xl mx-auto">
             <p className="text-[#C6A55A] text-[10px] tracking-[0.3em] uppercase font-medium mb-4">
               {data.label}
