@@ -10,10 +10,17 @@ import { recordSecurityEvent } from "@/lib/security/security-events";
 export const runtime = "nodejs";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Optional founder override for releasing on non-cleared (e.g. pending card
+  // settlement) funds. Requires a written reason; always ledgered below.
+  const body = (await req.json().catch(() => ({}))) as {
+    override_reason?: string;
+  };
+  const overrideReason = (body.override_reason ?? "").trim();
 
   // Auth check — role from server-side token only, never client body
   const supabase = await createClient();
@@ -52,7 +59,7 @@ export async function POST(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const { data: deal, error: dealErr } = await adminClient
     .from("deals")
-    .select("id, deal_id, deal_status, payment_status, payment_confirmed, amount_due, amount_paid, destination_country, is_platform_fee_only")
+    .select("id, deal_id, deal_status, payment_status, payment_confirmed, amount_due, amount_paid, destination_country, is_platform_fee_only, payment_settlement_status, payment_cleared_at")
     .eq(isUuid ? "id" : "deal_id", id)
     .single();
 
@@ -81,6 +88,79 @@ export async function POST(
           blocked: true,
           message: "Final release is blocked until required safety checks are complete.",
           required_action: "Payment confirmation required before release.",
+        },
+        { status: 402 },
+      );
+    }
+  }
+
+  // Settlement clearance gate — final packet must not release on funds that are
+  // only "observed" (visible but possibly pending settlement, e.g. card-funded
+  // Wise). Release requires settled/cleared funds OR a recorded founder override.
+  const fundsCleared =
+    deal.payment_settlement_status === "cleared" ||
+    deal.is_platform_fee_only === true ||
+    Number(deal.amount_due ?? 0) === 0;
+
+  if (!fundsCleared) {
+    if (overrideReason.length > 0) {
+      // Founder (already verified above) authorizes release on non-cleared funds.
+      await adminClient
+        .from("deals")
+        .update({
+          founder_payment_override_at: new Date().toISOString(),
+          founder_payment_override_by: user.email ?? user.id,
+          founder_payment_override_reason: overrideReason,
+        })
+        .eq("id", deal.id);
+
+      await appendLedger({
+        deal_id: deal.id,
+        event: CUSTODY_EVENTS.RELEASE_GATE_OVERRIDE,
+        actor_type: "operator",
+        actor_id: user.email ?? user.id,
+        status: "override_approved",
+        notes: `Founder override: release authorized on non-cleared funds | reason=${overrideReason} | settlement=${deal.payment_settlement_status ?? "unknown"}`,
+        metadata: {
+          override_by: user.email ?? user.id,
+          override_reason: overrideReason,
+          settlement_status: deal.payment_settlement_status ?? "unknown",
+          payment_reference: deal.deal_id ?? deal.id,
+        },
+      });
+
+      await recordSecurityEvent({
+        event_name: "PAYMENT_RELEASE_OVERRIDE_APPROVED",
+        severity: "warning",
+        actor: user.email ?? user.id,
+        matter_id: deal.id,
+        route: "/api/deals/[id]/release",
+        client_safe: false,
+        metadata: {
+          deal_id: deal.deal_id ?? id,
+          settlement_status: deal.payment_settlement_status ?? "unknown",
+        },
+      });
+    } else {
+      await recordSecurityEvent({
+        event_name: "FINAL_RELEASE_BLOCKED",
+        severity: "high",
+        actor: user.email ?? user.id,
+        matter_id: deal.id,
+        route: "/api/deals/[id]/release",
+        client_safe: false,
+        metadata: {
+          reason: "settlement_pending",
+          settlement_status: deal.payment_settlement_status ?? "unknown",
+          deal_id: deal.deal_id ?? id,
+        },
+      });
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          message: "Final release is blocked until required safety checks are complete.",
+          required_action: "Payment must clear before release, or a founder override is required.",
         },
         { status: 402 },
       );

@@ -353,6 +353,12 @@ async function processWiseEvent(opts: {
       payment_amount_received: confirmedAmount,
       amount_paid: confirmedAmount,
       payment_confirmed_at: new Date().toISOString(),
+      // A confirmed Wise event represents settled funds in the Milano Seal balance,
+      // so it CLEARS the payment for final release (operator manual-confirm only
+      // marks it "observed"). Final release still requires founder + identifier gates.
+      payment_settlement_status: "cleared",
+      payment_cleared_at: new Date().toISOString(),
+      payment_funding_method: "wise",
       invoice_status: "paid",
       // 6. Unlock scheduling only — do NOT jump beyond "scheduled"
       // Status remains unchanged here; scheduling is unlocked by the gate check
