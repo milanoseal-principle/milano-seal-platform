@@ -28,6 +28,7 @@
     "validate:apostille-packet": "node scripts/validate-apostille-packet.mjs",
     "validate:seo-client-profiles": "node scripts/validate-seo-client-profiles.mjs",
     "verify:production": "node scripts/verify-production.mjs"
+    "validate:seo-client-profiles": "node scripts/validate-seo-client-profiles.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
