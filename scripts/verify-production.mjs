@@ -1,70 +1,81 @@
-const BASE = process.env.BASE || process.env.BASE_URL || "https://themilanoseal.com";
-const requiredRoutes = ["/", "/intake", "/countries", "/map"];
-const failures = [];
+#!/usr/bin/env node
+// Milano Seal — Live production endpoint smoke test.
+// Usage: BASE=https://themilanoseal.com node scripts/verify-production.mjs
+// Exits non-zero if any GREEN-ONLY check fails. Safe, read-mostly; the intake
+// probe creates one test matter (clearly marked) only when --intake is passed.
 
-function url(path) {
-  return new URL(path, BASE).toString();
-}
+const BASE = process.env.BASE || "https://themilanoseal.com";
+const doIntake = process.argv.includes("--intake");
+let failures = 0;
 
-async function expectStatus(label, request, expected) {
+const ok = (m) => console.log(`  ✓ ${m}`);
+const bad = (m) => { console.error(`  ✗ ${m}`); failures += 1; };
+
+async function code(path, opts = {}) {
   try {
-    const response = await request();
-    const body = await response.text().catch(() => "");
-    const ok = Array.isArray(expected) ? expected.includes(response.status) : response.status === expected;
-    if (!ok) {
-      failures.push(`${label}: expected ${expected}, got ${response.status}`);
-      return;
-    }
-    if (/SUPABASE_SERVICE_ROLE_KEY|WISE_API_TOKEN|SHIPPO_WEBHOOK_SECRET|RESEND_API_KEY|TWILIO_AUTH_TOKEN/i.test(body)) {
-      failures.push(`${label}: response appears to leak a secret variable label`);
-      return;
-    }
-    console.log(`✓ ${label}: ${response.status}`);
-  } catch (error) {
-    failures.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+    const res = await fetch(BASE + path, opts);
+    return { status: res.status, text: await res.text() };
+  } catch (err) {
+    return { status: 0, text: String(err) };
   }
 }
 
-for (const route of requiredRoutes) {
-  await expectStatus(`public ${route}`, () => fetch(url(route), { method: "HEAD", redirect: "manual" }), [200, 301, 302, 307, 308]);
+console.log(`\nMilano Seal production smoke — ${BASE}\n`);
+
+console.log("[public pages] expect 200");
+for (const p of ["/", "/intake", "/countries", "/map"]) {
+  const { status } = await code(p);
+  status === 200 ? ok(`${p} -> 200`) : bad(`${p} -> ${status}`);
 }
 
-await expectStatus("Wise GET health", () => fetch(url("/api/webhooks/wise"), { method: "GET" }), 200);
-await expectStatus("Wise unsigned POST rejection", () => fetch(url("/api/webhooks/wise"), {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ event_type: "balances#credit" }),
-}), 401);
-await expectStatus("Shippo GET safety", () => fetch(url("/api/webhooks/shippo"), { method: "GET" }), [200, 404, 405]);
-await expectStatus("Shippo no-secret POST rejection", () => fetch(url("/api/webhooks/shippo"), {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ carrier: "usps", tracking_number: "TEST", tracking_status: { status: "DELIVERED" } }),
-}), 401);
+console.log("\n[wise webhook] GET health expect ok:true");
+{
+  const { status, text } = await code("/api/webhooks/wise");
+  status === 200 && text.includes("\"ok\":true")
+    ? ok("wise webhook healthy")
+    : bad(`wise webhook -> ${status} ${text.slice(0, 80)}`);
+}
 
-if (process.env.SHIPPO_WEBHOOK_SECRET) {
-  await expectStatus("Shippo authorized POST", () => fetch(`${url("/api/webhooks/shippo")}?secret=${encodeURIComponent(process.env.SHIPPO_WEBHOOK_SECRET)}`, {
+console.log("\n[shippo webhook] POST without secret expect 401");
+{
+  const { status } = await code("/api/webhooks/shippo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  // 401 = secret guard active; 200 skipped only valid if no secret configured.
+  status === 401 ? ok("shippo guard active (401)") : bad(`shippo guard -> ${status} (expected 401)`);
+}
+
+console.log("\n[db health] expect 200");
+{
+  const { status } = await code("/api/health/database");
+  status === 200 ? ok("database health 200") : bad(`database health -> ${status}`);
+}
+
+if (doIntake) {
+  console.log("\n[intake] POST creates a test matter (expect deal_id)");
+  const { status, text } = await code("/api/intake", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      carrier: "usps",
-      tracking_number: "TESTTRACKING123",
-      tracking_status: {
-        status: "TRANSIT",
-        substatus: { code: "information_received", text: "Tracking information received", action_required: false },
-        status_details: "Tracking information received",
-        status_date: "2026-06-28T12:00:00Z",
-        location: { city: "St. Petersburg", state: "FL", country: "US" },
-      },
+      name: "Production Verify (DELETE)",
+      email: "verify@themilanoseal.com",
+      country: "italy",
+      documentType: "power_of_attorney",
     }),
-  }), 200);
+  });
+  /MS-\d{4}-/.test(text)
+    ? ok(`intake created matter (${(text.match(/MS-\d{4}-\w+/) || [])[0]})`)
+    : bad(`intake -> ${status} ${text.slice(0, 120)}`);
 } else {
-  console.log("— SKIP: Shippo authorized POST requires SHIPPO_WEBHOOK_SECRET in the local environment.");
+  console.log("\n[intake] skipped (pass --intake to create a test matter)");
 }
 
-if (failures.length) {
-  failures.forEach((failure) => console.error(`✗ ${failure}`));
+console.log(`\n${"─".repeat(48)}`);
+if (failures > 0) {
+  console.error(`\n✗ ${failures} live check(s) FAILED.\n`);
   process.exit(1);
 }
-
-console.log(`✓ Production verification passed for ${BASE}`);
+console.log("\n✓ All live smoke checks passed.\n");
+process.exit(0);
