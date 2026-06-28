@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Route } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 import { buildHomeCorridor } from "@/lib/intelligence/homeCorridors";
 import { MiniCorridorMapPreview } from "@/components/home/MiniCorridorMapPreview";
-import { HomeExecutionPathCards } from "@/components/home/HomeExecutionPathCards";
 import { HomeShippingCorridorPanel } from "@/components/home/HomeShippingCorridorPanel";
 
 const ROUTE_TYPE_LABEL: Record<string, string> = {
@@ -47,13 +46,13 @@ export function HomepageRoutingPreview() {
     },
     {
       step: "02",
-      label: "Execution Route",
+      label: "Route",
       value: ROUTE_TYPE_LABEL[corridor.routeType] ?? "Receiving-Authority Review",
     },
     {
       step: "03",
-      label: "Custody Path",
-      value: "Secure Courier Custody",
+      label: "Release",
+      value: "Payment-Gated",
     },
   ];
 
@@ -104,13 +103,14 @@ export function HomepageRoutingPreview() {
                 Routing <em className="not-italic text-[var(--ms-gold)]">Preview</em>
               </h2>
               <p className="mt-4 text-sm leading-7 text-[#f5f1e8]/62 md:text-[15px]">
-                Select a destination corridor to preview intake, execution,
-                apostille, courier, and receiving-authority review.
+                Choose a destination to preview the execution route, custody
+                path, and receiving-authority review before intake.
               </p>
             </div>
 
             <div
-              className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]"
+              key={selected.slug}
+              className="animate-fade-in grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]"
               role="list"
               aria-label="Routing dimensions for the selected corridor"
             >
@@ -153,16 +153,11 @@ export function HomepageRoutingPreview() {
         </header>
 
         <div className="animate-fade-up grid overflow-hidden rounded-2xl border border-white/[0.07] bg-[#08080A]/90 shadow-[0_30px_90px_rgba(0,0,0,0.45)] lg:grid-cols-[5fr_7fr]">
-          <div className="space-y-6 border-b border-white/[0.06] p-5 sm:p-6 lg:border-b-0 lg:border-r">
+          <div className="space-y-5 border-b border-white/[0.06] p-5 sm:p-6 lg:border-b-0 lg:border-r">
             <div>
-              <div className="mb-5 flex items-center justify-between">
-                <span className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/55">
-                  Priority Destination Corridors
-                </span>
-                <span className="font-mono text-[8px] text-white/25">
-                  Florida origin
-                </span>
-              </div>
+              <p className="mb-4 font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/55">
+                Destination Corridors
+              </p>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
                 {PRIORITY_DESTINATIONS.map((destination) => {
@@ -172,12 +167,13 @@ export function HomepageRoutingPreview() {
                       key={destination.slug}
                       type="button"
                       onClick={() => setSelected(destination)}
-                      className={`min-h-12 rounded-lg border px-3 py-2 text-left transition-all ${
+                      className={`min-h-12 rounded-lg border px-3 py-2 text-left transition-all duration-300 ${
                         active
-                          ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.08] text-white"
-                          : "border-white/[0.06] bg-white/[0.015] text-white/45 hover:border-[var(--ms-gold)]/25 hover:text-white/70"
+                          ? "border-[var(--ms-gold)]/60 bg-[var(--ms-gold)]/[0.1] text-white shadow-[0_0_0_1px_rgba(212,175,55,0.25),0_8px_24px_rgba(212,175,55,0.08)]"
+                          : "border-white/[0.06] bg-white/[0.015] text-white/45 hover:-translate-y-px hover:border-[var(--ms-gold)]/25 hover:text-white/70"
                       }`}
                       aria-pressed={active}
+                      aria-label={`Preview routing for ${destination.name}`}
                     >
                       <span className="mr-2">{destination.flag}</span>
                       <span className="text-xs">{destination.name}</span>
@@ -185,52 +181,43 @@ export function HomepageRoutingPreview() {
                   );
                 })}
               </div>
-
-              <div className="mt-4 rounded-xl border border-[var(--ms-gold)]/10 bg-[var(--ms-gold)]/[0.025] p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Route className="h-3.5 w-3.5 text-[var(--ms-gold)]" />
-                  <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">
-                    Simplified Corridor Logic
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-white/55">
-                  <span>Florida</span>
-                  <span className="h-px flex-1 bg-gradient-to-r from-[var(--ms-gold)]/20 via-[var(--ms-gold)]/70 to-[var(--ms-gold)]/20" />
-                  <span className="text-white/85">{selected.name}</span>
-                </div>
-              </div>
             </div>
 
             <MiniCorridorMapPreview corridor={corridor} />
           </div>
 
-          <div className="space-y-6 p-5 sm:p-6 lg:p-8">
+          <div className="p-5 sm:p-6 lg:p-8">
             <DestinationIntelligenceCard
               key={selected.slug}
               destination={selected}
               variant="homepagePreview"
             />
-            <HomeExecutionPathCards />
           </div>
         </div>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-5">
           <HomeShippingCorridorPanel corridor={corridor} />
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href={corridor.intakeHref}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[var(--ms-gold)]/90"
-            >
-              Start Controlled Intake
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <Link
-              href={`/countries/${corridor.slug}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)]/60"
-            >
-              View Country Requirements
-            </Link>
+          <div className="rounded-2xl border border-white/[0.07] bg-[#08080A]/90 p-5 sm:p-6">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={corridor.intakeHref}
+                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
+              >
+                Start Controlled Intake
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href={`/countries/${corridor.slug}`}
+                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)]/60"
+              >
+                View Country Requirements
+              </Link>
+            </div>
+            <p className="mt-3 text-center text-[10px] leading-5 text-white/35">
+              Final routing is confirmed after document review, payment
+              confirmation, execution, and apostille requirements are validated.
+            </p>
           </div>
         </div>
       </div>
