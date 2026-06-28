@@ -12,6 +12,7 @@
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
     "smoke:responsive": "node scripts/smoke-responsive-routes.ts",
+    "verify:production": "node scripts/verify-production.mjs",
     "validate:intelligence": "node scripts/validate-country-intelligence.mjs",
     "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs",
     "validate:intelligence-safety": "node scripts/validate-public-intelligence-safety.mjs",
