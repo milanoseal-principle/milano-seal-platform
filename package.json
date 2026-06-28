@@ -26,6 +26,8 @@
     "validate:payment-release-gates": "node scripts/validate-payment-release-gates.mjs",
     "validate:shipping-tracking": "node scripts/validate-shipping-tracking.mjs",
     "validate:apostille-packet": "node scripts/validate-apostille-packet.mjs",
+    "validate:seo-client-profiles": "node scripts/validate-seo-client-profiles.mjs",
+    "verify:production": "node scripts/verify-production.mjs"
     "validate:seo-client-profiles": "node scripts/validate-seo-client-profiles.mjs"
   },
   "dependencies": {
