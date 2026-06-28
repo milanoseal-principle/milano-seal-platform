@@ -1,0 +1,1 @@
+const { readFileSync }=await import('fs'); const s=readFileSync('data/seo-client-profiles.ts','utf8'); for (const k of ['international lawyers','HNWI','yacht brokers','Start Controlled Intake']) if(!s.includes(k)) throw new Error('seo profile missing '+k); console.log('validate:seo-client-profiles passed');
