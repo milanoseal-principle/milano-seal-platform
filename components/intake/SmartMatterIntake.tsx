@@ -158,27 +158,33 @@ export function SmartMatterIntake({
   const showEmptyParseNotice = ready && !analysis.country;
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto mb-12 overflow-hidden bg-[#F4EFE6] border border-[rgba(198,165,90,0.18)] rounded-sm shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
-      <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#C6A55A] to-transparent opacity-50" />
+    <div
+      className="relative w-full max-w-2xl mx-auto mb-12 overflow-hidden border border-[rgba(198,165,90,0.32)] rounded-2xl"
+      style={{
+        background: "linear-gradient(180deg, rgba(13,13,15,0.96) 0%, rgba(7,7,8,0.98) 100%)",
+        boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 40px rgba(198,165,90,0.06), inset 0 0 30px rgba(198,165,90,0.02)",
+      }}
+    >
+      <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#C6A55A] to-transparent opacity-70" />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at top left, rgba(198,165,90,0.08), transparent 45%)",
+            "radial-gradient(circle at top left, rgba(198,165,90,0.10), transparent 45%)",
         }}
       />
 
       <div className="relative px-8 py-7 md:px-10 md:py-8">
         <div className="flex items-start justify-between gap-4 mb-5">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full border border-[rgba(198,165,90,0.45)] flex items-center justify-center text-[#A8894A]">
+            <div className="w-9 h-9 rounded-full border border-[rgba(198,165,90,0.5)] flex items-center justify-center text-[var(--ms-gold)]" style={{ background: "radial-gradient(circle, rgba(198,165,90,0.12), transparent)" }}>
               <Sparkles className="w-4 h-4" strokeWidth={1.6} />
             </div>
             <div>
-              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8E7440]">
+              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                 Smart Matter Intake
               </div>
-              <div className="text-[12px] text-[#6E6558] mt-1 leading-relaxed max-w-md font-light">
+              <div className="text-[12px] text-white/55 mt-1 leading-relaxed max-w-md font-light">
                 Upload PDF or Word documents, or describe your matter in any language. The
                 system will structure your intake, detect jurisdiction
                 requirements, and prepare your execution pathway.
@@ -188,7 +194,7 @@ export function SmartMatterIntake({
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            className="text-[10px] uppercase tracking-[0.18em] text-[#7E7465] hover:text-[#1A1208] transition-colors cursor-pointer"
+            className="text-[10px] uppercase tracking-[0.18em] text-white/40 hover:text-[var(--ms-gold)] transition-colors cursor-pointer"
           >
             {collapsed ? "Open" : "Hide"}
           </button>
@@ -298,7 +304,7 @@ export function SmartMatterIntake({
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={parsing}
-                  className="px-5 py-3 cursor-pointer border border-[#C6A55A] bg-transparent text-[#8D7442] hover:bg-[rgba(198,165,90,0.08)] text-[10.5px] font-semibold tracking-[0.16em] uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                  className="px-5 py-3 rounded-lg cursor-pointer border border-[var(--ms-gold)]/45 bg-black/30 text-[var(--ms-gold)]/85 hover:bg-[rgba(198,165,90,0.10)] hover:text-[var(--ms-gold)] text-[10.5px] font-semibold tracking-[0.16em] uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   Add Documents
@@ -321,7 +327,7 @@ export function SmartMatterIntake({
               </div>
 
               {error && (
-                <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-sm text-[11px] text-red-800">
+                <div className="mb-5 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/10 text-[11px] text-red-300">
                   {error}
                 </div>
               )}
@@ -358,7 +364,7 @@ export function SmartMatterIntake({
                             ? "Consular Route"
                             : "Standard Corridor"}
                         {intelligencePreview.is_derived && (
-                          <span className="ml-2 text-[9px] text-[#9A8A6A] uppercase tracking-wider">(derived)</span>
+                          <span className="ml-2 text-[9px] text-[#C6A55A] uppercase tracking-wider">(derived)</span>
                         )}
                       </IntelRow>
                       {intelligencePreview.estimated_timeline_days && (
@@ -384,7 +390,7 @@ export function SmartMatterIntake({
                       <IntelRow label="Client Next Action">
                         {intelligencePreview.next_action_client}
                       </IntelRow>
-                      <p className="text-[10px] text-[#6E6558] font-light leading-relaxed pt-2 border-t border-[rgba(198,165,90,0.1)]">
+                      <p className="text-[10px] text-[#9A9488] font-light leading-relaxed pt-2 border-t border-[rgba(198,165,90,0.1)]">
                         International use is subject to destination and receiving-authority requirements. The Milano Seal provides notarial and document coordination services only and does not provide legal advice.
                       </p>
                     </div>
@@ -394,10 +400,10 @@ export function SmartMatterIntake({
 
               {showEmptyParseNotice && (
                 <div className="mb-5 px-4 py-3 bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.25)] rounded-sm">
-                  <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-1">
+                  <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A] mb-1">
                     Insufficient Detail
                   </div>
-                  <p className="text-[12px] text-[#4A4030] font-light leading-relaxed">
+                  <p className="text-[12px] text-[#E8DCC0] font-light leading-relaxed">
                     The system finished structuring but couldn&apos;t identify a
                     destination jurisdiction from your input. Please add a short
                     description of your matter (destination country, document
@@ -406,7 +412,7 @@ export function SmartMatterIntake({
                 </div>
               )}
 
-              <div className="pt-4 border-t border-[rgba(198,165,90,0.14)] text-[11px] text-[#756C61] leading-relaxed font-light">
+              <div className="pt-4 border-t border-[rgba(198,165,90,0.14)] text-[11px] text-[#9A9488] leading-relaxed font-light">
                 All matters are reviewed before execution begins. Jurisdictional
                 requirements, apostille eligibility, and execution pathways are
                 confirmed prior to scheduling.
@@ -422,8 +428,8 @@ export function SmartMatterIntake({
 function StructuringPanel({ current }: { current: StructuringState }) {
   const idx = STRUCTURING_SEQUENCE.indexOf(current);
   return (
-    <div className="bg-[rgba(255,255,255,0.42)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5 mb-5">
-      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-4">
+    <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5 mb-5">
+      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A] mb-4">
         Matter Structuring Status
       </div>
       <div className="space-y-2.5">
@@ -438,10 +444,10 @@ function StructuringPanel({ current }: { current: StructuringState }) {
             >
               <div
                 className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  reached ? "bg-[#C6A55A]" : "bg-black/15"
+                  reached ? "bg-[#C6A55A]" : "bg-white/10"
                 } ${active ? "animate-pulse" : ""}`}
               />
-              <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#51483A] font-semibold">
+              <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#9A9488] font-semibold">
                 {STRUCTURING_LABEL[step]}
               </div>
             </div>
@@ -455,27 +461,27 @@ function StructuringPanel({ current }: { current: StructuringState }) {
 function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
   const lr = analysis.languageRouting;
   return (
-    <div className="bg-[rgba(255,255,255,0.46)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5">
-      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#8B7446] mb-4">
+    <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(198,165,90,0.18)] rounded-sm p-5">
+      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A] mb-4">
         Jurisdiction Preview
       </div>
 
       <div className="mb-4">
-        <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+        <div className="text-[11px] text-[#9A9488] mb-1 font-light">
           Destination Jurisdiction
         </div>
-        <div className="font-serif text-[22px] text-[#1D1A16] leading-tight">
+        <div className="font-serif text-[22px] text-[#E8DCC0] leading-tight">
           {analysis.country || "—"}
         </div>
       </div>
 
       <div className="mb-4">
-        <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+        <div className="text-[11px] text-[#9A9488] mb-1 font-light">
           Hague Convention
         </div>
         <div
           className={`text-[13px] font-semibold ${
-            analysis.hagueMember ? "text-[#3C6B46]" : "text-[#8A4A2B]"
+            analysis.hagueMember ? "text-[#5BBF84]" : "text-[#E0A07A]"
           }`}
         >
           {analysis.hagueMember ? "YES" : "NO"}
@@ -484,10 +490,10 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
 
       {lr && (
         <div className="mb-4">
-          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+          <div className="text-[11px] text-[#9A9488] mb-1 font-light">
             Official Language{lr.officialLanguages.length > 1 ? "s" : ""}
           </div>
-          <div className="text-[13px] text-[#2C261F] font-light">
+          <div className="text-[13px] text-[#E8DCC0] font-light">
             {lr.officialLanguages.join(", ")}
           </div>
         </div>
@@ -495,17 +501,17 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
 
       {lr && (
         <div className="mb-4">
-          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+          <div className="text-[11px] text-[#9A9488] mb-1 font-light">
             Translation
           </div>
           <div
             className={`text-[12px] font-semibold ${
-              lr.translationLikely ? "text-[#8A5A2B]" : "text-[#3C6B46]"
+              lr.translationLikely ? "text-[#E0A07A]" : "text-[#5BBF84]"
             }`}
           >
             {lr.translationLikely ? "Typically required" : "Not typically required"}
           </div>
-          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+          <div className="text-[11px] text-[#9A9488] font-light mt-0.5 leading-relaxed">
             {lr.translationNote}
           </div>
         </div>
@@ -513,13 +519,13 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
 
       {!lr && analysis.country && (
         <div className="mb-4">
-          <div className="text-[11px] text-[#7F725C] mb-1 font-light">
+          <div className="text-[11px] text-[#9A9488] mb-1 font-light">
             Translation
           </div>
-          <div className="text-[12px] text-[#8A5A2B] font-semibold">
+          <div className="text-[12px] text-[#E0A07A] font-semibold">
             Manual review required
           </div>
-          <div className="text-[11px] text-[#6E6558] font-light mt-0.5 leading-relaxed">
+          <div className="text-[11px] text-[#9A9488] font-light mt-0.5 leading-relaxed">
             Translation and language requirements for this jurisdiction will be confirmed by our team before execution.
           </div>
         </div>
@@ -527,10 +533,10 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
 
       {analysis.executionPath.length > 0 && (
         <div>
-          <div className="text-[11px] text-[#7F725C] mb-2 font-light">
+          <div className="text-[11px] text-[#9A9488] mb-2 font-light">
             Execution Path
           </div>
-          <div className="text-[13px] text-[#2C261F] leading-relaxed font-light">
+          <div className="text-[13px] text-[#E8DCC0] leading-relaxed font-light">
             {analysis.executionPath.join(" → ")}
           </div>
         </div>
@@ -564,13 +570,13 @@ function ConfidencePanel({ analysis }: { analysis: MatterAnalysis }) {
       </div>
       {analysis.missingFields.length > 0 && (
         <div className="pt-3 border-t border-white/[0.08]">
-          <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#9F9688] mb-1.5 font-semibold">
+          <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#9A9488] mb-1.5 font-semibold">
             Missing
           </div>
           {analysis.missingFields.map((f) => (
             <div
               key={f}
-              className="text-[12px] text-[#9F9688] leading-relaxed font-light"
+              className="text-[12px] text-[#9A9488] leading-relaxed font-light"
             >
               · {f}
             </div>

@@ -5,6 +5,7 @@ import { motion, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
 import {
   DestinationIntelligenceCard,
+  executionPathPreview,
   type DestinationIntelligence,
 } from "@/components/landing/destination-intelligence-card";
 
@@ -51,9 +52,13 @@ function heroDestinationIntelligence(
   destination: Destination,
 ): DestinationIntelligence {
   const verificationRequired = destination.hagueStatus !== "HAGUE";
+  const slug = destination.id === "uk" ? "united-kingdom" : destination.id;
+  const needsTranslation = destination.useCases.some((item) =>
+    /translation/i.test(item),
+  );
 
   return {
-    slug: destination.id === "uk" ? "united-kingdom" : destination.id,
+    slug,
     name: destination.label,
     flag: DESTINATION_FLAGS[destination.id],
     routeLabel: destination.routeLabel,
@@ -68,15 +73,13 @@ function heroDestinationIntelligence(
         : destination.id === "brazil"
           ? "International document execution for Brazil"
           : `Florida to ${destination.label} apostille support`,
-    translationReview: destination.useCases.some((item) =>
-      /translation/i.test(item),
-    ),
+    translationReview: needsTranslation,
     courierReview: true,
-    pathPreview: [
-      "Verify document type",
-      "Confirm destination requirements",
-      "Prepare secure intake pathway",
-    ],
+    pathPreview: executionPathPreview(
+      slug,
+      destination.hagueStatus === "HAGUE",
+      needsTranslation,
+    ),
   };
 }
 
@@ -181,6 +184,15 @@ export function GlobalTrustCoreHero() {
     timers.current.push(setTimeout(()=>{ setPhase("rotating"); setArcsDone(true); }, 80));
     return ()=>timers.current.forEach(clearTimeout);
   }, []);
+
+  // Collapse the routing-intelligence popover once the user scrolls away from it,
+  // so it never floats over downstream content.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onScroll = () => setSelectedId(null);
+    window.addEventListener("scroll", onScroll, { passive: true, once: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [selectedId]);
 
   const isSettled  = phase !== "idle";
   const activeId   = hoveredId ?? selectedId;

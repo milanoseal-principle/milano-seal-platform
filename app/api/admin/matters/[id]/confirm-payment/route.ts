@@ -70,8 +70,14 @@ export async function POST(
     .from("deals")
     .update({
       payment_confirmed: true,
+      payment_confirmed_at: now,
       payment_status: "confirmed",
       paid_at: now,
+      // Operator confirms a *visible* payment — this unlocks scheduling/execution,
+      // but is "observed" not "cleared". Final packet release still requires
+      // settled funds (Wise webhook → cleared) or a recorded founder override.
+      payment_settlement_status: "observed_available",
+      payment_observed_at: now,
     })
     .eq("id", id);
 
