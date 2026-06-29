@@ -26,15 +26,15 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const MILANO_CREST = "/brand/milano-seal-orb-v2.png";
 
 const LEFT_PRINCIPLES = [
-  { index: "01", icon: ShieldCheck, title: "Secure Intake", desc: "Verified identity, document stage, and scope before the matter begins." },
-  { index: "02", icon: Globe2, title: "Global Document Intelligence", desc: "Destination rules, forms, and authority requirements reviewed by corridor." },
-  { index: "03", icon: LockKeyhole, title: "Payment-Gated Scheduling", desc: "Scheduling opens only after scope and payment confirmation." },
+  { index: "01", icon: ShieldCheck, title: "Secure Intake", desc: "Verified identity, document stage, and scope before the matter begins.", href: "/intake" },
+  { index: "02", icon: Globe2, title: "Global Document Intelligence", desc: "Destination rules, forms, and authority requirements reviewed by corridor.", href: "/countries" },
+  { index: "03", icon: LockKeyhole, title: "Payment-Gated Scheduling", desc: "Scheduling opens only after scope and payment confirmation.", href: "/process" },
 ];
 
 const RIGHT_PRINCIPLES = [
-  { index: "04", icon: GitBranch, title: "Chain-of-Custody Visibility", desc: "Every custody movement is tracked from intake to release." },
-  { index: "05", icon: Stamp, title: "Apostille Coordination", desc: "Apostille and authentication routing coordinated by jurisdiction." },
-  { index: "06", icon: Send, title: "International Release", desc: "Final packets release through approved courier and delivery controls." },
+  { index: "04", icon: GitBranch, title: "Chain-of-Custody Visibility", desc: "Every custody movement is tracked from intake to release.", href: "/process" },
+  { index: "05", icon: Stamp, title: "Apostille Coordination", desc: "Apostille and authentication routing coordinated by jurisdiction.", href: "/services/apostille" },
+  { index: "06", icon: Send, title: "International Release", desc: "Final packets release through approved courier and delivery controls.", href: "/learn/international-document-courier" },
 ];
 
 // Deterministic — no Math.random, stable across server/client render.
@@ -165,34 +165,65 @@ function CenterCore({ inView, reduce, compact = false }: { inView: boolean; redu
 }
 
 function Connectors({ inView, reduce }: { inView: boolean; reduce: boolean }) {
-  const rows = [60, 160, 260];
-  const line = (i: number) => ({
-    initial: reduce ? { opacity: 0 } : { strokeDashoffset: 260, opacity: 0 },
-    animate: inView ? (reduce ? { opacity: 0.42 } : { strokeDashoffset: 0, opacity: 0.42 }) : {},
-    transition: { duration: reduce ? 0.4 : 1.1, delay: 0.45 + i * 0.12, ease: EASE },
+  // Core sits at (150,170) in this 300x340 stage. Lines fan to the three card rows
+  // on each side and extend past the stage edge (x<0 / x>300) into the column gap so
+  // they visually meet the flanking cards. overflow:visible lets them bleed out.
+  const CX = 150;
+  const CY = 170;
+  const rows = [54, 170, 286];
+  // left endpoint x=-44, right endpoint x=344 — curved via a control point near the core.
+  const leftPaths = rows.map((y) => `M ${CX} ${CY} C ${CX - 70} ${CY}, ${20} ${y}, ${-44} ${y}`);
+  const rightPaths = rows.map((y) => `M ${CX} ${CY} C ${CX + 70} ${CY}, ${280} ${y}, ${344} ${y}`);
+
+  const draw = (i: number) => ({
+    initial: reduce ? { opacity: 0 } : { pathLength: 0, opacity: 0 },
+    animate: inView ? (reduce ? { opacity: 0.5 } : { pathLength: 1, opacity: 0.5 }) : {},
+    transition: { duration: reduce ? 0.4 : 1.15, delay: 0.45 + i * 0.12, ease: EASE },
   });
+
+  const allPaths = [...leftPaths, ...rightPaths];
+
   return (
-    <svg className="absolute inset-0 pointer-events-none" width="300" height="320" viewBox="0 0 300 320" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
-      {rows.map((py, i) => (
-        <motion.line key={`l${i}`} x1={0} y1={py} x2={95} y2={160} stroke="url(#cL)" strokeWidth="1" strokeDasharray="260" {...line(i)} />
+    <svg className="absolute inset-0 pointer-events-none" width="300" height="340" viewBox="0 0 300 340" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
+      {leftPaths.map((d, i) => (
+        <motion.path key={`lp${i}`} d={d} stroke="url(#cL)" strokeWidth="1.25" strokeLinecap="round" {...draw(i)} />
       ))}
-      {rows.map((py, i) => (
-        <motion.line key={`r${i}`} x1={205} y1={160} x2={300} y2={py} stroke="url(#cR)" strokeWidth="1" strokeDasharray="260" {...line(i)} />
+      {rightPaths.map((d, i) => (
+        <motion.path key={`rp${i}`} d={d} stroke="url(#cR)" strokeWidth="1.25" strokeLinecap="round" {...draw(i)} />
       ))}
-      {rows.map((py, i) => (
-        <motion.circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="var(--ms-gold)" initial={{ opacity: 0 }} animate={inView ? { opacity: 0.45 } : {}} transition={{ duration: 0.4, delay: 1.1 + i * 0.1 }} />
+
+      {/* live "flow" pulse travelling outward along each wire (skipped on reduced motion) */}
+      {!reduce &&
+        allPaths.map((d, i) => (
+          <motion.path
+            key={`flow${i}`}
+            d={d}
+            stroke="rgba(255,245,220,0.85)"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeDasharray="3 150"
+            initial={{ strokeDashoffset: 0, opacity: 0 }}
+            animate={inView ? { strokeDashoffset: -153, opacity: [0, 0.9, 0] } : {}}
+            transition={{ duration: 2.6, repeat: Infinity, delay: 1.6 + i * 0.25, ease: "linear" }}
+          />
+        ))}
+
+      {/* endpoint glow nodes where each wire meets a card */}
+      {rows.map((y, i) => (
+        <motion.circle key={`ld${i}`} cx={-44} cy={y} r="3" fill="var(--ms-gold)" initial={{ opacity: 0, scale: 0 }} animate={inView ? { opacity: 0.55, scale: 1 } : {}} transition={{ duration: 0.4, delay: 1.2 + i * 0.1 }} style={{ filter: "drop-shadow(0 0 5px rgba(198,165,90,0.7))" }} />
       ))}
-      {rows.map((py, i) => (
-        <motion.circle key={`rd${i}`} cx={300} cy={py} r="2.5" fill="var(--ms-gold)" initial={{ opacity: 0 }} animate={inView ? { opacity: 0.45 } : {}} transition={{ duration: 0.4, delay: 1.1 + i * 0.1 }} />
+      {rows.map((y, i) => (
+        <motion.circle key={`rd${i}`} cx={344} cy={y} r="3" fill="var(--ms-gold)" initial={{ opacity: 0, scale: 0 }} animate={inView ? { opacity: 0.55, scale: 1 } : {}} transition={{ duration: 0.4, delay: 1.2 + i * 0.1 }} style={{ filter: "drop-shadow(0 0 5px rgba(198,165,90,0.7))" }} />
       ))}
+
       <defs>
-        <linearGradient id="cL" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0" />
-          <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0.45" />
+        <linearGradient id="cL" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0.05" />
         </linearGradient>
         <linearGradient id="cR" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0.05" />
         </linearGradient>
       </defs>
     </svg>
@@ -206,7 +237,7 @@ function PrincipleCard({
   reduce,
   index,
 }: {
-  principle: { index: string; icon: React.ElementType; title: string; desc: string };
+  principle: { index: string; icon: React.ElementType; title: string; desc: string; href: string };
   align: "left" | "right";
   inView: boolean;
   reduce: boolean;
@@ -225,8 +256,10 @@ function PrincipleCard({
           "linear-gradient(150deg, rgba(198,165,90,0.5) 0%, rgba(198,165,90,0.12) 30%, rgba(198,165,90,0.04) 60%, rgba(198,165,90,0.22) 100%)",
       }}
     >
-      <div
-        className="relative h-full rounded-2xl p-5 transition-colors duration-300"
+      <Link
+        href={principle.href}
+        aria-label={`${principle.title} — learn more`}
+        className="relative block h-full rounded-2xl p-5 transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)]/60"
         style={{
           background: "linear-gradient(180deg, rgba(12,12,14,0.92) 0%, rgba(7,7,8,0.86) 100%)",
           backdropFilter: "blur(8px)",
@@ -252,9 +285,12 @@ function PrincipleCard({
               <h3 className="font-serif text-[15px] font-medium leading-snug text-[#E8DCC0] transition-colors group-hover:text-[var(--ms-gold)]">{principle.title}</h3>
             </div>
             <p className="text-[13px] leading-relaxed text-white/58">{principle.desc}</p>
+            <span className={`mt-2 inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/0 transition-colors duration-300 group-hover:text-[var(--ms-gold)]/70 ${align === "right" ? "flex-row-reverse" : ""}`}>
+              View <ArrowRight className="h-2.5 w-2.5" />
+            </span>
           </div>
         </div>
-      </div>
+      </Link>
     </motion.div>
   );
 }
