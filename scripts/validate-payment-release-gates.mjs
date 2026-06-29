@@ -34,4 +34,9 @@ if(!/status\s*!==\s*402/.test(e2e)) throw new Error('production test must assert
 if(/api\.wise\.com|goshippo|create-label|resend/i.test(e2e)) throw new Error('production test must not call wise/shippo/labels/email');
 if(/payment_status:\s*\w+\s*=\s*body|body\.(payment_status|amount_paid|amount_due|role)/.test(e2e)) throw new Error('production test must not accept payment/role fields from body');
 
+// Edge middleware must let the secret-authenticated test runner through (else the
+// session gate 401s it before the route runs), and ONLY when the secret matches.
+const proxy=readFileSync('proxy.ts','utf8');
+for (const k of ['production-matter-ledger','x-test-runner-secret','PRODUCTION_TEST_SECRET']) if(!proxy.includes(k)) throw new Error('proxy test-runner bypass missing '+k);
+
 console.log('validate:payment-release-gates passed');

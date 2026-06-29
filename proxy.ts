@@ -48,6 +48,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(allianceUrl);
   }
 
+  // Founder production ledger test runner: allow secret-authenticated server-to-
+  // server calls (from SQL/terminal, no browser cookie) to pass the edge session
+  // gate. The route itself still verifies the secret, the confirmation token, and
+  // the test-matter guard before doing anything.
+  const testRunnerSecret = process.env.PRODUCTION_TEST_SECRET;
+  if (
+    pathname === "/api/admin/tests/production-matter-ledger" &&
+    testRunnerSecret &&
+    request.headers.get("x-test-runner-secret") === testRunnerSecret
+  ) {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_AUTH_PATHS.has(pathname)) {
     return NextResponse.next();
   }
