@@ -348,6 +348,7 @@ async function processWiseEvent(opts: {
     .from("deals")
     .update({
       payment_status: "paid",
+      payment_confirmed: true,
       payment_method: "wise",
       payment_reference: reference,
       payment_amount_received: confirmedAmount,

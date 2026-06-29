@@ -59,7 +59,7 @@ export async function POST(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const { data: deal, error: dealErr } = await adminClient
     .from("deals")
-    .select("id, deal_id, deal_status, payment_status, payment_confirmed, amount_due, amount_paid, destination_country, is_platform_fee_only, payment_settlement_status, payment_cleared_at")
+    .select("id, deal_id, deal_status, payment_status, payment_confirmed, payment_confirmed_at, amount_due, amount_paid, destination_country, is_platform_fee_only, payment_settlement_status, payment_cleared_at")
     .eq(isUuid ? "id" : "deal_id", id)
     .single();
 
@@ -67,8 +67,17 @@ export async function POST(
     return NextResponse.json({ error: "Deal not found" }, { status: 404 });
   }
 
-  // Payment gate — must be confirmed before release
-  const paymentOk = deal.payment_confirmed === true || deal.is_platform_fee_only === true;
+  // Payment gate — must be confirmed before release. Source of truth is broadened
+  // beyond the legacy payment_confirmed boolean to payment_confirmed_at, status,
+  // and amount coverage so confirmation drift cannot silently block releases.
+  const amountDueNum = Number(deal.amount_due ?? 0);
+  const paymentOk =
+    deal.is_platform_fee_only === true ||
+    deal.payment_confirmed === true ||
+    deal.payment_confirmed_at != null ||
+    deal.payment_status === "paid" ||
+    deal.payment_status === "confirmed" ||
+    (amountDueNum > 0 && Number(deal.amount_paid ?? 0) >= amountDueNum);
   if (!paymentOk) {
     try {
       assertPaymentConfirmed(deal, "release");

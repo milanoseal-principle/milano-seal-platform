@@ -70,6 +70,7 @@ export async function POST(
     .from("deals")
     .update({
       payment_confirmed: true,
+      payment_confirmed_at: now,
       payment_status: "confirmed",
       paid_at: now,
       // Operator confirms a *visible* payment — this unlocks scheduling/execution,
