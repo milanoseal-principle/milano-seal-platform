@@ -19,7 +19,7 @@
     "validate:sales-engine": "node scripts/validate-sales-engine.mjs",
     "validate:revenue-copy": "node scripts/validate-revenue-copy.mjs",
     "validate:brand-language": "node scripts/validate-brand-language.mjs",
-    "validate:service-positioning": "node scripts/validate-service-positioning.mjs"
+    "validate:service-positioning": "node scripts/validate-service-positioning.mjs",
     "validate:operating-spines": "node scripts/validate-operating-spines.mjs",
     "validate:global-compliance-atlas": "node scripts/validate-global-compliance-atlas.mjs",
     "validate:receiving-authority-rules": "node scripts/validate-receiving-authority-rules.mjs",
