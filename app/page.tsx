@@ -12,6 +12,7 @@ import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { HomepageRoutingPreview } from "@/components/landing/homepage-routing-preview";
+import { PersonaRouting } from "@/components/landing/persona-routing";
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
@@ -49,6 +50,9 @@ export default function HomePage() {
 
         {/* 2. Trust strip — credential badges */}
         <TrustStrip />
+
+        {/* 2b. Persona routing — explicit door per visitor type */}
+        <PersonaRouting />
 
         {/* 3. Milano Trust Core — 6 pillars */}
         <div id="principles">
