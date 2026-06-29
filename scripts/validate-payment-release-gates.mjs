@@ -23,4 +23,13 @@ for (const k of ['viewer_role','founder_admin','override_reason']) if(!drawer.in
 if(!/JSON\.stringify\(\{\s*override_reason/.test(drawer)) throw new Error('override must post only override_reason');
 if(/JSON\.stringify\(\{[^}]*\b(role|payment_status|payment_settlement_status)\b/.test(drawer)) throw new Error('override body must not post role/payment fields');
 
+// Authenticated production matter ledger test: founder-only, test-matter-guarded,
+// drives the real release route (block without override, succeed with), verifies
+// custody + audit rows, and never touches Wise/Shippo/email/labels.
+const e2e=readFileSync('app/api/admin/tests/production-matter-ledger/route.ts','utf8');
+for (const k of ['isFounderAdmin','EXECUTE_PRODUCTION_LEDGER_TEST','MS-2026-E2E-','/api/deals/','override_reason','PAYMENT_RECONCILED','RELEASE_GATE_OVERRIDE','DOC_RELEASE_CONFIRMED','audit_logs','without_override_blocked']) if(!e2e.includes(k)) throw new Error('production ledger test missing '+k);
+if(!/status\s*!==\s*402/.test(e2e)) throw new Error('production test must assert release blocked (402) without override');
+if(/api\.wise\.com|goshippo|create-label|resend/i.test(e2e)) throw new Error('production test must not call wise/shippo/labels/email');
+if(/payment_status:\s*\w+\s*=\s*body|body\.(payment_status|amount_paid|amount_due|role)/.test(e2e)) throw new Error('production test must not accept payment/role fields from body');
+
 console.log('validate:payment-release-gates passed');
