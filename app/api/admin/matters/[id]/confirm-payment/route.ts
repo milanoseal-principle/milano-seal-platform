@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { logActivity } from "@/lib/activity";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const runtime = "nodejs";
@@ -114,6 +115,10 @@ export async function POST(
       meta: { actor: actorEmail, timestamp: now },
     });
   } catch {}
+
+  // Mirror the observed payment into the client notification log. Runs only after
+  // the existing observed-confirmation logic above; non-blocking and client-safe.
+  await notifyClient(id, "payment_observed");
 
   return NextResponse.json({ ok: true });
 }

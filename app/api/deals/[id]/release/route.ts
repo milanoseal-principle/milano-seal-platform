@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isFounderAdmin } from "@/lib/security/access-control";
 import { recordSecurityEvent } from "@/lib/security/security-events";
 import { performFinalRelease } from "@/lib/release/performFinalRelease";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 
 export const runtime = "nodejs";
 
@@ -58,6 +60,29 @@ export async function POST(
     actorId: user.email ?? user.id,
     overrideReason,
   });
+
+  // Mirror a successful release into the client notification log. Runs only after
+  // the release gate has already passed (status 200); non-blocking and client-safe.
+  // Resolves the deal UUID (params [id] may be a UUID or business reference) for
+  // messages.deal_id without touching the release-gate logic.
+  if (outcome.status === 200) {
+    try {
+      const admin = createAdminClient();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
+      const { data: d } = await admin
+        .from("deals")
+        .select("id")
+        .eq(isUuid ? "id" : "deal_id", id)
+        .maybeSingle();
+      if (d?.id) await notifyClient(d.id, "release_ready");
+    } catch (err) {
+      console.error(
+        "[release] notify failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+
   return NextResponse.json(outcome.body, { status: outcome.status });
 }
 
