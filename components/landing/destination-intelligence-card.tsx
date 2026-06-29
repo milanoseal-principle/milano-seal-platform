@@ -286,7 +286,7 @@ export function DestinationIntelligenceCard({
           aria-label={`Start controlled intake for ${data.name}`}
           className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
         >
-          Start Controlled Intake
+          Begin Secure Intake
           <ArrowRight className="h-3 w-3" />
         </Link>
         <Link

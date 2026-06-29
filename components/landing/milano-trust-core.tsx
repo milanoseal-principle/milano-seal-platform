@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import Image from "next/image";
 import Image from "next/image";
 import {
   motion,
@@ -310,6 +312,23 @@ export function MilanoTrustCore() {
     <section ref={ref} className="relative w-full overflow-hidden border-t border-[var(--ms-gold)]/12 bg-[#050506] py-16 px-4 sm:px-6 lg:px-8">
       <Atmosphere y={hazeY} />
 
+      <div className="relative max-w-5xl mx-auto">
+        {/* Mobile: header + grid */}
+        <div className="lg:hidden">
+          <div className="flex flex-col items-center text-center mb-10">
+            <div
+              className="w-14 h-14 rounded-full border border-[var(--ms-gold)]/30 flex items-center justify-center mb-5"
+              style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, transparent 70%)" }}
+            >
+              <Image src="/milano-seal-core-brain-feather.png" alt="The Milano Seal Trust Core medallion" width={38} height={38} className="h-9 w-9 rounded-full object-contain" />
+            </div>
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
+              Our Platform Principles
+            </p>
+            <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
+            <p className="text-white/55 text-sm max-w-xs leading-relaxed">
+              International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
+            </p>
       <div className="relative mx-auto max-w-6xl">
         {/* Header */}
         <div className="text-center">
@@ -341,6 +360,132 @@ export function MilanoTrustCore() {
             ))}
           </div>
         </div>
+
+        {/* Desktop: header above, then three-column radial split */}
+        <div className="hidden lg:block">
+          {/* Header centered above */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-10"
+          >
+            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
+              Our Platform Principles
+            </p>
+            <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
+              Six Review Pillars
+            </h2>
+            <p className="text-white/50 text-sm leading-relaxed max-w-2xl mx-auto">
+              International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
+            </p>
+          </motion.div>
+
+          {/* Three-column: pillars | medallion | pillars — all vertically centered */}
+          <div className="grid grid-cols-[1fr_280px_1fr] items-center gap-0 relative" style={{ minHeight: 280 }}>
+            {/* Left pillars */}
+            <div className="flex flex-col gap-7 pr-8">
+              {LEFT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
+            </div>
+
+            {/* Center medallion */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88 }}
+              animate={inView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center relative"
+              style={{ height: 280 }}
+            >
+              {/* Glow */}
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: 260, height: 260,
+                  background: "radial-gradient(circle, rgba(198,165,90,0.09) 0%, transparent 70%)",
+                  filter: "blur(16px)",
+                }}
+              />
+              {/* Connector lines — SVG fan from center orb to each pillar row */}
+              <svg
+                className="absolute inset-0 pointer-events-none"
+                width="280"
+                height="280"
+                viewBox="0 0 280 280"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ overflow: "visible" }}
+              >
+                {/* Left connectors: from orb edge (x=75, y=140) to left column edge (x=0) at pillar rows */}
+                {[47, 140, 233].map((py, i) => (
+                  <line
+                    key={`l${i}`}
+                    x1={0} y1={py}
+                    x2={75} y2={140}
+                    stroke="url(#connLeft)"
+                    strokeWidth="1"
+                    strokeOpacity="0.5"
+                  />
+                ))}
+                {/* Right connectors: from orb edge (x=205, y=140) to right column edge (x=280) at pillar rows */}
+                {[47, 140, 233].map((py, i) => (
+                  <line
+                    key={`r${i}`}
+                    x1={205} y1={140}
+                    x2={280} y2={py}
+                    stroke="url(#connRight)"
+                    strokeWidth="1"
+                    strokeOpacity="0.5"
+                  />
+                ))}
+                {/* Small node dots at pillar connection points */}
+                {[47, 140, 233].map((py, i) => (
+                  <circle key={`ld${i}`} cx={0} cy={py} r="2.5" fill="var(--ms-gold)" fillOpacity="0.35" />
+                ))}
+                {[47, 140, 233].map((py, i) => (
+                  <circle key={`rd${i}`} cx={280} cy={py} r="2.5" fill="var(--ms-gold)" fillOpacity="0.35" />
+                ))}
+                <defs>
+                  <linearGradient id="connLeft" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+                    <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0" />
+                    <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0.35" />
+                  </linearGradient>
+                  <linearGradient id="connRight" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+                    <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="var(--ms-gold)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              {/* Rings */}
+              <div className="absolute w-[240px] h-[240px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.08)" }} />
+              <div className="absolute w-[200px] h-[200px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.14)" }} />
+              <div className="absolute w-[160px] h-[160px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.22)" }} />
+              {/* Core */}
+              <div
+                className="relative w-[130px] h-[130px] rounded-full border border-[var(--ms-gold)]/40 flex items-center justify-center"
+                style={{
+                  background: "radial-gradient(circle, rgba(198,165,90,0.13) 0%, rgba(6,6,8,0.97) 70%)",
+                  boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
+                }}
+              >
+                <Image
+                  src="/milano-seal-core-brain-feather.png"
+                  alt="The Milano Seal Trust Core medallion"
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-full object-contain drop-shadow-[0_0_28px_rgba(198,165,90,0.35)]"
+                  priority={false}
+                />
+              </div>
+            </motion.div>
+
+            {/* Right pillars */}
+            <div className="flex flex-col gap-7 pl-8">
+              {RIGHT_PILLARS.map((p, i) => (
+                <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
+              ))}
+            </div>
 
         {/* Desktop: spacious flanking layout around the cinematic crest core */}
         <div className="mt-16 hidden lg:grid grid-cols-[1fr_320px_1fr] items-center gap-x-12">

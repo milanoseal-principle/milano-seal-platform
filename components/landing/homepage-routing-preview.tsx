@@ -198,6 +198,20 @@ export function HomepageRoutingPreview() {
         <div className="mt-6 space-y-5">
           <HomeShippingCorridorPanel corridor={corridor} />
 
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={corridor.intakeHref}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[var(--ms-gold)]/90"
+            >
+              Begin Secure Intake
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              href={`/countries/${corridor.slug}`}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/30 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)]/60"
+            >
+              View Country Requirements
+            </Link>
           <div className="rounded-2xl border border-white/[0.07] bg-[#08080A]/90 p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link

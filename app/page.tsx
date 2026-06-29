@@ -21,9 +21,9 @@ import { TrustProof } from "@/components/conversion/TrustProof";
 import { FinalCTA } from "@/components/conversion/FinalCTA";
 
 export const metadata: Metadata = {
-  title: "The Milano Seal™ | International Notary, Apostille & Document Execution",
+  title: "The Milano Seal™ | International Document Execution & Apostille Coordination",
   description:
-    "Premium international document execution support for apostille coordination, notarization, secure intake, matter tracking, and document release.",
+    "International Document Execution, Apostille Coordination, Remote Online Notarization, Florida Mobile Notary Coordination, Witness Coordination, and secure final packet release for U.S. documents intended for use abroad.",
 };
 
 export default function HomePage() {
