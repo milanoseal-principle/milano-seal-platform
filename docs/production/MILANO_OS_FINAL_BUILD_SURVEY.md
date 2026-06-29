@@ -76,7 +76,7 @@ lookup. No code change needed; `appendLedger()` already expects these columns.
 
 - **Matter status unification** (Module 1) — reconcile `DealStatus` ↔ `MilanoStatus`. Risky (DB CHECK + every transition site); needs its own branch + review.
 - **Notification orchestration** (Module 11) — event→email dispatch for the missing transitions; Wise-webhook client email. Medium, additive.
-- **Alliance partner-data isolation** — verify/enforce RLS so partners can't read others' matters. Security-sensitive; verify before asserting.
+- ~~**Alliance partner-data isolation**~~ — **verified**: the matter-exposing route (`app/api/alliance/jobs/route.ts`) authenticates via `supabase.auth.getUser()`, enforces `ALLOWED_ROLES`, scopes to `.eq("operator_id", user.id)`, and returns only partner-safe deal fields (mapped stage labels, no client PII, no margins). Commissions/referrals filter by `partner_id`/`session.partnerId`. Isolation is enforced at the **app layer** (service-role client + per-route `user.id` scoping + partner-safe projection), not DB RLS — defensible, but means every alliance route must filter correctly; no hole found in the matter-exposing route. A belt-and-suspenders RLS layer would be a hardening follow-up, not a fix for a known leak.
 - **Mobile-notary & witness operator queues** (Module 7) — currently services-only.
 - **Apostille auto packet assembly + non-Hague auth-chain builder** (Module 8).
 - ~~`payment_gate_audit` table~~ — checked: the table **is** created in migration `016`, so `lib/payments/paymentGate.ts` writes succeed. Not a bug (false alarm during survey).
