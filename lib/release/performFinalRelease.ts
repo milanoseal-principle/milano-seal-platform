@@ -30,7 +30,7 @@ export async function performFinalRelease(opts: {
   const { data: deal, error: dealErr } = await adminClient
     .from("deals")
     .select(
-      "id, deal_id, deal_status, payment_status, payment_confirmed, payment_confirmed_at, amount_due, amount_paid, destination_country, discount_type, service_fee_waived, payment_settlement_status, payment_cleared_at",
+      "id, deal_id, deal_status, payment_status, payment_confirmed, payment_confirmed_at, amount_due, amount_paid, destination_country, payment_settlement_status",
     )
     .eq(isUuid ? "id" : "deal_id", id)
     .single();
@@ -39,10 +39,10 @@ export async function performFinalRelease(opts: {
     return { status: 404, body: { error: "Deal not found" } };
   }
 
-  // is_platform_fee_only is computed (not a stored column) from the real
-  // discount/fee columns.
-  const isPlatformFeeOnly =
-    deal.discount_type === "platform_fee_only" || deal.service_fee_waived === true;
+  // Treat a zero-charge matter as the no-payment (platform-fee / fee-waived) case.
+  // This avoids selecting optional discount columns that may be absent on the live
+  // DB (migration drift) — keeping the release gate robust and never crashing.
+  const isPlatformFeeOnly = Number(deal.amount_due ?? 0) === 0;
 
   // Payment gate — broadened source of truth (boolean OR timestamp OR status OR amount).
   const amountDueNum = Number(deal.amount_due ?? 0);
