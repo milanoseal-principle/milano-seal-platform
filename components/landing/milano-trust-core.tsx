@@ -22,8 +22,11 @@ import {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Official Milano Seal crest used site-wide (header/footer/hero).
-const MILANO_CREST = "/brand/milano-seal-orb-v2.png";
+// Trust Core intelligence medallion — the brain/M hybrid. Used ONLY here to
+// signify document intelligence, routing, and controlled-release judgment. The
+// official Milano Seal crest (orb-v2) remains the global brand mark in the
+// header, footer, portal, and formal materials.
+const MILANO_CREST = "/brand/milano-seal-core-brain-feather.png";
 
 const LEFT_PRINCIPLES = [
   { index: "01", icon: ShieldCheck, title: "Secure Intake", desc: "Verified identity, document stage, and scope before the matter begins.", href: "/intake" },
@@ -152,7 +155,7 @@ function CenterCore({ inView, reduce, compact = false }: { inView: boolean; redu
         <div className="absolute inset-0 rounded-full pointer-events-none" style={{ background: "linear-gradient(135deg, rgba(255,245,220,0.16) 0%, transparent 46%)" }} />
         <Image
           src={MILANO_CREST}
-          alt="The Milano Seal crest"
+          alt="Milano Trust Core intelligence medallion"
           width={crestSize}
           height={crestSize}
           priority={false}
