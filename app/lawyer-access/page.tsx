@@ -75,7 +75,7 @@ export default function Page() {
               href="/intake"
               className="inline-flex items-center justify-center rounded-md border border-[#C6A55A]/40 px-5 py-3 text-sm font-semibold text-[#C6A55A] transition-colors hover:bg-[#C6A55A]/10"
             >
-              Begin Secure Intake
+              Start Controlled Intake
             </Link>
           </div>
 

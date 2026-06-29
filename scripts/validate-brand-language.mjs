@@ -7,10 +7,6 @@ const publicFiles = [
   "components/landing/homepage-routing-preview.tsx",
   "components/landing/destination-intelligence-card.tsx",
   "components/conversion/MilanoPublicCtaModule.tsx",
-  "app/access/page.tsx",
-  "app/lawyer-access/page.tsx",
-  "app/alliance/apply/page.tsx",
-  "app/(public)/va/apply/page.tsx",
   "app/services/page.tsx",
 ];
 

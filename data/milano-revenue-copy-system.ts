@@ -54,7 +54,7 @@ export const MILANO_REVENUE_COPY_BLOCKS: MilanoRevenueCopyBlock[] = [
       "Schedule RON, mobile, or in-person execution when eligible",
       "Track apostille/authentication and release status",
     ],
-    ctaLabel: "Begin Secure Intake",
+    ctaLabel: "Start Controlled Intake",
     ctaHref: "/intake",
     complianceLine: BOUNDARY,
   },
