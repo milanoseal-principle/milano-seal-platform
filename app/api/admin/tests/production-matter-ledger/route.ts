@@ -3,13 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { isFounderAdmin } from "@/lib/security/access-control";
+import { performFinalRelease } from "@/lib/release/performFinalRelease";
 
 export const runtime = "nodejs";
 
-// Founder-only authenticated production go-live proof. Drives the REAL release
-// route against an explicitly-marked test matter and verifies the hash-linked
-// custody ledger + audit rows. Never public, never bypasses any gate, never
-// touches Wise/Shippo/email/labels, never accepts payment/role fields from body.
+// Founder-only authenticated production go-live proof. Drives the REAL shared
+// release gate (performFinalRelease) against an explicitly-marked test matter and
+// verifies the hash-linked custody ledger + audit rows. Auth is either a logged-in
+// founder_admin session OR the server-side PRODUCTION_TEST_SECRET header (so it can
+// be triggered from SQL/terminal without a browser cookie). Never public, never
+// bypasses any gate, never touches Wise/Shippo/email/labels.
 const CONFIRM_TOKEN = "EXECUTE_PRODUCTION_LEDGER_TEST";
 
 function fail(step: string, details: string, evidence: Record<string, unknown> = {}) {
@@ -20,17 +23,25 @@ function fail(step: string, details: string, evidence: Record<string, unknown> =
 }
 
 export async function POST(req: Request) {
-  // 1. Auth — founder_admin only, role resolved server-side (never from body).
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, code: "UNAUTHORIZED" }, { status: 401 });
-  }
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
-  if (!isFounderAdmin(role)) {
-    return NextResponse.json({ ok: false, code: "FOUNDER_ONLY" }, { status: 403 });
+  // 1. Auth — founder_admin session OR server secret header. Role never from body.
+  const secret = process.env.PRODUCTION_TEST_SECRET;
+  const providedSecret = req.headers.get("x-test-runner-secret");
+  const secretOk = Boolean(secret) && providedSecret === secret;
+
+  let actorId = "production-ledger-test";
+  if (!secretOk) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ ok: false, code: "UNAUTHORIZED" }, { status: 401 });
+    }
+    const role = user.app_metadata?.role ?? user.user_metadata?.role;
+    if (!isFounderAdmin(role)) {
+      return NextResponse.json({ ok: false, code: "FOUNDER_ONLY" }, { status: 403 });
+    }
+    actorId = user.email ?? user.id;
   }
 
   // 2. Body — explicit confirmation + written reason; ignore any payment/role fields.
@@ -63,7 +74,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, code: "MATTER_NOT_FOUND" }, { status: 404 });
   }
 
-  // 3. Test-matter guard — refuse to ever run against a real client matter.
+  // 3. Test-matter guard — never run against a real client matter.
   const isTestMatter =
     String(deal.deal_id ?? "").startsWith("MS-2026-E2E-") ||
     /production test/i.test(String(deal.client_name ?? ""));
@@ -100,39 +111,22 @@ export async function POST(req: Request) {
     deal_id: deal.id,
     event: CUSTODY_EVENTS.PAYMENT_RECONCILED,
     actor_type: "operator",
-    actor_id: user.email ?? user.id,
+    actor_id: actorId,
     status: "observed_available",
     notes: "Authenticated production matter test payment observed.",
     metadata: { test: true, matter_test: "production_ledger", settlement_status: "observed_available" },
   });
 
-  // Internal call to the REAL release route, forwarding the founder's auth cookie.
-  const host = req.headers.get("host") ?? "";
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const origin = host ? `${proto}://${host}` : new URL(req.url).origin;
-  const cookie = req.headers.get("cookie") ?? "";
-  const releaseUrl = `${origin}/api/deals/${deal.id}/release`;
-
-  // 6. Release WITHOUT override must be BLOCKED (settlement pending).
-  const r1 = await fetch(releaseUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({}),
-  });
-  const j1 = await r1.json().catch(() => ({}));
-  if (r1.status !== 402 || j1.ok === true) {
-    return fail("release_without_override_not_blocked", `expected 402 blocked, got ${r1.status}`, { response: j1 });
+  // 6. Real release gate WITHOUT override must be BLOCKED (settlement pending).
+  const blocked = await performFinalRelease({ id: deal.id, actorId });
+  if (blocked.status !== 402 || blocked.body.ok === true) {
+    return fail("release_without_override_not_blocked", `expected 402 blocked, got ${blocked.status}`, { response: blocked.body });
   }
 
-  // 7. Release WITH founder override reason must SUCCEED.
-  const r2 = await fetch(releaseUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ override_reason: overrideReason }),
-  });
-  const j2 = await r2.json().catch(() => ({}));
-  if (r2.status !== 200 || j2.ok !== true || !j2.hash) {
-    return fail("release_with_override_failed", `expected 200 ok+hash, got ${r2.status}`, { response: j2 });
+  // 7. Real release gate WITH founder override reason must SUCCEED.
+  const released = await performFinalRelease({ id: deal.id, actorId, overrideReason });
+  if (released.status !== 200 || released.body.ok !== true || !released.body.hash) {
+    return fail("release_with_override_failed", `expected 200 ok+hash, got ${released.status}`, { response: released.body });
   }
 
   // 8. Verify hash-linked custody ledger rows.
@@ -142,8 +136,7 @@ export async function POST(req: Request) {
     .eq("deal_id", deal.id)
     .order("created_at", { ascending: true });
   const ledger = rows ?? [];
-  const present = (event: string) =>
-    ledger.some((r) => r.event === event && r.hash && r.created_at);
+  const present = (event: string) => ledger.some((r) => r.event === event && r.hash && r.created_at);
   const paymentReconciled = present("PAYMENT_RECONCILED");
   const releaseGateOverride = present("RELEASE_GATE_OVERRIDE");
   const docReleaseConfirmed = present("DOC_RELEASE_CONFIRMED");
