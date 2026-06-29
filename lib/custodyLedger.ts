@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logActivity } from "@/lib/activity";
 
 export const CUSTODY_EVENTS = {
   DOC_CREATED: "DOC_CREATED",
@@ -153,7 +154,28 @@ export async function appendLedger(
   });
 
   if (error) {
-    console.error("[custody] append failed:", error.message);
+    // A custody-ledger write must never fail silently in production. The chain-of-
+    // custody record is safety-critical (release gates, payment confirmation, QA).
+    // Kept non-throwing so callers/flows are not broken, but the failure is
+    // surfaced loudly AND the event is durably captured in activity_logs as a
+    // fallback so it is never lost even if the custody_ledger schema drifts again
+    // (the exact failure mode migration 040 repaired).
+    console.error(
+      `[custody][CRITICAL] ledger write failed for deal=${input.deal_id} event=${input.event}: ${error.message}`,
+    );
+    await logActivity({
+      deal_id: input.deal_id,
+      actor: input.actor_id ?? "system",
+      action: "system",
+      detail: `CUSTODY_LEDGER_WRITE_FAILED: ${input.event}`,
+      meta: {
+        custody_event: input.event,
+        actor_type: input.actor_type,
+        prev_hash,
+        attempted_hash: hash,
+        error: error.message,
+      },
+    });
     return null;
   }
 
