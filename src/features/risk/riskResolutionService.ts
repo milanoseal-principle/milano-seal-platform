@@ -1,2 +1,0 @@
-export const RISK_CATEGORIES = ["missing intake info","missing upload","document correction required","identifier mismatch","RON ID failure","signer no-show","platform issue","apostille rejection","state processing delay","courier delay","customs hold","payment mismatch","client silence","attorney review pending"] as const;
-export function resolveRisk(category: string) { return { category, protocol: ["notify when action needed","record event ledger entry","operator review","client-safe update"], followUpHours: [24, 72, 168], event: "RESOLUTION_CONFIRMED" }; }

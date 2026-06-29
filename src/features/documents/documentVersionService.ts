@@ -1,5 +1,0 @@
-export const DOCUMENT_VERSION_STAGES = ["intake_upload","operator_review","translation_draft","attorney_review","client_approved","ron_ready","executed","apostille_submitted","apostille_received","final_packet"] as const;
-export type DocumentVersionStage = (typeof DOCUMENT_VERSION_STAGES)[number];
-export type DocumentVersion = { stage: DocumentVersionStage; hash: string; timestamp: string; actor: string; sourceFile: string; notes?: string; approved?: boolean };
-export function createDocumentVersion(input: Omit<DocumentVersion, "timestamp">) { return { ...input, timestamp: new Date().toISOString(), event: "DOCUMENT_VERSION_CREATED" }; }
-export function canCreateVersion(stage: DocumentVersionStage, checks: { identifiersPassed?: boolean; executedIdentifiersPassed?: boolean; apostilleReceivedIdentifiersPassed?: boolean }) { if (stage === "ron_ready") return !!checks.identifiersPassed; if (stage === "apostille_submitted") return !!checks.executedIdentifiersPassed; if (stage === "final_packet") return !!checks.apostilleReceivedIdentifiersPassed; return true; }

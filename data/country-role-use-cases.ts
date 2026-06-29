@@ -1,3 +1,0 @@
-import { DESTINATIONS } from "@/data/destinations";
-export const COUNTRY_ROLE_TYPES = ["client", "international_lawyer", "alliance_notary", "virtual_assistant", "operator", "foreign_counsel", "us_counsel", "private_client_advisor", "family_office", "yacht_broker", "luxury_real_estate", "equine_bloodstock", "gemstone_diamond_jewelry"] as const;
-export const COUNTRY_ROLE_USE_CASES = DESTINATIONS.flatMap((country) => COUNTRY_ROLE_TYPES.map((role) => ({ countrySlug: country.slug, countryName: country.name, role, publicSummary: `${country.name} ${role.replaceAll("_", " ")} route preview with receiving-authority review.`, privateControl: "Operator confirms inputs, payment gates, identifier lock, and ledger events before progression." })));

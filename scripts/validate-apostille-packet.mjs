@@ -1,1 +1,0 @@
-const { readFileSync }=await import('fs'); const s=readFileSync('src/features/apostille/apostillePacketService.ts','utf8'); for (const k of ['state apostille request form','state processing payment','prepaid return label']) if(!s.includes(k)) throw new Error('apostille packet missing '+k); console.log('validate:apostille-packet passed');

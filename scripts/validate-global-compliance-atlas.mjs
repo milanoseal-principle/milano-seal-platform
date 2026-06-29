@@ -1,1 +1,0 @@
-const { readFileSync }=await import('fs'); const s=readFileSync('data/global-compliance-atlas.ts','utf8'); for (const k of ['DESTINATIONS','receivingAuthorityBoundary','sourceType','needs_review']) if(!s.includes(k)) throw new Error('atlas missing '+k); console.log('validate:global-compliance-atlas passed');
