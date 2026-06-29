@@ -79,7 +79,7 @@ export default function Page() {
             className="text-3xl sm:text-4xl font-semibold tracking-tight"
             style={{ fontFamily: "var(--font-serif, serif)", color: "#C6A55A" }}
           >
-            Apply for Alliance Access
+            Apply to Join the Alliance Network
           </h1>
 
           {allianceCopy?.subheadline ? (
@@ -254,7 +254,7 @@ export default function Page() {
                 >
                   {status === "submitting"
                     ? "Submitting…"
-                    : "Submit Alliance Application"}
+                    : "Apply to Join the Alliance Network"}
                 </button>
               </div>
             </form>

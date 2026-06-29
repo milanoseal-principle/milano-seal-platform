@@ -4,12 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import {
-  MILANO_PUBLIC_PROMISE,
-  getRevenueCopyForAudience,
-} from "@/data/milano-revenue-copy-system";
-
-const vaCopy = getRevenueCopyForAudience("virtual_assistant");
+import { MILANO_PUBLIC_PROMISE } from "@/data/milano-revenue-copy-system";
 
 const labelClass = "block text-sm font-medium text-white/90 mb-1.5";
 const inputClass =
@@ -77,14 +72,21 @@ export default function Page() {
             className="text-3xl sm:text-4xl font-semibold tracking-tight"
             style={{ fontFamily: "var(--font-serif, serif)", color: "#C6A55A" }}
           >
-            Apply for VA Support Role
+            Apply to Execution Support Network
           </h1>
 
-          {vaCopy?.subheadline ? (
-            <p className="mt-5 text-[#8A8A8A] leading-relaxed max-w-3xl">
-              {vaCopy.subheadline}
-            </p>
-          ) : null}
+          <p className="mt-5 text-[#8A8A8A] leading-relaxed max-w-3xl">
+            Support controlled international document execution operations.
+          </p>
+
+          <p className="mt-4 text-[#8A8A8A] leading-relaxed max-w-3xl">
+            Execution support specialists assist The Milano Seal™ with intake
+            review, upload organization, document checklist support,
+            missing-field identification, and escalation of incomplete matters
+            to authorized operators. Support roles do not provide legal advice,
+            notarial acts, apostille determinations, payment approval,
+            client-facing authority, or final release approval.
+          </p>
 
           <p className="mt-4 text-[#8A8A8A] leading-relaxed max-w-3xl">
             {MILANO_PUBLIC_PROMISE}
@@ -229,7 +231,7 @@ export default function Page() {
                 >
                   {status === "submitting"
                     ? "Submitting…"
-                    : "Submit VA Application"}
+                    : "Apply for Execution Support Review"}
                 </button>
               </div>
             </form>

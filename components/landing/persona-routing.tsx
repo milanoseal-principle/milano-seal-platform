@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, FileSignature, FolderLock, Scale, Landmark, Users } from "lucide-react";
+import { ArrowRight, FileSignature, FolderLock, Scale, Landmark } from "lucide-react";
 
 // Public persona routing — every visitor gets an explicit door. Brand-aligned to
 // the locked Milano Seal system (International Document Execution & Apostille
@@ -35,19 +35,10 @@ const PATHWAYS = [
   {
     eyebrow: "RON / Notary / Alliance",
     icon: Landmark,
-    title: "Alliance Partner Application",
-    desc: "For remote online notaries, mobile notaries, and execution partners seeking review for the Milano Seal network.",
-    cta: "Apply as Alliance Partner",
+    title: "The Milano Seal™ Alliance Network",
+    desc: "For remote online notaries, mobile notaries, witness, courier, and apostille-support partners seeking review for the Milano Seal execution network.",
+    cta: "Apply to Join the Alliance Network",
     href: "/alliance/apply",
-    primary: false,
-  },
-  {
-    eyebrow: "Execution Support",
-    icon: Users,
-    title: "Execution Support Network",
-    desc: "For virtual assistants or operations support applicants seeking to work with The Milano Seal™.",
-    cta: "Apply to Execution Support",
-    href: "/va/apply",
     primary: false,
   },
 ] as const;
