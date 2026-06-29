@@ -13,4 +13,14 @@ if(!/payment_confirmed_at\s*!=\s*null/.test(releaseRoute)) throw new Error('rele
 const migration=readFileSync('supabase/migrations/039_payment_settlement_clearance.sql','utf8');
 for (const k of ['payment_settlement_status','payment_cleared_at','founder_payment_override_reason']) if(!migration.includes(k)) throw new Error('migration 039 missing '+k);
 
+// Founder Release Override UI: matter-detail API must expose viewer_role +
+// settlement fields; the drawer must gate on founder_admin and post ONLY
+// override_reason (no role / payment fields from the client).
+const matterDetail=readFileSync('app/api/dashboard/matter-detail/[id]/route.ts','utf8');
+for (const k of ['viewer_role','payment_settlement_status','founder_payment_override_at']) if(!matterDetail.includes(k)) throw new Error('matter-detail API missing '+k);
+const drawer=readFileSync('components/dashboard/MatterDetailDrawer.tsx','utf8');
+for (const k of ['viewer_role','founder_admin','override_reason']) if(!drawer.includes(k)) throw new Error('matter drawer missing '+k);
+if(!/JSON\.stringify\(\{\s*override_reason/.test(drawer)) throw new Error('override must post only override_reason');
+if(/JSON\.stringify\(\{[^}]*\b(role|payment_status|payment_settlement_status)\b/.test(drawer)) throw new Error('override body must not post role/payment fields');
+
 console.log('validate:payment-release-gates passed');
