@@ -1,0 +1,4 @@
+import { IDENTIFIER_CLIENT_SAFE_LANGUAGE } from "@/data/identifier-schemas";
+export type IdentifierValue = { fieldId: string; value: string; locked?: boolean };
+export function compareLockedIdentifiers(source: IdentifierValue[], candidate: IdentifierValue[]) { const mismatches = source.filter((item) => item.value !== (candidate.find((c) => c.fieldId === item.fieldId)?.value ?? "")); return { passed: mismatches.length === 0, mismatches, event: mismatches.length ? "IDENTIFIER_COMPARE_FAILED" : "IDENTIFIER_COMPARE_PASSED", blocks: mismatches.length ? ["RON", "apostille", "release"] : [] }; }
+export function lockIdentifiers(fields: IdentifierValue[]) { return { fields: fields.map((field) => ({ ...field, locked: true })), event: "IDENTIFIER_LOCKED", clientSafeLanguage: IDENTIFIER_CLIENT_SAFE_LANGUAGE }; }

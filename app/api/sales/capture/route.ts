@@ -108,6 +108,6 @@ export async function POST(request: Request) {
     nextUrl: "/intake",
     recommendedAction:
       "Start your controlled intake so The Milano Seal can review your route. Routing snapshots remain subject to receiving-authority review.",
-    ctaLabel: "Start Controlled Intake",
+    ctaLabel: "Begin Secure Intake",
   });
 }

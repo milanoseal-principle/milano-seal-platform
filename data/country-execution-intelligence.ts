@@ -48,7 +48,7 @@ export interface CountryExecutionIntelligence {
 }
 
 const EYEBROW = "EXECUTION INTELLIGENCE";
-const PRIMARY_CTA = "Start Controlled Intake";
+const PRIMARY_CTA = "Begin Secure Intake";
 const SECONDARY_CTA = "Open Global Atlas";
 
 const ROUTE_LABELS: Record<ExecutionRouteType, string> = {

@@ -113,7 +113,7 @@ export default function Page() {
                   className="inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90"
                   style={{ backgroundColor: "#C6A55A" }}
                 >
-                  Start Controlled Intake
+                  Begin Secure Intake
                 </Link>
               </div>
             </div>
