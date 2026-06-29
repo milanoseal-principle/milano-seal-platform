@@ -216,7 +216,7 @@ export async function performFinalRelease(opts: {
       event: "DOC_RELEASE_CONFIRMED",
       actor: actorId,
       resource: deal.deal_id ?? deal.id,
-      detail: `previous_status=${previousStatus} new_status=${newStatus}`,
+      payload: { previous_status: previousStatus, new_status: newStatus },
       created_at: new Date().toISOString(),
     });
     if (auditErr) auditFailed = true;
