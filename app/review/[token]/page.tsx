@@ -1,59 +1,40 @@
-import { Shield, Eye, Clock, AlertCircle } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ShieldAlert } from "lucide-react";
 
-// Secure Review Link — token-based, read-only, expiration-ready.
-// Raw storage URLs, internal notes, margins, and payment data are never exposed.
-// TODO: validate token against review_links table, check expiration, emit audit event.
+// Secure review links are private, single-use/time-limited, and never indexed.
+export const metadata: Metadata = {
+  title: "Secure Review Link | The Milano Seal™",
+  robots: { index: false, follow: false },
+};
 
 interface ReviewPageProps {
   params: Promise<{ token: string }>;
 }
 
+// Token-resolution against the review-links store is not yet wired. Until it is,
+// this route returns a safe invalid/expired state rather than exposing an
+// unfinished surface or echoing the token. No internal data is ever rendered here.
 export default async function SecureReviewPage({ params }: ReviewPageProps) {
-  const { token } = await params;
+  await params; // token intentionally not surfaced
 
-  // Stub: in production this resolves the token against DB and returns the linked record.
-  // If token is invalid or expired → show expired state.
-  // If token is valid → show read-only document preview (watermarked, no raw URL).
-  const isStub = true;
-
-  if (isStub) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
-            <Shield size={22} className="text-amber-500" />
-          </div>
-          <h1 className="text-lg font-semibold text-gray-900 mb-2">
-            Secure Review Link
-          </h1>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            Token-based secure review is active. Document rendering will be
-            available once the review link infrastructure is fully wired.
-          </p>
-          <div className="bg-gray-50 rounded-lg border border-gray-100 p-4 text-left space-y-3">
-            <div className="flex items-start gap-3 text-sm text-gray-600">
-              <Eye size={14} className="text-gray-400 mt-0.5 shrink-0" />
-              <span>Read-only mode — no download, no copy</span>
-            </div>
-            <div className="flex items-start gap-3 text-sm text-gray-600">
-              <Clock size={14} className="text-gray-400 mt-0.5 shrink-0" />
-              <span>Link expires — single-use or time-limited</span>
-            </div>
-            <div className="flex items-start gap-3 text-sm text-gray-600">
-              <AlertCircle size={14} className="text-gray-400 mt-0.5 shrink-0" />
-              <span>
-                No internal notes, margins, or storage URLs are exposed
-              </span>
-            </div>
-          </div>
-          <p className="text-[11px] text-gray-400 font-mono mt-5">
-            Token: {token.slice(0, 12)}…
-          </p>
+  return (
+    <div className="min-h-screen bg-[#050506] flex items-center justify-center p-6">
+      <div className="max-w-md w-full rounded-2xl border border-[var(--ms-gold)]/20 bg-[#0b0b0d] p-8 text-center" style={{ boxShadow: "0 24px 70px rgba(0,0,0,0.5)" }}>
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-[var(--ms-gold)]/35">
+          <ShieldAlert size={22} className="text-[var(--ms-gold)]" />
+        </div>
+        <h1 className="font-serif text-xl text-white mb-2">This review link is invalid or has expired</h1>
+        <p className="text-sm leading-relaxed text-white/55">
+          Secure review links are private and time-limited. If you were expecting access to a matter,
+          request a current link from your Milano Seal coordinator, or open your Secure Matter Portal.
+        </p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <Link href="/portal" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--ms-gold)]/35 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/85 transition-colors hover:border-[var(--ms-gold)]/60 hover:text-[var(--ms-gold)]">
+            Open Secure Matter Portal
+          </Link>
         </div>
       </div>
-    );
-  }
-
-  // Production: render watermarked read-only document preview here
-  return null;
+    </div>
+  );
 }

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyWiseSignature } from "@/lib/wise";
 import { mapWiseTransferState, mapWiseBalanceEvent } from "@/lib/wise/status";
 import { logActivity } from "@/lib/activity";
+import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -376,7 +377,31 @@ async function processWiseEvent(opts: {
       .eq("id", eventRowId);
   }
 
-  // 5. Write Operational Ledger event
+  // 5. Write hash-linked custody ledger event for the confirmed Wise payment.
+  //    Best-effort — never blocks the webhook 2xx; activity log written below too.
+  try {
+    await appendLedger({
+      deal_id: deal.id,
+      event: CUSTODY_EVENTS.WISE_PAYMENT_CONFIRMED,
+      actor_type: "system",
+      actor_id: "wise-webhook",
+      method: "wise",
+      status: "cleared",
+      notes: `Wise payment confirmed — $${confirmedAmount} USD via reference ${reference}`,
+      metadata: {
+        event_type: eventType,
+        wise_reference: reference,
+        amount_confirmed: confirmedAmount,
+        amount_due: amountDue,
+        scheduling_unlocked: willUnlockScheduling,
+        delivery_id: eventRowId,
+      },
+    });
+  } catch (err) {
+    console.error("[wise-webhook] custody ledger append failed:", err instanceof Error ? err.message : err);
+  }
+
+  // 6. Write Operational Ledger (activity) event
   await logActivity({
     deal_id: deal.deal_id ?? deal.id,
     actor: "wise-webhook",
