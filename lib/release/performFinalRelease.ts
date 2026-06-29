@@ -30,7 +30,7 @@ export async function performFinalRelease(opts: {
   const { data: deal, error: dealErr } = await adminClient
     .from("deals")
     .select(
-      "id, deal_id, deal_status, payment_status, payment_confirmed, payment_confirmed_at, amount_due, amount_paid, destination_country, is_platform_fee_only, payment_settlement_status, payment_cleared_at",
+      "id, deal_id, deal_status, payment_status, payment_confirmed, payment_confirmed_at, amount_due, amount_paid, destination_country, discount_type, service_fee_waived, payment_settlement_status, payment_cleared_at",
     )
     .eq(isUuid ? "id" : "deal_id", id)
     .single();
@@ -39,10 +39,15 @@ export async function performFinalRelease(opts: {
     return { status: 404, body: { error: "Deal not found" } };
   }
 
+  // is_platform_fee_only is computed (not a stored column) from the real
+  // discount/fee columns.
+  const isPlatformFeeOnly =
+    deal.discount_type === "platform_fee_only" || deal.service_fee_waived === true;
+
   // Payment gate — broadened source of truth (boolean OR timestamp OR status OR amount).
   const amountDueNum = Number(deal.amount_due ?? 0);
   const paymentOk =
-    deal.is_platform_fee_only === true ||
+    isPlatformFeeOnly ||
     deal.payment_confirmed === true ||
     deal.payment_confirmed_at != null ||
     deal.payment_status === "paid" ||
@@ -76,7 +81,7 @@ export async function performFinalRelease(opts: {
   // Settlement clearance gate — cleared funds OR a recorded founder override.
   const fundsCleared =
     deal.payment_settlement_status === "cleared" ||
-    deal.is_platform_fee_only === true ||
+    isPlatformFeeOnly ||
     Number(deal.amount_due ?? 0) === 0;
 
   if (!fundsCleared) {
