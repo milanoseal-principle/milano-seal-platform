@@ -4,6 +4,7 @@ import { verifyWiseSignature } from "@/lib/wise";
 import { mapWiseTransferState, mapWiseBalanceEvent } from "@/lib/wise/status";
 import { logActivity } from "@/lib/activity";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -416,6 +417,11 @@ async function processWiseEvent(opts: {
       delivery_id: eventRowId,
     },
   });
+
+  // Mirror the cleared payment into the client notification log. Runs only after
+  // the existing confirm/clear logic above already accepted the payment. Non-
+  // blocking and client-safe: notifyClient never throws and cannot affect payment.
+  await notifyClient(deal.id, "payment_cleared");
 
   // Non-scheduling ledger note if amount doesn't cover due
   if (!willUnlockScheduling && amountDue > 0) {
