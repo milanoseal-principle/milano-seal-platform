@@ -26,6 +26,7 @@
     "validate:identifier-schemas": "node scripts/validate-identifier-schemas.mjs",
     "validate:data-integrity": "node scripts/validate-data-integrity.mjs",
     "validate:matter-status": "node scripts/validate-matter-status.mjs",
+    "validate:notification-safety": "node scripts/validate-notification-safety.mjs",
     "validate:ron-compatibility": "node scripts/validate-ron-compatibility.mjs",
     "validate:payment-release-gates": "node scripts/validate-payment-release-gates.mjs",
     "validate:shipping-tracking": "node scripts/validate-shipping-tracking.mjs",
