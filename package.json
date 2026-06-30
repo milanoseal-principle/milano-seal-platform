@@ -32,6 +32,7 @@
     "validate:public-surface-guards": "node scripts/validate-public-surface-guards.mjs",
     "validate:custody-ledger-schema": "node scripts/validate-custody-ledger-schema.mjs",
     "validate:dashboard-command-center": "node scripts/validate-dashboard-command-center.mjs",
+    "validate:motion-system": "node scripts/validate-motion-system.mjs",
     "validate:ron-compatibility": "node scripts/validate-ron-compatibility.mjs",
     "validate:payment-release-gates": "node scripts/validate-payment-release-gates.mjs",
     "validate:shipping-tracking": "node scripts/validate-shipping-tracking.mjs",
