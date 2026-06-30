@@ -27,7 +27,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
-import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
 import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
 import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
 import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
@@ -540,18 +539,6 @@ export default function Dashboard() {
           shipped_count: data.shipped_count,
         }}
         slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
-      />
-
-      {/* Pipeline Load Matrix */}
-      <StatusGlowMatrix
-        counts={{
-          reviewing_count: data.reviewing_count,
-          awaiting_payment: data.awaiting_payment,
-          scheduled_count: data.scheduled_count,
-          in_execution: data.in_execution,
-          apostille_count: data.apostille_count,
-          shipped_count: data.shipped_count,
-        }}
       />
 
       {/* Matter Queue */}
