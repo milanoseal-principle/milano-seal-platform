@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, stageLabel, timeAgo } from "@/lib/format";
 import { StatusPill } from "@/components/dashboard/system/StatusPill";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import {
   Briefcase,
   TrendingUp,
@@ -790,7 +791,9 @@ export default function Dashboard() {
       <ChainOfCustodyIntelligence />
 
       {/* Courier Release Intelligence */}
-      <CourierIntelligencePanel />
+      <Reveal>
+        <CourierIntelligencePanel />
+      </Reveal>
 
       {/* Global Execution Intelligence */}
       <GlobalExecutionIntelligence />
