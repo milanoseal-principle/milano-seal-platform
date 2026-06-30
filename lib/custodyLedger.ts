@@ -113,73 +113,97 @@ export async function appendLedger(
 ): Promise<{ hash: string; prev_hash: string } | null> {
   const supabase = createAdminClient();
 
-  const { data: last } = await supabase
-    .from("custody_ledger")
-    .select("hash")
-    .eq("deal_id", input.deal_id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Read-latest-hash -> insert is not atomic, so two concurrent appends to the same
+  // deal can read the same parent hash and fork the chain. The linear-chain unique
+  // index (migration 041, on deal_id + prev_hash) rejects the loser with a unique
+  // violation (Postgres 23505); we re-read the now-advanced chain head, recompute,
+  // and retry — up to MAX_ATTEMPTS total. Non-throwing; return shape preserved.
+  const MAX_ATTEMPTS = 3;
+  let prev_hash = "GENESIS";
+  let hash = "";
+  let lastErrorMessage = "";
 
-  const prev_hash = last?.hash || "GENESIS";
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // Chain head = latest row that still carries a hash. Skip dedupe-orphaned rows
+    // whose hash was nulled by migration 040/041 so we always chain from a real head.
+    const { data: last } = await supabase
+      .from("custody_ledger")
+      .select("hash")
+      .eq("deal_id", input.deal_id)
+      .not("hash", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  const ts = new Date().toISOString();
-  const payload = canonicalize({
-    deal_id: input.deal_id,
-    event: input.event,
-    actor_type: input.actor_type,
-    actor_id: input.actor_id ?? null,
-    location: input.location ?? null,
-    method: input.method ?? null,
-    status: input.status ?? null,
-    notes: input.notes ?? null,
-    metadata: input.metadata ?? {},
-    prev_hash,
-    ts,
-  });
-  const hash = sha256(payload);
+    prev_hash = last?.hash || "GENESIS";
 
-  const { error } = await supabase.from("custody_ledger").insert({
-    deal_id: input.deal_id,
-    event: input.event,
-    actor_type: input.actor_type,
-    actor_id: input.actor_id ?? null,
-    location: input.location ?? null,
-    method: input.method ?? null,
-    status: input.status ?? null,
-    notes: input.notes ?? null,
-    metadata: input.metadata ?? {},
-    prev_hash,
-    hash,
-  });
-
-  if (error) {
-    // A custody-ledger write must never fail silently in production. The chain-of-
-    // custody record is safety-critical (release gates, payment confirmation, QA).
-    // Kept non-throwing so callers/flows are not broken, but the failure is
-    // surfaced loudly AND the event is durably captured in activity_logs as a
-    // fallback so it is never lost even if the custody_ledger schema drifts again
-    // (the exact failure mode migration 040 repaired).
-    console.error(
-      `[custody][CRITICAL] ledger write failed for deal=${input.deal_id} event=${input.event}: ${error.message}`,
-    );
-    await logActivity({
+    const ts = new Date().toISOString();
+    const payload = canonicalize({
       deal_id: input.deal_id,
-      actor: input.actor_id ?? "system",
-      action: "system",
-      detail: `CUSTODY_LEDGER_WRITE_FAILED: ${input.event}`,
-      meta: {
-        custody_event: input.event,
-        actor_type: input.actor_type,
-        prev_hash,
-        attempted_hash: hash,
-        error: error.message,
-      },
+      event: input.event,
+      actor_type: input.actor_type,
+      actor_id: input.actor_id ?? null,
+      location: input.location ?? null,
+      method: input.method ?? null,
+      status: input.status ?? null,
+      notes: input.notes ?? null,
+      metadata: input.metadata ?? {},
+      prev_hash,
+      ts,
     });
-    return null;
+    hash = sha256(payload);
+
+    const { error } = await supabase.from("custody_ledger").insert({
+      deal_id: input.deal_id,
+      event: input.event,
+      actor_type: input.actor_type,
+      actor_id: input.actor_id ?? null,
+      location: input.location ?? null,
+      method: input.method ?? null,
+      status: input.status ?? null,
+      notes: input.notes ?? null,
+      metadata: input.metadata ?? {},
+      prev_hash,
+      hash,
+    });
+
+    if (!error) {
+      return { hash, prev_hash };
+    }
+
+    lastErrorMessage = error.message;
+
+    // 23505 = unique_violation: a concurrent writer took this (deal_id, prev_hash)
+    // slot. Re-read the advanced head and retry. Any other error is not a fork race
+    // — stop and fall through to the durable fallback below.
+    const isUniqueViolation = error.code === "23505";
+    if (!isUniqueViolation || attempt === MAX_ATTEMPTS) {
+      break;
+    }
   }
 
-  return { hash, prev_hash };
+  // A custody-ledger write must never fail silently in production. The chain-of-
+  // custody record is safety-critical (release gates, payment confirmation, QA).
+  // Kept non-throwing so callers/flows are not broken, but the failure is surfaced
+  // loudly AND the event is durably captured in activity_logs as a fallback so it
+  // is never lost (covers schema drift — migration 040 — and exhausted fork retries).
+  console.error(
+    `[custody][CRITICAL] ledger write failed for deal=${input.deal_id} event=${input.event} after retries: ${lastErrorMessage}`,
+  );
+  await logActivity({
+    deal_id: input.deal_id,
+    actor: input.actor_id ?? "system",
+    action: "system",
+    detail: `CUSTODY_LEDGER_WRITE_FAILED: ${input.event}`,
+    meta: {
+      custody_event: input.event,
+      actor_type: input.actor_type,
+      prev_hash,
+      attempted_hash: hash,
+      error: lastErrorMessage,
+    },
+  });
+  return null;
 }
 
 export async function getLedger(deal_id: string): Promise<LedgerRow[]> {
