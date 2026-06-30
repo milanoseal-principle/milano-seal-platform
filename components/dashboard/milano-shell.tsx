@@ -38,33 +38,69 @@ import {
   ScrollText,
 } from "lucide-react";
 
-const NAV = [
-  { href: "/dashboard/admin", label: "Execution Intelligence", icon: ShieldAlert },
-  { href: "/dashboard", label: "Matter Control", icon: LayoutDashboard },
-  { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
-  { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
-  { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
-  { href: "/dashboard/compliance", label: "Global Document Intelligence", icon: Globe2 },
-  { href: "/dashboard/invoices", label: "Invoice Studio", icon: Receipt },
-  { href: "/dashboard/admin/payments", label: "Payment Gate", icon: CreditCard },
-  { href: "/dashboard/admin/reconciliation", label: "Finance Reconciliation", icon: Scale },
-  { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
-  { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
-  { href: "/dashboard/intelligence/acquisition", label: "Acquisition Intel", icon: Target },
-  { href: "/dashboard/intelligence/revenue", label: "Revenue Intel", icon: TrendingUp },
-  { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
-  { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
-  { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
-  { href: "/dashboard/courier", label: "Courier", icon: Truck },
-  { href: "/dashboard/tools", label: "Tools", icon: Wrench },
-  { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
-  { href: "/dashboard/docs/human-touch-trust-engine", label: "Trust Engine", icon: FileText },
-  { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
-  { href: "/dashboard/build-center", label: "Build Center", icon: Radio },
-  { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
-  { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
-  { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
-  { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
+// Grouped command-center navigation. Every existing route is preserved; only the
+// organization + a few labels change ("VA Tasks" -> "Execution Support"). The
+// /dashboard/va route is unchanged technically — only its visible label.
+const NAV_GROUPS: {
+  group: string;
+  items: { href: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
+  {
+    group: "Command",
+    items: [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
+      { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
+      { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
+      { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
+      { href: "/dashboard/terminal", label: "Operator Terminal", icon: Terminal },
+    ],
+  },
+  {
+    group: "Control",
+    items: [
+      { href: "/dashboard/compliance", label: "Compliance", icon: Globe2 },
+      { href: "/dashboard/invoices", label: "Invoices", icon: Receipt },
+      { href: "/dashboard/courier", label: "Courier", icon: Truck },
+    ],
+  },
+  {
+    group: "Finance Admin",
+    items: [
+      { href: "/dashboard/admin", label: "Admin Control", icon: ShieldAlert },
+      { href: "/dashboard/admin/payments", label: "Payments", icon: CreditCard },
+      { href: "/dashboard/admin/reconciliation", label: "Reconciliation", icon: Scale },
+    ],
+  },
+  {
+    group: "Intelligence",
+    items: [
+      { href: "/dashboard/intelligence/acquisition", label: "Acquisition", icon: Target },
+      { href: "/dashboard/intelligence/revenue", label: "Revenue", icon: TrendingUp },
+      { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
+      { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
+    ],
+  },
+  {
+    group: "Network",
+    items: [
+      { href: "/dashboard/va", label: "Execution Support", icon: ClipboardList },
+    ],
+  },
+  {
+    group: "System",
+    items: [
+      { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
+      { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
+      { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
+      { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
+      { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
+      { href: "/dashboard/build-center", label: "Build Center", icon: Radio },
+      { href: "/dashboard/tools", label: "Tools", icon: Wrench },
+      { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
+      { href: "/dashboard/docs/human-touch-trust-engine", label: "Trust Engine", icon: FileText },
+    ],
+  },
 ];
 
 function MilanoCrest({ size = 32 }: { size?: number }) {
@@ -101,28 +137,42 @@ function NavLinks({ onNav }: { onNav?: () => void }) {
   const location = usePathname();
   return (
     <>
-      {NAV.map((item) => {
-        const isActive =
-          item.href === "/dashboard" || item.href === "/dashboard/admin"
-            ? location === item.href
-            : location.startsWith(item.href);
-        const Icon = item.icon;
-        return (
-          <Link key={item.href} href={item.href} onClick={onNav}>
-            <div
-              data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                isActive
-                  ? "text-primary bg-gold-soft border border-gold"
-                  : "text-foreground/60 hover:text-foreground hover:bg-secondary/60 border border-transparent"
-              }`}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {item.label}
-            </div>
-          </Link>
-        );
-      })}
+      {NAV_GROUPS.map((group) => (
+        <div key={group.group} className="mb-3">
+          <p className="px-3 pb-1.5 pt-2 font-mono text-[8px] uppercase tracking-[0.24em] text-muted-foreground/60">
+            {group.group}
+          </p>
+          {group.items.map((item) => {
+            const isActive =
+              item.href === "/dashboard" || item.href === "/dashboard/admin"
+                ? location === item.href
+                : location.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} onClick={onNav}>
+                <div
+                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                  className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                    isActive
+                      ? "text-primary bg-gold-soft border border-gold"
+                      : "text-foreground/60 hover:text-foreground hover:bg-secondary/60 border border-transparent"
+                  }`}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full"
+                      style={{ background: "var(--ms-gold)" }}
+                    />
+                  )}
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </>
   );
 }
