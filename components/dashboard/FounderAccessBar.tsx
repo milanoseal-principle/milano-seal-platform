@@ -3,7 +3,8 @@ import Link from "next/link";
 const PORTALS = [
   { label: "Operator Dashboard", href: "/dashboard", tag: "OPS" },
   { label: "Secure Matter Portal", href: "/portal", tag: "CLIENT" },
-  { label: "Alliance Dashboard", href: "/alliance/dashboard", tag: "ALLIANCE" },
+  { label: "Alliance Oversight", href: "/dashboard/alliance", tag: "ALLIANCE" },
+  { label: "Alliance Partner Portal", href: "/alliance/dashboard", tag: "PARTNER" },
   { label: "Operations Desk", href: "/va/dashboard", tag: "VA" },
 ];
 
