@@ -15,14 +15,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  formatCurrency,
-  stageLabel,
-  stageBadgeClasses,
-  paymentBadgeClasses,
-  timeAgo,
-} from "@/lib/format";
+import { formatCurrency, timeAgo } from "@/lib/format";
 import { Search, X } from "lucide-react";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { StatusPill } from "@/components/dashboard/system/StatusPill";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 
 interface DealRow {
   id: string;
@@ -91,12 +88,14 @@ export default function Deals() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-2">
-          Execution Queue
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">All Matters</h1>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Execution Queue"
+          title="Matter Control Register"
+          description="Searchable register of every matter — status, payment gate, release gate, destination, lane, and next operator action."
+          primaryAction={{ label: "Begin Secure Intake", href: "/dashboard/intake" }}
+        />
+      </Reveal>
 
       {/* Stage filter pills */}
       <div className="flex flex-wrap gap-2">
@@ -320,20 +319,10 @@ export default function Deals() {
                       {formatCurrency(d.total_price)}
                     </TableCell>
                     <TableCell className="p-3">
-                      <Badge
-                        variant="outline"
-                        className={`rounded-sm text-[10px] ${paymentBadgeClasses(d.payment_status)}`}
-                      >
-                        {d.payment_status}
-                      </Badge>
+                      <StatusPill status={d.payment_status} size="sm" />
                     </TableCell>
                     <TableCell className="p-3">
-                      <Badge
-                        variant="outline"
-                        className={`rounded-sm text-[10px] ${stageBadgeClasses(d.deal_status)}`}
-                      >
-                        {stageLabel(d.deal_status)}
-                      </Badge>
+                      <StatusPill status={d.deal_status} size="sm" />
                     </TableCell>
                     <TableCell className="p-3 text-right text-xs text-muted-foreground font-mono">
                       {timeAgo(d.created_at)}
