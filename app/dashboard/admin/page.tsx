@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
 import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
 import { formatCurrency, stageLabel } from "@/lib/format";
 
 interface PipelineDeal {
@@ -189,10 +190,12 @@ export default function OperatorCommandCenter() {
 
   return (
     <div className="ms-fade-up">
-      <div className="ms-eyebrow">Execution Center · {today()}</div>
-      <h1 className="ms-h1">
-        Welcome back, <em>Nicholas</em>
-      </h1>
+      <DashboardPageHeader
+        eyebrow={`Admin Control Center · ${today()}`}
+        title="Admin Control Center"
+        description="System health, protected modules, gate-status summary, and operator shortcuts."
+        primaryAction={{ label: "Open Payment Admin", href: "/dashboard/admin/payments" }}
+      />
 
       <div className="ms-grid-4">
         {stats.map((s) => (
