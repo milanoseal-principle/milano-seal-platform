@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, stageLabel, stageTone } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PipelineBoard } from "@/components/dashboard/pipeline-board";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 
 interface PipelineDeal {
   deal_id: string;
@@ -85,21 +87,22 @@ export default function Pipeline() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Pipeline
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">
-          Execution Pipeline
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {data.total_open} open matters ·{" "}
-          {formatCurrency(data.total_value_open)} pipeline ·{" "}
-          {formatCurrency(data.total_value_closed)} closed
-        </p>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Execution State Board"
+          title="Execution Pipeline"
+          description="Every matter moving through the locked Milano Seal state machine — payment and release gates enforced at each stage."
+          primaryAction={{ label: "Open Active Matter", href: "/dashboard/deals" }}
+          meta={
+            <p className="font-mono text-[11px] text-muted-foreground">
+              {data.total_open} open · {formatCurrency(data.total_value_open)} pipeline ·{" "}
+              {formatCurrency(data.total_value_closed)} closed
+            </p>
+          }
+        />
+      </Reveal>
 
-      {/* PipelineBoard — operator Kanban with advance controls */}
+      {/* PipelineBoard — operator Kanban with advance controls (gates preserved) */}
       <PipelineBoard />
 
       <div className="grid grid-flow-col auto-cols-[minmax(280px,1fr)] gap-4 overflow-x-auto pb-4">

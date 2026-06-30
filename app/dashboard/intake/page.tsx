@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -355,16 +357,15 @@ export default function Intake() {
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-8">
       <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Intake
-        </p>
-        <h1 className="font-serif text-4xl text-foreground mb-2">
-          New Matter — International Document Execution
-        </h1>
-        <p className="text-muted-foreground mb-8">
-          Capture matter facts. Lane and pricing are determined automatically
-          from jurisdiction, document type, and execution constraints.
-        </p>
+        <Reveal>
+          <div className="mb-8">
+            <DashboardPageHeader
+              eyebrow="Intake Review Center"
+              title="New Matter Intake"
+              description="Capture matter facts. Lane and pricing are determined automatically from jurisdiction, document type, and execution constraints."
+            />
+          </div>
+        </Reveal>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

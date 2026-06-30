@@ -7,7 +7,9 @@ import { useApi } from "@/hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, stageLabel, stageTone, timeAgo } from "@/lib/format";
+import { formatCurrency, stageLabel, timeAgo } from "@/lib/format";
+import { StatusPill } from "@/components/dashboard/system/StatusPill";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import {
   Briefcase,
   TrendingUp,
@@ -26,7 +28,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { MilanoSealEntryRitual } from "@/components/dashboard/entry-ritual";
 import { OperatorActionPanel } from "@/components/dashboard/OperatorActionPanel";
-import { StatusGlowMatrix } from "@/components/dashboard/status-glow-matrix";
 import { LiveEventBusStream } from "@/components/dashboard/LiveEventBusStream";
 import { ExecutionOrchestrationPipeline } from "@/components/dashboard/ExecutionOrchestrationPipeline";
 import { ChainOfCustodyIntelligence } from "@/components/dashboard/ChainOfCustodyIntelligence";
@@ -402,10 +403,10 @@ export default function Dashboard() {
       >
         <div>
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-            Execution Center
+            Command Center
           </p>
           <h1 className="font-serif text-4xl text-foreground">
-            Today at the Seal
+            Command Overview
           </h1>
           <p className="text-muted-foreground mt-2 max-w-xl">
             Live snapshot of every matter in the international execution
@@ -414,7 +415,7 @@ export default function Dashboard() {
         </div>
         <Link href="/dashboard/intake">
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gold-glow">
-            New Matter Intake <ArrowRight className="ml-2 w-4 h-4" />
+            Review New Intake <ArrowRight className="ml-2 w-4 h-4" />
           </Button>
         </Link>
       </motion.div>
@@ -541,18 +542,6 @@ export default function Dashboard() {
         slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
       />
 
-      {/* Pipeline Load Matrix */}
-      <StatusGlowMatrix
-        counts={{
-          reviewing_count: data.reviewing_count,
-          awaiting_payment: data.awaiting_payment,
-          scheduled_count: data.scheduled_count,
-          in_execution: data.in_execution,
-          apostille_count: data.apostille_count,
-          shipped_count: data.shipped_count,
-        }}
-      />
-
       {/* Matter Queue */}
       <Card className="bg-card border-gold">
         <CardContent className="pt-6">
@@ -610,18 +599,7 @@ export default function Dashboard() {
                           <span className="text-sm text-foreground">
                             {formatCurrency(d.total_price)}
                           </span>
-                          <Badge
-                            variant="outline"
-                            className={
-                              stageTone(d.deal_status) === "paid"
-                                ? "bg-paid"
-                                : stageTone(d.deal_status) === "critical"
-                                  ? "bg-critical"
-                                  : "bg-await"
-                            }
-                          >
-                            {stageLabel(d.deal_status)}
-                          </Badge>
+                          <StatusPill status={d.deal_status} size="sm" />
                         </div>
                       </div>
                     </Link>
@@ -813,7 +791,9 @@ export default function Dashboard() {
       <ChainOfCustodyIntelligence />
 
       {/* Courier Release Intelligence */}
-      <CourierIntelligencePanel />
+      <Reveal>
+        <CourierIntelligencePanel />
+      </Reveal>
 
       {/* Global Execution Intelligence */}
       <GlobalExecutionIntelligence />
