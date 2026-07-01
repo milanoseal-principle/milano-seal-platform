@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,12 +39,14 @@ export default function FollowUps() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-2">
-          Follow-Up Queue
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">Follow-ups</h1>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Follow-Up Queue"
+          title="Follow-Up Queue"
+          description="Operator queue for stale intakes, unpaid invoices, missing information, client and attorney replies, and overdue matter updates."
+          primaryAction={{ label: "Prepare Follow-Up", href: "/dashboard/deals" }}
+        />
+      </Reveal>
 
       <div className="bg-[#0c0c12] border border-gray-900 rounded-sm">
         <div className="p-4 border-b border-gray-900">

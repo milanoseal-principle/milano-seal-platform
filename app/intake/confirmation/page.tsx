@@ -44,10 +44,27 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Normalize backend matter status into a client-safe label. Unknown → Under Review.
+function normalizeStatusLabel(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s === "awaiting_payment") return "Awaiting Payment";
+  if (s === "intake_received" || s === "under_review") return "Under Review";
+  return "Under Review";
+}
+
 function ConfirmationInner() {
   const params = useSearchParams();
   const router = useRouter();
-  const dealId = params.get("id") || "";
+  // Accept the intake wizard's ?id= as well as the documented handoff params.
+  const dealId =
+    params.get("id") || params.get("matterId") || params.get("deal_id") || "";
+  const rawStatus = params.get("status") || "";
+  const portalUrl = params.get("portal_url") || "";
+
+  // Deterministic matter-ID + status handoff (no invented IDs).
+  const hasMatterId = dealId.startsWith("MS-");
+  const matterIdLabel = hasMatterId ? dealId : "Matter ID pending";
+  const statusLabel = normalizeStatusLabel(rawStatus);
   const [intakeData, setIntakeData] = useState<Record<string, unknown> | null>(
     null,
   );
@@ -154,6 +171,61 @@ function ConfirmationInner() {
             </span>
             <CopyButton text={displayId} />
           </div>
+        )}
+      </div>
+
+      {/* Deterministic confirmation handoff — Matter ID, status, next step,
+          response window, and payment/scheduling gate. No invented IDs. */}
+      <div className="bg-[#111111] border border-[#C6A55A]/20 rounded-2xl p-6 mb-6">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#C6A55A]" />
+          <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+            Matter Received
+          </h2>
+        </div>
+        <dl className="divide-y divide-[#1A1A1A]">
+          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <dt className="text-[#8A8A8A] text-sm">Matter ID</dt>
+            <dd className="min-w-0 font-mono text-sm text-[#C6A55A] sm:text-right">
+              {matterIdLabel}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <dt className="text-[#8A8A8A] text-sm">Status</dt>
+            <dd className="text-sm text-white sm:text-right">{statusLabel}</dd>
+          </div>
+          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <dt className="text-[#8A8A8A] text-sm">Next Step</dt>
+            <dd className="text-sm text-white sm:text-right">
+              Compliance + execution review
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <dt className="text-[#8A8A8A] text-sm">Response Window</dt>
+            <dd className="text-sm text-white sm:text-right">One business day</dd>
+          </div>
+          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <dt className="text-[#8A8A8A] text-sm">Execution Status</dt>
+            <dd className="text-sm text-white sm:max-w-[60%] sm:text-right">
+              Not scheduled until payment is complete
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-4 text-[13px] leading-relaxed text-[#8A8A8A]">
+          Your matter has been received for review. The Milano Seal team will
+          confirm document type, signer location, destination jurisdiction,
+          apostille route, payment status, and receiving-authority requirements
+          before scheduling execution.
+        </p>
+        <p className="mt-3 text-[13px] leading-relaxed text-[#B0B0B0]">
+          Execution is not scheduled until scope is confirmed and payment is
+          complete.
+        </p>
+        {!hasMatterId && (
+          <p className="mt-3 text-[12px] leading-relaxed text-[#8A8A8A]/80">
+            If you just submitted intake and do not see your matter ID, check
+            your confirmation email or contact the coordinator.
+          </p>
         )}
       </div>
 
@@ -287,12 +359,26 @@ function ConfirmationInner() {
         </div>
       )}
 
-      <div className="text-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/"
-          className="text-sm text-[#8A8A8A] hover:text-[#C6A55A] transition-colors"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#2A2A2A] px-5 py-2.5 text-sm text-[#B0B0B0] transition-colors hover:border-[#C6A55A]/40 hover:text-[#C6A55A]"
         >
-          ← Return to The Milano Seal™
+          Return Home
+        </Link>
+        {(hasMatterId || portalUrl) && (
+          <Link
+            href={portalUrl || "/portal"}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#C6A55A]/40 px-5 py-2.5 text-sm text-[#C6A55A] transition-colors hover:border-[#C6A55A]"
+          >
+            Open Secure Portal
+          </Link>
+        )}
+        <Link
+          href="/intake"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#2A2A2A] px-5 py-2.5 text-sm text-[#B0B0B0] transition-colors hover:border-[#C6A55A]/40 hover:text-[#C6A55A]"
+        >
+          Begin Another Intake
         </Link>
       </div>
     </div>

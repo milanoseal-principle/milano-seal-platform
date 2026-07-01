@@ -76,14 +76,20 @@ export function isRouteAllowedForRole(
 
   if (!normalized) return pathname.startsWith("/portal");
   if (normalized === "client") return pathname.startsWith("/portal");
-  if (normalized === "operator") {
-    return pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/alliance");
-  }
-  if (normalized === "admin") {
-    return pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/alliance");
-  }
-  if (normalized === "owner") {
-    return pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/alliance");
+  // Founder / admin / owner are the top oversight roles: they may reach the operator
+  // dashboard (including /dashboard/alliance) AND oversee the Execution Support (/va)
+  // and Alliance (/alliance) surfaces. Partner / VA / client roles stay isolated to
+  // their own areas (handled below) — only these top roles are widened.
+  if (
+    normalized === "operator" ||
+    normalized === "admin" ||
+    normalized === "owner"
+  ) {
+    return (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/va") ||
+      pathname.startsWith("/alliance")
+    );
   }
   if (normalized === "va") return pathname.startsWith("/va");
   if (normalized === "alliance") return pathname.startsWith("/alliance");

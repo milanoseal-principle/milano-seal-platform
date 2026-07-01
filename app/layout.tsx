@@ -75,8 +75,8 @@ const jsonLd = {
       "@id": "https://themilanoseal.com/#business",
       name: "The Milano Seal™",
       url: "https://themilanoseal.com",
-      logo: "https://themilanoseal.com/milano-seal-gold-transparent-512.png",
-      image: "https://themilanoseal.com/og-image.png",
+      logo: "https://themilanoseal.com/milano-seal-orb-v2.png",
+      image: "https://themilanoseal.com/milano-seal-orb-v2.png",
       description:
         "U.S. Document Execution for International Use — Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
       address: {

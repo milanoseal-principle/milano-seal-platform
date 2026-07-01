@@ -42,10 +42,22 @@ function isProtected(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (pathname.startsWith("/dashboard/alliance")) {
-    const allianceUrl = request.nextUrl.clone();
-    allianceUrl.pathname = "/alliance/dashboard";
-    return NextResponse.redirect(allianceUrl);
+  // NOTE: /dashboard/alliance is the operator/founder ALLIANCE OVERSIGHT surface
+  // (aggregate partner + assignment view) and must stay reachable for founder/admin
+  // oversight — it is intentionally NOT redirected to the partner portal
+  // (/alliance/dashboard). Role access is enforced below via isRouteAllowedForRole.
+
+  // Founder production ledger test runner: allow secret-authenticated server-to-
+  // server calls (from SQL/terminal, no browser cookie) to pass the edge session
+  // gate. The route itself still verifies the secret, the confirmation token, and
+  // the test-matter guard before doing anything.
+  const testRunnerSecret = process.env.PRODUCTION_TEST_SECRET;
+  if (
+    pathname === "/api/admin/tests/production-matter-ledger" &&
+    testRunnerSecret &&
+    request.headers.get("x-test-runner-secret") === testRunnerSecret
+  ) {
+    return NextResponse.next();
   }
 
   if (PUBLIC_AUTH_PATHS.has(pathname)) {

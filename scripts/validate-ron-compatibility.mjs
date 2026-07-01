@@ -1,0 +1,1 @@
+const { readFileSync }=await import('fs'); const s=readFileSync('data/ron-acceptance-compatibility.ts','utf8'); for (const k of ['unknown','autoSchedulingBlocked: true','high-value asset','attorney instruction']) if(!s.toLowerCase().includes(k.toLowerCase())) throw new Error('ron missing '+k); console.log('validate:ron-compatibility passed');
