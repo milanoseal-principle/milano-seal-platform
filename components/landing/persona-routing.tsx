@@ -20,7 +20,7 @@ const PATHWAYS = [
     title: "Open Secure Matter Portal",
     desc: "For clients who already have a Milano Seal matter reference or portal access.",
     cta: "Open Secure Matter Portal",
-    href: "/portal",
+    href: "/secure-portal",
     primary: true,
   },
   {
