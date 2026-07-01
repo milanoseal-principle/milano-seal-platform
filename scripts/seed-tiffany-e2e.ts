@@ -51,18 +51,21 @@ async function upsertDiscountCode() {
     return existing.id as string;
   }
 
+  // Live schema (035): a 100% percentage comp so it drives the comp-clear path.
+  // internal_reason is NOT NULL. Columns aligned to production discount_codes.
   const { data, error } = await admin
     .from("discount_codes")
     .insert({
       code: "TIFFANYTEST",
-      discount_type: "fixed_amount",
+      discount_type: "percentage",
       discount_value: 100,
       status: "ACTIVE",
-      description: "Tiffany E2E demo code",
-      internal_note: "Tiffany E2E demo code — do not delete",
+      applies_to: "service_fee",
+      internal_reason: "Tiffany E2E — approved 100% comp (demo only, do not delete)",
+      client_label: "Milano Seal courtesy adjustment",
       usage_limit: null,
       usage_count: 0,
-      expires_at: null,
+      expiration_date: null,
     })
     .select("id")
     .single();
