@@ -8,11 +8,13 @@ import { CredentialTicker } from "@/components/landing/credential-ticker";
 
 const navLinks = [
   { label: "Services", href: "/#services" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Process", href: "/#process" },
   { label: "Countries", href: "/countries" },
   { label: "Map", href: "/map" },
   { label: "About", href: "/about" },
   { label: "Founder", href: "/founder" },
+  { label: "Secure Portal", href: "/secure-portal" },
 ];
 
 export function Header() {
