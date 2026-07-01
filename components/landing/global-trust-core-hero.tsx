@@ -604,6 +604,29 @@ export function GlobalTrustCoreHero() {
           </div>
       )}
 
+      {/* ── Mobile: bottom-sheet card (desktop uses the popover above). Uses fixed
+             positioning so it never disturbs the globe's absolute layout. ──── */}
+      {selectedDest && (
+        <div
+          className="ms-destination-mobile-card md:hidden fixed inset-x-3 bottom-3 z-40 flex justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative w-full max-w-[420px]">
+            <button
+              onClick={() => setSelectedId(null)}
+              aria-label="Close"
+              className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 font-mono text-base leading-none text-white/50 transition-colors hover:text-white"
+            >×</button>
+            <DestinationIntelligenceCard
+              intelligence={heroDestinationIntelligence(selectedDest)}
+              variant="globePreview"
+              className="w-full max-w-none"
+              onPrimaryAction={() => setSelectedId(null)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Orbit rings */}
       <div className="ms-orbit-ring ms-orbit-ring--main" />
       <div className="ms-orbit-ring ms-orbit-ring--outer" />
