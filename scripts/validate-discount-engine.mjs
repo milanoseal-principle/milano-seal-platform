@@ -34,7 +34,16 @@ const ADDITIVE = [
   "app/api/alliance/discounts/request/route.ts",
   "app/api/admin/discounts/requests/route.ts",
   "app/api/admin/discounts/requests/[id]/approve/route.ts",
+  "lib/discounts/compClear.ts",
+  "app/api/admin/discounts/comp-clear/route.ts",
 ];
+
+// The comp-clear path is the ONLY additive code allowed to write payment state,
+// and only through an audited redemption. Everything else must not.
+const COMP_CLEAR_FILES = new Set([
+  "lib/discounts/compClear.ts",
+  "app/api/admin/discounts/comp-clear/route.ts",
+]);
 for (const p of ADDITIVE) {
   if (!existsSync(p)) errors.push(`additive discount-engine file missing: ${p}`);
 }
@@ -67,21 +76,44 @@ if (!/Math\.max\(0/.test(read("src/features/discounts/discountService.ts"))) {
   errors.push("discountService no longer clamps amounts to >= 0");
 }
 
-// 5. Payment hard-locks — the additive layer must not write payment status or a
-//    paid_comped release-clear (that path is deferred pending schema confirmation).
+// 5. Payment hard-locks.
+//    (a) Only the comp-clear path may write payment state; everything else must not.
+//    (b) No file may introduce a `paid_comped` status (we reuse the existing
+//        'confirmed' clear — no new status, no CHECK-constraint migration).
 for (const p of ADDITIVE.filter((f) => f.startsWith("lib/discounts") || f.startsWith("app/api"))) {
   const src = read(p);
-  if (/payment_status\s*[:=]/.test(src)) {
-    errors.push(`additive file writes payment_status (deferred / must be audited path): ${p}`);
+  if (!COMP_CLEAR_FILES.has(p) && /payment_status\s*[:=]/.test(src)) {
+    errors.push(`non-comp-clear additive file writes payment_status: ${p}`);
   }
   if (/paid_comped/.test(src)) {
-    errors.push(`additive file introduces paid_comped (deferred payment-gate change): ${p}`);
+    errors.push(`additive file introduces paid_comped (must reuse existing 'confirmed' clear): ${p}`);
   }
 }
-// Release gate must be untouched by this branch.
+
+// 5b. Comp-clear must be audited + backed by a redemption, and reuse 'confirmed'.
+const compClear = read("lib/discounts/compClear.ts");
+if (compClear) {
+  for (const ev of ["PAYMENT_COMPED", "PAYMENT_BALANCE_UPDATED", "SCHEDULING_UNLOCKED"]) {
+    if (!compClear.includes(ev)) errors.push(`compClear.ts does not write the ${ev} audit event`);
+  }
+  if (!/discount_redemptions/.test(compClear)) {
+    errors.push("compClear.ts does not record an audited discount_redemptions row");
+  }
+  if (!/["']confirmed["']/.test(compClear)) {
+    errors.push("compClear.ts does not reuse the existing 'confirmed' payment status");
+  }
+  if (!/Math\.max\(0/.test(compClear)) {
+    errors.push("compClear.ts does not clamp the final amount to >= 0");
+  }
+}
+if (!/canApproveComp/.test(read("app/api/admin/discounts/comp-clear/route.ts"))) {
+  errors.push("comp-clear route does not enforce canApproveComp (owner/operator gate)");
+}
+
+// Release gate must be untouched by this branch (no paid_comped, no comp edits).
 const releaseGate = read("lib/release/performFinalRelease.ts");
 if (/paid_comped/.test(releaseGate)) {
-  errors.push("performFinalRelease.ts references paid_comped — release-gate change is deferred");
+  errors.push("performFinalRelease.ts references paid_comped — must reuse existing confirmed clear");
 }
 
 // 6. Public-surface guards: no TIFFANY100 static code, no "100% off" coupon copy.

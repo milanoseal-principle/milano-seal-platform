@@ -129,14 +129,31 @@ confirmation. Exact 4-bucket breakdown:
   `EventType` union (additive).
 - **Engine enable gate** — all new routes 503 when `DISCOUNT_ENGINE_ENABLED !== "true"`.
 
-### Deferred -> NOT written (blocked/risky, needs live-DB confirmation)
-- **`comp` 100% payment-clear + comped release-gate acceptance.** Requires writing
-  `payment_status` and editing `performFinalRelease.ts`. Blocked because the live
-  `discount_codes` shape is ambiguous (034 `type/value` vs 035
-  `discount_type/discount_value`) and this is the payment/release path. The approval
-  route records the comp decision + audit today; the actual payment-clear is the one
-  edit to make **after** confirming production columns.
-- **`discount_codes` ALTER for comp/approval columns** — same schema-ambiguity block.
+### Comp 100% payment-clear -> SHIPPED (after live-schema confirmation)
+Nick confirmed the live schema: `discount_codes` and `discount_redemptions` both use
+the **035 shape** (`discount_type` enum, `discount_value`, `usage_count`,
+`expiration_date`, `status`; redemptions use `original_amount`/`discount_amount`/
+`final_amount`/`code`/`redeemed_by`/`approved_by`). With that confirmed:
+
+- **`lib/discounts/compClear.ts`** + **`POST /api/admin/discounts/comp-clear`**
+  (owner/operator `canApproveComp` gated). It:
+  - validates the referenced `discount_codes` row is an ACTIVE 100% (`percentage`,
+    value ≥ 100) comp;
+  - records an **audited `discount_redemptions` row** (`final_amount = 0`,
+    `redeemed_by`/`approved_by` = approver) — the discount state that justifies
+    clearing payment;
+  - clears payment on `deals` by **mirroring the proven operator confirm path**
+    (`payment_confirmed=true`, `payment_status='confirmed'`,
+    `payment_settlement_status='observed_available'`, `amount_due=0`);
+  - writes `PAYMENT_COMPED`, `PAYMENT_BALANCE_UPDATED`, `SCHEDULING_UNLOCKED` events.
+- **No new `paid_comped` status, no CHECK-constraint migration, no release-gate
+  edit.** The existing gate already accepts `payment_confirmed=true`, so the comp
+  clears legitimately and only because an audited redemption exists. `amount_after`
+  is clamped `>= 0`.
+
+### Still deferred (not needed for comp)
+- **`discount_codes` ALTER for extra comp/approval columns** — unnecessary; the live
+  035 table already has `approved_by`, `status`, `metadata`. No ALTER performed.
 
 ### Client-portal apply surface
 - The existing `POST /api/deals/[id]/apply-discount` already authorizes the owning
