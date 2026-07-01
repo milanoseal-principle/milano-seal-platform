@@ -33,6 +33,7 @@
     "validate:banned-phrases": "node scripts/validate-banned-phrases.mjs",
     "validate:portal-prelogin": "node scripts/validate-portal-prelogin.mjs",
     "validate:intake-confirmation": "node scripts/validate-intake-confirmation.mjs",
+    "validate:discount-engine": "node scripts/validate-discount-engine.mjs",
     "validate:custody-ledger-schema": "node scripts/validate-custody-ledger-schema.mjs",
     "validate:dashboard-command-center": "node scripts/validate-dashboard-command-center.mjs",
     "validate:sales-intelligence-lab": "node scripts/validate-sales-intelligence-lab.mjs",

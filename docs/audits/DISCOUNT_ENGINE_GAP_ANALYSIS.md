@@ -102,15 +102,55 @@ none should be written without explicit approval.
 
 ---
 
-## 5. Decision needed from Nick
+## 5. Decision: Option A — extend additively (SELECTED)
 
-Pick one:
-- **A — Extend existing engine (recommended):** implement §4 additively on this
-  branch; hold for preview approval before merge.
-- **B — Build Block 4 verbatim as a parallel engine:** accept the schema collision
-  risk and two competing discount systems (not recommended on payment infra).
-- **C — Leave as-is:** the existing engine + `TIFFANYTEST` seed already support an
-  operator-created matter discount; run the Tiffany E2E on what exists and skip new
-  payment-path code.
+Nick selected **Option A**. This branch implements the schema-safe additive
+pieces and **defers** the payment-critical pieces that require live-DB schema
+confirmation. Exact 4-bucket breakdown:
 
-No payment/release/Wise/custody code has been changed on this branch.
+### Already exists (reused, not rebuilt)
+- Discount tables + RLS (034/035), `discountService` apply/remove, `lib/discountCodes.ts`,
+  operator apply route + dashboard API + `DiscountCodeManager`, `TIFFANYTEST` E2E seed.
+- Amount clamp `>= 0` (`money()`), post-payment guard, audited apply/remove.
+
+### Missing -> shipped on this branch (safe additive)
+- **`discount_requests` table** — `supabase/migrations/042_discount_requests.sql`
+  (ONE new table; no ALTER of existing tables; RLS: service_role + founder/admin only).
+- **`lib/discounts/` layer** — `env.ts` (`DISCOUNT_ENGINE_ENABLED`, comp flags,
+  owner/operator allow-lists, client/partner caps), `permissions.ts`
+  (`canCreateDiscountRequest`, `canReviewDiscountRequest`, `canApproveComp`),
+  `requests.ts` (create/list/review), `audit.ts` (wraps existing event ledger),
+  `types.ts`.
+- **Alliance/partner request flow** — `POST /api/alliance/discounts/request`
+  (partners may only *request*), `GET /api/admin/discounts/requests` (operator list),
+  `POST /api/admin/discounts/requests/[id]/approve` (operator approve/deny; a comp
+  requires the stricter `canApproveComp` owner/operator gate).
+- **New audit events** — `DISCOUNT_REQUEST_CREATED/APPROVED/DENIED` added to the
+  `EventType` union (additive).
+- **Engine enable gate** — all new routes 503 when `DISCOUNT_ENGINE_ENABLED !== "true"`.
+
+### Deferred -> NOT written (blocked/risky, needs live-DB confirmation)
+- **`comp` 100% payment-clear + comped release-gate acceptance.** Requires writing
+  `payment_status` and editing `performFinalRelease.ts`. Blocked because the live
+  `discount_codes` shape is ambiguous (034 `type/value` vs 035
+  `discount_type/discount_value`) and this is the payment/release path. The approval
+  route records the comp decision + audit today; the actual payment-clear is the one
+  edit to make **after** confirming production columns.
+- **`discount_codes` ALTER for comp/approval columns** — same schema-ambiguity block.
+
+### Client-portal apply surface
+- The existing `POST /api/deals/[id]/apply-discount` already authorizes the owning
+  portal client, so no second apply path was created (hard-lock: no duplicate payment
+  logic). A portal UI card that calls this existing route is a low-risk follow-up.
+
+### Hard-locks upheld
+No parallel engine, no schema collision, no unaudited `payment_status` write, no
+comped release-gate edit, no Wise/custody/payout change, no public coupon language,
+no static `TIFFANY100` public code. Enforced by `npm run validate:discount-engine`.
+
+### Tiffany E2E (for Block 5)
+Use the existing engine: operator creates a matter-specific discount (existing
+`TIFFANYTEST` seed or a fresh matter-specific code) and applies it via the existing
+audited apply route. The **final payment-clear to $0 + scheduling unlock** depends on
+the deferred comped-clear edit — so the fully-comped auto-unlock cannot be verified
+until that one edit lands post-schema-confirmation.
