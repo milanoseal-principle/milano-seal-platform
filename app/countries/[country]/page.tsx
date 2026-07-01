@@ -225,7 +225,7 @@ export default async function CountryPage({ params }: PageProps) {
 
               {/* Disclaimer */}
               <p className="font-mono text-[8px] text-[#2A2A2A] leading-relaxed">
-                Procedural guidance only. Not legal advice. Requirements confirmed with receiving authority before execution.
+                Procedural guidance only. Document execution coordination only. Requirements confirmed with receiving authority before execution.
               </p>
             </div>
 
@@ -236,7 +236,7 @@ export default async function CountryPage({ params }: PageProps) {
               <div className="relative rounded-xl border border-[#C6A55A]/20 bg-[#0A0A0A] p-5 sticky top-6"
                 style={{ boxShadow: "0 0 0 1px rgba(198,165,90,0.06), 0 24px 48px rgba(0,0,0,0.6)" }}>
                 <div className="absolute top-0 left-0 right-0 h-px rounded-t-xl bg-gradient-to-r from-transparent via-[#C6A55A]/50 to-transparent" />
-                <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Begin Execution</p>
+                <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Begin Secure Intake</p>
                 <p className="text-white font-serif text-lg leading-snug mb-4">{dest.name} Document Authentication</p>
                 <Link
                   href={`/intake?destination=${encodeURIComponent(dest.slug)}&country=${encodeURIComponent(dest.name)}`}

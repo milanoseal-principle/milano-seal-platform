@@ -44,6 +44,7 @@ import { TopDocumentsPanel } from "@/components/dashboard/TopDocumentsPanel";
 import { MattersByStatus } from "@/components/dashboard/MattersByStatus";
 import { ExecutionStatusRail } from "@/components/dashboard/ExecutionStatusRail";
 import { MatterQueue } from "@/components/dashboard/MatterQueue";
+import { InternalModuleGrid } from "@/components/dashboard/InternalModuleGrid";
 
 interface DashboardSummary {
   total_deals: number;
@@ -419,6 +420,8 @@ export default function Dashboard() {
           </Button>
         </Link>
       </motion.div>
+
+      <InternalModuleGrid />
 
       {/* Status strip — 6 cards */}
       <motion.div

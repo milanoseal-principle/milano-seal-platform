@@ -20,6 +20,10 @@
     "validate:revenue-copy": "node scripts/validate-revenue-copy.mjs",
     "validate:brand-language": "node scripts/validate-brand-language.mjs",
     "validate:service-positioning": "node scripts/validate-service-positioning.mjs",
+    "validate:command-center-intelligence": "node scripts/validate-command-center-intelligence.mjs",
+    "validate:internal-module-registry": "node scripts/validate-internal-module-registry.mjs",
+    "validate:public-final-copy-lock": "node scripts/validate-public-final-copy-lock.mjs",
+    "validate:route-registry": "node scripts/validate-route-registry.mjs"
     "validate:command-center-intelligence": "node scripts/validate-command-center-intelligence.mjs"
     "validate:operating-spines": "node scripts/validate-operating-spines.mjs",
     "validate:global-compliance-atlas": "node scripts/validate-global-compliance-atlas.mjs",

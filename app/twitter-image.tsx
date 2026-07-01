@@ -8,6 +8,8 @@ export const alt =
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// Gold M Orb share card: black background, The Milano Seal™, U.S. Document Execution for International Use, themilanoseal.com.
+const sealDataUri = (() => {
 // Inline the Gold M Orb once at module load as a data URI (no network fetch).
 const orbDataUri = (() => {
   try {
@@ -86,6 +88,19 @@ export default function TwitterImage() {
           }}
         >
           U.S. Document Execution for International Use
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            marginTop: 30,
+            fontSize: 22,
+            letterSpacing: 5,
+            color: "rgba(255,255,255,0.55)",
+            fontFamily: "sans-serif",
+          }}
+        >
+          THEMILANOSEAL.COM
         </div>
 
         <div

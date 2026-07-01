@@ -38,6 +38,7 @@ export default function PricingPage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/intake" className="rounded-full bg-amber-200 px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.18em] text-black">Begin Secure Intake</Link>
+            <Link href="/secure-portal" className="rounded-full border border-amber-300/30 px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.18em] text-amber-100">Secure Portal</Link>
             <Link href="/secure-portal" className="rounded-full border border-amber-300/30 px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.18em] text-amber-100">Matter Control Portal</Link>
           </div>
         </section>

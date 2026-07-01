@@ -265,7 +265,7 @@ export default async function AuthorityDocumentPage({ params }: PageProps) {
       <section className="py-8 px-6">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-[#5A5A5A] leading-relaxed text-center">
-            Procedural guidance only. The Milano Seal is not a law firm and does not provide legal advice. Requirements should always be confirmed with the receiving authority. International document requirements may change.
+            Procedural guidance only. Document execution coordination only. The Milano Seal™ does not provide legal guidance. Requirements should always be confirmed with the receiving authority. International document requirements may change.
           </p>
         </div>
       </section>

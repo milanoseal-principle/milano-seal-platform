@@ -161,7 +161,7 @@ export default function ColoradoItalyPage() {
       {/* Disclaimer */}
       <section className="max-w-4xl mx-auto px-6 pb-20">
         <p className="text-[11px] text-gray-600 leading-relaxed border-t border-[#D4AF37]/10 pt-6">
-          The Milano Seal™ is not a law firm and does not provide legal advice. This case study documents notarial services, document execution support, apostille coordination, courier coordination, and administrative liaison support where permitted. Final consular requirements, eligibility determinations, document acceptance, and legal strategy must be verified with the appropriate authority or licensed counsel. Requirements change — verify all authority requirements before use.
+          Document execution coordination only. The Milano Seal™ does not provide legal guidance. This case study documents notarial services, document execution support, apostille coordination, courier coordination, and administrative liaison support where permitted. Final consular requirements, eligibility determinations, document acceptance, and legal strategy must be verified with the appropriate authority or licensed counsel. Requirements change — verify all authority requirements before use.
         </p>
       </section>
     </main>

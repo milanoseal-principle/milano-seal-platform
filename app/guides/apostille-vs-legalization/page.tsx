@@ -152,7 +152,7 @@ export default function Page() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="mt-6 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-                The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide legal advice. Legal questions should be handled by a licensed attorney.
+                The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Document execution coordination only. The Milano Seal™ does not provide legal guidance. Legal questions should be handled by a licensed attorney.
               </p>
             </div>
           </div>
