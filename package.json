@@ -31,6 +31,7 @@
     "validate:receiving-authority-language": "node scripts/validate-receiving-authority-language.mjs",
     "validate:public-surface-guards": "node scripts/validate-public-surface-guards.mjs",
     "validate:banned-phrases": "node scripts/validate-banned-phrases.mjs",
+    "validate:responsive-safety": "node scripts/validate-responsive-safety.mjs",
     "validate:custody-ledger-schema": "node scripts/validate-custody-ledger-schema.mjs",
     "validate:dashboard-command-center": "node scripts/validate-dashboard-command-center.mjs",
     "validate:sales-intelligence-lab": "node scripts/validate-sales-intelligence-lab.mjs",
