@@ -36,6 +36,8 @@ import {
   PlayCircle,
   AlertOctagon,
   ScrollText,
+  BadgePercent,
+  Sparkles,
 } from "lucide-react";
 
 // Grouped command-center navigation. Every existing route is preserved; only the
@@ -70,6 +72,7 @@ const NAV_GROUPS: {
       { href: "/dashboard/admin", label: "Admin Control", icon: ShieldAlert },
       { href: "/dashboard/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/dashboard/admin/reconciliation", label: "Reconciliation", icon: Scale },
+      { href: "/dashboard/discounts", label: "Discount Control", icon: BadgePercent },
     ],
   },
   {
@@ -79,6 +82,7 @@ const NAV_GROUPS: {
       { href: "/dashboard/intelligence/revenue", label: "Revenue", icon: TrendingUp },
       { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
       { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
+      { href: "/dashboard/intelligence/sales-lab", label: "Sales Intelligence Lab", icon: Sparkles },
     ],
   },
   {
