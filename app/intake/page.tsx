@@ -84,21 +84,30 @@ export default function IntakePage({
         <div className="ms-os-atmosphere" aria-hidden="true" />
         <div className="max-w-7xl mx-auto">
           {/* Page header */}
-          <div className="relative z-10 mb-10 text-center sm:mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-6">
+          <div className="relative z-10 mb-10 text-center sm:mb-12">
+            {/* subtle gold halo behind the title */}
+            <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2" style={{ width: 460, height: 220, background: "radial-gradient(circle, rgba(198,165,90,0.10), transparent 70%)", filter: "blur(8px)" }} />
+            <div className="relative inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-6">
               <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
               <span className="text-sm text-[var(--ms-gold)] font-medium">
               Secure Records Intake
               </span>
             </div>
-            <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
+            <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
               Begin Your Execution
             </h1>
-            <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto">
+            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">
               Complete the controlled intake below. Destination context from
               Global Document Intelligence is preserved when you arrive from a
               routing corridor.
             </p>
+            <div className="relative mt-6 flex flex-wrap justify-center gap-2">
+              {["Payment-Gated Scheduling", "Hague Route Review", "Courier Release Control"].map((c) => (
+                <span key={c} className="rounded-full border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.05] px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/80">
+                  {c}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Intake wizard */}

@@ -1,10 +1,12 @@
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { DiscountCodeManager } from "@/components/dashboard/DiscountCodeManager";
+import { OperatorCompClearControl } from "@/components/dashboard/OperatorCompClearControl";
+import { LaunchStatusCard } from "@/components/dashboard/LaunchStatusCard";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Discount Codes — Milano Seal",
+  title: "Discount Control — Milano Seal",
   robots: { index: false, follow: false },
 };
 
@@ -24,8 +26,18 @@ export default async function DiscountsPage() {
   }
 
   return (
-    <main className="ms-os-page ms-safe-bottom min-h-screen bg-[#080808] px-4 py-6 text-white sm:px-6 sm:py-8">
+    <main className="ms-os-page ms-safe-bottom min-h-screen overflow-x-hidden bg-[#080808] px-4 py-6 text-white sm:px-6 sm:py-8">
       <div className="ms-os-atmosphere" aria-hidden="true" />
+      <div className="relative z-10 mx-auto mb-8 max-w-5xl">
+        <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.32em] text-[#C6A55A]/60">
+          Founder / Admin Access Only
+        </p>
+        <h1 className="font-serif text-3xl text-[#E4D2A4]">Discount Control</h1>
+      </div>
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <LaunchStatusCard />
+        <OperatorCompClearControl />
+      </div>
       <DiscountCodeManager />
     </main>
   );

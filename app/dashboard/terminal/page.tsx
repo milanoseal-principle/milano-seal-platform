@@ -913,8 +913,8 @@ export default function ExecutionAssistantPage() {
       {/* Page header */}
       <div className="ea-header">
         <div>
-          <div className="ea-eyebrow">Execution Assistant™</div>
-          <h1 className="ea-h1">Operational Ledger + Matter Intelligence</h1>
+          <div className="ea-eyebrow">Operator Terminal · Execution Assistant™</div>
+          <h1 className="ea-h1">Operator Terminal</h1>
         </div>
         <div className="ea-live">
           <span className="ea-live-dot" />

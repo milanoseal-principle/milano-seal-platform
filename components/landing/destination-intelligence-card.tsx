@@ -9,6 +9,7 @@ import {
   Route,
 } from "lucide-react";
 import type { Destination } from "@/data/destinations";
+import { DESTINATIONS } from "@/data/destinations";
 import { getCorridorIntel } from "@/data/corridor-intel";
 import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
 import ExecutionComplianceBoundary from "@/components/intelligence/ExecutionComplianceBoundary";
@@ -60,6 +61,36 @@ const ROUTE_COPY: Record<string, string> = {
   uae: "Consular authentication review for UAE",
 };
 
+/**
+ * Real, destination-specific routing steps for the intel cards.
+ * Uses the canonical executionPath (e.g. "Florida Department of State apostille",
+ * "Courier to Italian municipality or consulate") instead of generic placeholder
+ * copy. Surfaces (globe hero) that lack the full Destination object resolve the
+ * real path by slug; if a slug is unknown, a route-type-derived path is returned —
+ * never generic filler.
+ */
+export function executionPathPreview(
+  slug: string,
+  isHague: boolean,
+  needsTranslation: boolean,
+): string[] {
+  const canonical = DESTINATIONS.find((item) => item.slug === slug);
+  if (canonical && canonical.executionPath.length > 0) {
+    return canonical.executionPath.slice(0, 5);
+  }
+
+  const steps = isHague
+    ? ["Notarization or RON", "Florida Department of State apostille"]
+    : [
+        "Notarization or RON",
+        "Florida & U.S. Dept. of State authentication",
+        "Destination consular legalization",
+      ];
+  if (needsTranslation) steps.push("Certified translation");
+  steps.push("Courier to receiving authority");
+  return steps;
+}
+
 function documentChips(destination: Destination): string[] {
   const noteDocuments = destination.note
     .split("·")
@@ -110,11 +141,7 @@ export function buildDestinationIntelligence(
     courierReview: destination.executionPath.some((step) =>
       /courier|delivery|release/i.test(step),
     ),
-    pathPreview: [
-      "Verify document type",
-      "Confirm destination requirements",
-      "Prepare secure intake pathway",
-    ],
+    pathPreview: destination.executionPath.slice(0, 5),
   };
 }
 
@@ -256,7 +283,7 @@ export function DestinationIntelligenceCard({
         <Link
           href={intakeHref}
           onClick={onPrimaryAction}
-          aria-label={`Start controlled intake for ${data.name}`}
+          aria-label={`Begin secure intake for ${data.name}`}
           className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
         >
           Begin Secure Intake

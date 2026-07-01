@@ -1,93 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import { ArrowRight, Lock, Globe, Shield, Eye, FileCheck } from "lucide-react";
+import { ProcessExperience } from "@/components/process/ProcessExperience";
 
 export const metadata: Metadata = {
   title: "How It Works — Execution Process | The Milano Seal™",
   description:
-    "The Milano Seal™ six-stage execution process: matter intake, compliance review, payment-gated scheduling, document execution, chain-of-custody tracking, and structured international release.",
+    "The Milano Seal™ six-stage execution process: matter intake, compliance review, payment-gated execution, document execution, chain-of-custody visibility, and structured international release.",
   alternates: { canonical: "https://themilanoseal.com/process" },
 };
 
-const stages = [
-  {
-    id: "compliance-review",
-    number: "02",
-    icon: Shield,
-    title: "Compliance Review",
-    headline: "Jurisdiction Validation & Execution Path Determination",
-    body: "Every matter begins with a jurisdictional review. Destination-country requirements, document type parameters, and authentication pathway options are assessed before any execution is scheduled. This ensures that your documents are structured correctly for the receiving authority.",
-    details: [
-      "Destination-country apostille or consular legalization path confirmed",
-      "Document format and language requirements validated",
-      "Identity verification requirements outlined",
-      "Estimated processing timeline provided",
-    ],
-  },
-  {
-    id: "payment-gate",
-    number: "03",
-    icon: Lock,
-    title: "Payment-Gated Execution",
-    headline: "No Scheduling Until Scope is Confirmed & Payment is Complete",
-    body: "The Milano Seal™ does not schedule or execute any matter until scope has been confirmed in writing and payment has been received in full. This is a deliberate structural control — it protects the integrity of the execution chain and ensures complete alignment before any document is touched.",
-    details: [
-      "Scope confirmation provided in writing before payment",
-      "Payment processed through secure Wise international infrastructure",
-      "Scheduling unlocked immediately upon payment confirmation",
-      "Scope changes after payment initiation require re-confirmation",
-    ],
-    highlight: true,
-  },
-  {
-    id: "execution",
-    number: "04",
-    icon: FileCheck,
-    title: "Document Execution",
-    headline: "RON, Mobile Notary, and Execution Pathways",
-    body: "Documents are executed under Florida law via Remote Online Notarization (RON) or in-person mobile notary depending on document type, jurisdiction requirements, and client preference. Every execution session is recorded, sealed, and logged.",
-    details: [
-      "RON: encrypted video session, identity-verified, cryptographic seal applied",
-      "Mobile notary: in-person dispatch to client location",
-      "Witness coordination arranged where required by document type",
-      "Execution recorded and retained per Florida statutory requirements",
-    ],
-  },
-  {
-    id: "custody",
-    number: "05",
-    icon: Eye,
-    title: "Chain-of-Custody Visibility",
-    headline: "Real-Time Status Through the Secure Matter Portal",
-    body: "From execution through final delivery, matter status is maintained in the Secure Matter Portal. Every transit event, authentication step, and courier handoff is logged and visible. This is one of The Milano Seal™'s strongest trust differentiators.",
-    details: [
-      "Matter status updated at each authentication and transit stage",
-      "Custody Rail integrated for physical document transit",
-      "Audit trail available for all matter events",
-      "Secure Matter Portal access provided at matter initiation",
-    ],
-  },
-  {
-    id: "release",
-    number: "06",
-    icon: Globe,
-    title: "Structured International Release",
-    headline: "Apostille, Courier, and Destination Delivery",
-    body: "The final stage coordinates apostille issuance, international courier dispatch, and structured release to the destination authority. Delivery is confirmed and documented. Physical originals shipped via tracked international courier where required.",
-    details: [
-      "Apostille issued by the Florida Department of State",
-      "International courier dispatch via DHL or FedEx International",
-      "Delivery confirmation provided to client portal",
-      "Consular legalization coordinated for non-Hague jurisdictions",
-    ],
-  },
-];
-
 export default function ProcessPage() {
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <>
       <Header />
 
       {/* Hero */}
@@ -190,7 +115,10 @@ export default function ProcessPage() {
         </div>
       </section>
 
+      <main>
+        <ProcessExperience />
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

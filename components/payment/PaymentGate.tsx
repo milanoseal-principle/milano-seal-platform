@@ -260,7 +260,7 @@ export function PaymentGate({
       </div>
 
       <div className="mt-3 flex items-center justify-center gap-4 text-[9px] font-mono text-gray-500 tracking-[0.2em] uppercase">
-        <span>AES-256 Encrypted</span>
+        <span>Encrypted</span>
         <span className="text-[#D4AF37]/30">/</span>
         <span>Wise Verified</span>
         <span className="text-[#D4AF37]/30">/</span>
