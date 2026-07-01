@@ -385,7 +385,7 @@ export function SmartMatterIntake({
                         {intelligencePreview.next_action_client}
                       </IntelRow>
                       <p className="text-[10px] text-[#6E6558] font-light leading-relaxed pt-2 border-t border-[rgba(198,165,90,0.1)]">
-                        International use is subject to destination and receiving-authority requirements. The Milano Seal provides notarial and document coordination services only and does not provide legal advice.
+                        International use is subject to destination and receiving-authority requirements. The Milano Seal provides notarial and document coordination services only and does not provide legal guidance.
                       </p>
                     </div>
                   )}

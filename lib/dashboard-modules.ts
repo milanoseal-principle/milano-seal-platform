@@ -18,6 +18,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
   },
   {
     name: "Command Center",
+    route: "command-center",
+    icon: "Crown",
+    description: "Every Matter. Every Dollar. Every Step.",
+    group: "Admin",
+  },
+  {
+    name: "Command Center",
     route: "admin",
     icon: "ShieldAlert",
     description: "SLA alerts, conversion scoring, recent activity",
