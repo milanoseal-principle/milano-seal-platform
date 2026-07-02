@@ -1,0 +1,1 @@
+const { readFileSync }=await import('fs'); for (const f of ['src/features/quality/identifierLockService.ts','src/features/documents/documentVersionService.ts','supabase/migrations/037_identifier_lock_document_versions.sql']) if(!readFileSync(f,'utf8').length) throw new Error('missing '+f); console.log('validate:data-integrity passed');

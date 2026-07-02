@@ -118,6 +118,11 @@ const serviceLinks = [
   { label: "Mobile Notary", href: "/services/mobile-notary" },
 ];
 
+const networkLinks = [
+  { label: "Alliance Partner Network", href: "/alliance/apply" },
+  { label: "Execution Support Network", href: "/va/apply" },
+];
+
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -163,6 +168,17 @@ export function Footer() {
                 <Phone className="w-4 h-4 text-[var(--ms-gold)]" />
                 <span>Available upon intake</span>
               </div>
+            </div>
+            <div className="mt-6 space-y-2">
+              {networkLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
 

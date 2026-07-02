@@ -21,6 +21,17 @@ interface MatterDetail {
   payment_status: string | null;
   payment_confirmed?: boolean | null;
   is_platform_fee_only?: boolean | null;
+  viewer_role?: string | null;
+  payment_confirmed_at?: string | null;
+  payment_settlement_status?: string | null;
+  payment_observed_at?: string | null;
+  payment_cleared_at?: string | null;
+  payment_funding_method?: string | null;
+  founder_payment_override_at?: string | null;
+  founder_payment_override_by?: string | null;
+  founder_payment_override_reason?: string | null;
+  amount_due?: number | null;
+  amount_paid?: number | null;
   tier: string | null;
   courier_tracking_id: string | null;
   courier_carrier: string | null;
@@ -477,6 +488,9 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           />
         </div>
 
+        {/* Founder Release Override — founder_admin only, settlement-pending bridge */}
+        <FounderReleaseOverridePanel matter={matter} />
+
         {/* Execution QA Matrix — pre-flight check state */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
@@ -503,6 +517,152 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// Founder-only control to release a final packet when payment is visible but not
+// yet settlement-cleared (e.g. card-funded Wise). Calls the release route with a
+// written override_reason; the server still enforces founder_admin, the payment
+// gate, settlement clearance, and the Codice Fiscale lock. Never shown to
+// admin_operator, virtual_assistant, or clients.
+function FounderReleaseOverridePanel({ matter }: { matter: MatterDetail }) {
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideBusy, setOverrideBusy] = useState(false);
+  const [overrideMessage, setOverrideMessage] = useState<string | null>(null);
+
+  const isFounder = matter.viewer_role === "founder_admin";
+  if (!isFounder) return null;
+
+  const amber = "rgba(245,158,11,1)";
+  const cleared = matter.payment_settlement_status === "cleared";
+  const overrideAlreadyRecorded = Boolean(matter.founder_payment_override_at);
+
+  if (cleared) {
+    return (
+      <div style={{ border: "1px solid rgba(52,211,153,0.28)", background: "rgba(52,211,153,0.06)", padding: 12, borderRadius: 8 }}>
+        <p style={{ color: "rgba(52,211,153,0.9)", fontSize: 9, fontFamily: "monospace", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+          Funds Cleared — Release Gate Eligible
+        </p>
+      </div>
+    );
+  }
+
+  if (overrideAlreadyRecorded) {
+    return (
+      <div style={{ border: `1px solid rgba(245,158,11,0.28)`, background: "rgba(245,158,11,0.06)", padding: 12, borderRadius: 8 }}>
+        <p style={{ color: amber, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 6 }}>
+          Founder Override Recorded
+        </p>
+        <p style={{ color: textMuted, fontSize: 11 }}>By: {matter.founder_payment_override_by ?? "—"}</p>
+        <p style={{ color: textMuted, fontSize: 11 }}>At: {matter.founder_payment_override_at ? timeAgo(matter.founder_payment_override_at) : "—"}</p>
+        <p style={{ color: textMuted, fontSize: 11 }}>Reason: {matter.founder_payment_override_reason ?? "—"}</p>
+      </div>
+    );
+  }
+
+  const paymentLooksPaid =
+    matter.payment_status === "paid" ||
+    matter.payment_status === "confirmed" ||
+    matter.payment_status === "payment_confirmed" ||
+    matter.payment_confirmed === true ||
+    Boolean(matter.payment_confirmed_at);
+  const due = Number(matter.amount_due ?? matter.total_price ?? 0);
+  const paidAmount = Number(matter.amount_paid ?? 0);
+  const amountCovered = due <= 0 || paidAmount >= due || matter.is_platform_fee_only === true;
+  const settlementPending =
+    Boolean(matter.payment_settlement_status) && matter.payment_settlement_status !== "cleared";
+
+  if (!(paymentLooksPaid && amountCovered && settlementPending)) return null;
+
+  const reasonReady = overrideReason.trim().length >= 12;
+
+  async function approveReleaseOverride() {
+    const reason = overrideReason.trim();
+    if (reason.length < 12) {
+      setOverrideMessage("Override reason must be specific.");
+      return;
+    }
+    setOverrideBusy(true);
+    setOverrideMessage(null);
+    try {
+      const res = await fetch(`/api/deals/${matter.id}/release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ override_reason: reason }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setOverrideMessage(
+          json.required_action || json.message || json.error || "Release override failed.",
+        );
+        return;
+      }
+      setOverrideMessage("Override recorded. Release gate updated. Refreshing matter.");
+      window.setTimeout(() => window.location.reload(), 900);
+    } catch (error) {
+      setOverrideMessage(error instanceof Error ? error.message : "Network error.");
+    } finally {
+      setOverrideBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ border: `1px solid rgba(245,158,11,0.28)`, background: "rgba(245,158,11,0.06)", padding: 14, borderRadius: 8 }}>
+      <p style={{ color: amber, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 4 }}>
+        Founder Release Control
+      </p>
+      <p style={{ color: "#fff", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Release Override</p>
+      <p style={{ color: textMuted, fontSize: 11, lineHeight: 1.5, marginBottom: 10 }}>
+        Payment is visible but not marked cleared. Use this only if you accept release
+        responsibility before settlement confirmation.
+      </p>
+      <label style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+        Override reason
+      </label>
+      <textarea
+        value={overrideReason}
+        onChange={(e) => setOverrideReason(e.target.value)}
+        placeholder="Example: Wise payment visible in business account; founder approves release before settlement."
+        rows={3}
+        style={{
+          width: "100%",
+          marginTop: 6,
+          marginBottom: 10,
+          background: "#000",
+          color: "#fff",
+          border: `1px solid rgba(245,158,11,0.4)`,
+          borderRadius: 6,
+          padding: 8,
+          fontSize: 12,
+          fontFamily: "monospace",
+          resize: "vertical",
+        }}
+      />
+      <button
+        type="button"
+        onClick={approveReleaseOverride}
+        disabled={overrideBusy || !reasonReady}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 6,
+          border: "none",
+          background: overrideBusy || !reasonReady ? "rgba(245,158,11,0.25)" : amber,
+          color: overrideBusy || !reasonReady ? "rgba(255,255,255,0.55)" : "#1a1206",
+          fontFamily: "monospace",
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          cursor: overrideBusy || !reasonReady ? "not-allowed" : "pointer",
+        }}
+      >
+        {overrideBusy ? "Working…" : reasonReady ? "Approve Release Override" : "Enter Override Reason"}
+      </button>
+      {overrideMessage && (
+        <p style={{ color: textMuted, fontSize: 11, marginTop: 8 }}>{overrideMessage}</p>
+      )}
     </div>
   );
 }

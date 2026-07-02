@@ -1,6 +1,8 @@
 "use client";
 
 import { useApi } from "@/hooks/useApi";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
@@ -53,15 +55,14 @@ export default function FinanceReconciliation() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase mb-2">
-          Finance Reconciliation
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">Payment Ledger</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Live reconciliation of Wise transfers and internal payment records.
-        </p>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Finance Reconciliation"
+          title="Execution Reconciliation Center"
+          description="Live reconciliation of Wise transfers and internal payment records across the payment-to-release spine."
+          primaryAction={{ label: "Open Exception", href: "/dashboard/needs-review" }}
+        />
+      </Reveal>
 
       {/* Payment Summary */}
       <div className="grid sm:grid-cols-3 gap-4">

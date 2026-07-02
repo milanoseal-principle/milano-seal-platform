@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { CountryComplianceProfile } from "@/lib/compliance/countries";
 import { CLIENT_COPY } from "@/lib/compliance/clientCopy";
 import { DOCUMENT_TAXONOMY } from "@/lib/compliance/documents";
-import { GlobalRouteGlobe } from "@/components/globe/GlobalRouteGlobe";
 import { SeoCorridorMapPreview } from "@/components/map/SeoCorridorMapPreview";
 
 interface Props {
@@ -33,16 +32,10 @@ export function CountryAuthorityPage({ country, authMode = "apostille" }: Props)
 
       <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", marginBottom: 32 }} />
 
-      {/* Authority globe + corridor preview */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-10">
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">Authority Coverage</p>
-          <GlobalRouteGlobe selectedSlug={country.slug} className="w-full max-w-[400px]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">Corridor Preview</p>
-          <SeoCorridorMapPreview slug={country.slug} className="w-full" />
-        </div>
+      {/* Corridor preview (single, clean map — removed the redundant radar globe) */}
+      <div className="mb-10 min-w-0">
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">Corridor Preview</p>
+        <SeoCorridorMapPreview slug={country.slug} className="w-full" />
       </div>
 
       {/* Action bar */}

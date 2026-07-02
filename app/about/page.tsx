@@ -19,7 +19,7 @@ const PILLARS = [
   {
     icon: Globe,
     title: "International Reach",
-    desc: "Apostille coordination, RON execution, and international document routing across 21+ countries and counting.",
+    desc: "Apostille coordination, RON execution, and international document routing across Hague and non-Hague jurisdictions.",
   },
   {
     icon: FileCheck,

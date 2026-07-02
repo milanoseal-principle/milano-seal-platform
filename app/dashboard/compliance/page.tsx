@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useApi } from "@/hooks/useApi";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import {
   Card,
   CardContent,
@@ -81,18 +83,14 @@ export default function Compliance() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-          Document Intelligence
-        </p>
-        <h1 className="font-serif text-4xl text-foreground">
-          Global Document Intelligence
-        </h1>
-        <p className="text-muted-foreground mt-2 max-w-2xl">
-          Authentication paths, RON eligibility, witness rules, and typical
-          documents for every jurisdiction we serve.
-        </p>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Compliance Routing Center"
+          title="Compliance Routing Center"
+          description="Authentication paths, RON eligibility, witness rules, apostille routing, and receiving-authority review for every jurisdiction we serve. Operational routing snapshot only — final acceptance remains subject to the receiving authority."
+          primaryAction={{ label: "Review Compliance Route", href: "/dashboard/deals" }}
+        />
+      </Reveal>
 
       <div className="grid md:grid-cols-4 gap-4">
         <StatPill
