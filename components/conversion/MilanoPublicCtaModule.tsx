@@ -7,7 +7,7 @@ import {
 // Public-safe clarity + conversion module. No private workflow exposed.
 export function MilanoPublicCtaModule({ className = "" }: { className?: string }) {
   const ctas = [
-    { label: "Start Controlled Intake", href: "/intake", primary: true },
+    { label: "Begin Secure Intake", href: "/intake", primary: true },
     { label: "Request Lawyer Access", href: "/lawyer-access" },
     { label: "Apply for Alliance Access", href: "/alliance/apply" },
     { label: "Request Private Client Review", href: "/access?interest=private-client" },

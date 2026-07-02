@@ -52,7 +52,7 @@ export default function EquineDocumentApostillePage() {
             </p>
             <div className="p-5 bg-[#111111] border border-[#C6A55A]/20 rounded-xl mb-8">
               <p className="text-sm text-[#B0B0B0]">
-                <strong className="text-white">Scope of Services:</strong> The Milano Seal does not provide veterinary advice, animal export licensing, or equine legal advice. Document execution support is administrative in nature. Export health certificates and import permits are outside the scope of this service.
+                <strong className="text-white">Scope of Services:</strong> The Milano Seal does not provide veterinary advice, animal export licensing, or equine legal guidance. Document execution support is administrative in nature. Export health certificates and import permits are outside the scope of this service.
               </p>
             </div>
             <h2 className="font-serif text-xl font-medium text-white mb-4">Documents We Support</h2>
@@ -72,7 +72,7 @@ export default function EquineDocumentApostillePage() {
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed">
-              The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide veterinary advice, animal export licensing, customs brokerage, or equine legal advice.</p>
+              The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide veterinary advice, animal export licensing, customs brokerage, or equine legal guidance.</p>
           </div>
         </section>
         <Footer />

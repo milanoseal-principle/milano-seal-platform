@@ -72,7 +72,7 @@ export default function MedicalDocumentApostillePage() {
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed">
-              The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide medical advice, treatment recommendations, healthcare compliance advice, or legal advice. Medical and legal questions should be handled by qualified professionals.</p>
+              The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide medical advice, treatment recommendations, healthcare compliance advice, or legal guidance. Medical and legal questions should be handled by qualified professionals.</p>
           </div>
         </section>
         <Footer />

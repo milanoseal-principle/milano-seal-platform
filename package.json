@@ -16,7 +16,28 @@
     "validate:execution-intelligence": "node scripts/validate-execution-intelligence.mjs",
     "validate:intelligence-safety": "node scripts/validate-public-intelligence-safety.mjs",
     "validate:sales-engine": "node scripts/validate-sales-engine.mjs",
-    "validate:revenue-copy": "node scripts/validate-revenue-copy.mjs"
+    "validate:revenue-copy": "node scripts/validate-revenue-copy.mjs",
+    "validate:brand-language": "node scripts/validate-brand-language.mjs",
+    "validate:service-positioning": "node scripts/validate-service-positioning.mjs",
+    "validate:command-center-intelligence": "node scripts/validate-command-center-intelligence.mjs",
+    "validate:internal-module-registry": "node scripts/validate-internal-module-registry.mjs",
+    "validate:public-final-copy-lock": "node scripts/validate-public-final-copy-lock.mjs",
+    "validate:route-registry": "node scripts/validate-route-registry.mjs",
+    "validate:canonical-locks": "node scripts/validate-canonical-locks.mjs",
+    "validate:referral-intelligence": "node scripts/validate-referral-intelligence.mjs",
+    "validate:seo-phase-authority": "node scripts/validate-seo-phase-authority.mjs",
+    "validate:pricing-luxury-canon": "node scripts/validate-pricing-luxury-canon.mjs",
+    "validate:data-intel-compliance-ui": "node scripts/validate-data-intel-compliance-ui.mjs",
+    "validate:final-mobile-cosmetic-pass": "node scripts/validate-final-mobile-cosmetic-pass.mjs",
+    "validate:final-wiring-confirmation": "node scripts/validate-final-wiring-confirmation.mjs",
+    "validate:touchpoint-registry": "node scripts/validate-touchpoint-registry.mjs",
+    "validate:client-touchpoint-wiring": "node scripts/validate-client-touchpoint-wiring.mjs",
+    "validate:alliance-touchpoint-wiring": "node scripts/validate-alliance-touchpoint-wiring.mjs",
+    "validate:va-operator-touchpoint-wiring": "node scripts/validate-va-operator-touchpoint-wiring.mjs",
+    "validate:cross-system-gates": "node scripts/validate-cross-system-gates.mjs",
+    "validate:global-acceptance-intelligence": "node scripts/validate-global-acceptance-intelligence.mjs",
+    "validate:milano-execution-routing-upgrade": "node scripts/validate-milano-execution-routing-upgrade.mjs",
+    "validate:operator-intelligence-spine": "node scripts/validate-operator-intelligence-spine.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -93,5 +114,6 @@
     "tailwindcss": "^4.2.0",
     "tw-animate-css": "1.3.3",
     "typescript": "5.7.3"
-  }
+  },
+  "packageManager": "npm@11.4.2"
 }

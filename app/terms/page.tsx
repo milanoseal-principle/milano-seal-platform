@@ -55,9 +55,9 @@ export default function TermsPage() {
             </h2>
             <p className="text-[#B0B0B0] leading-relaxed mb-6">
               Our services are limited to notarization and apostille
-              coordination. We do not provide legal advice, and our services do
+              coordination. We do not provide legal guidance, and our services do
               not constitute a legal practice. Clients should consult with an
-              attorney for legal advice regarding their documents.
+              attorney for legal guidance regarding their documents.
             </p>
 
             <h2 className="font-serif text-xl font-medium text-white mt-8 mb-4">

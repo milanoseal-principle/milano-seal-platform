@@ -8,6 +8,7 @@ export const alt =
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// Gold M Orb share card: black background, The Milano Seal™, U.S. Document Execution for International Use, themilanoseal.com.
 // Read the transparent gold seal once at module load and inline it as a data
 // URI so the OG renderer never has to fetch over the network.
 const sealDataUri = (() => {
@@ -100,7 +101,7 @@ export default function OpengraphImage() {
             fontFamily: "sans-serif",
           }}
         >
-          SEALING TRUST IN EVERY SIGNATURE
+          THEMILANOSEAL.COM
         </div>
 
         <div
