@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
 
@@ -125,7 +126,7 @@ export function MilanoTrustCore() {
               className="w-14 h-14 rounded-full border border-[var(--ms-gold)]/30 flex items-center justify-center mb-5"
               style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, transparent 70%)" }}
             >
-              <span className="font-serif text-[var(--ms-gold)] text-2xl font-medium leading-none">M</span>
+              <Image src="/milano-seal-core-brain-feather.png" alt="The Milano Seal Trust Core medallion" width={38} height={38} className="h-9 w-9 rounded-full object-contain" />
             </div>
             <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
               Our Platform Principles
@@ -155,7 +156,7 @@ export function MilanoTrustCore() {
               Our Platform Principles
             </p>
             <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
-              Milano Trust Core
+              Six Review Pillars
             </h2>
             <p className="text-white/50 text-sm leading-relaxed max-w-2xl mx-auto">
               International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
@@ -250,12 +251,14 @@ export function MilanoTrustCore() {
                   boxShadow: "0 0 48px rgba(198,165,90,0.12), inset 0 0 28px rgba(198,165,90,0.05)",
                 }}
               >
-                <span
-                  className="font-serif text-[var(--ms-gold)] text-5xl font-medium leading-none select-none"
-                  style={{ textShadow: "0 0 32px rgba(198,165,90,0.5)" }}
-                >
-                  M
-                </span>
+                <Image
+                  src="/milano-seal-core-brain-feather.png"
+                  alt="The Milano Seal Trust Core medallion"
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-full object-contain drop-shadow-[0_0_28px_rgba(198,165,90,0.35)]"
+                  priority={false}
+                />
               </div>
             </motion.div>
 

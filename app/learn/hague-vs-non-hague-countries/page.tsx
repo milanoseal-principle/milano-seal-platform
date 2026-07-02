@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.themilanoseal.com/learn/hague-vs-non-hague-countries" },
   openGraph: { title: "Hague vs. Non-Hague Countries", description: "Which countries accept apostilles and which require full legalization — and what that means for your documents.", images: [{ url: "https://www.themilanoseal.com/og-image.png", width: 1200, height: 630 }] },
 };
-const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal advice.";
+const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal guidance.";
 export default function Page() {
   return (
     <div className="min-h-screen" style={{ background: "#060402" }}>

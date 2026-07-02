@@ -190,7 +190,7 @@ export default async function VerifyPage({
         <p style={{ color: "#374151", fontSize: 10, lineHeight: 1.6, borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 20 }}>
           This certificate confirms that The Milano Seal recorded a custody and release event for this matter.
           International use remains subject to destination and receiving-authority requirements.
-          This certificate does not constitute legal advice or guarantee acceptance by any receiving authority.
+          This certificate does not constitute legal guidance or guarantee acceptance by any receiving authority.
         </p>
       </div>
     </div>

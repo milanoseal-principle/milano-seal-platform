@@ -36,11 +36,21 @@ import {
   PlayCircle,
   AlertOctagon,
   ScrollText,
+  Percent,
+  SearchCheck,
+  Network,
 } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard/admin", label: "Execution Intelligence", icon: ShieldAlert },
   { href: "/dashboard", label: "Matter Control", icon: LayoutDashboard },
+  { href: "/dashboard/command-center", label: "Command Center", icon: Activity },
+  { href: "/dashboard/discounts", label: "Discount Control", icon: Percent },
+  { href: "/dashboard/referrals", label: "Referral Intelligence", icon: Network },
+  { href: "/dashboard/seo-authority", label: "SEO Authority", icon: SearchCheck },
+  { href: "/dashboard/compliance-atlas", label: "Compliance Atlas", icon: Globe2 },
+  { href: "/dashboard/operator-terminal", label: "Operator Terminal", icon: Terminal },
+  { href: "/dashboard/intelligence/sales-lab", label: "Sales Intelligence Lab", icon: TrendingUp },
   { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
   { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
   { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },

@@ -18,7 +18,7 @@ const BORDER = "rgba(212,175,55,0.14)";
 const SURFACE = "rgba(255,255,255,0.025)";
 
 const DISCLAIMER =
-  "Final pricing is confirmed after matter review. Scheduling begins only after payment confirmation. Apostille processing times may vary by state authority workload. Courier timing appears after label selection. The Milano Seal™ coordinates document execution, notarization, apostille handling, and secure release. The Milano Seal™ does not provide legal advice.";
+  "Final pricing is confirmed after matter review. Scheduling begins only after payment confirmation. Apostille processing times may vary by state authority workload. Courier timing appears after label selection. The Milano Seal™ coordinates document execution, notarization, apostille handling, and secure release. The Milano Seal™ does not provide legal guidance.";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (

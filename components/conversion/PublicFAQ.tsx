@@ -32,7 +32,7 @@ const FAQ_ITEMS = [
     a: "When courier handling is part of the matter, tracking and delivery status are made visible through the secure matter process.",
   },
   {
-    q: "Do you provide legal advice?",
+    q: "Do you provide document execution coordination?",
     a: "No. The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Legal advice should come from a licensed attorney.",
   },
 ];
