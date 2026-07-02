@@ -1,0 +1,3 @@
+import { DataSourceStatusCard } from "@/components/dashboard/DataSourceStatusCard";
+import { OperatorNextAction } from "@/components/dashboard/OperatorNextAction";
+export default function ComplianceAtlasPage(){return <main className="space-y-6"><h1 className="font-serif text-3xl">Compliance Atlas</h1><p className="text-muted-foreground">Internal routing intelligence only; not a public legal conclusion. Mexico: Manual Review Required. UAE: Manual Review Required.</p><DataSourceStatusCard moduleName="Compliance Atlas" status="planned" /><OperatorNextAction action="Confirm country-specific receiving-authority expectations before execution routing." /></main>}
