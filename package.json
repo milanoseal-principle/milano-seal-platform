@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "rm -f app/opengraph-image.tsx app/twitter-image.tsx && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -103,6 +103,7 @@
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",
     "vaul": "^1.1.2",
+    "\u0078lsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
