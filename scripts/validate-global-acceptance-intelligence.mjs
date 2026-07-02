@@ -1,0 +1,9 @@
+import fs from "node:fs";
+const files = ["lib/milano-seal/global-acceptance/global-acceptance-types.ts", "lib/milano-seal/global-acceptance/hague-country-registry.ts", "lib/milano-seal/global-acceptance/us-state-execution-registry.ts", "lib/milano-seal/global-acceptance/consular-legalization-registry.ts", "lib/milano-seal/global-acceptance/ron-acceptance-matrix.ts", "lib/milano-seal/global-acceptance/translation-requirements.ts", "lib/milano-seal/global-acceptance/international-risk-screening.ts", "lib/milano-seal/global-acceptance/alliance-member-rules.ts", "lib/milano-seal/global-acceptance/operator-ui-summaries.ts", "lib/milano-seal/global-acceptance/global-acceptance-engine.ts", "docs/MILANO_SEAL_GLOBAL_ACCEPTANCE_INTELLIGENCE.md", "docs/MILANO_SEAL_HAGUE_CONSULAR_RESEARCH_PROTOCOL.md"];
+const missing = files.filter((file) => !fs.existsSync(file));
+if (missing.length) throw new Error(`Missing global acceptance files: ${missing.join(", ")}`);
+const all = files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+for (const term of ["AcceptanceRoute", "HagueStatus", "RONAcceptanceStatus", "CountryAcceptanceProfile", "USStateExecutionProfile", "GlobalAcceptanceResult", "HAGUE_COUNTRY_REGISTRY", "US_STATE_EXECUTION_REGISTRY", "Florida RON exists under Chapter 117", "CONSULAR_LEGALIZATION_REGISTRY", "RON_ACCEPTANCE_MATRIX", "TRANSLATION_REQUIREMENT_REGISTRY", "OFAC Sanctions List Service", "MILANO_SEAL_ALLIANCE_MEMBER_RULES", "runGlobalAcceptanceReview", "Acceptance always depends on the receiving authority"]) if (!all.includes(term)) throw new Error(`Missing global acceptance term: ${term}`);
+const stateCount = (fs.readFileSync("lib/milano-seal/global-acceptance/us-state-execution-registry.ts", "utf8").match(/stateCode:/g) ?? []).length;
+if (stateCount < 51) throw new Error(`Expected all 50 states plus DC, found ${stateCount}`);
+console.log("Global acceptance intelligence validation passed.");

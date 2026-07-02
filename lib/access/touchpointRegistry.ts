@@ -1,0 +1,36 @@
+export type TouchpointRole = "public_visitor" | "client" | "alliance_member" | "virtual_assistant" | "operator" | "founder_admin";
+export type TouchpointStatus = "injected" | "partial" | "missing" | "staged_only" | "blocked";
+export type TouchpointRisk = "low" | "medium" | "high" | "payment_sensitive" | "identity_sensitive" | "custody_sensitive" | "compliance_sensitive";
+export interface Touchpoint { role: TouchpointRole; label: string; href?: string; status: TouchpointStatus; risk: TouchpointRisk; notes: string; }
+export const TOUCHPOINTS: Touchpoint[] = [
+  { role:"public_visitor", label:"Home", href:"/", status:"injected", risk:"low", notes:"Public entry" },
+  { role:"public_visitor", label:"Pricing", href:"/pricing", status:"injected", risk:"low", notes:"Execution Quote" },
+  { role:"public_visitor", label:"Secure Portal", href:"/secure-portal", status:"injected", risk:"identity_sensitive", notes:"Secure Matter Portal" },
+  { role:"public_visitor", label:"Map", href:"/map", status:"injected", risk:"compliance_sensitive", notes:"Global Document Intelligence" },
+  { role:"client", label:"Intake", href:"/intake", status:"injected", risk:"identity_sensitive", notes:"Secure Records Intake" },
+  { role:"client", label:"Intake Confirmation", href:"/intake/confirmation", status:"injected", risk:"low", notes:"Confirmation" },
+  { role:"client", label:"Portal", href:"/portal", status:"partial", risk:"identity_sensitive", notes:"Authenticated portal" },
+  { role:"client", label:"Matter Room", href:"/portal/matter-room", status:"partial", risk:"custody_sensitive", notes:"Matter room" },
+  { role:"client", label:"PortalCourierCustody", status:"partial", risk:"custody_sensitive", notes:"Courier custody" },
+  { role:"client", label:"Invoice/payment view", href:"/portal/invoice", status:"partial", risk:"payment_sensitive", notes:"Invoice and payment view" },
+  { role:"alliance_member", label:"Alliance", href:"/alliance", status:"injected", risk:"medium", notes:"Public alliance entry" },
+  { role:"alliance_member", label:"Alliance Dashboard", href:"/alliance/dashboard", status:"partial", risk:"identity_sensitive", notes:"Own dashboard only" },
+  { role:"alliance_member", label:"Alliance Dashboard Modules", href:"lib/modules/allianceDashboardModules.ts", status:"partial", risk:"medium", notes:"Module registry equivalent" },
+  { role:"alliance_member", label:"Dispatch", status:"staged_only", risk:"compliance_sensitive", notes:"Operator-approved staged dispatch" },
+  { role:"virtual_assistant", label:"Intake review", status:"partial", risk:"identity_sensitive", notes:"Cannot touch payment release or custody release" },
+  { role:"virtual_assistant", label:"Document checklist", status:"partial", risk:"identity_sensitive", notes:"Checklist prep" },
+  { role:"virtual_assistant", label:"Follow-up queue", status:"partial", risk:"medium", notes:"Draft support" },
+  { role:"operator", label:"Dashboard", href:"/dashboard", status:"injected", risk:"high", notes:"Operator dashboard" },
+  { role:"operator", label:"Command Center", href:"/dashboard/command-center", status:"injected", risk:"high", notes:"Internal command center" },
+  { role:"operator", label:"Discounts", href:"/dashboard/discounts", status:"injected", risk:"payment_sensitive", notes:"Discount Control" },
+  { role:"operator", label:"Referrals", href:"/dashboard/referrals", status:"injected", risk:"medium", notes:"Referral Intelligence" },
+  { role:"operator", label:"SEO Authority", href:"/dashboard/seo-authority", status:"injected", risk:"medium", notes:"SEO Authority Engine" },
+  { role:"operator", label:"Compliance Atlas", href:"/dashboard/compliance-atlas", status:"injected", risk:"compliance_sensitive", notes:"Internal atlas" },
+  { role:"operator", label:"Operator Terminal", href:"/dashboard/operator-terminal", status:"injected", risk:"high", notes:"Internal only" },
+  { role:"operator", label:"Invoices", href:"/dashboard/invoices", status:"injected", risk:"payment_sensitive", notes:"Invoice Studio" },
+  { role:"operator", label:"Shipping", href:"/dashboard/shipping", status:"partial", risk:"custody_sensitive", notes:"Shipping operations" },
+  { role:"founder_admin", label:"Payment gate overrides", status:"partial", risk:"payment_sensitive", notes:"Founder/admin only" },
+  { role:"founder_admin", label:"Release approval", status:"partial", risk:"custody_sensitive", notes:"Founder/admin only" },
+  { role:"founder_admin", label:"Wise reconciliation", status:"partial", risk:"payment_sensitive", notes:"Founder/admin only" },
+  { role:"founder_admin", label:"BlueNotary webhook review", status:"partial", risk:"compliance_sensitive", notes:"Founder/admin only" },
+];
