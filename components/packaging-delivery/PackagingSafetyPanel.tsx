@@ -1,0 +1,2 @@
+import { getPackagingSafetyCopy } from "@/lib/packaging-delivery/packagingDeliverySafety";
+export default function PackagingSafetyPanel() { return <section id="packaging-safety" className="rounded-3xl border border-amber-300/15 bg-black/45 p-5"><h2 className="text-xl font-semibold text-stone-50">Packaging Safety</h2><p className="mt-3 text-sm leading-6 text-stone-300">{getPackagingSafetyCopy()}</p><p className="mt-3 text-sm text-amber-100">Payment-Gated Execution, zero balance, custody clearance, and release approval remain required.</p></section>; }

@@ -1,0 +1,1 @@
+export default function SpineEmptyState() { return <div className="rounded-2xl border border-amber-300/15 bg-black/35 p-4 text-sm text-stone-300">No live data connected yet. This module is ready for operator use once matter data is connected.</div>; }

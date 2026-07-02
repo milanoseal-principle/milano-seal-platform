@@ -1,0 +1,7 @@
+import type { MilanoRevenueEntry, MilanoRevenueStatus } from "./types";
+
+const LABELS: Record<MilanoRevenueStatus, string> = { quote_needed: "Quote needed", quote_sent: "Quote sent", quote_issued: "Quote issued", awaiting_payment: "Awaiting payment", payment_pending: "Payment pending", paid: "Paid", paid_and_released: "Paid & Released", paid_comped: "Paid comped", released: "Released", refunded: "Refunded", blocked: "Blocked" };
+export function buildMilanoRevenueLedger(entries: readonly MilanoRevenueEntry[] = []) { return entries.map((entry) => ({ ...entry, internalOnly: true, nextAction: getRevenueNextAction(entry) })); }
+export function getRevenueStatusLabel(status: MilanoRevenueStatus) { return LABELS[status]; }
+export function getRevenueNextAction(entry: MilanoRevenueEntry) { if (entry.paymentStatus === "paid_and_released") return "Archive release confirmation only after zero balance and release status are confirmed."; if (entry.paymentStatus === "paid" || entry.paymentStatus === "paid_comped") return "Confirm release gate and custody clearance."; if (entry.paymentStatus === "awaiting_payment" || entry.paymentStatus === "payment_pending") return "Verify payment before scheduling."; return "Prepare quote or review blocker."; }
+export function getRevenueLedgerEmptyState() { return "No revenue entries connected. This ledger will show internal-only quote, payment, lane, add-on, and release status without fake totals."; }

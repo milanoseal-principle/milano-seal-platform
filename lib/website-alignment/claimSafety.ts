@@ -1,0 +1,4 @@
+export const SAFE_PUBLIC_CLAIMS = ["U.S. Document Execution for International Use", "Apostille Coordination", "Remote Online Notarization for eligible documents", "Florida Mobile Notary Coordination", "International Courier Release", "Final acceptance remains subject to the receiving authority.", "Receiving authority review may be required."] as const;
+export const BLOCKED_PUBLIC_CLAIMS = ["Hague compliant", "accepted internationally", "guaranteed acceptance", "government approved", "legal advice", "all documents accepted", "immediate delivery", "RON certified", "AES-256"] as const;
+export function findBlockedPublicClaims(copy: string) { return BLOCKED_PUBLIC_CLAIMS.filter((claim) => copy.toLowerCase().includes(claim.toLowerCase())); }
+export function getReceivingAuthorityWarning() { return "Final acceptance remains subject to the receiving authority. Receiving authority review may be required."; }

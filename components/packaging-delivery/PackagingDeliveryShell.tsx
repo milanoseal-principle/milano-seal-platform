@@ -1,0 +1,5 @@
+import DhlReleaseChecklistPanel from "./DhlReleaseChecklistPanel";
+import FinalPacketOrderPanel from "./FinalPacketOrderPanel";
+import PackagingSafetyPanel from "./PackagingSafetyPanel";
+import PrintSpecPanel from "./PrintSpecPanel";
+export default function PackagingDeliveryShell() { return <main className="min-h-screen overflow-x-hidden bg-black px-4 py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] text-stone-100 md:px-8"><div className="mx-auto max-w-6xl"><section className="rounded-[2rem] border border-amber-300/20 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.2),transparent_35%),#080604] p-6 md:p-10"><p className="text-xs uppercase tracking-[0.32em] text-amber-200">Internal Delivery Control</p><h1 className="mt-4 text-4xl font-semibold text-stone-50 md:text-5xl">Packaging & Delivery</h1><p className="mt-4 max-w-3xl text-sm leading-7 text-stone-300">Locked final packet order, print specifications, DHL release checklist, and payment/custody release safety for The Milano Seal.</p></section><div className="mt-6 grid gap-5"><FinalPacketOrderPanel /><PrintSpecPanel /><DhlReleaseChecklistPanel /><PackagingSafetyPanel /></div></div></main>; }

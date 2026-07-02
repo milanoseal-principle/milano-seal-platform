@@ -116,6 +116,30 @@ export const INTERNAL_MODULES: InternalModule[] = [
     riskLevel: "low",
     sourceStandard: SOURCE_STANDARD,
   },
+
+
+  {
+    id: "packaging_delivery",
+    label: "Packaging & Delivery",
+    href: "/dashboard/packaging-delivery",
+    section: "Execution",
+    description: "Internal packet order, print specs, DHL release checklist, and payment/custody release safety.",
+    status: "live",
+    visibility: "internal",
+    riskLevel: "medium",
+    sourceStandard: SOURCE_STANDARD,
+  },
+  {
+    id: "operator_intelligence_spine",
+    label: "Operator Intelligence Spine",
+    href: "/dashboard/operator-spine",
+    section: "Intelligence",
+    description: "Internal-only execution priorities, route plans, partner memory, revenue status, activity ledger, and closeout control.",
+    status: "live",
+    visibility: "internal",
+    riskLevel: "medium",
+    sourceStandard: SOURCE_STANDARD,
+  },
   {
     id: "motion_preview",
     label: "Motion Preview",
