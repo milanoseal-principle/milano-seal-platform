@@ -168,7 +168,7 @@ export function Hero() {
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-3 max-w-xl lg:max-w-none">
                 {[
                   { icon: "shield", label: "Secure, Verified\nIntake" },
-                  { icon: "monitor", label: "Notarize From\nAnywhere" },
+                  { icon: "monitor", label: "Remote Online\nNotarization" },
                   { icon: "check", label: "Apostille Routing\nHandled For You" },
                   { icon: "globe", label: "Destination Rules\nReviewed" },
                   { icon: "lock", label: "Resources Reserved\nFor Your Matter" },
@@ -189,6 +189,9 @@ export function Hero() {
                   </div>
                 ))}
               </div>
+              <p className="mt-3 max-w-xl text-center font-mono text-[8px] uppercase tracking-[0.1em] text-white/35 lg:text-left">
+                RON availability depends on document type, signer location, jurisdiction, and receiving-authority requirements.
+              </p>
             </div>
 
           </div>

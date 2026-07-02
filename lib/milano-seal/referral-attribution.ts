@@ -1,0 +1,7 @@
+export type ReferralSourceType = "direct" | "google_search" | "google_business_profile" | "social" | "referral_partner" | "attorney" | "real_estate" | "international_client" | "family_office" | "event" | "returning_client" | "unknown";
+export interface AttributionInput { source?: ReferralSourceType; utmSource?: string; utmMedium?: string; utmCampaign?: string; entryPage?: string; quoteAmount?: number; privateNotes?: string; }
+export interface AttributionRecord extends AttributionInput { source: ReferralSourceType; attributionWindowDays: 30; multiTouch: true; createdAt: string; }
+export function buildMilanoSealAttribution(input: AttributionInput): AttributionRecord { return { ...input, source: input.source ?? "unknown", attributionWindowDays: 30, multiTouch: true, createdAt: new Date().toISOString() }; }
+export function groupAttributionBySource(records: AttributionRecord[]) { return records.reduce<Record<string, AttributionRecord[]>>((groups, record) => { groups[record.source] = [...(groups[record.source] ?? []), record]; return groups; }, {}); }
+export function getAttributionSummary(records: AttributionRecord[]) { return Object.entries(groupAttributionBySource(records)).map(([source, group]) => ({ source, count: group.length, quoteAmount: group.reduce((sum, record) => sum + (record.quoteAmount ?? 0), 0) })); }
+export function getSafeAttributionForClient(record: AttributionRecord) { return { source: record.source, entryPage: record.entryPage, utmSource: record.utmSource }; }

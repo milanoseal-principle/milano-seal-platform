@@ -155,7 +155,7 @@ export function HomepageRoutingPreview() {
               href={corridor.intakeHref}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#050507] transition-colors hover:bg-[var(--ms-gold)]/90"
             >
-              Start Controlled Intake
+              Begin Secure Intake
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
             <Link

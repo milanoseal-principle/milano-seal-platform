@@ -90,7 +90,7 @@ export default function ImmigrationDocumentsPage() {
       <section className="py-8 px-6 bg-[#111111]">
         <div className="max-w-3xl mx-auto p-6 border border-[#2A2A2A] rounded-xl">
           <p className="text-sm text-[#6A6A6A] leading-relaxed text-center">
-            This service covers document sequencing, identity validation workflows, and administrative coordination only. We do not provide immigration legal advice, case strategy, or representation. Consult a licensed immigration attorney for legal guidance.
+            This service covers document sequencing, identity validation workflows, and administrative coordination only. We do not provide immigration legal guidance, case strategy, or representation. Consult a licensed immigration attorney for legal guidance.
           </p>
         </div>
       </section>
@@ -112,7 +112,7 @@ export default function ImmigrationDocumentsPage() {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
           <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide legal advice. Legal questions should be handled by a licensed attorney.</p>
+            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Document execution coordination only. The Milano Seal™ does not provide legal guidance. Legal questions should be handled by a licensed attorney.</p>
         </div>
       </section>
 
