@@ -1,0 +1,8 @@
+import type { GlobalAcceptanceInput, TranslationRequirementStatus } from "./global-acceptance-types";
+const ENGLISH_DESTINATIONS = ["united states", "canada", "united kingdom", "ireland", "australia", "new zealand"];
+const CERTIFIED_TERMS = ["court", "government", "consulate", "university", "immigration", "civil registry", "vital record", "school transcript", "diploma", "power of attorney", "poa", "inheritance", "real estate"];
+export const TRANSLATION_REQUIREMENT_REGISTRY = { rule: "Never guarantee translation acceptance." } as const;
+export function getTranslationRequirementStatus(input: GlobalAcceptanceInput): TranslationRequirementStatus { const text = `${input.destinationAuthorityType ?? ""} ${input.documentType ?? ""}`.toLowerCase(); if (CERTIFIED_TERMS.some((term) => text.includes(term))) return "certified_translation_review"; if (input.translationNeeded === true) return "translation_likely_required"; if (input.destinationCountry && !ENGLISH_DESTINATIONS.includes(input.destinationCountry.toLowerCase())) return "translation_may_be_required"; return "unknown_needs_review"; }
+export function requiresCertifiedTranslationReview(input: GlobalAcceptanceInput) { return getTranslationRequirementStatus(input) === "certified_translation_review"; }
+export function getTranslationWarnings(input: GlobalAcceptanceInput) { return ["Translation acceptance is never guaranteed.", `Translation status: ${getTranslationRequirementStatus(input)}`]; }
+export function getTranslationChecklist(input: GlobalAcceptanceInput) { return ["Confirm receiving authority language expectations", "Confirm certified translation need", "Confirm whether translation affidavit is required", `Document type reviewed: ${input.documentType ?? "unknown"}`]; }

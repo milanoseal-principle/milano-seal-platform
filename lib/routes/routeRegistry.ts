@@ -19,6 +19,9 @@ export const INTERNAL_DASHBOARD_ROUTES = [
   "/dashboard/operator-terminal",
   "/dashboard/invoices",
   "/dashboard/intelligence/sales-lab",
+  "/dashboard/shipping",
+  "/dashboard/ledger",
+  "/dashboard/terminal",
 ] as const;
 
 export const STAGED_AUTHORITY_ROUTES = [

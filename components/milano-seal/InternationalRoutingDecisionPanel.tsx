@@ -1,0 +1,2 @@
+import type { GlobalAcceptanceResult } from "@/lib/milano-seal/global-acceptance/global-acceptance-types";
+export function InternationalRoutingDecisionPanel({ result }: { result: GlobalAcceptanceResult }) { return <section className="rounded-2xl border border-amber-300/20 p-4"><h3>International Routing Decision</h3><p>{result.recommendedExecutionPath}</p><ul>{result.operatorChecklist.map((item) => <li key={item}>{item}</li>)}</ul></section>; }

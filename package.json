@@ -35,6 +35,9 @@
     "validate:client-touchpoint-wiring": "node scripts/validate-client-touchpoint-wiring.mjs",
     "validate:alliance-touchpoint-wiring": "node scripts/validate-alliance-touchpoint-wiring.mjs",
     "validate:va-operator-touchpoint-wiring": "node scripts/validate-va-operator-touchpoint-wiring.mjs",
+    "validate:cross-system-gates": "node scripts/validate-cross-system-gates.mjs",
+    "validate:global-acceptance-intelligence": "node scripts/validate-global-acceptance-intelligence.mjs",
+    "validate:milano-execution-routing-upgrade": "node scripts/validate-milano-execution-routing-upgrade.mjs"
     "validate:cross-system-gates": "node scripts/validate-cross-system-gates.mjs"
     "validate:route-registry": "node scripts/validate-route-registry.mjs"
     "validate:command-center-intelligence": "node scripts/validate-command-center-intelligence.mjs"
