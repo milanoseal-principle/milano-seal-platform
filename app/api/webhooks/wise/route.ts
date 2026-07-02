@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyWiseSignature } from "@/lib/wise";
 import { mapWiseTransferState, mapWiseBalanceEvent } from "@/lib/wise/status";
 import { logActivity } from "@/lib/activity";
+import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -348,11 +350,18 @@ async function processWiseEvent(opts: {
     .from("deals")
     .update({
       payment_status: "paid",
+      payment_confirmed: true,
       payment_method: "wise",
       payment_reference: reference,
       payment_amount_received: confirmedAmount,
       amount_paid: confirmedAmount,
       payment_confirmed_at: new Date().toISOString(),
+      // A confirmed Wise event represents settled funds in the Milano Seal balance,
+      // so it CLEARS the payment for final release (operator manual-confirm only
+      // marks it "observed"). Final release still requires founder + identifier gates.
+      payment_settlement_status: "cleared",
+      payment_cleared_at: new Date().toISOString(),
+      payment_funding_method: "wise",
       invoice_status: "paid",
       // 6. Unlock scheduling only — do NOT jump beyond "scheduled"
       // Status remains unchanged here; scheduling is unlocked by the gate check
@@ -369,7 +378,31 @@ async function processWiseEvent(opts: {
       .eq("id", eventRowId);
   }
 
-  // 5. Write Operational Ledger event
+  // 5. Write hash-linked custody ledger event for the confirmed Wise payment.
+  //    Best-effort — never blocks the webhook 2xx; activity log written below too.
+  try {
+    await appendLedger({
+      deal_id: deal.id,
+      event: CUSTODY_EVENTS.WISE_PAYMENT_CONFIRMED,
+      actor_type: "system",
+      actor_id: "wise-webhook",
+      method: "wise",
+      status: "cleared",
+      notes: `Wise payment confirmed — $${confirmedAmount} USD via reference ${reference}`,
+      metadata: {
+        event_type: eventType,
+        wise_reference: reference,
+        amount_confirmed: confirmedAmount,
+        amount_due: amountDue,
+        scheduling_unlocked: willUnlockScheduling,
+        delivery_id: eventRowId,
+      },
+    });
+  } catch (err) {
+    console.error("[wise-webhook] custody ledger append failed:", err instanceof Error ? err.message : err);
+  }
+
+  // 6. Write Operational Ledger (activity) event
   await logActivity({
     deal_id: deal.deal_id ?? deal.id,
     actor: "wise-webhook",
@@ -384,6 +417,11 @@ async function processWiseEvent(opts: {
       delivery_id: eventRowId,
     },
   });
+
+  // Mirror the cleared payment into the client notification log. Runs only after
+  // the existing confirm/clear logic above already accepted the payment. Non-
+  // blocking and client-safe: notifyClient never throws and cannot affect payment.
+  await notifyClient(deal.id, "payment_cleared");
 
   // Non-scheduling ledger note if amount doesn't cover due
   if (!willUnlockScheduling && amountDue > 0) {

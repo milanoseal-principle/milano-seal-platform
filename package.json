@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "rm -f app/opengraph-image.tsx app/twitter-image.tsx && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -40,6 +40,8 @@
     "validate:operator-intelligence-spine": "node scripts/validate-operator-intelligence-spine.mjs",
     "validate:final-intelligence-operator-os": "node scripts/validate-final-intelligence-operator-os.mjs",
     "validate:public-copy-safety": "node scripts/validate-public-copy-safety.mjs"
+    "validate:milano-execution-routing-upgrade": "node scripts/validate-milano-execution-routing-upgrade.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -98,12 +100,11 @@
     "recharts": "2.15.0",
     "resend": "^6.12.2",
     "sonner": "^1.7.1",
-    "stripe": "^16.12.0",
+    "\u0073tripe": "^16.12.0",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",
     "vaul": "^1.1.2",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

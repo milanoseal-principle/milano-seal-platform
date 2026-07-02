@@ -18,6 +18,19 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // Quiet the closed control when the footer is in view so it never competes
+  // with footer branding.
+  const [nearFooter, setNearFooter] = useState(false);
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setNearFooter(entry.isIntersecting),
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    obs.observe(footer);
+    return () => obs.disconnect();
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const config = ROLE_PROMPT_REGISTRY[roleMode];
@@ -79,7 +92,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
         right: "max(1.5rem, calc(1.5rem + env(safe-area-inset-right)))",
       }}
     >
-      <style>{`@keyframes ms-goldPulse{0%,100%{opacity:.55}50%{opacity:1}}`}</style>
+      <style>{`@keyframes ms-goldPulse{0%,100%{opacity:.78}50%{opacity:1}}@media(prefers-reduced-motion:reduce){.ms-ai-orb{animation:none!important}}`}</style>
       {/* Anamorphic bloom SVG filter */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
@@ -106,28 +119,37 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
           <motion.button
             key="orb"
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: nearFooter ? 0.35 : 1, scale: nearFooter ? 0.88 : 1 }}
+            whileHover={{ opacity: 1, scale: nearFooter ? 0.95 : 1.04 }}
             exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            style={{ scaleY: orbScaleY, scaleX: orbScaleX, width: 64, height: 64 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             onClick={handleOpen}
-            className="relative flex items-center justify-center cursor-pointer focus:outline-none touch-manipulation bg-transparent border-none shadow-none"
-            aria-label="Open Milano Seal Assistant"
+            className="group relative flex items-center gap-2.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)]/60 rounded-full touch-manipulation bg-transparent border-none shadow-none"
+            aria-label="Open Milano AI Assistant"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/milano-seal-feather-m-orb.png"
-              alt=""
-              aria-hidden="true"
-              width={64}
-              height={64}
-              style={{
-                display: "block",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 16px rgba(212,175,55,0.6)) drop-shadow(0 0 32px rgba(212,175,55,0.3))",
-                animation: "ms-goldPulse 4s ease-in-out infinite",
-              }}
-            />
+            {/* hover label — reads as an assistant utility, not a logo */}
+            <span className="pointer-events-none hidden md:inline-block rounded-full border border-[var(--ms-gold)]/30 bg-[#050507]/85 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/85 opacity-0 -translate-x-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+              Ask Milano AI
+            </span>
+            <span className="relative flex items-center justify-center" style={{ width: 52, height: 52 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/milano-seal-orb-v2.png"
+                alt=""
+                aria-hidden="true"
+                width={52}
+                height={52}
+                className="ms-ai-orb"
+                style={{
+                  display: "block",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 0 10px rgba(212,175,55,0.35))",
+                  animation: "ms-goldPulse 7s ease-in-out infinite",
+                }}
+              />
+              {/* live status dot */}
+              <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[#050507]" />
+            </span>
           </motion.button>
         ) : (
           /* ── PANEL ── */
@@ -159,7 +181,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
                   style={{ display: "block", objectFit: "contain", flexShrink: 0 }}
                 />
                 <div className="flex flex-col">
-                  <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano Seal™ Assistant</span>
+                  <span className="text-[9.5px] font-bold tracking-[0.15em] text-zinc-100 uppercase">Milano AI Assistant</span>
                   <span className="text-[7px] text-zinc-500 tracking-wider uppercase">{roleMode === 'PUBLIC' ? 'Secure Execution Desk' : roleMode + ' MODE'}</span>
                 </div>
               </div>

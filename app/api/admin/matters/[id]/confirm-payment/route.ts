@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { logActivity } from "@/lib/activity";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export const runtime = "nodejs";
@@ -70,8 +71,14 @@ export async function POST(
     .from("deals")
     .update({
       payment_confirmed: true,
+      payment_confirmed_at: now,
       payment_status: "confirmed",
       paid_at: now,
+      // Operator confirms a *visible* payment — this unlocks scheduling/execution,
+      // but is "observed" not "cleared". Final packet release still requires
+      // settled funds (Wise webhook → cleared) or a recorded founder override.
+      payment_settlement_status: "observed_available",
+      payment_observed_at: now,
     })
     .eq("id", id);
 
@@ -108,6 +115,10 @@ export async function POST(
       meta: { actor: actorEmail, timestamp: now },
     });
   } catch {}
+
+  // Mirror the observed payment into the client notification log. Runs only after
+  // the existing observed-confirmation logic above; non-blocking and client-safe.
+  await notifyClient(id, "payment_observed");
 
   return NextResponse.json({ ok: true });
 }

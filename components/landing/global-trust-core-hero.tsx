@@ -5,6 +5,7 @@ import { motion, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
 import {
   DestinationIntelligenceCard,
+  executionPathPreview,
   type DestinationIntelligence,
 } from "@/components/landing/destination-intelligence-card";
 
@@ -51,9 +52,13 @@ function heroDestinationIntelligence(
   destination: Destination,
 ): DestinationIntelligence {
   const verificationRequired = destination.hagueStatus !== "HAGUE";
+  const slug = destination.id === "uk" ? "united-kingdom" : destination.id;
+  const needsTranslation = destination.useCases.some((item) =>
+    /translation/i.test(item),
+  );
 
   return {
-    slug: destination.id === "uk" ? "united-kingdom" : destination.id,
+    slug,
     name: destination.label,
     flag: DESTINATION_FLAGS[destination.id],
     routeLabel: destination.routeLabel,
@@ -68,15 +73,13 @@ function heroDestinationIntelligence(
         : destination.id === "brazil"
           ? "International document execution for Brazil"
           : `Florida to ${destination.label} apostille support`,
-    translationReview: destination.useCases.some((item) =>
-      /translation/i.test(item),
-    ),
+    translationReview: needsTranslation,
     courierReview: true,
-    pathPreview: [
-      "Verify document type",
-      "Confirm destination requirements",
-      "Prepare secure intake pathway",
-    ],
+    pathPreview: executionPathPreview(
+      slug,
+      destination.hagueStatus === "HAGUE",
+      needsTranslation,
+    ),
   };
 }
 
@@ -181,6 +184,15 @@ export function GlobalTrustCoreHero() {
     timers.current.push(setTimeout(()=>{ setPhase("rotating"); setArcsDone(true); }, 80));
     return ()=>timers.current.forEach(clearTimeout);
   }, []);
+
+  // Collapse the routing-intelligence popover once the user scrolls away from it,
+  // so it never floats over downstream content.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onScroll = () => setSelectedId(null);
+    window.addEventListener("scroll", onScroll, { passive: true, once: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [selectedId]);
 
   const isSettled  = phase !== "idle";
   const activeId   = hoveredId ?? selectedId;
@@ -590,6 +602,29 @@ export function GlobalTrustCoreHero() {
               />
             </motion.div>
           </div>
+      )}
+
+      {/* ── Mobile: bottom-sheet card (desktop uses the popover above). Uses fixed
+             positioning so it never disturbs the globe's absolute layout. ──── */}
+      {selectedDest && (
+        <div
+          className="ms-destination-mobile-card md:hidden fixed inset-x-3 bottom-3 z-40 flex justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative w-full max-w-[420px]">
+            <button
+              onClick={() => setSelectedId(null)}
+              aria-label="Close"
+              className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 font-mono text-base leading-none text-white/50 transition-colors hover:text-white"
+            >×</button>
+            <DestinationIntelligenceCard
+              intelligence={heroDestinationIntelligence(selectedDest)}
+              variant="globePreview"
+              className="w-full max-w-none"
+              onPrimaryAction={() => setSelectedId(null)}
+            />
+          </div>
+        </div>
       )}
 
       {/* Orbit rings */}

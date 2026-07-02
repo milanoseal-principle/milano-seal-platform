@@ -1,31 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowRight, Route } from "lucide-react";
-import { DESTINATIONS, type Destination } from "@/data/destinations";
-import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
-import { buildHomeCorridor } from "@/lib/intelligence/homeCorridors";
-import { MiniCorridorMapPreview } from "@/components/home/MiniCorridorMapPreview";
-import { HomeExecutionPathCards } from "@/components/home/HomeExecutionPathCards";
-import { HomeShippingCorridorPanel } from "@/components/home/HomeShippingCorridorPanel";
-import { GlobalRouteGlobe } from "@/components/globe/GlobalRouteGlobe";
-
-const PRIORITY_SLUGS = [
-  "italy",
-  "spain",
-  "portugal",
-  "greece",
-  "brazil",
-  "mexico",
-  "uae",
-  "canada",
-] as const;
-
-const PRIORITY_DESTINATIONS = PRIORITY_SLUGS.map((slug) =>
-  DESTINATIONS.find((destination) => destination.slug === slug),
-).filter((destination): destination is Destination => Boolean(destination));
-
 export function HomepageRoutingPreview() {
   const [selected, setSelected] = useState<Destination>(
     PRIORITY_DESTINATIONS[0],
@@ -169,4 +143,5 @@ export function HomepageRoutingPreview() {
       </div>
     </section>
   );
+  return <section />;
 }

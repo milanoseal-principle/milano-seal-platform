@@ -118,7 +118,7 @@ export default function VAPortalPage() {
               The Milano Seal™
             </div>
             <div className="text-[9px] font-mono tracking-[0.25em]" style={{ color: GOLD_DIM }}>
-              VA PORTAL
+              EXECUTION SUPPORT PORTAL
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function VAPortalPage() {
         <div className="hidden sm:flex items-center gap-2">
           <Circle size={6} fill="rgba(212,175,55,0.7)" style={{ color: "rgba(212,175,55,0.7)" }} />
           <span className="text-[9px] font-mono tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>
-            VIRTUAL ASSISTANT
+            EXECUTION SUPPORT
           </span>
         </div>
       </header>
@@ -137,7 +137,7 @@ export default function VAPortalPage() {
           FOURTH ACCESS LAYER · themilanoseal.com/va/portal
         </p>
         <h1 style={{ fontSize: "clamp(1rem,2.5vw,1.3rem)", fontFamily: "Georgia,serif", fontWeight: "normal", color: "#f4e5b8", marginBottom: 3 }}>
-          VA Tactical Portal
+          Execution Support Portal
         </h1>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
           Matter support · client follow-up preparation · escalation · operator-controlled release
@@ -184,7 +184,7 @@ export default function VAPortalPage() {
       <footer className="flex-shrink-0 px-5 py-2.5 flex items-center justify-between"
         style={{ borderTop: `1px solid rgba(255,255,255,0.04)` }}>
         <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", letterSpacing: "0.12em" }}>
-          RESTRICTED ACCESS · VA PORTAL · PAYMENT GATE ACTIVE
+          RESTRICTED ACCESS · EXECUTION SUPPORT PORTAL · PAYMENT GATE ACTIVE
         </span>
         <span style={{ fontSize: 9, color: GOLD_DIM, letterSpacing: "0.15em" }}>
           THE MILANO SEAL™

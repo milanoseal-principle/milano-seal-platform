@@ -1,0 +1,1 @@
+const { readFileSync }=await import('fs'); const s=readFileSync('data/receiving-authority-requirements.ts','utf8'); for (const k of ['foreign_court','civil_registry','comune','bank','consulate','unknown','Receiving-authority review applies']) if(!s.includes(k)) throw new Error('receiving authority missing '+k); console.log('validate:receiving-authority-rules passed');
