@@ -32,7 +32,8 @@ export default async function VAMessagesPage() {
         textAlign: "center",
       }}>
         <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, margin: 0 }}>
-          Message Studio coming soon. Draft client-safe updates and escalate to Nicholas for review before sending.
+          This module is not yet available. Client-safe coordinator messaging is managed through your
+          operator until Message Studio is enabled.
         </p>
       </div>
 

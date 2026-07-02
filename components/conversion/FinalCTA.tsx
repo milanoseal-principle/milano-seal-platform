@@ -32,7 +32,7 @@ export function FinalCTA() {
             Start Secure Intake
           </Link>
           <Link
-            href="/portal"
+            href="/secure-portal"
             className="inline-block text-sm font-medium py-3 px-8 rounded transition-colors"
             style={{
               background: "transparent",

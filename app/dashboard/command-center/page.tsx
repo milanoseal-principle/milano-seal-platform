@@ -25,6 +25,7 @@ const systemCards = ["Payment Gate Status", "Supabase Connection", "AI Status", 
 const sections = ["Revenue", "Pipeline", "Execution", "Compliance", "Outreach", "Ads", "Content", "System"];
 
 function MetricShell({ label, value = "No live data connected yet", note = "Connect live matter records to populate this card." }: { label: string; value?: string; note?: string }) {
+function MetricShell({ label, value = "Empty", note = "Connect live matter records to populate this card." }: { label: string; value?: string; note?: string }) {
   return (
     <div className="rounded-2xl border border-amber-300/20 bg-black/40 p-4 shadow-[0_0_40px_rgba(212,175,55,0.08)]">
       <p className="text-xs uppercase tracking-[0.24em] text-amber-200/60">{label}</p>

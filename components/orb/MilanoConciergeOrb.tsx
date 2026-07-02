@@ -32,7 +32,7 @@ function getRoleBadgeLabel(role: MilanoConciergeOrbProps["role"]): string {
     case "client":
       return "Client";
     case "virtual_assistant":
-      return "Virtual Assistant";
+      return "Execution Support Specialist";
   }
 }
 
@@ -52,7 +52,7 @@ function getWelcomeMessage(
         ? `Welcome${name}. Your matter is being handled with care. Current status: ${activeMatterStatus.replace(/_/g, " ")}.`
         : `Welcome${name}. Your matter is being handled with care.`;
     case "virtual_assistant":
-      return "VA mode active. Compliance checks and follow-up queues are ready.";
+      return "Execution Support mode active. Compliance checks and follow-up queues are ready.";
   }
 }
 

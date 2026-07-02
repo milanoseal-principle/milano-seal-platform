@@ -4,30 +4,22 @@ import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { VAOperatorPanel } from "@/components/dashboard/va/VAOperatorPanel";
 import { VATaskIntelligencePanel } from "@/components/dashboard/va/VATaskIntelligencePanel";
 import { VACourierTaskPanel } from "@/components/operators/VACourierTaskPanel";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 
 export default async function VATaskManagementPage() {
   const { role } = await requireDashboardAccess();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Role header */}
-      <div>
-        <p
-          className="text-[9px] font-mono tracking-[0.3em]"
-          style={{ color: "rgba(212,175,55,0.4)" }}
-        >
-          {role.replace(/_/g, " ").toUpperCase()} · OPERATOR ENVIRONMENT
-        </p>
-        <h1
-          className="text-xl font-light mt-1"
-          style={{
-            color: "rgba(255,255,255,0.75)",
-            fontFamily: "var(--font-playfair),Georgia,serif",
-          }}
-        >
-          VA Task Management
-        </h1>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow={`${role.replace(/_/g, " ").toUpperCase()} · OPERATOR ENVIRONMENT`}
+          title="Execution Support Queue"
+          description="Internal execution-support queue — missing intake fields, document gaps, signer details, deadline gaps, upload issues, and operator escalation."
+          primaryAction={{ label: "Escalate to Operator", href: "/dashboard/needs-review" }}
+        />
+      </Reveal>
 
       {/* Task Intelligence — generated from matter state, no DB table needed */}
       <VATaskIntelligencePanel />

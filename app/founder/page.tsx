@@ -175,7 +175,7 @@ export default function FounderPage() {
                   icon: Globe,
                   label: "International Reach",
                   items: [
-                    "Apostille for 21+ countries",
+                    "Apostille coordination across Hague and non-Hague jurisdictions",
                     "Hague Convention compliance",
                     "FL DOS direct submission",
                     "Multi-country coordination",

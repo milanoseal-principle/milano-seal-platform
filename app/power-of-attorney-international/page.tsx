@@ -151,7 +151,7 @@ export default function PowerOfAttorneyInternationalPage() {
           <p className="text-[#8A8A8A] text-sm font-light mt-4">
             Don't see your country?{" "}
             <Link href="/map" className="text-[#C6A55A] hover:underline">
-              Check the compliance map
+              View Global Document Intelligence
             </Link>{" "}
             or{" "}
             <Link href="/intake" className="text-[#C6A55A] hover:underline">
