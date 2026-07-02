@@ -5,24 +5,22 @@ import { RevenueIntelligencePanel } from "@/components/dashboard/RevenueIntellig
 import { PartnerScorecard } from "@/components/dashboard/PartnerScorecard";
 import { PayoutReviewPanel } from "@/components/dashboard/PayoutReviewPanel";
 import { IntelligenceCommandCenter2 } from "@/components/dashboard/IntelligenceCommandCenter2";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 
 export default async function RevenueIntelligencePage() {
   await requireDashboardAccess();
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <div
-          className="text-[9px] font-mono uppercase tracking-[0.28em] mb-1"
-          style={{ color: "rgba(212,175,55,0.5)" }}
-        >
-          Revenue Intelligence Infrastructure
-        </div>
-        <h1 className="font-serif text-2xl">Revenue Intelligence</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Revenue breakdown by destination, document type, and service lane. Unpaid matter escalation.
-        </p>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Revenue Intelligence Infrastructure"
+          title="Revenue Intelligence"
+          description="Quoted pipeline, awaiting payment, cleared payments, completed matters, unpaid balances, and reconciliation issues by destination and service lane."
+          primaryAction={{ label: "Review Payment Queue", href: "/dashboard/admin/payments" }}
+        />
+      </Reveal>
       <RevenueIntelligencePanel />
       <div
         className="rounded-sm px-5 py-5"

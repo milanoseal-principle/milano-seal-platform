@@ -1,7 +1,6 @@
 "use client";
 
 import { useId } from "react";
-import Link from "next/link";
 import {
   FLORIDA_ORIGIN,
   type HomeExecutionCorridor,
@@ -75,16 +74,11 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
 
   return (
     <div className="rounded-xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <p className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">
-            Execution Corridor Snapshot
-          </p>
-          <p className="mt-1 text-xs text-white/50">
-            Florida origin → {corridor.country} destination
-          </p>
-        </div>
-        <span className="mt-0.5 text-lg leading-none">{corridor.flag}</span>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">
+          Route Map
+        </p>
+        <span className="text-lg leading-none">{corridor.flag}</span>
       </div>
 
       <svg
@@ -229,21 +223,10 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
           </span>
         ) : (
           <span className="rounded-full border border-[#C0563E]/40 bg-[#C0563E]/[0.1] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#E0876E]">
-            Manual Review
+            Consular Review
           </span>
         )}
       </div>
-
-      <p className="mt-3 text-[10px] leading-5 text-white/30">
-        Preview only. Open the full Intelligence Atlas for country-level routing.
-      </p>
-
-      <Link
-        href="/map"
-        className="mt-2 inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--ms-gold)] transition-colors hover:text-[var(--ms-gold)]/80"
-      >
-        Open Full Intelligence Map →
-      </Link>
     </div>
   );
 }

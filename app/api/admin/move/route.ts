@@ -10,6 +10,7 @@ import {
   sendShippedNotification,
   sendCompletedNotification,
 } from "@/lib/email";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       const { data: deal } = await supabase
         .from("deals")
         .select(
-          "email, client_name, deal_id, access_token, scheduled_at, tracking_number, carrier, invoice_balance, balance_payment_link",
+          "id, email, client_name, deal_id, access_token, scheduled_at, tracking_number, carrier, invoice_balance, balance_payment_link",
         )
         .eq("deal_id", deal_id)
         .maybeSingle();
@@ -99,6 +100,18 @@ export async function POST(req: NextRequest) {
           dealId: id,
           portalUrl,
         });
+      }
+
+      // Mirror the transition into the client notification log (non-blocking).
+      // notifyClient never throws, so this cannot affect the move result.
+      if (deal.id) {
+        const event =
+          stage === "scheduled"
+            ? "execution_scheduled"
+            : stage === "shipped"
+              ? "shipped"
+              : "completed";
+        await notifyClient(deal.id, event);
       }
     })();
   }

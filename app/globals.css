@@ -474,6 +474,28 @@ h4 {
   .node-radial-pulse  { animation: none !important; }
 }
 
+/* Continuous gold scanline for the Routing Preview command header */
+@keyframes ms-command-scan {
+  0%   { top: -10%; opacity: 0; }
+  12%  { opacity: 0.5; }
+  88%  { opacity: 0.5; }
+  100% { top: 110%; opacity: 0; }
+}
+.ms-command-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.55) 50%, transparent 100%);
+  animation: ms-command-scan 5.5s linear infinite;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-command-scan { animation: none !important; opacity: 0 !important; }
+}
+
 .gold-glow {
   box-shadow: 0 0 30px rgba(198, 165, 90, 0.15);
 }

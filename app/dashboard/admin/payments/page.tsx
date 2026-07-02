@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 import {
   Card,
   CardContent,
@@ -106,30 +108,32 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.25em] text-gold font-medium mb-2">
-            Payment Review
-          </p>
-          <h1 className="font-serif text-4xl text-foreground">Wise Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {data?.api_host} · {data?.wise_total ?? 0} live request
-            {data?.wise_total === 1 ? "" : "s"} · last sync{" "}
-            {data ? timeAgo(data.fetched_at) : "—"}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refetch()}
-          disabled={isLoading}
-        >
-          <RefreshCw
-            className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </Button>
-      </div>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Payment Review"
+          title="Payment Control Desk"
+          description="Wise-confirmed, observed, and mismatch payments with gate impact. Client-side state is never trusted — confirmation stays operator-guarded."
+          primaryAction={{ label: "Reconcile Payment", href: "/dashboard/admin/reconciliation" }}
+          meta={
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="font-mono text-[11px] text-muted-foreground">
+                {data?.api_host} · {data?.wise_total ?? 0} live request
+                {data?.wise_total === 1 ? "" : "s"} · last sync{" "}
+                {data ? timeAgo(data.fetched_at) : "—"}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void refetch()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          }
+        />
+      </Reveal>
 
       {data?.wise_error && (
         <Card className="bg-rose-500/5 border-rose-500/30">
