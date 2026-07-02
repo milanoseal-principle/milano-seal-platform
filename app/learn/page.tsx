@@ -24,7 +24,7 @@ const TOPICS = [
   { slug: "hague-vs-non-hague-countries", title: "Hague vs. Non-Hague Countries" },
 ];
 
-const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal advice.";
+const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal guidance.";
 
 export default function LearnIndexPage() {
   return (

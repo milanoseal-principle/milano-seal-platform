@@ -150,7 +150,7 @@ export default async function MatterRoomPage({
               <p className="text-white font-medium">The Milano Seal™</p>
               <p className="font-mono text-xs mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>contact@themilanoseal.com</p>
               <p className="font-mono text-[10px] mt-3" style={{ color: "rgba(255,255,255,0.3)" }}>
-                The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. This service does not provide legal advice.
+                The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. This service does not provide legal guidance.
               </p>
             </div>
           </>

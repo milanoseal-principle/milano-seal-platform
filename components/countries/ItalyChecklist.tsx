@@ -142,7 +142,7 @@ export function ItalyChecklist({
 
         <div className="mt-4 pt-4 border-t border-[#1E1E1E]">
           <p className="text-[9px] text-gray-600 leading-relaxed">
-            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide legal advice. Legal questions should be handled by a licensed attorney.</p>
+            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Document execution coordination only. The Milano Seal™ does not provide legal guidance. Legal questions should be handled by a licensed attorney.</p>
         </div>
       </div>
     </div>

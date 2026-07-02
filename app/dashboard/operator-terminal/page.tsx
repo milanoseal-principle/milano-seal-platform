@@ -1,0 +1,3 @@
+import { DataSourceStatusCard } from "@/components/dashboard/DataSourceStatusCard";
+import { OperatorNextAction } from "@/components/dashboard/OperatorNextAction";
+export default function OperatorTerminalPage(){return <main className="space-y-6"><h1 className="font-serif text-3xl">Operator Terminal</h1><p className="text-muted-foreground">Internal only. Operator review required. No client-side AI keys. JSON output expected.</p><DataSourceStatusCard moduleName="Operator Terminal" status="planned" /><OperatorNextAction action="Use only server-mediated operator workflows and keep environment variables out of the client." /></main>}

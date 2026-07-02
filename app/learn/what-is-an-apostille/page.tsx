@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.themilanoseal.com/learn/what-is-an-apostille" },
   openGraph: { title: "What Is an Apostille?", description: "Learn what an apostille is, how it works, and when you need one.", images: [{ url: "https://www.themilanoseal.com/og-image.png", width: 1200, height: 630 }] },
 };
-const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal advice.";
+const DISCLAIMER = "The Milano Seal provides document coordination, notarization, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country and receiving-authority requirements. This service does not provide legal guidance.";
 export default function Page() {
   return (
     <div className="min-h-screen" style={{ background: "#060402" }}>

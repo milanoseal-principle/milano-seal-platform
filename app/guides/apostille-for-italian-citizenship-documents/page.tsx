@@ -71,7 +71,7 @@ export default function Page() {
             <div className="p-5 bg-[#111111] border border-[#C6A55A]/20 rounded-xl">
               <h2 className="font-medium text-[#C6A55A] mb-2">Disclaimer</h2>
               <p className="text-[#B0B0B0] text-sm leading-relaxed">
-                The Milano Seal does not provide Italian citizenship legal advice, citizenship eligibility determinations, consular guidance, or immigration advice. Document execution support is provided for apostille and notarization logistics only. Citizenship eligibility questions should be handled by a qualified attorney.
+                The Milano Seal does not provide Italian citizenship legal guidance, citizenship eligibility determinations, consular guidance, or immigration advice. Document execution support is provided for apostille and notarization logistics only. Citizenship eligibility questions should be handled by a qualified attorney.
               </p>
             </div>
 
@@ -166,7 +166,7 @@ export default function Page() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="mt-6 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-                The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide legal advice, citizenship eligibility determinations, or consular guidance. Legal questions should be handled by a licensed attorney.
+                The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Document execution coordination only. The Milano Seal™ does not provide legal guidance, citizenship eligibility determinations, or consular guidance. Legal questions should be handled by a licensed attorney.
               </p>
             </div>
           </div>

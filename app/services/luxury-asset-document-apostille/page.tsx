@@ -52,7 +52,7 @@ export default function LuxuryAssetDocumentApostillePage() {
             </p>
             <div className="p-5 bg-[#111111] border border-[#C6A55A]/20 rounded-xl mb-8">
               <p className="text-sm text-[#B0B0B0]">
-                <strong className="text-white">Scope of Services:</strong> The Milano Seal does not provide asset valuation, appraisal services, or legal advice regarding asset ownership or transfer. Document execution support is administrative in nature. Customs and import compliance requirements must be confirmed with appropriate authorities.
+                <strong className="text-white">Scope of Services:</strong> The Milano Seal does not provide asset valuation, appraisal services, or legal guidance regarding asset ownership or transfer. Document execution support is administrative in nature. Customs and import compliance requirements must be confirmed with appropriate authorities.
               </p>
             </div>
             <h2 className="font-serif text-xl font-medium text-white mb-4">Documents We Support</h2>
