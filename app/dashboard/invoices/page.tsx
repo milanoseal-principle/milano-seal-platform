@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { formatCurrency } from "@/lib/format";
+import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
+import { Reveal } from "@/components/dashboard/system/DashboardMotion";
 
 interface Deal {
   id: string;
@@ -426,8 +428,13 @@ export default function InvoiceStudio() {
 
   return (
     <div>
-      <div className="inv-eyebrow">Invoice Studio</div>
-      <h1 className="inv-h1">Generate Invoice</h1>
+      <Reveal>
+        <DashboardPageHeader
+          eyebrow="Invoice Command Center"
+          title="Invoice Studio"
+          description="Generate and review matter invoices — Wise reference, deposit and final balance, discounts, and release-gate impact. Payment status is never set from the UI; it follows confirmed Wise settlement."
+        />
+      </Reveal>
 
       <div className="inv-grid">
         {/* Matter list */}

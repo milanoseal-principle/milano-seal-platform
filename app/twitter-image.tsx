@@ -10,9 +10,11 @@ export const contentType = "image/png";
 
 // Gold M Orb share card: black background, The Milano Seal™, U.S. Document Execution for International Use, themilanoseal.com.
 const sealDataUri = (() => {
+// Inline the Gold M Orb once at module load as a data URI (no network fetch).
+const orbDataUri = (() => {
   try {
     const bytes = readFileSync(
-      join(process.cwd(), "public", "milano-seal-gold-transparent-512.png"),
+      join(process.cwd(), "public", "milano-seal-orb-v2.png"),
     );
     return `data:image/png;base64,${bytes.toString("base64")}`;
   } catch {
@@ -32,7 +34,7 @@ export default function TwitterImage() {
           alignItems: "center",
           justifyContent: "center",
           background:
-            "radial-gradient(circle at 50% 32%, #15120A 0%, #08080A 55%, #050507 100%)",
+            "radial-gradient(circle at 50% 30%, #16130B 0%, #0A0A0C 58%, #050506 100%)",
           position: "relative",
           fontFamily: "serif",
         }}
@@ -40,23 +42,23 @@ export default function TwitterImage() {
         <div
           style={{
             position: "absolute",
-            top: 28,
-            left: 28,
-            right: 28,
-            bottom: 28,
-            border: "1px solid rgba(198,165,90,0.35)",
-            borderRadius: 18,
+            top: 26,
+            left: 26,
+            right: 26,
+            bottom: 26,
+            border: "1px solid rgba(198,165,90,0.30)",
+            borderRadius: 20,
           }}
         />
 
-        {sealDataUri ? (
+        {orbDataUri ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={sealDataUri}
-            width={150}
-            height={112}
+            src={orbDataUri}
+            width={312}
+            height={312}
             alt=""
-            style={{ marginBottom: 28 }}
+            style={{ marginBottom: 14 }}
           />
         ) : null}
 
@@ -67,7 +69,7 @@ export default function TwitterImage() {
             letterSpacing: 14,
             color: "#C6A55A",
             fontFamily: "sans-serif",
-            marginBottom: 18,
+            marginBottom: 16,
           }}
         >
           THE MILANO SEAL™
@@ -77,12 +79,12 @@ export default function TwitterImage() {
           style={{
             display: "flex",
             textAlign: "center",
-            fontSize: 56,
+            fontSize: 46,
             lineHeight: 1.15,
             color: "#FFFFFF",
-            maxWidth: 880,
+            maxWidth: 900,
             justifyContent: "center",
-            padding: "0 40px",
+            padding: "0 60px",
           }}
         >
           U.S. Document Execution for International Use
@@ -104,19 +106,15 @@ export default function TwitterImage() {
         <div
           style={{
             position: "absolute",
-            bottom: 56,
+            bottom: 50,
             display: "flex",
-            gap: 18,
-            alignItems: "center",
-            fontSize: 18,
-            letterSpacing: 3,
-            color: "rgba(198,165,90,0.7)",
+            fontSize: 22,
+            letterSpacing: 4,
+            color: "rgba(198,165,90,0.75)",
             fontFamily: "sans-serif",
           }}
         >
-          REMOTE ONLINE NOTARIZATION
-          <span style={{ color: "rgba(198,165,90,0.4)" }}>·</span>
-          APOSTILLE COORDINATION
+          themilanoseal.com
         </div>
       </div>
     ),

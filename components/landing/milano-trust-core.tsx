@@ -274,4 +274,6 @@ export function MilanoTrustCore() {
       </div>
     </motion.section>
   );
+export function MilanoTrustCore() {
+  return null;
 }

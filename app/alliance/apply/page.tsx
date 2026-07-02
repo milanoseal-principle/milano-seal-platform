@@ -79,7 +79,7 @@ export default function Page() {
             className="text-3xl sm:text-4xl font-semibold tracking-tight"
             style={{ fontFamily: "var(--font-serif, serif)", color: "#C6A55A" }}
           >
-            Apply for Alliance Access
+            Apply to Join the Alliance Network
           </h1>
 
           {allianceCopy?.subheadline ? (
@@ -113,7 +113,7 @@ export default function Page() {
                   className="inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90"
                   style={{ backgroundColor: "#C6A55A" }}
                 >
-                  Start Controlled Intake
+                  Begin Secure Intake
                 </Link>
               </div>
             </div>
@@ -254,7 +254,7 @@ export default function Page() {
                 >
                   {status === "submitting"
                     ? "Submitting…"
-                    : "Submit Alliance Application"}
+                    : "Apply to Join the Alliance Network"}
                 </button>
               </div>
             </form>

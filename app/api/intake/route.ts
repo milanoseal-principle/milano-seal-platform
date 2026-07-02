@@ -12,6 +12,7 @@ import { createWisePaymentRequest } from "@/lib/wise";
 import { sendIntakeConfirmation } from "@/lib/email";
 import { DESTINATIONS } from "@/data/destinations";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 import { runDealEngine } from "@/lib/core/engine";
 import {
   normalizeIntakeRouting,
@@ -460,6 +461,9 @@ export async function POST(req: NextRequest) {
           );
         }
       })();
+
+      // Client notification log entry for intake (non-blocking; never throws).
+      void notifyClient(dealRowId, "intake_received");
 
       void (async () => {
         try {

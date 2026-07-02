@@ -198,7 +198,7 @@ const inputCls = `w-full px-4 py-3 bg-[#0A0A0A] border border-[rgba(198,165,90,0
 
 const selectCls = `${inputCls} appearance-none cursor-pointer`;
 
-const labelCls = `block text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] mb-2`;
+const labelCls = `block text-[10px] font-semibold tracking-[0.14em] uppercase text-[var(--ms-gold)]/65 mb-2`;
 
 const checkRowCls = `flex items-start gap-3 p-3.5 bg-[#0A0A0A] border border-[rgba(198,165,90,0.12)]
   rounded-sm cursor-pointer transition-all duration-200 hover:border-[rgba(198,165,90,0.3)]`;
@@ -263,7 +263,7 @@ function CheckRow({
       <div>
         <div className="text-sm text-white font-light">{label}</div>
         {sub && (
-          <div className="text-[11px] text-[#8A7A60] mt-0.5 font-light">
+          <div className="text-[11px] text-[#9A9488] mt-0.5 font-light">
             {sub}
           </div>
         )}
@@ -312,7 +312,7 @@ function RadioGroup({
           <div>
             <div className="text-sm text-white font-light">{opt.label}</div>
             {opt.sub && (
-              <div className="text-[11px] text-[#8A7A60] mt-0.5 font-light">
+              <div className="text-[11px] text-[#9A9488] mt-0.5 font-light">
                 {opt.sub}
               </div>
             )}
@@ -340,10 +340,10 @@ function ReviewItem({
         : "—";
   return (
     <div className="grid grid-cols-[140px_1fr] gap-4 py-2.5 px-4 border-b border-[rgba(198,165,90,0.06)] last:border-0">
-      <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#8A7A60] pt-0.5">
+      <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#9A9488] pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-[#1A1208] font-light break-words">
+      <span className="text-sm text-[#E8DCC0] font-light break-words">
         {display}
       </span>
     </div>
@@ -635,7 +635,7 @@ export function IntakeWizard({
           />
           {analysisNote && (
             <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
-              <span className="text-[11px] text-[#7A6830] font-medium">
+              <span className="text-[11px] text-[var(--ms-gold)] font-medium">
                 ✓ {analysisNote.msg}
               </span>
               <div className="flex items-center gap-3 flex-shrink-0">
@@ -656,7 +656,7 @@ export function IntakeWizard({
                 <button
                   type="button"
                   onClick={() => setAnalysisNote(null)}
-                  className="text-[#9A8A6A] hover:text-[#4A4030] transition-colors cursor-pointer text-[12px] leading-none"
+                  className="text-[var(--ms-gold)] hover:text-[#9A9488] transition-colors cursor-pointer text-[12px] leading-none"
                 >
                   ×
                 </button>
@@ -695,7 +695,7 @@ export function IntakeWizard({
                     <Check className="w-3 h-3 text-[#0A0A0A]" strokeWidth={3} />
                   ) : (
                     <span
-                      className={active ? "text-[#0A0A0A]" : "text-[#8A7A60]"}
+                      className={active ? "text-[#0A0A0A]" : "text-[#9A9488]"}
                     >
                       {n}
                     </span>
@@ -718,9 +718,16 @@ export function IntakeWizard({
         </div>
       </div>
 
-      <div className="relative bg-[#F4EFE6] border border-[rgba(198,165,90,0.18)] rounded-sm shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+      <div
+        className="relative border border-[rgba(198,165,90,0.28)] rounded-2xl overflow-hidden"
+        style={{
+          background: "linear-gradient(180deg, rgba(13,13,15,0.96) 0%, rgba(7,7,8,0.98) 100%)",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 40px rgba(198,165,90,0.06), inset 0 0 30px rgba(198,165,90,0.02)",
+        }}
+      >
         {/* Gold top line */}
-        <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)] to-transparent opacity-40" />
+        <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)] to-transparent opacity-60" />
+        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at top left, rgba(198,165,90,0.08), transparent 45%)" }} />
 
         <div className="px-8 py-10 md:px-12 md:py-12">
           <AnimatePresence mode="wait">
@@ -733,10 +740,10 @@ export function IntakeWizard({
             >
               {step === 1 && (
                 <>
-                  <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Contact Information
                   </h2>
-                  <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
                     Your primary details for this matter.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
@@ -744,7 +751,7 @@ export function IntakeWizard({
                   <FieldRow>
                     <FieldGroup>
                       <label className={labelCls}>
-                        Full Name <span className="text-[#8A7240]">*</span>
+                        Full Name <span className="text-[var(--ms-gold)]">*</span>
                       </label>
                       <input
                         type="text"
@@ -754,14 +761,14 @@ export function IntakeWizard({
                         className={inputCls}
                       />
                       {errors.client_name && (
-                        <p className="text-[10.5px] text-red-800 mt-1">
+                        <p className="text-[10.5px] text-red-300 mt-1">
                           {errors.client_name}
                         </p>
                       )}
                     </FieldGroup>
                     <FieldGroup>
                       <label className={labelCls}>
-                        Email Address <span className="text-[#8A7240]">*</span>
+                        Email Address <span className="text-[var(--ms-gold)]">*</span>
                       </label>
                       <input
                         type="email"
@@ -771,7 +778,7 @@ export function IntakeWizard({
                         className={inputCls}
                       />
                       {errors.email && (
-                        <p className="text-[10.5px] text-red-800 mt-1">
+                        <p className="text-[10.5px] text-red-300 mt-1">
                           {errors.email}
                         </p>
                       )}
@@ -781,7 +788,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Phone{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (optional)
                         </span>
                       </label>
@@ -796,7 +803,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Organization / Firm{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (if applicable)
                         </span>
                       </label>
@@ -822,17 +829,17 @@ export function IntakeWizard({
 
               {step === 2 && (
                 <>
-                  <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Document Details
                   </h2>
-                  <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
                     Tell us about the document or matter to be coordinated.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Document Type <span className="text-[#8A7240]">*</span>
+                      Document Type <span className="text-[var(--ms-gold)]">*</span>
                     </label>
                     <select
                       value={data.document_type}
@@ -879,7 +886,7 @@ export function IntakeWizard({
                       </optgroup>
                     </select>
                     {errors.document_type && (
-                      <p className="text-[10.5px] text-red-800 mt-1">
+                      <p className="text-[10.5px] text-red-300 mt-1">
                         {errors.document_type}
                       </p>
                     )}
@@ -888,7 +895,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Document Description{" "}
-                      <span className="text-[#8A7240]">*</span>
+                      <span className="text-[var(--ms-gold)]">*</span>
                     </label>
                     <textarea
                       value={data.document_description}
@@ -900,7 +907,7 @@ export function IntakeWizard({
                       className={`${inputCls} resize-none`}
                     />
                     {errors.document_description && (
-                      <p className="text-[10.5px] text-red-800 mt-1">
+                      <p className="text-[10.5px] text-red-300 mt-1">
                         {errors.document_description}
                       </p>
                     )}
@@ -938,7 +945,7 @@ export function IntakeWizard({
                   <FieldRow>
                     <FieldGroup>
                       <label className={labelCls}>
-                        Origin Authority <span className="text-[#8A7240]">*</span>
+                        Origin Authority <span className="text-[var(--ms-gold)]">*</span>
                       </label>
                       {/* Contextual origin authority selector — backward-compatible with origin_state field */}
                       <select
@@ -973,7 +980,7 @@ export function IntakeWizard({
                         <option value="Other / Not Sure">Other / Not Sure — Operator Review</option>
                       </select>
                       {errors.origin_state && (
-                        <p className="text-[10.5px] text-red-800 mt-1">
+                        <p className="text-[10.5px] text-red-300 mt-1">
                           {errors.origin_state}
                         </p>
                       )}
@@ -1030,10 +1037,10 @@ export function IntakeWizard({
 
               {step === 3 && (
                 <>
-                  <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Services Required
                   </h2>
-                  <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
                     Indicate which services are needed for this matter.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
@@ -1114,7 +1121,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Deadline Date{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (if applicable)
                         </span>
                       </label>
@@ -1140,10 +1147,10 @@ export function IntakeWizard({
 
               {step === 4 && (
                 <>
-                  <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Additional Details
                   </h2>
-                  <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
                     Upload documents and let us know how you found us.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
@@ -1207,7 +1214,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Supporting Documents{" "}
-                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional — for advance review)
                       </span>
                     </label>
@@ -1217,7 +1224,7 @@ export function IntakeWizard({
                       maxFiles={5}
                       maxSizeMB={10}
                     />
-                    <p className="text-[11px] text-[#8A7A60] mt-2 font-light">
+                    <p className="text-[11px] text-[#9A9488] mt-2 font-light">
                       Uploading documents now allows for advance review prior to
                       scheduling. All files are handled with strict
                       confidentiality.
@@ -1227,7 +1234,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Signer Names{" "}
-                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional)
                       </span>
                     </label>
@@ -1245,7 +1252,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Matter Category{" "}
-                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional)
                       </span>
                     </label>
@@ -1275,7 +1282,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Remote online notarization preferred?{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (optional)
                         </span>
                       </label>
@@ -1293,7 +1300,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Wet ink required?{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (optional)
                         </span>
                       </label>
@@ -1313,7 +1320,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Receiving Authority{" "}
-                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional)
                       </span>
                     </label>
@@ -1330,7 +1337,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Deadline or Closing Date{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (optional)
                         </span>
                       </label>
@@ -1344,7 +1351,7 @@ export function IntakeWizard({
                     <FieldGroup>
                       <label className={labelCls}>
                         Courier tracking needed?{" "}
-                        <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                           (optional)
                         </span>
                       </label>
@@ -1366,7 +1373,7 @@ export function IntakeWizard({
                   <FieldGroup>
                     <label className={labelCls}>
                       Additional Notes{" "}
-                      <span className="text-[#8A7A60] text-[9px] normal-case tracking-normal font-light">
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional)
                       </span>
                     </label>
@@ -1383,17 +1390,17 @@ export function IntakeWizard({
 
               {step === 5 && (
                 <>
-                  <h2 className="font-serif text-2xl text-[#1A1208] mb-1">
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Review &amp; Submit
                   </h2>
-                  <p className="text-[12px] text-[#8A7A60] tracking-[0.04em] mb-1 font-light">
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
                     Confirm your matter details before sending.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
-                  <div className="bg-[rgba(255,255,255,0.5)] border border-[rgba(26,18,8,0.08)] rounded-sm overflow-hidden mb-5">
+                  <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(198,165,90,0.18)] rounded-sm overflow-hidden mb-5">
                     <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                         Contact
                       </span>
                     </div>
@@ -1413,7 +1420,7 @@ export function IntakeWizard({
                       value={data.is_attorney}
                     />
                     <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                         Document
                       </span>
                     </div>
@@ -1448,7 +1455,7 @@ export function IntakeWizard({
                       value={data.execution_type}
                     />
                     <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                         Services
                       </span>
                     </div>
@@ -1480,7 +1487,7 @@ export function IntakeWizard({
                     {(data.source_detail || data.attribution || data.notes) && (
                       <>
                         <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                             Details
                           </span>
                         </div>
@@ -1562,7 +1569,7 @@ export function IntakeWizard({
                     return (
                       <div className="bg-[rgba(10,10,10,0.03)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] rounded-sm mb-5">
                         <div className="px-4 py-2.5 border-b border-[rgba(198,165,90,0.1)]">
-                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#8A7240]">
+                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
                             Estimated Investment
                           </span>
                         </div>
@@ -1572,33 +1579,33 @@ export function IntakeWizard({
                               key={i}
                               className="flex justify-between items-center"
                             >
-                              <span className="text-[12px] text-[#4A4030] font-light">
+                              <span className="text-[12px] text-[#9A9488] font-light">
                                 {item.label}
                               </span>
-                              <span className="text-[12px] text-[#4A4030] font-medium">
+                              <span className="text-[12px] text-[#9A9488] font-medium">
                                 ${item.price.toLocaleString()}
                               </span>
                             </div>
                           ))}
                           <div className="border-t border-[rgba(198,165,90,0.15)] pt-2 mt-2 flex justify-between items-center">
-                            <span className="text-[12px] font-semibold text-[#1A1208]">
+                            <span className="text-[12px] font-semibold text-[#E8DCC0]">
                               Estimated Total
                             </span>
-                            <span className="text-[14px] font-semibold text-[#1A1208]">
+                            <span className="text-[14px] font-semibold text-[#E8DCC0]">
                               ${total.toLocaleString()}+
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-[11px] text-[#8A7A60]">
+                            <span className="text-[11px] text-[#9A9488]">
                               Retainer due at confirmation (50%)
                             </span>
-                            <span className="text-[12px] text-[#8A7240] font-medium">
+                            <span className="text-[12px] text-[var(--ms-gold)] font-medium">
                               ${retainer.toLocaleString()}
                             </span>
                           </div>
                         </div>
                         <div className="px-4 py-2.5 border-t border-[rgba(198,165,90,0.08)]">
-                          <p className="text-[10px] text-[#8A7A60] italic">
+                          <p className="text-[10px] text-[#9A9488] italic">
                             Final scope and pricing confirmed by Nicholas Milano
                             after matter review. This is an estimate based on
                             the information provided.
@@ -1609,7 +1616,7 @@ export function IntakeWizard({
                   })()}
 
                   <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] px-5 py-4 rounded-sm mb-6">
-                    <p className="text-[12px] text-[#4A4030] leading-relaxed font-light">
+                    <p className="text-[12px] text-[#9A9488] leading-relaxed font-light">
                       All matters are reviewed by Nicholas Milano before
                       execution is scheduled. Submission of this form does not
                       create a legally binding engagement. You will receive a
@@ -1639,16 +1646,16 @@ export function IntakeWizard({
                       />
                     </div>
                     <div>
-                      <div className="text-[12px] font-semibold text-[#1A1208]">Nicholas Milano</div>
-                      <div className="text-[10px] text-[#8A7A60] mb-1.5">Founder · The Milano Seal™</div>
-                      <p className="text-[11px] text-[#4A4030] font-light leading-relaxed">
+                      <div className="text-[12px] font-semibold text-[#E8DCC0]">Nicholas Milano</div>
+                      <div className="text-[10px] text-[#9A9488] mb-1.5">Founder · The Milano Seal™</div>
+                      <p className="text-[11px] text-[#9A9488] font-light leading-relaxed">
                         Every matter is reviewed before execution begins.
                       </p>
                     </div>
                   </div>
 
                   {/* Payment Gate Notice */}
-                  <p className="text-[11px] text-[#8A7A60] text-center mb-5 font-light">
+                  <p className="text-[11px] text-[#9A9488] text-center mb-5 font-light">
                     No matter is scheduled or executed until scope is confirmed and payment is complete.
                   </p>
 
@@ -1659,7 +1666,7 @@ export function IntakeWizard({
                       label="I understand that all matters are reviewed before execution is scheduled"
                     />
                     {errors.consent && (
-                      <p className="text-[10.5px] text-red-800 mt-1">
+                      <p className="text-[10.5px] text-red-300 mt-1">
                         {errors.consent}
                       </p>
                     )}
@@ -1669,7 +1676,7 @@ export function IntakeWizard({
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-[12px] text-red-800 mt-4 font-light"
+                      className="text-[12px] text-red-300 mt-4 font-light"
                     >
                       {submitError}
                     </motion.p>
@@ -1683,7 +1690,7 @@ export function IntakeWizard({
             {step > 1 && (
               <button
                 onClick={goBack}
-                className="flex items-center cursor-pointer gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#8A7A60] hover:text-[#4A4030] transition-colors duration-200"
+                className="flex items-center cursor-pointer gap-2 text-[10px] font-semibold tracking-[0.14em] uppercase text-[#9A9488] hover:text-[#9A9488] transition-colors duration-200"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back

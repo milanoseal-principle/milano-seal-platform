@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
-import { assertPaymentConfirmed } from "@/lib/payments/paymentGate";
 import { isFounderAdmin } from "@/lib/security/access-control";
-import { requiresCodiceFiscaleLockForRelease } from "@/lib/security/release-integrity";
 import { recordSecurityEvent } from "@/lib/security/security-events";
+import { performFinalRelease } from "@/lib/release/performFinalRelease";
+import { notifyClient } from "@/lib/notifications/orchestrator";
 
 export const runtime = "nodejs";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Optional founder override for releasing on non-cleared (e.g. pending card
+  // settlement) funds. Requires a written reason; always ledgered below.
+  const body = (await req.json().catch(() => ({}))) as {
+    override_reason?: string;
+  };
+  const overrideReason = (body.override_reason ?? "").trim();
 
   // Auth check — role from server-side token only, never client body
   const supabase = await createClient();
@@ -46,138 +52,37 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Resolve deal (id may be deal_id slug or UUID)
-  const adminClient = createAdminClient();
-  const isUuid =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  const { data: deal, error: dealErr } = await adminClient
-    .from("deals")
-    .select("id, deal_id, deal_status, payment_status, payment_confirmed, amount_due, amount_paid, destination_country, is_platform_fee_only")
-    .eq(isUuid ? "id" : "deal_id", id)
-    .single();
+  // Run the shared final-release gate (payment + settlement/override + Codice
+  // Fiscale + custody/audit ledger). Identical logic is exercised by the
+  // authenticated production test runner.
+  const outcome = await performFinalRelease({
+    id,
+    actorId: user.email ?? user.id,
+    overrideReason,
+  });
 
-  if (dealErr || !deal) {
-    return NextResponse.json({ error: "Deal not found" }, { status: 404 });
-  }
-
-  // Payment gate — must be confirmed before release
-  const paymentOk = deal.payment_confirmed === true || deal.is_platform_fee_only === true;
-  if (!paymentOk) {
+  // Mirror a successful release into the client notification log. Runs only after
+  // the release gate has already passed (status 200); non-blocking and client-safe.
+  // Resolves the deal UUID (params [id] may be a UUID or business reference) for
+  // messages.deal_id without touching the release-gate logic.
+  if (outcome.status === 200) {
     try {
-      assertPaymentConfirmed(deal, "release");
-    } catch {
-      await recordSecurityEvent({
-        event_name: "FINAL_RELEASE_BLOCKED",
-        severity: "high",
-        actor: user.email ?? user.id,
-        matter_id: deal.id,
-        route: "/api/deals/[id]/release",
-        client_safe: false,
-        metadata: { reason: "payment_not_confirmed", deal_id: deal.deal_id ?? id },
-      });
-      return NextResponse.json(
-        {
-          ok: false,
-          blocked: true,
-          message: "Final release is blocked until required safety checks are complete.",
-          required_action: "Payment confirmation required before release.",
-        },
-        { status: 402 },
+      const admin = createAdminClient();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
+      const { data: d } = await admin
+        .from("deals")
+        .select("id")
+        .eq(isUuid ? "id" : "deal_id", id)
+        .maybeSingle();
+      if (d?.id) await notifyClient(d.id, "release_ready");
+    } catch (err) {
+      console.error(
+        "[release] notify failed:",
+        err instanceof Error ? err.message : err,
       );
     }
   }
 
-  // Italy hard rule — Codice Fiscale Lock required
-  if (requiresCodiceFiscaleLockForRelease(deal.destination_country)) {
-    const { data: idLock } = await adminClient
-      .from("identifier_locks")
-      .select("identifier_type, match_status")
-      .eq("matter_id", deal.id)
-      .eq("identifier_type", "codice_fiscale")
-      .single();
-
-    const lockConfirmed =
-      idLock?.match_status === "confirmed" || idLock?.match_status === "exact_match";
-
-    if (!lockConfirmed) {
-      await recordSecurityEvent({
-        event_name: "IDENTIFIER_MISMATCH_BLOCKED",
-        severity: "high",
-        actor: user.email ?? user.id,
-        matter_id: deal.id,
-        route: "/api/deals/[id]/release",
-        client_safe: false,
-        metadata: {
-          reason: idLock ? "codice_fiscale_mismatch" : "codice_fiscale_lock_missing",
-          destination_country: deal.destination_country ?? "italy",
-        },
-      });
-      return NextResponse.json(
-        {
-          ok: false,
-          blocked: true,
-          message: "Final release is blocked until required safety checks are complete.",
-          required_action: "Codice Fiscale exact-match lock required before Italy apostille release.",
-        },
-        { status: 403 },
-      );
-    }
-  }
-
-  const previousStatus = deal.deal_status;
-  const newStatus = "released";
-
-  const result = await appendLedger({
-    deal_id: deal.id,
-    event: CUSTODY_EVENTS.DOC_RELEASE_CONFIRMED,
-    actor_type: "operator",
-    actor_id: user.email ?? user.id,
-    notes: `Document release confirmed by founder | previous_status=${previousStatus} | new_status=${newStatus} | release_action=DOC_RELEASE_CONFIRMED | operator=${user.email ?? user.id}`,
-  });
-
-  if (!result) {
-    return NextResponse.json(
-      { error: "Failed to append custody ledger" },
-      { status: 500 },
-    );
-  }
-
-  // Record FINAL_RELEASE_APPROVED in security log
-  await recordSecurityEvent({
-    event_name: "FINAL_RELEASE_APPROVED",
-    severity: "info",
-    actor: user.email ?? user.id,
-    matter_id: deal.id,
-    route: "/api/deals/[id]/release",
-    client_safe: false,
-    metadata: { deal_id: deal.deal_id ?? id, destination_country: deal.destination_country ?? null },
-  });
-
-  // Durable audit log — failure recorded in custody chain, never silently dropped
-  let auditFailed = false;
-  try {
-    const { error: auditErr } = await adminClient.from("audit_logs").insert({
-      event: "DOC_RELEASE_CONFIRMED",
-      actor: user.email ?? user.id,
-      resource: deal.deal_id ?? deal.id,
-      detail: `previous_status=${previousStatus} new_status=${newStatus}`,
-      created_at: new Date().toISOString(),
-    });
-    if (auditErr) auditFailed = true;
-  } catch {
-    auditFailed = true;
-  }
-
-  if (auditFailed) {
-    await appendLedger({
-      deal_id: deal.id,
-      event: "AUDIT_PENDING_SYNC",
-      actor_type: "system",
-      actor_id: "system",
-      notes: `audit_logs insert failed for DOC_RELEASE_CONFIRMED by ${user.email ?? user.id} — chain requires manual reconciliation`,
-    });
-  }
-
-  return NextResponse.json({ ok: true, hash: result.hash, audit_ok: !auditFailed });
+  return NextResponse.json(outcome.body, { status: outcome.status });
 }
 

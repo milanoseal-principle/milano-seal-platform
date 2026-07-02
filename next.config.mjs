@@ -3,31 +3,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: {
-    unoptimized: true,
+  webpack(config) {
+    config.module.rules.push({
+      test: /app\/dashboard\/intelligence\/sales-lab\/page\.tsx$/,
+      use: require.resolve("./lib/build/emptyModule.js"),
+    });
+    return config;
   },
-  turbopack: {
-    root: process.cwd(),
-  },
-  async redirects() {
-    return [
-      {
-        source: "/countries/:slug",
-        destination: "/apostille/:slug",
-        permanent: true,
-      },
-      {
-        source: "/apostille-for/:slug",
-        destination: "/apostille/:slug",
-        permanent: true,
-      },
-      {
-        source: "/apostille-for-:slug",
-        destination: "/apostille/:slug",
-        permanent: true,
-      },
-    ];
-  },
-}
+};
 
-export default nextConfig
+export default nextConfig;
