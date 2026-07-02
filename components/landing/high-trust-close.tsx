@@ -40,7 +40,7 @@ export function HighTrustClose() {
           </h2>
 
           <p className="text-lg md:text-xl text-[#B0B0B0] mb-12 max-w-2xl mx-auto leading-relaxed">
-            When your documents must be accepted internationally, precision is
+            When your documents need receiving-authority review, precision is
             not optional. We coordinate the U.S. side of your matter with the
             care and discretion it deserves.
           </p>

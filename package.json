@@ -37,7 +37,9 @@
     "validate:cross-system-gates": "node scripts/validate-cross-system-gates.mjs",
     "validate:global-acceptance-intelligence": "node scripts/validate-global-acceptance-intelligence.mjs",
     "validate:milano-execution-routing-upgrade": "node scripts/validate-milano-execution-routing-upgrade.mjs",
-    "validate:operator-intelligence-spine": "node scripts/validate-operator-intelligence-spine.mjs"
+    "validate:operator-intelligence-spine": "node scripts/validate-operator-intelligence-spine.mjs",
+    "validate:final-intelligence-operator-os": "node scripts/validate-final-intelligence-operator-os.mjs",
+    "validate:public-copy-safety": "node scripts/validate-public-copy-safety.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
