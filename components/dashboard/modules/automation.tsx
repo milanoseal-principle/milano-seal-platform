@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState } from 'react';
 import { ModuleWrapper } from "./_module-wrapper";
 
 export function AutomationModule({ mod }: any) {

@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { Card, SectionHeader, Select, Input, GoldBtn, GhostBtn, Notify, Badge } from "./SalesLabShared";
 import { CONTENT_TYPES } from "./constants";
 import type { ContentOutput } from "./types";

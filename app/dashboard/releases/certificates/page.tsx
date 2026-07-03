@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReleaseCertificateRenderer } from "@/components/releases/ReleaseCertificateRenderer";
 import { CertificateActions } from "@/components/releases/CertificateActions";

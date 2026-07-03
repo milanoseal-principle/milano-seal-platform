@@ -12,9 +12,6 @@ export const contentType = "image/png";
 // Read the transparent gold seal once at module load and inline it as a data
 // URI so the OG renderer never has to fetch over the network.
 const sealDataUri = (() => {
-// Inline the Gold M Orb once at module load as a data URI so the OG renderer
-// never fetches over the network. High-contrast mark reads well at thumbnail size.
-const orbDataUri = (() => {
   try {
     const bytes = readFileSync(
       join(process.cwd(), "public", "milano-seal-orb-v2.png"),
@@ -55,10 +52,10 @@ export default function OpengraphImage() {
           }}
         />
 
-        {orbDataUri ? (
+        {sealDataUri ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={orbDataUri}
+            src={sealDataUri}
             width={312}
             height={312}
             alt=""

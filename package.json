@@ -27,6 +27,7 @@
     "validate:referral-intelligence": "node scripts/validate-referral-intelligence.mjs",
     "validate:seo-phase-authority": "node scripts/validate-seo-phase-authority.mjs",
     "validate:pricing-luxury-canon": "node scripts/validate-pricing-luxury-canon.mjs",
+    "validate:smart-intake-pricing-engine": "node scripts/validate-smart-intake-pricing-engine.mjs",
     "validate:data-intel-compliance-ui": "node scripts/validate-data-intel-compliance-ui.mjs",
     "validate:final-mobile-cosmetic-pass": "node scripts/validate-final-mobile-cosmetic-pass.mjs",
     "validate:final-wiring-confirmation": "node scripts/validate-final-wiring-confirmation.mjs",

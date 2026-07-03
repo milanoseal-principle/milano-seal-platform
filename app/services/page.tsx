@@ -95,6 +95,4 @@ export default function ServicesPage() {
       <Footer />
     </main>
   );
-export default function Page() {
-  return <main />;
 }

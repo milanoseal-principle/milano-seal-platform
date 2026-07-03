@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 
 const US_STATES = [

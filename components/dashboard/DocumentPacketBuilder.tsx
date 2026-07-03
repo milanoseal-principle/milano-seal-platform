@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { listPackets, getPacket, type DocumentPacket } from "@/lib/intelligence/packetBuilder";
 
 const packets = listPackets();

@@ -1,7 +1,7 @@
 "use client";
+import { useState } from 'react';
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { getAllCountries, getAllDocumentTypes } from "@/data/intelligence";
 
 // Note: metadata is exported from the layout or a separate server component.

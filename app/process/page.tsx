@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, Check } from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { ProcessExperience } from "@/components/process/ProcessExperience";
@@ -9,6 +11,63 @@ export const metadata: Metadata = {
 };
 
 export default function ProcessPage() {
+  const stages = [
+    {
+      id: "submit",
+      number: "02",
+      highlight: true,
+      icon: Check,
+      title: "Prepare & Verify",
+      headline: "Structured intake verification",
+      body: "Operator reviews intake, confirms documents, and prepares execution checklist.",
+      details: [
+        "Document type validation",
+        "Destination review",
+        "Required signer checks",
+      ],
+    },
+    {
+      id: "execution",
+      number: "03",
+      highlight: false,
+      icon: Check,
+      title: "Execution",
+      headline: "Notarization & signing",
+      body: "RON or in-person execution depending on eligibility and client preference.",
+      details: ["RON coordination", "Witness handling", "Signature capture"],
+    },
+    {
+      id: "apostille",
+      number: "04",
+      highlight: false,
+      icon: Check,
+      title: "Apostille / Legalization",
+      headline: "Apostille or consular legalization where required",
+      body: "Coordinate apostille or consular steps and required supporting documents.",
+      details: ["Apostille submission", "Consular review if required"],
+    },
+    {
+      id: "assembly",
+      number: "05",
+      highlight: false,
+      icon: Check,
+      title: "Packet Assembly",
+      headline: "Final packet preparation",
+      body: "Assemble originals, slips, and documentation for secure courier release.",
+      details: ["Final packet checklist", "Quality assurance"],
+    },
+    {
+      id: "delivery",
+      number: "06",
+      highlight: false,
+      icon: Check,
+      title: "Courier & Delivery",
+      headline: "Secure international courier release",
+      body: "Release to international courier and provide tracking to client.",
+      details: ["Courier selection", "Tracking & confirmation"],
+    },
+  ];
+
   return (
     <>
       <Header />

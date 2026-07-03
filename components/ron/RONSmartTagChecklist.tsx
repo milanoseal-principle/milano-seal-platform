@@ -1,6 +1,6 @@
-'use client';
-
+"use client";
 import { useState } from 'react';
+
 import { TAG_PRESETS, type SmartTagPreset } from '@/lib/bluenotary/tags';
 
 interface DocumentTagItem {

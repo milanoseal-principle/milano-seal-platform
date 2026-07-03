@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Shield, CheckCircle, Circle } from "lucide-react";
 
 interface Attestation {

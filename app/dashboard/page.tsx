@@ -911,6 +911,4 @@ export default function Dashboard() {
       />
     </>
   );
-export default function DashboardPage() {
-  return <main />;
 }

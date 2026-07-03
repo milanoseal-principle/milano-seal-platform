@@ -1,6 +1,6 @@
-'use client';
-
+"use client";
 import { useState } from 'react';
+
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 
 interface GateCondition {

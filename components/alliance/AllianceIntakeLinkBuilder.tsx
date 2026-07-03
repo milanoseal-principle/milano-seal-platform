@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { Link2, Copy, CheckCircle } from "lucide-react";
 
 interface IntakeLink {

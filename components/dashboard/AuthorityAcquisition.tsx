@@ -1,7 +1,7 @@
 "use client";
+import { useState } from 'react';
 
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { TrendingUp, CheckCircle2, Eye, AlertTriangle, ArrowRight } from "lucide-react";
 import type { CountryStat, GlobalStats, ConfidenceCounts } from "@/app/dashboard/authority-acquisition/page";
 

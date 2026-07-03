@@ -1,4 +1,18 @@
 "use client";
+import { useState } from 'react';
+import Link from 'next/link';
+import { DESTINATIONS, type Destination } from '@/data/destinations';
+import { buildHomeCorridor } from '@/lib/intelligence/homeCorridors';
+import { GlobalRouteGlobe } from '@/components/globe/GlobalRouteGlobe';
+import { DestinationIntelligenceCard } from '@/components/landing/destination-intelligence-card';
+import { ArrowRight, Route } from 'lucide-react';
+
+// Placeholder components for missing imports
+const HomeExecutionPathCards = () => <div />;
+const MiniCorridorMapPreview = ({ corridor }: any) => <div />;
+const HomeShippingCorridorPanel = ({ corridor }: any) => <div />;
+
+const PRIORITY_DESTINATIONS: Destination[] = (DESTINATIONS && DESTINATIONS.length > 0) ? DESTINATIONS.slice(0, 8) : [];
 
 export function HomepageRoutingPreview() {
   const [selected, setSelected] = useState<Destination>(

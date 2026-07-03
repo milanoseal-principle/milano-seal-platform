@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { selectCertificate, type CertificateTemplate } from "@/lib/intelligence/certificateSelection";
 
 const ACT_OPTIONS = ["acknowledgment", "jurat", "oath"];

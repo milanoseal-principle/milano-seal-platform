@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState } from 'react';
 import { getChecklist, type ChecklistType } from "@/lib/execution-qa/checklists";
 
 export function ScanBackReviewChecklist({ type, onComplete }: { type: ChecklistType; onComplete?: (allPassed: boolean) => void }) {

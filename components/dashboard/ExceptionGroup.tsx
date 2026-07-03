@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: "#ef4444",

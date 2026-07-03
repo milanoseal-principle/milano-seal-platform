@@ -10,8 +10,6 @@ export const contentType = "image/png";
 
 // Gold M Orb share card: black background, The Milano Seal™, U.S. Document Execution for International Use, themilanoseal.com.
 const sealDataUri = (() => {
-// Inline the Gold M Orb once at module load as a data URI (no network fetch).
-const orbDataUri = (() => {
   try {
     const bytes = readFileSync(
       join(process.cwd(), "public", "milano-seal-orb-v2.png"),
@@ -51,10 +49,10 @@ export default function TwitterImage() {
           }}
         />
 
-        {orbDataUri ? (
+        {sealDataUri ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={orbDataUri}
+            src={sealDataUri}
             width={312}
             height={312}
             alt=""

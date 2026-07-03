@@ -178,6 +178,4 @@ export default function CommandCenterPage() {
       </div>
     </main>
   );
-export default function Page() {
-  return <main />;
 }

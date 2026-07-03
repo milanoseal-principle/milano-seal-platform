@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, Copy, Check, Mail, Linkedin, MessageCircle } from "lucide-react";
 

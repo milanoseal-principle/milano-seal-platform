@@ -1,6 +1,6 @@
 "use client";
+import { useState } from 'react';
 
-import { useState } from "react";
 
 // Operator Comp-Clear Control — UI only. Resolves the entered discount code to
 // its id using the EXISTING dashboard discounts list, then calls the EXISTING
