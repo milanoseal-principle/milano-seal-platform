@@ -40,7 +40,13 @@
     "validate:milano-execution-routing-upgrade": "node scripts/validate-milano-execution-routing-upgrade.mjs",
     "validate:operator-intelligence-spine": "node scripts/validate-operator-intelligence-spine.mjs",
     "validate:final-intelligence-operator-os": "node scripts/validate-final-intelligence-operator-os.mjs",
-    "validate:public-copy-safety": "node scripts/validate-public-copy-safety.mjs"
+    "validate:public-copy-safety": "node scripts/validate-public-copy-safety.mjs",
+    "validate:fingerprint-apostille-expansion": "node scripts/validate-fingerprint-apostille-expansion.mjs",
+    "validate:fingerprint-routing-rules": "node scripts/validate-fingerprint-routing-rules.mjs",
+    "validate:apostille-authentication-rules": "node scripts/validate-apostille-authentication-rules.mjs",
+    "validate:translation-coordination": "node scripts/validate-translation-coordination.mjs",
+    "validate:booking-intake-gates": "node scripts/validate-booking-intake-gates.mjs",
+    "validate:regulated-public-claims": "node scripts/validate-regulated-public-claims.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
