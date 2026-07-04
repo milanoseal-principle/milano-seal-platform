@@ -192,14 +192,27 @@ export function MilanoTrustCore() {
               className="flex items-center justify-center relative"
               style={{ height: 280 }}
             >
-              {/* Glow */}
-              <div
+              {/* Glow — activation pulse then slow breathe */}
+              <motion.div
                 className="absolute rounded-full"
                 style={{
-                  width: 260, height: 260,
-                  background: "radial-gradient(circle, rgba(198,165,90,0.09) 0%, transparent 70%)",
-                  filter: "blur(16px)",
+                  width: 280, height: 280,
+                  background: "radial-gradient(circle, rgba(198,165,90,0.16) 0%, transparent 70%)",
+                  filter: "blur(20px)",
                 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={
+                  inView
+                    ? reduce
+                      ? { opacity: 0.75 }
+                      : { opacity: [0, 1, 0.62, 0.78, 0.66], scale: [0.9, 1.06, 1, 1.03, 1] }
+                    : {}
+                }
+                transition={
+                  reduce
+                    ? { duration: 0.6 }
+                    : { duration: 6, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }
+                }
               />
               {/* Connector lines — SVG fan from center orb to each pillar row */}
               <svg
@@ -315,6 +328,36 @@ export function MilanoTrustCore() {
                   />
                 ))}
               </motion.div>
+
+              {/* Compass axis — faint cross lines through the orbit */}
+              <div aria-hidden="true" className="absolute" style={{ width: 240, height: 240 }}>
+                <div
+                  className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2"
+                  style={{ background: "linear-gradient(to bottom, transparent, rgba(198,165,90,0.16), transparent)" }}
+                />
+                <div
+                  className="absolute top-1/2 left-0 w-full h-px -translate-y-1/2"
+                  style={{ background: "linear-gradient(to right, transparent, rgba(198,165,90,0.16), transparent)" }}
+                />
+              </div>
+
+              {/* Scan highlight — slow rotating radar sweep */}
+              {!reduce && (
+                <motion.div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    width: 200,
+                    height: 200,
+                    background:
+                      "conic-gradient(from 0deg, transparent 0deg, rgba(198,165,90,0.16) 24deg, transparent 64deg)",
+                    maskImage: "radial-gradient(circle, black 58%, transparent 72%)",
+                    WebkitMaskImage: "radial-gradient(circle, black 58%, transparent 72%)",
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+                />
+              )}
+
               {/* Core */}
               <div
                 className="relative w-[130px] h-[130px] rounded-full border border-[var(--ms-gold)]/40 flex items-center justify-center"
