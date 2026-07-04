@@ -48,6 +48,17 @@ const RIGHT_PILLARS = [
   },
 ];
 
+// Orbiting custody nodes that ride the rings around the Trust Core medallion.
+// { angle°, radius px from center, dot size px, opacity }.
+const ORBIT_NODES = [
+  { angle: 18, radius: 116, size: 3, opacity: 0.7 },
+  { angle: 96, radius: 116, size: 2, opacity: 0.45 },
+  { angle: 162, radius: 116, size: 2.5, opacity: 0.6 },
+  { angle: 240, radius: 92, size: 2.5, opacity: 0.55 },
+  { angle: 300, radius: 92, size: 2, opacity: 0.4 },
+  { angle: 348, radius: 92, size: 3, opacity: 0.65 },
+];
+
 function Pillar({
   icon: Icon,
   title,
@@ -240,11 +251,11 @@ export function MilanoTrustCore() {
                   </linearGradient>
                 </defs>
               </svg>
-              {/* Rings — slowly rotating orbital system with glowing nodes */}
+              {/* Rings — slowly rotating orbital system */}
               {[
-                { d: 240, o: 0.08, dur: 90, dir: 1, dot: 0.55 },
-                { d: 200, o: 0.14, dur: 130, dir: -1, dot: 0.7 },
-                { d: 160, o: 0.22, dur: 60, dir: 1, dot: 0.6 },
+                { d: 240, o: 0.08, dur: 90, dir: 1 },
+                { d: 200, o: 0.14, dur: 130, dir: -1 },
+                { d: 160, o: 0.22, dur: 60, dir: 1 },
               ].map((r, i) => (
                 <motion.div
                   key={`ring${i}`}
@@ -252,21 +263,58 @@ export function MilanoTrustCore() {
                   style={{ width: r.d, height: r.d, border: `1px solid rgba(198,165,90,${r.o})` }}
                   animate={reduce ? undefined : { rotate: r.dir * 360 }}
                   transition={reduce ? undefined : { duration: r.dur, repeat: Infinity, ease: "linear" }}
-                >
+                />
+              ))}
+
+              {/* Orbiting custody nodes — the constellation of dots that ride the rings */}
+              <motion.div
+                className="absolute"
+                style={{ width: 240, height: 240 }}
+                animate={reduce ? undefined : { rotate: 360 }}
+                transition={reduce ? undefined : { duration: 90, repeat: Infinity, ease: "linear" }}
+              >
+                {ORBIT_NODES.map((n, i) => (
                   <span
+                    key={i}
                     className="absolute rounded-full bg-[var(--ms-gold)]"
                     style={{
-                      width: 4,
-                      height: 4,
-                      top: -2,
-                      left: "50%",
-                      marginLeft: -2,
-                      opacity: r.dot,
-                      boxShadow: "0 0 8px rgba(198,165,90,0.85)",
+                      width: n.size,
+                      height: n.size,
+                      opacity: n.opacity,
+                      left: `${50 + (n.radius / 240) * 100 * Math.cos((n.angle * Math.PI) / 180)}%`,
+                      top: `${50 + (n.radius / 240) * 100 * Math.sin((n.angle * Math.PI) / 180)}%`,
+                      marginLeft: -n.size / 2,
+                      marginTop: -n.size / 2,
+                      boxShadow: "0 0 6px rgba(198,165,90,0.6)",
                     }}
                   />
-                </motion.div>
-              ))}
+                ))}
+              </motion.div>
+
+              {/* Counter-rotating inner node ring for depth */}
+              <motion.div
+                className="absolute"
+                style={{ width: 200, height: 200 }}
+                animate={reduce ? undefined : { rotate: -360 }}
+                transition={reduce ? undefined : { duration: 130, repeat: Infinity, ease: "linear" }}
+              >
+                {ORBIT_NODES.slice(0, 3).map((n, i) => (
+                  <span
+                    key={`inner${i}`}
+                    className="absolute rounded-full bg-[var(--ms-gold)]"
+                    style={{
+                      width: 2,
+                      height: 2,
+                      opacity: 0.5,
+                      left: `${50 + (78 / 200) * 100 * Math.cos(((n.angle + 40) * Math.PI) / 180)}%`,
+                      top: `${50 + (78 / 200) * 100 * Math.sin(((n.angle + 40) * Math.PI) / 180)}%`,
+                      marginLeft: -1,
+                      marginTop: -1,
+                      boxShadow: "0 0 5px rgba(198,165,90,0.6)",
+                    }}
+                  />
+                ))}
+              </motion.div>
               {/* Core */}
               <div
                 className="relative w-[130px] h-[130px] rounded-full border border-[var(--ms-gold)]/40 flex items-center justify-center"
