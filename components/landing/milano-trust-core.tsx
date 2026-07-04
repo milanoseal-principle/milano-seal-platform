@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
@@ -92,6 +92,7 @@ function Pillar({
 export function MilanoTrustCore() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+  const reduce = useReducedMotion() ?? false;
 
   return (
     <motion.section
@@ -239,10 +240,33 @@ export function MilanoTrustCore() {
                   </linearGradient>
                 </defs>
               </svg>
-              {/* Rings */}
-              <div className="absolute w-[240px] h-[240px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.08)" }} />
-              <div className="absolute w-[200px] h-[200px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.14)" }} />
-              <div className="absolute w-[160px] h-[160px] rounded-full" style={{ border: "1px solid rgba(198,165,90,0.22)" }} />
+              {/* Rings — slowly rotating orbital system with glowing nodes */}
+              {[
+                { d: 240, o: 0.08, dur: 90, dir: 1, dot: 0.55 },
+                { d: 200, o: 0.14, dur: 130, dir: -1, dot: 0.7 },
+                { d: 160, o: 0.22, dur: 60, dir: 1, dot: 0.6 },
+              ].map((r, i) => (
+                <motion.div
+                  key={`ring${i}`}
+                  className="absolute rounded-full"
+                  style={{ width: r.d, height: r.d, border: `1px solid rgba(198,165,90,${r.o})` }}
+                  animate={reduce ? undefined : { rotate: r.dir * 360 }}
+                  transition={reduce ? undefined : { duration: r.dur, repeat: Infinity, ease: "linear" }}
+                >
+                  <span
+                    className="absolute rounded-full bg-[var(--ms-gold)]"
+                    style={{
+                      width: 4,
+                      height: 4,
+                      top: -2,
+                      left: "50%",
+                      marginLeft: -2,
+                      opacity: r.dot,
+                      boxShadow: "0 0 8px rgba(198,165,90,0.85)",
+                    }}
+                  />
+                </motion.div>
+              ))}
               {/* Core */}
               <div
                 className="relative w-[130px] h-[130px] rounded-full border border-[var(--ms-gold)]/40 flex items-center justify-center"
