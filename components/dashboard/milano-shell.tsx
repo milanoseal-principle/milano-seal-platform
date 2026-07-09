@@ -79,6 +79,15 @@ const NAV_GROUPS: {
       { href: "/dashboard/discounts", label: "Discount Control", icon: BadgePercent },
     ],
   },
+
+  {
+    group: "Revenue Operations",
+    items: [
+      { href: "/dashboard/conversion", label: "Conversion Recovery", icon: TrendingUp },
+      { href: "/dashboard/seo-revenue", label: "SEO Revenue", icon: SearchCheck },
+      { href: "/dashboard/matter-ops", label: "Matter Ops QA", icon: ClipboardList },
+    ],
+  },
   {
     group: "Intelligence",
     items: [
@@ -88,6 +97,8 @@ const NAV_GROUPS: {
       { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
       { href: "/dashboard/intelligence/sales-lab", label: "Sales Intelligence Lab", icon: Sparkles },
       { href: "/dashboard/government-intelligence", label: "Government Intelligence", icon: Landmark },
+      { href: "/dashboard/acquisition", label: "Acquisition", icon: Target },
+      { href: "/dashboard/jurisdictions", label: "Jurisdictions", icon: Globe2 },
     ],
   },
   {
@@ -95,6 +106,7 @@ const NAV_GROUPS: {
     items: [
       { href: "/dashboard/va", label: "Execution Support", icon: ClipboardList },
       { href: "/dashboard/alliance/intelligence-platform", label: "Trust Network", icon: Network },
+      { href: "/dashboard/dispatch", label: "Dispatch", icon: Network },
     ],
   },
   {
@@ -106,6 +118,7 @@ const NAV_GROUPS: {
       { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
       { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
       { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
+      { href: "/dashboard/founder", label: "Founder OS", icon: Activity },
       { href: "/dashboard/build-center", label: "Build Center", icon: Radio },
       { href: "/dashboard/tools", label: "Tools", icon: Wrench },
       { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
