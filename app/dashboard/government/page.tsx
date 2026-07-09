@@ -11,11 +11,13 @@ import { CapabilityStatementManager } from "@/components/dashboard/government/Ca
 import { BidNoBidScoringPanel } from "@/components/dashboard/government/BidNoBidScoringPanel";
 import { GovernmentRevenuePanel } from "@/components/dashboard/government/GovernmentRevenuePanel";
 import { GovernmentSafetyPanel } from "@/components/dashboard/government/GovernmentSafetyPanel";
+import { RecordedSubmissionsPanel } from "@/components/dashboard/government/RecordedSubmissionsPanel";
 import type {
   GovernmentCrmRecord,
   ProcurementOpportunity,
 } from "@/lib/government/types";
 import type { VendorRegistration } from "@/lib/government/vendorRegistrationTracker";
+import { GOVERNMENT_SUBMISSIONS } from "@/lib/government/submissions/pinellasItq250786";
 
 export const metadata = {
   title: "Government — The Milano Seal™",
@@ -80,8 +82,11 @@ export default async function GovernmentDashboardPage() {
       />
 
       <p className="rounded-xl border border-amber-300/20 bg-black/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-amber-200/70">
-        Payment Gate Status: ENFORCED · Internal sample data shown below
+        Payment Gate Status: ENFORCED · Recorded Submissions are real; all other
+        panels show internal sample data
       </p>
+
+      <RecordedSubmissionsPanel submissions={GOVERNMENT_SUBMISSIONS} />
 
       <GovernmentCommandCenter
         records={SAMPLE_CRM}
