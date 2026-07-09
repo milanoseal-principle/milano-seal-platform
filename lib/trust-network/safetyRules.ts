@@ -13,4 +13,8 @@ export const TRUST_NETWORK_SAFETY_RULES = [
   "Public verification status may display only after verification is complete."
 ] as const;
 
-export const BANNED_TRUST_NETWORK_TERMS = ["cousins", "family", "yappy", "table", "crew", "council", "keys"] as const;
+export const COMPETITOR_COPY_GUARD = {
+  scanScope: "new platform modules",
+  rule: "Block competitor identity terms, copied price structures, copied names, and copied community positioning.",
+  action: "Fail validation and require Milano Seal proprietary naming and pricing."
+} as const;
