@@ -29,7 +29,7 @@
     "validate:pricing-luxury-canon": "node scripts/validate-pricing-luxury-canon.mjs",
     "validate:smart-intake-pricing-engine": "node scripts/validate-smart-intake-pricing-engine.mjs",
     "validate:motion-system": "node scripts/validate-motion-system.mjs",
-    "validate:responsive-safety": "node scripts/validate-responsive-safety.mjs",
+    "validate:responsive-safety": "node scripts/validate-responsive-routes.mjs",
     "validate:final-branch-salvage-audit": "node scripts/validate-final-branch-salvage-audit.mjs",
     "validate:data-intel-compliance-ui": "node scripts/validate-data-intel-compliance-ui.mjs",
     "validate:final-mobile-cosmetic-pass": "node scripts/validate-final-mobile-cosmetic-pass.mjs",
@@ -52,6 +52,8 @@
     "validate:regulated-public-claims": "node scripts/validate-regulated-public-claims.mjs",
     "validate:revenue-stream-engine": "node scripts/validate-revenue-stream-engine.mjs",
     "validate:trust-network-intelligence": "node scripts/validate-trust-network-intelligence.mjs"
+    "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs"
+    "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -105,12 +107,9 @@
     "react-day-picker": "9.13.2",
     "react-dom": "^19",
     "react-hook-form": "^7.54.1",
-    "react-leaflet": "^5.0.0",
-    "react-resizable-panels": "^2.1.7",
-    "recharts": "2.15.0",
     "resend": "^6.12.2",
     "sonner": "^1.7.1",
-    "\u0073tripe": "^16.12.0",
+    "stripe": "^16.12.0",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",

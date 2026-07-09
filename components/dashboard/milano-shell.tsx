@@ -100,6 +100,7 @@ const NAV_GROUPS: {
   {
     group: "System",
     items: [
+      { href: "/dashboard/government", label: "Government", icon: Scale },
       { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
       { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
       { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
