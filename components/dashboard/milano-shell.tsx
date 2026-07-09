@@ -36,48 +36,13 @@ import {
   PlayCircle,
   AlertOctagon,
   ScrollText,
-  Percent,
-  SearchCheck,
-  Network,
-} from "lucide-react";
-
-const NAV = [
-  { href: "/dashboard/admin", label: "Execution Intelligence", icon: ShieldAlert },
-  { href: "/dashboard", label: "Matter Control", icon: LayoutDashboard },
-  { href: "/dashboard/command-center", label: "Command Center", icon: Activity },
-  { href: "/dashboard/discounts", label: "Discount Control", icon: Percent },
-  { href: "/dashboard/referrals", label: "Referral Intelligence", icon: Network },
-  { href: "/dashboard/seo-authority", label: "SEO Authority", icon: SearchCheck },
-  { href: "/dashboard/compliance-atlas", label: "Compliance Atlas", icon: Globe2 },
-  { href: "/dashboard/operator-terminal", label: "Operator Terminal", icon: Terminal },
-  { href: "/dashboard/intelligence/sales-lab", label: "Sales Intelligence Lab", icon: TrendingUp },
-  { href: "/dashboard/intake", label: "Intake", icon: FilePlus2 },
-  { href: "/dashboard/deals", label: "Matters", icon: Briefcase },
-  { href: "/dashboard/pipeline", label: "Pipeline", icon: Kanban },
-  { href: "/dashboard/compliance", label: "Global Document Intelligence", icon: Globe2 },
-  { href: "/dashboard/invoices", label: "Invoice Studio", icon: Receipt },
-  { href: "/dashboard/admin/payments", label: "Payment Gate", icon: CreditCard },
-  { href: "/dashboard/admin/reconciliation", label: "Finance Reconciliation", icon: Scale },
-  { href: "/dashboard/follow-ups", label: "Follow-ups", icon: ListTodo },
-  { href: "/dashboard/terminal", label: "Operational Ledger", icon: Terminal },
-  { href: "/dashboard/intelligence/acquisition", label: "Acquisition Intel", icon: Target },
-  { href: "/dashboard/intelligence/revenue", label: "Revenue Intel", icon: TrendingUp },
-  { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
-  { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
-  { href: "/dashboard/va", label: "VA Tasks", icon: ClipboardList },
-  { href: "/dashboard/courier", label: "Courier", icon: Truck },
-  { href: "/dashboard/tools", label: "Tools", icon: Wrench },
-  { href: "/dashboard/sops", label: "SOPs", icon: BookOpen },
-  { href: "/dashboard/docs/human-touch-trust-engine", label: "Trust Engine", icon: FileText },
-  { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
-  { href: "/dashboard/build-center", label: "Build Center", icon: Radio },
-  { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
-  { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
-  { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
-  { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
   BadgePercent,
   Sparkles,
+  SearchCheck,
+  Network,
+  Landmark,
 } from "lucide-react";
+
 
 // Grouped command-center navigation. Every existing route is preserved; only the
 // organization + a few labels change ("VA Tasks" -> "Execution Support"). The
@@ -122,12 +87,14 @@ const NAV_GROUPS: {
       { href: "/dashboard/intelligence/autopilot", label: "Autopilot", icon: Zap },
       { href: "/dashboard/intelligence/compliance", label: "Compliance Intel", icon: ShieldCheck },
       { href: "/dashboard/intelligence/sales-lab", label: "Sales Intelligence Lab", icon: Sparkles },
+      { href: "/dashboard/government-intelligence", label: "Government Intelligence", icon: Landmark },
     ],
   },
   {
     group: "Network",
     items: [
       { href: "/dashboard/va", label: "Execution Support", icon: ClipboardList },
+      { href: "/dashboard/alliance/intelligence-platform", label: "Trust Network", icon: Network },
     ],
   },
   {
