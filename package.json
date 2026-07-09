@@ -50,7 +50,8 @@
     "validate:translation-coordination": "node scripts/validate-translation-coordination.mjs",
     "validate:booking-intake-gates": "node scripts/validate-booking-intake-gates.mjs",
     "validate:regulated-public-claims": "node scripts/validate-regulated-public-claims.mjs",
-    "validate:revenue-stream-engine": "node scripts/validate-revenue-stream-engine.mjs"
+    "validate:revenue-stream-engine": "node scripts/validate-revenue-stream-engine.mjs",
+    "validate:trust-network-intelligence": "node scripts/validate-trust-network-intelligence.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

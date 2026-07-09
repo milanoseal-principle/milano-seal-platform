@@ -116,6 +116,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     group: "Core",
   },
   {
+    name: "Trust Network Intelligence",
+    route: "alliance/intelligence-platform",
+    icon: "Network",
+    description: "Partner Passport, trust progression, dispatch readiness, and Alliance intelligence graph",
+    group: "Core",
+  },
+  {
     name: "Government Intelligence",
     route: "government-intelligence",
     icon: "Landmark",
