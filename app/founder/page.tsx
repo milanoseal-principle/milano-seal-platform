@@ -150,6 +150,32 @@ export default function FounderPage() {
           </div>
         </section>
 
+
+        <section className="py-20 px-6 bg-[#050505] border-y border-[#2A2A2A]">
+          <div className="max-w-5xl mx-auto">
+            <p className="text-[#C6A55A] text-xs tracking-[0.08em] uppercase font-medium mb-4 text-center">
+              Revenue Architecture
+            </p>
+            <h2 className="font-serif text-3xl font-medium text-white mb-6 text-center">
+              Built around secure coordination, not volume claims
+            </h2>
+            <p className="max-w-3xl mx-auto text-center text-white/65 leading-relaxed">
+              The Milano Seal monetizes the coordination layer around Secure Records Intake, RON eligibility review, apostille/authentication routing, signer coordination, partner dispatch, International Courier Release, and Execution Chain Visibility for U.S. documents used abroad. Public positioning avoids guaranteed acceptance, guaranteed assignments, travel clearance, or legal advice claims.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6 mt-10">
+              {[
+                "Eligibility and pathway review",
+                "Payment-Gated Execution",
+                "Controlled Records release",
+              ].map((item) => (
+                <div key={item} className="rounded-xl border border-[#2A2A2A] bg-[#0A0A0A] p-5 text-center">
+                  <p className="text-[#C6A55A] text-sm">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Credentials */}
         <section className="py-20 px-6 bg-[#080808]">
           <div className="max-w-5xl mx-auto">
