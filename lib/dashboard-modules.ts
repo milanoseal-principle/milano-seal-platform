@@ -115,6 +115,13 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Global vertical opportunity engine — 22 B2B ecosystems",
     group: "Core",
   },
+  {
+    name: "Government",
+    route: "government",
+    icon: "Scale",
+    description: "Government & public-sector document execution vertical — CRM, procurement, bid/no-bid",
+    group: "Core",
+  },
   // ── PIPELINE ─────────────────────────────────────────────────────────────
   {
     name: "Leads",
