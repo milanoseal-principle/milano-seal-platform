@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
 import { GovernmentCommandCenter } from "@/components/dashboard/government/GovernmentCommandCenter";
+import { ProcurementCommandCenter } from "@/components/dashboard/government/ProcurementCommandCenter";
 import { GovernmentCRMBoard } from "@/components/dashboard/government/GovernmentCRMBoard";
 import { ProcurementOpportunityBoard } from "@/components/dashboard/government/ProcurementOpportunityBoard";
 import { VendorRegistrationTracker } from "@/components/dashboard/government/VendorRegistrationTracker";
@@ -91,6 +92,7 @@ export default async function GovernmentDashboardPage() {
         governmentRevenue={0}
         governmentClients={0}
       />
+      <ProcurementCommandCenter />
       <GovernmentCRMBoard records={SAMPLE_CRM} />
       <ProcurementOpportunityBoard opportunities={SAMPLE_OPPS} />
       <VendorRegistrationTracker registrations={SAMPLE_REGISTRATIONS} />

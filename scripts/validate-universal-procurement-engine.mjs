@@ -97,6 +97,71 @@ check(!protectedImport.test(proc) && !/service_role/.test(proc),
   "no protected-system imports in procurement modules",
   "procurement modules must not import protected systems");
 
+// ── Dashboard wiring (existing route, no third dashboard) ──
+const govPage = read("app/dashboard/government/page.tsx");
+check(/ProcurementCommandCenter/.test(govPage),
+  "Government dashboard renders Procurement Command Center",
+  "Government dashboard must render the Procurement Command Center");
+check(existsSync("components/dashboard/government/ProcurementCommandCenter.tsx"),
+  "Procurement Command Center component exists",
+  "ProcurementCommandCenter component missing");
+check(!existsSync("app/dashboard/procurement/page.tsx") && !existsSync("app/dashboard/government-procurement/page.tsx"),
+  "no third/parallel government dashboard route",
+  "must not add a parallel government dashboard route");
+
+// ── Command center: real Pinellas render + honest empty states + labels ──
+const cc = read("components/dashboard/government/ProcurementCommandCenter.tsx");
+check(/PINELLAS_ITQ_250786/.test(cc) && /Submitted · Not Awarded/.test(cc),
+  "command center renders real Pinellas record as Submitted · Not Awarded",
+  "command center must render Pinellas as Submitted · Not Awarded");
+check(/No verified opportunities recorded|No active contracts|No reference consent confirmed/.test(cc),
+  "command center shows honest empty states",
+  "command center must show honest empty states");
+check(/Real data/.test(cc),
+  "command center labels real vs sample data",
+  "command center must label real vs sample data");
+check(/select|<select/.test(cc) && /flex-wrap/.test(cc),
+  "command center tabs are responsive (mobile select + wrapping)",
+  "command center tabs must be responsive");
+
+// ── Operator actions use shared shape + dedup ──
+const acts = read("lib/procurement/procurementOperatorActions.ts");
+check(/deduplicateActions/.test(acts) && /record_award/.test(acts),
+  "procurement operator actions include dedup + full action set",
+  "procurement operator actions incomplete");
+
+// ── Tests present ──
+for (const p of [
+  "tests/unit/procurementSafety.test.ts",
+  "tests/unit/procurementProposalAssembler.test.ts",
+  "tests/integration/pinellasSubmissionRecord.test.ts",
+  "tests/integration/procurementAwardEvidenceGate.test.ts",
+  "tests/integration/procurementReferenceInsurance.test.ts",
+  "tests/integration/procurementOperatorActions.test.ts",
+]) {
+  check(existsSync(p), `test present: ${p}`, `MISSING test: ${p}`);
+}
+
+// ── SOP docs present + airport safety language ──
+for (const p of [
+  "docs/procurement/PROCUREMENT_OPERATOR_SOP.md",
+  "docs/procurement/BID_NO_BID_SOP.md",
+  "docs/procurement/COMPLIANCE_MATRIX_SOP.md",
+  "docs/procurement/PROPOSAL_ASSEMBLY_SOP.md",
+  "docs/procurement/REFERENCE_CONSENT_SOP.md",
+  "docs/procurement/INSURANCE_READINESS_SOP.md",
+  "docs/procurement/VENDOR_REGISTRATION_SOP.md",
+  "docs/procurement/SUBMISSION_AND_CONFIRMATION_SOP.md",
+  "docs/procurement/AWARD_AND_DEBRIEF_SOP.md",
+  "docs/procurement/AIRPORT_RELATIONSHIP_AND_SPONSORSHIP_PLAYBOOK.md",
+]) {
+  check(existsSync(p), `SOP present: ${p.split("/").pop()}`, `MISSING SOP: ${p}`);
+}
+const airport = read("docs/procurement/AIRPORT_RELATIONSHIP_AND_SPONSORSHIP_PLAYBOOK.md");
+check(/relationship first/i.test(airport) && /does \*\*not\*\* guarantee badging|does not guarantee badging/i.test(airport) && /never claim/i.test(airport),
+  "airport playbook enforces relationship-first, no-guarantee safety",
+  "airport playbook must enforce relationship-first / no-guarantee safety");
+
 // ── package.json valid ──
 try {
   JSON.parse(readFileSync("package.json", "utf8"));
