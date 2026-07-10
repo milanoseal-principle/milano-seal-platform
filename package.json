@@ -61,7 +61,8 @@
     "validate:canonical-foundation": "node scripts/validate-canonical-foundation.mjs",
     "validate:mini-atlas-intelligence-flow": "node scripts/validate-mini-atlas-intelligence-flow.mjs",
     "validate:trust-core-intelligence-engine": "node scripts/validate-trust-core-intelligence-engine.mjs",
-    "validate:universal-procurement-engine": "node scripts/validate-universal-procurement-engine.mjs"
+    "validate:universal-procurement-engine": "node scripts/validate-universal-procurement-engine.mjs",
+    "validate:maritime-logistics-execution": "node scripts/validate-maritime-logistics-execution.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
