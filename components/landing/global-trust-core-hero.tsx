@@ -208,8 +208,10 @@ export function GlobalTrustCoreHero() {
     left: "auto",
     bottom: "auto",
     width: "min(360px, calc(100vw - 24px))",
-    maxHeight: "calc(100dvh - var(--header-total-height) - 32px)",
+    maxHeight:
+      "calc(100dvh - var(--header-total-height) - var(--sa-top, 0px) - 32px)",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     zIndex: 60,
     pointerEvents: "auto",
   };
@@ -608,10 +610,18 @@ export function GlobalTrustCoreHero() {
              positioning so it never disturbs the globe's absolute layout. ──── */}
       {selectedDest && (
         <div
-          className="ms-destination-mobile-card md:hidden fixed inset-x-3 bottom-3 z-40 flex justify-center"
+          className="ms-destination-mobile-card md:hidden fixed inset-x-3 z-40 flex justify-center"
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative w-full max-w-[420px]">
+          <div
+            className="relative w-full max-w-[420px] overflow-y-auto"
+            style={{
+              maxHeight:
+                "calc(100dvh - var(--header-total-height) - var(--sa-top, 0px) - 1.5rem)",
+              overscrollBehavior: "contain",
+            }}
+          >
             <button
               onClick={() => setSelectedId(null)}
               aria-label="Close"
