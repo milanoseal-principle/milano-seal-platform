@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/**/*.test.ts",
+    "test": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:project": "npx tsx scripts/validate-project.ts",
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
@@ -62,7 +62,8 @@
     "validate:mini-atlas-intelligence-flow": "node scripts/validate-mini-atlas-intelligence-flow.mjs",
     "validate:trust-core-intelligence-engine": "node scripts/validate-trust-core-intelligence-engine.mjs",
     "validate:universal-procurement-engine": "node scripts/validate-universal-procurement-engine.mjs",
-    "validate:maritime-logistics-execution": "node scripts/validate-maritime-logistics-execution.mjs"
+    "validate:maritime-logistics-execution": "node scripts/validate-maritime-logistics-execution.mjs",
+    "validate:high-value-assets": "node scripts/validate-high-value-assets.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
