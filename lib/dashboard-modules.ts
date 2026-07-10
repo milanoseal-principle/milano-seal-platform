@@ -133,6 +133,34 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     description: "Government & public-sector document execution vertical — CRM, procurement, bid/no-bid",
     group: "Core",
   },
+  {
+    name: "Acquisition",
+    route: "acquisition",
+    icon: "Funnel",
+    description: "Client acquisition engine — lead scoring, dynamic CTAs, referral capture, abandoned intake, founder review",
+    group: "Core",
+  },
+  {
+    name: "Founder Command",
+    route: "founder",
+    icon: "TrendingUp",
+    description: "Founder OS — daily command, revenue review, follow-ups, pipelines, KPI review",
+    group: "Core",
+  },
+  {
+    name: "Jurisdictions",
+    route: "jurisdictions",
+    icon: "Globe",
+    description: "Global jurisdiction intelligence — Hague status, embassy/consulate, translation rules, manual-review flags",
+    group: "Core",
+  },
+  {
+    name: "Alliance Dispatch",
+    route: "dispatch",
+    icon: "Send",
+    description: "Alliance dispatch network — partner passport, trust score, coverage, dispatch queue, QA, payment queue",
+    group: "Core",
+  },
   // ── PIPELINE ─────────────────────────────────────────────────────────────
   {
     name: "Leads",
