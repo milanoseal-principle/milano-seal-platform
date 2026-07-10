@@ -91,3 +91,20 @@
 - All findings above require consumer migration + validation evidence before any removal (spec rule 3–5).
 
 **Next gated step (after review):** Phase 2–5 — canonical entity index, extend `CanonicalMatterObject`, and the `canonicalPricingGateway` + `matterStateAdapters`, each behind `@deprecated` shims so no existing consumer breaks.
+
+---
+
+# Phase 2–5 Decisions (implemented — additive only, nothing deleted)
+
+| Concept | Controlling decision | Adapter added | Deprecated (not deleted) | Consumers migrated |
+| --- | --- | --- | --- | --- |
+| Matter | `lib/platform/canonicalMatter.ts` — **extended** with optional fields | `lib/platform/entities/adapters.ts` (MatterCommandRecord → canonical) | MatterCommandRecord (still used where it is) | 0 (foundation only) |
+| Entities | `lib/platform/entities/index.ts` (single import surface) | ids/relationships/safety | — | 0 |
+| State machine | `lib/stateMachine.ts` remains controlling | `lib/platform/matterStateAdapters.ts` delegates to it; `matterStateSafety.ts` | command-center/status, conversion stages (via adapter) | 0 |
+| Pricing | `lib/pricing.ts` remains controlling | `lib/pricing/canonicalPricingGateway.ts` delegates `calculatePrice`; `pricingAdapters.ts`; `pricing/index.ts` | pricingIntelligence, config/pricing, smartIntakePricingEngine (marked @deprecated in index) | 0 |
+| Partner Passport | `lib/alliance/intelligence/partnerPassport.ts` **selected** | `lib/alliance/canonicalPartnerPassport.ts` (re-export) + `partnerPassportAdapters.ts` | `lib/dispatch/trustScore.ts`, `lib/platform/trustNetwork.ts` | 0 (all 3 had 0 importers) |
+| Country | `data/destinations` (presentation) + `compliance/countries` (authoritative) | `lib/jurisdictions/canonicalCountryAdapter.ts` (merge by ISO, preserve conflicts) | `jurisdictions/countryRegistry` → adapter layer | 0 |
+
+**Deletion eligibility remains FALSE for every item.** No consumer migrated in this pass; nothing removed. Deletion still requires: consumers migrated → validation proves unused → documented here.
+
+**Next migration sequence (future, gated):** (1) route new pricing consumers through `canonicalPricingGateway`; (2) wire dashboards to read canonical state via `normalizeMatterState`; (3) migrate the 0-consumer passport/trust duplicates first (lowest risk); (4) fold country sources through `canonicalCountryAdapter`. No Portal 2.0 live auth, no nav reorg, no deletion in this phase.

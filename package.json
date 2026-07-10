@@ -55,7 +55,8 @@
     "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
     "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",
-    "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs"
+    "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs",
+    "validate:canonical-foundation": "node scripts/validate-canonical-foundation.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
