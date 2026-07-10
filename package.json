@@ -54,7 +54,7 @@
     "validate:trust-network-intelligence": "node scripts/validate-trust-network-intelligence.mjs",
     "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
     "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
-    "validate:mobile-cinematic-hotfix": "node scripts/validate-mobile-cinematic-hotfix.mjs"
+    "validate:mobile-cinematic-hotfix": "node scripts/validate-mobile-cinematic-hotfix.mjs",
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",
     "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs",
     "validate:canonical-foundation": "node scripts/validate-canonical-foundation.mjs"
@@ -116,7 +116,7 @@
     "recharts": "2.15.0",
     "resend": "^6.12.2",
     "sonner": "^1.7.1",
-    "\u0073tripe": "^16.12.0",
+    "stripe": "^16.12.0",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",
