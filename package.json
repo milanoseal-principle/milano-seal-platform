@@ -59,7 +59,8 @@
     "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs",
     "validate:canonical-foundation": "node scripts/validate-canonical-foundation.mjs",
     "validate:mini-atlas-intelligence-flow": "node scripts/validate-mini-atlas-intelligence-flow.mjs",
-    "validate:trust-core-intelligence-engine": "node scripts/validate-trust-core-intelligence-engine.mjs"
+    "validate:trust-core-intelligence-engine": "node scripts/validate-trust-core-intelligence-engine.mjs",
+    "validate:universal-procurement-engine": "node scripts/validate-universal-procurement-engine.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
