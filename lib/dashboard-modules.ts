@@ -176,6 +176,10 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     route: "government-intelligence",
     icon: "Landmark",
     description: "Agency registry, procurement watch, relationship memory, and public-sector capability routing",
+    name: "Government",
+    route: "government",
+    icon: "Scale",
+    description: "Government & public-sector document execution vertical — CRM, procurement, bid/no-bid",
     group: "Core",
   },
   // ── PIPELINE ─────────────────────────────────────────────────────────────
