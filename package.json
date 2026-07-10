@@ -63,7 +63,8 @@
     "validate:trust-core-intelligence-engine": "node scripts/validate-trust-core-intelligence-engine.mjs",
     "validate:universal-procurement-engine": "node scripts/validate-universal-procurement-engine.mjs",
     "validate:maritime-logistics-execution": "node scripts/validate-maritime-logistics-execution.mjs",
-    "validate:high-value-assets": "node scripts/validate-high-value-assets.mjs"
+    "validate:high-value-assets": "node scripts/validate-high-value-assets.mjs",
+    "validate:unified-revenue-stack": "node scripts/validate-unified-revenue-stack.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
