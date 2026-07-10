@@ -28,11 +28,11 @@ const RAIL_B: { route: string; workflow: string }[] = [
 export function CredentialTicker() {
   return (
     <div
-      className="border-b border-[#D4AF37]/10 bg-black/60 overflow-hidden relative"
+      className="ms-credential-ticker border-b border-[#D4AF37]/10 bg-black/60 overflow-hidden relative max-w-full"
       aria-hidden="true"
     >
       {/* Rail A — operational signals, scrolls left */}
-      <div className="flex ticker-anim whitespace-nowrap py-1.5 relative">
+      <div className="ticker-anim flex w-max max-w-none whitespace-nowrap py-1.5 relative">
         {[...RAIL_A, ...RAIL_A].map((item, i) => (
           <span
             key={`a-${i}`}
@@ -63,7 +63,7 @@ export function CredentialTicker() {
       </div>
 
       {/* Rail B — corridor map, scrolls right */}
-      <div className="flex ticker-anim-reverse whitespace-nowrap py-1.5 relative">
+      <div className="ticker-anim-reverse flex w-max max-w-none whitespace-nowrap py-1.5 relative">
         {[...RAIL_B, ...RAIL_B].map((item, i) => (
           <span
             key={`b-${i}`}
