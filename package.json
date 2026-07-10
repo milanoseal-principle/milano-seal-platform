@@ -53,7 +53,7 @@
     "validate:revenue-stream-engine": "node scripts/validate-revenue-stream-engine.mjs",
     "validate:trust-network-intelligence": "node scripts/validate-trust-network-intelligence.mjs",
     "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
-    "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs"
+    "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",
     "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs"
   },
