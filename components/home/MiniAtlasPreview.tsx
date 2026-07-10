@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { setActiveCorridor } from "@/lib/homepage/activeCorridorStore";
 
 interface Props {
   selected: Destination;
@@ -77,6 +78,11 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
     setAnalyzing(true);
     const t = setTimeout(() => setAnalyzing(false), 850);
     return () => clearTimeout(t);
+  }, [selected.slug]);
+
+  // Publish the featured corridor so the Milano Trust Core engine can sync to it.
+  useEffect(() => {
+    setActiveCorridor(selected.slug);
   }, [selected.slug]);
 
   const pause = () => { pausedRef.current = true; };

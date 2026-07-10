@@ -1,30 +1,51 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
+import { DESTINATIONS } from "@/data/destinations";
+import {
+  subscribeActiveCorridor,
+  getActiveCorridorSnapshot,
+  getActiveCorridorServerSnapshot,
+} from "@/lib/homepage/activeCorridorStore";
 
+// The six review concepts, ordered as an illustrative verification sequence.
+// `step` is this concept's position in that sequence (0–5).
 const LEFT_PILLARS = [
   {
     icon: Shield,
     title: "Secure Intake",
     desc: "Verified identity & document stage. Every matter begins with structured scope confirmation.",
     href: "/intake",
+    step: 0,
   },
   {
     icon: Globe,
     title: "Global Document Intelligence",
     desc: "Destination rules, forms & authority requirements reviewed for your specific corridor.",
     href: "/countries",
+    step: 1,
   },
   {
     icon: Lock,
     title: "Payment-Gated Scheduling",
     desc: "No scheduling until scope & payment are confirmed. Your resources are reserved for your matter only.",
     href: "/process",
+    step: 2,
   },
+];
+
+// Ordered labels for the engine readout (matches the six pillars' `step`).
+const SEQUENCE_LABELS = [
+  "Secure Intake",
+  "Global Document Intelligence",
+  "Payment-Gated Scheduling",
+  "Chain-of-Custody Visibility",
+  "Apostille Coordination",
+  "International Release",
 ];
 
 
@@ -57,20 +78,30 @@ const RIGHT_PILLARS = [
     title: "Chain-of-Custody Visibility",
     desc: "Track every step from intake to release. Full custody record maintained throughout.",
     href: "/process",
+    step: 3,
   },
   {
     icon: FileCheck,
     title: "Apostille Coordination",
     desc: "Expert coordination for Hague Convention certification and consular legalization workflows.",
     href: "/services",
+    step: 4,
   },
   {
     icon: Send,
     title: "International Release",
     desc: "Secure release through approved courier methods and international delivery partners.",
     href: "/services",
+    step: 5,
   },
 ];
+
+// Resolve the active corridor to canonical data and a public route label.
+function routeLabelFor(hague: boolean, slug: string): string {
+  if (hague && slug !== "mexico") return "Hague Apostille Route";
+  if (slug === "uae") return "Consular Legalization Review";
+  return "Authentication Review";
+}
 
 // Orbiting custody nodes that ride the rings around the Trust Core medallion.
 // { angle°, radius px from center, dot size px, opacity }.
@@ -91,6 +122,7 @@ function Pillar({
   delay,
   inView,
   href,
+  active,
 }: {
   icon: React.ElementType;
   title: string;
@@ -99,6 +131,7 @@ function Pillar({
   delay: number;
   inView: boolean;
   href: string;
+  active?: boolean;
 }) {
   return (
     <motion.div
@@ -108,13 +141,30 @@ function Pillar({
     >
       <Link
         href={href}
+        aria-current={active ? "true" : undefined}
         className={`flex items-start gap-3 group ${align === "right" ? "flex-row-reverse text-right" : ""}`}
       >
-        <div className="w-8 h-8 rounded-lg border border-[var(--ms-gold)]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:border-[var(--ms-gold)]/40 transition-colors">
-          <Icon className="w-3.5 h-3.5 text-[var(--ms-gold)]/70 group-hover:text-[var(--ms-gold)] transition-colors" />
+        <div
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-500 ${
+            active
+              ? "border-[var(--ms-gold)]/70 bg-[var(--ms-gold)]/[0.1] shadow-[0_0_16px_rgba(198,165,90,0.25)]"
+              : "border-[var(--ms-gold)]/20 group-hover:border-[var(--ms-gold)]/40"
+          }`}
+        >
+          <Icon
+            className={`w-3.5 h-3.5 transition-colors duration-500 ${
+              active ? "text-[var(--ms-gold)]" : "text-[var(--ms-gold)]/70 group-hover:text-[var(--ms-gold)]"
+            }`}
+          />
         </div>
         <div className="min-w-0">
-          <h3 className="font-serif text-[#E8DCC0] text-[15px] font-medium mb-1 leading-snug group-hover:text-[var(--ms-gold)] transition-colors">{title}</h3>
+          <h3
+            className={`font-serif text-[15px] font-medium mb-1 leading-snug transition-colors duration-500 ${
+              active ? "text-[var(--ms-gold)]" : "text-[#E8DCC0] group-hover:text-[var(--ms-gold)]"
+            }`}
+          >
+            {title}
+          </h3>
           <p className="text-[#8A8A8A] text-[13px] leading-relaxed group-hover:text-[#9A9A9A] transition-colors">
             {desc}
           </p>
@@ -128,6 +178,41 @@ export function MilanoTrustCore() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
   const reduce = useReducedMotion() ?? false;
+
+  // ── Intelligence engine: sync to the active Mini Atlas corridor ──────────
+  const activeSlug = useSyncExternalStore(
+    subscribeActiveCorridor,
+    getActiveCorridorSnapshot,
+    getActiveCorridorServerSnapshot,
+  );
+  const activeDest =
+    DESTINATIONS.find((d) => d.slug === activeSlug) ?? DESTINATIONS[0];
+  const routeLabel = activeDest
+    ? routeLabelFor(activeDest.hague, activeDest.slug)
+    : "Hague Apostille Route";
+
+  // Illustrative verification sequence — lights each of the six review pillars
+  // in turn. This is a platform demonstration only; it performs no real-time
+  // document analysis and produces no scores, counts, or verification results.
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Restart the sequence whenever the featured corridor changes.
+  useEffect(() => {
+    setActiveStep(0);
+  }, [activeSlug]);
+
+  useEffect(() => {
+    if (reduce || !inView) return;
+    const id = setInterval(() => {
+      setActiveStep((s) => (s + 1) % SEQUENCE_LABELS.length);
+    }, 900);
+    return () => clearInterval(id);
+  }, [reduce, inView]);
+
+  // Under reduced motion, present the sequence as complete rather than animating.
+  const stepLabel = reduce
+    ? "Sequence reviewed"
+    : `Reviewing · ${SEQUENCE_LABELS[activeStep]}`;
 
   return (
     <motion.section
@@ -198,21 +283,41 @@ export function MilanoTrustCore() {
             <p className="mt-4 max-w-[34rem] text-base leading-7 text-white/62">
               International document matters require more than a signature. The Milano Seal coordinates intake, execution review, apostille or authentication routing, custody, and release through one controlled matter workflow.
             </p>
+
+            {/* Corridor context — synced to the Mini Atlas below */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 rounded-full border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.03] px-4 py-2">
+              {activeDest?.flag && <span className="text-sm leading-none">{activeDest.flag}</span>}
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/55">
+                Florida → {activeDest?.name}
+              </span>
+              <span className="text-[var(--ms-gold)]/30">·</span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/70">
+                {routeLabel}
+              </span>
+            </div>
+            <p className="mt-2 font-mono text-[8px] uppercase tracking-[0.16em] text-white/25">
+              Illustrative platform sequence · general information only
+            </p>
           </div>
 
           <div className="mt-8 grid gap-4">
             {MOBILE_TRUST_PRINCIPLES.map((principle, i) => {
               const Icon = principle.icon;
+              const activeMobile = !reduce && SEQUENCE_LABELS[activeStep] === principle.title;
               return (
                 <motion.div
                   key={principle.title}
                   initial={{ opacity: 0, y: 14 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.45, delay: 0.08 * i, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-start gap-3 rounded-2xl border border-[var(--ms-gold)]/15 bg-white/[0.025] p-4"
+                  className={`flex items-start gap-3 rounded-2xl border p-4 transition-all duration-500 ${
+                    activeMobile
+                      ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.06] shadow-[0_0_20px_rgba(198,165,90,0.15)]"
+                      : "border-[var(--ms-gold)]/15 bg-white/[0.025]"
+                  }`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.055]">
-                    <Icon className="h-4 w-4 text-[var(--ms-gold)]/80" />
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-500 ${activeMobile ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.12]" : "border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.055]"}`}>
+                    <Icon className={`h-4 w-4 transition-colors duration-500 ${activeMobile ? "text-[var(--ms-gold)]" : "text-[var(--ms-gold)]/80"}`} />
                   </div>
                   <div className="min-w-0 text-left">
                     <h3 className="text-[1.25rem] font-semibold leading-tight text-[#E8DCC0]">{principle.title}</h3>
@@ -234,11 +339,14 @@ export function MilanoTrustCore() {
             className="text-center mb-10"
           >
             <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
-              Our Platform Principles
+              Our Platform Intelligence
             </p>
-            <h2 className="font-serif text-3xl text-white font-normal mb-2 leading-tight">
-              Six Review Pillars
+            <h2 className="font-serif text-3xl text-white font-normal mb-1 leading-tight">
+              Milano Trust Core
             </h2>
+            <p className="font-mono text-[9px] tracking-[0.14em] uppercase text-white/40 mb-2">
+              Global Matter Intelligence Engine · Six Review Pillars
+            </p>
             <p className="text-white/50 text-sm leading-relaxed max-w-2xl mx-auto">
               International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
             </p>
@@ -249,7 +357,7 @@ export function MilanoTrustCore() {
             {/* Left pillars */}
             <div className="flex flex-col gap-7 pr-8">
               {LEFT_PILLARS.map((p, i) => (
-                <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} />
+                <Pillar key={p.title} {...p} align="left" delay={0.1 + 0.08 * i} inView={inView} active={!reduce && activeStep === p.step} />
               ))}
             </div>
 
@@ -449,10 +557,31 @@ export function MilanoTrustCore() {
             {/* Right pillars */}
             <div className="flex flex-col gap-7 pl-8">
               {RIGHT_PILLARS.map((p, i) => (
-                <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} />
+                <Pillar key={p.title} {...p} align="right" delay={0.1 + 0.08 * i} inView={inView} active={!reduce && activeStep === p.step} />
               ))}
             </div>
 
+          </div>
+
+          {/* Engine readout — corridor context + illustrative sequence state */}
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2.5 rounded-full border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.03] px-4 py-1.5">
+              {activeDest?.flag && <span className="text-sm leading-none">{activeDest.flag}</span>}
+              <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/55">
+                Florida → {activeDest?.name}
+              </span>
+              <span className="text-[var(--ms-gold)]/30">·</span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/70">
+                {routeLabel}
+              </span>
+              <span className="text-[var(--ms-gold)]/30">·</span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/45" aria-live="polite">
+                {stepLabel}
+              </span>
+            </div>
+            <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-white/25">
+              Illustrative platform sequence · general information only
+            </p>
           </div>
         </div>
       </div>
