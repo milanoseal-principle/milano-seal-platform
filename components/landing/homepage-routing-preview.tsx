@@ -3,9 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { DESTINATIONS, type Destination } from '@/data/destinations';
 import { buildHomeCorridor } from '@/lib/intelligence/homeCorridors';
-import { GlobalRouteGlobe } from '@/components/globe/GlobalRouteGlobe';
 import { DestinationIntelligenceCard } from '@/components/landing/destination-intelligence-card';
-import { MiniCorridorMapPreview } from '@/components/home/MiniCorridorMapPreview';
+import { MiniAtlasPreview } from '@/components/home/MiniAtlasPreview';
 import { HomeShippingCorridorPanel } from '@/components/home/HomeShippingCorridorPanel';
 import { ArrowRight, Route } from 'lucide-react';
 
@@ -51,26 +50,7 @@ export function HomepageRoutingPreview() {
           </Link>
         </div>
 
-        {/* Authority globe — compact teaser above the main routing panel */}
-        <div className="mb-6 hidden lg:flex items-center gap-6 rounded-xl border border-white/[0.05] bg-[#050507]/80 p-4 overflow-hidden">
-          <GlobalRouteGlobe selectedSlug={selected.slug} onSelectCountry={(slug) => { const d = DESTINATIONS.find(x => x.slug === slug); if (d) setSelected(d); }} className="flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="font-mono text-[8px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/55 mb-2">Global Authority Network</p>
-            <p className="font-serif text-white/80 text-base leading-snug mb-3">
-              Click any country on the globe to explore its apostille corridor.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/map" className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--ms-gold)] border-b border-[var(--ms-gold)]/30 pb-0.5 hover:border-[var(--ms-gold)] transition-colors">
-                Open Full Atlas <ArrowRight className="w-3 h-3" />
-              </Link>
-              <Link href="/countries" className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white/40 border-b border-white/10 pb-0.5 hover:text-white/60 hover:border-white/20 transition-colors">
-                Country Directory <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid overflow-hidden rounded-2xl border border-white/[0.07] bg-[#08080A]/90 shadow-[0_30px_90px_rgba(0,0,0,0.45)] lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#08080A]/90 shadow-[0_30px_90px_rgba(0,0,0,0.45)] lg:grid-cols-2">
           <div className="space-y-6 border-b border-white/[0.06] p-5 sm:p-6 lg:border-b-0 lg:border-r">
             <div>
               <div className="mb-5 flex items-center justify-between">
@@ -119,7 +99,7 @@ export function HomepageRoutingPreview() {
               </div>
             </div>
 
-            <MiniCorridorMapPreview corridor={corridor} />
+            <MiniAtlasPreview selected={selected} onSelect={setSelected} />
           </div>
 
           <div className="space-y-6 p-5 sm:p-6 lg:p-8">
