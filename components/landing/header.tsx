@@ -50,6 +50,7 @@ export function Header() {
                   aria-hidden="true"
                   width={64}
                   height={64}
+                  className="ms-logo-shimmer"
                   style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(56px, 6vw, 72px)", height: "clamp(56px, 6vw, 72px)" }}
                 />
                 <span className="flex flex-col leading-none">

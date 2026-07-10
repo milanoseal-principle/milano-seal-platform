@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import Link from "next/link";
 import {
   FLORIDA_ORIGIN,
   type HomeExecutionCorridor,
@@ -68,17 +69,17 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
   const accent = hague ? "var(--ms-gold)" : "#E0876E";
 
   return (
-    <div className="rounded-xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4">
+    <div className="rounded-2xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4 sm:p-5 ms-atlas-corridor-preview">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">
-          Route Map
+        <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--ms-gold)]/75">
+          Atlas Corridor Preview
         </p>
         <span className="text-lg leading-none">{corridor.flag}</span>
       </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full rounded-lg border border-[var(--ms-gold)]/10"
+        className="h-[170px] max-h-[210px] min-h-[170px] w-full rounded-lg border border-[var(--ms-gold)]/10 sm:h-auto sm:max-h-none"
         role="img"
         aria-label={`Corridor map from Florida to ${corridor.country}`}
       >
@@ -202,19 +203,24 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
         )}
       </svg>
 
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 grid gap-3 sm:flex sm:items-center sm:justify-between">
         <span className="text-xs text-white/60">
           Florida → {corridor.country}
         </span>
-        {hague ? (
-          <span className="rounded-full border border-[var(--ms-gold)]/40 bg-[var(--ms-gold)]/[0.08] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]">
-            Hague Route
-          </span>
-        ) : (
-          <span className="rounded-full border border-[#C0563E]/40 bg-[#C0563E]/[0.1] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#E0876E]">
-            Consular Review
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {hague ? (
+            <span className="rounded-full border border-[var(--ms-gold)]/40 bg-[var(--ms-gold)]/[0.08] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]">
+              Hague Route
+            </span>
+          ) : (
+            <span className="rounded-full border border-[#C0563E]/40 bg-[#C0563E]/[0.1] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#E0876E]">
+              Consular Review
+            </span>
+          )}
+          <Link href="/map" className="rounded-full border border-[var(--ms-gold)]/35 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--ms-gold)]">
+            Open Atlas
+          </Link>
+        </div>
       </div>
     </div>
   );

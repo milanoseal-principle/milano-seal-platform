@@ -88,8 +88,8 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
     <div
       className="fixed z-50 font-mono select-none"
       style={{
-        bottom: "max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom)))",
-        right: "max(1.5rem, calc(1.5rem + env(safe-area-inset-right)))",
+        bottom: "calc(env(safe-area-inset-bottom) + 86px)",
+        right: "16px",
       }}
     >
       <style>{`@keyframes ms-goldPulse{0%,100%{opacity:.78}50%{opacity:1}}@media(prefers-reduced-motion:reduce){.ms-ai-orb{animation:none!important}}`}</style>
@@ -161,6 +161,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             style={{
               width: "min(380px, calc(100vw - 2rem))",
+              maxHeight: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 7rem)",
               WebkitBackdropFilter: "blur(40px)",
             }}
             className="bg-[#050507]/85 backdrop-blur-[40px] border border-zinc-800 rounded-sm overflow-hidden shadow-[0_32px_80px_-15px_rgba(0,0,0,0.97)] relative flex flex-col"
