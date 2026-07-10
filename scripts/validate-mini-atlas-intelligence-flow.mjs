@@ -68,9 +68,18 @@ if (existsSync(previewPath)) {
 if (existsSync(miniPath)) {
   const mini = readFileSync(miniPath, "utf8");
 
-  check(/GlobalIntelMapInteractive/.test(mini),
-    "Mini Atlas reuses canonical GlobalIntelMapInteractive",
-    "Mini Atlas must reuse the canonical GlobalIntelMapInteractive component");
+  // The Mini Atlas must NOT embed the heavy full Atlas map — it teases it.
+  check(!/GlobalIntelMapInteractive|react-leaflet|MapContainer/.test(mini),
+    "Mini Atlas does not embed the full Leaflet Atlas (teases, not clones)",
+    "Mini Atlas must not embed the full Leaflet Atlas — keep it a lightweight HUD");
+
+  check(/Global Execution Network/i.test(mini),
+    "Mini Atlas is a Global Execution Network command widget",
+    "Mini Atlas should present as a Global Execution Network widget");
+
+  check(/animate|animateMotion|animateTransform/.test(mini),
+    "Mini Atlas is animated (living corridor)",
+    "Mini Atlas must be animated");
 
   check(/DESTINATIONS/.test(mini),
     "Mini Atlas uses canonical DESTINATIONS data",
