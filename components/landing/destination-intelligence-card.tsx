@@ -292,7 +292,7 @@ export function DestinationIntelligenceCard({
         className={compact ? "mt-2" : "mt-3"}
       />
 
-      <div className={`grid grid-cols-1 ${compact ? "mt-3 gap-2 sm:flex" : "mt-4 gap-3 min-[480px]:grid-cols-2"}`}>
+      <div className={`grid ${compact ? "mt-3 grid-cols-2 gap-2" : "mt-4 grid-cols-1 gap-3 min-[480px]:grid-cols-2"}`}>
         <Link
           href={intakeHref}
           onClick={onPrimaryAction}
