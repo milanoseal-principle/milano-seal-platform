@@ -69,7 +69,9 @@
     "validate:vertical-intelligence-commercial-os": "node scripts/validate-vertical-intelligence-commercial-os.mjs",
     "validate:relationship-intelligence-layer": "node scripts/validate-relationship-intelligence-layer.mjs",
     "validate:trusted-integration-command": "node scripts/validate-trusted-integration-command.mjs",
-    "check:integration-configuration": "node scripts/check-integration-configuration.mjs"
+    "check:integration-configuration": "node scripts/check-integration-configuration.mjs",
+    "validate:milano-pre-execution": "node scripts/validate-milano-pre-execution.mjs",
+    "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
