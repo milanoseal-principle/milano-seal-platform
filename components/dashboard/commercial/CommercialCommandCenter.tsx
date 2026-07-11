@@ -10,8 +10,9 @@ import { useState } from "react";
 import { VERTICAL_REGISTRY } from "@/lib/vertical-intelligence/verticalRegistry";
 import { listRealCommercialAccounts, totalRealAccountRevenue } from "@/lib/commercial-accounts/accountRegistry";
 import { FORECAST_LABEL } from "@/lib/vertical-intelligence/verticalIntelligenceSafety";
+import { TARGET_ORGANIZATIONS } from "@/data/commercial/targetOrganizations";
 
-const SECTIONS = ["Today", "Verticals", "Accounts", "Relationships", "Forecast"] as const;
+const SECTIONS = ["Today", "Targets", "Verticals", "Accounts", "Relationships", "Forecast"] as const;
 type Section = (typeof SECTIONS)[number];
 
 function Empty({ label }: { label: string }) {
@@ -70,6 +71,27 @@ export function CommercialCommandCenter() {
 
       <div className="min-h-[180px]">
         {active === "Today" && <Empty label="No commercial actions recorded" />}
+        {active === "Targets" && (
+          <div className="grid gap-1.5">
+            <div className="mb-1 flex items-center justify-between">
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">
+                {TARGET_ORGANIZATIONS.length} target organizations · stage: target identified
+              </p>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-emerald-300/80">Real data</span>
+            </div>
+            {TARGET_ORGANIZATIONS.map((t) => (
+              <div key={t.id} className="flex flex-col gap-0.5 rounded-lg border border-white/[0.055] bg-white/[0.015] px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-[12px] text-white/75">{t.organizationName}</span>
+                <span className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/35">
+                  {t.segment.replace(/_/g, " ")}{t.cityState ? ` · ${t.cityState}` : ""} · verify contact
+                </span>
+              </div>
+            ))}
+            <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.14em] text-white/25">
+              Public firmographic data only · no contacts, touchpoints, or relationships recorded
+            </p>
+          </div>
+        )}
         {active === "Accounts" && (realAccounts.length === 0 ? <Empty label="No active commercial accounts (no paid evidence yet)" /> : null)}
         {active === "Relationships" && <Empty label="No documented interactions recorded" />}
         {active === "Forecast" && (
