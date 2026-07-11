@@ -62,6 +62,31 @@ check(!existsSync("lib/integration-command/paymentGate.ts") && !existsSync("lib/
   "no duplicate payment/release/custody gate introduced",
   "must not introduce duplicate protected gates");
 
+// ── Read model + role command UIs (increment 2) ──
+const rm = read("lib/integration-command/integrationReadModel.ts");
+if (rm) {
+  check(!/from\s+["'][^"']*(stripe|shippo|bluenotary|wise|supabase)/i.test(rm),
+    "read model imports no provider SDK",
+    "read model must not import provider SDKs");
+  check(/configured ≠ healthy|configured\s*\?\s*"configured"/.test(rm) || /health:\s*configured\s*\?\s*"configured"/.test(rm),
+    "read model health is evidence-based (configured is not healthy)",
+    "read model must keep configured distinct from healthy");
+}
+for (const p of [
+  "app/dashboard/founder/integrations/page.tsx",
+  "app/dashboard/operations/integrations/page.tsx",
+  "app/dashboard/va/command/page.tsx",
+  "app/alliance/command/page.tsx",
+  "app/dashboard/system/integrations/page.tsx",
+  "components/integrations/RoleIntegrationCommand.tsx",
+  "components/integrations/health/IntegrationHealthGrid.tsx",
+]) if (existsSync(p)) ok.push(`route/component present: ${p}`); else errors.push(`MISSING: ${p}`);
+
+const grid = read("components/integrations/health/IntegrationHealthGrid.tsx");
+if (grid) check(/STATE_LABEL/.test(grid),
+  "health grid conveys state by text (not colour alone)",
+  "health grid must convey state by text, not colour alone");
+
 try { JSON.parse(readFileSync("package.json", "utf8")); ok.push("package.json valid"); }
 catch { errors.push("package.json invalid JSON"); }
 
