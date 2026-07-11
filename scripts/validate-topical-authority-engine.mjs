@@ -75,6 +75,22 @@ check(!/from\s+["'][^"']*(stripe|shippo|bluenotary|wise-|supabase)/i.test(lib) &
   "no protected-system imports",
   "must not import protected systems");
 
+// ── Programmatic indexation gate (extends the engine; prevents thin pages) ──
+const qual = read("lib/topical-authority/programmatic/pageQualityScore.ts");
+const elig = read("lib/topical-authority/programmatic/pageEligibility.ts");
+check(qual !== "" && elig !== "",
+  "programmatic page-quality + indexation gate present",
+  "programmatic indexation gate required");
+check(/thin content/.test(qual) && /no verified authority source/.test(qual) && /duplicate primary intent/.test(qual),
+  "quality gate blocks thin / unsourced / duplicate-intent pages",
+  "quality gate must block thin/unsourced/duplicate pages");
+check(/approved_indexable/.test(elig) && /inSitemap/.test(elig) && /operatorApproved/.test(elig),
+  "only approved-indexable, operator-approved pages enter the sitemap",
+  "indexation must gate sitemap on approval");
+check(/containsBannedContentClaim/.test(qual),
+  "quality gate reuses existing content-safety guard (no duplicate)",
+  "quality gate must reuse existing content safety");
+
 try { JSON.parse(readFileSync("package.json", "utf8")); ok.push("package.json valid"); }
 catch { errors.push("package.json invalid JSON"); }
 
