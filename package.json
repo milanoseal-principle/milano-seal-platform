@@ -67,7 +67,9 @@
     "validate:unified-revenue-stack": "node scripts/validate-unified-revenue-stack.mjs",
     "validate:topical-authority-engine": "node scripts/validate-topical-authority-engine.mjs",
     "validate:vertical-intelligence-commercial-os": "node scripts/validate-vertical-intelligence-commercial-os.mjs",
-    "validate:relationship-intelligence-layer": "node scripts/validate-relationship-intelligence-layer.mjs"
+    "validate:relationship-intelligence-layer": "node scripts/validate-relationship-intelligence-layer.mjs",
+    "validate:trusted-integration-command": "node scripts/validate-trusted-integration-command.mjs",
+    "check:integration-configuration": "node scripts/check-integration-configuration.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
