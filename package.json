@@ -73,7 +73,8 @@
     "validate:trusted-integration-command": "node scripts/validate-trusted-integration-command.mjs",
     "check:integration-configuration": "node scripts/check-integration-configuration.mjs",
     "validate:milano-pre-execution": "node scripts/validate-milano-pre-execution.mjs",
-    "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts"
+    "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts",
+    "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
