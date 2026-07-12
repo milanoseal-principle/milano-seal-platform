@@ -176,6 +176,9 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     route: "government-intelligence",
     icon: "Landmark",
     description: "Agency registry, procurement watch, relationship memory, and public-sector capability routing",
+    group: "Core",
+  },
+  {
     name: "Government",
     route: "government",
     icon: "Scale",
