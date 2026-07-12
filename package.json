@@ -49,7 +49,14 @@
     "validate:apostille-authentication-rules": "node scripts/validate-apostille-authentication-rules.mjs",
     "validate:translation-coordination": "node scripts/validate-translation-coordination.mjs",
     "validate:booking-intake-gates": "node scripts/validate-booking-intake-gates.mjs",
-    "validate:regulated-public-claims": "node scripts/validate-regulated-public-claims.mjs"
+    "validate:regulated-public-claims": "node scripts/validate-regulated-public-claims.mjs",
+    "validate:revenue-stream-engine": "node scripts/validate-revenue-stream-engine.mjs",
+    "validate:trust-network-intelligence": "node scripts/validate-trust-network-intelligence.mjs",
+    "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
+    "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
+    "validate:mobile-cinematic-hotfix": "node scripts/validate-mobile-cinematic-hotfix.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "validate:complimentary-matter-flow": "node scripts/validate-complimentary-matter-flow.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -108,7 +115,7 @@
     "recharts": "2.15.0",
     "resend": "^6.12.2",
     "sonner": "^1.7.1",
-    "\u0073tripe": "^16.12.0",
+    "stripe": "^16.12.0",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(
@@ -18,14 +18,14 @@ export async function POST(
     if (!deal)
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
 
-    try {
-      assertPaymentConfirmed(deal, "schedule");
-    } catch (err) {
-      const code = err instanceof PaymentGateError ? err.code : "PAYMENT_REQUIRED";
+    const schedulingGate = evaluateSchedulingGate({ matter: deal });
+    if (!schedulingGate.schedulingEligible) {
       return NextResponse.json(
         {
-          error: code,
-          message: "Payment must be confirmed before scheduling can begin.",
+          error: "PAYMENT_REQUIRED",
+          paymentRequirementSatisfied: schedulingGate.paymentRequirementSatisfied,
+          paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
+          message: "Verified payment or an active Complimentary Authorization is required before scheduling can begin.",
         },
         { status: 402 }
       );
@@ -53,7 +53,7 @@ export async function POST(
         detail: body.execution_date
           ? `Scheduled for ${body.execution_date}`
           : "Marked scheduled",
-        meta: { execution_date: body.execution_date ?? null },
+        meta: { execution_date: body.execution_date ?? null, payment_requirement_method: schedulingGate.paymentRequirementMethod },
       });
     })();
 

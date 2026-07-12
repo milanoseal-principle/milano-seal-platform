@@ -1,0 +1,3 @@
+import type { AgencyProfile } from "./agencyRegistry";
+export interface OpportunityPrediction { agencyId: string; signal: "Likely Renewal" | "Upcoming Expiration" | "Seasonal Buying" | "Emergency Event" | "Disaster Procurement" | "Budget Cycle" | "Capital Project" | "Professional Services"; confidence: "Low" | "Medium" | "High"; rationale: string; nextAction: string; }
+export function predictAgencyOpportunities(agency: AgencyProfile): OpportunityPrediction[] { return [{ agencyId: agency.id, signal: "Budget Cycle", confidence: "Medium", rationale: `${agency.agency} should be monitored through official budget and procurement calendars before any bid decision.`, nextAction: "Verify portal registration requirements and add official procurement calendar dates." }]; }
