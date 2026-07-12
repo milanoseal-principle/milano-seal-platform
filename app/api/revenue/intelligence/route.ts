@@ -16,7 +16,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const role = ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
   if (!["founder_admin", "admin_operator"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
