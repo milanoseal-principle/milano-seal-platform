@@ -72,30 +72,6 @@ const MOBILE_TRUST_PRINCIPLES = [
   },
 ];
 
-
-const MOBILE_TRUST_PRINCIPLES = [
-  {
-    icon: Shield,
-    title: "Secure Intake",
-    desc: "Every matter begins with structured scope and document review.",
-  },
-  {
-    icon: Globe,
-    title: "Global Document Intelligence",
-    desc: "Destination and receiving-authority requirements are reviewed for the specific corridor.",
-  },
-  {
-    icon: Lock,
-    title: "Payment-Gated Scheduling",
-    desc: "Scheduling remains locked until scope and payment are confirmed.",
-  },
-  {
-    icon: Eye,
-    title: "Chain-of-Custody Visibility",
-    desc: "Key document and delivery milestones remain visible from intake through release.",
-  },
-];
-
 const RIGHT_PILLARS = [
   {
     icon: Eye,
@@ -334,10 +310,6 @@ export function MilanoTrustCore() {
                   initial={{ opacity: 0, y: 14 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.45, delay: 0.08 * i, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-start gap-3 rounded-2xl border border-[var(--ms-gold)]/15 bg-white/[0.025] p-4"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.055]">
-                    <Icon className="h-4 w-4 text-[var(--ms-gold)]/80" />
                   className={`flex items-start gap-3 rounded-2xl border p-4 transition-all duration-500 ${
                     activeMobile
                       ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.06] shadow-[0_0_20px_rgba(198,165,90,0.15)]"
