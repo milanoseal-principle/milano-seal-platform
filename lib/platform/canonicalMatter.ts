@@ -33,6 +33,82 @@ export interface CanonicalMatterObject {
   governmentContractId?: string;
   revenueId?: string;
   kpiIds: string[];
+
+  // ── Unification Phase 3 extensions (ALL OPTIONAL — additive, non-breaking) ──
+  // IDENTITY
+  reference?: string;
+  state?: string; // canonical state — normalize via matterStateAdapters
+  substate?: string;
+  urgency?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // CLIENT
+  contactId?: string;
+  clientType?: string;
+  referralSourceId?: string;
+  // JURISDICTION
+  documentOriginJurisdictionId?: string;
+  signerLocation?: string;
+  destinationCountryId?: string;
+  receivingAuthorityId?: string;
+  hagueStatusReference?: string;
+  manualReviewFlags?: string[];
+  // EXECUTION
+  ronEligibility?: boolean | "unknown";
+  fieldAvailability?: boolean | "unknown";
+  hybridEligibility?: boolean | "unknown";
+  witnessRequirement?: boolean | "unknown";
+  translatorRequirement?: boolean | "unknown";
+  executionAppointment?: string | null;
+  assignedOperatorId?: string;
+  assignedPartnerId?: string;
+  // COMMERCIAL
+  quotedValue?: number | null;
+  paidValue?: number | null;
+  paymentStatus?: string;
+  paymentReference?: string;
+  schedulingUnlocked?: boolean;
+  // DOCUMENTS
+  documentFamily?: string;
+  requiredSignatures?: number | null;
+  notarialCertificateRequirements?: string[];
+  // QA
+  qaRecordIds?: string[];
+  identifierVerificationStatus?: string;
+  signerReadiness?: string;
+  witnessReadiness?: string;
+  apostillePacketReadiness?: string;
+  courierReadiness?: string;
+  blockerIds?: string[];
+  qaComplete?: boolean;
+  // FULFILLMENT
+  ronSessionStatus?: string;
+  apostilleStatus?: string;
+  translationStatus?: string;
+  custodyEventIds?: string[];
+  deliveryStatus?: string;
+  releaseEligible?: boolean | "unknown"; // read from approved release gate only
+  releaseStatus?: string;
+  // PORTAL
+  portalAccessId?: string;
+  clientActionRequired?: boolean;
+  clientVisibleStatus?: string;
+  clientVisibleTimeline?: string[];
+  // OPERATIONS
+  operatorActionIds?: string[];
+  governmentOpportunityId?: string;
+  governmentSubmissionId?: string;
+  revenueEventIds?: string[];
+  intelligenceNodeIds?: string[];
+  sopUpdateIds?: string[];
+  // METADATA (canonical common fields)
+  source?: string;
+  sourceRecordId?: string;
+  environment?: string;
+  isSample?: boolean;
+  dataClassification?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export const CANONICAL_MATTER_FIELDS: (keyof CanonicalMatterObject)[] = [
