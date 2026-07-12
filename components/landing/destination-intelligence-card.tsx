@@ -230,6 +230,7 @@ export function DestinationIntelligenceCard({
         </p>
       </div>
 
+      <p className={`${compact ? "text-[13px]" : "text-base"} mt-3 leading-7 text-white/58 sm:text-sm sm:leading-relaxed`}>
       <p className={`${compact ? "mt-2 text-[12.5px] leading-5" : "mt-3 text-base leading-7"} text-white/58 sm:text-sm sm:leading-relaxed`}>
         {data.summary}
       </p>
@@ -247,6 +248,11 @@ export function DestinationIntelligenceCard({
       </div>
 
       {!directory && (
+        <div className={`mt-4 grid ${compact || uaeCard ? "gap-2" : "gap-2 sm:grid-cols-3"}`}>
+          {data.pathPreview.map((step, index) => (
+            <div
+              key={step}
+              className="flex min-h-12 items-center gap-2 rounded-lg border border-white/[0.055] bg-white/[0.015] px-4 py-3"
         <div className={`${compact ? "mt-3" : "mt-4"} grid ${compact || uaeCard ? "gap-1.5" : "gap-2 sm:grid-cols-3"}`}>
           {data.pathPreview
             .slice(0, compact ? 4 : data.pathPreview.length)
@@ -258,6 +264,7 @@ export function DestinationIntelligenceCard({
               <span className="font-mono text-[8px] text-[var(--ms-gold)]/65">
                 {String(index + 1).padStart(2, "0")}
               </span>
+              <span className="text-sm leading-5 text-white/52 sm:text-[9px] sm:leading-4">{step}</span>
               <span className={`text-white/52 ${compact ? "text-[11px] leading-4" : "text-sm leading-5 sm:text-[9px] sm:leading-4"}`}>{step}</span>
             </div>
           ))}
@@ -292,6 +299,7 @@ export function DestinationIntelligenceCard({
         className={compact ? "mt-2" : "mt-3"}
       />
 
+      <div className={`mt-4 grid grid-cols-1 gap-3 ${compact ? "sm:flex sm:gap-2" : "min-[480px]:grid-cols-2"}`}>
       <div className={`grid ${compact ? "mt-3 grid-cols-2 gap-2" : "mt-4 grid-cols-1 gap-3 min-[480px]:grid-cols-2"}`}>
         <Link
           href={intakeHref}
