@@ -8,7 +8,7 @@ async function requireDashboardRole() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const role = ((user.app_metadata?.role ?? user.user_metadata?.role) as string) ?? "";
+  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
   const allowed = new Set(["founder", "founder_admin", "admin", "admin_operator", "ops_manager"]);
   return allowed.has(role) ? { user, role } : null;
 }

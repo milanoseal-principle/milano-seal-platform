@@ -12,7 +12,7 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const role = ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
   if (!isVARole(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const admin = createAdminClient();

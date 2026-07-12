@@ -1,11 +1,28 @@
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// A disabled account (soft-disable flag in service-role-controlled app_metadata,
+// complementing Supabase's native ban) resolves to NO role, so every guard
+// blocks it exactly like a missing role.
+export function isAccountDisabled(user: User | null | undefined): boolean {
+  return user?.app_metadata?.disabled === true;
+}
+
 function metadataRole(user: User | null | undefined): string {
   if (!user) return "";
+  if (isAccountDisabled(user)) return "";
 
   const appRole = user.app_metadata?.role;
   return typeof appRole === "string" ? appRole.trim() : "";
+}
+
+/**
+ * Canonical synchronous role read from the VALIDATED session user.
+ * Reads ONLY `app_metadata.role` (service-role controlled). `user_metadata`
+ * is user-writable and must never be consulted for authorization.
+ */
+export function readAppRole(user: User | null | undefined): string {
+  return metadataRole(user);
 }
 
 /**

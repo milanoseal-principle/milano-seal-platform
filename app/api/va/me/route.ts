@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   const role =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+    ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   if (!isVARole(role)) {
     await recordSecurityEvent({

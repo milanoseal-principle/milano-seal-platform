@@ -13,7 +13,7 @@ async function resolvePartnerSession(): Promise<{ userId: string; email: string 
   if (!user) return null;
 
   const role =
-    (user.user_metadata?.role as string | undefined) ??
+    (user.app_metadata?.role as string | undefined) ??
     (user.app_metadata?.role as string | undefined) ??
     "";
 

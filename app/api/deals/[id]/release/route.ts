@@ -39,7 +39,7 @@ export async function POST(
   }
 
   // Release requires founder_admin — not admin_operator
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = user.app_metadata?.role ?? user.app_metadata?.role;
   if (!isFounderAdmin(role)) {
     await recordSecurityEvent({
       event_name: "ADMIN_ACTION_DENIED",

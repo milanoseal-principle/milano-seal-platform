@@ -198,7 +198,7 @@ function LoginInner() {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) return;
-        const role = ((data.user.app_metadata?.role ?? data.user.user_metadata?.role) as string) ?? "";
+        const role = ((data.user.app_metadata?.role ?? data.user.app_metadata?.role) as string) ?? "";
         if (!role) return;
         // Already authed — don't auto-redirect so founder can pick a tab
       }).catch(() => { /* ignore — non-blocking redirect check */ });

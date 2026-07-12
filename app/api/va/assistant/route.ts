@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const role =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+    ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   if (!isVARole(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

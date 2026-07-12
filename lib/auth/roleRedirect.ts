@@ -15,6 +15,10 @@ export const roleHomeRoute: Record<UserRole, string> = {
   alliance: "/alliance/dashboard",
 };
 
+// Safe denied destination for authenticated users whose role is missing or
+// unrecognized. Missing role is BLOCKED, never defaulted into a protected area.
+export const DENIED_ROUTE = "/login?error=access_denied";
+
 const operatorAliases = new Set([
   "operator",
   "founder",
@@ -25,6 +29,7 @@ const operatorAliases = new Set([
   "apostille_coordinator",
   "finance_operator",
   "client_support",
+  "compliance_reviewer",
 ]);
 
 const adminAliases = new Set(["admin"]);
@@ -64,7 +69,8 @@ export function normalizeUserRole(role?: string | null): UserRole | null {
 
 export function getHomeRouteForRole(role?: string | null): string {
   const normalized = normalizeUserRole(role);
-  if (!normalized) return "/portal";
+  // Missing / unrecognized role → safe denied route, never a protected default.
+  if (!normalized) return DENIED_ROUTE;
   return roleHomeRoute[normalized];
 }
 
@@ -74,7 +80,8 @@ export function isRouteAllowedForRole(
 ): boolean {
   const normalized = normalizeUserRole(role);
 
-  if (!normalized) return pathname.startsWith("/portal");
+  // Missing / unrecognized role is blocked everywhere (no portal default).
+  if (!normalized) return false;
   if (normalized === "client") return pathname.startsWith("/portal");
   // Founder / admin / owner are the top oversight roles: they may reach the operator
   // dashboard (including /dashboard/alliance) AND oversee the Execution Support (/va)
