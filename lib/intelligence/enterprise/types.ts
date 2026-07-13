@@ -46,6 +46,33 @@ export interface CanonicalAssignment {
   isSample?: boolean;
 }
 
+/** Minimal canonical Matter-state shape (no revenue/org/capacity/relationship). */
+export interface MatterStateRecord {
+  matterId: string;
+  status?: string | null;
+  createdAt?: string | null;
+  completedAt?: string | null;
+  destination?: string | null;
+  documentFamily?: string | null;
+  isSample?: boolean;
+}
+
+export interface MatterStateSnapshot extends SnapshotMeta {
+  /** Alias of sourceRecordCount for the event-count contract. */
+  sourceEventCount: number;
+  sourceDateRange: { from: string | null; to: string | null };
+  confidence: "high" | "medium" | null;
+  totalMatters: number;
+  activeMatters: number;
+  completedMatters: number;
+  /** Null when canonical state has no "blocked" stage (not fabricated). */
+  blockedMatters: number | null;
+  /** Null unless both timestamps exist on at least one Matter. */
+  averageCompletionMs: number | null;
+  destinationsRepresented: number;
+  documentFamiliesRepresented: number;
+}
+
 export interface MatterPerformanceSnapshot extends SnapshotMeta {
   verifiedMatterVolume: number;
   complimentaryMatterVolume: number;
