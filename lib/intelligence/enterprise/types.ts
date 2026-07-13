@@ -27,6 +27,8 @@ export interface CanonicalMatterRecord {
   /** "complimentary" | "standard_payment" | null */
   payment_disposition?: string | null;
   comp_authorized?: boolean | null;
+  /** ISO currency of amount_paid; used to avoid guessing conversion. */
+  currency?: string | null;
   isSample?: boolean;
 }
 
@@ -76,8 +78,13 @@ export interface MatterStateSnapshot extends SnapshotMeta {
 export interface MatterPerformanceSnapshot extends SnapshotMeta {
   verifiedMatterVolume: number;
   complimentaryMatterVolume: number;
-  /** Confirmed payment evidence only. Complimentary Matters contribute $0. */
-  verifiedRevenue: number;
+  /**
+   * Confirmed payment evidence only. Complimentary Matters contribute $0.
+   * Null when confirmed payments span multiple currencies (no guessed conversion).
+   */
+  verifiedRevenue: number | null;
+  /** Single currency of verifiedRevenue when known; null if none/mixed. */
+  currency: string | null;
   /** Forecast is a SEPARATE, distinctly-labeled field; never folded into verifiedRevenue. */
   forecastRevenue: number | null;
 }
@@ -115,7 +122,7 @@ export interface CapacitySnapshot extends SnapshotMeta {
 
 export interface FounderExecutiveSnapshot extends SnapshotMeta {
   verifiedMatterVolume: number;
-  verifiedRevenue: number;
+  verifiedRevenue: number | null;
   complimentaryMatterVolume: number;
   forecastRevenue: number | null;
   activeOrganizations: number;
