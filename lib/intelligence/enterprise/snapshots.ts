@@ -17,6 +17,8 @@ import type {
   MatterPerformanceSnapshot,
   MatterStateRecord,
   MatterStateSnapshot,
+  OrganizationInventorySnapshot,
+  OrganizationRecord,
   OrganizationPerformanceSnapshot,
   RelationshipNetworkSnapshot,
   VerticalPerformanceSnapshot,
@@ -29,6 +31,83 @@ const COMPLETED_STAGES = new Set(["completed"]);
 
 // Read-only Matter-STATE snapshot: counts/durations from canonical Matter
 // records. No revenue, organization, capacity, or relationship inference.
+// Read-only Organization INVENTORY snapshot derived from canonical Matter
+// (deals) evidence. No relationship strength, revenue, or account health.
+// Unsupported org fields (active/target/vertical) stay null with a limitation.
+export function buildOrganizationInventorySnapshot(
+  records: readonly OrganizationRecord[],
+  opts?: BuildOpts & { commercialAccounts?: number; rangeFromIso?: string | null },
+): OrganizationInventorySnapshot {
+  const clean = excludeSamples([...records]);
+  const sampleExcluded = records.length - clean.length;
+
+  // Distinct organizations by canonical key.
+  const orgKeys = new Set(clean.map((r) => r.organizationKey).filter((k): k is string => !!k));
+  const totalOrganizations = orgKeys.size;
+
+  // Geography roll-up: distinct orgs per geography.
+  const geoMap = new Map<string, Set<string>>();
+  for (const r of clean) {
+    if (!r.organizationKey || !r.geography) continue;
+    if (!geoMap.has(r.geography)) geoMap.set(r.geography, new Set());
+    geoMap.get(r.geography)!.add(r.organizationKey);
+  }
+  const byGeography = [...geoMap.entries()].map(([geography, set]) => ({ geography, organizations: set.size }));
+
+  // Vertical roll-up only if any canonical vertical evidence exists.
+  const hasVertical = clean.some((r) => !!r.vertical);
+  let byVertical: OrganizationInventorySnapshot["byVertical"] = null;
+  if (hasVertical) {
+    const vMap = new Map<string, Set<string>>();
+    for (const r of clean) {
+      if (!r.organizationKey || !r.vertical) continue;
+      if (!vMap.has(r.vertical)) vMap.set(r.vertical, new Set());
+      vMap.get(r.vertical)!.add(r.organizationKey);
+    }
+    byVertical = [...vMap.entries()].map(([vertical, set]) => ({ vertical, organizations: set.size }));
+  }
+
+  // New-in-range: orgs whose earliest firstSeenAt falls at/after rangeFromIso.
+  const rangeFrom = opts?.rangeFromIso ?? null;
+  const firstSeen = new Map<string, string>();
+  for (const r of clean) {
+    if (!r.organizationKey || !r.firstSeenAt) continue;
+    const cur = firstSeen.get(r.organizationKey);
+    if (!cur || r.firstSeenAt < cur) firstSeen.set(r.organizationKey, r.firstSeenAt);
+  }
+  const newInRange = rangeFrom
+    ? [...firstSeen.values()].filter((t) => t >= rangeFrom).length
+    : 0;
+
+  const times = clean.map((r) => r.firstSeenAt).filter((t): t is string => !!t).sort();
+  const sourceDateRange = { from: times[0] ?? null, to: times[times.length - 1] ?? null };
+
+  const limitations: string[] = [];
+  if (totalOrganizations === 0) limitations.push("No canonical organization evidence in range.");
+  limitations.push("Active/target organization status has no canonical field (reported null).");
+  if (!hasVertical) limitations.push("Organization-level vertical has no canonical field (reported null).");
+
+  const evidenceStatus = totalOrganizations === 0 ? "insufficient_evidence" : "verified";
+
+  return {
+    generatedAt: opts?.generatedAt ?? null,
+    sourceRecordCount: clean.length,
+    sourceEventCount: clean.length,
+    sampleExcluded,
+    evidenceStatus,
+    limitations,
+    sourceDateRange,
+    confidence: totalOrganizations === 0 ? null : "medium",
+    totalOrganizations,
+    activeOrganizations: null, // no canonical active-status field
+    targetOrganizations: null, // no canonical target-stage field
+    commercialAccounts: Math.max(0, opts?.commercialAccounts ?? 0),
+    byGeography,
+    byVertical,
+    newInRange,
+  };
+}
+
 export function buildMatterStateSnapshot(
   records: readonly MatterStateRecord[],
   opts?: BuildOpts,

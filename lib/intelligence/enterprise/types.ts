@@ -75,6 +75,32 @@ export interface MatterStateSnapshot extends SnapshotMeta {
   documentFamiliesRepresented: number;
 }
 
+/** Canonical Organization proxy derived from Matter (deals) evidence. */
+export interface OrganizationRecord {
+  organizationKey: string;
+  geography?: string | null;
+  vertical?: string | null;
+  firstSeenAt?: string | null;
+  isSample?: boolean;
+}
+
+export interface OrganizationInventorySnapshot extends SnapshotMeta {
+  sourceEventCount: number;
+  sourceDateRange: { from: string | null; to: string | null };
+  confidence: "high" | "medium" | null;
+  totalOrganizations: number;
+  /** Null: no canonical org active-status field. */
+  activeOrganizations: number | null;
+  /** Null: no canonical org target-stage field. */
+  targetOrganizations: number | null;
+  /** Canonical commercial-account evidence (real, paid). */
+  commercialAccounts: number;
+  byGeography: Array<{ geography: string; organizations: number }>;
+  /** Null: no canonical org-level vertical field on Matter evidence. */
+  byVertical: Array<{ vertical: string; organizations: number }> | null;
+  newInRange: number;
+}
+
 export interface MatterPerformanceSnapshot extends SnapshotMeta {
   verifiedMatterVolume: number;
   complimentaryMatterVolume: number;

@@ -1,4 +1,4 @@
-import type { CanonicalMatterRecord, MatterStateRecord } from "./types";
+import type { CanonicalMatterRecord, MatterStateRecord, OrganizationRecord } from "./types";
 
 // Pure mapper: canonical `deals` rows → MatterStateRecord. No DB, no writes,
 // no revenue/org/capacity/relationship fields. Unknown values stay null.
@@ -22,6 +22,9 @@ export interface DealRow {
   currency?: string | null;
   organization_id?: string | null;
   vertical?: string | null;
+  // Organization evidence (Source #3) — canonical deals columns.
+  company_name?: string | null;
+  destination_country?: string | null;
 }
 
 export function mapDealsToMatterStateRecords(rows: readonly DealRow[]): MatterStateRecord[] {
@@ -53,4 +56,23 @@ export function mapDealsToCanonicalMatterRecords(rows: readonly DealRow[]): Cano
     currency: r.currency ?? null,
     isSample: r.is_sample === true,
   }));
+}
+
+// Organization mapper: canonical `deals` rows → OrganizationRecord using the
+// migration-confirmed org proxy (company_name) and geography (destination_country).
+// No org table exists; organizations are derived from Matter evidence. Unknowns
+// stay null; the snapshot builder dedups by organizationKey.
+export function mapDealsToOrganizationRecords(rows: readonly DealRow[]): OrganizationRecord[] {
+  return rows
+    .map((r) => {
+      const key = (r.company_name ?? "").trim();
+      return {
+        organizationKey: key,
+        geography: r.destination_country ?? null,
+        vertical: null, // no canonical org-level vertical field on deals
+        firstSeenAt: r.created_at ?? null,
+        isSample: r.is_sample === true,
+      };
+    })
+    .filter((o) => o.organizationKey.length > 0);
 }

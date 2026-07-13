@@ -6,6 +6,7 @@ import {
   type CanonicalMatterRecord,
   type MatterPerformanceSnapshot,
   type MatterStateSnapshot,
+  type OrganizationInventorySnapshot,
 } from "@/lib/intelligence/enterprise";
 
 // Additive, read-only Enterprise Intelligence section for Founder Command.
@@ -19,6 +20,7 @@ export function EnterpriseIntelligenceSection({
   generatedAt = null,
   matterState = null,
   revenue = null,
+  organizations = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
@@ -28,6 +30,8 @@ export function EnterpriseIntelligenceSection({
   matterState?: MatterStateSnapshot | null;
   /** Precomputed, server-derived verified-revenue snapshot (no raw records). */
   revenue?: MatterPerformanceSnapshot | null;
+  /** Precomputed, server-derived organization inventory snapshot (no raw records). */
+  organizations?: OrganizationInventorySnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
@@ -51,7 +55,12 @@ export function EnterpriseIntelligenceSection({
     },
     { label: "Complimentary Matters", value: String(rev.complimentaryMatterVolume), note: "$0 verified revenue", empty: revInsufficient },
     { label: "Forecast", value: rev.forecastRevenue == null ? "—" : money(rev.forecastRevenue, rev.currency), note: "Separate from verified" },
-    { label: "Active Organizations", value: String(snapshot.activeOrganizations), empty: insufficient },
+    {
+      label: "Organizations",
+      value: organizations ? String(organizations.totalOrganizations) : "0",
+      note: "Commercial accounts: " + String(organizations?.commercialAccounts ?? 0),
+      empty: !organizations || organizations.evidenceStatus === "insufficient_evidence",
+    },
     { label: "Relationship Edges", value: String(snapshot.relationshipEdgeCount), note: "Evidence-backed only", empty: insufficient },
   ];
 
@@ -117,6 +126,22 @@ export function EnterpriseIntelligenceSection({
               <li key={v.vertical} className="flex justify-between gap-3">
                 <span className="truncate">{v.vertical}</span>
                 <span className="text-white/50">{v.matterVolume}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Organizations by Geography</p>
+        {!organizations || organizations.evidenceStatus === "insufficient_evidence" || organizations.byGeography.length === 0 ? (
+          <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical organization records in range.</p>
+        ) : (
+          <ul className="mt-2 space-y-1 text-sm text-white/70">
+            {organizations.byGeography.map((g) => (
+              <li key={g.geography} className="flex justify-between gap-3">
+                <span className="truncate">{g.geography}</span>
+                <span className="text-white/50">{g.organizations}</span>
               </li>
             ))}
           </ul>
