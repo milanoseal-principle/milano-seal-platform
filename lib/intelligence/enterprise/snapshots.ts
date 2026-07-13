@@ -120,9 +120,27 @@ export function buildMatterPerformanceSnapshot(
   const sampleExcluded = records.length - clean.length;
   const verifiedMatterVolume = clean.filter(isVerifiedPaidMatter).length;
   const complimentaryMatterVolume = clean.filter(isComplimentary).length;
-  const verifiedRevenue = clean.reduce((sum, m) => sum + verifiedRevenueOf(m), 0);
   const evidenceStatus = clean.length === 0 ? "insufficient_evidence" : "verified";
   const limitations = clean.length === 0 ? ["No canonical Matter evidence available."] : [];
+
+  // Verified revenue: confirmed non-complimentary paid amounts only. Never guess
+  // currency conversion — if confirmed payments span multiple currencies, leave
+  // verifiedRevenue null and report the limitation.
+  const confirmedPaid = clean.filter(isVerifiedPaidMatter);
+  const currencies = new Set(
+    confirmedPaid.map((m) => m.currency).filter((c): c is string => !!c),
+  );
+  let verifiedRevenue: number | null;
+  let currency: string | null;
+  if (currencies.size > 1) {
+    verifiedRevenue = null;
+    currency = null;
+    limitations.push("Verified revenue not summed: confirmed payments span multiple currencies (no conversion).");
+  } else {
+    verifiedRevenue = clean.reduce((sum, m) => sum + verifiedRevenueOf(m), 0);
+    currency = currencies.size === 1 ? [...currencies][0] : null;
+  }
+
   return {
     ...base(clean.length, sampleExcluded, opts),
     evidenceStatus,
@@ -130,6 +148,7 @@ export function buildMatterPerformanceSnapshot(
     verifiedMatterVolume,
     complimentaryMatterVolume,
     verifiedRevenue,
+    currency,
     // Forecast is intentionally not derived here (no invented forecast).
     forecastRevenue: null,
   };

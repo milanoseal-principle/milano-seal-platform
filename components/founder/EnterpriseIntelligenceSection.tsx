@@ -1,8 +1,10 @@
 import {
   buildFounderExecutiveSnapshot,
+  buildMatterPerformanceSnapshot,
   type CanonicalAssignment,
   type CanonicalIntegrationEvent,
   type CanonicalMatterRecord,
+  type MatterPerformanceSnapshot,
   type MatterStateSnapshot,
 } from "@/lib/intelligence/enterprise";
 
@@ -16,6 +18,7 @@ export function EnterpriseIntelligenceSection({
   assignments = [],
   generatedAt = null,
   matterState = null,
+  revenue = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
@@ -23,22 +26,33 @@ export function EnterpriseIntelligenceSection({
   generatedAt?: string | null;
   /** Precomputed, server-derived Matter-state snapshot (no raw records). */
   matterState?: MatterStateSnapshot | null;
+  /** Precomputed, server-derived verified-revenue snapshot (no raw records). */
+  revenue?: MatterPerformanceSnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
     { generatedAt },
   );
+  // Revenue tiles come from the server-computed revenue snapshot when wired;
+  // otherwise honest empty evidence.
+  const rev = revenue ?? buildMatterPerformanceSnapshot([], { generatedAt });
+  const revInsufficient = rev.evidenceStatus === "insufficient_evidence";
   const insufficient = snapshot.evidenceStatus === "insufficient_evidence";
-  const money = (n: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  const money = (n: number, ccy: string | null) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: ccy || "USD", maximumFractionDigits: 0 }).format(n);
 
-  const tiles: Array<{ label: string; value: string; note?: string }> = [
-    { label: "Verified Matter Volume", value: String(snapshot.verifiedMatterVolume) },
-    { label: "Verified Revenue", value: money(snapshot.verifiedRevenue), note: "Confirmed payment evidence only" },
-    { label: "Complimentary Matters", value: String(snapshot.complimentaryMatterVolume), note: "$0 verified revenue" },
-    { label: "Forecast", value: snapshot.forecastRevenue == null ? "—" : money(snapshot.forecastRevenue), note: "Separate from verified" },
-    { label: "Active Organizations", value: String(snapshot.activeOrganizations) },
-    { label: "Relationship Edges", value: String(snapshot.relationshipEdgeCount), note: "Evidence-backed only" },
+  const tiles: Array<{ label: string; value: string; note?: string; empty?: boolean }> = [
+    { label: "Verified Paid Matters", value: String(rev.verifiedMatterVolume), empty: revInsufficient },
+    {
+      label: "Verified Revenue",
+      value: rev.verifiedRevenue == null ? "—" : money(rev.verifiedRevenue, rev.currency),
+      note: "Confirmed payment evidence only",
+      empty: revInsufficient,
+    },
+    { label: "Complimentary Matters", value: String(rev.complimentaryMatterVolume), note: "$0 verified revenue", empty: revInsufficient },
+    { label: "Forecast", value: rev.forecastRevenue == null ? "—" : money(rev.forecastRevenue, rev.currency), note: "Separate from verified" },
+    { label: "Active Organizations", value: String(snapshot.activeOrganizations), empty: insufficient },
+    { label: "Relationship Edges", value: String(snapshot.relationshipEdgeCount), note: "Evidence-backed only", empty: insufficient },
   ];
 
   return (
@@ -58,7 +72,7 @@ export function EnterpriseIntelligenceSection({
         {tiles.map((t) => (
           <div key={t.label} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">{t.label}</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{insufficient ? "—" : t.value}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{t.empty ? "—" : t.value}</p>
             {t.note && <p className="mt-1 text-xs text-white/45">{t.note}</p>}
           </div>
         ))}
