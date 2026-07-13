@@ -7,8 +7,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { listRealCommercialAccounts } from "@/lib/commercial-accounts/accountRegistry";
+import { fetchCanonicalDeals, DealsSchemaError } from "@/lib/deals/canonicalDealReadModel";
 import { buildOrganizationInventorySnapshot } from "../snapshots";
-import { mapDealsToOrganizationRecords, type DealRow } from "../matterStateMapper";
+import { mapDealsToOrganizationRecords } from "../matterStateMapper";
 import type { OrganizationInventorySnapshot } from "../types";
 import type { IntelRange } from "./founderMatterSource";
 
@@ -39,6 +40,14 @@ function emptySnapshot(nowIso: string, note: string): OrganizationInventorySnaps
   return { ...s, limitations: [note, ...s.limitations] };
 }
 
+function unavailableSnapshot(nowIso: string): OrganizationInventorySnapshot {
+  const s = buildOrganizationInventorySnapshot([], {
+    generatedAt: nowIso,
+    commercialAccounts: commercialAccountCount(),
+  });
+  return { ...s, evidenceStatus: "unavailable", limitations: ["canonical_source_unavailable"] };
+}
+
 /**
  * Founder/admin-only, read-only Organization inventory for the last `range`.
  * Honest empty evidence when the actor is not founder/admin or on error.
@@ -58,19 +67,15 @@ export async function loadFounderOrganizationSnapshot(range: IntelRange = 30): P
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const { data, error } = await supabase
-      .from("deals")
-      .select("company_name, destination_country, created_at")
-      .gte("created_at", fromIso);
-    if (error || !data) return emptySnapshot(nowIso, "Organization records unavailable.");
-
-    const records = mapDealsToOrganizationRecords(data as DealRow[]);
+    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const records = mapDealsToOrganizationRecords(rows);
     return buildOrganizationInventorySnapshot(records, {
       generatedAt: nowIso,
       commercialAccounts: commercialAccountCount(),
       rangeFromIso: fromIso,
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
     return emptySnapshot(nowIso, "Organization records unavailable.");
   }
 }

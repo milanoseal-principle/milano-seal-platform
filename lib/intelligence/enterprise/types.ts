@@ -4,7 +4,9 @@
 // canonical state, and never fabricate values. Missing evidence yields
 // `evidenceStatus: "insufficient_evidence"`; unknown fields stay null.
 
-export type EvidenceStatus = "verified" | "insufficient_evidence";
+// "unavailable" = the canonical source could not be read (schema/query failure).
+// It is distinct from "insufficient_evidence" (source read fine, but no records).
+export type EvidenceStatus = "verified" | "insufficient_evidence" | "unavailable";
 
 export interface SnapshotMeta {
   /** Caller-stamped timestamp. Null when not provided (never fabricated). */

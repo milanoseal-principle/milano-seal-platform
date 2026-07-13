@@ -40,8 +40,12 @@ export function EnterpriseIntelligenceSection({
   // Revenue tiles come from the server-computed revenue snapshot when wired;
   // otherwise honest empty evidence.
   const rev = revenue ?? buildMatterPerformanceSnapshot([], { generatedAt });
-  const revInsufficient = rev.evidenceStatus === "insufficient_evidence";
-  const insufficient = snapshot.evidenceStatus === "insufficient_evidence";
+  const revInsufficient = rev.evidenceStatus !== "verified";
+  const insufficient = snapshot.evidenceStatus !== "verified";
+  const unavailable =
+    matterState?.evidenceStatus === "unavailable" ||
+    rev.evidenceStatus === "unavailable" ||
+    organizations?.evidenceStatus === "unavailable";
   const money = (n: number, ccy: string | null) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: ccy || "USD", maximumFractionDigits: 0 }).format(n);
 
@@ -75,6 +79,11 @@ export function EnterpriseIntelligenceSection({
             {insufficient ? "Insufficient evidence" : "Verified"}
           </span>
         </p>
+        {unavailable && (
+          <p className="mt-2 text-sm text-rose-300/80">
+            Canonical source unavailable — schema verification required.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
