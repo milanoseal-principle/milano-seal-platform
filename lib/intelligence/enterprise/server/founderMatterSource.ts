@@ -5,8 +5,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
+import { fetchCanonicalDeals, DealsSchemaError } from "@/lib/deals/canonicalDealReadModel";
 import { buildMatterStateSnapshot } from "../snapshots";
-import { mapDealsToMatterStateRecords, type DealRow } from "../matterStateMapper";
+import { mapDealsToMatterStateRecords } from "../matterStateMapper";
 import type { MatterStateSnapshot } from "../types";
 
 const FOUNDER_ADMIN_ROLES = new Set(["founder", "founder_admin", "admin_operator", "admin"]);
@@ -26,6 +27,12 @@ function rangeStartIso(range: IntelRange, nowIso: string): string {
 function emptySnapshot(nowIso: string, note: string): MatterStateSnapshot {
   const s = buildMatterStateSnapshot([], { generatedAt: nowIso });
   return { ...s, limitations: [note, ...s.limitations] };
+}
+
+// Distinct from empty/insufficient: the canonical source could not be read.
+function unavailableSnapshot(nowIso: string): MatterStateSnapshot {
+  const s = buildMatterStateSnapshot([], { generatedAt: nowIso });
+  return { ...s, evidenceStatus: "unavailable", limitations: ["canonical_source_unavailable"] };
 }
 
 /**
@@ -48,15 +55,12 @@ export async function loadFounderMatterStateSnapshot(range: IntelRange = 30): Pr
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const { data, error } = await supabase
-      .from("deals")
-      .select("id, deal_id, status, created_at, completed_at, execution_date, country, document_type")
-      .gte("created_at", fromIso);
-    if (error || !data) return emptySnapshot(nowIso, "Matter records unavailable.");
-
-    const records = mapDealsToMatterStateRecords(data as DealRow[]);
+    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const records = mapDealsToMatterStateRecords(rows);
     return buildMatterStateSnapshot(records, { generatedAt: nowIso });
-  } catch {
+  } catch (e) {
+    // A schema/query failure is NOT "no records" — surface it as unavailable.
+    if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
     return emptySnapshot(nowIso, "Matter records unavailable.");
   }
 }

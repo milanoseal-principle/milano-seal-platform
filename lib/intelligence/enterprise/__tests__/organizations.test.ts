@@ -141,12 +141,14 @@ test("org loader is read-only, founder/admin gated, server-only, computed-snapsh
   assert.ok(!/founderOrganizationSource/.test(index), "server loader not re-exported to client barrel");
 });
 
-test("no PII/notes/billing columns are selected", () => {
-  const src = readFileSync("lib/intelligence/enterprise/server/founderOrganizationSource.ts", "utf8");
-  // Inspect only the SELECT column list.
-  const selectArg = src.match(/\.select\("([^"]*)"\)/)?.[1] ?? "";
-  assert.ok(/company_name/.test(selectArg), "selects the org proxy");
-  assert.ok(!/email|phone|note|billing|client_name|payload|credential/i.test(selectArg), `unsafe column in select: ${selectArg}`);
+test("no PII/notes/billing columns are selected (via canonical adapter)", () => {
+  // The org loader delegates to the canonical adapter; the safe column list lives there.
+  const loader = readFileSync("lib/intelligence/enterprise/server/founderOrganizationSource.ts", "utf8");
+  assert.ok(/fetchCanonicalDeals/.test(loader), "uses the canonical adapter");
+  const adapter = readFileSync("lib/deals/canonicalDealReadModel.ts", "utf8");
+  const selectArg = adapter.match(/CANONICAL_DEAL_COLUMNS\s*=\s*\n?\s*"([^"]*)"/)?.[1] ?? "";
+  assert.ok(/company_name/.test(selectArg), "adapter selects the org proxy");
+  assert.ok(!/email|phone|note|billing|client_name|payload|credential/i.test(selectArg), `unsafe column: ${selectArg}`);
 });
 
 // 18. Matter + Revenue snapshots intact

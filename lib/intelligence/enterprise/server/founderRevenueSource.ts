@@ -5,8 +5,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
+import { fetchCanonicalDeals, DealsSchemaError } from "@/lib/deals/canonicalDealReadModel";
 import { buildMatterPerformanceSnapshot } from "../snapshots";
-import { mapDealsToCanonicalMatterRecords, type DealRow } from "../matterStateMapper";
+import { mapDealsToCanonicalMatterRecords } from "../matterStateMapper";
 import type { MatterPerformanceSnapshot } from "../types";
 import type { IntelRange } from "./founderMatterSource";
 
@@ -24,6 +25,11 @@ function rangeStartIso(range: IntelRange, nowIso: string): string {
 function emptySnapshot(nowIso: string, note: string): MatterPerformanceSnapshot {
   const s = buildMatterPerformanceSnapshot([], { generatedAt: nowIso });
   return { ...s, limitations: [note, ...s.limitations] };
+}
+
+function unavailableSnapshot(nowIso: string): MatterPerformanceSnapshot {
+  const s = buildMatterPerformanceSnapshot([], { generatedAt: nowIso });
+  return { ...s, evidenceStatus: "unavailable", limitations: ["canonical_source_unavailable"] };
 }
 
 /**
@@ -45,15 +51,11 @@ export async function loadFounderRevenueSnapshot(range: IntelRange = 30): Promis
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const { data, error } = await supabase
-      .from("deals")
-      .select("id, deal_id, status, payment_confirmed, amount_paid, payment_disposition, comp_authorized, currency, created_at")
-      .gte("created_at", fromIso);
-    if (error || !data) return emptySnapshot(nowIso, "Payment records unavailable.");
-
-    const records = mapDealsToCanonicalMatterRecords(data as DealRow[]);
+    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const records = mapDealsToCanonicalMatterRecords(rows);
     return buildMatterPerformanceSnapshot(records, { generatedAt: nowIso });
-  } catch {
+  } catch (e) {
+    if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
     return emptySnapshot(nowIso, "Payment records unavailable.");
   }
 }
