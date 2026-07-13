@@ -3,6 +3,7 @@ import {
   type CanonicalAssignment,
   type CanonicalIntegrationEvent,
   type CanonicalMatterRecord,
+  type MatterStateSnapshot,
 } from "@/lib/intelligence/enterprise";
 
 // Additive, read-only Enterprise Intelligence section for Founder Command.
@@ -14,11 +15,14 @@ export function EnterpriseIntelligenceSection({
   integrationEvents = [],
   assignments = [],
   generatedAt = null,
+  matterState = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
   assignments?: CanonicalAssignment[];
   generatedAt?: string | null;
+  /** Precomputed, server-derived Matter-state snapshot (no raw records). */
+  matterState?: MatterStateSnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
@@ -58,6 +62,35 @@ export function EnterpriseIntelligenceSection({
             {t.note && <p className="mt-1 text-xs text-white/45">{t.note}</p>}
           </div>
         ))}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Matter Activity</p>
+        {!matterState || matterState.evidenceStatus === "insufficient_evidence" ? (
+          <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical Matter records in range.</p>
+        ) : (
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Total Matters", value: matterState.totalMatters },
+              { label: "Active", value: matterState.activeMatters },
+              { label: "Completed", value: matterState.completedMatters },
+              { label: "Destinations", value: matterState.destinationsRepresented },
+              { label: "Document Families", value: matterState.documentFamiliesRepresented },
+              {
+                label: "Avg Completion (days)",
+                value:
+                  matterState.averageCompletionMs == null
+                    ? "—"
+                    : Math.round(matterState.averageCompletionMs / 86_400_000),
+              },
+            ].map((t) => (
+              <div key={t.label} className="min-w-0">
+                <p className="text-xs text-white/45">{t.label}</p>
+                <p className="text-lg font-semibold text-white">{String(t.value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">

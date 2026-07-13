@@ -15,10 +15,71 @@ import type {
   FounderExecutiveSnapshot,
   IntegrationReliabilitySnapshot,
   MatterPerformanceSnapshot,
+  MatterStateRecord,
+  MatterStateSnapshot,
   OrganizationPerformanceSnapshot,
   RelationshipNetworkSnapshot,
   VerticalPerformanceSnapshot,
 } from "./types";
+
+// Canonical pipeline stages (lib/pipelineEngine VALID_STAGES). There is no
+// "blocked" stage, so blockedMatters is reported as null (never fabricated).
+const TERMINAL_STAGES = new Set(["completed", "lost"]);
+const COMPLETED_STAGES = new Set(["completed"]);
+
+// Read-only Matter-STATE snapshot: counts/durations from canonical Matter
+// records. No revenue, organization, capacity, or relationship inference.
+export function buildMatterStateSnapshot(
+  records: readonly MatterStateRecord[],
+  opts?: BuildOpts,
+): MatterStateSnapshot {
+  const clean = excludeSamples([...records]);
+  const sampleExcluded = records.length - clean.length;
+  const total = clean.length;
+
+  const completedMatters = clean.filter((m) => m.status != null && COMPLETED_STAGES.has(m.status)).length;
+  const activeMatters = clean.filter((m) => m.status != null && !TERMINAL_STAGES.has(m.status)).length;
+
+  const durations = clean
+    .filter((m) => m.createdAt && m.completedAt)
+    .map((m) => new Date(m.completedAt as string).getTime() - new Date(m.createdAt as string).getTime())
+    .filter((d) => Number.isFinite(d) && d >= 0);
+  const averageCompletionMs =
+    durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
+
+  const destinations = new Set(clean.map((m) => m.destination).filter((d): d is string => !!d));
+  const docFamilies = new Set(clean.map((m) => m.documentFamily).filter((d): d is string => !!d));
+
+  const createdTimes = clean.map((m) => m.createdAt).filter((c): c is string => !!c).sort();
+  const sourceDateRange = {
+    from: createdTimes[0] ?? null,
+    to: createdTimes[createdTimes.length - 1] ?? null,
+  };
+
+  const evidenceStatus = total === 0 ? "insufficient_evidence" : "verified";
+  const limitations: string[] = [];
+  if (total === 0) limitations.push("No canonical Matter records in range.");
+  if (durations.length < total) limitations.push("Completion duration unavailable for Matters missing timestamps.");
+  const confidence = total === 0 ? null : durations.length === total ? "high" : "medium";
+
+  return {
+    generatedAt: opts?.generatedAt ?? null,
+    sourceRecordCount: total,
+    sourceEventCount: total,
+    sampleExcluded,
+    evidenceStatus,
+    limitations,
+    sourceDateRange,
+    confidence,
+    totalMatters: total,
+    activeMatters,
+    completedMatters,
+    blockedMatters: null, // no canonical "blocked" stage
+    averageCompletionMs,
+    destinationsRepresented: destinations.size,
+    documentFamiliesRepresented: docFamilies.size,
+  };
+}
 
 interface BuildOpts {
   /** Caller-supplied timestamp; not fabricated inside the pure builders. */
