@@ -51,9 +51,24 @@ export async function loadFounderRevenueSnapshot(range: IntelRange = 30): Promis
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const { rows, conflicts, compCapability } = await fetchCanonicalDeals(supabase, fromIso);
     const records = mapDealsToCanonicalMatterRecords(rows);
-    return buildMatterPerformanceSnapshot(records, { generatedAt: nowIso });
+    const snap = buildMatterPerformanceSnapshot(records, { generatedAt: nowIso });
+    const extra: string[] = [];
+    // Complimentary detection needs comp columns; when absent, verified PAID
+    // revenue is still real, but comp separation cannot be evidenced.
+    if (compCapability === "unavailable") {
+      extra.push("complimentary_capability_unavailable: comp columns not yet in production (migration 043 pending).");
+    }
+    if (conflicts.length > 0) {
+      extra.push(...conflicts.map((c) => `Legacy column conflict on ${c.field} (${c.count} Matters).`));
+    }
+    if (extra.length === 0) return snap;
+    return {
+      ...snap,
+      evidenceStatus: snap.evidenceStatus === "verified" ? "verified_with_limitations" : snap.evidenceStatus,
+      limitations: [...snap.limitations, ...extra],
+    };
   } catch (e) {
     if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
     return emptySnapshot(nowIso, "Payment records unavailable.");

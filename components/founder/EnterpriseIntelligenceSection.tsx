@@ -40,8 +40,10 @@ export function EnterpriseIntelligenceSection({
   // Revenue tiles come from the server-computed revenue snapshot when wired;
   // otherwise honest empty evidence.
   const rev = revenue ?? buildMatterPerformanceSnapshot([], { generatedAt });
-  const revInsufficient = rev.evidenceStatus !== "verified";
-  const insufficient = snapshot.evidenceStatus !== "verified";
+  const hasData = (s?: { evidenceStatus: string } | null) =>
+    s?.evidenceStatus === "verified" || s?.evidenceStatus === "verified_with_limitations";
+  const revInsufficient = !hasData(rev);
+  const insufficient = !hasData(snapshot);
   const unavailable =
     matterState?.evidenceStatus === "unavailable" ||
     rev.evidenceStatus === "unavailable" ||
@@ -63,7 +65,7 @@ export function EnterpriseIntelligenceSection({
       label: "Organizations",
       value: organizations ? String(organizations.totalOrganizations) : "0",
       note: "Commercial accounts: " + String(organizations?.commercialAccounts ?? 0),
-      empty: !organizations || organizations.evidenceStatus === "insufficient_evidence",
+      empty: !hasData(organizations),
     },
     { label: "Relationship Edges", value: String(snapshot.relationshipEdgeCount), note: "Evidence-backed only", empty: insufficient },
   ];
@@ -98,7 +100,7 @@ export function EnterpriseIntelligenceSection({
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Matter Activity</p>
-        {!matterState || matterState.evidenceStatus === "insufficient_evidence" ? (
+        {!matterState || !hasData(matterState) ? (
           <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical Matter records in range.</p>
         ) : (
           <div className="mt-2 grid gap-3 sm:grid-cols-3">
@@ -143,7 +145,7 @@ export function EnterpriseIntelligenceSection({
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Organizations by Geography</p>
-        {!organizations || organizations.evidenceStatus === "insufficient_evidence" || organizations.byGeography.length === 0 ? (
+        {!organizations || !hasData(organizations) || organizations.byGeography.length === 0 ? (
           <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical organization records in range.</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm text-white/70">

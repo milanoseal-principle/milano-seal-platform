@@ -4,9 +4,18 @@
 // canonical state, and never fabricate values. Missing evidence yields
 // `evidenceStatus: "insufficient_evidence"`; unknown fields stay null.
 
-// "unavailable" = the canonical source could not be read (schema/query failure).
-// It is distinct from "insufficient_evidence" (source read fine, but no records).
-export type EvidenceStatus = "verified" | "insufficient_evidence" | "unavailable";
+// Evidence states:
+//  verified                 — records read, no blocking issues
+//  verified_with_limitations— records read, but populated legacy columns conflict
+//  insufficient_evidence    — source read fine, but no records
+//  unavailable              — canonical source could not be read (schema/query failure)
+//  capability_unavailable   — a required capability's columns are absent (e.g. comp)
+export type EvidenceStatus =
+  | "verified"
+  | "verified_with_limitations"
+  | "insufficient_evidence"
+  | "unavailable"
+  | "capability_unavailable";
 
 export interface SnapshotMeta {
   /** Caller-stamped timestamp. Null when not provided (never fabricated). */
