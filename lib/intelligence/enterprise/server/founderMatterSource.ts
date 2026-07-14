@@ -55,9 +55,17 @@ export async function loadFounderMatterStateSnapshot(range: IntelRange = 30): Pr
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const { rows, conflicts } = await fetchCanonicalDeals(supabase, fromIso);
     const records = mapDealsToMatterStateRecords(rows);
-    return buildMatterStateSnapshot(records, { generatedAt: nowIso });
+    const snap = buildMatterStateSnapshot(records, { generatedAt: nowIso });
+    if (snap.evidenceStatus === "verified" && conflicts.length > 0) {
+      return {
+        ...snap,
+        evidenceStatus: "verified_with_limitations",
+        limitations: [...snap.limitations, ...conflicts.map((c) => `Legacy column conflict on ${c.field} (${c.count} Matters).`)],
+      };
+    }
+    return snap;
   } catch (e) {
     // A schema/query failure is NOT "no records" — surface it as unavailable.
     if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);

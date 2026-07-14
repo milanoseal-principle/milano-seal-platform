@@ -67,13 +67,22 @@ export async function loadFounderOrganizationSnapshot(range: IntelRange = 30): P
     }
 
     const fromIso = rangeStartIso(range, nowIso);
-    const rows = await fetchCanonicalDeals(supabase, fromIso);
+    const { rows, conflicts } = await fetchCanonicalDeals(supabase, fromIso);
     const records = mapDealsToOrganizationRecords(rows);
-    return buildOrganizationInventorySnapshot(records, {
+    const snap = buildOrganizationInventorySnapshot(records, {
       generatedAt: nowIso,
       commercialAccounts: commercialAccountCount(),
       rangeFromIso: fromIso,
     });
+    const orgConflicts = conflicts.filter((c) => c.field === "organization");
+    if (snap.evidenceStatus === "verified" && orgConflicts.length > 0) {
+      return {
+        ...snap,
+        evidenceStatus: "verified_with_limitations",
+        limitations: [...snap.limitations, ...orgConflicts.map((c) => `Legacy column conflict on ${c.field} (${c.count} Matters).`)],
+      };
+    }
+    return snap;
   } catch (e) {
     if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
     return emptySnapshot(nowIso, "Organization records unavailable.");

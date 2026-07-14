@@ -1,5 +1,16 @@
 # Verify Canonical `deals` Schema (Production)
 
+> **Production status (verified via `schema_migrations`):** the repo migrations
+> `001…043` were **NOT applied**; production runs the original April schema
+> (`01_schema_core`…) plus ad-hoc columns. The adapter now targets the real
+> production columns (`status` primary / `deal_status` fallback; `destination_country`
+> primary / `country` fallback; `company_name`/`company`; `document_type`/`document`;
+> `payment_status`/`payment_confirmed`/`amount_paid`). The complimentary columns
+> (`payment_disposition`, `verified_revenue`, `comp_authorized`, `currency`) are
+> **absent** until migration 043 is applied — surfaced as `capability_unavailable`,
+> not fake zeros. **Migration 043 application is an operator action (see below).**
+
+
 The enterprise intelligence loaders read canonical `deals` columns through one
 adapter (`lib/deals/canonicalDealReadModel.ts`) using the **migration-confirmed**
 names (migrations 001 + 043). Run the SQL below in the Supabase SQL Editor to
