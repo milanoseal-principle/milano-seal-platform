@@ -140,9 +140,31 @@ export interface VerticalPerformanceSnapshot extends SnapshotMeta {
 }
 
 export interface RelationshipNetworkSnapshot extends SnapshotMeta {
-  /** Only real org↔Matter edges backed by an organizationId on the record. */
+  /** Only real org↔Matter edges backed by an organization key on the record. */
   edges: Array<{ organizationId: string; matterId: string }>;
   nodeCount: number;
+  organizationsWithMatterEvidence: number;
+  organizationsWithInteractionEvidence: number;
+  interactionCount: number;
+  latestInteraction: string | null;
+  sourceDateRange: { from: string | null; to: string | null };
+  /** Null until a canonical referral source is wired (no fabricated edges). */
+  verifiedReferralEdges: number | null;
+}
+
+/** Minimal Matter reference for relationship edges (org key + Matter id). */
+export interface RelationshipMatterRef {
+  matterId: string;
+  organizationKey?: string | null;
+  isSample?: boolean;
+}
+
+/** Canonical interaction evidence (deal_activities). No notes/description/PII. */
+export interface RelationshipInteraction {
+  matterId: string;
+  activityType?: string | null;
+  occurredAt?: string | null;
+  isSample?: boolean;
 }
 
 export interface IntegrationReliabilitySnapshot extends SnapshotMeta {

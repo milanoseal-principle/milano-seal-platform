@@ -7,6 +7,7 @@ import {
   type MatterPerformanceSnapshot,
   type MatterStateSnapshot,
   type OrganizationInventorySnapshot,
+  type RelationshipNetworkSnapshot,
 } from "@/lib/intelligence/enterprise";
 
 // Additive, read-only Enterprise Intelligence section for Founder Command.
@@ -21,6 +22,7 @@ export function EnterpriseIntelligenceSection({
   matterState = null,
   revenue = null,
   organizations = null,
+  relationship = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
@@ -32,6 +34,8 @@ export function EnterpriseIntelligenceSection({
   revenue?: MatterPerformanceSnapshot | null;
   /** Precomputed, server-derived organization inventory snapshot (no raw records). */
   organizations?: OrganizationInventorySnapshot | null;
+  /** Precomputed, server-derived relationship snapshot (no raw records). */
+  relationship?: RelationshipNetworkSnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
@@ -47,7 +51,8 @@ export function EnterpriseIntelligenceSection({
   const unavailable =
     matterState?.evidenceStatus === "unavailable" ||
     rev.evidenceStatus === "unavailable" ||
-    organizations?.evidenceStatus === "unavailable";
+    organizations?.evidenceStatus === "unavailable" ||
+    relationship?.evidenceStatus === "unavailable";
   const money = (n: number, ccy: string | null) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: ccy || "USD", maximumFractionDigits: 0 }).format(n);
 
@@ -67,7 +72,12 @@ export function EnterpriseIntelligenceSection({
       note: "Commercial accounts: " + String(organizations?.commercialAccounts ?? 0),
       empty: !hasData(organizations),
     },
-    { label: "Relationship Edges", value: String(snapshot.relationshipEdgeCount), note: "Evidence-backed only", empty: insufficient },
+    {
+      label: "Relationship Edges",
+      value: relationship ? String(relationship.edges.length) : String(snapshot.relationshipEdgeCount),
+      note: "Evidence-backed only",
+      empty: !hasData(relationship),
+    },
   ];
 
   return (
@@ -156,6 +166,29 @@ export function EnterpriseIntelligenceSection({
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Relationship Evidence</p>
+        {!relationship || !hasData(relationship) ? (
+          <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical relationship records in range.</p>
+        ) : (
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Org↔Matter Edges", value: relationship.edges.length },
+              { label: "Orgs w/ Matter", value: relationship.organizationsWithMatterEvidence },
+              { label: "Orgs w/ Interaction", value: relationship.organizationsWithInteractionEvidence },
+              { label: "Interactions", value: relationship.interactionCount },
+              { label: "Verified Referrals", value: relationship.verifiedReferralEdges == null ? "—" : relationship.verifiedReferralEdges },
+              { label: "Latest Activity", value: relationship.latestInteraction ? relationship.latestInteraction.slice(0, 10) : "—" },
+            ].map((t) => (
+              <div key={t.label} className="min-w-0">
+                <p className="text-xs text-white/45">{t.label}</p>
+                <p className="text-lg font-semibold text-white">{String(t.value)}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
