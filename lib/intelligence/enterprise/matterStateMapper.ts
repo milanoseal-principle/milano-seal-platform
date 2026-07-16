@@ -1,4 +1,4 @@
-import type { CanonicalMatterRecord, MatterStateRecord, OrganizationRecord } from "./types";
+import type { CanonicalMatterRecord, MatterStateRecord, OrganizationRecord, RelationshipMatterRef, RelationshipInteraction } from "./types";
 
 // Pure mapper: canonical `deals` rows → MatterStateRecord. No DB, no writes,
 // no revenue/org/capacity/relationship fields. Unknown values stay null.
@@ -75,4 +75,30 @@ export function mapDealsToOrganizationRecords(rows: readonly DealRow[]): Organiz
       };
     })
     .filter((o) => o.organizationKey.length > 0);
+}
+
+// Relationship Matter refs (org key + Matter id) from canonical deals rows.
+export function mapDealsToRelationshipMatterRefs(rows: readonly DealRow[]): RelationshipMatterRef[] {
+  return rows.map((r) => ({
+    matterId: String(r.deal_id ?? r.id ?? ""),
+    organizationKey: (r.company_name ?? "").trim() || null,
+    isSample: r.is_sample === true,
+  })).filter((m) => m.matterId.length > 0);
+}
+
+// Interaction evidence from canonical deal_activities rows. Only Matter id,
+// activity type, and timestamp — never description/old_value/new_value (PII/notes).
+export interface DealActivityRow {
+  deal_id?: string | null;
+  activity_type?: string | null;
+  created_at?: string | null;
+  is_sample?: boolean | null;
+}
+export function mapDealActivitiesToInteractions(rows: readonly DealActivityRow[]): RelationshipInteraction[] {
+  return rows.map((r) => ({
+    matterId: String(r.deal_id ?? ""),
+    activityType: r.activity_type ?? null,
+    occurredAt: r.created_at ?? null,
+    isSample: r.is_sample === true,
+  })).filter((i) => i.matterId.length > 0);
 }

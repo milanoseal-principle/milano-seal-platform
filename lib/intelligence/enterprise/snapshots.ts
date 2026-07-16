@@ -20,6 +20,8 @@ import type {
   OrganizationInventorySnapshot,
   OrganizationRecord,
   OrganizationPerformanceSnapshot,
+  RelationshipInteraction,
+  RelationshipMatterRef,
   RelationshipNetworkSnapshot,
   VerticalPerformanceSnapshot,
 } from "./types";
@@ -280,27 +282,86 @@ export function buildVerticalPerformanceSnapshot(
   };
 }
 
+// Read-only relationship snapshot from canonical evidence: org↔Matter edges
+// (organization key present) and interaction evidence (deal_activities). No
+// influence / network-strength / score / dormancy inference; referral edges stay
+// null until a canonical referral source is wired.
 export function buildRelationshipNetworkSnapshot(
-  records: readonly CanonicalMatterRecord[],
+  input:
+    | readonly CanonicalMatterRecord[]
+    | { matters?: readonly RelationshipMatterRef[]; interactions?: readonly RelationshipInteraction[] },
   opts?: BuildOpts,
 ): RelationshipNetworkSnapshot {
-  const clean = excludeSamples([...records]);
-  const sampleExcluded = records.length - clean.length;
-  // Only real edges: a Matter with an organizationId is a genuine org↔Matter edge.
-  const edges = clean
-    .filter((m) => !!m.organizationId)
-    .map((m) => ({ organizationId: m.organizationId as string, matterId: m.matterId }));
+  // Backward-compatible: an array of CanonicalMatterRecord maps to org-key refs.
+  const isArrayInput = Array.isArray(input);
+  const objectInput = isArrayInput
+    ? { matters: undefined, interactions: undefined }
+    : (input as { matters?: readonly RelationshipMatterRef[]; interactions?: readonly RelationshipInteraction[] });
+  const mattersInput: readonly RelationshipMatterRef[] = isArrayInput
+    ? (input as readonly CanonicalMatterRecord[]).map((m) => ({
+        matterId: m.matterId,
+        organizationKey: m.organizationId ?? null,
+        isSample: m.isSample,
+      }))
+    : objectInput.matters ?? [];
+  const interactionsInput: readonly RelationshipInteraction[] = isArrayInput ? [] : objectInput.interactions ?? [];
+
+  const matters = excludeSamples([...mattersInput]);
+  const interactions = excludeSamples([...interactionsInput]);
+  const sampleExcluded =
+    mattersInput.length - matters.length + (interactionsInput.length - interactions.length);
+
+  // org↔Matter edges, deduped by (org, matter).
+  const seen = new Set<string>();
+  const edges: Array<{ organizationId: string; matterId: string }> = [];
   const nodes = new Set<string>();
-  for (const e of edges) {
-    nodes.add(`org:${e.organizationId}`);
-    nodes.add(`matter:${e.matterId}`);
+  const matterToOrg = new Map<string, string>();
+  for (const m of matters) {
+    if (!m.organizationKey || !m.matterId) continue;
+    matterToOrg.set(m.matterId, m.organizationKey);
+    const key = `${m.organizationKey}::${m.matterId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    edges.push({ organizationId: m.organizationKey, matterId: m.matterId });
+    nodes.add(`org:${m.organizationKey}`);
+    nodes.add(`matter:${m.matterId}`);
   }
+
+  // Interaction evidence, deduped by (matter, type, timestamp).
+  const iseen = new Set<string>();
+  const interactionTimes: string[] = [];
+  const orgsWithInteraction = new Set<string>();
+  let interactionCount = 0;
+  for (const it of interactions) {
+    if (!it.matterId) continue;
+    const key = `${it.matterId}::${it.activityType ?? ""}::${it.occurredAt ?? ""}`;
+    if (iseen.has(key)) continue;
+    iseen.add(key);
+    interactionCount += 1;
+    if (it.occurredAt) interactionTimes.push(it.occurredAt);
+    const org = matterToOrg.get(it.matterId);
+    if (org) orgsWithInteraction.add(org);
+  }
+  interactionTimes.sort();
+
+  const orgsWithMatter = new Set(edges.map((e) => e.organizationId));
+  const hasEvidence = edges.length > 0 || interactionCount > 0;
+  const limitations: string[] = [];
+  if (!hasEvidence) limitations.push("No evidence-backed relationship edges or interactions.");
+  limitations.push("Referral edges require a canonical referral source (not wired).");
+
   return {
-    ...base(clean.length, sampleExcluded, opts),
-    evidenceStatus: edges.length === 0 ? "insufficient_evidence" : "verified",
-    limitations: edges.length === 0 ? ["No evidence-backed relationship edges."] : [],
+    ...base(matters.length + interactions.length, sampleExcluded, opts),
+    evidenceStatus: hasEvidence ? "verified" : "insufficient_evidence",
+    limitations,
     edges,
     nodeCount: nodes.size,
+    organizationsWithMatterEvidence: orgsWithMatter.size,
+    organizationsWithInteractionEvidence: orgsWithInteraction.size,
+    interactionCount,
+    latestInteraction: interactionTimes[interactionTimes.length - 1] ?? null,
+    sourceDateRange: { from: interactionTimes[0] ?? null, to: interactionTimes[interactionTimes.length - 1] ?? null },
+    verifiedReferralEdges: null,
   };
 }
 
