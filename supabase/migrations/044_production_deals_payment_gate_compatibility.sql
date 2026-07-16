@@ -15,8 +15,14 @@
 --     is nullable and unused by paid/complimentary gating.
 --   * No data restore is required — this migration writes no rows.
 
--- 1. Additive column (nullable; no default backfill of existing rows).
+-- 1. Additive columns (nullable; no default backfill of existing rows). These
+-- are no-ops in production (already present) but make this migration valid
+-- against the committed migration chain, whose base `deals` table predates the
+-- ad-hoc `status`/payment columns added in production.
 alter table public.deals
+  add column if not exists status text null,
+  add column if not exists payment_status text null,
+  add column if not exists payment_confirmed boolean null,
   add column if not exists currency text null;
 
 -- 2. Payment gate evaluated on the canonical operational status field (status).
