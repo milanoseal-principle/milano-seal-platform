@@ -11,6 +11,7 @@ import type {
   CanonicalAssignment,
   CanonicalIntegrationEvent,
   CanonicalMatterRecord,
+  CapacityMatterRef,
   CapacitySnapshot,
   FounderExecutiveSnapshot,
   IntegrationReliabilitySnapshot,
@@ -393,6 +394,62 @@ export function buildIntegrationReliabilitySnapshot(
   };
 }
 
+// Read-only workload capacity from canonical Matter assignment evidence
+// (status + assignee presence on deals). Emits COUNTS only — never the assignee
+// id. No thresholds are invented: capacityState stays "unknown" with a
+// limitation. No scheduled/overdue/SLA inference without a canonical source.
+export function buildWorkloadCapacitySnapshot(
+  matters: readonly CapacityMatterRef[],
+  opts?: BuildOpts,
+): CapacitySnapshot {
+  const clean = excludeSamples([...matters]);
+  const sampleExcluded = matters.length - clean.length;
+  const active = clean.filter((m) => m.status != null && !TERMINAL_STAGES.has(m.status));
+
+  const assignedSeen = new Set<string>();
+  const assignees = new Set<string>();
+  let totalActiveAssignments = 0;
+  let unassignedActiveMatters = 0;
+  for (const m of active) {
+    const who = (m.assignee ?? "").trim();
+    if (who) {
+      assignees.add(who);
+      const key = `${m.matterId}::${who}`;
+      if (!assignedSeen.has(key)) {
+        assignedSeen.add(key);
+        totalActiveAssignments += 1;
+      }
+    } else {
+      unassignedActiveMatters += 1;
+    }
+  }
+
+  const times = clean.map((m) => m.createdAt).filter((t): t is string => !!t).sort();
+  const hasEvidence = active.length > 0;
+  const limitations: string[] = [];
+  if (!hasEvidence) limitations.push("No active Matter/assignment evidence in range.");
+  limitations.push("capacity_threshold_not_configured");
+  limitations.push("Scheduled/overdue/SLA workload has no canonical source (reported null).");
+  limitations.push("Assignment role has no canonical join (byRole reported empty).");
+
+  return {
+    ...base(clean.length, sampleExcluded, opts),
+    // Real counts, but no approved thresholds → verified_with_limitations.
+    evidenceStatus: hasEvidence ? "verified_with_limitations" : "insufficient_evidence",
+    limitations,
+    byRole: [],
+    totalActiveAssignments,
+    unassignedActiveMatters,
+    distinctAssignees: assignees.size,
+    capacityState: "unknown",
+    scheduledInRange: null,
+    overdueTasks: null,
+    slaRiskCount: null,
+    sourceDateRange: { from: times[0] ?? null, to: times[times.length - 1] ?? null },
+    confidence: hasEvidence ? "medium" : null,
+  };
+}
+
 export function buildCapacitySnapshot(
   assignments: readonly CanonicalAssignment[],
   opts?: BuildOpts,
@@ -408,6 +465,15 @@ export function buildCapacitySnapshot(
     evidenceStatus: active.length === 0 ? "insufficient_evidence" : "verified",
     limitations: active.length === 0 ? ["No active assignment evidence."] : [],
     byRole: rows,
+    totalActiveAssignments: active.length,
+    unassignedActiveMatters: 0,
+    distinctAssignees: 0,
+    capacityState: "unknown",
+    scheduledInRange: null,
+    overdueTasks: null,
+    slaRiskCount: null,
+    sourceDateRange: { from: null, to: null },
+    confidence: active.length === 0 ? null : "medium",
   };
 }
 

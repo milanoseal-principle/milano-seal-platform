@@ -19,7 +19,7 @@
 
 // Base columns present in every environment (original schema + ad-hoc adds).
 export const CANONICAL_DEAL_COLUMNS =
-  "id, stage, status, deal_status, destination_country, country, company, company_name, document, document_type, payment_status, payment_confirmed, amount_paid, created_at";
+  "id, stage, status, deal_status, destination_country, country, company, company_name, document, document_type, payment_status, payment_confirmed, amount_paid, created_at, assigned_to";
 
 // Complimentary/revenue capability columns (migration 043/044). Selected only
 // when present; their availability is detected at query time, never hardcoded.
@@ -41,6 +41,7 @@ interface RawDealRow {
   payment_confirmed?: boolean | null;
   amount_paid?: number | null;
   created_at?: string | null;
+  assigned_to?: string | null;
   // Complimentary capability columns (present only when 043/044 applied).
   payment_disposition?: string | null;
   verified_revenue?: number | null;
@@ -67,6 +68,8 @@ export interface NormalizedDealRow {
   payment_status: string | null;
   payment_confirmed: boolean | null;
   amount_paid: number | null;
+  /** Assignment presence/actor key (operator id). Never serialized to clients. */
+  assignee: string | null;
   payment_disposition: string | null; // capability-unavailable → null
   verified_revenue: number | null; // capability-unavailable → null
   comp_authorized: boolean | null; // capability-unavailable → null
@@ -105,6 +108,7 @@ export function normalizeDealRow(r: RawDealRow): NormalizedDealRow {
     payment_status: r.payment_status ?? null,
     payment_confirmed: typeof r.payment_confirmed === "boolean" ? r.payment_confirmed : null,
     amount_paid: typeof r.amount_paid === "number" ? r.amount_paid : null,
+    assignee: r.assigned_to ?? null,
     // Populated only when the comp columns were successfully selected.
     payment_disposition: r.payment_disposition ?? null,
     verified_revenue: typeof r.verified_revenue === "number" ? r.verified_revenue : null,
