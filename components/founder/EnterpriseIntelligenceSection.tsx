@@ -8,6 +8,7 @@ import {
   type MatterStateSnapshot,
   type OrganizationInventorySnapshot,
   type RelationshipNetworkSnapshot,
+  type CapacitySnapshot,
 } from "@/lib/intelligence/enterprise";
 
 // Additive, read-only Enterprise Intelligence section for Founder Command.
@@ -23,6 +24,7 @@ export function EnterpriseIntelligenceSection({
   revenue = null,
   organizations = null,
   relationship = null,
+  capacity = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
@@ -36,6 +38,8 @@ export function EnterpriseIntelligenceSection({
   organizations?: OrganizationInventorySnapshot | null;
   /** Precomputed, server-derived relationship snapshot (no raw records). */
   relationship?: RelationshipNetworkSnapshot | null;
+  /** Precomputed, server-derived workload capacity snapshot (no raw records). */
+  capacity?: CapacitySnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
@@ -52,7 +56,8 @@ export function EnterpriseIntelligenceSection({
     matterState?.evidenceStatus === "unavailable" ||
     rev.evidenceStatus === "unavailable" ||
     organizations?.evidenceStatus === "unavailable" ||
-    relationship?.evidenceStatus === "unavailable";
+    relationship?.evidenceStatus === "unavailable" ||
+    capacity?.evidenceStatus === "unavailable";
   const money = (n: number, ccy: string | null) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: ccy || "USD", maximumFractionDigits: 0 }).format(n);
 
@@ -182,6 +187,29 @@ export function EnterpriseIntelligenceSection({
               { label: "Interactions", value: relationship.interactionCount },
               { label: "Verified Referrals", value: relationship.verifiedReferralEdges == null ? "—" : relationship.verifiedReferralEdges },
               { label: "Latest Activity", value: relationship.latestInteraction ? relationship.latestInteraction.slice(0, 10) : "—" },
+            ].map((t) => (
+              <div key={t.label} className="min-w-0">
+                <p className="text-xs text-white/45">{t.label}</p>
+                <p className="text-lg font-semibold text-white">{String(t.value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Workload Capacity</p>
+        {!capacity || !hasData(capacity) ? (
+          <p className="mt-2 text-sm text-white/50">Insufficient evidence — no canonical assignment records in range.</p>
+        ) : (
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Active Assignments", value: capacity.totalActiveAssignments },
+              { label: "Unassigned Active", value: capacity.unassignedActiveMatters },
+              { label: "Distinct Assignees", value: capacity.distinctAssignees },
+              { label: "Scheduled In Range", value: capacity.scheduledInRange == null ? "—" : capacity.scheduledInRange },
+              { label: "Overdue Tasks", value: capacity.overdueTasks == null ? "—" : capacity.overdueTasks },
+              { label: "Capacity State", value: capacity.capacityState },
             ].map((t) => (
               <div key={t.label} className="min-w-0">
                 <p className="text-xs text-white/45">{t.label}</p>

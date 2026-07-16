@@ -175,8 +175,38 @@ export interface IntegrationReliabilitySnapshot extends SnapshotMeta {
   }>;
 }
 
+export type CapacityState =
+  | "available"
+  | "balanced"
+  | "near_capacity"
+  | "over_capacity"
+  | "blocked"
+  | "unknown";
+
 export interface CapacitySnapshot extends SnapshotMeta {
   byRole: Array<{ role: string; activeAssignments: number }>;
+  totalActiveAssignments: number;
+  unassignedActiveMatters: number;
+  distinctAssignees: number;
+  /** "unknown" until an approved canonical capacity threshold is configured. */
+  capacityState: CapacityState;
+  /** Null: no canonical scheduled_at column on deals in production. */
+  scheduledInRange: number | null;
+  /** Null: no canonical task due-date source wired. */
+  overdueTasks: number | null;
+  /** Null: no canonical SLA deadline source wired. */
+  slaRiskCount: number | null;
+  sourceDateRange: { from: string | null; to: string | null };
+  confidence: "high" | "medium" | null;
+}
+
+/** Minimal Matter reference for capacity (status + assignee presence). */
+export interface CapacityMatterRef {
+  matterId: string;
+  status?: string | null;
+  assignee?: string | null;
+  createdAt?: string | null;
+  isSample?: boolean;
 }
 
 export interface FounderExecutiveSnapshot extends SnapshotMeta {

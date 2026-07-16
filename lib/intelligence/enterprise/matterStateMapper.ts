@@ -1,4 +1,4 @@
-import type { CanonicalMatterRecord, MatterStateRecord, OrganizationRecord, RelationshipMatterRef, RelationshipInteraction } from "./types";
+import type { CanonicalMatterRecord, MatterStateRecord, OrganizationRecord, RelationshipMatterRef, RelationshipInteraction, CapacityMatterRef } from "./types";
 
 // Pure mapper: canonical `deals` rows → MatterStateRecord. No DB, no writes,
 // no revenue/org/capacity/relationship fields. Unknown values stay null.
@@ -101,4 +101,16 @@ export function mapDealActivitiesToInteractions(rows: readonly DealActivityRow[]
     occurredAt: r.created_at ?? null,
     isSample: r.is_sample === true,
   })).filter((i) => i.matterId.length > 0);
+}
+
+// Capacity refs (status + assignee presence) from canonical deals rows.
+// The assignee id stays internal; the capacity builder emits only counts.
+export function mapDealsToCapacityMatterRefs(rows: readonly (DealRow & { assignee?: string | null })[]): CapacityMatterRef[] {
+  return rows.map((r) => ({
+    matterId: String(r.deal_id ?? r.id ?? ""),
+    status: r.status ?? null,
+    assignee: (r as { assignee?: string | null }).assignee ?? null,
+    createdAt: r.created_at ?? null,
+    isSample: r.is_sample === true,
+  })).filter((m) => m.matterId.length > 0);
 }
