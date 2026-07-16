@@ -17,14 +17,14 @@
 // comp_authorized, currency) are NOT yet in production (migration 043 unapplied),
 // so they are reported as capability-unavailable rather than silently zeroed.
 
-// Only columns confirmed present+populated in production are selected. Selecting
-// a nonexistent column would fail the whole query.
+// Base columns present in every environment (original schema + ad-hoc adds).
 export const CANONICAL_DEAL_COLUMNS =
   "id, stage, status, deal_status, destination_country, country, company, company_name, document, document_type, payment_status, payment_confirmed, amount_paid, created_at";
 
-// Whether the complimentary/revenue capability columns exist in the schema this
-// adapter targets. False until migration 043 is applied to production.
-export const COMP_CAPABILITY_AVAILABLE = false;
+// Complimentary/revenue capability columns (migration 043/044). Selected only
+// when present; their availability is detected at query time, never hardcoded.
+export const COMP_CAPABILITY_COLUMNS =
+  "payment_disposition, verified_revenue, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, currency";
 
 interface RawDealRow {
   id?: string | null;
@@ -41,6 +41,11 @@ interface RawDealRow {
   payment_confirmed?: boolean | null;
   amount_paid?: number | null;
   created_at?: string | null;
+  // Complimentary capability columns (present only when 043/044 applied).
+  payment_disposition?: string | null;
+  verified_revenue?: number | null;
+  comp_authorized?: boolean | null;
+  currency?: string | null;
 }
 
 // Normalized row consumed by the enterprise mappers. `status`/`country`/
@@ -100,10 +105,11 @@ export function normalizeDealRow(r: RawDealRow): NormalizedDealRow {
     payment_status: r.payment_status ?? null,
     payment_confirmed: typeof r.payment_confirmed === "boolean" ? r.payment_confirmed : null,
     amount_paid: typeof r.amount_paid === "number" ? r.amount_paid : null,
-    payment_disposition: null,
-    verified_revenue: null,
-    comp_authorized: null,
-    currency: null,
+    // Populated only when the comp columns were successfully selected.
+    payment_disposition: r.payment_disposition ?? null,
+    verified_revenue: typeof r.verified_revenue === "number" ? r.verified_revenue : null,
+    comp_authorized: typeof r.comp_authorized === "boolean" ? r.comp_authorized : null,
+    currency: r.currency ?? null,
   };
 }
 
@@ -158,14 +164,26 @@ export interface CanonicalDealsResult {
  * DealsSchemaError on query error (a schema failure is NOT "no records").
  */
 export async function fetchCanonicalDeals(client: DealsQuery, sinceIso: string): Promise<CanonicalDealsResult> {
-  const { data, error } = await client.from("deals").select(CANONICAL_DEAL_COLUMNS).gte("created_at", sinceIso);
-  if (error) {
+  // First attempt includes the complimentary-capability columns. If they exist
+  // (migration 043/044 applied) the query succeeds and capability is available.
+  const withComp = await client
+    .from("deals")
+    .select(`${CANONICAL_DEAL_COLUMNS}, ${COMP_CAPABILITY_COLUMNS}`)
+    .gte("created_at", sinceIso);
+
+  if (!withComp.error) {
+    const raw = Array.isArray(withComp.data) ? (withComp.data as RawDealRow[]) : [];
+    return { rows: raw.map(normalizeDealRow), conflicts: detectConflicts(raw), compCapability: "available" };
+  }
+
+  // Comp columns absent (or another issue): retry with base columns only. If the
+  // always-present base set ALSO fails, that is a genuine schema/query failure.
+  const base = await client.from("deals").select(CANONICAL_DEAL_COLUMNS).gte("created_at", sinceIso);
+  if (base.error) {
     throw new DealsSchemaError("Canonical deals query failed (schema verification required).");
   }
-  const raw = Array.isArray(data) ? (data as RawDealRow[]) : [];
-  return {
-    rows: raw.map(normalizeDealRow),
-    conflicts: detectConflicts(raw),
-    compCapability: COMP_CAPABILITY_AVAILABLE ? "available" : "unavailable",
-  };
+  const raw = Array.isArray(base.data) ? (base.data as RawDealRow[]) : [];
+  // Base succeeded but comp columns are missing → capability unavailable (NOT a
+  // hard failure, NOT fabricated zeros).
+  return { rows: raw.map(normalizeDealRow), conflicts: detectConflicts(raw), compCapability: "unavailable" };
 }

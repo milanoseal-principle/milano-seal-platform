@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   CANONICAL_DEAL_COLUMNS,
-  COMP_CAPABILITY_AVAILABLE,
+  COMP_CAPABILITY_COLUMNS,
   normalizeDealRow,
   detectConflicts,
   fetchCanonicalDeals,
@@ -57,45 +57,59 @@ test("payment fields map correctly", () => {
 });
 
 // 11: missing complimentary fields → capability unavailable + null comp fields
-test("missing complimentary fields mark capability unavailable and stay null", () => {
-  assert.equal(COMP_CAPABILITY_AVAILABLE, false);
-  const n = normalizeDealRow({ status: "new" });
-  assert.equal(n.payment_disposition, null);
-  assert.equal(n.verified_revenue, null);
-  assert.equal(n.comp_authorized, null);
-  assert.equal(n.currency, null);
+test("comp fields normalize from raw when present, else null", () => {
+  assert.equal(normalizeDealRow({ status: "new" }).payment_disposition, null);
+  const n = normalizeDealRow({ status: "new", payment_disposition: "complimentary", verified_revenue: 0, comp_authorized: true, currency: "USD" });
+  assert.equal(n.payment_disposition, "complimentary");
+  assert.equal(n.comp_authorized, true);
+  assert.equal(n.currency, "USD");
 });
 
-// column list is production-safe (no comp columns that would break the query)
-test("column list excludes not-yet-present comp columns", () => {
-  assert.ok(/\bstatus\b/.test(CANONICAL_DEAL_COLUMNS));
-  assert.ok(/\bstage\b/.test(CANONICAL_DEAL_COLUMNS));
+test("base column list has status+stage+destination; comp columns are a separate list", () => {
+  assert.ok(/\bstatus\b/.test(CANONICAL_DEAL_COLUMNS) && /\bstage\b/.test(CANONICAL_DEAL_COLUMNS));
   assert.ok(/destination_country/.test(CANONICAL_DEAL_COLUMNS) && /\bcountry\b/.test(CANONICAL_DEAL_COLUMNS));
-  for (const missing of ["payment_disposition", "verified_revenue", "comp_authorized", "currency"]) {
-    assert.ok(!new RegExp(missing).test(CANONICAL_DEAL_COLUMNS), `must not select ${missing}`);
+  for (const comp of ["payment_disposition", "verified_revenue", "comp_authorized", "currency"]) {
+    assert.ok(!new RegExp(comp).test(CANONICAL_DEAL_COLUMNS), `base list must not include ${comp}`);
+    assert.ok(new RegExp(comp).test(COMP_CAPABILITY_COLUMNS), `comp list must include ${comp}`);
   }
 });
 
-// fetch: returns result shape with conflicts + capability
-test("fetchCanonicalDeals returns rows, conflicts, and comp capability", async () => {
+// capability AVAILABLE when the comp-inclusive query succeeds
+test("compCapability is available when comp columns select succeeds", async () => {
   const ok = {
     from: () => ({
       select: () => ({
-        gte: async () => ({
-          data: [{ status: "new", deal_status: "old", destination_country: "Italy", country: "Italy" }],
-          error: null,
-        }),
+        gte: async () => ({ data: [{ status: "new", deal_status: "old" }], error: null }),
       }),
     }),
   };
   const res = await fetchCanonicalDeals(ok, "2026-01-01T00:00:00Z");
-  assert.equal(res.rows[0].status, "new");
-  assert.equal(res.compCapability, "unavailable");
+  assert.equal(res.compCapability, "available");
   assert.equal(res.conflicts.find((c) => c.field === "operationalStatus")?.count, 1);
 });
 
-// schema failure → DealsSchemaError (not empty)
-test("fetchCanonicalDeals throws DealsSchemaError on query error", async () => {
+// capability UNAVAILABLE when comp select errors but base succeeds
+test("compCapability is unavailable when comp columns absent but base works", async () => {
+  let call = 0;
+  const client = {
+    from: () => ({
+      select: (cols: string) => ({
+        gte: async () => {
+          call += 1;
+          // First call includes comp columns → error; base-only call → succeeds.
+          if (/payment_disposition/.test(cols)) return { data: null, error: { message: "column does not exist" } };
+          return { data: [{ status: "new" }], error: null };
+        },
+      }),
+    }),
+  };
+  const res = await fetchCanonicalDeals(client, "2026-01-01T00:00:00Z");
+  assert.equal(res.compCapability, "unavailable");
+  assert.ok(call >= 2, "should retry base-only");
+});
+
+// schema failure → DealsSchemaError when even base fails
+test("fetchCanonicalDeals throws DealsSchemaError when base query also fails", async () => {
   const failing = { from: () => ({ select: () => ({ gte: async () => ({ data: null, error: { message: "x" } }) }) }) };
   await assert.rejects(() => fetchCanonicalDeals(failing, "2026-01-01T00:00:00Z"), DealsSchemaError);
 });
