@@ -9,6 +9,7 @@ import {
   type OrganizationInventorySnapshot,
   type RelationshipNetworkSnapshot,
   type CapacitySnapshot,
+  type IntegrationReliabilitySnapshot,
 } from "@/lib/intelligence/enterprise";
 
 // Additive, read-only Enterprise Intelligence section for Founder Command.
@@ -25,6 +26,7 @@ export function EnterpriseIntelligenceSection({
   organizations = null,
   relationship = null,
   capacity = null,
+  integration = null,
 }: {
   matters?: CanonicalMatterRecord[];
   integrationEvents?: CanonicalIntegrationEvent[];
@@ -40,6 +42,8 @@ export function EnterpriseIntelligenceSection({
   relationship?: RelationshipNetworkSnapshot | null;
   /** Precomputed, server-derived workload capacity snapshot (no raw records). */
   capacity?: CapacitySnapshot | null;
+  /** Precomputed, server-derived integration reliability snapshot (no raw records). */
+  integration?: IntegrationReliabilitySnapshot | null;
 }) {
   const snapshot = buildFounderExecutiveSnapshot(
     { matters, integrationEvents, assignments },
@@ -57,7 +61,8 @@ export function EnterpriseIntelligenceSection({
     rev.evidenceStatus === "unavailable" ||
     organizations?.evidenceStatus === "unavailable" ||
     relationship?.evidenceStatus === "unavailable" ||
-    capacity?.evidenceStatus === "unavailable";
+    capacity?.evidenceStatus === "unavailable" ||
+    integration?.evidenceStatus === "unavailable";
   const money = (n: number, ccy: string | null) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: ccy || "USD", maximumFractionDigits: 0 }).format(n);
 
@@ -210,6 +215,29 @@ export function EnterpriseIntelligenceSection({
               { label: "Scheduled In Range", value: capacity.scheduledInRange == null ? "—" : capacity.scheduledInRange },
               { label: "Overdue Tasks", value: capacity.overdueTasks == null ? "—" : capacity.overdueTasks },
               { label: "Capacity State", value: capacity.capacityState },
+            ].map((t) => (
+              <div key={t.label} className="min-w-0">
+                <p className="text-xs text-white/45">{t.label}</p>
+                <p className="text-lg font-semibold text-white">{String(t.value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#c9a24a]">Integration Reliability</p>
+        {!integration || !hasData(integration) ? (
+          <p className="mt-2 text-sm text-white/50">Insufficient evidence — no verified integration events (configured is not active).</p>
+        ) : (
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Providers", value: integration.providerCount },
+              { label: "Configured", value: integration.configuredCount },
+              { label: "Active", value: integration.activeCount },
+              { label: "Degraded", value: integration.degradedCount },
+              { label: "Latest Verified", value: integration.latestVerifiedEvent ? integration.latestVerifiedEvent.slice(0, 10) : "—" },
+              { label: "Uptime %", value: integration.uptimePercent == null ? "—" : integration.uptimePercent },
             ].map((t) => (
               <div key={t.label} className="min-w-0">
                 <p className="text-xs text-white/45">{t.label}</p>

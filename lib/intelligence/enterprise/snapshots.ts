@@ -14,6 +14,8 @@ import type {
   CapacityMatterRef,
   CapacitySnapshot,
   FounderExecutiveSnapshot,
+  IntegrationHealthInput,
+  IntegrationLifecycleState,
   IntegrationReliabilitySnapshot,
   MatterPerformanceSnapshot,
   MatterStateRecord,
@@ -391,6 +393,107 @@ export function buildIntegrationReliabilitySnapshot(
     evidenceStatus: verified.length === 0 ? "insufficient_evidence" : "verified",
     limitations: verified.length === 0 ? ["No verified integration events (configured ≠ active)."] : [],
     integrations,
+    providerCount: byIntegration.size,
+    configuredCount: 0,
+    authenticationVerifiedCount: 0,
+    webhookVerifiedCount: 0,
+    testEventVerifiedCount: verified.length,
+    activeCount: 0,
+    degradedCount: 0,
+    unavailableCount: 0,
+    latestVerifiedEvent: null,
+    latestFailureEvent: null,
+    latencyMs: null,
+    uptimePercent: null,
+    errorRate: null,
+    sourceDateRange: { from: null, to: null },
+    confidence: verified.length === 0 ? null : "medium",
+  };
+}
+
+// Health-Center-aligned integration snapshot. Reads the SAME canonical evidence
+// as the Integration Health Center (configured/verified/active states). It NEVER
+// elevates state from env presence: "configured" ≠ "active". uptime/latency/
+// error-rate remain null (no measured history). No provider calls, no secrets.
+export function buildIntegrationHealthSnapshot(
+  records: readonly IntegrationHealthInput[],
+  opts?: BuildOpts,
+): IntegrationReliabilitySnapshot {
+  const clean = excludeSamples([...records]);
+  const sampleExcluded = records.length - clean.length;
+
+  const toLifecycle = (health: string, configured: boolean): IntegrationLifecycleState => {
+    switch (health) {
+      case "active":
+      case "healthy":
+        return "active";
+      case "degraded":
+        return "degraded";
+      case "unavailable":
+        return "unavailable";
+      case "configured":
+        return "configuration_present";
+      case "action_required":
+        return configured ? "configuration_present" : "missing_configuration";
+      default:
+        return configured ? "configuration_present" : "unknown";
+    }
+  };
+
+  const integrations = clean.map((r) => {
+    const lifecycleState = toLifecycle(r.health, r.configured);
+    return {
+      integration: r.provider,
+      verifiedEventCount: r.lastVerifiedEventAt ? 1 : 0,
+      successRate: null,
+      configured: r.configured,
+      lifecycleState,
+      lastVerifiedEventAt: r.lastVerifiedEventAt ?? null,
+    };
+  });
+
+  const count = (s: IntegrationLifecycleState) => integrations.filter((i) => i.lifecycleState === s).length;
+  const configuredCount = integrations.filter((i) => i.configured).length;
+  const activeCount = count("active");
+  const degradedCount = count("degraded");
+  const unavailableCount = count("unavailable");
+  const verifiedTimes = clean.map((r) => r.lastVerifiedEventAt).filter((t): t is string => !!t).sort();
+  const failureTimes = clean.map((r) => r.lastFailureAt).filter((t): t is string => !!t).sort();
+
+  const limitations: string[] = [];
+  if (clean.length === 0) limitations.push("No integration providers found.");
+  if (activeCount === 0) limitations.push("No provider is Active — configured ≠ active (needs a signed provider event).");
+  limitations.push("uptime/latency/error-rate require measured event history (reported null).");
+
+  // Verified only when at least one provider is genuinely active; otherwise, with
+  // real configuration evidence, verified_with_limitations; with none, insufficient.
+  const evidenceStatus =
+    clean.length === 0
+      ? "insufficient_evidence"
+      : activeCount > 0
+        ? "verified"
+        : "verified_with_limitations";
+
+  return {
+    ...base(clean.length, sampleExcluded, opts),
+    evidenceStatus,
+    limitations,
+    integrations,
+    providerCount: integrations.length,
+    configuredCount,
+    authenticationVerifiedCount: 0, // no canonical auth-verified evidence source
+    webhookVerifiedCount: 0, // no canonical webhook-verified evidence source
+    testEventVerifiedCount: verifiedTimes.length,
+    activeCount,
+    degradedCount,
+    unavailableCount,
+    latestVerifiedEvent: verifiedTimes[verifiedTimes.length - 1] ?? null,
+    latestFailureEvent: failureTimes[failureTimes.length - 1] ?? null,
+    latencyMs: null,
+    uptimePercent: null,
+    errorRate: null,
+    sourceDateRange: { from: verifiedTimes[0] ?? null, to: verifiedTimes[verifiedTimes.length - 1] ?? null },
+    confidence: clean.length === 0 ? null : "medium",
   };
 }
 
