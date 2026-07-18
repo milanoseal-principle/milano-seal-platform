@@ -8,6 +8,26 @@ infrastructure. Code gates below are machine-verified in CI/local runs.
 
 ---
 
+## 0. Enterprise Intelligence — CODE-COMPLETE
+Read-only Founder Command intelligence, wired to canonical evidence across six
+sources. All PRs merged to `main`.
+
+| Field | Value |
+|---|---|
+| Final PR | #151 (Source #6 — verified integration events) |
+| Merge commit | `030a2b2` |
+| Six sources | ✅ Matter (#141) · payment/revenue (#142) · organizations (#143) · relationship (#148) · assignments/capacity (#150) · integration events (#151) |
+| Founder Command blocks | ✅ Matter Activity · Verified Revenue · Organization Intelligence · Relationship Evidence · Workload Capacity · Integration Reliability |
+| Tests | VERIFIED — 263/263 |
+| Typecheck / Lint / Build | VERIFIED — clean / clean / passed |
+| `validate:complimentary-matter-flow` | VERIFIED |
+| Honest evidence rules | VERIFIED — no evidence→insufficient_evidence; query failure→unavailable; partial→verified_with_limitations; complimentary revenue $0; forecasts separate; samples excluded; configured integration ≠ active; unsupported metrics null |
+| Visual review (Founder Command w/ real data) | **NOT VERIFIED** (requires rendering) |
+| Provider live evidence (signed Wise/BlueNotary/Shippo events) | **NOT VERIFIED** (requires live infra) |
+| Supabase migration-chain repair | **BLOCKED / separate** — fresh chain fails at migration 002; tracked in `SUPABASE_MIGRATION_CHAIN_REPAIR.md` |
+
+---
+
 ## 1. Release Identity
 | Field | Value |
 |---|---|
