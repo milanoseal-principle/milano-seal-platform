@@ -167,12 +167,58 @@ export interface RelationshipInteraction {
   isSample?: boolean;
 }
 
+// Canonical Health Center lifecycle (mirrors the Integration Health states).
+export type IntegrationLifecycleState =
+  | "missing_configuration"
+  | "configuration_present"
+  | "authentication_verified"
+  | "webhook_verified"
+  | "test_event_verified"
+  | "normalized_state_verified"
+  | "active"
+  | "degraded"
+  | "incident_open"
+  | "recovery_pending"
+  | "recovered"
+  | "unavailable"
+  | "unknown";
+
+/** Health Center evidence input (from lib/integration-command/integrationReadModel). */
+export interface IntegrationHealthInput {
+  provider: string;
+  configured: boolean;
+  /** Canonical Health Center health string. */
+  health: string;
+  lastVerifiedEventAt?: string | null;
+  lastFailureAt?: string | null;
+  isSample?: boolean;
+}
+
 export interface IntegrationReliabilitySnapshot extends SnapshotMeta {
   integrations: Array<{
     integration: string;
     verifiedEventCount: number;
     successRate: number | null;
+    configured?: boolean;
+    lifecycleState?: IntegrationLifecycleState;
+    lastVerifiedEventAt?: string | null;
   }>;
+  providerCount: number;
+  configuredCount: number;
+  authenticationVerifiedCount: number;
+  webhookVerifiedCount: number;
+  testEventVerifiedCount: number;
+  activeCount: number;
+  degradedCount: number;
+  unavailableCount: number;
+  latestVerifiedEvent: string | null;
+  latestFailureEvent: string | null;
+  /** Unsupported without measured history — always null (never fabricated). */
+  latencyMs: number | null;
+  uptimePercent: number | null;
+  errorRate: number | null;
+  sourceDateRange: { from: string | null; to: string | null };
+  confidence: "high" | "medium" | null;
 }
 
 export type CapacityState =
