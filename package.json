@@ -1,5 +1,5 @@
 {
-  "name": "my-project",
+  "name": "milano-seal-platform",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
+    "test": "node scripts/run-tests.mjs",
     "validate:project": "npx tsx scripts/validate-project.ts",
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",
@@ -56,7 +56,6 @@
     "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
     "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
     "validate:mobile-cinematic-hotfix": "node scripts/validate-mobile-cinematic-hotfix.mjs",
-    "test": "node scripts/run-tests.mjs",
     "validate:complimentary-matter-flow": "node scripts/validate-complimentary-matter-flow.mjs",
     "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs"
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",
@@ -75,7 +74,9 @@
     "check:integration-configuration": "node scripts/check-integration-configuration.mjs",
     "validate:milano-pre-execution": "node scripts/validate-milano-pre-execution.mjs",
     "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts",
-    "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs"
+    "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
+    "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
+    "validate:migration-chain": "node scripts/validate-migration-chain.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
