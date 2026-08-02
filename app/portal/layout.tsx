@@ -18,7 +18,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   if (!user) redirect("/login?next=/portal");
 
-  const role = ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   // Founder/admin may preview the client portal — do not bounce them.
   // Real VA / alliance roles remain locked to their own dashboard.

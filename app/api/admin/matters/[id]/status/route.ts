@@ -38,7 +38,7 @@ export async function POST(
     return NextResponse.json({ ok: false, code: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = user.app_metadata?.role ?? user.app_metadata?.role;
   if (role !== "founder_admin") {
     return NextResponse.json({ ok: false, code: "FOUNDER_ONLY" }, { status: 403 });
   }

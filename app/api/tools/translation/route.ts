@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const role: string =
     profile?.role ??
-    (user.user_metadata?.role as string) ??
+    (user.app_metadata?.role as string) ??
     (user.app_metadata?.role as string) ??
     "";
 

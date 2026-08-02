@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = user.app_metadata?.role ?? user.app_metadata?.role;
   if (role !== "founder_admin") {
     return NextResponse.json(
       { success: false, code: "FOUNDER_ONLY_PRICING_CONTROL" },

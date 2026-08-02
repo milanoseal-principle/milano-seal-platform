@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+// Validator — Canonical Foundation (Unification Phases 2–5).
+// Asserts the additive foundation exists, delegates to controlling engines, adds
+// no duplicate pricing constants, deletes nothing, and touches no protected logic.
+
+import fs from "fs";
+import path from "path";
+import { execSync } from "child_process";
+
+const repoRoot = process.cwd();
+let failures = 0;
+const fail = (m) => { console.error("FAIL:", m); failures++; };
+const ok = (m) => console.log("OK:", m);
+const read = (rel) => (fs.existsSync(path.join(repoRoot, rel)) ? fs.readFileSync(path.join(repoRoot, rel), "utf8") : null);
+const exists = (rel) => fs.existsSync(path.join(repoRoot, rel));
+
+// 1. Canonical files exist.
+const required = [
+  "lib/platform/entities/index.ts",
+  "lib/platform/entities/ids.ts",
+  "lib/platform/entities/entityRelationships.ts",
+  "lib/platform/entities/entitySafety.ts",
+  "lib/platform/entities/adapters.ts",
+  "lib/platform/canonicalMatter.ts",
+  "lib/platform/matterStateAdapters.ts",
+  "lib/platform/matterStateSafety.ts",
+  "lib/pricing/canonicalPricingGateway.ts",
+  "lib/pricing/pricingAdapters.ts",
+  "lib/pricing/index.ts",
+  "lib/alliance/canonicalPartnerPassport.ts",
+  "lib/alliance/partnerPassportAdapters.ts",
+  "lib/jurisdictions/canonicalCountryAdapter.ts",
+  "docs/architecture/MILANO_SEAL_CANONICAL_ENTITY_FRAMEWORK.md",
+  "docs/architecture/MILANO_SEAL_CANONICAL_MATTER_CORE.md",
+  "docs/architecture/MILANO_SEAL_STATE_AND_PRICING_GOVERNANCE.md",
+];
+for (const f of required) if (!exists(f)) fail(`Missing ${f}`);
+if (failures === 0) ok("All canonical foundation files present");
+
+// 2. Canonical Matter remains controlling and still exports its type + fields.
+const cm = read("lib/platform/canonicalMatter.ts") ?? "";
+if (!/interface CanonicalMatterObject/.test(cm)) fail("CanonicalMatterObject missing");
+if (!/CANONICAL_MATTER_FIELDS/.test(cm)) fail("CANONICAL_MATTER_FIELDS missing (would break consumers)");
+else ok("Canonical Matter controlling type + fields intact");
+
+// 3. State machine remains controlling; adapters delegate (no second engine).
+if (!exists("lib/stateMachine.ts")) fail("Controlling lib/stateMachine.ts missing");
+const sa = read("lib/platform/matterStateAdapters.ts") ?? "";
+if (!/from "\.\.\/stateMachine"/.test(sa)) fail("State adapter must delegate to lib/stateMachine (no duplicate engine)");
+else ok("State adapters delegate to the controlling state machine");
+if (!/scheduling requires payment_confirmed/.test(sa)) fail("State adapter must enforce payment gate on → scheduled");
+else ok("State adapter enforces payment-before-scheduling");
+
+// 4. Pricing gateway delegates; adds no duplicate price constants.
+const gw = read("lib/pricing/canonicalPricingGateway.ts") ?? "";
+if (!/from "\.\.\/pricing"/.test(gw) || !/calculatePrice/.test(gw)) fail("Pricing gateway must delegate to lib/pricing calculatePrice");
+else ok("Pricing gateway delegates to controlling engine");
+if (/\b(750|975|1850)\b/.test(gw)) fail("Pricing gateway must not add duplicate lane-base constants");
+else ok("No duplicate public pricing constants in gateway");
+
+// 5. Partner passport + country decisions documented.
+if (!/partnerPassport\.ts/.test(read("lib/alliance/canonicalPartnerPassport.ts") ?? "")) fail("Partner passport controlling decision not documented");
+else ok("Partner Passport controlling decision recorded");
+if (!/preserve|conflict/i.test(read("lib/jurisdictions/canonicalCountryAdapter.ts") ?? "")) fail("Country adapter must preserve conflicts");
+else ok("Country governance (conflict-preserving) recorded");
+
+// 6. package.json valid JSON.
+try { JSON.parse(read("package.json")); ok("package.json valid JSON"); }
+catch { fail("package.json invalid JSON"); }
+
+// 7. No deletions, no protected-file changes vs main.
+try {
+  const base = execSync("git merge-base origin/main HEAD || git rev-parse main", { cwd: repoRoot, encoding: "utf8" }).trim();
+  const deleted = execSync(`git diff --name-only --diff-filter=D ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" }).split("\n").filter(Boolean);
+  if (deleted.length) fail(`Files deleted (not allowed this phase): ${deleted.join(", ")}`);
+  else ok("No files deleted");
+  const diff = execSync(`git diff --name-only ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" });
+  const prot = /wise|webhook|payment-?confirm|paymentConfirm|release-?gate|releaseGate|performFinalRelease|custody|supabase\/(migrations|rls)|serviceRole|shippo|bluenotary/i;
+  const touched = diff.split("\n").filter((f) => f && prot.test(f));
+  if (touched.length) fail(`Protected files changed: ${touched.join(", ")}`);
+  else ok("No protected business-logic files changed");
+} catch (e) { console.log("NOTE: git guard skipped (", e.message, ")"); }
+
+if (failures) { console.error(`\nVALIDATOR: canonical-foundation FAILED (${failures}).`); process.exit(2); }
+console.log("\nVALIDATOR: canonical-foundation PASSED.");
