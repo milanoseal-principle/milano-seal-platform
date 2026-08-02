@@ -33,8 +33,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Do you provide document execution coordination?",
-    a: "Yes. Document execution coordination only. The Milano Seal does not provide legal advice. Final acceptance remains subject to the receiving authority.",
-    a: "No. The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Legal advice should come from a licensed attorney.",
+    a: "Yes. Document execution coordination only. The Milano Seal does not provide legal advice. Legal advice should come from a licensed attorney, and final acceptance remains subject to the receiving authority.",
   },
 ];
 

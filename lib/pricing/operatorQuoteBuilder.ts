@@ -21,7 +21,7 @@ function addOnFloor(value: number | [number, number]): number {
 
 // Build an operator quote draft from a Smart Intake pricing result.
 export function buildOperatorQuote(result: SmartPricingResult): OperatorQuoteDraft {
-  const addOnTotal = Object.values(result.addOns).reduce((sum, v) => sum + addOnFloor(v), 0);
+  const addOnTotal = Object.values(result.addOns).reduce<number>((sum, v) => sum + addOnFloor(v), 0);
   const estimatedFloor =
     result.internalBase === null ? null : result.internalBase + addOnTotal;
 

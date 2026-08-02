@@ -1,0 +1,1 @@
+export const identifierVerificationRule = "Character-by-character identifier verification is mandatory for legal identifiers, foreign tax IDs, passport numbers, registry numbers, dates, and destination-country forms.";

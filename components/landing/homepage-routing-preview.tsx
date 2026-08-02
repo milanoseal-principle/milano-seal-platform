@@ -35,8 +35,8 @@ export function HomepageRoutingPreview() {
             <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">
               Smart Intake Routing
             </p>
-            <h2 className="font-serif text-3xl text-white md:text-4xl">
-              Routing <em className="text-[var(--ms-gold)]">Preview</em>
+            <h2 className="font-serif text-[clamp(1.65rem,7vw,2.4rem)] leading-tight text-white md:text-4xl">
+              Atlas Corridor <em className="text-[var(--ms-gold)]">Preview</em>
             </h2>
             <p className="mt-4 text-sm leading-7 text-white/45 md:text-base">
               Select a priority corridor to prepare a secure intake pathway.

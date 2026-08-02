@@ -19,6 +19,7 @@ import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 import { PublicFAQ } from "@/components/conversion/PublicFAQ";
 import { TrustProof } from "@/components/conversion/TrustProof";
 import { FinalCTA } from "@/components/conversion/FinalCTA";
+import { SectionReveal } from "@/components/motion/SectionReveal";
 
 export const metadata: Metadata = {
   title: "The Milano Seal™ | International Document Execution & Apostille Coordination",
@@ -49,10 +50,10 @@ export default function HomePage() {
         <Hero />
 
         {/* 2. Trust strip — credential badges */}
-        <TrustStrip />
+        <SectionReveal><TrustStrip /></SectionReveal>
 
         {/* 2b. Persona routing — explicit door per visitor type */}
-        <PersonaRouting />
+        <SectionReveal><PersonaRouting /></SectionReveal>
 
         {/* 3. Milano Trust Core — 6 pillars */}
         <div id="principles">
@@ -60,19 +61,19 @@ export default function HomePage() {
         </div>
 
         {/* 4. Services — RON, Apostille, International Execution, Mobile Notary */}
-        <div id="services">
+        <SectionReveal className="w-full"><div id="services">
           <Services />
-        </div>
+        </div></SectionReveal>
 
         {/* 5. How It Works — #process nav target */}
-        <div id="process">
+        <SectionReveal className="w-full"><div id="process">
           <HowItWorks />
-        </div>
+        </div></SectionReveal>
 
         {/* 6. Guided routing preview — full workspace remains on /map */}
-        <div id="map">
+        <SectionReveal className="w-full"><div id="map">
           <HomepageRoutingPreview />
-        </div>
+        </div></SectionReveal>
 
         {/* 6. What Are You Executing — document type grid */}
         <DocumentIntelligence />
