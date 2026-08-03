@@ -83,8 +83,8 @@ export default function Page() {
             Execution support specialists assist The Milano Seal™ with intake
             review, upload organization, document checklist support,
             missing-field identification, and escalation of incomplete matters
-            to authorized operators. Support roles do not provide legal advice,
-            notarial acts, apostille determinations, payment approval,
+            to authorized operators. Support roles do not interpret laws or provide professional counsel,
+            perform notarial acts, make apostille determinations, approve payment,
             client-facing authority, or final release approval.
           </p>
 

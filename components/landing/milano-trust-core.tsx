@@ -27,6 +27,30 @@ const LEFT_PILLARS = [
   },
 ];
 
+
+const MOBILE_TRUST_PRINCIPLES = [
+  {
+    icon: Shield,
+    title: "Secure Intake",
+    desc: "Every matter begins with structured scope and document review.",
+  },
+  {
+    icon: Globe,
+    title: "Global Document Intelligence",
+    desc: "Destination and receiving-authority requirements are reviewed for the specific corridor.",
+  },
+  {
+    icon: Lock,
+    title: "Payment-Gated Scheduling",
+    desc: "Scheduling remains locked until scope and payment are confirmed.",
+  },
+  {
+    icon: Eye,
+    title: "Chain-of-Custody Visibility",
+    desc: "Key document and delivery milestones remain visible from intake through release.",
+  },
+];
+
 const RIGHT_PILLARS = [
   {
     icon: Eye,
@@ -111,7 +135,7 @@ export function MilanoTrustCore() {
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full border-t border-[#1A1A1A] bg-[#060608] py-10 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      className="relative w-full overflow-hidden border-t border-[#1A1A1A] bg-[#060608] px-5 py-14 sm:px-6 lg:px-8 lg:py-10"
     >
       {/* Ambient gold particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -131,27 +155,72 @@ export function MilanoTrustCore() {
       </div>
 
       <div className="relative max-w-5xl mx-auto">
-        {/* Mobile: header + grid */}
+        {/* Mobile: cinematic Trust Core summary */}
         <div className="lg:hidden">
-          <div className="flex flex-col items-center text-center mb-10">
-            <div
-              className="w-14 h-14 rounded-full border border-[var(--ms-gold)]/30 flex items-center justify-center mb-5"
-              style={{ background: "radial-gradient(circle, rgba(198,165,90,0.08) 0%, transparent 70%)" }}
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[var(--ms-gold)]/35"
+              style={{ background: "radial-gradient(circle, rgba(198,165,90,0.14) 0%, rgba(6,6,8,0.96) 72%)" }}
+              animate={reduce ? undefined : { boxShadow: ["0 0 18px rgba(198,165,90,0.12)", "0 0 34px rgba(198,165,90,0.26)", "0 0 18px rgba(198,165,90,0.12)"] }}
+              transition={reduce ? undefined : { duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Image src="/milano-seal-core-brain-feather.png" alt="The Milano Seal Trust Core medallion" width={38} height={38} className="h-9 w-9 rounded-full object-contain" />
-            </div>
-            <p className="font-mono text-[9px] tracking-[0.08em] uppercase text-[var(--ms-gold)]/70 mb-2">
+              <motion.span
+                aria-hidden="true"
+                className="absolute inset-[-10px] rounded-full border border-[var(--ms-gold)]/15"
+                animate={reduce ? undefined : { rotate: 360 }}
+                transition={reduce ? undefined : { duration: 28, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.span
+                aria-hidden="true"
+                className="absolute inset-[-18px] rounded-full border border-[var(--ms-gold)]/10"
+                animate={reduce ? undefined : { rotate: -360 }}
+                transition={reduce ? undefined : { duration: 44, repeat: Infinity, ease: "linear" }}
+              />
+              {!reduce && (
+                <motion.span
+                  aria-hidden="true"
+                  className="absolute inset-[-14px] rounded-full"
+                  style={{
+                    background: "conic-gradient(from 0deg, transparent 0deg, rgba(198,165,90,0.18) 32deg, transparent 74deg)",
+                    maskImage: "radial-gradient(circle, transparent 52%, black 58%, black 68%, transparent 74%)",
+                    WebkitMaskImage: "radial-gradient(circle, transparent 52%, black 58%, black 68%, transparent 74%)",
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+                />
+              )}
+              <Image src="/milano-seal-core-brain-feather.png" alt="The Milano Seal Trust Core medallion" width={64} height={64} className="relative h-16 w-16 rounded-full object-contain drop-shadow-[0_0_22px_rgba(198,165,90,0.32)]" />
+            </motion.div>
+            <p className="mb-2 font-mono text-[13px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/75">
               Our Platform Principles
             </p>
-            <h2 className="font-serif text-2xl text-white font-normal mb-2">Milano Trust Core</h2>
-            <p className="text-white/55 text-sm max-w-xs leading-relaxed">
-              International document matters rarely fail because of complexity alone. They fail because a signature was missed, a certificate was incomplete, an apostille route was misunderstood, a translation was overlooked, or a document packet moved without proper review. The Milano Seal brings structure to that process through secure intake, document review, notarization coordination, apostille/authentication routing, courier custody, and final release support.
+            <h2 className="font-serif text-3xl leading-tight text-white">Milano Trust Core</h2>
+            <p className="mt-4 max-w-[34rem] text-base leading-7 text-white/62">
+              International document matters require more than a signature. The Milano Seal coordinates intake, execution review, apostille or authentication routing, custody, and release through one controlled matter workflow.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[...LEFT_PILLARS, ...RIGHT_PILLARS].map((p, i) => (
-              <Pillar key={p.title} {...p} align="left" delay={0.07 * i} inView={inView} />
-            ))}
+
+          <div className="mt-8 grid gap-4">
+            {MOBILE_TRUST_PRINCIPLES.map((principle, i) => {
+              const Icon = principle.icon;
+              return (
+                <motion.div
+                  key={principle.title}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.45, delay: 0.08 * i, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-start gap-3 rounded-2xl border border-[var(--ms-gold)]/15 bg-white/[0.025] p-4"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.055]">
+                    <Icon className="h-4 w-4 text-[var(--ms-gold)]/80" />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <h3 className="text-[1.25rem] font-semibold leading-tight text-[#E8DCC0]">{principle.title}</h3>
+                    <p className="mt-1 text-base leading-7 text-white/56">{principle.desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
 

@@ -23,6 +23,8 @@ export interface PortalClientMatter {
   matter_status: string | null;       // raw internal status (for logic/state machine)
   client_facing_status: string | null; // human-readable status copy
   payment_status: string | null;
+  payment_disposition?: string | null;
+  comp_authorized?: boolean | null;
   payment_amount_due: number | null;
   amount_due: number | null;
   payment_confirmed: boolean;
@@ -77,6 +79,8 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     matter_status: (raw.matter_status as string | null) ?? (raw.status as string | null) ?? null,
     client_facing_status: (raw.client_facing_status as string | null) ?? null,
     payment_status: (raw.payment_status as string | null) ?? null,
+    payment_disposition: (raw.payment_disposition as string | null) ?? null,
+    comp_authorized: (raw.comp_authorized as boolean | null) ?? false,
     payment_amount_due: (raw.payment_amount_due as number | null) ?? null,
     amount_due: (raw.amount_due as number | null) ?? (raw.payment_amount_due as number | null) ?? null,
     payment_confirmed: (raw.payment_confirmed as boolean) ?? false,

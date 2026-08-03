@@ -108,6 +108,10 @@ export default function ClientInvoicePage() {
 
   // Use payment_amount_due from the safe API — no internal cost/margin fields
   const subtotal = Number(deal.payment_amount_due ?? deal.amount_due ?? 0);
+  const complimentaryAuthorized =
+    deal.payment_disposition === "complimentary" &&
+    deal.comp_authorized === true &&
+    Number(deal.amount_due ?? deal.payment_amount_due ?? 0) === 0;
   const paid =
     deal.payment_status === "paid" ||
     deal.payment_status === "confirmed" ||
@@ -286,9 +290,43 @@ export default function ClientInvoicePage() {
         </div>
       )}
 
-      {/* Payment card — Wise suppressed for platform-fee-only matters */}
+
+      {complimentaryAuthorized && (
+        <div data-critical-card="" style={{
+          marginBottom: 16,
+          background: "rgba(74,142,107,0.08)",
+          border: "1px solid rgba(74,142,107,0.28)",
+          borderRadius: 8,
+          padding: "18px 22px",
+        }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(74,142,107,0.86)", marginBottom: 10 }}>
+            Complimentary Service Authorization
+          </div>
+          <div style={{ fontSize: 14, color: "#E5E5E5", marginBottom: 6 }}>
+            No payment is due for this Matter.
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.52)", lineHeight: 1.6 }}>
+            Your Matter will proceed after the remaining scheduling and execution requirements are confirmed. This is not a paid status or Wise Payment Confirmed status.
+          </div>
+        </div>
+      )}
+
+      {/* Payment card — Wise suppressed for complimentary and platform-fee-only matters */}
       <div data-critical-card="" style={{ marginBottom: 24 }}>
-        {deal.is_platform_fee_only ? (
+        {complimentaryAuthorized ? (
+          <div style={{
+            background: "rgba(74,142,107,0.06)",
+            border: "1px solid rgba(74,142,107,0.22)",
+            borderRadius: 8,
+            padding: "20px 24px",
+          }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(74,142,107,0.8)", marginBottom: 12 }}>
+              Complimentary Matter
+            </div>
+            <div style={{ fontSize: 14, color: "#E5E5E5", marginBottom: 6 }}>No payment is due for this authorized Matter.</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>Scheduling remains subject to document, identity, execution, and release requirements.</div>
+          </div>
+        ) : deal.is_platform_fee_only ? (
           <div style={{
             background: "rgba(198,165,90,0.06)",
             border: "1px solid rgba(198,165,90,0.18)",
