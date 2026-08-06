@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
 
-const passthrough = process.argv.slice(2).filter((arg) => arg !== "--runInBand");
-const result = spawnSync(process.execPath, ["--test", ...passthrough], { stdio: "inherit" });
 // Run the node test runner through tsx so TypeScript tests and the `@/` path
 // alias resolve. Accept explicit test paths as arguments; otherwise discover the
 // canonical test locations. `--runInBand` is accepted for compatibility.
