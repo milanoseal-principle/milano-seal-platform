@@ -36,7 +36,7 @@ jobs:
         run: npm run typecheck
 
       - name: Lint
-        run: npm run lint
+        run: npx --yes eslint@9.39.1 .
 
       - name: Tests
         run: npm test
