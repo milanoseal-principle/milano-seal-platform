@@ -117,6 +117,16 @@ const DOC_COUNT_RE = /(\d+)\s*(?:document|doc|documenti|documentos)\b/i;
 
 const RON_HINTS = /\b(remote\s*online|ron|remoto|remota|video\s*notar)\b/i;
 
+// A bare "notar" mention implies a notarization/RON review — UNLESS the client
+// negated it ("no notarization needed", "without notary", "notarization not
+// required"). Negation windows avoid crossing punctuation so "no apostille,
+// notarization needed" is NOT treated as a notarization negation.
+const NOTAR_RE = /\bnotar/i;
+const NOTAR_NEGATED_BEFORE =
+  /\b(no|not|without|non|sin|sans|kein\w*|nessun\w*|don'?t|doesn'?t|does\s+not|do\s+not|never)\b[^,.;!?]{0,14}notar/i;
+const NOTAR_NEGATED_AFTER =
+  /notar\w*[^,.;!?]{0,14}\b(not\s+(?:needed|required|necessary)|unnecessary|no\s+longer\s+(?:needed|required)|isn'?t\s+(?:needed|required))\b/i;
+
 export function quickTagParse(text: string): MatterAnalysisPatch {
   const out: MatterAnalysisPatch = {};
   const t = text || "";
@@ -149,7 +159,10 @@ export function quickTagParse(text: string): MatterAnalysisPatch {
   const dm = t.match(DOC_COUNT_RE);
   if (dm) out.documentCount = Math.max(1, parseInt(dm[1], 10));
 
-  out.ronReviewRequired = RON_HINTS.test(t) || /\bnotar/i.test(t);
+  const notarNegated = NOTAR_NEGATED_BEFORE.test(t) || NOTAR_NEGATED_AFTER.test(t);
+  out.ronReviewRequired = notarNegated
+    ? false
+    : RON_HINTS.test(t) || NOTAR_RE.test(t);
 
   return out;
 }
