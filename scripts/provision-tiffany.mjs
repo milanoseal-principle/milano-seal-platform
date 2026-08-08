@@ -1,4 +1,3 @@
-// Provision an approved operator account with founder_admin role + a 100% discount code.
 // Provision complimentary-Matter permissions for an already-approved operator.
 //
 // This script grants ONLY the scoped `matter.comp.*` permissions the merged
@@ -25,20 +24,6 @@ const EMAIL = process.env.TIFFANY_OPERATOR_EMAIL;
 const ALLOW_REVOKE = process.env.TIFFANY_ALLOW_COMP_REVOKE === "true";
 const DRY_RUN = process.env.TIFFANY_PROVISION_DRY_RUN === "true";
 
-if (!URL || !SERVICE_KEY || !EMAIL || !PASSWORD) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TIFFANY_OPERATOR_EMAIL, or TIFFANY_OPERATOR_PASSWORD.");
-  process.exit(1);
-}
-
-const EMAIL = process.env.TIFFANY_OPERATOR_EMAIL;
-const PASSWORD = process.env.TIFFANY_OPERATOR_PASSWORD;
-const ROLE = "founder_admin";
-
-const DISCOUNT_CODE = process.env.TIFFANY_COMP_CODE ?? "MILANO_COMP_AUTHORIZED";
-
-const admin = createClient(URL, SERVICE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
 // Canonical scoped permissions read by the complimentary-Matter flow.
 // Base set mirrors AUTHORIZED_OPERATOR_COMP_PERMISSIONS in
 // lib/payments/complimentary-policy.ts. Revoke is added only on explicit opt-in.
@@ -127,17 +112,6 @@ async function run() {
     return;
   }
 
-  const { error } = await admin.from("discount_codes").insert({
-    code: DISCOUNT_CODE,
-    discount_type: "percentage",
-    discount_value: 100,
-    applies_to: "service_fee",
-    usage_limit: null,
-    expiration_date: null,
-    internal_reason: "Approved operator courtesy authorization — full access.",
-    client_label: "Milano Seal courtesy adjustment",
-    status: "ACTIVE",
-    created_by: createdById,
   if (plan.already) {
     console.log("  No changes applied (already provisioned; idempotent no-op).");
     return;
