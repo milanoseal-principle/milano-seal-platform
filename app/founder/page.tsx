@@ -160,6 +160,7 @@ export default function FounderPage() {
               Built around secure coordination, not volume claims
             </h2>
             <p className="max-w-3xl mx-auto text-center text-white/65 leading-relaxed">
+              The Milano Seal monetizes the coordination layer around Secure Records Intake, RON eligibility review, apostille/authentication routing, signer coordination, partner dispatch, International Courier Release, and Execution Chain Visibility for U.S. documents used abroad. Public positioning makes no promises about third-party outcomes, assignment volume, or travel clearance and does not replace qualified independent counsel.
               The Milano Seal monetizes the coordination layer around Secure Records Intake, RON eligibility review, apostille/authentication routing, signer coordination, partner dispatch, International Courier Release, and Execution Chain Visibility for U.S. documents used abroad. Public positioning avoids guaranteed acceptance, guaranteed assignments, travel clearance, or legal advice claims.
             </p>
             <div className="grid md:grid-cols-3 gap-6 mt-10">

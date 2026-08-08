@@ -75,6 +75,22 @@ html {
 .ms-state-panel-error { border-color: rgba(248, 113, 113, 0.24); }
 .ms-state-panel-success { border-color: rgba(110, 231, 183, 0.2); }
 
+.ms-portal-empty-state {
+  min-height: 12rem;
+  border: 1px solid var(--ms-border-subtle);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(18, 18, 18, 0.72), rgba(13, 13, 13, 0.52));
+}
+
+.ms-cinematic-grid {
+  animation: ms-grid-breathe 8s var(--ms-ease-standard) infinite alternate;
+}
+
+@keyframes ms-grid-breathe {
+  from { opacity: 0.14; transform: translateY(0); }
+  to { opacity: 0.22; transform: translateY(8px); }
+}
+
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--ms-gold-soft);
   outline-offset: 3px;
