@@ -110,6 +110,12 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
   // the required 0–3 for straightforward matters unless useful).
   if (c.urgency === "unknown") optionalUnknowns.push("deadline");
 
+  // Standard (non-contradictory) matters must never present more than 3 questions.
+  // Questions are pushed in priority order (contradiction > route > price >
+  // execution), so slicing keeps the highest-priority set. Contradictory matters
+  // may exceed 3 only because unresolved contradictions must all be surfaced.
+  const finalQuestions = c.contradictions.length === 0 ? questions.slice(0, 3) : questions;
+
   return {
     knownFacts,
     contradictions: c.contradictions.map(String),
@@ -117,6 +123,6 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
     priceDrivingUnknowns,
     executionCriticalUnknowns,
     optionalUnknowns,
-    questions,
+    questions: finalQuestions,
   };
 }

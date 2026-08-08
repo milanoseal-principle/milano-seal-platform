@@ -51,3 +51,11 @@ test("straightforward matter stays within 0–3 questions", () => {
   const r = q("Colorado birth certificate going to Italy, apostille", { originState: "Colorado", destinationCountry: "Italy", apostille: true });
   assert.ok(r.questions.length <= 3);
 });
+
+test("ordinary matter never produces more than 3 Step-2 questions", () => {
+  // Everything unknown: destination, origin-driven doc, apostille unknown → many
+  // potential unknowns, but no contradiction → capped at 3.
+  const r = q("birth certificate", {});
+  assert.ok(r.contradictions.length === 0);
+  assert.ok(r.questions.length <= 3, `expected <=3, got ${r.questions.length}`);
+});

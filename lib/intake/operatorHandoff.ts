@@ -10,6 +10,7 @@
 
 import type { SmartIntakeClassification, ServiceState } from "./smartClassification";
 import type { MilanoPricingResult } from "../pricing/milanoPricingTruth";
+import { projectClientPricing, type ClientPricingProjection } from "../pricing/pricingProjections";
 
 export interface OperatorHandoff {
   matterId: string;
@@ -77,10 +78,8 @@ export function buildOperatorHandoff(input: OperatorHandoffInput): OperatorHando
   };
 }
 
-/** Client-safe projection — what a CLIENT may see. Excludes the operator packet. */
-export function clientProjection(handoff: OperatorHandoff): {
-  clientDisplay: MilanoPricingResult["clientDisplay"];
-  paymentGateRequired: true;
-} {
-  return { clientDisplay: handoff.pricing.clientDisplay, paymentGateRequired: true };
+/** Client-safe projection — what a CLIENT may see. Excludes the operator packet.
+ * Reuses the canonical projectClientPricing (one projection rule everywhere). */
+export function clientProjection(handoff: OperatorHandoff): { pricing: ClientPricingProjection } {
+  return { pricing: projectClientPricing(handoff.pricing) };
 }

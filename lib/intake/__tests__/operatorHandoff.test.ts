@@ -38,9 +38,9 @@ test("client projection excludes the operator packet + internal reasons", () => 
   const h = handoff();
   const client = clientProjection(h);
   const json = JSON.stringify(client);
-  assert.ok(!/manualReviewReasons|serviceStates|classificationConfidence|audience/.test(json));
-  assert.ok("clientDisplay" in client);
-  assert.equal(client.paymentGateRequired, true);
+  assert.ok(!/manualReviewReasons|serviceStates|classificationConfidence|audience|pricingConfidence/.test(json));
+  assert.ok("pricing" in client);
+  assert.equal(client.pricing.paymentGateRequired, true);
 });
 
 test("handoff is operator-audience and deterministic for the same matter", () => {
