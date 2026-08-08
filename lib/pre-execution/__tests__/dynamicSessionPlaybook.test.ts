@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildDynamicSessionPlaybook } from "../dynamicSessionPlaybook";
+import {
+  buildDynamicSessionPlaybook,
+  buildDynamicSessionPlaybookFromMatterRecord,
+} from "../dynamicSessionPlaybook";
 
 test("builds a complete jurat playbook from resolved facts", () => {
   const playbook = buildDynamicSessionPlaybook({
@@ -73,4 +76,41 @@ test("jurat requires oath confirmation", () => {
 
   assert.equal(playbook.readyForOperatorUse, false);
   assert.ok(playbook.blockers.some((blocker) => blocker.includes("Oath/affirmation")));
+});
+
+test("Matter-record adapter uses stored execution facts and preserves unknowns", () => {
+  const playbook = buildDynamicSessionPlaybookFromMatterRecord({
+    id: "deal-123",
+    deal_id: "MS-2026-0123",
+    document_type: "Affidavit of One and the Same Person",
+    destination_country: "Italy",
+    signing_type: "RON",
+    notarial_act: "jurat",
+    estimated_session_minutes: 12,
+    required_documents: ["Government ID", "Final Affidavit"],
+    required_statements: ["Oath or affirmation"],
+    oath_required: true,
+    witness_required: false,
+    translator_required: false,
+    loose_certificate_required: false,
+    post_session_actions: ["Quality review", "Apostille readiness review"],
+  });
+
+  assert.equal(playbook.matterId, "deal-123");
+  assert.equal(playbook.executionMethod, "ron");
+  assert.equal(playbook.notarialAct, "jurat");
+  assert.equal(playbook.estimatedSessionMinutes, 12);
+  assert.equal(playbook.readyForOperatorUse, true);
+});
+
+test("Matter-record adapter never infers missing notarial requirements", () => {
+  const playbook = buildDynamicSessionPlaybookFromMatterRecord({
+    id: "deal-456",
+    document_type: "Affidavit",
+    destination_country: "Italy",
+  });
+
+  assert.equal(playbook.executionMethod, "unknown");
+  assert.equal(playbook.notarialAct, "unknown");
+  assert.equal(playbook.readyForOperatorUse, false);
 });
