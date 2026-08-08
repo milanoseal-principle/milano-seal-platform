@@ -497,10 +497,9 @@ export function IntakeWizard({
       country: data.destination_country || "United States",
       destination_country: data.destination_country,
       mobile: data.execution_type === "Mobile",
-      apostille:
-        data.apostille_required ||
-        (data.destination_country !== "" &&
-          data.destination_country !== "United States"),
+      // Apostille comes ONLY from explicit client intent — never fabricated from
+      // a foreign destination. (foreign country ≠ apostille required.)
+      apostille: data.apostille_required,
       apostille_count: data.apostille_count,
       translation: data.translation_needed,
       draft_ready: data.draft_ready,
@@ -602,8 +601,11 @@ export function IntakeWizard({
       const resolvedCountry = resolveCountry(x.country);
       if (resolvedCountry) merged.destination_country = resolvedCountry;
 
-      merged.apostille_required = x.apostilleRequired;
-      merged.translation_needed = x.translationNeeded;
+      // Precedence: AI may FILL an unanswered field but must never silently
+      // overturn an explicit client selection. apostilleChoice/translationChoice
+      // are set only when the client has explicitly answered in Step 2.
+      if (apostilleChoice === "") merged.apostille_required = x.apostilleRequired;
+      if (translationChoice === "") merged.translation_needed = x.translationNeeded;
 
       if (x.urgency === "urgent") merged.timeline = "Urgent (24-48 hours)";
       else if (x.urgency === "expedited")
