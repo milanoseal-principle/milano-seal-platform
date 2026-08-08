@@ -72,54 +72,6 @@ const MOBILE_TRUST_PRINCIPLES = [
   },
 ];
 
-
-const MOBILE_TRUST_PRINCIPLES = [
-  {
-    icon: Shield,
-    title: "Secure Intake",
-    desc: "Every matter begins with structured scope and document review.",
-  },
-  {
-    icon: Globe,
-    title: "Global Document Intelligence",
-    desc: "Destination and receiving-authority requirements are reviewed for the specific corridor.",
-  },
-  {
-    icon: Lock,
-    title: "Payment-Gated Scheduling",
-    desc: "Scheduling remains locked until scope and payment are confirmed.",
-  },
-  {
-    icon: Eye,
-    title: "Chain-of-Custody Visibility",
-    desc: "Key document and delivery milestones remain visible from intake through release.",
-  },
-];
-
-
-const MOBILE_TRUST_PRINCIPLES = [
-  {
-    icon: Shield,
-    title: "Secure Intake",
-    desc: "Every matter begins with structured scope and document review.",
-  },
-  {
-    icon: Globe,
-    title: "Global Document Intelligence",
-    desc: "Destination and receiving-authority requirements are reviewed for the specific corridor.",
-  },
-  {
-    icon: Lock,
-    title: "Payment-Gated Scheduling",
-    desc: "Scheduling remains locked until scope and payment are confirmed.",
-  },
-  {
-    icon: Eye,
-    title: "Chain-of-Custody Visibility",
-    desc: "Key document and delivery milestones remain visible from intake through release.",
-  },
-];
-
 const RIGHT_PILLARS = [
   {
     icon: Eye,
