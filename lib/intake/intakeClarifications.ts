@@ -40,16 +40,13 @@ const ORIGIN_DRIVEN_FAMILIES = new Set([
   "certified_copy",
 ]);
 
-// Only contradictions the current client UI can safely and deterministically
-// resolve are rendered as Step-2 questions. Other contradictions remain in the
-// classification/operator handoff as manual-review reasons; they never trap the
-// client in an unanswerable loop.
+// Only contradictions the current structured intake state can resolve without
+// inventing a second service-state model are rendered to the client. Other
+// contradictions remain operator/manual-review facts and never trap Step 2.
 const CLIENT_RESOLVABLE_CONTRADICTIONS = new Set([
   "notarization",
   "apostille",
   "translation",
-  "ron",
-  "mobile",
 ]);
 
 export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeClarifications {
@@ -109,9 +106,6 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
 
   if (c.urgency === "unknown") optionalUnknowns.push("deadline");
 
-  // Standard matters remain 0–3. Only client-resolvable contradictions can lift
-  // the cap, because unresolved internal/manual-review contradictions are never
-  // converted into blocking client questions.
   const finalQuestions = resolvableContradictions.length === 0 ? questions.slice(0, 3) : questions;
 
   return {
