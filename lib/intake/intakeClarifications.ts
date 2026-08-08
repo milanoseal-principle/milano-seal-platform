@@ -28,9 +28,6 @@ export interface IntakeClarifications {
 
 const resolved = (s: ServiceState) => s !== "unknown" && s !== "contradictory";
 
-// Document families whose ORIGIN jurisdiction drives the apostille/authentication
-// route (state/civil/federal records). Execution documents (POA/affidavit) are
-// signer-driven, not origin-driven.
 const ORIGIN_DRIVEN_FAMILIES = new Set([
   "birth_certificate",
   "marriage_certificate",
@@ -43,6 +40,18 @@ const ORIGIN_DRIVEN_FAMILIES = new Set([
   "certified_copy",
 ]);
 
+// Only contradictions the current client UI can safely and deterministically
+// resolve are rendered as Step-2 questions. Other contradictions remain in the
+// classification/operator handoff as manual-review reasons; they never trap the
+// client in an unanswerable loop.
+const CLIENT_RESOLVABLE_CONTRADICTIONS = new Set([
+  "notarization",
+  "apostille",
+  "translation",
+  "ron",
+  "mobile",
+]);
+
 export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeClarifications {
   const knownFacts: string[] = [];
   const routeDrivingUnknowns: string[] = [];
@@ -51,7 +60,6 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
   const optionalUnknowns: string[] = [];
   const questions: IntakeQuestion[] = [];
 
-  // Known facts (so they are never re-asked).
   if (c.documentFamily) knownFacts.push(`document:${c.documentFamily}`);
   if (c.destinationCountry) knownFacts.push(`destination:${c.destinationCountry}`);
   if (c.signerCount) knownFacts.push(`signers:${c.signerCount}`);
@@ -63,8 +71,8 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
     if (resolved(st)) knownFacts.push(`${name}:${st}`);
   }
 
-  // 1. Contradictions — highest priority.
-  for (const concept of c.contradictions) {
+  const resolvableContradictions = c.contradictions.filter((concept) => CLIENT_RESOLVABLE_CONTRADICTIONS.has(concept));
+  for (const concept of resolvableContradictions) {
     questions.push({
       id: `resolve_${concept}`,
       kind: "contradiction",
@@ -76,14 +84,11 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
     });
   }
 
-  // 2. Route-driving: destination unknown (needed to route apostille/authentication).
   if (!c.destinationCountry) {
     routeDrivingUnknowns.push("destinationCountry");
     questions.push({ id: "destination", kind: "route", prompt: "Where will this document be used?" });
   }
 
-  // Conditional ORIGIN — only for origin-driven document families (or apostille
-  // requested) and only when origin is not already known. NEVER universal.
   const originMatters =
     (c.documentFamily && ORIGIN_DRIVEN_FAMILIES.has(c.documentFamily)) || c.apostille === "required";
   if (originMatters && !c.originJurisdiction) {
@@ -91,30 +96,23 @@ export function buildIntakeClarifications(c: SmartIntakeClassification): IntakeC
     questions.push({ id: "document_origin", kind: "route", prompt: "Where was this document issued?" });
   }
 
-  // 3. Price-driving: apostille undetermined for an international destination.
   if (c.apostille === "unknown" && c.destinationCountry && c.destinationCountry !== "United States") {
     priceDrivingUnknowns.push("apostille");
     questions.push({ id: "apostille_needed", kind: "price", prompt: "Do you need us to arrange an apostille?", options: ["Yes", "No", "Not sure"] });
   }
 
-  // 4. Execution-critical: signer location only when execution needs it (mobile /
-  // RON / new notarization) and it is not known. Apostille-only/civil records
-  // never trigger this.
   const executionNeedsSigner = c.mobile === "required" || c.ron === "required" || c.notarization === "required";
   if (executionNeedsSigner && !c.signerLocation) {
     executionCriticalUnknowns.push("signerLocation");
     questions.push({ id: "signer_location", kind: "execution", prompt: "Where will the signer be physically located?" });
   }
 
-  // Timing is optional — only surfaced when nothing else is unknown (kept out of
-  // the required 0–3 for straightforward matters unless useful).
   if (c.urgency === "unknown") optionalUnknowns.push("deadline");
 
-  // Standard (non-contradictory) matters must never present more than 3 questions.
-  // Questions are pushed in priority order (contradiction > route > price >
-  // execution), so slicing keeps the highest-priority set. Contradictory matters
-  // may exceed 3 only because unresolved contradictions must all be surfaced.
-  const finalQuestions = c.contradictions.length === 0 ? questions.slice(0, 3) : questions;
+  // Standard matters remain 0–3. Only client-resolvable contradictions can lift
+  // the cap, because unresolved internal/manual-review contradictions are never
+  // converted into blocking client questions.
+  const finalQuestions = resolvableContradictions.length === 0 ? questions.slice(0, 3) : questions;
 
   return {
     knownFacts,
