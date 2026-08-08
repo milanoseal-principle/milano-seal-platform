@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
 import { FileUploadZone } from "@/components/intake/FileUploadZone";
+import { classifyIntake } from "@/lib/intake/smartClassification";
+import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
+import { projectClientPricing } from "@/lib/pricing/pricingProjections";
 
 interface IntakeData {
   client_name: string;
@@ -1150,6 +1153,49 @@ export function IntakeWizard({
                       </ul>
                     </div>
                   )}
+
+                  {/* Canonical client pricing projection — no client-side math.
+                      Amount + summary come only from projectClientPricing(). */}
+                  {(() => {
+                    const classification = classifyIntake({
+                      structured: {
+                        apostille: apostilleChoice === "yes" ? true : apostilleChoice === "no" ? false : undefined,
+                        translation: translationChoice === "yes" ? true : translationChoice === "no" ? false : undefined,
+                        destinationCountry: data.destination_country || undefined,
+                        signerCount: data.signer_count,
+                        documentType: data.document_type || undefined,
+                        mobile: data.execution_type === "Mobile" ? true : undefined,
+                      },
+                    });
+                    const result = priceSmartIntake({
+                      classification,
+                      selectedLane: initialTier,
+                      commercialContext: "consumer",
+                    });
+                    const p = projectClientPricing(result);
+                    return (
+                      <div className="bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.28)] rounded-sm px-5 py-4 mb-6">
+                        {p.mode === "approved_price" ? (
+                          <>
+                            <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]/70 mb-1">Price</div>
+                            <div className="text-2xl font-semibold text-white">
+                              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(p.amount ?? 0)}
+                            </div>
+                            <div className="text-[12px] text-[#E8DCC0] font-light mt-1">{p.summary}</div>
+                            <div className="text-[11px] text-[#9A9488] font-light mt-2">Payment is required before scheduling.</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]/70 mb-1">Quote Status</div>
+                            <div className="text-lg font-semibold text-white">Ready for review</div>
+                            <div className="text-[12px] text-[#9A9488] font-light mt-1">
+                              We have enough information to begin. The Milano Seal will confirm your final execution route and quote.
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] px-5 py-4 rounded-sm mb-6">
                     <p className="text-[12px] text-[#9A9488] leading-relaxed font-light">

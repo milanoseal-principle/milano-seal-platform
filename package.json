@@ -77,7 +77,8 @@
     "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts",
     "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
-    "validate:migration-chain": "node scripts/validate-migration-chain.mjs"
+    "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
+    "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

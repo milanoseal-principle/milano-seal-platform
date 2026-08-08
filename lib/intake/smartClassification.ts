@@ -57,6 +57,8 @@ export interface SmartIntakeClassification {
 
 /** Explicit structured client selections — the HIGHEST precedence source. */
 export interface StructuredSelections {
+  notarization?: boolean | "already_completed";
+  ron?: boolean;
   apostille?: boolean;
   translation?: boolean;
   mobile?: boolean;
@@ -85,7 +87,6 @@ export interface ClassificationInput {
   ai?: AiExtraction;
 }
 
-// Document family normalization (no fabricated specificity).
 const FAMILY_RULES: Array<[RegExp, string]> = [
   [/power\s*of\s*attorney|attorney-?in-?fact|\bpoa\b/i, "power_of_attorney"],
   [/affidavit/i, "affidavit"],
@@ -108,8 +109,6 @@ function documentFamilyOf(docType?: string, text?: string): string | undefined {
   return docType ? "unknown" : undefined;
 }
 
-// Country alias normalization (contextual, low/medium confidence — never silent
-// for genuinely ambiguous text).
 const COUNTRY_ALIASES: Record<string, { to: string; confidence: Confidence }> = {
   columbia: { to: "Colombia", confidence: "medium" },
 };
@@ -125,34 +124,26 @@ function normalizeCountry(raw?: string): { value?: string; norm?: { from: string
 function polarityToState(p: FactPolarity, isContradiction: boolean): ServiceState {
   if (isContradiction) return "contradictory";
   switch (p) {
-    case "positive":
-      return "required";
-    case "negative":
-      return "not_required";
-    case "already_completed":
-      return "already_completed";
-    default:
-      return "unknown";
+    case "positive": return "required";
+    case "negative": return "not_required";
+    case "already_completed": return "already_completed";
+    default: return "unknown";
   }
 }
 
-// Resolve one service under precedence: explicit structured selection wins, then
-// explicit text, then AI, then default unknown. Lower sources only fill unknown.
 function resolveService(
   concept: IntakeConcept,
   interp: ReturnType<typeof interpretIntakeText>,
-  structured: boolean | undefined,
+  structured: boolean | "already_completed" | undefined,
   ai: boolean | undefined,
 ): ServiceState {
   const isContra = interp.contradictions.includes(concept);
   const fromText = polarityToState(interp.concepts[concept].polarity, isContra);
 
-  // 1. Explicit structured selection (highest).
+  if (structured === "already_completed") return "already_completed";
   if (structured === true) return "required";
   if (structured === false) return "not_required";
-  // 2. Explicit client text.
   if (fromText !== "unknown") return fromText;
-  // 3. AI extraction fills an unknown only.
   if (ai === true) return "required";
   if (ai === false) return "not_required";
   return "unknown";
@@ -164,8 +155,8 @@ export function classifyIntake(input: ClassificationInput): SmartIntakeClassific
   const ai = input.ai ?? {};
   const interp = interpretIntakeText(text);
 
-  const notarization = resolveService("notarization", interp, undefined, undefined);
-  const ron = resolveService("ron", interp, undefined, undefined);
+  const notarization = resolveService("notarization", interp, s.notarization, undefined);
+  const ron = resolveService("ron", interp, s.ron, undefined);
   const apostille = resolveService("apostille", interp, s.apostille, ai.apostilleRequired);
   const translation = resolveService("translation", interp, s.translation, ai.translationNeeded);
   const mobile = resolveService("mobile", interp, s.mobile, undefined);
@@ -174,15 +165,12 @@ export function classifyIntake(input: ClassificationInput): SmartIntakeClassific
   const courier = resolveService("courier", interp, undefined, undefined);
   const shipping = resolveService("shipping", interp, undefined, undefined);
 
-  // documentType/family: structured > text/ai.
   const documentType = s.documentType ?? ai.documentType ?? undefined;
   const documentFamily = documentFamilyOf(documentType, text);
 
-  // Destination: structured > ai > (interpretation does not detect country).
   const rawDest = s.destinationCountry ?? ai.country;
   const dest = normalizeCountry(rawDest);
 
-  // Origin jurisdiction vs signer location — kept separate.
   const originJurisdiction = s.originState ?? ai.originState ?? undefined;
   const signerLocation = s.signerLocation ?? undefined;
 
@@ -207,8 +195,9 @@ export function classifyIntake(input: ClassificationInput): SmartIntakeClassific
 
   const manualReviewReasons: string[] = [];
   if (interp.contradictions.length) manualReviewReasons.push("contradictory_service_statements");
-  if (apostille === "unknown" && dest.value && dest.value !== "United States")
+  if (apostille === "unknown" && dest.value && dest.value !== "United States") {
     manualReviewReasons.push("apostille_undetermined_for_international_destination");
+  }
 
   const classificationConfidence: Confidence = missingCriticalFacts.length === 0 ? "high" : missingCriticalFacts.length === 1 ? "medium" : "low";
   const routingConfidence: Confidence = dest.value ? (apostille === "unknown" ? "medium" : "high") : "low";
