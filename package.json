@@ -56,6 +56,10 @@
     "validate:next-five-production-builds": "node scripts/validate-next-five-production-builds.mjs",
     "validate:next-three-revenue-ops": "node scripts/validate-next-three-revenue-ops.mjs",
     "validate:mobile-cinematic-hotfix": "node scripts/validate-mobile-cinematic-hotfix.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "validate:complimentary-matter-flow": "node scripts/validate-complimentary-matter-flow.mjs",
+    "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs",
+    "validate:cinematic-route-coverage": "node scripts/validate-cinematic-route-coverage.mjs"
     "validate:complimentary-matter-flow": "node scripts/validate-complimentary-matter-flow.mjs",
     "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs"
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",

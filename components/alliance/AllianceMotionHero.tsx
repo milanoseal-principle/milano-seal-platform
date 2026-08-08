@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 interface Node {
   x: number;
@@ -12,15 +13,17 @@ interface Node {
 
 export function AllianceMotionHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const reducedMotion = useMilanoReducedMotion();
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || reducedMotion) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animId: number;
+    let animId: number | undefined;
+    let visible = true;
     const W = canvas.offsetWidth;
     const H = canvas.offsetHeight;
     canvas.width = W;
@@ -73,12 +76,25 @@ export function AllianceMotionHero() {
         if (node.y < 0 || node.y > H) node.vy *= -1;
       }
 
-      animId = requestAnimationFrame(draw);
+      if (visible) animId = requestAnimationFrame(draw);
     }
 
+    const observer = new IntersectionObserver(([entry]) => {
+      const nextVisible = entry.isIntersecting;
+      if (nextVisible && !visible) {
+        visible = true;
+        draw();
+      } else {
+        visible = nextVisible;
+      }
+    }, { rootMargin: "120px" });
+    observer.observe(canvas);
     draw();
-    return () => cancelAnimationFrame(animId);
-  }, []);
+    return () => {
+      observer.disconnect();
+      if (animId !== undefined) cancelAnimationFrame(animId);
+    };
+  }, [reducedMotion]);
 
   return (
     <div
@@ -92,7 +108,8 @@ export function AllianceMotionHero() {
     >
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block" }}
+        aria-hidden="true"
+        style={{ width: "100%", height: "100%", display: "block", opacity: reducedMotion ? 0 : 1 }}
       />
       <div
         style={{
