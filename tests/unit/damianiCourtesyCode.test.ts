@@ -6,62 +6,66 @@ import {
   type DiscountCode,
 } from "@/lib/discountCodes";
 
-// DAMIANI50 is a single-use, 50% courtesy code for a returning professional
-// client. These tests pin the checkout-relevant behavior: the adjustment is
-// exactly 50% of the eligible service subtotal, excluded charges are never
-// discounted, and the code cannot be redeemed a second time.
 function damiani(overrides: Partial<DiscountCode> = {}): DiscountCode {
   return {
     id: "damiani-code",
     code: "DAMIANI50",
-    label: "Milano Seal courtesy — Avv. Damiani",
-    discount_type: "percent",
+    discount_type: "percentage",
     discount_value: 50,
-    max_uses: 1,
-    uses_count: 0,
-    valid_from: "2026-01-01T00:00:00.000Z",
-    valid_until: null,
-    active: true,
+    status: "active",
+    usage_limit: 1,
+    usage_count: 0,
+    starts_at: "2026-01-01T00:00:00.000Z",
+    expires_at: null,
+    applies_to: "eligible_subtotal",
+    matter_id: null,
+    client_id: null,
+    client_label: "Milano Seal courtesy — Avv. Damiani",
+    internal_reason: null,
     created_by: "founder",
-    notes: null,
-    deal_id_restriction: null,
-    single_use: true,
+    updated_by: null,
+    metadata: {},
     ...overrides,
   };
 }
 
-test("DAMIANI50 applies exactly 50% to the eligible service subtotal", () => {
+test("DAMIANI50 applies exactly 50% to eligible service subtotal", () => {
   assert.equal(computeDiscountAmount(damiani(), 750), 375);
   assert.equal(computeDiscountAmount(damiani(), 975), 487.5);
   assert.equal(computeDiscountAmount(damiani(), 1850), 925);
 });
 
-test("excluded charges are never folded into the discounted subtotal", () => {
-  // Only the eligible service subtotal is discounted. Shipping, government,
-  // translation and other pass-through charges are added on top, undiscounted.
+test("excluded charges remain outside the discounted subtotal", () => {
   const eligibleServiceSubtotal = 750;
-  const excludedCharges = 250; // e.g. apostille coordination / shipping pass-through
+  const excludedCharges = 250;
   const adjustment = computeDiscountAmount(damiani(), eligibleServiceSubtotal);
   const finalAmountDue = eligibleServiceSubtotal - adjustment + excludedCharges;
   assert.equal(adjustment, 375);
   assert.equal(finalAmountDue, 625);
-  // The excluded portion is fully preserved in the total.
-  assert.ok(finalAmountDue >= excludedCharges);
 });
 
-test("DAMIANI50 is single-use: a second redemption is rejected", () => {
-  assert.deepEqual(validateCodeRedeemable(damiani({ uses_count: 0 })), { ok: true });
-  const second = validateCodeRedeemable(damiani({ uses_count: 1 }));
-  assert.equal(second.ok, false);
+test("DAMIANI50 is single-use through usage_limit", () => {
+  assert.deepEqual(validateCodeRedeemable(damiani({ usage_count: 0 })), { ok: true });
+  assert.equal(validateCodeRedeemable(damiani({ usage_count: 1 })).ok, false);
 });
 
-test("an inactive or usage-exhausted DAMIANI50 cannot be redeemed", () => {
-  assert.equal(validateCodeRedeemable(damiani({ active: false })).ok, false);
-  assert.equal(validateCodeRedeemable(damiani({ max_uses: 1, uses_count: 1 })).ok, false);
+test("inactive, exhausted, expired, and future codes are rejected", () => {
+  const now = new Date("2026-08-08T12:00:00.000Z");
+  assert.equal(validateCodeRedeemable(damiani({ status: "inactive" }), undefined, now).ok, false);
+  assert.equal(validateCodeRedeemable(damiani({ status: "exhausted" }), undefined, now).ok, false);
+  assert.equal(validateCodeRedeemable(damiani({ expires_at: "2026-08-07T00:00:00.000Z" }), undefined, now).ok, false);
+  assert.equal(validateCodeRedeemable(damiani({ starts_at: "2026-08-09T00:00:00.000Z" }), undefined, now).ok, false);
 });
 
-test("the courtesy adjustment never exceeds the eligible subtotal", () => {
-  assert.ok(computeDiscountAmount(damiani(), 0) <= 0.0001);
+test("matter-restricted code cannot be used on a different matter", () => {
+  assert.equal(
+    validateCodeRedeemable(damiani({ matter_id: "matter-a" }), "matter-b").ok,
+    false,
+  );
+});
+
+test("courtesy adjustment never exceeds eligible subtotal", () => {
+  assert.equal(computeDiscountAmount(damiani(), 0), 0);
   const subtotal = 500;
   assert.ok(computeDiscountAmount(damiani(), subtotal) <= subtotal);
 });

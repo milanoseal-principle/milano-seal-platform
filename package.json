@@ -78,7 +78,8 @@
     "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
-    "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs"
+    "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
+    "validate:production-governance": "node scripts/validate-production-governance.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -137,7 +138,6 @@
     "recharts": "2.15.0",
     "resend": "^6.12.2",
     "sonner": "^1.7.1",
-    "stripe": "^16.12.0",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",
