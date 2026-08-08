@@ -187,7 +187,7 @@ All `/dashboard/*` routes require authentication. Unauthenticated requests redir
 |---|---|---|---|---|
 | `/portal` | `app/portal/page.tsx` | client | Portal entry | ✅ |
 | `/portal/tracking` | `app/portal/tracking/page.tsx` | client | Matter tracking | ✅ |
-| `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | client | Live tracking | ✅ |
+| `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | client | Compatibility redirect → `/portal/tracking` (query preserved) | ✅ |
 | `/portal/invoice` | `app/portal/invoice/page.tsx` | client | Invoice view | ✅ |
 | `/portal/documents` | `app/portal/documents/page.tsx` | client | Document access | ✅ |
 | `/portal/release` | `app/portal/release/page.tsx` | client | Release coordination | ✅ |
@@ -206,7 +206,7 @@ All `/dashboard/*` routes require authentication. Unauthenticated requests redir
 | Route | File | Access | Purpose | Smoke Test |
 |---|---|---|---|---|
 | `/portal/tracking` | `app/portal/tracking/page.tsx` | client | Shipment tracking | ✅ |
-| `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | client | Live tracking | ✅ |
+| `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | client | Compatibility redirect → `/portal/tracking` (query preserved) | ✅ |
 | `/portal/release` | `app/portal/release/page.tsx` | client | Release coordination | — |
 | `/dashboard/courier` | `app/dashboard/courier/page.tsx` | operator | Courier management | — |
 | `/dashboard/deliveries` | `app/dashboard/deliveries/page.tsx` | operator | Delivery tracking | ✅ |
@@ -341,7 +341,7 @@ Complete client journey from login through all portal sub-routes.
 | 3 | `/portal/invoice` | `app/portal/invoice/page.tsx` | Invoice & Payment Authorization. Amount due, Wise reference, payment status, printable invoice. |
 | 4 | `/portal/payment` | `app/portal/payment/page.tsx` | Payment Status. Wise reference, payment confirmation status, release gate status. Client-safe labels only. |
 | 5 | `/portal/tracking` | `app/portal/tracking/page.tsx` | Courier & tracking overview. |
-| 6 | `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | Live courier custody view. |
+| 6 | `/portal/trackingNow` | `app/portal/trackingNow/page.tsx` | Compatibility redirect → `/portal/tracking` (query preserved). |
 | 7 | `/portal/documents` | `app/portal/documents/page.tsx` | Document Vault. Client-accessible document records. |
 | 8 | `/portal/release` | `app/portal/release/page.tsx` | Release Desk. Release status and final delivery confirmation. |
 

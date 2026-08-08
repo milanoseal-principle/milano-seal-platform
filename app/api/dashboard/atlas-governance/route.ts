@@ -11,7 +11,7 @@ async function requireFounderAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const role =
-    (user.user_metadata?.role as string | undefined) ??
+    (user.app_metadata?.role as string | undefined) ??
     (user.app_metadata?.role as string | undefined) ??
     "";
   if (role !== "founder_admin") return null;
@@ -23,7 +23,7 @@ async function requireDashboardRead() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const role =
-    (user.user_metadata?.role as string | undefined) ??
+    (user.app_metadata?.role as string | undefined) ??
     (user.app_metadata?.role as string | undefined) ??
     "";
   if (!ADMIN_ROLES.has(role)) return null;

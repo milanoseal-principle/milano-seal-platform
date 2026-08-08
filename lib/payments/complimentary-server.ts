@@ -38,6 +38,11 @@ export function extractActor(user: {
     : Array.isArray(meta.permissions)
       ? meta.permissions.map(String)
       : [];
+  // Authorization role + permissions come ONLY from app_metadata (service-role
+  // controlled). user_metadata is user-writable and must never grant authority;
+  // it is used solely for the display name below.
+  const role = String(app.role ?? "");
+  const permissions = Array.isArray(app.permissions) ? app.permissions.map(String) : [];
   return {
     userId: user.id,
     role,

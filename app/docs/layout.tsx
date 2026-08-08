@@ -18,7 +18,7 @@ export default async function DocsLayout({
   }
 
   const role =
-    (user.user_metadata?.role as string | undefined) ??
+    (user.app_metadata?.role as string | undefined) ??
     (user.app_metadata?.role as string | undefined) ??
     "";
 

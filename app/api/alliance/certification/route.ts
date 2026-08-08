@@ -11,7 +11,7 @@ async function getAuthUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const role =
-    (user.user_metadata?.role as string | undefined) ??
+    (user.app_metadata?.role as string | undefined) ??
     (user.app_metadata?.role as string | undefined) ??
     "";
   if (!ALLIANCE_ROLES.includes(role)) return null;

@@ -18,7 +18,7 @@ export async function GET() {
   }
 
   const role =
-    (user.app_metadata?.role ?? user.user_metadata?.role ?? null) as string | null;
+    (user.app_metadata?.role ?? user.app_metadata?.role ?? null) as string | null;
 
   // Never return: id, tokens, metadata payloads, keys, storage paths
   return NextResponse.json({

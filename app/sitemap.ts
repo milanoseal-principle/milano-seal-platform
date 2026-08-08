@@ -11,7 +11,7 @@ type SitemapEntry = {
 const corePages: SitemapEntry[] = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
   { path: "/intake", priority: 0.95, changeFrequency: "weekly" },
-  { path: "/portal", priority: 0.75, changeFrequency: "monthly" },
+  // Client portal is authenticated and noindex; intentionally excluded here.
   { path: "/map", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services", priority: 0.9, changeFrequency: "monthly" },
   { path: "/countries", priority: 0.85, changeFrequency: "monthly" },
