@@ -1,4 +1,5 @@
 import type { MatterAnalysisPatch } from "./matterAnalysis";
+import { interpretIntakeText, isPositive, isSuppressed } from "./intakeInterpretation";
 
 const COUNTRY_HINTS: Array<[RegExp, string]> = [
   [/\b(italy|italia|italie|italien)\b/i, "Italy"],
@@ -99,11 +100,6 @@ const DOC_HINTS: Array<[RegExp, string]> = [
   [/\b(visa)\b/i, "Visa Support Document"],
 ];
 
-const APOSTILLE_RE =
-  /\b(apostille|apostilla|apostiglia|apostillare|hague|legaliza[zc]ione|legalization)\b/i;
-
-const TRANSLATION_RE = /\b(translat|traduzion|traducci|übersetz)\b/i;
-
 const URGENT_RE =
   /\b(urgent|urgente|urgentemente|asap|immediately|today|tomorrow|same\s*day|rush|sofort|de\s*urgencia|venerd[ìi]|monday|tuesday|wednesday|thursday|friday)\b/i;
 
@@ -114,8 +110,6 @@ const SIGNER_RE =
   /(\d+)\s*(?:signer|signator|firmatari|firmant|firmante|firmen|signatario)/i;
 
 const DOC_COUNT_RE = /(\d+)\s*(?:document|doc|documenti|documentos)\b/i;
-
-const RON_HINTS = /\b(remote\s*online|ron|remoto|remota|video\s*notar)\b/i;
 
 export function quickTagParse(text: string): MatterAnalysisPatch {
   const out: MatterAnalysisPatch = {};
@@ -136,8 +130,22 @@ export function quickTagParse(text: string): MatterAnalysisPatch {
     }
   }
 
-  if (APOSTILLE_RE.test(t)) out.apostilleRequired = true;
-  if (TRANSLATION_RE.test(t)) out.translationNeeded = true;
+  // Generalized, negation-aware interpretation (single interpretation truth).
+  // Explicit negatives / already-completed suppress the service; a bare mention
+  // no longer forces a positive requirement.
+  const interp = interpretIntakeText(t);
+
+  if (isPositive(interp.concepts.apostille)) out.apostilleRequired = true;
+  else if (isSuppressed(interp.concepts.apostille)) out.apostilleRequired = false;
+
+  if (isPositive(interp.concepts.translation)) out.translationNeeded = true;
+  else if (isSuppressed(interp.concepts.translation)) out.translationNeeded = false;
+
+  // RON review is warranted by an affirmative notarization/RON request; an
+  // explicit "no notarization" / "already notarized" suppresses it.
+  const notar = interp.concepts.notarization;
+  const ron = interp.concepts.ron;
+  out.ronReviewRequired = isPositive(ron) || isPositive(notar);
 
   if (URGENT_RE.test(t)) out.urgency = "urgent";
   else if (EXPEDITED_RE.test(t)) out.urgency = "expedited";
@@ -148,8 +156,6 @@ export function quickTagParse(text: string): MatterAnalysisPatch {
 
   const dm = t.match(DOC_COUNT_RE);
   if (dm) out.documentCount = Math.max(1, parseInt(dm[1], 10));
-
-  out.ronReviewRequired = RON_HINTS.test(t) || /\bnotar/i.test(t);
 
   return out;
 }
