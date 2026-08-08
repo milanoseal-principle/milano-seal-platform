@@ -193,10 +193,11 @@ async function main() {
     if (!r.ok) stopWith(results, 1);
   }
 
-  // 4. Core gates — hard fail.
+  // 4. Core gates — hard fail. Lint intentionally mirrors PR CI's pinned
+  // clean-runner command because eslint is not declared in package devDependencies.
   for (const [label, cmd, args] of [
     ["typecheck", "npm", ["run", "--silent", "typecheck"]],
-    ["lint", "npm", ["run", "--silent", "lint"]],
+    ["lint", "npx", ["--yes", "eslint@9.39.1", "."]],
     ["test", "npm", ["test", "--silent"]],
     ["build", "npm", ["run", "--silent", "build"]],
   ]) {
