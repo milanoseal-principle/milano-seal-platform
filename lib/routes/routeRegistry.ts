@@ -7,6 +7,13 @@ export const PUBLIC_LIVE_ROUTES = [
   "/map",
   "/apostille/italy",
   "/apostille/brazil",
+  "/international-affidavits",
+  "/international-affidavit",
+  "/power-of-attorney-international",
+  "/affidavit-name-discrepancy",
+  "/affidavit-one-and-the-same",
+  "/affidavit-non-existence-record",
+  "/affidavit-translation-accuracy",
 ] as const;
 
 export const INTERNAL_DASHBOARD_ROUTES = [
@@ -25,12 +32,6 @@ export const INTERNAL_DASHBOARD_ROUTES = [
 ] as const;
 
 export const STAGED_AUTHORITY_ROUTES = [
-  "/international-affidavit",
-  "/power-of-attorney-international",
-  "/affidavit-name-discrepancy",
-  "/affidavit-one-and-the-same",
-  "/affidavit-non-existence-record",
-  "/affidavit-translation-accuracy",
   "/fbi-apostille",
   "/international-notary",
   "/remote-online-notary",

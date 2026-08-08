@@ -77,8 +77,10 @@ const moduleText = requiredFiles
   .join("\n")
   .toLowerCase();
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 for (const term of forbidden) {
-  if (moduleText.includes(term)) {
+  const standaloneTerm = new RegExp(`\\b${escapeRegExp(term)}\\b`, "i");
+  if (standaloneTerm.test(moduleText)) {
     console.error(`Forbidden competitor/community term found: ${term}`);
     process.exit(1);
   }

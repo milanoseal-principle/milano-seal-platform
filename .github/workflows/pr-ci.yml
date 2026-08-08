@@ -48,3 +48,18 @@ jobs:
 
       - name: Smart Intake SOP validator
         run: npm run validate:smart-intake-sop
+
+      - name: Route registry validator
+        run: npm run validate:route-registry
+
+      - name: Pre-execution validator
+        run: npm run validate:milano-pre-execution
+
+      - name: Alliance platform validator
+        run: npm run validate:trust-alliance-platform
+
+      - name: Topical authority validator
+        run: npm run validate:topical-authority-engine
+
+      - name: Final production regression
+        run: npm run validate:final-production-regression
