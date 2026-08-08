@@ -61,7 +61,7 @@
     "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs",
     "validate:cinematic-route-coverage": "node scripts/validate-cinematic-route-coverage.mjs"
     "validate:complimentary-matter-flow": "node scripts/validate-complimentary-matter-flow.mjs",
-    "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs"
+    "validate:cinematic-ui-system": "node scripts/validate-cinematic-ui-system.mjs",
     "validate:trust-alliance-platform": "node scripts/validate-milano-trust-alliance-platform.mjs",
     "validate:government-public-sector": "node scripts/validate-government-public-sector-vertical.mjs",
     "validate:canonical-foundation": "node scripts/validate-canonical-foundation.mjs",
