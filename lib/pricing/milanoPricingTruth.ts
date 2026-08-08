@@ -98,7 +98,7 @@ function reviewResult(
 
 export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult {
   const c = input.classification;
-  const ctx: CommercialContext = input.commercialContext ?? "consumer";
+  const ctx: CommercialContext = input.commercialContext ?? c.commercialContext ?? "consumer";
   const reasons = [...c.manualReviewReasons];
 
   // Government / institutional / enterprise never use the consumer lane schedule.
@@ -107,14 +107,20 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
     return reviewResult(ctx, lane, ["separate_procurement_pricing_model"], "Procurement quote issued after review.", c.apostilleQuantity);
   }
 
-  // Any material price-driving service that is unknown/contradictory → review.
-  for (const [name, state] of [
+  // Already-completed services are explicit exclusions: they do not create a
+  // quote requirement or a new paid service.
+  const serviceStates = [
     ["notarization", c.notarization],
     ["apostille", c.apostille],
     ["authentication", c.authentication],
     ["translation", c.translation],
     ["mobile", c.mobile],
-  ] as Array<[string, ServiceState]>) {
+  ] as Array<[string, ServiceState]>;
+
+  for (const [name, state] of serviceStates) {
+    if (state === "already_completed") {
+      reasons.push(`${name}_already_completed_excluded`);
+    }
     if (needsReview(state)) reasons.push(`${name}_state_unresolved`);
   }
 
@@ -124,6 +130,13 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
   if (isRequired(c.authentication)) reasons.push("authentication_route_quote_after_review");
   // Translation is coordination; no locked flat consumer price.
   if (isRequired(c.translation)) reasons.push("translation_coordination_quote_after_review");
+  // Regulated / fingerprint / loan / professional intermediary / ORI hints are
+  // mandatory review-proofing fields in the locked pricing doctrine.
+  if (c.regulatedUseCase) reasons.push("regulated_use_case_quote_after_review");
+  if (c.fingerprintUseCase) reasons.push("fingerprint_use_case_quote_after_review");
+  if (c.loanSigningNeeded) reasons.push("loan_signing_quote_after_review");
+  if (c.professionalIntermediary) reasons.push("professional_intermediary_quote_after_review");
+  if (c.oriProvided) reasons.push("ori_provided_requires_operator_review");
 
   // Does the matter need an execution lane (notarization/RON/mobile/signature)?
   const executionNeeded = isRequired(c.notarization) || isRequired(c.ron) || isRequired(c.mobile) || !!input.selectedLane;

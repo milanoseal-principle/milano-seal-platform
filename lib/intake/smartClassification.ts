@@ -46,6 +46,19 @@ export interface SmartIntakeClassification {
   urgency: "normal" | "urgent" | "same_day" | "unknown";
   deadline?: string | null;
 
+  // Price-driving and commercial context fields are part of the canonical
+  // classification contract because pricing and quote layers read the same
+  // normalized Matter intelligence.
+  regulatedUseCase?: boolean;
+  fingerprintUseCase?: string | null;
+  loanSigningNeeded?: boolean;
+  professionalIntermediary?: boolean;
+  clientType?: string;
+  uploadedAgencyInstructions?: boolean;
+  oriProvided?: boolean;
+  receivingAuthorityType?: string;
+  commercialContext?: "consumer" | "professional_private" | "government" | "institutional" | "enterprise";
+
   explicitNegatives: string[];
   contradictions: string[];
   missingCriticalFacts: string[];
@@ -66,6 +79,15 @@ export interface StructuredSelections {
   signerLocation?: string;
   documentCount?: number;
   signerCount?: number;
+  regulatedUseCase?: boolean;
+  fingerprintUseCase?: string | null;
+  loanSigningNeeded?: boolean;
+  professionalIntermediary?: boolean;
+  clientType?: string;
+  uploadedAgencyInstructions?: boolean;
+  oriProvided?: boolean;
+  receivingAuthorityType?: string;
+  commercialContext?: "consumer" | "professional_private" | "government" | "institutional" | "enterprise";
 }
 
 /** AI extraction — lower precedence than explicit client evidence. */
@@ -77,12 +99,21 @@ export interface AiExtraction {
   signerCount?: number;
   apostilleRequired?: boolean;
   translationNeeded?: boolean;
+  regulatedUseCase?: boolean;
+  fingerprintUseCase?: string | null;
+  loanSigningNeeded?: boolean;
+  professionalIntermediary?: boolean;
+  clientType?: string;
+  uploadedAgencyInstructions?: boolean;
+  oriProvided?: boolean;
+  receivingAuthorityType?: string;
 }
 
 export interface ClassificationInput {
   text?: string;
   structured?: StructuredSelections;
   ai?: AiExtraction;
+  commercialContext?: "consumer" | "professional_private" | "government" | "institutional" | "enterprise";
 }
 
 // Document family normalization (no fabricated specificity).
@@ -197,6 +228,16 @@ export function classifyIntake(input: ClassificationInput): SmartIntakeClassific
         ? "urgent"
         : "unknown";
 
+  const regulatedUseCase = s.regulatedUseCase ?? ai.regulatedUseCase ?? false;
+  const fingerprintUseCase = s.fingerprintUseCase ?? ai.fingerprintUseCase ?? null;
+  const loanSigningNeeded = s.loanSigningNeeded ?? ai.loanSigningNeeded ?? false;
+  const professionalIntermediary = s.professionalIntermediary ?? ai.professionalIntermediary ?? false;
+  const clientType = s.clientType ?? ai.clientType;
+  const uploadedAgencyInstructions = s.uploadedAgencyInstructions ?? ai.uploadedAgencyInstructions ?? false;
+  const oriProvided = s.oriProvided ?? ai.oriProvided ?? false;
+  const receivingAuthorityType = s.receivingAuthorityType ?? ai.receivingAuthorityType;
+  const commercialContext = s.commercialContext ?? input.commercialContext ?? "consumer";
+
   const explicitNegatives = (Object.keys(interp.concepts) as IntakeConcept[])
     .filter((c) => interp.concepts[c].polarity === "negative")
     .map((c) => `${c}:not_required`);
@@ -234,6 +275,15 @@ export function classifyIntake(input: ClassificationInput): SmartIntakeClassific
     shipping,
     urgency,
     deadline: null,
+    regulatedUseCase,
+    fingerprintUseCase,
+    loanSigningNeeded,
+    professionalIntermediary,
+    clientType,
+    uploadedAgencyInstructions,
+    oriProvided,
+    receivingAuthorityType,
+    commercialContext,
     explicitNegatives,
     contradictions: interp.contradictions.map(String),
     missingCriticalFacts,

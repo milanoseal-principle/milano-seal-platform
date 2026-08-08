@@ -6,7 +6,7 @@ import Link from "next/link";
 
 // ─── Ledger Event Taxonomy ────────────────────────────────────────────────────
 
-export const LEDGER_EVENT_TYPES = [
+const LEDGER_EVENT_TYPES = [
   "SMART_INTAKE_CREATED",
   "MATTER_CREATED",
   "DESTINATION_SELECTED",
@@ -46,7 +46,7 @@ export const LEDGER_EVENT_TYPES = [
   "TRANSLATION_REVIEW_FLAGGED",
 ] as const;
 
-export type LedgerEventType = typeof LEDGER_EVENT_TYPES[number];
+type LedgerEventType = typeof LEDGER_EVENT_TYPES[number];
 
 // ─── Event Group Definitions ──────────────────────────────────────────────────
 

@@ -59,7 +59,12 @@ export async function POST(req: NextRequest) {
       .upload(path, buffer, { contentType: file.type, upsert: false });
 
     if (uploadErr) {
-      return NextResponse.json({ error: uploadErr.message }, { status: 500 });
+      return NextResponse.json({
+        error: "Your request was saved. Some documents did not finish uploading. Retry upload using the same Matter ID; no second Matter will be created.",
+        retryHint: "Reuse the same matter ID and retry the upload without creating a new Matter.",
+        uploadError: uploadErr.message,
+        matterId: deal_id,
+      }, { status: 500 });
     }
 
     // SECURITY-05/06: Signed URL — bucket must be private; no public CDN path exposed.
