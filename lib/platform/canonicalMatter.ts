@@ -113,4 +113,7 @@ export interface CanonicalMatterObject {
 
 export const CANONICAL_MATTER_FIELDS: (keyof CanonicalMatterObject)[] = [
   "matterId", "matterType", "clientId", "organizationId", "country", "destinationCountry", "executionTier", "executionPath", "ron", "mobile", "hybrid", "priority", "timeline", "quoteId", "invoiceId", "paymentId", "portalId", "documentIds", "witnessIds", "translatorId", "courierId", "apostilleId", "status", "qaStatus", "chainOfCustodyIds", "caseStudyId", "knowledgeGraphNodeIds", "alliancePartnerId", "governmentContractId", "revenueId", "kpiIds",
+  // Price/route-driving fields consumed by priceCanonicalMatter — previously
+  // absent from the registry (drift). Additive: no existing field removed.
+  "documentFamily", "apostilleStatus", "translationStatus", "signerLocation", "urgency", "clientType",
 ];
