@@ -63,6 +63,19 @@ for (const dir of uiDirs) {
 }
 ok("no copied lane-price table / price arithmetic in intake UI");
 
+// 4b. Live wiring: the active intake component renders canonical pricing via
+// projectClientPricing (Step 3), not a local calculation.
+const wizard = "components/intake/intake-wizard.tsx";
+if (exists(wizard)) {
+  const src = read(wizard);
+  /projectClientPricing/.test(src)
+    ? ok("live Step 3 consumes projectClientPricing")
+    : fail("intake Step 3 does not consume projectClientPricing (canonical client pricing)");
+  /priceSmartIntake|priceCanonicalMatter/.test(src)
+    ? ok("live intake prices via canonical engine")
+    : fail("intake does not call the canonical pricing engine");
+}
+
 // 5. No merge-conflict markers in Smart Intake scope.
 for (const dir of ["lib/intake", "lib/pricing", ...uiDirs]) {
   const abs = path.join(root, dir);
