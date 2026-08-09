@@ -70,6 +70,12 @@ export function outstandingRequirements(input: ReadinessInput): string[] {
     out.push("Destination country");
   }
 
+  if (c.notarization === "unknown") {
+    out.push("Notarization requirement");
+  } else if (c.notarization === "required" && c.ron === "unknown" && c.mobile === "unknown") {
+    out.push("Execution method (remote or in-person)");
+  }
+
   if (!timeline) out.push("Preferred execution timeline");
   if (!delivery) out.push("Delivery method");
 

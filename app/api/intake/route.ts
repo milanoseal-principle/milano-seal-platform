@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
-import { determineLaneAndPrice } from "@/lib/pricing";
+import { calculatePrice, determineLaneAndPrice } from "@/lib/pricing";
 import { generateInvoice } from "@/lib/invoice";
 import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
@@ -185,7 +185,27 @@ export async function POST(req: NextRequest) {
       urgency: data.urgency as "standard" | "urgent" | undefined,
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
-    const pricing = determineLaneAndPrice(pricingInput);
+    const legacyPricing = determineLaneAndPrice(pricingInput);
+    const requestedTier=String(raw.tier??"").toLowerCase();
+    const requestedLane: "Signature"|"Priority"|"Executive" = requestedTier==="executive"?"Executive":requestedTier==="signature"?"Signature":requestedTier==="priority"?"Priority":autoLane;
+    const laneOrder=["Signature","Priority","Executive"] as const;
+    const pricedLane=laneOrder.indexOf(requestedLane)>=laneOrder.indexOf(autoLane)?requestedLane:autoLane;
+    const timeline=String(raw.timeline_preference??"");
+    const delivery=String(raw.delivery_method??"");
+    const canonicalPricing=calculatePrice({
+      tier:pricedLane.toLowerCase(),
+      document_count:Math.max(1,Number(data.docs??raw.docs??1)),
+      signer_count:Math.max(1,Number(data.signers??raw.signers??1)),
+      notarized_signature_count:raw.notarization_required===true||raw.ron_required===true?Math.max(1,Number(data.signers??raw.signers??1)):0,
+      apostille_count:Boolean(compliance?.apostille_required??data.apostille)?Math.max(1,Number(raw.apostille_count??1)):0,
+      urgency:timeline==="urgent"?"rush":timeline==="expedited"?"expedited":data.urgency??"standard",
+      shipping:delivery==="international_courier"?"international":delivery==="domestic_courier"?"standard_domestic":"none",
+    });
+    const pricing={lane:pricedLane,base:canonicalPricing.base,total:canonicalPricing.total,addons:canonicalPricing.breakdown.filter(x=>!x.internal_only&&x.key!=="base").map(x=>({item:x.label,amount:x.amount})),witness_total:legacyPricing.witness_total};
+    const clientQuotedTotal=Number(raw.client_quoted_total);
+    if(Number.isFinite(clientQuotedTotal)&&Math.abs(clientQuotedTotal-pricing.total)>0.009){
+      return NextResponse.json({error:"Pricing changed after server validation. Please review the updated matter scope before payment.",code:"PRICING_REVIEW_REQUIRED",quoted_total:clientQuotedTotal,authoritative_total:pricing.total},{status:409});
+    }
     const supabase = createAdminClient();
     const requestedCourtesy = typeof raw.courtesy_code === "string" ? raw.courtesy_code.trim().toUpperCase() : "";
     let courtesyAdjustment: null | { id:string; code:string; discount_type:"percentage"|"fixed_amount"; discount_value:number; amount:number } = null;
@@ -206,11 +226,7 @@ export async function POST(req: NextRequest) {
     }
     const effectiveTotal=Math.max(0,Math.round((Number(pricing.total)-(courtesyAdjustment?.amount ?? 0))*100)/100);
 
-    const laneOrder = ["Signature", "Priority", "Executive"];
-    const finalLane =
-      laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
-        ? autoLane
-        : pricing.lane;
+    const finalLane = pricing.lane;
 
     const invoice = generateInvoice(effectiveTotal);
     const decline_risk = riskScore(data);
@@ -343,7 +359,6 @@ export async function POST(req: NextRequest) {
       non_discountable_total: 0,
       final_total: effectiveTotal,
       discount_code: courtesyAdjustment?.code ?? null,
-      discount_type: courtesyAdjustment?.discount_type ?? null,
       discount_value: courtesyAdjustment?.discount_value ?? null,
       discount_amount: courtesyAdjustment?.amount ?? 0,
       invoice_retainer: invoice.retainer,

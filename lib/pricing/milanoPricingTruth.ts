@@ -10,7 +10,7 @@
 // signer +$150 each) is the locked consumer schedule. This module does not
 // duplicate the pricing engine; it is the canonical intake entry into it.
 
-import { INTERNAL_BASES } from "./pricingDoctrine";
+import { calculatePrice } from "../pricing";
 import type { SmartIntakeClassification, ServiceState } from "../intake/smartClassification";
 
 export type CommercialContext =
@@ -32,17 +32,13 @@ export type SuggestedLane =
 
 // Locked public consumer add-on canon (Nick × Tiff commercial architecture).
 export const CONSUMER_ADD_ONS = { apostille: 250, rush: 400, additionalSigner: 150 } as const;
-const LANE_BASE: Record<"signature" | "priority" | "executive", number> = {
-  signature: INTERNAL_BASES.signature,
-  priority: INTERNAL_BASES.priority,
-  executive: INTERNAL_BASES.executive,
-};
 
 export interface MilanoPricingResult {
   commercialContext: CommercialContext;
   suggestedLane: SuggestedLane;
   laneBase: number | null;
   authorizedAddOns: { apostille?: number; rush?: number; additionalSigners?: number };
+  clientLineItems: Array<{ key: string; label: string; amount: number }>;
   /** Number of additional signers priced (max(0, signerCount-1)). */
   additionalSignerCount: number;
   /** Preserved for operator review; NOT multiplied into the +$250 add-on. */
@@ -63,6 +59,8 @@ export interface PricingTruthInput {
   commercialContext?: CommercialContext;
   /** Explicit client lane selection (Signature/Priority/Executive), if any. */
   selectedLane?: "signature" | "priority" | "executive";
+  timeline?: "" | "standard" | "expedited" | "urgent";
+  delivery?: "" | "digital" | "domestic_courier" | "international_courier";
 }
 
 const isRequired = (s: ServiceState) => s === "required";
@@ -84,6 +82,7 @@ function reviewResult(
     suggestedLane: lane,
     laneBase: null,
     authorizedAddOns: {},
+    clientLineItems: [],
     additionalSignerCount: 0,
     apostilleQuantity,
     total: null,
@@ -146,28 +145,52 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
     return reviewResult(ctx, input.selectedLane ?? "signature", reasons, "Your matter is ready for review. We'll confirm the final quote.", c.apostilleQuantity);
   }
 
-  const lane = input.selectedLane ?? "signature";
-  const laneBase = LANE_BASE[lane];
-
+  const requestedLane = input.selectedLane ?? "signature";
+  const minimumLane: "signature" | "priority" | "executive" =
+    c.urgency === "urgent" || c.urgency === "same_day"
+      ? "executive"
+      : isRequired(c.apostille) || c.signerCount > 1
+        ? "priority"
+        : "signature";
+  const rank = { signature: 0, priority: 1, executive: 2 } as const;
+  const lane = rank[requestedLane] >= rank[minimumLane] ? requestedLane : minimumLane;
+  const urgency = input.timeline === "urgent" ? "rush" : input.timeline === "expedited" ? "expedited" : c.urgency === "same_day" ? "same_day" : c.urgency === "urgent" ? "rush" : "standard";
+  const shipping = input.delivery === "international_courier" ? "international" : input.delivery === "domestic_courier" ? "standard_domestic" : "none";
+  const canonical = calculatePrice({
+    tier: lane,
+    document_count: Math.max(1, c.documentCount || 1),
+    signer_count: Math.max(1, c.signerCount || 1),
+    notarized_signature_count: isRequired(c.notarization) || isRequired(c.ron) ? Math.max(1, c.signerCount || 1) : 0,
+    apostille_count: isRequired(c.apostille) ? Math.max(1, c.apostilleQuantity || 1) : 0,
+    urgency,
+    shipping,
+  });
+  const hidden = canonical.breakdown.filter((x) => x.internal_only).reduce((sum,x) => sum+x.amount,0);
+  const publicItems = canonical.breakdown.filter((x) => !x.internal_only);
+  const laneName = lane[0].toUpperCase()+lane.slice(1);
+  const clientLineItems = publicItems.map((x) => x.key === "base"
+    ? { key:x.key, label:`${laneName} Execution Lane`, amount:x.amount+hidden }
+    : { key:x.key, label:x.label, amount:x.amount });
   const addOns: MilanoPricingResult["authorizedAddOns"] = {};
-  if (isRequired(c.apostille)) addOns.apostille = CONSUMER_ADD_ONS.apostille; // flat coordination add-on; quantity preserved, NOT multiplied
-  if (c.urgency === "urgent" || c.urgency === "same_day") addOns.rush = CONSUMER_ADD_ONS.rush;
-  const additionalSignerCount = Math.max(0, c.signerCount - 1);
-  if (additionalSignerCount > 0) addOns.additionalSigners = additionalSignerCount * CONSUMER_ADD_ONS.additionalSigner;
-
-  const total = laneBase + (addOns.apostille ?? 0) + (addOns.rush ?? 0) + (addOns.additionalSigners ?? 0);
-
-  const laneName = lane[0].toUpperCase() + lane.slice(1);
-  const parts = [`${laneName} Execution`];
-  if (addOns.apostille) parts.push("Apostille Coordination");
-  if (addOns.rush) parts.push("Rush Processing");
-  if (additionalSignerCount > 0) parts.push(`${additionalSignerCount} Additional Signer${additionalSignerCount > 1 ? "s" : ""}`);
+  const apostilleItem=canonical.breakdown.find((x)=>x.key==="apostille");
+  const urgencyItem=canonical.breakdown.find((x)=>x.key==="urgency");
+  const signerItem=canonical.breakdown.find((x)=>x.key==="additional_signers");
+  if (apostilleItem) addOns.apostille=apostilleItem.amount;
+  if (urgencyItem) addOns.rush=urgencyItem.amount;
+  if (signerItem) addOns.additionalSigners=signerItem.amount;
+  const additionalSignerCount=Math.max(0,c.signerCount-1);
+  const total=canonical.total;
+  const parts=[`${laneName} Execution`];
+  if (apostilleItem) parts.push("Apostille Coordination");
+  if (urgencyItem) parts.push("Timeline Premium");
+  if (signerItem) parts.push(`${additionalSignerCount} Additional Signer${additionalSignerCount>1?"s":""}`);
 
   return {
     commercialContext: ctx,
     suggestedLane: lane,
-    laneBase,
+    laneBase: canonical.base,
     authorizedAddOns: addOns,
+    clientLineItems,
     additionalSignerCount,
     apostilleQuantity: c.apostilleQuantity,
     total,

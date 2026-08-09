@@ -70,6 +70,12 @@ function toInt(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toNonNegativeInt(value: unknown, fallback = 0): number {
+  if (value === null || value === undefined || value === "") return fallback;
+  const parsed = parseInt(String(value), 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 function toBool(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
 }
@@ -200,16 +206,16 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
   );
   const notarizedSigCount = Math.max(
     0,
-    toInt(
+    toNonNegativeInt(
       params.notarized_signature_count ??
         params.signature_count ??
         params.signatureCount,
-      signerCount,
+      0,
     ),
   );
   const intlSignerCount = Math.max(
     0,
-    toInt(
+    toNonNegativeInt(
       params.international_signer_count ?? params.internationalSignerCount,
       0,
     ),
@@ -220,7 +226,7 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
   );
   const apostilleCount = Math.max(
     0,
-    toInt(
+    toNonNegativeInt(
       params.apostille_count ?? params.apostilleCount,
       toBool(params.apostille_required) ? 1 : 0,
     ),

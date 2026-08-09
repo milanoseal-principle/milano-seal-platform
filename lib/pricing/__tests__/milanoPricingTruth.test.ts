@@ -11,26 +11,26 @@ function price(text: string, structured: Parameters<typeof classifyIntake>[0]["s
 
 // ── Locked consumer canon math ──────────────────────────────────────────────
 
-test("Matter B: Signature + 1 additional signer = $900", () => {
+test("Matter B: two signers elevate to Priority with signer + signature tracking", () => {
   const r = price("notarize this document for 2 signers", { signerCount: 2, destinationCountry: "United States" }, "signature");
-  assert.equal(r.total, 900); // 750 + 150
+  assert.equal(r.total, 1175); // 975 Priority + 150 additional signer + 50 internal signature tracking
   assert.equal(r.additionalSignerCount, 1);
 });
 
-test("Matter C: Priority + apostille = $1,225", () => {
+test("Matter C: Priority + apostille + notarized-signature tracking = $1,250", () => {
   const r = price("notarize and apostille for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
-  assert.equal(r.total, 1225); // 975 + 250
+  assert.equal(r.total, 1250); // 975 + 250 apostille + 25 internal signature tracking
 });
 
-test("Matter D: Priority + apostille + rush = $1,625", () => {
+test("Matter D: same-day apostille elevates to Executive and adds rush", () => {
   const r = price("notarize, apostille, same day for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
   assert.equal(r.authorizedAddOns.rush, 400);
-  assert.equal(r.total, 1625); // 975 + 250 + 400
+  assert.equal(r.total, 2525); // 1850 Executive + 250 apostille + 400 rush + 25 internal signature tracking
 });
 
-test("Matter E: Executive + apostille + 2 signers = $2,250", () => {
+test("Matter E: Executive + apostille + 2 signers includes signature tracking", () => {
   const r = price("notarize and apostille for Italy, 2 signers", { apostille: true, destinationCountry: "Italy", signerCount: 2 }, "executive");
-  assert.equal(r.total, 2250); // 1850 + 250 + 150
+  assert.equal(r.total, 2300); // 1850 + 250 + 150 additional signer + 50 internal signature tracking
 });
 
 test("additional signer math: 3 signers => 2 additional => $300", () => {
@@ -82,10 +82,10 @@ test("no-fabrication: apostille never adds notarization; execution lane not forc
   assert.equal(r.suggestedLane, "apostille_only");
 });
 
-test("apostille quantity preserved, not multiplied into the +$250 add-on", () => {
+test("apostille quantity uses first + additional apostille pricing", () => {
   const r = price("notarize and 3 apostilles for Italy", { apostille: true, destinationCountry: "Italy" }, "signature");
   assert.equal(r.apostilleQuantity, 3);
-  assert.equal(r.authorizedAddOns.apostille, 250); // flat, not 750
+  assert.equal(r.authorizedAddOns.apostille, 550); // first 250 + 2 additional at 150 each
 });
 
 test("rush not applied from vague urgency (deadline exists but no same-day/rush word)", () => {
