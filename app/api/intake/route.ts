@@ -128,33 +128,23 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Sanitize free-text fields before any processing
-    if (raw.name)        raw.name        = safeText(raw.name);
+    if (raw.name) raw.name = safeText(raw.name);
     if (raw.client_name) raw.client_name = safeText(raw.client_name);
-    if (raw.notes)       raw.notes       = safeText(raw.notes);
-    if (raw.message)     raw.message     = safeText(raw.message);
+    if (raw.notes) raw.notes = safeText(raw.notes);
+    if (raw.message) raw.message = safeText(raw.message);
 
     const data = normalizeMatter(raw);
-    // Canonical client email: the deal's email is the ownership key for the
-    // email-based portal RLS (client_own_deal). Normalize once (trim +
-    // lowercase) so it deterministically matches the confirmed Supabase auth
-    // JWT email — no loose/substring/case-variant binding.
     if (typeof data.email === "string") {
       data.email = data.email.trim().toLowerCase();
     }
 
-    // ── Routing normalizer (P0 correctness fix) ───────────────────────────
-    // Converts raw origin_state overload into a deterministic NormalizedRoutingContext.
-    // origin_authority_label is used in review summaries and notifications instead of
-    // raw origin_state so that RON affidavits are never misrouted as federal documents.
-    // P1/P2: promote normalized routing fields to dedicated columns after registry migrations are approved.
     let normalizedRouting = normalizeIntakeRouting({
       ...raw,
       ...data,
     });
     normalizedRouting = checkAffidavitFederalConflict(
       normalizedRouting,
-      data.document_type as string || "",
+      (data.document_type as string) || "",
     );
     const originAuthorityLabel = normalizedRouting.origin_authority_label;
     const routingWarnings = normalizedRouting.warnings;
@@ -193,45 +183,147 @@ export async function POST(req: NextRequest) {
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
     const legacyPricing = determineLaneAndPrice(pricingInput);
-    const requestedTier=String(raw.tier??"").toLowerCase();
-    const requestedLane: "Signature"|"Priority"|"Executive" = requestedTier==="executive"?"Executive":requestedTier==="signature"?"Signature":requestedTier==="priority"?"Priority":autoLane;
-    const laneOrder=["Signature","Priority","Executive"] as const;
-    const pricedLane=laneOrder.indexOf(requestedLane)>=laneOrder.indexOf(autoLane)?requestedLane:autoLane;
-    const timeline=String(raw.timeline_preference??"");
-    const delivery=String(raw.delivery_method??"");
-    const canonicalPricing=calculatePrice({
-      tier:pricedLane.toLowerCase(),
-      document_count:Math.max(1,Number(data.docs??raw.docs??1)),
-      signer_count:Math.max(1,Number(data.signers??raw.signers??1)),
-      notarized_signature_count:raw.notarization_required===true||raw.ron_required===true?Math.max(1,Number(data.signers??raw.signers??1)):0,
-      apostille_count:Boolean(compliance?.apostille_required??data.apostille)?Math.max(1,Number(raw.apostille_count??1)):0,
-      urgency:timeline==="urgent"?"rush":timeline==="expedited"?"expedited":data.urgency??"standard",
-      shipping:delivery==="international_courier"?"international":delivery==="domestic_courier"?"standard_domestic":"none",
+    const requestedTier = String(raw.tier ?? "").toLowerCase();
+    const requestedLane: "Signature" | "Priority" | "Executive" =
+      requestedTier === "executive"
+        ? "Executive"
+        : requestedTier === "signature"
+          ? "Signature"
+          : requestedTier === "priority"
+            ? "Priority"
+            : autoLane;
+    const laneOrder = ["Signature", "Priority", "Executive"] as const;
+    const pricedLane =
+      laneOrder.indexOf(requestedLane) >= laneOrder.indexOf(autoLane)
+        ? requestedLane
+        : autoLane;
+    const timeline = String(raw.timeline_preference ?? "");
+    const delivery = String(raw.delivery_method ?? "");
+    const canonicalPricing = calculatePrice({
+      tier: pricedLane.toLowerCase(),
+      document_count: Math.max(1, Number(data.docs ?? raw.docs ?? 1)),
+      signer_count: Math.max(1, Number(data.signers ?? raw.signers ?? 1)),
+      notarized_signature_count:
+        raw.notarization_required === true || raw.ron_required === true
+          ? Math.max(1, Number(data.signers ?? raw.signers ?? 1))
+          : 0,
+      apostille_count: Boolean(compliance?.apostille_required ?? data.apostille)
+        ? Math.max(1, Number(raw.apostille_count ?? 1))
+        : 0,
+      urgency:
+        timeline === "urgent"
+          ? "rush"
+          : timeline === "expedited"
+            ? "expedited"
+            : data.urgency ?? "standard",
+      shipping:
+        delivery === "international_courier"
+          ? "international"
+          : delivery === "domestic_courier"
+            ? "standard_domestic"
+            : "none",
     });
-    const pricing={lane:pricedLane,base:canonicalPricing.base,total:canonicalPricing.total,addons:canonicalPricing.breakdown.filter(x=>!x.internal_only&&x.key!=="base").map(x=>({item:x.label,amount:x.amount})),witness_total:legacyPricing.witness_total};
-    const clientQuotedTotal=Number(raw.client_quoted_total);
-    if(Number.isFinite(clientQuotedTotal)&&Math.abs(clientQuotedTotal-pricing.total)>0.009){
-      return NextResponse.json({error:"Pricing changed after server validation. Please review the updated matter scope before payment.",code:"PRICING_REVIEW_REQUIRED",quoted_total:clientQuotedTotal,authoritative_total:pricing.total},{status:409});
+    const pricing = {
+      lane: pricedLane,
+      base: canonicalPricing.base,
+      total: canonicalPricing.total,
+      addons: canonicalPricing.breakdown
+        .filter((x) => !x.internal_only && x.key !== "base")
+        .map((x) => ({ item: x.label, amount: x.amount })),
+      witness_total: legacyPricing.witness_total,
+    };
+    const clientQuotedTotal = Number(raw.client_quoted_total);
+    if (
+      Number.isFinite(clientQuotedTotal) &&
+      Math.abs(clientQuotedTotal - pricing.total) > 0.009
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Pricing changed after server validation. Please review the updated matter scope before payment.",
+          code: "PRICING_REVIEW_REQUIRED",
+          quoted_total: clientQuotedTotal,
+          authoritative_total: pricing.total,
+        },
+        { status: 409 },
+      );
     }
     const supabase = createAdminClient();
-    const requestedCourtesy = typeof raw.courtesy_code === "string" ? raw.courtesy_code.trim().toUpperCase() : "";
-    let courtesyAdjustment: null | { id:string; code:string; discount_type:"percentage"|"fixed_amount"; discount_value:number; amount:number } = null;
+    const requestedCourtesy =
+      typeof raw.courtesy_code === "string"
+        ? raw.courtesy_code.trim().toUpperCase()
+        : "";
+    let courtesyAdjustment: null | {
+      id: string;
+      code: string;
+      discount_type: "percentage" | "fixed_amount";
+      discount_value: number;
+      amount: number;
+    } = null;
     if (requestedCourtesy) {
-      const { data: discount, error: discountError } = await supabase.from("discount_codes").select("id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to").eq("code", requestedCourtesy).maybeSingle();
+      const { data: discount, error: discountError } = await supabase
+        .from("discount_codes")
+        .select(
+          "id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to",
+        )
+        .eq("code", requestedCourtesy)
+        .maybeSingle();
       if (discountError) throw discountError;
-      if (!discount) return NextResponse.json({ error: "Courtesy code not found." }, { status: 400 });
-      const now=Date.now();
-      if (discount.status !== "active") return NextResponse.json({ error: "Courtesy code is not active." }, { status: 400 });
-      if (discount.starts_at && new Date(discount.starts_at).getTime() > now) return NextResponse.json({ error: "Courtesy code is not active yet." }, { status: 400 });
-      if (discount.expires_at && new Date(discount.expires_at).getTime() < now) return NextResponse.json({ error: "Courtesy code has expired." }, { status: 400 });
-      if (discount.usage_limit != null && Number(discount.usage_count ?? 0) >= Number(discount.usage_limit)) return NextResponse.json({ error: "Courtesy code has already been used." }, { status: 400 });
-      if (discount.applies_to !== "eligible_subtotal") return NextResponse.json({ error: "Courtesy code requires operator review." }, { status: 400 });
-      const eligibleSubtotalCents=Math.round(Number(pricing.total)*100);
-      const discountValue=Number(discount.discount_value);
-      const discountCents=discount.discount_type === "percentage" ? Math.round((eligibleSubtotalCents*discountValue)/100) : Math.round(discountValue*100);
-      courtesyAdjustment={ id:discount.id, code:String(discount.code), discount_type:discount.discount_type as "percentage"|"fixed_amount", discount_value:discountValue, amount:Math.min(eligibleSubtotalCents,Math.max(0,discountCents))/100 };
+      if (!discount)
+        return NextResponse.json(
+          { error: "Courtesy code not found." },
+          { status: 400 },
+        );
+      const now = Date.now();
+      if (discount.status !== "active")
+        return NextResponse.json(
+          { error: "Courtesy code is not active." },
+          { status: 400 },
+        );
+      if (discount.starts_at && new Date(discount.starts_at).getTime() > now)
+        return NextResponse.json(
+          { error: "Courtesy code is not active yet." },
+          { status: 400 },
+        );
+      if (discount.expires_at && new Date(discount.expires_at).getTime() < now)
+        return NextResponse.json(
+          { error: "Courtesy code has expired." },
+          { status: 400 },
+        );
+      if (
+        discount.usage_limit != null &&
+        Number(discount.usage_count ?? 0) >= Number(discount.usage_limit)
+      )
+        return NextResponse.json(
+          { error: "Courtesy code has already been used." },
+          { status: 400 },
+        );
+      if (discount.applies_to !== "eligible_subtotal")
+        return NextResponse.json(
+          { error: "Courtesy code requires operator review." },
+          { status: 400 },
+        );
+      const eligibleSubtotalCents = Math.round(Number(pricing.total) * 100);
+      const discountValue = Number(discount.discount_value);
+      const discountCents =
+        discount.discount_type === "percentage"
+          ? Math.round((eligibleSubtotalCents * discountValue) / 100)
+          : Math.round(discountValue * 100);
+      courtesyAdjustment = {
+        id: discount.id,
+        code: String(discount.code),
+        discount_type: discount.discount_type as "percentage" | "fixed_amount",
+        discount_value: discountValue,
+        amount:
+          Math.min(eligibleSubtotalCents, Math.max(0, discountCents)) / 100,
+      };
     }
-    const effectiveTotal=Math.max(0,Math.round((Number(pricing.total)-(courtesyAdjustment?.amount ?? 0))*100)/100);
+    const effectiveTotal = Math.max(
+      0,
+      Math.round(
+        (Number(pricing.total) - (courtesyAdjustment?.amount ?? 0)) * 100,
+      ) / 100,
+    );
 
     const finalLane = pricing.lane;
 
@@ -252,7 +344,6 @@ export async function POST(req: NextRequest) {
 
     const priority_tier = routeDeal(conversion_score);
 
-    // Canonical Wise reconciliation reference: exactly MS-YYYY-####.
     const payment_reference = deal_id;
     const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
 
@@ -267,7 +358,6 @@ export async function POST(req: NextRequest) {
     });
     const payment_link = wiseResult.url;
 
-    // P1/P2: promote payment metadata to dedicated columns after registry migrations approved.
     const payment_metadata = {
       provider: "wise",
       amount_due: invoice.retainer,
@@ -307,18 +397,50 @@ export async function POST(req: NextRequest) {
       wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${invoice.retainer}&currency=USD`,
       amount_due: invoice.retainer,
       currency: "USD",
-      courtesy: courtesyAdjustment ? { code:courtesyAdjustment.code, discount_type:courtesyAdjustment.discount_type, discount_value:courtesyAdjustment.discount_value, discount_amount:courtesyAdjustment.amount, redemption_status:"not_redeemed" } : null,
+      courtesy: courtesyAdjustment
+        ? {
+            code: courtesyAdjustment.code,
+            discount_type: courtesyAdjustment.discount_type,
+            discount_value: courtesyAdjustment.discount_value,
+            discount_amount: courtesyAdjustment.amount,
+            redemption_status: "not_redeemed",
+          }
+        : null,
       compliance: compliance ?? null,
       decline_risk: decline_risk ?? null,
       followup_schedule: ["24h", "72h", "7d"],
-      matterCategory: (raw as Record<string, unknown>).matterCategory ?? (raw as Record<string, unknown>).matter_category ?? null,
-      ronPreferred: (raw as Record<string, unknown>).ronPreferred ?? (raw as Record<string, unknown>).ron_preferred ?? null,
-      wetInkRequired: (raw as Record<string, unknown>).wetInkRequired ?? (raw as Record<string, unknown>).wet_ink_required ?? null,
-      receivingAuthority: (raw as Record<string, unknown>).receivingAuthority ?? (raw as Record<string, unknown>).receiving_authority ?? null,
-      deadlineOrClosingDate: (raw as Record<string, unknown>).deadlineOrClosingDate ?? (raw as Record<string, unknown>).deadline_or_closing_date ?? null,
-      courierRequired: (raw as Record<string, unknown>).courierRequired ?? (raw as Record<string, unknown>).courier_required ?? null,
-      timelinePreference: (raw as Record<string, unknown>).timelinePreference ?? (raw as Record<string, unknown>).timeline_preference ?? null,
-      deliveryMethod: (raw as Record<string, unknown>).deliveryMethod ?? (raw as Record<string, unknown>).delivery_method ?? null,
+      matterCategory:
+        (raw as Record<string, unknown>).matterCategory ??
+        (raw as Record<string, unknown>).matter_category ??
+        null,
+      ronPreferred:
+        (raw as Record<string, unknown>).ronPreferred ??
+        (raw as Record<string, unknown>).ron_preferred ??
+        null,
+      wetInkRequired:
+        (raw as Record<string, unknown>).wetInkRequired ??
+        (raw as Record<string, unknown>).wet_ink_required ??
+        null,
+      receivingAuthority:
+        (raw as Record<string, unknown>).receivingAuthority ??
+        (raw as Record<string, unknown>).receiving_authority ??
+        null,
+      deadlineOrClosingDate:
+        (raw as Record<string, unknown>).deadlineOrClosingDate ??
+        (raw as Record<string, unknown>).deadline_or_closing_date ??
+        null,
+      courierRequired:
+        (raw as Record<string, unknown>).courierRequired ??
+        (raw as Record<string, unknown>).courier_required ??
+        null,
+      timelinePreference:
+        (raw as Record<string, unknown>).timelinePreference ??
+        (raw as Record<string, unknown>).timeline_preference ??
+        null,
+      deliveryMethod:
+        (raw as Record<string, unknown>).deliveryMethod ??
+        (raw as Record<string, unknown>).delivery_method ??
+        null,
     };
 
     const safeNotes = [
@@ -326,7 +448,9 @@ export async function POST(req: NextRequest) {
       `[routing] origin_authority_type=${normalizedRouting?.origin_authority_type ?? "unknown"}`,
       `[routing] origin_authority_label=${originAuthorityLabel ?? "unknown"}`,
       `[routing] apostille_path=${normalizedRouting?.apostille_path ?? "unknown"}`,
-      (routingWarnings?.length ?? 0) > 0 ? `[routing_warnings] ${routingWarnings.join(" | ")}` : "",
+      (routingWarnings?.length ?? 0) > 0
+        ? `[routing_warnings] ${routingWarnings.join(" | ")}`
+        : "",
       `[intake_metadata:${JSON.stringify(intakeMetadata)}]`,
     ]
       .filter(Boolean)
@@ -338,15 +462,18 @@ export async function POST(req: NextRequest) {
       deal_id,
       access_token,
       client_name,
-      client_type: ((raw as Record<string, string>).client_type as string) ?? "individual",
+      client_type:
+        ((raw as Record<string, string>).client_type as string) ?? "individual",
       company_name: companyName,
       email: data.email || "",
       phone: data.phone || "",
       document_type: docType,
       use_case: useCase || null,
       destination_country: country,
-      origin_state: ((raw as Record<string, string>).origin_state as string) || null,
-      apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+      origin_state:
+        ((raw as Record<string, string>).origin_state as string) || null,
+      apostille_required:
+        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
       docs_count: Number(data.docs ?? 1),
       lane: finalLane,
       urgency: (data.urgency as string) ?? "standard",
@@ -379,6 +506,7 @@ export async function POST(req: NextRequest) {
       amount_paid: 0,
       currency: "USD",
       payment_link,
+      status: "intake_received",
       deal_status: "awaiting_payment",
       conversion_score,
       priority_tier,
@@ -386,9 +514,9 @@ export async function POST(req: NextRequest) {
       internal_notes: safeInternalNotes,
     };
 
-    let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
+    let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null =
+      null;
 
-    // Attempt 1: full payload
     {
       const { data: d, error: e } = await supabase
         .from("deals")
@@ -406,10 +534,15 @@ export async function POST(req: NextRequest) {
           code: e.code,
         });
 
-        // Courtesy checkout must never degrade to a legacy payload that loses discount/payment truth.
-        if (requestedCourtesy) return NextResponse.json({ error: "Courtesy checkout is temporarily unavailable. Please contact The Milano Seal." }, { status: 503 });
+        if (requestedCourtesy)
+          return NextResponse.json(
+            {
+              error:
+                "Courtesy checkout is temporarily unavailable. Please contact The Milano Seal.",
+            },
+            { status: 503 },
+          );
 
-        // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits
         const minimalPayload = {
           deal_id,
           access_token,
@@ -418,7 +551,8 @@ export async function POST(req: NextRequest) {
           phone: data.phone || "",
           document_type: docType,
           destination_country: country,
-          apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+          apostille_required:
+            compliance?.apostille_required ?? Boolean(data.apostille ?? false),
           urgency: (data.urgency as string) ?? "standard",
           mobile: Boolean(data.mobile ?? false),
           signers: Number(data.signers ?? 1),
@@ -426,6 +560,7 @@ export async function POST(req: NextRequest) {
           translation: Boolean(data.translation ?? false),
           multi_country: Boolean(data.multi_country ?? false),
           payment_status: "unpaid" as const,
+          status: "intake_received" as const,
           deal_status: "awaiting_payment" as const,
         };
 
@@ -443,13 +578,13 @@ export async function POST(req: NextRequest) {
             code: e2.code,
           });
 
-          // Attempt 3: absolute bare minimum — deal_id + access_token only
           const barePayload = {
             deal_id,
             access_token,
             client_name,
             email: data.email || "",
             payment_status: "unpaid" as const,
+            status: "intake_received" as const,
             deal_status: "awaiting_payment" as const,
           };
           const { data: d3, error: e3 } = await supabase
@@ -484,10 +619,18 @@ export async function POST(req: NextRequest) {
           }
 
           deal = d3 as Record<string, unknown>;
-          console.warn("[intake] saved via bare payload fallback — attempt1:", e.code, "attempt2:", e2.code);
+          console.warn(
+            "[intake] saved via bare payload fallback — attempt1:",
+            e.code,
+            "attempt2:",
+            e2.code,
+          );
         } else {
           deal = d2 as Record<string, unknown>;
-          console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
+          console.warn(
+            "[intake] saved via minimal payload fallback — full payload code:",
+            e.code,
+          );
         }
       }
     }
@@ -521,7 +664,6 @@ export async function POST(req: NextRequest) {
         }
       })();
 
-      // Client notification log entry for intake (non-blocking; never throws).
       void notifyClient(dealRowId, "intake_received");
 
       void (async () => {
@@ -535,7 +677,7 @@ export async function POST(req: NextRequest) {
             document_type: data.document_type as string | undefined,
             destination_country: country,
             country,
-            status: "awaiting_payment",
+            status: "intake_received",
             payment_status: "unpaid",
             payment_link,
             raw_text:
@@ -626,9 +768,10 @@ export async function POST(req: NextRequest) {
         witness_total: pricing.witness_total,
         total: pricing.total,
         breakdown: pricingBreakdown,
-        rationale: rationaleByLane[finalLane] ?? "Standard pricing applied.",
+        rationale:
+          rationaleByLane[finalLane] ?? "Standard pricing applied.",
       },
-      execution_stage: "Awaiting Payment",
+      execution_stage: "Intake Received",
       portal_url: `${
         process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
       }/portal/${access_token}`,
