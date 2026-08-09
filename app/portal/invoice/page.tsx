@@ -74,6 +74,8 @@ export default function ClientInvoicePage() {
     );
   }
 
+  const complimentaryAuthorized =
+    deal.payment_disposition === "complimentary" && deal.comp_authorized === true;
   const paymentConfirmed =
     deal.payment_confirmed ||
     deal.payment_status === "paid" ||
@@ -86,6 +88,77 @@ export default function ClientInvoicePage() {
   const wiseRef =
     deal.wise_reference ??
     `MS-${(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}`;
+
+  if (complimentaryAuthorized) {
+    return (
+      <div>
+        <div
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "rgba(198,165,90,0.58)",
+            fontFamily: "monospace",
+            marginBottom: 8,
+          }}
+        >
+          Invoice &amp; Authorization
+        </div>
+        <h1
+          style={{
+            fontFamily: "var(--font-playfair, Georgia, serif)",
+            fontSize: 24,
+            color: "#E5E5E5",
+            marginBottom: 8,
+          }}
+        >
+          Complimentary Service Authorization
+        </h1>
+        <p
+          style={{
+            marginBottom: 24,
+            maxWidth: 680,
+            fontSize: 12,
+            lineHeight: 1.65,
+            color: "rgba(255,255,255,0.48)",
+          }}
+        >
+          No payment is due for this Matter. This authorization is a separate
+          zero-revenue disposition and is not a paid status or Wise Payment
+          Confirmed status.
+        </p>
+        <div
+          data-critical-card=""
+          style={{
+            background: "rgba(74,158,107,0.06)",
+            border: "1px solid rgba(74,158,107,0.28)",
+            borderRadius: 8,
+            padding: "22px 26px",
+          }}
+        >
+          {deal.original_total !== null && (
+            <Line
+              label="Original service value"
+              value={money(deal.original_total, currency)}
+            />
+          )}
+          <Line label="Authorized amount due" value={money(0, currency)} strong positive />
+          <div
+            style={{
+              paddingTop: 16,
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 12,
+              lineHeight: 1.65,
+            }}
+          >
+            Scheduling eligibility is evaluated through the canonical
+            Complimentary Authorization gate. No Wise payment or payment
+            confirmation is fabricated for this Matter.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
