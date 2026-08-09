@@ -54,7 +54,28 @@ test("serviceStateLabel renders explicit negatives as a resolved instruction", (
 test("serviceStateLabel renders required/completed/unknown correctly", () => {
   assert.equal(serviceStateLabel("required", "Apostille Coordination"), "Apostille Coordination");
   assert.equal(serviceStateLabel("already_completed", "Notarization"), "Already completed");
-  assert.equal(serviceStateLabel("unknown", "Notarization"), "Confirmation required before checkout");
+  assert.equal(serviceStateLabel("unknown", "Notarization"), "Will be confirmed from document review");
+});
+
+test("unknown notarization does not trap an apostille client in manual checkout edits", () => {
+  const out = outstandingRequirements({
+    classification: classification({ notarization: "unknown", ron: "unknown", mobile: "unknown" }),
+    timeline: "standard",
+    delivery: "international_courier",
+    pricingApproved: false,
+  });
+  assert.ok(!out.includes("Notarization requirement"));
+  assert.deepEqual(out, []);
+});
+
+test("required notarization still requires an execution method", () => {
+  const out = outstandingRequirements({
+    classification: classification({ notarization: "required", ron: "unknown", mobile: "unknown" }),
+    timeline: "standard",
+    delivery: "digital",
+    pricingApproved: true,
+  });
+  assert.ok(out.includes("Execution method (remote or in-person)"));
 });
 
 test("outstandingRequirements is empty when every quote-critical fact is resolved", () => {
@@ -109,9 +130,6 @@ test("outstandingRequirements requires explicit timeline and delivery", () => {
 });
 
 test("outstandingRequirements ignores pricing approval so review-only matters stay submittable", () => {
-  // A matter that intentionally prices as quote_after_review (pricingApproved
-  // false) must still be submittable once every client-resolvable fact is
-  // provided — the submit gate keys off this list, not off pricing approval.
   const out = outstandingRequirements({
     classification: classification({ apostille: "not_required", authentication: "not_required", originJurisdiction: undefined }),
     timeline: "standard",
