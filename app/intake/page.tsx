@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };
 
+function normalizeCourtesyCode(value?: string): string | undefined {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) return undefined;
+  return /^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(normalized) ? normalized : undefined;
+}
+
 function IntakeContent({
   searchParams,
 }: {
@@ -22,6 +28,7 @@ function IntakeContent({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   return (
@@ -42,6 +49,7 @@ async function IntakeWizardWrapper({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -60,7 +68,19 @@ async function IntakeWizardWrapper({
       ? tier
       : "priority";
 
-  return <SmartIntakeSOPWizard initialTier={validTier} prefill={prefill} />;
+  // URL/query values are routing hints only. The API validates existence,
+  // status, usage limit, time window, and eligibility server-side before a
+  // discount can affect pricing. This permits disposable E2E codes without
+  // hard-coding production courtesy programs into the browser layer.
+  const courtesyCode = normalizeCourtesyCode(params.courtesy);
+
+  return (
+    <SmartIntakeSOPWizard
+      initialTier={validTier}
+      prefill={prefill}
+      courtesyCode={courtesyCode}
+    />
+  );
 }
 
 export default function IntakePage({
@@ -74,6 +94,7 @@ export default function IntakePage({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   return (

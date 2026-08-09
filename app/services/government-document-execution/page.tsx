@@ -52,7 +52,7 @@ export default function GovernmentDocumentExecutionPage() {
         },
       ]}
       disclaimers={[
-        "The Milano Seal™ does not provide legal advice, government approval guarantees, procurement guarantees, or guaranteed acceptance by any agency, court, institution, or receiving authority.",
+        "The Milano Seal™ does not provide legal advice, government approval guarantees, procurement guarantees, or acceptance guarantees by any agency, court, institution, or receiving authority.",
         "Descriptions of the organizations we serve are illustrative of who these workflows are designed for and are not statements of existing clients or engagements.",
       ]}
     >

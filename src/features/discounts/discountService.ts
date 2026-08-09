@@ -5,7 +5,6 @@ import {
   validateCodeRedeemable,
   type DiscountCode,
 } from "@/lib/discountCodes";
-import { getMatterById, updateMatter } from "@/src/features/matters/matterRepository";
 import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
 
 function money(value: number) {
@@ -13,14 +12,22 @@ function money(value: number) {
 }
 
 function eligibleSubtotalForMatter(matter: Record<string, unknown>): number {
-  const explicit = Number(
-    matter.eligible_subtotal ??
-      matter.service_subtotal ??
-      matter.original_total ??
-      matter.final_total ??
-      0,
-  );
-  return money(Number.isFinite(explicit) ? explicit : 0);
+  const raw = matter.eligible_subtotal;
+  const explicit = Number(raw);
+  if (raw === null || raw === undefined || !Number.isFinite(explicit) || explicit < 0) {
+    throw new Error("DISCOUNT_REVIEW_REQUIRED: eligible subtotal is not explicitly stored.");
+  }
+  return money(explicit);
+}
+
+async function getMatterById(id: string) {
+  const supabase = createAdminClient();
+  return supabase.from("deals").select("*").eq("id", id).single();
+}
+
+async function updateMatter(id: string, values: Record<string, unknown>) {
+  const supabase = createAdminClient();
+  return supabase.from("deals").update(values).eq("id", id).select("*").single();
 }
 
 export async function applyDiscountToMatter(
@@ -81,21 +88,20 @@ export async function applyDiscountToMatter(
   }
 
   const eligibleSubtotal = eligibleSubtotalForMatter(matter);
+  const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));
   const discountAmount = computeDiscountAmount(discount, eligibleSubtotal);
-  const originalTotal = money(Number(matter.original_total ?? matter.final_total ?? eligibleSubtotal));
-  const finalTotal = money(originalTotal - Math.min(originalTotal, discountAmount));
-  const depositRequired = Boolean(matter.deposit_required);
-  const depositAmount = depositRequired ? money(finalTotal / 2) : finalTotal;
-  const balanceDue = depositRequired ? money(finalTotal - depositAmount) : 0;
-
+  const originalTotal = money(eligibleSubtotal + nonDiscountableTotal);
+  const finalTotal = money(eligibleSubtotal - Math.min(eligibleSubtotal, discountAmount) + nonDiscountableTotal);
+  const priorTotal = money(Number(matter.total_price ?? originalTotal));
+  const priorRetainer = money(Number(matter.invoice_retainer ?? priorTotal));
+  const retainerRatio = priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;
+  const depositAmount = money(finalTotal * retainerRatio);
+  const balanceDue = money(finalTotal - depositAmount);
   const updated = await updateMatter(matterId, {
-    discount_code: discount.code,
-    discount_type: discount.discount_type,
-    discount_value: Number(discount.discount_value),
-    discount_amount: discountAmount,
-    final_total: finalTotal,
-    deposit_amount: depositAmount,
-    balance_due: balanceDue,
+    discount_code: discount.code, discount_type: discount.discount_type,
+    discount_value: Number(discount.discount_value), discount_amount: discountAmount,
+    original_total: originalTotal, final_total: finalTotal, total_price: finalTotal,
+    invoice_retainer: depositAmount, invoice_balance: balanceDue, amount_due: depositAmount,
   });
   if (updated.error) throw updated.error;
 
@@ -129,18 +135,18 @@ export async function removeDiscountFromMatter(
     throw new Error("Discount cannot be removed after payment has started.");
   }
 
-  const originalTotal = money(Number(matter.original_total ?? matter.final_total ?? 0));
-  const depositRequired = Boolean(matter.deposit_required);
-  const depositAmount = depositRequired ? money(originalTotal / 2) : originalTotal;
-  const balanceDue = depositRequired ? money(originalTotal - depositAmount) : 0;
+  const eligibleSubtotal = eligibleSubtotalForMatter(matter);
+  const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));
+  const originalTotal = money(Number(matter.original_total ?? (eligibleSubtotal + nonDiscountableTotal)));
+  const priorFinal = money(Number(matter.final_total ?? matter.total_price ?? originalTotal));
+  const priorRetainer = money(Number(matter.invoice_retainer ?? priorFinal));
+  const retainerRatio = priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;
+  const depositAmount = money(originalTotal * retainerRatio);
+  const balanceDue = money(originalTotal - depositAmount);
   const updated = await updateMatter(matterId, {
-    discount_code: null,
-    discount_type: null,
-    discount_value: null,
-    discount_amount: 0,
-    final_total: originalTotal,
-    deposit_amount: depositAmount,
-    balance_due: balanceDue,
+    discount_code: null, discount_type: null, discount_value: null, discount_amount: 0,
+    final_total: originalTotal, total_price: originalTotal, invoice_retainer: depositAmount,
+    invoice_balance: balanceDue, amount_due: depositAmount,
   });
   if (updated.error) throw updated.error;
   await writeEventLedger({ matterId, actorEmail, eventType: "DISCOUNT_REMOVED" });

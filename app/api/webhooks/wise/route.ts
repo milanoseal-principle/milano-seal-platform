@@ -376,27 +376,20 @@ async function processWiseEvent(opts: {
     return;
   }
 
-  // PAYMENT_CONFIRMED: exact amount and explicit USD currency have already passed.
+  // PAYMENT_CONFIRMED: payment + attached discount redemption commit atomically.
   const confirmedAmount = eventAmount;
   const willUnlockScheduling = eventMinor === dueMinor;
-
-  await supabase
-    .from("deals")
-    .update({
-      payment_status: "paid",
-      payment_confirmed: true,
-      payment_method: "wise",
-      payment_reference: reference,
-      payment_amount_received: confirmedAmount,
-      amount_paid: confirmedAmount,
-      payment_confirmed_at: new Date().toISOString(),
-      payment_settlement_status: "cleared",
-      payment_cleared_at: new Date().toISOString(),
-      payment_funding_method: "wise",
-      invoice_status: "paid",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", deal.id);
+  const wiseTransactionReference = String(resource.id ?? resource.transferId ?? "").trim() || null;
+  const { data: confirmation, error: confirmationError } = await supabase.rpc("confirm_wise_payment_for_deal", {
+    p_deal_id: deal.id, p_payment_reference: reference, p_wise_transaction_reference: wiseTransactionReference,
+    p_amount: confirmedAmount, p_currency: eventCurrency, p_actor: "wise-webhook",
+  });
+  if (confirmationError) {
+    await flagForReview(supabase,eventRowId,`atomic_confirmation_failed:${confirmationError.message}`,reference,deal.id);
+    return;
+  }
+  const redemptionId = confirmation && typeof confirmation === "object" && "redemption_id" in confirmation
+    ? (confirmation as Record<string, unknown>).redemption_id ?? null : null;
 
   if (eventRowId) {
     await supabase
@@ -421,6 +414,7 @@ async function processWiseEvent(opts: {
         amount_due: amountDue,
         currency: eventCurrency,
         scheduling_unlocked: willUnlockScheduling,
+        discount_redemption_id: redemptionId,
         delivery_id: eventRowId,
       },
     });

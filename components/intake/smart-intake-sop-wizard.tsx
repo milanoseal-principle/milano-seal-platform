@@ -11,6 +11,14 @@ import { buildIntakeClarifications, type IntakeQuestion } from "@/lib/intake/int
 import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
 import { projectClientPricing } from "@/lib/pricing/pricingProjections";
 import { buildIntakeAnalyticsPayload, type IntakeAnalyticsEvent } from "@/lib/intake/intakeAnalytics";
+import {
+  documentIdentityLabel,
+  isQuoteReady,
+  outstandingRequirements,
+  serviceStateLabel,
+  type DeliveryChoice,
+  type TimelineChoice,
+} from "@/lib/intake/reviewReadiness";
 
 interface IntakePrefill {
   country?: string;
@@ -22,6 +30,7 @@ interface IntakePrefill {
 interface Props {
   initialTier?: "signature" | "priority" | "executive";
   prefill?: IntakePrefill;
+  courtesyCode?: string;
 }
 
 type Choice = "yes" | "no" | "unsure" | "";
@@ -46,6 +55,8 @@ interface FormState {
   translationChoice: Choice;
   deadline: string;
   courierRequired: boolean;
+  timelineChoice: TimelineChoice;
+  deliveryChoice: DeliveryChoice;
 }
 
 const INITIAL: FormState = {
@@ -66,6 +77,8 @@ const INITIAL: FormState = {
   translationChoice: "",
   deadline: "",
   courierRequired: false,
+  timelineChoice: "",
+  deliveryChoice: "",
 };
 
 const COUNTRIES = [
@@ -85,13 +98,6 @@ function fileKey(file: File) {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
-function clientState(value: string) {
-  if (value === "required") return "Required";
-  if (value === "not_required") return "Not required";
-  if (value === "already_completed") return "Already completed";
-  return "To be confirmed";
-}
-
 function ReviewRow({ label, value, onEdit }: { label: string; value: string; onEdit?: () => void }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-[rgba(198,165,90,0.08)] px-4 py-3 last:border-0">
@@ -104,7 +110,7 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Props) {
+export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
@@ -158,8 +164,50 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
   }), [form, analysis]);
 
   const clarifications = useMemo(() => buildIntakeClarifications(classification), [classification]);
-  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer" }), [classification, initialTier]);
+  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer", timeline: form.timelineChoice, delivery: form.deliveryChoice }), [classification, initialTier, form.timelineChoice, form.deliveryChoice]);
   const clientPricing = useMemo(() => projectClientPricing(pricing), [pricing]);
+
+  const outstanding = useMemo(
+    () =>
+      outstandingRequirements({
+        classification,
+        timeline: form.timelineChoice,
+        delivery: form.deliveryChoice,
+        pricingApproved: clientPricing.mode === "approved_price",
+      }),
+    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode],
+  );
+
+  const quoteReady = useMemo(
+    () =>
+      isQuoteReady({
+        classification,
+        timeline: form.timelineChoice,
+        delivery: form.deliveryChoice,
+        pricingApproved: clientPricing.mode === "approved_price",
+      }),
+    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode],
+  );
+
+  const matterTypeLabel = useMemo(() => {
+    if (classification.apostille === "required") return "International Apostille Coordination";
+    if (classification.authentication === "required") return "International Authentication Coordination";
+    if (classification.ron === "required" || form.executionType === "RON") return "Remote Online Notarization";
+    if (classification.mobile === "required" || form.executionType === "Mobile") return "Mobile Notary Deployment";
+    if (classification.notarization === "required") return "Notarization Coordination";
+    return "Document Execution Coordination";
+  }, [classification, form.executionType]);
+
+  const scopeBullets = useMemo(() => {
+    const bullets: string[] = [];
+    bullets.push(`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`);
+    if (classification.destinationCountry) bullets.push(`Destination: ${classification.destinationCountry}`);
+    if (classification.apostille === "required") bullets.push(`Apostille coordination required${classification.apostilleQuantity > 1 ? ` (${classification.apostilleQuantity})` : ""}`);
+    else if (classification.authentication === "required") bullets.push("Authentication coordination required");
+    bullets.push(classification.ron === "required" || form.executionType === "RON" ? "RON included" : classification.notarization === "required" ? "Notarization included" : "RON not required");
+    bullets.push(classification.translation === "required" ? "Translation included" : "Translation not required");
+    return bullets;
+  }, [classification, form.executionType, files.length]);
 
   const track = (event: IntakeAnalyticsEvent, metadata: Record<string, unknown> = {}, id?: string) => {
     try {
@@ -279,6 +327,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
   };
 
   const submit = async () => {
+    // Gate on client-resolvable facts, NOT on pricing approval: matters that
+    // intentionally price as quote_after_review (mobile / authentication /
+    // translation coordination) must still be submittable so a Matter is
+    // created for the operator to review and quote.
+    if (outstanding.length > 0) return setError("Please resolve the remaining details above before checkout.");
     if (!consent) return setError("Confirm the review notice before completing your order.");
     setSubmitting(true);
     setError(null);
@@ -286,6 +339,9 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
 
     const payload = {
       source_channel: "Website Form",
+      tier: initialTier,
+      client_quoted_total: clientPricing.mode === "approved_price" ? clientPricing.amount : undefined,
+      pricing_engine_version: "canonical-pricing-v1",
       name: form.name,
       client_name: form.name,
       email: form.email,
@@ -299,15 +355,23 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
       country: classification.destinationCountry || "United States",
       destination_country: classification.destinationCountry || "",
       mobile: classification.mobile === "required",
+      notarization_required: classification.notarization === "required",
+      ron_required: classification.ron === "required",
       apostille: classification.apostille === "required",
       apostille_count: classification.apostilleQuantity,
       translation: classification.translation === "required",
+      // Timeline/delivery are explicit quote inputs. Client projection and
+      // server recomputation consume the same selections so the accepted
+      // quote cannot diverge from the amount persisted for Wise checkout.
       urgency: classification.urgency === "same_day" || classification.urgency === "urgent" ? "urgent" : "standard",
+      timeline_preference: form.timelineChoice || undefined,
+      delivery_method: form.deliveryChoice || undefined,
       deadline_date: form.deadline,
       notes: form.executionType === "Mobile" && form.mobileAddress ? `Mobile signing address: ${form.mobileAddress}` : "",
       courier_required: form.courierRequired ? "yes" : undefined,
       name_match: true,
       files_uploaded: files.length > 0,
+      courtesy_code: courtesyCode || undefined,
     };
 
     try {
@@ -488,26 +552,98 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
             <>
               <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">Your Matter</h2>
               <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Review exactly what we understood before completing your order.</p>
-              <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A]">
-                <ReviewRow label="Documents" value={`${classification.documentCount} × ${classification.documentType || "Document"}`} onEdit={() => edit("matter")} />
-                <ReviewRow label="Destination" value={classification.destinationCountry || "To be confirmed"} onEdit={() => edit("destination")} />
-                <ReviewRow label="Service" value={form.executionType === "RON" ? "Remote Online Notarization" : form.executionType === "Mobile" ? "Mobile Deployment" : "Execution route to be confirmed"} onEdit={() => edit("matter")} />
-                <ReviewRow label="Notarization" value={clientState(classification.notarization)} onEdit={() => edit("notarization")} />
-                <ReviewRow label="Apostille / Authentication" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : clientState(classification.apostille)} onEdit={() => edit("apostille")} />
-                <ReviewRow label="Translation" value={classification.translation === "required" ? "Translation required" : classification.translation === "not_required" ? "Not currently indicated" : clientState(classification.translation)} onEdit={() => edit("translation")} />
-                <ReviewRow label="Timeline" value={form.deadline || (classification.urgency === "same_day" ? "Same day" : classification.urgency === "urgent" ? "Urgent" : "Standard")} onEdit={() => edit("timeline")} />
-                <ReviewRow label="Delivery" value={form.courierRequired ? "Courier coordination" : "To be confirmed"} onEdit={() => edit("delivery")} />
+
+              <div className="mb-6 overflow-hidden rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A]">
+                <div className="border-b border-[rgba(198,165,90,0.1)] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Your Matter</div>
+                <ReviewRow label="Matter Type" value={matterTypeLabel} onEdit={() => edit("matter")} />
+                <ReviewRow label="Documents" value={`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`} onEdit={() => edit("matter")} />
+                <ReviewRow label="Document Titles" value={documentIdentityLabel(classification.documentType)} onEdit={() => edit("matter")} />
+                <ReviewRow label="Destination" value={classification.destinationCountry || "Destination confirmation required"} onEdit={() => edit("destination")} />
+                <ReviewRow label="Requested Service" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : matterTypeLabel} onEdit={() => edit("matter")} />
+                <ReviewRow label="Notarization" value={serviceStateLabel(classification.notarization, "Notarization required")} onEdit={() => edit("notarization")} />
+                <ReviewRow label="Remote Online Notarization" value={serviceStateLabel(classification.ron, "Remote Online Notarization")} onEdit={() => edit("matter")} />
+                <ReviewRow label="Apostille / Authentication" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : serviceStateLabel(classification.apostille, "Apostille Coordination")} onEdit={() => edit("apostille")} />
+                <ReviewRow label="Translation" value={serviceStateLabel(classification.translation, "Translation required")} onEdit={() => edit("translation")} />
               </div>
 
-              <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-5">
-                {clientPricing.mode === "approved_price" ? <><div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Price</div><div className="mt-1 text-2xl font-semibold text-white">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(clientPricing.amount ?? 0)}</div><div className="mt-1 text-[12px] font-light text-[#E8DCC0]">{clientPricing.summary}</div><div className="mt-2 text-[11px] font-light text-[#9A9488]">Payment is required before scheduling.</div></> : <><div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Quote Status</div><div className="mt-1 text-lg font-semibold text-white">Ready for review</div><div className="mt-1 text-[12px] font-light text-[#9A9488]">We have enough information to begin. The Milano Seal will confirm your final execution route and quote.</div></>}
+              <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A] px-4 py-5">
+                <div className="mb-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Execution Path</div>
+                <p className="text-[12px] font-light leading-relaxed text-[#9A9488]">Document review → originating-authority verification → apostille / authentication route confirmation → submission → quality review → delivery</p>
               </div>
+
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>Preferred execution timeline <span className="text-[var(--ms-gold)]">*</span></label>
+                  <select value={form.timelineChoice} onChange={(e) => setField("timelineChoice", e.target.value as TimelineChoice)} className={inputCls}>
+                    <option value="">— Select timeline —</option>
+                    <option value="standard">Standard</option>
+                    <option value="expedited">Expedited</option>
+                    <option value="urgent">Urgent / Same-Day</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Delivery method <span className="text-[var(--ms-gold)]">*</span></label>
+                  <select value={form.deliveryChoice} onChange={(e) => setField("deliveryChoice", e.target.value as DeliveryChoice)} className={inputCls}>
+                    <option value="">— Select delivery —</option>
+                    <option value="digital">Digital return</option>
+                    <option value="domestic_courier">Domestic courier</option>
+                    <option value="international_courier">International courier</option>
+                  </select>
+                </div>
+              </div>
+
+              {outstanding.length > 0 && (
+                <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.04)] px-5 py-5">
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/80">Requirements Still Needed</div>
+                  <ul className="space-y-2">
+                    {outstanding.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] font-light text-[#E8DCC0]"><span className="mt-1 text-[var(--ms-gold)]">•</span>{item}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-4 text-[11px] font-light text-[#9A9488]">Checkout opens once these quote-critical details are confirmed.</p>
+                </div>
+              )}
+
+              {quoteReady && clientPricing.mode === "approved_price" && (
+                <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-6">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Pro Forma Quote</div>
+                  <div className="mt-2 font-serif text-lg text-[#E8DCC0]">{clientPricing.summary}</div>
+                  <div className="mt-4 border-t border-[rgba(198,165,90,0.14)] pt-4">
+                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Matter Scope</div>
+                    <ul className="space-y-1">
+                      {scopeBullets.map((bullet) => (
+                        <li key={bullet} className="flex items-start gap-2 text-[12px] font-light text-[#E8DCC0]"><span className="mt-0.5 text-[var(--ms-gold)]/70">•</span>{bullet}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="mt-5 border-t border-[rgba(198,165,90,0.14)] pt-4">
+                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Quote Breakdown</div>
+                    <div className="space-y-2">{pricing.clientLineItems.map((item) => (
+                      <div key={item.key} className="flex items-start justify-between gap-4 text-[12px] font-light text-[#E8DCC0]"><span>{item.label}</span><span className="shrink-0">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(item.amount)}</span></div>
+                    ))}</div>
+                  </div>
+                  {courtesyCode && <div className="mt-4 flex items-start justify-between gap-4 border-t border-[rgba(198,165,90,0.14)] pt-4 text-[12px]"><span className="text-[#D8C08A]">Courtesy code</span><span className="font-semibold text-[var(--ms-gold)]">{courtesyCode} · validated securely at checkout</span></div>}
+                  <div className="mt-5 flex items-baseline justify-between border-t border-[rgba(198,165,90,0.14)] pt-4">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9A9488]">Quoted Investment</span>
+                    <span className="text-2xl font-semibold text-white">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(clientPricing.amount ?? 0)}</span>
+                  </div>
+                  <p className="mt-3 text-[11px] font-light text-[#9A9488]">Wise secure payment · Scheduling available only after verified payment. Final pricing is confirmed after review.</p>
+                </div>
+              )}
+
+              {!quoteReady && clientPricing.mode !== "approved_price" && outstanding.length === 0 && (
+                <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-5">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Quote Status</div>
+                  <div className="mt-1 text-lg font-semibold text-white">Ready for review</div>
+                  <div className="mt-1 text-[12px] font-light text-[#9A9488]">The Milano Seal will confirm your final execution route and quote.</div>
+                </div>
+              )}
 
               <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-sm border border-[rgba(198,165,90,0.16)] bg-[#0A0A0A] p-4 text-sm text-[#E8DCC0]"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4" /><span>I understand that all matters are reviewed and payment is required before scheduling or execution.</span></label>
               {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" onClick={() => setStep(clarifications.questions.length ? 2 : 1)} className={secondaryCls}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
-                <button type="button" onClick={submit} disabled={submitting} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>Complete My Order <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
+                <button type="button" onClick={submit} disabled={submitting || outstanding.length > 0} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>Complete My Order <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
               </div>
             </>
           )}
