@@ -101,6 +101,7 @@ export function secretExposureScan() {
 // complimentary-Matter flow. These MUST be green to ship — the meta-gate
 // hard-fails on any of them. (All are green on the baseline commit.)
 export const REQUIRED_VALIDATORS = [
+  "validate:damiani-production-wiring",
   "validate:complimentary-matter-flow",
   "validate:route-registry",
   "validate:cross-system-gates",

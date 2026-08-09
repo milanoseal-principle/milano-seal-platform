@@ -186,6 +186,25 @@ export async function POST(req: NextRequest) {
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
     const pricing = determineLaneAndPrice(pricingInput);
+    const supabase = createAdminClient();
+    const requestedCourtesy = typeof raw.courtesy_code === "string" ? raw.courtesy_code.trim().toUpperCase() : "";
+    let courtesyAdjustment: null | { id:string; code:string; discount_type:"percentage"|"fixed_amount"; discount_value:number; amount:number } = null;
+    if (requestedCourtesy) {
+      const { data: discount, error: discountError } = await supabase.from("discount_codes").select("id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to").eq("code", requestedCourtesy).maybeSingle();
+      if (discountError) throw discountError;
+      if (!discount) return NextResponse.json({ error: "Courtesy code not found." }, { status: 400 });
+      const now=Date.now();
+      if (discount.status !== "active") return NextResponse.json({ error: "Courtesy code is not active." }, { status: 400 });
+      if (discount.starts_at && new Date(discount.starts_at).getTime() > now) return NextResponse.json({ error: "Courtesy code is not active yet." }, { status: 400 });
+      if (discount.expires_at && new Date(discount.expires_at).getTime() < now) return NextResponse.json({ error: "Courtesy code has expired." }, { status: 400 });
+      if (discount.usage_limit != null && Number(discount.usage_count ?? 0) >= Number(discount.usage_limit)) return NextResponse.json({ error: "Courtesy code has already been used." }, { status: 400 });
+      if (discount.applies_to !== "eligible_subtotal") return NextResponse.json({ error: "Courtesy code requires operator review." }, { status: 400 });
+      const eligibleSubtotalCents=Math.round(Number(pricing.total)*100);
+      const discountValue=Number(discount.discount_value);
+      const discountCents=discount.discount_type === "percentage" ? Math.round((eligibleSubtotalCents*discountValue)/100) : Math.round(discountValue*100);
+      courtesyAdjustment={ id:discount.id, code:String(discount.code), discount_type:discount.discount_type as "percentage"|"fixed_amount", discount_value:discountValue, amount:Math.min(eligibleSubtotalCents,Math.max(0,discountCents))/100 };
+    }
+    const effectiveTotal=Math.max(0,Math.round((Number(pricing.total)-(courtesyAdjustment?.amount ?? 0))*100)/100);
 
     const laneOrder = ["Signature", "Priority", "Executive"];
     const finalLane =
@@ -193,7 +212,7 @@ export async function POST(req: NextRequest) {
         ? autoLane
         : pricing.lane;
 
-    const invoice = generateInvoice(pricing.total);
+    const invoice = generateInvoice(effectiveTotal);
     const decline_risk = riskScore(data);
     const deal_id = genDealId();
     const access_token = randomUUID();
@@ -210,8 +229,8 @@ export async function POST(req: NextRequest) {
 
     const priority_tier = routeDeal(conversion_score);
 
-    // Payment reference is always matterReference-R for retainer reconciliation
-    const payment_reference = `${deal_id}-R`;
+    // Canonical Wise reconciliation reference: exactly MS-YYYY-####.
+    const payment_reference = deal_id;
     const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
 
     const wiseResult = await createWisePaymentRequest({
@@ -262,9 +281,10 @@ export async function POST(req: NextRequest) {
       payment_metadata: payment_metadata ?? null,
       wise_invoice: wise_invoice ?? null,
       wise_reference: deal_id,
-      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,
-      amount_due: pricing.total,
+      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${invoice.retainer}&currency=USD`,
+      amount_due: invoice.retainer,
       currency: "USD",
+      courtesy: courtesyAdjustment ? { code:courtesyAdjustment.code, discount_type:courtesyAdjustment.discount_type, discount_value:courtesyAdjustment.discount_value, discount_amount:courtesyAdjustment.amount, redemption_status:"not_redeemed" } : null,
       compliance: compliance ?? null,
       decline_risk: decline_risk ?? null,
       followup_schedule: ["24h", "72h", "7d"],
@@ -315,12 +335,25 @@ export async function POST(req: NextRequest) {
       multi_country: Boolean(data.multi_country ?? false),
       base_price: pricing.base,
       witness_total: pricing.witness_total,
-      total_price: pricing.total,
+      total_price: effectiveTotal,
+      original_total: pricing.total,
+      eligible_subtotal: pricing.total,
+      non_discountable_total: 0,
+      final_total: effectiveTotal,
+      discount_code: courtesyAdjustment?.code ?? null,
+      discount_type: courtesyAdjustment?.discount_type ?? null,
+      discount_value: courtesyAdjustment?.discount_value ?? null,
+      discount_amount: courtesyAdjustment?.amount ?? 0,
       invoice_retainer: invoice.retainer,
       invoice_balance: invoice.balance,
       payment_status: "unpaid",
+      payment_confirmed: false,
       payment_method: "wise",
       payment_reference,
+      wise_reference: payment_reference,
+      amount_due: invoice.retainer,
+      amount_paid: 0,
+      currency: "USD",
       payment_link,
       deal_status: "awaiting_payment",
       conversion_score,
@@ -329,7 +362,6 @@ export async function POST(req: NextRequest) {
       internal_notes: safeInternalNotes,
     };
 
-    const supabase = createAdminClient();
     let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
 
     // Attempt 1: full payload
@@ -349,6 +381,9 @@ export async function POST(req: NextRequest) {
           hint: e.hint,
           code: e.code,
         });
+
+        // Courtesy checkout must never degrade to a legacy payload that loses discount/payment truth.
+        if (requestedCourtesy) return NextResponse.json({ error: "Courtesy checkout is temporarily unavailable. Please contact The Milano Seal." }, { status: 503 });
 
         // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits
         const minimalPayload = {

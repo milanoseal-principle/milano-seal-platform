@@ -79,7 +79,8 @@
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
-    "validate:production-governance": "node scripts/validate-production-governance.mjs"
+    "validate:production-governance": "node scripts/validate-production-governance.mjs",
+    "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
