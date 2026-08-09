@@ -8,6 +8,8 @@ import { gunzipSync } from "node:zlib";
 
 import chunk0 from "./payload/chunk0";
 import chunk1 from "./payload/chunk1";
+import chunk2a from "./payload/chunk2a";
+import chunk2b from "./payload/chunk2b";
 import chunk2 from "./payload/chunk2";
 import chunk3 from "./payload/chunk3";
 import chunk4 from "./payload/chunk4";
@@ -26,6 +28,8 @@ export type WorkbookSheetSource = {
 const WORKBOOK_SOURCE_GZIP_BASE64 = [
   chunk0,
   chunk1,
+  chunk2a,
+  chunk2b,
   chunk2,
   chunk3,
   chunk4,
