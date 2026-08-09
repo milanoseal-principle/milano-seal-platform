@@ -18,6 +18,21 @@ test("punctuation terminates negation scope", () => {
   assert.equal(r.concepts.notarization.polarity, "positive");
 });
 
+test("coordinated negation applies to RON and translation", () => {
+  const r = interpretIntakeText("2 apostille to columbia i do not need ron or translation");
+  assert.equal(r.concepts.apostille.polarity, "positive");
+  assert.equal(r.concepts.ron.polarity, "negative");
+  assert.equal(r.concepts.translation.polarity, "negative");
+  assert.equal(r.apostilleQuantity.value, 2);
+});
+
+test("coordinated negation reaches legacy intake flags without fabrication", () => {
+  const out = quickTagParse("2 apostille to columbia i do not need ron or translation");
+  assert.equal(out.apostilleRequired, true);
+  assert.equal(out.ronReviewRequired, false);
+  assert.equal(out.translationNeeded, false);
+});
+
 test("contradictions are recorded, not silently resolved", () => {
   const r = interpretIntakeText("already notarized but need notarization");
   assert.ok(r.contradictions.includes("notarization"));
