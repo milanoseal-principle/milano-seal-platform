@@ -3,8 +3,10 @@ import { MODULES } from "@/lib/workbook/moduleRegistry";
 
 export const dynamic = "force-dynamic";
 
+type WorkbookModule = (typeof MODULES)[number];
+
 export default function WorkbookIndexPage() {
-  const grouped = MODULES.reduce<Record<string, typeof MODULES>>((acc, mod) => {
+  const grouped = MODULES.reduce<Record<string, WorkbookModule[]>>((acc, mod) => {
     (acc[mod.domain] ||= []).push(mod);
     return acc;
   }, {});
