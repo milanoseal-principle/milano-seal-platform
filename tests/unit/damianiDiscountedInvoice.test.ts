@@ -43,6 +43,7 @@ test("Wise amount (invoice retainer) derives from the DISCOUNTED total", () => {
 
   // Retainer is 50% of the discounted subtotal → the Wise amount_due.
   assert.equal(discountedInvoice.retainer, 312.5);
+
   // It must be strictly less than the retainer computed from the full price.
   assert.ok(discountedInvoice.retainer < originalInvoice.retainer);
   assert.equal(originalInvoice.retainer, 625);

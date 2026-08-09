@@ -10,7 +10,6 @@ export interface PortalSafeMatter {
   total_price: number | null;
   courier_tracking_id: string | null;
   is_paid_and_released: boolean;
-  // Payment fields visible to clients
   wise_reference: string | null;
   wise_payment_url: string | null;
   payment_confirmed: boolean;
@@ -19,6 +18,12 @@ export interface PortalSafeMatter {
   paid_at: string | null;
   invoice_status: string | null;
   is_platform_fee_only: boolean;
+  original_total: number | null;
+  discount_amount: number;
+  discount_value: number | null;
+  final_total: number | null;
+  courtesy_applied: boolean;
+  courtesy_label: string | null;
 }
 
 export function projectMatterForPortal(deal: {
@@ -31,6 +36,7 @@ export function projectMatterForPortal(deal: {
   courier_tracking_id?: string | null;
   wise_reference?: string | null;
   wise_payment_url?: string | null;
+  payment_link?: string | null;
   payment_confirmed?: boolean | null;
   amount_due?: number | null;
   payment_amount_due?: number | null;
@@ -39,44 +45,62 @@ export function projectMatterForPortal(deal: {
   invoice_status?: string | null;
   discount_type?: string | null;
   service_fee_waived?: boolean | null;
+  original_total?: number | null;
+  discount_code?: string | null;
+  discount_value?: number | null;
+  discount_amount?: number | null;
+  final_total?: number | null;
 }): PortalSafeMatter {
+  const discountAmount = Number(deal.discount_amount ?? 0);
+  const courtesyApplied =
+    Boolean(deal.discount_code) && Number.isFinite(discountAmount) && discountAmount > 0;
+
   return {
     id: deal.id,
     status: deal.status ?? "new",
     payment_status: deal.payment_status ?? null,
     service_type: deal.service_type ?? null,
     destination_country: deal.destination_country ?? null,
-    total_price: deal.total_price ?? null,
+    total_price: deal.total_price ?? deal.final_total ?? null,
     courier_tracking_id: deal.courier_tracking_id ?? null,
     is_paid_and_released:
       deal.payment_status === "paid" && deal.status === "completed",
     wise_reference: deal.wise_reference ?? null,
-    wise_payment_url: deal.wise_payment_url ?? null,
-    payment_confirmed: deal.payment_confirmed ?? deal.payment_status === "paid",
-    amount_due: deal.amount_due ?? deal.payment_amount_due ?? deal.total_price ?? null,
+    wise_payment_url: deal.wise_payment_url ?? deal.payment_link ?? null,
+    payment_confirmed:
+      deal.payment_confirmed ?? deal.payment_status === "paid",
+    amount_due:
+      deal.amount_due ??
+      deal.payment_amount_due ??
+      deal.final_total ??
+      deal.total_price ??
+      null,
     currency: deal.currency ?? "USD",
     paid_at: deal.paid_at ?? null,
     invoice_status: deal.invoice_status ?? null,
-    is_platform_fee_only: deal.discount_type === "platform_fee_only" || deal.service_fee_waived === true,
+    is_platform_fee_only:
+      deal.discount_type === "platform_fee_only" ||
+      deal.service_fee_waived === true,
+    original_total: deal.original_total ?? null,
+    discount_amount: Number.isFinite(discountAmount) ? discountAmount : 0,
+    discount_value: deal.discount_value ?? null,
+    final_total: deal.final_total ?? null,
+    courtesy_applied: courtesyApplied,
+    courtesy_label: courtesyApplied ? "Professional courtesy" : null,
   };
 }
 
-// These fields must NEVER appear in portal-facing API responses:
 export const PORTAL_BLOCKED_FIELDS = [
-  // Payment internals — NOTE: wise_reference and wise_payment_url are intentionally
-  // NOT blocked; clients need their reference and payment URL to complete payment.
   "wise_transfer_id",
   "wise_account_id",
   "wise_payload",
   "stripe_payment_intent_id",
   "stripe_customer_id",
-  // Internal notes
   "internal_notes",
   "operator_notes",
   "admin_notes",
   "compliance_notes",
   "risk_notes",
-  // Revenue / margin
   "total_revenue",
   "base_cost",
   "shipping_cost",
@@ -85,18 +109,15 @@ export const PORTAL_BLOCKED_FIELDS = [
   "operator_fee",
   "runner_fee",
   "markup",
-  // Assignment / routing internals
   "assignee",
   "assignee_user_id",
   "runner_id",
   "operator_id",
   "dispatch_id",
-  // Risk / compliance internals
   "risk_score",
   "compliance_flag",
   "compliance_override",
   "review_reason",
-  // Storage paths and signing URLs
   "storage_path",
   "file_path",
   "evidence_path",
@@ -104,13 +125,13 @@ export const PORTAL_BLOCKED_FIELDS = [
   "evidence_url",
   "full_signing_url",
   "bn_signing_url",
-  // Audit / admin structures
   "audit_logs",
   "admin_actions",
   "admin_overrides",
   "event_log",
-  // Raw contact / personal data beyond client's own
   "email",
   "phone",
   "ship_to",
+  // Courtesy code itself remains internal; portal receives only safe derived courtesy fields.
+  "discount_code",
 ] as const;

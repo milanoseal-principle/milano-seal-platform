@@ -11,10 +11,20 @@ export interface PortalDeal {
   country: string | null;
   status: string | null;
   payment_status: string | null;
+  payment_confirmed: boolean | null;
   amount: number | null;
+  amount_due: number | null;
   invoice_subtotal: number | null;
   invoice_retainer: number | null;
   invoice_balance: number | null;
+  original_total: number | null;
+  final_total: number | null;
+  discount_code: string | null;
+  discount_value: number | null;
+  discount_amount: number | null;
+  wise_reference: string | null;
+  payment_link: string | null;
+  currency: string | null;
   tracking_number: string | null;
   carrier: string | null;
   delivery_status: string | null;
@@ -38,18 +48,22 @@ export async function getAllClientDeals(): Promise<{
   } = await supabase.auth.getUser();
   if (!user?.email) return null;
 
-  const email = user.email.toLowerCase();
+  const email = user.email.trim().toLowerCase();
   const admin = createAdminClient();
   const { data } = await admin
     .from("deals")
-    .select("id, client_name, email, phone, document_type, destination_country, country, status, payment_status, amount, invoice_subtotal, invoice_retainer, invoice_balance, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at")
+    .select(
+      "id, client_name, email, phone, document_type, destination_country, country, status, payment_status, payment_confirmed, amount, amount_due, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
+    )
     .ilike("email", email)
     .order("created_at", { ascending: false });
 
   return { email, deals: (data as PortalDeal[]) ?? [] };
 }
 
-export async function getCurrentClientDeal(dealId?: string | null): Promise<{
+export async function getCurrentClientDeal(
+  dealId?: string | null,
+): Promise<{
   email: string;
   deal: PortalDeal | null;
 } | null> {
