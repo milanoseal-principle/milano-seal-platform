@@ -10,7 +10,6 @@ import chunk0 from "./payload/chunk0";
 import chunk1 from "./payload/chunk1";
 import chunk2a from "./payload/chunk2a";
 import chunk2b from "./payload/chunk2b";
-import chunk2 from "./payload/chunk2";
 import chunk3 from "./payload/chunk3";
 import chunk4 from "./payload/chunk4";
 import chunk5 from "./payload/chunk5";
@@ -30,7 +29,6 @@ const WORKBOOK_SOURCE_GZIP_BASE64 = [
   chunk1,
   chunk2a,
   chunk2b,
-  chunk2,
   chunk3,
   chunk4,
   chunk5,
@@ -40,14 +38,39 @@ const WORKBOOK_SOURCE_GZIP_BASE64 = [
   chunk9,
 ].join("");
 
-const decodedWorkbookSource = gunzipSync(
-  Buffer.from(WORKBOOK_SOURCE_GZIP_BASE64, "base64"),
-).toString("utf8");
+let workbookSourceCache: Record<string, WorkbookSheetSource> | null = null;
+let workbookSourceDecodeAttempted = false;
 
-export const WORKBOOK_SOURCE = JSON.parse(
-  decodedWorkbookSource,
-) as Record<string, WorkbookSheetSource>;
+function decodeWorkbookSource(): Record<string, WorkbookSheetSource> {
+  if (workbookSourceCache) return workbookSourceCache;
+  if (workbookSourceDecodeAttempted) return {};
+
+  workbookSourceDecodeAttempted = true;
+
+  try {
+    const decodedWorkbookSource = gunzipSync(
+      Buffer.from(WORKBOOK_SOURCE_GZIP_BASE64, "base64"),
+    ).toString("utf8");
+
+    workbookSourceCache = JSON.parse(
+      decodedWorkbookSource,
+    ) as Record<string, WorkbookSheetSource>;
+
+    return workbookSourceCache;
+  } catch (error) {
+    console.error(
+      "[workbook-source] source payload decode failed; protected workbook routes will remain unavailable until payload repair",
+      error instanceof Error ? error.message : "unknown decode error",
+    );
+    workbookSourceCache = {};
+    return workbookSourceCache;
+  }
+}
+
+export function getWorkbookSource(sheet: string) {
+  return decodeWorkbookSource()[sheet] ?? null;
+}
 
 export function hasWorkbookSource(sheet: string) {
-  return Boolean(WORKBOOK_SOURCE[sheet]);
+  return Boolean(getWorkbookSource(sheet));
 }
