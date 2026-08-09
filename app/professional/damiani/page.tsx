@@ -23,21 +23,15 @@ export const metadata: Metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ courtesy?: string; lang?: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const params = await searchParams;
-  // The query parameter only *initializes* the courtesy journey for display.
-  // It is never treated as authorization: eligibility is verified server-side
-  // against an operator-managed discount record before any adjustment applies.
-  const courtesyDetected =
-    typeof params.courtesy === "string" &&
-    params.courtesy.trim().toUpperCase() === "DAMIANI50";
   const initialLang = params.lang === "en" ? "en" : "it";
 
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
       <Header />
-      <DamianiReentry courtesyDetected={courtesyDetected} initialLang={initialLang} />
+      <DamianiReentry initialLang={initialLang} />
       <Footer />
     </main>
   );
