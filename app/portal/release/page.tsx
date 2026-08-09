@@ -12,15 +12,27 @@ export const metadata = {
 async function getReleaseMatter() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  // Canonical ownership: the authenticated (confirmed) email must equal the
+  // Matter's stored email. RLS (client_own_deal) enforces this; the explicit
+  // email filter is belt-and-suspenders and fails closed on a missing email.
+  const email = user?.email?.trim().toLowerCase();
+  if (!email) return null;
 
   const { data } = await supabase
-    .from("client_safe_matter_view")
-    .select("id, deal_id, display_id, payment_status, status, invoice_status")
-    .eq("client_user_id", user.id)
+    .from("deals")
+    .select("id, deal_id, status, payment_status")
+    .eq("email", email)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  return data;
+  if (!data) return null;
+  return {
+    display_id: data.deal_id ?? data.id,
+    deal_id: data.deal_id ?? data.id,
+    payment_status: data.payment_status,
+    status: data.status,
+  };
 }
 
 export default async function PortalReleasePage() {
