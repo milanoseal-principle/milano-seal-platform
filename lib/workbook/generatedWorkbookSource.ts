@@ -38,14 +38,39 @@ const WORKBOOK_SOURCE_GZIP_BASE64 = [
   chunk9,
 ].join("");
 
-const decodedWorkbookSource = gunzipSync(
-  Buffer.from(WORKBOOK_SOURCE_GZIP_BASE64, "base64"),
-).toString("utf8");
+let workbookSourceCache: Record<string, WorkbookSheetSource> | null = null;
+let workbookSourceDecodeAttempted = false;
 
-export const WORKBOOK_SOURCE = JSON.parse(
-  decodedWorkbookSource,
-) as Record<string, WorkbookSheetSource>;
+function decodeWorkbookSource(): Record<string, WorkbookSheetSource> {
+  if (workbookSourceCache) return workbookSourceCache;
+  if (workbookSourceDecodeAttempted) return {};
+
+  workbookSourceDecodeAttempted = true;
+
+  try {
+    const decodedWorkbookSource = gunzipSync(
+      Buffer.from(WORKBOOK_SOURCE_GZIP_BASE64, "base64"),
+    ).toString("utf8");
+
+    workbookSourceCache = JSON.parse(
+      decodedWorkbookSource,
+    ) as Record<string, WorkbookSheetSource>;
+
+    return workbookSourceCache;
+  } catch (error) {
+    console.error(
+      "[workbook-source] source payload decode failed; protected workbook routes will remain unavailable until payload repair",
+      error instanceof Error ? error.message : "unknown decode error",
+    );
+    workbookSourceCache = {};
+    return workbookSourceCache;
+  }
+}
+
+export function getWorkbookSource(sheet: string) {
+  return decodeWorkbookSource()[sheet] ?? null;
+}
 
 export function hasWorkbookSource(sheet: string) {
-  return Boolean(WORKBOOK_SOURCE[sheet]);
+  return Boolean(getWorkbookSource(sheet));
 }
