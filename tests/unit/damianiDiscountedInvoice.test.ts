@@ -37,6 +37,7 @@ test("Wise amount (invoice retainer) derives from the DISCOUNTED total", () => {
   const original = 1250;
   const discount = courtesyAmount(original, 50);
   const effective = effectiveTotal(original, discount); // 625
+
   const discountedInvoice = generateInvoice(effective);
   const originalInvoice = generateInvoice(original);
 

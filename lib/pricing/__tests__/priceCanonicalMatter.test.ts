@@ -27,6 +27,14 @@ test("field-equal execution Matters priced by different surfaces match exactly",
   const intakeView = priceCanonicalMatter(matter);
   const portalView = priceCanonicalMatter(matter);
 
+test("field-equal Matters priced by 'different surfaces' match on lane/add-ons/total/review", () => {
+  // An established execution service (ron) plus a required apostille prices to a
+  // full, approved lane total. A lane preference alone is deliberately NOT
+  // treated as evidence of execution (see milanoPricingTruth), so ron establishes
+  // the execution service here.
+  const matter = { executionTier: "Priority" as const, destinationCountry: "Italy", apostilleStatus: "required", ron: true };
+  const intakeView = priceCanonicalMatter(matter);
+  const portalView = priceCanonicalMatter({ ...matter });
   assert.equal(intakeView.suggestedLane, portalView.suggestedLane);
   assert.deepEqual(intakeView.authorizedAddOns, portalView.authorizedAddOns);
   assert.equal(intakeView.total, portalView.total);
@@ -46,6 +54,14 @@ test("executionTier alone never fabricates an execution service", () => {
   assert.equal(r.suggestedLane, "regulated_manual_review");
   assert.equal(r.total, null);
   assert.equal(r.manualReviewRequired, true);
+  assert.equal(intakeView.suggestedLane, "priority");
+  assert.equal(intakeView.total, 1250); // 1000 Priority base + 250 apostille, consistent across surfaces
+});
+
+test("lane maps from executionTier", () => {
+  // ron establishes the execution service so the priced lane is reached; without
+  // an execution service the matter routes to review rather than a fabricated lane.
+  assert.equal(priceCanonicalMatter({ executionTier: "Executive", ron: true }).suggestedLane, "executive");
 });
 
 test("government contract Matter → government_quote, never consumer lane", () => {

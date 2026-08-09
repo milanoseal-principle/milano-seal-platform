@@ -27,6 +27,8 @@ test("unpaid matter cannot schedule (PAYMENT_REQUIRED semantics)", () => {
 });
 
 test("a courtesy discount alone never unlocks scheduling", () => {
+  // Same matter, still unpaid, but with the discount recorded. The gate must
+  // not treat an attached courtesy code as payment.
   assert.equal(evaluatePaymentGate(unpaidDiscountedMatter), "PAYMENT_REQUIRED");
   const gate = evaluateSchedulingGate({ matter: unpaidDiscountedMatter });
   assert.equal(gate.schedulingEligible, false);

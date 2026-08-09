@@ -19,11 +19,15 @@ const review = () =>
     destinationCountry: "Italy",
     apostilleStatus: "required",
   });
+// An established execution service (ron) + required apostille → approved price.
+const approved = () => priceCanonicalMatter({ executionTier: "Priority", destinationCountry: "Italy", apostilleStatus: "required", ron: true });
+const review = () => priceCanonicalMatter({ destinationCountry: "Italy", apostilleStatus: "required" }); // apostille-only → review
 
 test("client projection shows approved amount from canonical result (not hard-coded)", () => {
   const p = projectClientPricing(approved());
   assert.equal(p.mode, "approved_price");
   assert.equal(p.amount, 1250);
+  assert.equal(p.amount, 1250); // 1000 Priority base + 250 apostille
   assert.equal(p.paymentGateRequired, true);
 });
 
