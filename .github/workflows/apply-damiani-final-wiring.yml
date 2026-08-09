@@ -1,0 +1,166 @@
+name: Apply Damiani final wiring patch
+
+on:
+  push:
+    branches:
+      - agent/damiani-final-wiring-gap-fix
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/damiani-final-wiring-gap-fix
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply canonical Damiani/discount/Wise wiring
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+
+          # Intake page: preserve courtesy hint through canonical Smart Intake.
+          p=Path('app/intake/page.tsx'); s=p.read_text()
+          s=s.replace('    matter?: string;\n  }>;', '    matter?: string;\n    courtesy?: string;\n  }>;')
+          s=s.replace('  return <SmartIntakeSOPWizard initialTier={validTier} prefill={prefill} />;', '  const courtesyCode = params.courtesy?.trim().toUpperCase() === "DAMIANI50" ? "DAMIANI50" : undefined;\n\n  return <SmartIntakeSOPWizard initialTier={validTier} prefill={prefill} courtesyCode={courtesyCode} />;')
+          p.write_text(s)
+
+          # Wizard: send display/routing hint to server; never authorize client-side.
+          p=Path('components/intake/smart-intake-sop-wizard.tsx'); s=p.read_text()
+          s=s.replace('interface Props {\n  initialTier?: "signature" | "priority" | "executive";\n  prefill?: IntakePrefill;\n}', 'interface Props {\n  initialTier?: "signature" | "priority" | "executive";\n  prefill?: IntakePrefill;\n  courtesyCode?: string;\n}')
+          s=s.replace('export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Props) {', 'export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode }: Props) {')
+          s=s.replace('      files_uploaded: files.length > 0,\n    };', '      files_uploaded: files.length > 0,\n      courtesy_code: courtesyCode || undefined,\n    };')
+          p.write_text(s)
+
+          # Discount service: align with operational deals table and explicit subtotal truth.
+          p=Path('src/features/discounts/discountService.ts'); s=p.read_text()
+          s=s.replace('import { getMatterById, updateMatter } from "@/src/features/matters/matterRepository";\n','')
+          s=s.replace('''function eligibleSubtotalForMatter(matter: Record<string, unknown>): number {\n  const explicit = Number(\n    matter.eligible_subtotal ??\n      matter.service_subtotal ??\n      matter.original_total ??\n      matter.final_total ??\n      0,\n  );\n  return money(Number.isFinite(explicit) ? explicit : 0);\n}\n''','''function eligibleSubtotalForMatter(matter: Record<string, unknown>): number {\n  const raw = matter.eligible_subtotal;\n  const explicit = Number(raw);\n  if (raw === null || raw === undefined || !Number.isFinite(explicit) || explicit < 0) {\n    throw new Error("DISCOUNT_REVIEW_REQUIRED: eligible subtotal is not explicitly stored.");\n  }\n  return money(explicit);\n}\n\nasync function getMatterById(id: string) {\n  const supabase = createAdminClient();\n  return supabase.from("deals").select("*").eq("id", id).single();\n}\n\nasync function updateMatter(id: string, values: Record<string, unknown>) {\n  const supabase = createAdminClient();\n  return supabase.from("deals").update(values).eq("id", id).select("*").single();\n}\n''')
+          s=s.replace('''  const eligibleSubtotal = eligibleSubtotalForMatter(matter);\n  const discountAmount = computeDiscountAmount(discount, eligibleSubtotal);\n  const originalTotal = money(Number(matter.original_total ?? matter.final_total ?? eligibleSubtotal));\n  const finalTotal = money(originalTotal - Math.min(originalTotal, discountAmount));\n  const depositRequired = Boolean(matter.deposit_required);\n  const depositAmount = depositRequired ? money(finalTotal / 2) : finalTotal;\n  const balanceDue = depositRequired ? money(finalTotal - depositAmount) : 0;\n\n  const updated = await updateMatter(matterId, {\n    discount_code: discount.code,\n    discount_type: discount.discount_type,\n    discount_value: Number(discount.discount_value),\n    discount_amount: discountAmount,\n    final_total: finalTotal,\n    deposit_amount: depositAmount,\n    balance_due: balanceDue,\n  });''','''  const eligibleSubtotal = eligibleSubtotalForMatter(matter);\n  const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));\n  const discountAmount = computeDiscountAmount(discount, eligibleSubtotal);\n  const originalTotal = money(eligibleSubtotal + nonDiscountableTotal);\n  const finalTotal = money(eligibleSubtotal - Math.min(eligibleSubtotal, discountAmount) + nonDiscountableTotal);\n  const priorTotal = money(Number(matter.total_price ?? originalTotal));\n  const priorRetainer = money(Number(matter.invoice_retainer ?? priorTotal));\n  const retainerRatio = priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;\n  const depositAmount = money(finalTotal * retainerRatio);\n  const balanceDue = money(finalTotal - depositAmount);\n  const updated = await updateMatter(matterId, {\n    discount_code: discount.code, discount_type: discount.discount_type,\n    discount_value: Number(discount.discount_value), discount_amount: discountAmount,\n    original_total: originalTotal, final_total: finalTotal, total_price: finalTotal,\n    invoice_retainer: depositAmount, invoice_balance: balanceDue, amount_due: depositAmount,\n  });''')
+          s=s.replace('''  const originalTotal = money(Number(matter.original_total ?? matter.final_total ?? 0));\n  const depositRequired = Boolean(matter.deposit_required);\n  const depositAmount = depositRequired ? money(originalTotal / 2) : originalTotal;\n  const balanceDue = depositRequired ? money(originalTotal - depositAmount) : 0;\n  const updated = await updateMatter(matterId, {\n    discount_code: null,\n    discount_type: null,\n    discount_value: null,\n    discount_amount: 0,\n    final_total: originalTotal,\n    deposit_amount: depositAmount,\n    balance_due: balanceDue,\n  });''','''  const eligibleSubtotal = eligibleSubtotalForMatter(matter);\n  const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));\n  const originalTotal = money(Number(matter.original_total ?? (eligibleSubtotal + nonDiscountableTotal)));\n  const priorFinal = money(Number(matter.final_total ?? matter.total_price ?? originalTotal));\n  const priorRetainer = money(Number(matter.invoice_retainer ?? priorFinal));\n  const retainerRatio = priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;\n  const depositAmount = money(originalTotal * retainerRatio);\n  const balanceDue = money(originalTotal - depositAmount);\n  const updated = await updateMatter(matterId, {\n    discount_code: null, discount_type: null, discount_value: null, discount_amount: 0,\n    final_total: originalTotal, total_price: originalTotal, invoice_retainer: depositAmount,\n    invoice_balance: balanceDue, amount_due: depositAmount,\n  });''')
+          p.write_text(s)
+
+          # Intake API: verify courtesy server-side BEFORE Wise request; canonical reference; fail closed.
+          p=Path('app/api/intake/route.ts'); s=p.read_text()
+          needle='''    const pricing = determineLaneAndPrice(pricingInput);\n\n    const laneOrder = ["Signature", "Priority", "Executive"];'''
+          insert='''    const pricing = determineLaneAndPrice(pricingInput);\n    const supabase = createAdminClient();\n    const requestedCourtesy = typeof raw.courtesy_code === "string" ? raw.courtesy_code.trim().toUpperCase() : "";\n    let courtesyAdjustment: null | { id:string; code:string; discount_type:"percentage"|"fixed_amount"; discount_value:number; amount:number } = null;\n    if (requestedCourtesy) {\n      const { data: discount, error: discountError } = await supabase.from("discount_codes").select("id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to").eq("code", requestedCourtesy).maybeSingle();\n      if (discountError) throw discountError;\n      if (!discount) return NextResponse.json({ error: "Courtesy code not found." }, { status: 400 });\n      const now=Date.now();\n      if (discount.status !== "active") return NextResponse.json({ error: "Courtesy code is not active." }, { status: 400 });\n      if (discount.starts_at && new Date(discount.starts_at).getTime() > now) return NextResponse.json({ error: "Courtesy code is not active yet." }, { status: 400 });\n      if (discount.expires_at && new Date(discount.expires_at).getTime() < now) return NextResponse.json({ error: "Courtesy code has expired." }, { status: 400 });\n      if (discount.usage_limit != null && Number(discount.usage_count ?? 0) >= Number(discount.usage_limit)) return NextResponse.json({ error: "Courtesy code has already been used." }, { status: 400 });\n      if (discount.applies_to !== "eligible_subtotal") return NextResponse.json({ error: "Courtesy code requires operator review." }, { status: 400 });\n      const eligibleSubtotalCents=Math.round(Number(pricing.total)*100);\n      const discountValue=Number(discount.discount_value);\n      const discountCents=discount.discount_type === "percentage" ? Math.round((eligibleSubtotalCents*discountValue)/100) : Math.round(discountValue*100);\n      courtesyAdjustment={ id:discount.id, code:String(discount.code), discount_type:discount.discount_type as "percentage"|"fixed_amount", discount_value:discountValue, amount:Math.min(eligibleSubtotalCents,Math.max(0,discountCents))/100 };\n    }\n    const effectiveTotal=Math.max(0,Math.round((Number(pricing.total)-(courtesyAdjustment?.amount ?? 0))*100)/100);\n\n    const laneOrder = ["Signature", "Priority", "Executive"];'''
+          if needle not in s: raise SystemExit('intake pricing anchor missing')
+          s=s.replace(needle,insert)
+          s=s.replace('    const invoice = generateInvoice(pricing.total);','    const invoice = generateInvoice(effectiveTotal);')
+          s=s.replace('    // Payment reference is always matterReference-R for retainer reconciliation\n    const payment_reference = `${deal_id}-R`;','    // Canonical Wise reconciliation reference: exactly MS-YYYY-####.\n    const payment_reference = deal_id;')
+          s=s.replace('wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,','wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${invoice.retainer}&currency=USD`,')
+          s=s.replace('      amount_due: pricing.total,\n      currency: "USD",','      amount_due: invoice.retainer,\n      currency: "USD",\n      courtesy: courtesyAdjustment ? { code:courtesyAdjustment.code, discount_type:courtesyAdjustment.discount_type, discount_value:courtesyAdjustment.discount_value, discount_amount:courtesyAdjustment.amount, redemption_status:"not_redeemed" } : null,')
+          s=s.replace('      total_price: pricing.total,','      total_price: effectiveTotal,\n      original_total: pricing.total,\n      eligible_subtotal: pricing.total,\n      non_discountable_total: 0,\n      final_total: effectiveTotal,\n      discount_code: courtesyAdjustment?.code ?? null,\n      discount_type: courtesyAdjustment?.discount_type ?? null,\n      discount_value: courtesyAdjustment?.discount_value ?? null,\n      discount_amount: courtesyAdjustment?.amount ?? 0,')
+          s=s.replace('      payment_status: "unpaid",\n      payment_method: "wise",\n      payment_reference,\n      payment_link,','      payment_status: "unpaid",\n      payment_confirmed: false,\n      payment_method: "wise",\n      payment_reference,\n      wise_reference: payment_reference,\n      amount_due: invoice.retainer,\n      amount_paid: 0,\n      currency: "USD",\n      payment_link,')
+          s=s.replace('    const supabase = createAdminClient();\n    let deal:', '    let deal:')
+          fallback='''        // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits'''
+          s=s.replace(fallback, '''        // Courtesy checkout must never degrade to a legacy payload that loses discount/payment truth.\n        if (requestedCourtesy) return NextResponse.json({ error: "Courtesy checkout is temporarily unavailable. Please contact The Milano Seal." }, { status: 503 });\n\n        // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits''')
+          p.write_text(s)
+
+          # Wise webhook: atomic payment confirmation + attached discount redemption.
+          p=Path('app/api/webhooks/wise/route.ts'); s=p.read_text()
+          old='''  // PAYMENT_CONFIRMED: exact amount and explicit USD currency have already passed.\n  const confirmedAmount = eventAmount;\n  const willUnlockScheduling = eventMinor === dueMinor;\n\n  await supabase\n    .from("deals")\n    .update({\n      payment_status: "paid",\n      payment_confirmed: true,\n      payment_method: "wise",\n      payment_reference: reference,\n      payment_amount_received: confirmedAmount,\n      amount_paid: confirmedAmount,\n      payment_confirmed_at: new Date().toISOString(),\n      payment_settlement_status: "cleared",\n      payment_cleared_at: new Date().toISOString(),\n      payment_funding_method: "wise",\n      invoice_status: "paid",\n      updated_at: new Date().toISOString(),\n    })\n    .eq("id", deal.id);\n'''
+          new='''  // PAYMENT_CONFIRMED: payment + attached discount redemption commit atomically.\n  const confirmedAmount = eventAmount;\n  const willUnlockScheduling = eventMinor === dueMinor;\n  const wiseTransactionReference = String(resource.id ?? resource.transferId ?? "").trim() || null;\n  const { data: confirmation, error: confirmationError } = await supabase.rpc("confirm_wise_payment_for_deal", {\n    p_deal_id: deal.id, p_payment_reference: reference, p_wise_transaction_reference: wiseTransactionReference,\n    p_amount: confirmedAmount, p_currency: eventCurrency, p_actor: "wise-webhook",\n  });\n  if (confirmationError) {\n    await flagForReview(supabase,eventRowId,`atomic_confirmation_failed:${confirmationError.message}`,reference,deal.id);\n    return;\n  }\n  const redemptionId = confirmation && typeof confirmation === "object" && "redemption_id" in confirmation\n    ? (confirmation as Record<string, unknown>).redemption_id ?? null : null;\n'''
+          if old not in s: raise SystemExit('wise confirmation anchor missing')
+          s=s.replace(old,new)
+          s=s.replace('        scheduling_unlocked: willUnlockScheduling,\n        delivery_id: eventRowId,','        scheduling_unlocked: willUnlockScheduling,\n        discount_redemption_id: redemptionId,\n        delivery_id: eventRowId,')
+          p.write_text(s)
+
+          # Package + final meta gate.
+          p=Path('package.json'); data=json.loads(p.read_text()); data['scripts']['validate:damiani-production-wiring']='node scripts/validate-damiani-production-wiring.mjs'; p.write_text(json.dumps(data,indent=2)+'\n')
+          p=Path('scripts/validate-final-production-regression.mjs'); s=p.read_text(); s=s.replace('export const REQUIRED_VALIDATORS = [\n  "validate:complimentary-matter-flow",','export const REQUIRED_VALIDATORS = [\n  "validate:damiani-production-wiring",\n  "validate:complimentary-matter-flow",'); p.write_text(s)
+          PY
+
+          cat > supabase/migrations/047_discount_wise_deal_wiring.sql <<'SQL'
+          begin;
+          alter table public.deals
+            add column if not exists discount_code text,
+            add column if not exists discount_value numeric(12,2),
+            add column if not exists eligible_subtotal numeric(12,2),
+            add column if not exists non_discountable_total numeric(12,2) not null default 0,
+            add column if not exists original_total numeric(12,2),
+            add column if not exists final_total numeric(12,2),
+            add column if not exists wise_transaction_reference text;
+          create index if not exists idx_deals_discount_code on public.deals(upper(discount_code));
+          create index if not exists idx_deals_wise_reference on public.deals(wise_reference);
+
+          create or replace function public.redeem_discount_for_matter(p_discount_code_id uuid,p_matter_id uuid,p_payment_reference text,p_wise_transaction_reference text,p_currency text,p_created_by text default 'wise-webhook') returns uuid language plpgsql security definer set search_path=public as $$
+          declare v_code public.discount_codes%rowtype; v_deal public.deals%rowtype; v_existing uuid; v_redemption uuid;
+          begin
+            if p_currency is null or upper(trim(p_currency)) !~ '^[A-Z]{3}$' then raise exception 'invalid_currency'; end if;
+            select id into v_existing from public.discount_redemptions where discount_code_id=p_discount_code_id and matter_id=p_matter_id and status='redeemed' limit 1;
+            if v_existing is not null then return v_existing; end if;
+            select * into v_code from public.discount_codes where id=p_discount_code_id for update;
+            if not found then raise exception 'discount_code_not_found'; end if;
+            if v_code.status <> 'active' then raise exception 'discount_code_not_active'; end if;
+            if v_code.starts_at is not null and v_code.starts_at > now() then raise exception 'discount_code_not_started'; end if;
+            if v_code.expires_at is not null and v_code.expires_at < now() then raise exception 'discount_code_expired'; end if;
+            if v_code.usage_limit is not null and v_code.usage_count >= v_code.usage_limit then raise exception 'discount_code_exhausted'; end if;
+            select * into v_deal from public.deals where id=p_matter_id for update;
+            if not found then raise exception 'matter_not_found'; end if;
+            if upper(coalesce(v_deal.discount_code,'')) <> upper(v_code.code) then raise exception 'discount_not_attached_to_matter'; end if;
+            if v_deal.eligible_subtotal is null then raise exception 'eligible_subtotal_missing'; end if;
+            insert into public.discount_redemptions(discount_code_id,matter_id,client_id,payment_reference,wise_transaction_reference,eligible_subtotal,discount_amount,currency,status,redeemed_at,created_by,metadata)
+            values(v_code.id,v_deal.id,null,p_payment_reference,p_wise_transaction_reference,v_deal.eligible_subtotal,coalesce(v_deal.discount_amount,0),upper(trim(p_currency)),'redeemed',now(),p_created_by,jsonb_build_object('source','confirmed_wise_reconciliation')) returning id into v_redemption;
+            update public.discount_codes set usage_count=usage_count+1,status=case when usage_limit is not null and usage_count+1>=usage_limit then 'exhausted' else status end,updated_at=now() where id=v_code.id;
+            return v_redemption;
+          end $$;
+          revoke all on function public.redeem_discount_for_matter(uuid,uuid,text,text,text,text) from public,anon,authenticated;
+          grant execute on function public.redeem_discount_for_matter(uuid,uuid,text,text,text,text) to service_role;
+
+          create or replace function public.confirm_wise_payment_for_deal(p_deal_id uuid,p_payment_reference text,p_wise_transaction_reference text,p_amount numeric,p_currency text,p_actor text default 'wise-webhook') returns jsonb language plpgsql security definer set search_path=public as $$
+          declare v_deal public.deals%rowtype; v_discount_id uuid; v_redemption_id uuid; v_expected_currency text;
+          begin
+            if p_amount is null or p_amount<=0 then raise exception 'invalid_payment_amount'; end if;
+            if p_currency is null or upper(trim(p_currency)) !~ '^[A-Z]{3}$' then raise exception 'invalid_payment_currency'; end if;
+            select * into v_deal from public.deals where id=p_deal_id for update;
+            if not found then raise exception 'matter_not_found'; end if;
+            if v_deal.payment_status='paid' and v_deal.payment_confirmed=true then return jsonb_build_object('confirmed',true,'already_confirmed',true,'redemption_id',null); end if;
+            if v_deal.amount_due is null or v_deal.amount_due<=0 then raise exception 'amount_due_missing'; end if;
+            if round(p_amount*100) <> round(v_deal.amount_due*100) then raise exception 'payment_amount_mismatch'; end if;
+            v_expected_currency:=upper(coalesce(nullif(trim(v_deal.currency),''),'USD'));
+            if upper(trim(p_currency)) <> v_expected_currency then raise exception 'payment_currency_mismatch'; end if;
+            if p_payment_reference is null or trim(p_payment_reference)='' then raise exception 'payment_reference_missing'; end if;
+            if coalesce(v_deal.wise_reference,v_deal.deal_id) <> trim(p_payment_reference) then raise exception 'payment_reference_mismatch'; end if;
+            if nullif(trim(coalesce(v_deal.discount_code,'')),'') is not null then
+              select id into v_discount_id from public.discount_codes where upper(code)=upper(v_deal.discount_code) limit 1;
+              if v_discount_id is null then raise exception 'attached_discount_not_found'; end if;
+              v_redemption_id:=public.redeem_discount_for_matter(v_discount_id,v_deal.id,trim(p_payment_reference),p_wise_transaction_reference,upper(trim(p_currency)),p_actor);
+            end if;
+            update public.deals set payment_status='paid',payment_confirmed=true,payment_method='wise',payment_reference=trim(p_payment_reference),wise_transaction_reference=p_wise_transaction_reference,payment_amount_received=p_amount,amount_paid=p_amount,payment_confirmed_at=now(),payment_settlement_status='cleared',payment_cleared_at=now(),payment_funding_method='wise',updated_at=now() where id=v_deal.id;
+            return jsonb_build_object('confirmed',true,'already_confirmed',false,'redemption_id',v_redemption_id);
+          end $$;
+          revoke all on function public.confirm_wise_payment_for_deal(uuid,text,text,numeric,text,text) from public,anon,authenticated;
+          grant execute on function public.confirm_wise_payment_for_deal(uuid,text,text,numeric,text,text) to service_role;
+          commit;
+          SQL
+
+          cat > scripts/validate-damiani-production-wiring.mjs <<'JS'
+          import { readFileSync } from "node:fs";
+          const read=(p)=>readFileSync(p,"utf8"); const checks=[]; const check=(n,o)=>checks.push({n,o});
+          const page=read("app/intake/page.tsx"),wizard=read("components/intake/smart-intake-sop-wizard.tsx"),intake=read("app/api/intake/route.ts"),discount=read("src/features/discounts/discountService.ts"),wise=read("app/api/webhooks/wise/route.ts"),migration=read("supabase/migrations/047_discount_wise_deal_wiring.sql");
+          check("courtesy page handoff",/courtesyCode=\{courtesyCode\}/.test(page)); check("wizard server payload",/courtesy_code:\s*courtesyCode/.test(wizard)); check("server courtesy validation",/requestedCourtesy/.test(intake)&&/redemption_status:\s*"not_redeemed"/.test(intake)); check("canonical Wise reference",/const payment_reference = deal_id;/.test(intake)&&!/\$\{deal_id\}-R/.test(intake)); check("exact amount due stored",/amount_due:\s*invoice\.retainer/.test(intake)); check("courtesy fail closed",/Courtesy checkout is temporarily unavailable/.test(intake)); check("discount uses deals",/from\("deals"\)/.test(discount)&&!/matterRepository/.test(discount)); check("explicit eligible subtotal",/DISCOUNT_REVIEW_REQUIRED/.test(discount)); check("atomic Wise RPC",/confirm_wise_payment_for_deal/.test(wise)&&/atomic_confirmation_failed/.test(wise)); check("redemption deal lock",/from public\.deals where id=p_matter_id for update/i.test(migration)); check("discount row lock",/from public\.discount_codes where id=p_discount_code_id for update/i.test(migration)); check("exact amount in RPC",/round\(p_amount\*100\) <> round\(v_deal\.amount_due\*100\)/.test(migration)); check("currency fail closed",/invalid_payment_currency/.test(migration)&&/payment_currency_mismatch/.test(migration)); check("service-role confirm",/grant execute on function public\.confirm_wise_payment_for_deal[\s\S]*service_role/i.test(migration)); check("service-role redeem",/grant execute on function public\.redeem_discount_for_matter[\s\S]*service_role/i.test(migration));
+          const failed=checks.filter(x=>!x.o); for(const x of checks) console.log(`${x.o?"PASS":"FAIL"} ${x.n}`); console.log(`Damiani production wiring: ${checks.length-failed.length}/${checks.length} passed`); if(failed.length) process.exit(1);
+          JS
+
+      - name: Validate source wiring
+        run: node scripts/validate-damiani-production-wiring.mjs
+
+      - name: Commit canonical wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/intake/page.tsx components/intake/smart-intake-sop-wizard.tsx app/api/intake/route.ts app/api/webhooks/wise/route.ts src/features/discounts/discountService.ts supabase/migrations/047_discount_wise_deal_wiring.sql scripts/validate-damiani-production-wiring.mjs scripts/validate-final-production-regression.mjs package.json
+          git commit -m "Wire Damiani courtesy through Wise atomic reconciliation"
+          git push origin HEAD:agent/damiani-final-wiring-gap-fix
