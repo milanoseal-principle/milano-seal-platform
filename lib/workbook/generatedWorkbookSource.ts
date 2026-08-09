@@ -1,7 +1,6 @@
 // AUTO-GENERATED SOURCE CONTRACT
-// The complete workbook source is intentionally externalized from runtime route logic.
-// This placeholder is replaced by the generated workbook payload during production build ingestion.
-// Source values/formulas must remain immutable evidence; runtime behavior is layered separately.
+// Complete workbook payload is ingested from the locked Legal Compliance Engine artifact during build/deployment packaging.
+// Runtime routes must fail closed when a sheet payload is unavailable rather than inventing data.
 
 export type WorkbookSheetSource = {
   range: string;
@@ -10,3 +9,7 @@ export type WorkbookSheetSource = {
 };
 
 export const WORKBOOK_SOURCE: Record<string, WorkbookSheetSource> = {};
+
+export function hasWorkbookSource(sheet: string) {
+  return Boolean(WORKBOOK_SOURCE[sheet]);
+}
