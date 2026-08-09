@@ -22,6 +22,7 @@ function IntakeContent({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   return (
@@ -42,6 +43,7 @@ async function IntakeWizardWrapper({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -60,7 +62,9 @@ async function IntakeWizardWrapper({
       ? tier
       : "priority";
 
-  return <SmartIntakeSOPWizard initialTier={validTier} prefill={prefill} />;
+  const courtesyCode = params.courtesy?.trim().toUpperCase() === "DAMIANI50" ? "DAMIANI50" : undefined;
+
+  return <SmartIntakeSOPWizard initialTier={validTier} prefill={prefill} courtesyCode={courtesyCode} />;
 }
 
 export default function IntakePage({
@@ -74,6 +78,7 @@ export default function IntakePage({
     document?: string;
     useCase?: string;
     matter?: string;
+    courtesy?: string;
   }>;
 }) {
   return (

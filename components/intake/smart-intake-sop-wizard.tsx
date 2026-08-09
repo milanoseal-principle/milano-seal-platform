@@ -22,6 +22,7 @@ interface IntakePrefill {
 interface Props {
   initialTier?: "signature" | "priority" | "executive";
   prefill?: IntakePrefill;
+  courtesyCode?: string;
 }
 
 type Choice = "yes" | "no" | "unsure" | "";
@@ -104,7 +105,7 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Props) {
+export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
@@ -308,6 +309,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill }: Prop
       courier_required: form.courierRequired ? "yes" : undefined,
       name_match: true,
       files_uploaded: files.length > 0,
+      courtesy_code: courtesyCode || undefined,
     };
 
     try {
