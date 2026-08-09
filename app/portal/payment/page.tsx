@@ -7,63 +7,95 @@ import { usePortal } from "@/components/portal/portal-context";
 const GOLD = "#C6A55A";
 const GOLD_DIM = "rgba(198,165,90,0.55)";
 const GOLD_BORDER = "rgba(198,165,90,0.18)";
+const GREEN = "#4a9e6b";
 
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { label: string; color: string; bg: string }> = {
-    paid: { label: "Payment Confirmed", color: "#4a9e6b", bg: "rgba(74,158,107,0.08)" },
-    confirmed: { label: "Payment Confirmed", color: "#4a9e6b", bg: "rgba(74,158,107,0.08)" },
-    payment_confirmed: { label: "Payment Confirmed", color: "#4a9e6b", bg: "rgba(74,158,107,0.08)" },
-    pending: { label: "Payment Pending", color: GOLD, bg: "rgba(198,165,90,0.08)" },
-    awaiting_payment: { label: "Payment Pending", color: GOLD, bg: "rgba(198,165,90,0.08)" },
-    unpaid: { label: "Payment Pending", color: GOLD, bg: "rgba(198,165,90,0.08)" },
-    failed: { label: "Payment Failed", color: "#e05c5c", bg: "rgba(224,92,92,0.08)" },
-  };
-  const s = map[status] ?? { label: "Payment Pending", color: GOLD, bg: "rgba(198,165,90,0.08)" };
+function money(value: number | null | undefined, currency = "USD") {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+    return "—";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+  }).format(Number(value));
+}
+
+function StatusPill({ confirmed }: { confirmed: boolean }) {
+  const color = confirmed ? GREEN : GOLD;
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        padding: "4px 12px",
+        padding: "5px 12px",
         borderRadius: 99,
-        background: s.bg,
-        border: `1px solid ${s.color}40`,
+        background: confirmed
+          ? "rgba(74,158,107,0.08)"
+          : "rgba(198,165,90,0.08)",
+        border: `1px solid ${color}40`,
         fontSize: 11,
         fontFamily: "monospace",
         letterSpacing: "0.06em",
-        color: s.color,
+        color,
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.color, display: "inline-block" }} />
-      {s.label}
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: color,
+          display: "inline-block",
+        }}
+      />
+      {confirmed ? "Payment Verified" : "Awaiting Payment"}
     </span>
   );
 }
 
-function ReleaseStatusPill({ isPaidAndReleased, matterStatus, paymentConfirmed }: {
-  isPaidAndReleased: boolean;
-  matterStatus: string | null | undefined;
-  paymentConfirmed: boolean;
+function Row({
+  label,
+  value,
+  emphasis,
+  positive,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+  positive?: boolean;
 }) {
-  if (isPaidAndReleased) {
-    return (
-      <span style={{ fontSize: 12, color: "#4a9e6b" }}>Paid &amp; Released</span>
-    );
-  }
-  if (matterStatus === "shipped" || matterStatus === "delivered") {
-    return <span style={{ fontSize: 12, color: GOLD }}>In Transit</span>;
-  }
-  if (matterStatus === "courier_ready") {
-    return <span style={{ fontSize: 12, color: GOLD }}>Release pending final QA</span>;
-  }
-  if (matterStatus === "apostille_processing") {
-    return <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Apostille processing</span>;
-  }
-  if (paymentConfirmed) {
-    return <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Execution scheduled</span>;
-  }
-  return <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Release pending payment</span>;
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 20,
+        padding: "11px 0",
+        borderBottom: `1px solid ${GOLD_BORDER}`,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.45)",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontSize: emphasis ? 15 : 13,
+          fontWeight: emphasis ? 600 : 500,
+          color: positive ? GREEN : emphasis ? GOLD : "#E5E5E5",
+          textAlign: "right",
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
 }
 
 export default function PaymentStatusPage() {
@@ -71,25 +103,18 @@ export default function PaymentStatusPage() {
 
   if (isLoading) {
     return (
-      <div style={{ paddingTop: 8 }} role="status" aria-label="Verifying payment state…">
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: GOLD_DIM, marginBottom: 16, letterSpacing: "0.1em" }}>
+      <div style={{ paddingTop: 8 }} role="status">
+        <div
+          style={{
+            fontSize: 11,
+            fontFamily: "monospace",
+            color: GOLD_DIM,
+            marginBottom: 16,
+            letterSpacing: "0.1em",
+          }}
+        >
           Verifying payment state…
         </div>
-        {[55, 36, 80].map((w, i) => (
-          <div
-            key={i}
-            style={{
-              height: i === 0 ? 28 : 52,
-              borderRadius: 2,
-              marginBottom: 12,
-              background: "rgba(198,165,90,0.05)",
-              border: "1px solid rgba(198,165,90,0.08)",
-              animation: "ppSkeleton 2s ease-in-out infinite",
-              animationDelay: `${i * 0.15}s`,
-              width: `${w}%`,
-            }}
-          />
-        ))}
       </div>
     );
   }
@@ -103,20 +128,23 @@ export default function PaymentStatusPage() {
   }
 
   const paymentConfirmed =
+    deal.payment_confirmed ||
     deal.payment_status === "paid" ||
     deal.payment_status === "confirmed" ||
-    deal.payment_status === "payment_confirmed" ||
-    deal.matter_status === "payment_confirmed";
+    deal.payment_status === "payment_confirmed";
 
+  const currency = deal.currency ?? "USD";
+  const amountDue = deal.amount_due ?? deal.payment_amount_due ?? null;
+  const originalTotal = deal.original_total;
+  const discountAmount = deal.discount_amount ?? 0;
+  const finalTotal = deal.final_total;
+  const courtesyApplied = deal.courtesy_applied && discountAmount > 0;
   const wiseRef =
     deal.wise_reference ??
     `MS-${(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}`;
 
-  const amountDue = deal.payment_amount_due ?? deal.amount_due ?? null;
-
   return (
     <div>
-      {/* Header */}
       <div
         style={{
           fontSize: 9,
@@ -127,23 +155,36 @@ export default function PaymentStatusPage() {
           marginBottom: 8,
         }}
       >
-        Payment &amp; Invoice
+        Payment &amp; Authorization
       </div>
       <h1
         style={{
           fontFamily: "var(--font-playfair, Georgia, serif)",
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: 600,
           color: "#E5E5E5",
           letterSpacing: "0.02em",
-          marginBottom: 24,
+          marginBottom: 8,
         }}
       >
-        Payment Status
+        Secure Payment
       </h1>
+      <p
+        style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.45)",
+          lineHeight: 1.65,
+          marginBottom: 24,
+          maxWidth: 680,
+        }}
+      >
+        Your payment summary is generated from the Matter record. Courtesy
+        adjustments are applied automatically and cannot be consumed until Wise
+        confirms the exact payment amount and currency.
+      </p>
 
-      {/* Payment status card */}
       <div
+        data-critical-card=""
         style={{
           background: "rgba(255,255,255,0.01)",
           border: `1px solid ${GOLD_BORDER}`,
@@ -154,62 +195,76 @@ export default function PaymentStatusPage() {
       >
         <div
           style={{
-            fontSize: 10,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: GOLD_DIM,
-            fontFamily: "monospace",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
             marginBottom: 18,
           }}
         >
-          Payment Status
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <StatusPill status={deal.payment_status ?? (paymentConfirmed ? "paid" : "pending")} />
-        </div>
-
-        {/* KV rows */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {amountDue != null && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${GOLD_BORDER}`, paddingBottom: 10 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.05em" }}>Amount Due</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: paymentConfirmed ? "#4a9e6b" : GOLD }}>
-                {paymentConfirmed ? "Paid in Full" : `$${Number(amountDue).toLocaleString()}`}
-              </span>
+          <div>
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: GOLD_DIM,
+                fontFamily: "monospace",
+                marginBottom: 6,
+              }}
+            >
+              Matter Payment
             </div>
-          )}
-
-          {!paymentConfirmed && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${GOLD_BORDER}`, paddingBottom: 10 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.05em" }}>Wise Reference</span>
-              <span style={{ fontSize: 12, fontFamily: "monospace", color: GOLD, letterSpacing: "0.06em" }}>{wiseRef}</span>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+              Reference {wiseRef}
             </div>
-          )}
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${GOLD_BORDER}`, paddingBottom: 10 }}>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.05em" }}>Payment Confirmation</span>
-            <span style={{ fontSize: 12, color: paymentConfirmed ? "#4a9e6b" : "rgba(255,255,255,0.35)" }}>
-              {paymentConfirmed ? "Confirmed" : "Awaiting confirmation"}
-            </span>
           </div>
+          <StatusPill confirmed={paymentConfirmed} />
+        </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.05em" }}>Release Gate</span>
-            <ReleaseStatusPill
-              isPaidAndReleased={!!deal.is_paid_and_released}
-              matterStatus={deal.matter_status}
-              paymentConfirmed={paymentConfirmed}
+        {originalTotal !== null && (
+          <Row label="Original service total" value={money(originalTotal, currency)} />
+        )}
+
+        {courtesyApplied && (
+          <>
+            <Row
+              label={
+                deal.discount_value
+                  ? `${deal.courtesy_label ?? "Professional courtesy"} · ${Number(deal.discount_value)}%`
+                  : deal.courtesy_label ?? "Professional courtesy"
+              }
+              value={`−${money(discountAmount, currency)}`}
+              positive
             />
-          </div>
-        </div>
+            {finalTotal !== null && (
+              <Row
+                label="Final service total"
+                value={money(finalTotal, currency)}
+              />
+            )}
+          </>
+        )}
+
+        <Row
+          label={paymentConfirmed ? "Verified payment" : "Amount due now"}
+          value={
+            paymentConfirmed
+              ? "Confirmed"
+              : amountDue !== null
+                ? money(amountDue, currency)
+                : "Pending final quote"
+          }
+          emphasis
+          positive={paymentConfirmed}
+        />
       </div>
 
-      {/* Instruction card for pending payment */}
-      {!paymentConfirmed && (
+      {!paymentConfirmed && amountDue !== null && amountDue > 0 && (
         <div
           style={{
-            background: "rgba(198,165,90,0.03)",
+            background: "rgba(198,165,90,0.04)",
             border: `1px solid ${GOLD_BORDER}`,
             borderRadius: 8,
             padding: "20px 24px",
@@ -223,53 +278,93 @@ export default function PaymentStatusPage() {
               textTransform: "uppercase",
               color: GOLD_DIM,
               fontFamily: "monospace",
-              marginBottom: 12,
+              marginBottom: 10,
             }}
           >
-            How to Pay
+            Wise Payment
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65, marginBottom: 10 }}>
-            Payment is processed via Wise bank transfer. Include your Wise reference in the transfer memo so
-            your payment can be matched to your matter automatically.
+          <p
+            style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.65,
+              marginBottom: 14,
+            }}
+          >
+            Use the exact Wise reference shown above. Scheduling remains locked
+            until the transfer is reconciled against the exact amount and
+            currency.
           </p>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.65 }}>
-            Once confirmed, your scheduling will be unlocked and your coordinator will reach out with next steps.
-            View your full invoice at{" "}
+
+          {deal.wise_payment_url ? (
             <a
-              href="/portal/invoice"
-              style={{ color: GOLD, textDecoration: "none", borderBottom: `1px solid ${GOLD_BORDER}` }}
+              href={deal.wise_payment_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 46,
+                padding: "0 20px",
+                borderRadius: 5,
+                background: GOLD,
+                color: "#0A0A0A",
+                textDecoration: "none",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+              }}
             >
-              Invoice &amp; Payment Authorization
+              Continue to Secure Wise Payment
             </a>
-            .
-          </p>
+          ) : (
+            <div
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.45)",
+                lineHeight: 1.6,
+              }}
+            >
+              Payment instructions are being finalized. Your Matter remains
+              safely unpaid and scheduling stays locked until the payment link is
+              available.
+            </div>
+          )}
         </div>
       )}
 
-      {/* Paid & released state */}
-      {deal.is_paid_and_released && (
+      {paymentConfirmed && (
         <div
           style={{
-            background: "linear-gradient(135deg, rgba(74,158,107,0.06) 0%, rgba(198,165,90,0.06) 100%)",
-            border: "1px solid rgba(198,165,90,0.3)",
+            background:
+              "linear-gradient(135deg, rgba(74,158,107,0.06) 0%, rgba(198,165,90,0.06) 100%)",
+            border: "1px solid rgba(74,158,107,0.28)",
             borderRadius: 8,
             padding: "20px 24px",
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
           }}
         >
-          <span style={{ color: "#4a9e6b", fontSize: 20, lineHeight: 1 }}>✓</span>
-          <div>
-            <div style={{ fontFamily: "var(--font-playfair, Georgia, serif)", fontWeight: 600, fontSize: 14, color: GOLD, letterSpacing: "0.02em", marginBottom: 4 }}>
-              PAID &amp; RELEASED
-            </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
-              Your documents have been released.{" "}
-              <a href="/portal/documents" style={{ color: GOLD, textDecoration: "none" }}>
-                View The Vault →
-              </a>
-            </div>
+          <div
+            style={{
+              fontFamily: "var(--font-playfair, Georgia, serif)",
+              fontSize: 15,
+              fontWeight: 600,
+              color: GREEN,
+              marginBottom: 6,
+            }}
+          >
+            Payment Verified
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.6,
+            }}
+          >
+            Wise reconciliation is complete. Your payment gate is satisfied and
+            scheduling may proceed through the canonical Matter workflow.
           </div>
         </div>
       )}
