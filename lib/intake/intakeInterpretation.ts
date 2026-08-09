@@ -55,9 +55,9 @@ export interface IntakeInterpretation {
 // Prefix-based patterns so inflections/plurals match (apostille/apostilles/
 // apostilled; notary/notarize/notarization; translate/translation).
 const CONCEPT_PATTERNS: Record<IntakeConcept, RegExp> = {
-  notarization: /\bnotar/i, // notary, notarize, notarization, notarial, notarized
+  notarization: /\bnotar/i,
   ron: /\b(remote\s*online\s*notar|remote\s*notar|\bron\b|video\s*notar|online\s*notar|notariz\w*\s*remot|remot\w*\s*notar)/i,
-  apostille: /\bapostill/i, // apostille(s), apostilled, apostilla
+  apostille: /\bapostill/i,
   authentication: /\b(authenticat|legaliza[zc]|consular|embassy\s*legaliz)/i,
   translation: /\b(translat|traduc|traduzion|übersetz)/i,
   witness: /\bwitness/i,
@@ -70,13 +70,19 @@ const CONCEPT_PATTERNS: Record<IntakeConcept, RegExp> = {
 
 const CONCEPT_LIST = Object.keys(CONCEPT_PATTERNS) as IntakeConcept[];
 
-// Negation cues (English + a few common ES/IT/FR/DE). Applied within one clause.
 const NEG_BEFORE =
   /\b(no|not|without|non|sin|sans|kein\w*|nessun\w*|don'?t|doesn'?t|do\s+not|does\s+not|never|neither|nor|skip|avoid)\b/i;
 const NEG_AFTER =
   /\b(not\s+(?:needed|required|necessary|applicable)|isn'?t\s+(?:needed|required)|no\s+longer\s+(?:needed|required)|unnecessary|n[/']?a)\b/i;
 const ALREADY =
   /\b(already|previously|has\s+been|have\s+been|was|were|is\s+done|completed|prior)\b/i;
+
+// Explicit coordinated negation must carry across conjunctions. Example:
+// "I do not need RON or translation" means BOTH RON and translation are
+// negative. Without this rule the second concept can look positive because the
+// preceding concept boundary cuts the local negation window.
+const COORDINATED_NEGATION =
+  /\b(?:no|not|without|don'?t|doesn'?t|do\s+not|does\s+not|skip|avoid)\b(?:\s+(?:need|needs|needed|require|requires|required|want|wants|wanted|use|using|have|having|any))?\s+([^.,;!?\n]+)/i;
 
 const QUANTITY_BEFORE_APOSTILLE = /(\d+)\s*(?:apostille|apostilla)/i;
 const DOC_COUNT_RE = /(\d+)\s*(?:document|doc|documenti|documentos|certificate|copies|copy)\b/i;
@@ -89,17 +95,31 @@ function splitClauses(text: string): string[] {
     .filter(Boolean);
 }
 
-// Position-aware polarity: negation/already cues only apply within the window
-// immediately around a concept keyword, and the before-window is cut at the
-// previous concept keyword so "no apostille … notarization" does not let "no"
-// bleed onto notarization.
+function coordinatedNegative(clause: string, concept: IntakeConcept): boolean {
+  const m = COORDINATED_NEGATION.exec(clause);
+  if (!m) return false;
+  const tail = m[1] ?? "";
+  if (!CONCEPT_PATTERNS[concept].test(tail)) return false;
+
+  // Carry negation only through a coordinated list. A later explicit positive
+  // requirement breaks the scope rather than being silently negated.
+  const conceptMatch = CONCEPT_PATTERNS[concept].exec(tail);
+  if (!conceptMatch) return false;
+  const beforeConcept = tail.slice(0, conceptMatch.index);
+  if (/\b(?:but|however)\b/i.test(beforeConcept)) return false;
+  if (/\b(?:is|required|needed|must|please)\b/i.test(beforeConcept) && !/\b(?:or|and|nor)\b/i.test(beforeConcept)) return false;
+  return true;
+}
+
 function conceptPolarity(clause: string, concept: IntakeConcept): FactPolarity | null {
   const m = CONCEPT_PATTERNS[concept].exec(clause);
   if (!m) return null;
+
+  if (coordinatedNegative(clause, concept)) return "negative";
+
   const start = m.index;
   const end = m.index + m[0].length;
 
-  // Nearest preceding OTHER concept keyword end (to cut negation bleed).
   let prevConceptEnd = 0;
   let nextConceptStart = clause.length;
   for (const other of CONCEPT_LIST) {
@@ -123,10 +143,6 @@ function emptyFact<T>(): IntakeFact<T> {
   return { value: null, polarity: "unknown", confidence: "low", source: "default" };
 }
 
-/**
- * Deterministically interpret an intake description into normalized facts.
- * Pure: no I/O, no mutation of the input.
- */
 export function interpretIntakeText(text: string): IntakeInterpretation {
   const concepts = {} as Record<IntakeConcept, IntakeFact<boolean>>;
   (Object.keys(CONCEPT_PATTERNS) as IntakeConcept[]).forEach((c) => {
@@ -144,8 +160,6 @@ export function interpretIntakeText(text: string): IntakeInterpretation {
   if (!t) return result;
 
   const clauses = splitClauses(t);
-
-  // Track observed polarities per concept across clauses to detect contradictions.
   const seen: Record<string, Set<FactPolarity>> = {};
 
   for (const clause of clauses) {
@@ -154,8 +168,6 @@ export function interpretIntakeText(text: string): IntakeInterpretation {
       if (pol === null) continue;
       (seen[concept] ??= new Set()).add(pol);
       const prev = result.concepts[concept];
-      // First real observation, or upgrade an explicit negative/already over a
-      // prior positive from a different clause is handled by contradiction logic.
       const fact: IntakeFact<boolean> = {
         value: pol === "positive" ? true : pol === "negative" ? false : false,
         polarity: pol,
@@ -165,7 +177,6 @@ export function interpretIntakeText(text: string): IntakeInterpretation {
       };
       if (prev.polarity === "unknown") result.concepts[concept] = fact;
       else if (prev.polarity !== pol) {
-        // Conflicting explicit statements → mark unknown, record contradiction.
         result.concepts[concept] = {
           value: null,
           polarity: "unknown",
@@ -218,14 +229,10 @@ export function interpretIntakeText(text: string): IntakeInterpretation {
   return result;
 }
 
-// ── Convenience booleans for the legacy MatterAnalysis flags ────────────────
-
-/** True only when a service is affirmatively requested (positive polarity). */
 export function isPositive(f: IntakeFact<boolean>): boolean {
   return f.polarity === "positive" && f.value === true;
 }
 
-/** True when the client explicitly negated OR already-completed a service. */
 export function isSuppressed(f: IntakeFact<boolean>): boolean {
   return f.polarity === "negative" || f.polarity === "already_completed";
 }
