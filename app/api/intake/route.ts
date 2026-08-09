@@ -17,7 +17,6 @@ import { runDealEngine } from "@/lib/core/engine";
 import {
   normalizeIntakeRouting,
   checkAffidavitFederalConflict,
-  formatApostillePath,
 } from "@/lib/intake/routing-normalizer";
 import { safeText } from "@/lib/security/app-guards";
 
@@ -110,9 +109,7 @@ export async function POST(req: NextRequest) {
 
     const useCase = (raw.use_case || raw.useCase || "") as string;
     const prefillDoc = (raw.document_type || raw.document || "") as string;
-    const prefillCountry = (raw.country ||
-      raw.destination_country ||
-      "") as string;
+    const prefillCountry = (raw.country || raw.destination_country || "") as string;
 
     if (raw.message && !raw.document_type) {
       const parsed = parseIntake(raw.message);
@@ -138,10 +135,7 @@ export async function POST(req: NextRequest) {
       data.email = data.email.trim().toLowerCase();
     }
 
-    let normalizedRouting = normalizeIntakeRouting({
-      ...raw,
-      ...data,
-    });
+    let normalizedRouting = normalizeIntakeRouting({ ...raw, ...data });
     normalizedRouting = checkAffidavitFederalConflict(
       normalizedRouting,
       (data.document_type as string) || "",
@@ -232,6 +226,7 @@ export async function POST(req: NextRequest) {
         .map((x) => ({ item: x.label, amount: x.amount })),
       witness_total: legacyPricing.witness_total,
     };
+
     const clientQuotedTotal = Number(raw.client_quoted_total);
     if (
       Number.isFinite(clientQuotedTotal) &&
@@ -248,6 +243,7 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
+
     const supabase = createAdminClient();
     const requestedCourtesy =
       typeof raw.courtesy_code === "string"
@@ -260,6 +256,7 @@ export async function POST(req: NextRequest) {
       discount_value: number;
       amount: number;
     } = null;
+
     if (requestedCourtesy) {
       const { data: discount, error: discountError } = await supabase
         .from("discount_codes")
@@ -303,6 +300,7 @@ export async function POST(req: NextRequest) {
           { error: "Courtesy code requires operator review." },
           { status: 400 },
         );
+
       const eligibleSubtotalCents = Math.round(Number(pricing.total) * 100);
       const discountValue = Number(discount.discount_value);
       const discountCents =
@@ -318,6 +316,7 @@ export async function POST(req: NextRequest) {
           Math.min(eligibleSubtotalCents, Math.max(0, discountCents)) / 100,
       };
     }
+
     const effectiveTotal = Math.max(
       0,
       Math.round(
@@ -326,7 +325,6 @@ export async function POST(req: NextRequest) {
     );
 
     const finalLane = pricing.lane;
-
     const invoice = generateInvoice(effectiveTotal);
     const decline_risk = riskScore(data);
     const deal_id = genDealId();
@@ -341,7 +339,6 @@ export async function POST(req: NextRequest) {
       useCase,
       urgency: data.urgency as string,
     });
-
     const priority_tier = routeDeal(conversion_score);
 
     const payment_reference = deal_id;
@@ -514,8 +511,7 @@ export async function POST(req: NextRequest) {
       internal_notes: safeInternalNotes,
     };
 
-    let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null =
-      null;
+    let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
 
     {
       const { data: d, error: e } = await supabase
@@ -635,7 +631,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    void notifyHighValue(deal_id, country, pricing.total, priority_tier);
+    void notifyHighValue(deal_id, country, effectiveTotal, priority_tier);
 
     if (deal?.id) {
       const dealRowId = deal.id as string;
@@ -653,7 +649,9 @@ export async function POST(req: NextRequest) {
               source,
               lane: finalLane,
               country,
-              total: pricing.total,
+              original_total: pricing.total,
+              discount_amount: courtesyAdjustment?.amount ?? 0,
+              final_total: effectiveTotal,
             },
           });
         } catch (err) {
@@ -701,7 +699,7 @@ export async function POST(req: NextRequest) {
         name: client_name,
         dealId: deal_id,
         lane: finalLane,
-        total: pricing.total,
+        total: effectiveTotal,
         retainer: invoice.retainer,
         paymentLink: payment_link,
         portalUrl: `${SITE}/portal/${access_token}`,
@@ -721,10 +719,13 @@ export async function POST(req: NextRequest) {
         deal_id,
         actor,
         action: "created",
-        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country} · ${originAuthorityLabel}`,
+        detail: `Intake captured · ${finalLane} lane · $${effectiveTotal} · ${country} · ${originAuthorityLabel}`,
         meta: {
           source,
           lane: finalLane,
+          original_total: pricing.total,
+          discount_amount: courtesyAdjustment?.amount ?? 0,
+          final_total: effectiveTotal,
           conversion_score,
           priority_tier,
         },
@@ -743,6 +744,13 @@ export async function POST(req: NextRequest) {
     for (const addon of pricing.addons) {
       pricingBreakdown.push({ label: addon.item, amount: addon.amount });
     }
+    if (courtesyAdjustment?.amount) {
+      pricingBreakdown.push({
+        label: "Professional courtesy",
+        amount: -courtesyAdjustment.amount,
+      });
+    }
+
     const rationaleByLane: Record<string, string> = {
       RON_SIMPLE: "Colorado RON-only path — RON Simple lane applies.",
       MOBILE_STANDARD: "Florida mobile execution + round-trip mileage.",
@@ -756,7 +764,14 @@ export async function POST(req: NextRequest) {
       success: true,
       deal_id: deal?.deal_id || deal_id,
       lane: finalLane,
-      estimated_value: pricing.total,
+      estimated_value: effectiveTotal,
+      original_total: pricing.total,
+      discount_amount: courtesyAdjustment?.amount ?? 0,
+      discount_value: courtesyAdjustment?.discount_value ?? null,
+      final_total: effectiveTotal,
+      amount_due: invoice.retainer,
+      courtesy_applied: Boolean(courtesyAdjustment),
+      courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
       conversion_score,
       priority_tier,
       payment_method: "WISE",
@@ -766,7 +781,9 @@ export async function POST(req: NextRequest) {
         lane: finalLane,
         base: pricing.base,
         witness_total: pricing.witness_total,
-        total: pricing.total,
+        original_total: pricing.total,
+        discount_amount: courtesyAdjustment?.amount ?? 0,
+        total: effectiveTotal,
         breakdown: pricingBreakdown,
         rationale:
           rationaleByLane[finalLane] ?? "Standard pricing applied.",
