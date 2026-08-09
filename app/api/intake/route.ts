@@ -322,6 +322,7 @@ export async function POST(req: NextRequest) {
       payment_method: "wise",
       payment_reference,
       payment_link,
+      status: "intake_received",
       deal_status: "awaiting_payment",
       conversion_score,
       priority_tier,
@@ -367,6 +368,7 @@ export async function POST(req: NextRequest) {
           translation: Boolean(data.translation ?? false),
           multi_country: Boolean(data.multi_country ?? false),
           payment_status: "unpaid" as const,
+          status: "intake_received" as const,
           deal_status: "awaiting_payment" as const,
         };
 
@@ -391,6 +393,7 @@ export async function POST(req: NextRequest) {
             client_name,
             email: data.email || "",
             payment_status: "unpaid" as const,
+            status: "intake_received" as const,
             deal_status: "awaiting_payment" as const,
           };
           const { data: d3, error: e3 } = await supabase
@@ -476,7 +479,7 @@ export async function POST(req: NextRequest) {
             document_type: data.document_type as string | undefined,
             destination_country: country,
             country,
-            status: "awaiting_payment",
+            status: "intake_received",
             payment_status: "unpaid",
             payment_link,
             raw_text:
