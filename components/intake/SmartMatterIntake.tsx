@@ -549,43 +549,28 @@ function JurisdictionPreview({ analysis }: { analysis: MatterAnalysis }) {
 }
 
 function ConfidencePanel({ analysis }: { analysis: MatterAnalysis }) {
+  const complete = analysis.missingFields.length === 0;
   return (
     <div className="bg-[#111111] border border-[rgba(198,165,90,0.18)] rounded-sm p-5">
-      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A] mb-3">
-        Matter Structuring Confidence
-      </div>
-      <div className="font-serif text-[40px] text-[#F6F1E6] leading-none mb-4">
-        {analysis.confidenceScore}%
+      <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#C6A55A] mb-3">Matter Structure</div>
+      <div className="font-serif text-[24px] text-[#F6F1E6] leading-tight mb-4">
+        {complete ? "Core Matter Facts Captured" : "Additional Matter Facts Needed"}
       </div>
       <div className="space-y-1.5 mb-3">
         {analysis.detectedFields.map((f) => (
-          <div
-            key={f}
-            className="flex items-center gap-2 text-[12.5px] text-[#D9D1C4]"
-          >
-            <CheckCircle2
-              className="w-3 h-3 text-emerald-400 flex-shrink-0"
-              strokeWidth={2.4}
-            />
+          <div key={f} className="flex items-center gap-2 text-[12.5px] text-[#D9D1C4]">
+            <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" strokeWidth={2.4} />
             {f}
           </div>
         ))}
       </div>
       {analysis.missingFields.length > 0 && (
         <div className="pt-3 border-t border-white/[0.08]">
-          <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#9A9488] mb-1.5 font-semibold">
-            Missing
-          </div>
-          {analysis.missingFields.map((f) => (
-            <div
-              key={f}
-              className="text-[12px] text-[#9A9488] leading-relaxed font-light"
-            >
-              · {f}
-            </div>
-          ))}
+          <div className="text-[10.5px] uppercase tracking-[0.14em] text-[#9A9488] mb-1.5 font-semibold">Still Needed</div>
+          {analysis.missingFields.map((f) => <div key={f} className="text-[12px] text-[#9A9488] leading-relaxed font-light">· {f}</div>)}
         </div>
       )}
+      <p className="mt-4 pt-3 border-t border-white/[0.08] text-[10.5px] text-[#777064] font-light leading-relaxed">Execution timeline and delivery are selected during Review and do not reduce matter-structuring confidence.</p>
     </div>
   );
 }

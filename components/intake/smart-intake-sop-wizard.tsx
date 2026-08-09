@@ -164,7 +164,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   }), [form, analysis]);
 
   const clarifications = useMemo(() => buildIntakeClarifications(classification), [classification]);
-  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer" }), [classification, initialTier]);
+  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer", timeline: form.timelineChoice, delivery: form.deliveryChoice }), [classification, initialTier, form.timelineChoice, form.deliveryChoice]);
   const clientPricing = useMemo(() => projectClientPricing(pricing), [pricing]);
 
   const outstanding = useMemo(
@@ -339,6 +339,9 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
     const payload = {
       source_channel: "Website Form",
+      tier: initialTier,
+      client_quoted_total: clientPricing.mode === "approved_price" ? clientPricing.amount : undefined,
+      pricing_engine_version: "canonical-pricing-v1",
       name: form.name,
       client_name: form.name,
       email: form.email,
@@ -352,14 +355,14 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       country: classification.destinationCountry || "United States",
       destination_country: classification.destinationCountry || "",
       mobile: classification.mobile === "required",
+      notarization_required: classification.notarization === "required",
+      ron_required: classification.ron === "required",
       apostille: classification.apostille === "required",
       apostille_count: classification.apostilleQuantity,
       translation: classification.translation === "required",
-      // Timeline/delivery are captured as operator-facing preferences, not
-      // billing inputs: the client-displayed quote and the server billing
-      // engine both derive urgency from the classification, so a selector must
-      // never silently change the amount billed vs. the amount shown. Rush /
-      // expedited pricing is confirmed by the operator at review.
+      // Timeline/delivery are explicit quote inputs. Client projection and
+      // server recomputation consume the same selections so the accepted
+      // quote cannot diverge from the amount persisted for Wise checkout.
       urgency: classification.urgency === "same_day" || classification.urgency === "urgent" ? "urgent" : "standard",
       timeline_preference: form.timelineChoice || undefined,
       delivery_method: form.deliveryChoice || undefined,
@@ -613,6 +616,13 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                       ))}
                     </ul>
                   </div>
+                  <div className="mt-5 border-t border-[rgba(198,165,90,0.14)] pt-4">
+                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Quote Breakdown</div>
+                    <div className="space-y-2">{pricing.clientLineItems.map((item) => (
+                      <div key={item.key} className="flex items-start justify-between gap-4 text-[12px] font-light text-[#E8DCC0]"><span>{item.label}</span><span className="shrink-0">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(item.amount)}</span></div>
+                    ))}</div>
+                  </div>
+                  {courtesyCode && <div className="mt-4 flex items-start justify-between gap-4 border-t border-[rgba(198,165,90,0.14)] pt-4 text-[12px]"><span className="text-[#D8C08A]">Courtesy code</span><span className="font-semibold text-[var(--ms-gold)]">{courtesyCode} · validated securely at checkout</span></div>}
                   <div className="mt-5 flex items-baseline justify-between border-t border-[rgba(198,165,90,0.14)] pt-4">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9A9488]">Quoted Investment</span>
                     <span className="text-2xl font-semibold text-white">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(clientPricing.amount ?? 0)}</span>
