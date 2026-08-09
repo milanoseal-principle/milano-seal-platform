@@ -135,6 +135,13 @@ export async function POST(req: NextRequest) {
     if (raw.message)     raw.message     = safeText(raw.message);
 
     const data = normalizeMatter(raw);
+    // Canonical client email: the deal's email is the ownership key for the
+    // email-based portal RLS (client_own_deal). Normalize once (trim +
+    // lowercase) so it deterministically matches the confirmed Supabase auth
+    // JWT email — no loose/substring/case-variant binding.
+    if (typeof data.email === "string") {
+      data.email = data.email.trim().toLowerCase();
+    }
 
     // ── Routing normalizer (P0 correctness fix) ───────────────────────────
     // Converts raw origin_state overload into a deterministic NormalizedRoutingContext.
