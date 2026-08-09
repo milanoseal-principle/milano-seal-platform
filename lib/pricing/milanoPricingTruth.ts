@@ -165,8 +165,12 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
     urgency,
     shipping,
   });
-  const hidden = canonical.breakdown.filter((x) => x.internal_only).reduce((sum,x) => sum+x.amount,0);
-  const publicItems = canonical.breakdown.filter((x) => !x.internal_only);
+  // Quote-safe disclosure: courier/shipping is a required disclosed quote charge.
+  // Other internal-only operational components remain rolled into the lane line.
+  const hidden = canonical.breakdown
+    .filter((x) => x.internal_only && x.key !== "shipping")
+    .reduce((sum,x) => sum+x.amount,0);
+  const publicItems = canonical.breakdown.filter((x) => !x.internal_only || x.key === "shipping");
   const laneName = lane[0].toUpperCase()+lane.slice(1);
   const clientLineItems = publicItems.map((x) => x.key === "base"
     ? { key:x.key, label:`${laneName} Execution Lane`, amount:x.amount+hidden }

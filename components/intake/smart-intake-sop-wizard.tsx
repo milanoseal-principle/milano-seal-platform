@@ -360,11 +360,9 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       apostille: classification.apostille === "required",
       apostille_count: classification.apostilleQuantity,
       translation: classification.translation === "required",
-      // Timeline/delivery are captured as operator-facing preferences, not
-      // billing inputs: the client-displayed quote and the server billing
-      // engine both derive urgency from the classification, so a selector must
-      // never silently change the amount billed vs. the amount shown. Rush /
-      // expedited pricing is confirmed by the operator at review.
+      // Timeline/delivery are explicit quote inputs. Client projection and
+      // server recomputation consume the same selections so the accepted
+      // quote cannot diverge from the amount persisted for Wise checkout.
       urgency: classification.urgency === "same_day" || classification.urgency === "urgent" ? "urgent" : "standard",
       timeline_preference: form.timelineChoice || undefined,
       delivery_method: form.deliveryChoice || undefined,
