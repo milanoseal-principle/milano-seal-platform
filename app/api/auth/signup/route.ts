@@ -55,16 +55,58 @@ export async function POST(request: Request) {
     const user = data.user;
     const isNewUser = !!user && Array.isArray(user.identities) && user.identities.length > 0;
 
+    // FAIL CLOSED on missing email verification. If signUp returned a live
+    // session, or a brand-new user is already marked confirmed, then the
+    // project's "Confirm email" setting is OFF and this address was auto-
+    // trusted without proving mailbox control. Because the portal binds a
+    // client to their Matter purely by the (assumed-verified) JWT email,
+    // granting the client role here would let anyone who knows an intake email
+    // reach that Matter's data. Do not stamp the role; delete the just-created
+    // account so no usable, email-squatting login is left behind.
+    const autoConfirmed =
+      !!data.session ||
+      (isNewUser && !!(user!.email_confirmed_at || (user as { confirmed_at?: string }).confirmed_at));
+    if (autoConfirmed) {
+      if (isNewUser && user) {
+        try {
+          await createAdminClient().auth.admin.deleteUser(user.id);
+        } catch {
+          // Best-effort cleanup; the request still fails closed below.
+        }
+      }
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Secure sign-up is temporarily unavailable. Please contact The Milano Seal.",
+        },
+        { status: 503 },
+      );
+    }
+
     if (isNewUser && user) {
+      // updateUserById resolves to { error } instead of throwing, so inspect
+      // the returned error too — otherwise a failed role stamp would report
+      // success and leave the confirmed account permanently roleless (login
+      // fails "Access profile missing" and retry can't repair it because the
+      // existing-user response has identities=[]). On any failure, delete the
+      // account so a retry starts clean.
+      let roleError: unknown = null;
       try {
-        const admin = createAdminClient();
-        await admin.auth.admin.updateUserById(user.id, {
-          app_metadata: { role: "client" },
-        });
-      } catch {
-        // If role stamping fails, the account still exists unconfirmed with no
-        // role — login will fail closed ("Access profile missing") rather than
-        // grant unintended access. Surface a generic retry rather than leak.
+        const { error: updateError } = await createAdminClient().auth.admin.updateUserById(
+          user.id,
+          { app_metadata: { role: "client" } },
+        );
+        roleError = updateError;
+      } catch (err) {
+        roleError = err;
+      }
+      if (roleError) {
+        try {
+          await createAdminClient().auth.admin.deleteUser(user.id);
+        } catch {
+          // Best-effort cleanup.
+        }
         return NextResponse.json(
           { ok: false, error: "We couldn't complete sign-up right now. Please try again." },
           { status: 500 },
