@@ -108,6 +108,19 @@ test("outstandingRequirements requires explicit timeline and delivery", () => {
   assert.ok(out.includes("Delivery method"));
 });
 
+test("outstandingRequirements ignores pricing approval so review-only matters stay submittable", () => {
+  // A matter that intentionally prices as quote_after_review (pricingApproved
+  // false) must still be submittable once every client-resolvable fact is
+  // provided — the submit gate keys off this list, not off pricing approval.
+  const out = outstandingRequirements({
+    classification: classification({ apostille: "not_required", authentication: "not_required", originJurisdiction: undefined }),
+    timeline: "standard",
+    delivery: "digital",
+    pricingApproved: false,
+  });
+  assert.deepEqual(out, []);
+});
+
 test("isQuoteReady requires approved pricing AND nothing outstanding", () => {
   const ready = { classification: classification(), timeline: "standard" as const, delivery: "digital" as const, pricingApproved: true };
   assert.equal(isQuoteReady(ready), true);

@@ -327,7 +327,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   };
 
   const submit = async () => {
-    if (!quoteReady) return setError("Please resolve the remaining details above before checkout.");
+    // Gate on client-resolvable facts, NOT on pricing approval: matters that
+    // intentionally price as quote_after_review (mobile / authentication /
+    // translation coordination) must still be submittable so a Matter is
+    // created for the operator to review and quote.
+    if (outstanding.length > 0) return setError("Please resolve the remaining details above before checkout.");
     if (!consent) return setError("Confirm the review notice before completing your order.");
     setSubmitting(true);
     setError(null);
@@ -351,12 +355,17 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       apostille: classification.apostille === "required",
       apostille_count: classification.apostilleQuantity,
       translation: classification.translation === "required",
-      urgency: form.timelineChoice === "urgent" || form.timelineChoice === "expedited" || classification.urgency === "same_day" || classification.urgency === "urgent" ? "urgent" : "standard",
+      // Timeline/delivery are captured as operator-facing preferences, not
+      // billing inputs: the client-displayed quote and the server billing
+      // engine both derive urgency from the classification, so a selector must
+      // never silently change the amount billed vs. the amount shown. Rush /
+      // expedited pricing is confirmed by the operator at review.
+      urgency: classification.urgency === "same_day" || classification.urgency === "urgent" ? "urgent" : "standard",
       timeline_preference: form.timelineChoice || undefined,
       delivery_method: form.deliveryChoice || undefined,
       deadline_date: form.deadline,
       notes: form.executionType === "Mobile" && form.mobileAddress ? `Mobile signing address: ${form.mobileAddress}` : "",
-      courier_required: form.deliveryChoice === "domestic_courier" || form.deliveryChoice === "international_courier" || form.courierRequired ? "yes" : undefined,
+      courier_required: form.courierRequired ? "yes" : undefined,
       name_match: true,
       files_uploaded: files.length > 0,
       courtesy_code: courtesyCode || undefined,
@@ -624,7 +633,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
               {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" onClick={() => setStep(clarifications.questions.length ? 2 : 1)} className={secondaryCls}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
-                <button type="button" onClick={submit} disabled={submitting || !quoteReady} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>Complete My Order <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
+                <button type="button" onClick={submit} disabled={submitting || outstanding.length > 0} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>Complete My Order <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
               </div>
             </>
           )}

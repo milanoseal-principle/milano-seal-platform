@@ -294,6 +294,8 @@ export async function POST(req: NextRequest) {
       receivingAuthority: (raw as Record<string, unknown>).receivingAuthority ?? (raw as Record<string, unknown>).receiving_authority ?? null,
       deadlineOrClosingDate: (raw as Record<string, unknown>).deadlineOrClosingDate ?? (raw as Record<string, unknown>).deadline_or_closing_date ?? null,
       courierRequired: (raw as Record<string, unknown>).courierRequired ?? (raw as Record<string, unknown>).courier_required ?? null,
+      timelinePreference: (raw as Record<string, unknown>).timelinePreference ?? (raw as Record<string, unknown>).timeline_preference ?? null,
+      deliveryMethod: (raw as Record<string, unknown>).deliveryMethod ?? (raw as Record<string, unknown>).delivery_method ?? null,
     };
 
     const safeNotes = [
