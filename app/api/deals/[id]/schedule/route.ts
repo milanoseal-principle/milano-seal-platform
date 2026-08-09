@@ -15,8 +15,10 @@ export async function POST(
       .select("*")
       .eq("id", id)
       .single();
-    if (!deal)
+
+    if (!deal) {
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
 
     const schedulingGate = evaluateSchedulingGate({ matter: deal });
     if (!schedulingGate.schedulingEligible) {
@@ -25,22 +27,39 @@ export async function POST(
           error: "PAYMENT_REQUIRED",
           paymentRequirementSatisfied: schedulingGate.paymentRequirementSatisfied,
           paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
-          message: "Verified payment or an active Complimentary Authorization is required before scheduling can begin.",
+          message:
+            "Verified payment or an active Complimentary Authorization is required before scheduling can begin.",
         },
-        { status: 402 }
+        { status: 402 },
       );
     }
 
     const body = await req.json().catch(() => ({}));
-    const { data: updated } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("deals")
       .update({
+        // `status` is the canonical Matter lifecycle field governed by migration 046.
+        // `deal_status` remains compatibility-only and mirrors the canonical state.
+        status: "scheduled",
         deal_status: "scheduled",
-        ...(body.execution_date ? { execution_date: body.execution_date } : {}),
+        ...(body.execution_date
+          ? { execution_date: body.execution_date }
+          : {}),
       })
       .eq("id", id)
       .select()
       .single();
+
+    if (updateError || !updated) {
+      return NextResponse.json(
+        {
+          error: "SCHEDULING_TRANSITION_FAILED",
+          message:
+            "The Matter could not be moved to scheduled. No scheduling state was fabricated.",
+        },
+        { status: 409 },
+      );
+    }
 
     void (async () => {
       const {
@@ -53,7 +72,12 @@ export async function POST(
         detail: body.execution_date
           ? `Scheduled for ${body.execution_date}`
           : "Marked scheduled",
-        meta: { execution_date: body.execution_date ?? null, payment_requirement_method: schedulingGate.paymentRequirementMethod },
+        meta: {
+          execution_date: body.execution_date ?? null,
+          payment_requirement_method:
+            schedulingGate.paymentRequirementMethod,
+          canonical_status: "scheduled",
+        },
       });
     })();
 
@@ -61,7 +85,7 @@ export async function POST(
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
