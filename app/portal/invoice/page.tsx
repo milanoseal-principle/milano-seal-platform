@@ -123,9 +123,7 @@ export default function ClientInvoicePage() {
             color: "rgba(255,255,255,0.48)",
           }}
         >
-          No payment is due for this Matter. This authorization is a separate
-          zero-revenue disposition and is not a paid status or Wise Payment
-          Confirmed status.
+          No payment is due for this Matter. This authorization is a separate zero-revenue disposition and is not a paid status or Wise Payment Confirmed status.
         </p>
         <div
           data-critical-card=""
