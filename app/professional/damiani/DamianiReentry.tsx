@@ -29,7 +29,7 @@ const COPY: Record<
     primary: "Avvia una nuova pratica",
     secondary: "Richiedi assistenza",
     courtesyRecognized:
-      "Codice di cortesia DAMIANI50 riconosciuto. L’idoneità sarà verificata e l’adeguamento applicato prima del pagamento.",
+      "Codice di cortesia DAMIANI50 riconosciuto per la verifica. L’idoneità sarà verificata e l’adeguamento applicato prima del pagamento.",
     switchLabel: "English",
     reviewNote:
       "The Milano Seal esaminerà il percorso di esecuzione proposto e confermerà i requisiti operativi prima di formulare un preventivo o programmare il servizio.",
@@ -42,7 +42,7 @@ const COPY: Record<
     primary: "Start a new matter",
     secondary: "Request assistance",
     courtesyRecognized:
-      "Courtesy code DAMIANI50 recognized. Eligibility will be verified and the adjustment applied before payment.",
+      "Courtesy code DAMIANI50 recognized for verification. Eligibility will be verified and the adjustment applied before payment.",
     switchLabel: "Italiano",
     reviewNote:
       "The Milano Seal will review the proposed execution route and confirm operational requirements before quoting or scheduling.",
@@ -51,21 +51,14 @@ const COPY: Record<
 
 const GOLD = "#C6A55A";
 
-export function DamianiReentry({
-  courtesyDetected,
-  initialLang,
-}: {
-  courtesyDetected: boolean;
-  initialLang: Lang;
-}) {
+export function DamianiReentry({ initialLang }: { initialLang: Lang }) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const copy = COPY[lang];
 
-  // Carry the courtesy signal into intake so the operator can verify eligibility
-  // downstream. This is a display/routing hint only — never an authorization.
-  const intakeHref = courtesyDetected
-    ? "/intake?lane=professional&courtesy=DAMIANI50"
-    : "/intake?lane=professional";
+  // The dedicated re-entry route always requests DAMIANI50 for server-side
+  // validation. This routing signal is never authorization or redemption.
+  const intakeHref =
+    "/intake?lane=professional&courtesy=DAMIANI50&source=damiani-reentry";
 
   const assistanceSubject = encodeURIComponent(
     lang === "it"
@@ -112,19 +105,17 @@ export function DamianiReentry({
             {copy.verified}
           </p>
 
-          {courtesyDetected ? (
-            <div
-              className="mt-6 rounded-xl border px-4 py-3 text-[15px] leading-relaxed"
-              style={{
-                borderColor: "rgba(198,165,90,0.35)",
-                background: "rgba(198,165,90,0.06)",
-                color: "rgba(255,255,255,0.82)",
-              }}
-              role="status"
-            >
-              {copy.courtesyRecognized}
-            </div>
-          ) : null}
+          <div
+            className="mt-6 rounded-xl border px-4 py-3 text-[15px] leading-relaxed"
+            style={{
+              borderColor: "rgba(198,165,90,0.35)",
+              background: "rgba(198,165,90,0.06)",
+              color: "rgba(255,255,255,0.82)",
+            }}
+            role="status"
+          >
+            {copy.courtesyRecognized}
+          </div>
         </div>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-3">
