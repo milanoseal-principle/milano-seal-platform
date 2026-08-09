@@ -26,6 +26,7 @@ const wiseWebhook = source("app/api/webhooks/wise/route.ts");
 const schedulingRoute = source("app/api/deals/[id]/schedule/route.ts");
 const damianiPage = source("app/professional/damiani/page.tsx");
 const damianiClient = source("app/professional/damiani/DamianiReentry.tsx");
+const intakeRoute = source("app/api/intake/route.ts");
 
 check(
   "canonical governance script is wired",
@@ -93,6 +94,45 @@ check(
     "English",
     "/intake?lane=professional&courtesy=DAMIANI50",
   ]),
+);
+
+// Canonical Matter lifecycle must remain independent from payment state.
+// Every new deal row begins at intake_received; payment stays unpaid; the
+// legacy deal_status value is compatibility metadata only.
+const canonicalInsertCount =
+  intakeRoute.match(/status:\s*["']intake_received["']/g)?.length ?? 0;
+const unpaidCount =
+  intakeRoute.match(/payment_status:\s*["']unpaid["']/g)?.length ?? 0;
+const legacyAwaitingPaymentCount =
+  intakeRoute.match(/deal_status:\s*["']awaiting_payment["']/g)?.length ?? 0;
+
+check(
+  "all Smart Intake insert paths seed canonical intake_received state",
+  canonicalInsertCount >= 4,
+);
+
+check(
+  "Smart Intake keeps payment status separate and unpaid at creation",
+  unpaidCount >= 4,
+);
+
+check(
+  "legacy deal_status remains awaiting_payment compatibility metadata",
+  legacyAwaitingPaymentCount >= 3,
+);
+
+check(
+  "deal engine handoff starts from canonical intake_received",
+  /runDealEngine\(\{[\s\S]*?status:\s*["']intake_received["'][\s\S]*?payment_status:\s*["']unpaid["']/.test(
+    intakeRoute,
+  ),
+);
+
+check(
+  "Smart Intake does not hand the engine awaiting_payment as canonical status",
+  !/runDealEngine\(\{[\s\S]*?status:\s*["']awaiting_payment["']/.test(
+    intakeRoute,
+  ),
 );
 
 const failures = checks.filter(({ ok }) => !ok);
