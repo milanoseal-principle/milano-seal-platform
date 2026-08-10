@@ -37,12 +37,15 @@ for (const column of ["status", "payment_status", "payment_confirmed", "currency
 const intakeRepair = fs.readFileSync(path.join(dir, "049_dashboard_intake_payment_status_reconciliation.sql"), "utf8");
 for (const invariant of [
   "add column if not exists discount_amount",
-  "set payment_status = 'unpaid'",
   "alter column payment_status set default 'unpaid'",
   "'unpaid'",
+  "'pending'",
   "drop constraint if exists deals_payment_status_check",
 ]) {
   if (!intakeRepair.includes(invariant)) throw new Error(`049 intake persistence repair missing invariant: ${invariant}`);
+}
+if (/update\s+public\.deals[\s\S]*payment_status\s*=\s*'unpaid'/i.test(intakeRepair)) {
+  throw new Error("049 must not bulk-rewrite legacy pending payment state during the intake repair increment");
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
