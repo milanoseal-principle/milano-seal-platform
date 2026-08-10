@@ -49,10 +49,15 @@ test("generic deal PATCH cannot jump directly to scheduled or in_execution", () 
 });
 
 test("schedule route blocks unresolved execution truth before payment gate", () => {
-  const executionCheck = scheduleRoute.indexOf("EXECUTION_REVIEW_REQUIRED");
-  const paymentCheck = scheduleRoute.indexOf("evaluateSchedulingGate");
-  assert.ok(executionCheck > -1);
-  assert.ok(paymentCheck > executionCheck);
+  const executionValidation = scheduleRoute.indexOf("validateExecutionTruth");
+  const executionBlock = scheduleRoute.indexOf("EXECUTION_REVIEW_REQUIRED");
+  const paymentGateEvaluation = scheduleRoute.indexOf(
+    "const schedulingGate = evaluateSchedulingGate({ matter: deal });",
+  );
+
+  assert.ok(executionValidation > -1);
+  assert.ok(executionBlock > executionValidation);
+  assert.ok(paymentGateEvaluation > executionBlock);
 });
 
 test("legacy admin move pipeline cannot bypass execution or canonical scheduling gate", () => {
