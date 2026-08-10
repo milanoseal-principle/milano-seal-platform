@@ -11,6 +11,22 @@ export const metadata: Metadata = {
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };
 
+type IntakeSearchParams = {
+  tier?: string;
+  lane?: string;
+  destination?: string;
+  country?: string;
+  document?: string;
+  useCase?: string;
+  matter?: string;
+  courtesy?: string;
+  source?: string;
+  referral_source?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+};
+
 function normalizeCourtesyCode(value?: string): string | undefined {
   const normalized = value?.trim().toUpperCase();
   if (!normalized) return undefined;
@@ -20,16 +36,7 @@ function normalizeCourtesyCode(value?: string): string | undefined {
 function IntakeContent({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <Suspense fallback={<div className="h-[600px]" />}>
@@ -41,16 +48,7 @@ function IntakeContent({
 async function IntakeWizardWrapper({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   const params = await searchParams;
   const prefill = {
@@ -86,16 +84,7 @@ async function IntakeWizardWrapper({
 export default function IntakePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <main className="ms-os-page min-h-screen bg-[#0A0A0A]">
