@@ -170,6 +170,15 @@ check(
 );
 
 check(
+  "intake preserves the eligible-subtotal boundary instead of discounting pass-through charges",
+  containsAll(intakeRoute, [
+    "non_discountable_total",
+    "eligibleSubtotal",
+    "nonDiscountableTotal",
+  ]) && !intakeRoute.includes("const eligibleSubtotalCents = Math.round(Number(pricing.total) * 100)"),
+);
+
+check(
   "client monetary truth uses discounted effective total",
   containsAll(intakeRoute, [
     "estimated_value: effectiveTotal",
