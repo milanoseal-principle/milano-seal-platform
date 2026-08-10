@@ -4,6 +4,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { getCountryBySlug, COUNTRY_REGISTRY } from "@/lib/compliance/countries";
 import { buildCountryPageSchema } from "@/lib/compliance/schemaBuilders";
+import { applyVerifiedCountryOverride } from "@/lib/compliance/verified-country-overrides";
 import { CountryAuthorityPage } from "@/components/seo/CountryAuthorityPage";
 import { getPremiumCorridor } from "@/lib/seo-premium-corridors";
 
@@ -15,8 +16,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country: slug } = await params;
-  const country = getCountryBySlug(slug);
-  if (!country) return {};
+  const baseCountry = getCountryBySlug(slug);
+  if (!baseCountry) return {};
+  const country = applyVerifiedCountryOverride(baseCountry);
 
   const corridor = getPremiumCorridor(slug);
   const canonical = `https://www.themilanoseal.com/apostille/${slug}`;
@@ -58,8 +60,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ApostilleCountryPage({ params }: Props) {
   const { country: slug } = await params;
-  const country = getCountryBySlug(slug);
-  if (!country) notFound();
+  const baseCountry = getCountryBySlug(slug);
+  if (!baseCountry) notFound();
+  const country = applyVerifiedCountryOverride(baseCountry);
 
   const corridor = getPremiumCorridor(slug);
   const url = `https://www.themilanoseal.com/apostille/${slug}`;
