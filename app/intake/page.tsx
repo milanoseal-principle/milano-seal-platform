@@ -11,25 +11,37 @@ export const metadata: Metadata = {
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };
 
+type IntakeSearchParams = {
+  tier?: string;
+  lane?: string;
+  destination?: string;
+  country?: string;
+  document?: string;
+  useCase?: string;
+  matter?: string;
+  courtesy?: string;
+  source?: string;
+  referral_source?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+};
+
 function normalizeCourtesyCode(value?: string): string | undefined {
   const normalized = value?.trim().toUpperCase();
   if (!normalized) return undefined;
   return /^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(normalized) ? normalized : undefined;
 }
 
+function normalizeQueryValue(value?: string): string | undefined {
+  const normalized = value?.trim().slice(0, 160);
+  return normalized || undefined;
+}
+
 function IntakeContent({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <Suspense fallback={<div className="h-[600px]" />}>
@@ -41,16 +53,7 @@ function IntakeContent({
 async function IntakeWizardWrapper({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   const params = await searchParams;
   const prefill = {
@@ -74,11 +77,23 @@ async function IntakeWizardWrapper({
   // hard-coding production courtesy programs into the browser layer.
   const courtesyCode = normalizeCourtesyCode(params.courtesy);
 
+  // Acquisition values are observational only. They never alter pricing,
+  // compliance, payment, scheduling, or execution state. They are retained
+  // so organic search and professional corridor conversions can be measured.
+  const acquisitionContext = {
+    landingSource: normalizeQueryValue(params.source),
+    referralSource: normalizeQueryValue(params.referral_source),
+    utmSource: normalizeQueryValue(params.utm_source),
+    utmMedium: normalizeQueryValue(params.utm_medium),
+    utmCampaign: normalizeQueryValue(params.utm_campaign),
+  };
+
   return (
     <SmartIntakeSOPWizard
       initialTier={validTier}
       prefill={prefill}
       courtesyCode={courtesyCode}
+      acquisitionContext={acquisitionContext}
     />
   );
 }
@@ -86,16 +101,7 @@ async function IntakeWizardWrapper({
 export default function IntakePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-    courtesy?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <main className="ms-os-page min-h-screen bg-[#0A0A0A]">
