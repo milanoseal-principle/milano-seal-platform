@@ -1,230 +1,390 @@
 # Wise Payment Gate — Operator Smoke Test
-**Milano Seal OS — Pre-Production Checklist**
-Status: MIGRATION PENDING / WEBHOOK REGISTRATION PENDING / SMOKE TEST PENDING
+**Milano Seal OS — Production Checklist**
+
+Status: LIVE WEBHOOKS PRESENT / LIVE PAYLOAD VALIDATION REQUIRED
 
 ---
 
-## Prerequisites
+## Canonical production truth
 
-Apply migration 016 BEFORE registering the webhook URL in Wise.
+Wise is the only payment authority for Milano Seal execution release.
 
-```sql
--- Verify tables exist after migration
-SELECT table_name FROM information_schema.tables
-WHERE table_name IN (
-  'wise_payment_intents',
-  'wise_webhook_events',
-  'payment_gate_audit',
-  'wise_reconciliation_runs'
-);
--- Expected: 4 rows
+Current live callback:
+
+```text
+https://www.themilanoseal.com/api/webhooks/wise
 ```
 
+Current Wise subscriptions observed in the Wise Business account:
+
+- Account deposits
+- Transfer updates
+- Transfer issues
+
+All currently point to the canonical callback above.
+
+Current subscriptions were created on schema `2.0.0`. Wise recommends the latest supported schema for each event; `4.0.0+` provides millisecond-precision ordering timestamps.
+
+Do not delete the existing subscriptions until the replacement subscriptions have delivered successful signed test events to production.
+
 ---
 
-## Environment Checks
+## Critical payload rule
 
-### 1. Environment Variables
+Do not model `balances#credit` as if these values all live on `data.resource`:
 
-Confirm in Vercel (server-side only, never NEXT_PUBLIC):
+```text
+resource.reference
+resource.amount
+resource.currency
+```
 
-| Variable | Required | Notes |
+That is not the documented Wise balance-credit payload.
+
+For current Wise balance-credit schemas, the balance/profile identifier is in `data.resource`, while transaction values such as amount, currency and occurred-at are in `data`.
+
+A generic balance credit does **not** provide a Milano invoice/matter reference that is safe to use as automatic payment authority.
+
+Therefore:
+
+```text
+balances#credit
+→ authenticate
+→ deduplicate
+→ store event
+→ parse amount/currency from data
+→ require reconciliation
+→ DO NOT unlock scheduling from amount-only matching
+```
+
+This is intentionally fail-closed.
+
+---
+
+## Environment checks
+
+Confirm in Vercel. All values are server-side only.
+
+| Variable | Required | Production value |
 |---|---|---|
-| `WISE_ENV` | Yes | `sandbox` or `production` |
-| `WISE_API_TOKEN` | Yes | Personal token or OAuth |
-| `WISE_PROFILE_ID` | Yes | Business profile ID |
-| `WISE_WEBHOOK_ALLOWED_TEST` | No | `true` only in sandbox |
+| `WISE_ENV` | Yes | `production` |
+| `WISE_API_TOKEN` | Yes | existing Wise Business personal API token |
+| `WISE_PROFILE_ID` | Yes | Wise Business profile ID |
+| `WISE_WEBHOOK_ALLOWED_TEST` | Yes | `false` |
+| `WISE_WEBHOOK_TEST_BYPASS` | No | MUST be unset |
 
-Verify no Wise secrets appear in client bundle:
+Never create any `NEXT_PUBLIC_WISE_*` variable.
+
+Verify no Wise secrets appear in the client bundle:
 
 ```bash
-grep -rn "WISE_API_TOKEN\|WISE_CLIENT_SECRET" .next/static/ 2>/dev/null
+grep -rn "WISE_API_TOKEN\|WISE_CLIENT_SECRET\|NEXT_PUBLIC_WISE" .next/static/ 2>/dev/null
 # Expected: no output
 ```
 
-### 2. Webhook URL
+---
 
-Correct URL (no query params — Wise requirement):
-```
-https://themilanoseal.com/api/webhooks/wise
-```
+## Canonical webhook security
 
-Register in Wise dashboard > Settings > Webhooks.
+Every production event must:
 
-Subscribe to:
-- `transfers#state-change`
-- `balances#credit`
-- `balances#update`
-- `transfers#payout-failure`
-- `transfers#refund`
+1. arrive over HTTPS
+2. be read as the raw request body
+3. verify `X-Signature-SHA256` against Wise's production RSA public key
+4. deduplicate with `X-Delivery-Id`
+5. preserve `X-Test-Notification`
+6. store the raw provider event server-side only
+7. never expose provider payloads in client/portal responses
+8. never change `payment_status` to paid unless payment authority is proven
+
+Wise may deliver events more than once and events may arrive out of order.
+
+Use `data.occurred_at` for event chronology when the event provides it.
 
 ---
 
-## Test Cases
-
-### Test 1 — Unpaid matter cannot schedule
+## Test 1 — webhook route is live
 
 ```bash
-# Create matter, do NOT mark paid
-curl -X POST https://themilanoseal.com/api/deals/{MATTER_ID}/schedule \
-  -H "Cookie: <operator-session>"
-
-# Expected: HTTP 402
-# { "error": "PAYMENT_REQUIRED", "message": "Payment must be confirmed..." }
+curl -i https://www.themilanoseal.com/api/webhooks/wise
 ```
 
-Check `payment_gate_audit` table — should have 1 row with `gate_status = PAYMENT_REQUIRED`.
+Expected:
+
+```text
+HTTP 200
+{"ok":true}
+```
+
+A redirect is a failure. Wise does not follow webhook redirects.
 
 ---
 
-### Test 2 — Partial payment cannot schedule
+## Test 2 — invalid signature is rejected
 
 ```bash
-# Set amount_due = 975, amount_paid = 500, payment_status = partial
-# Attempt schedule
-
-# Expected: HTTP 402
-# { "error": "PARTIAL_PAYMENT" }
-```
-
----
-
-### Test 3 — Invalid webhook signature is rejected
-
-```bash
-curl -X POST https://themilanoseal.com/api/webhooks/wise \
+curl -i -X POST https://www.themilanoseal.com/api/webhooks/wise \
   -H "Content-Type: application/json" \
   -H "X-Signature-SHA256: invalidsignature" \
-  -d '{"event_type":"transfers#state-change"}'
-
-# Expected: HTTP 401
-# Payment status must NOT change
-# wise_webhook_events should have row with signature_valid = false
+  -d '{"event_type":"balances#credit","schema_version":"4.0.0","data":{}}'
 ```
-
----
-
-### Test 4 — Duplicate X-Delivery-Id is ignored
-
-Send the same Wise test webhook twice (same X-Delivery-Id).
-
-```
-First delivery: HTTP 200
-Second delivery: HTTP 200, body: { "received": true, "duplicate": true }
-Payment status advances only once.
-```
-
----
-
-### Test 5 — Valid matched payment confirms
-
-Send Wise test webhook with:
-- Valid RSA signature
-- `event_type: balances#credit`
-- `resource.reference` = existing `wise_reference` on a deal
-- `resource.amount` >= `amount_due`
-- `resource.currency = "USD"`
-- `WISE_ENV = sandbox`, `X-Test-Notification: true`, `WISE_WEBHOOK_ALLOWED_TEST = true`
 
 Expected:
-- `deals.payment_status = "paid"`
-- `deals.amount_paid = <amount>`
-- `deals.payment_confirmed_at` = timestamp
-- `wise_webhook_events` row with `processed = true`
-- `deal_activity` row with `action = "payment_confirmed"`
+
+```text
+HTTP 401
+```
+
+Payment state must not change.
 
 ---
 
-### Test 6 — Payment confirmed unlocks scheduling only
+## Test 3 — duplicate delivery is idempotent
 
-After Test 5, attempt to schedule:
+Deliver the same valid Wise event twice using the same `X-Delivery-Id`.
+
+Expected second response:
+
+```json
+{
+  "received": true,
+  "duplicate": true
+}
+```
+
+No payment transition may execute twice.
+
+---
+
+## Test 4 — real balance-credit shape does not auto-pay
+
+Use the Wise-documented balance credit shape:
+
+```json
+{
+  "schema_version": "4.0.0",
+  "subscription_id": "01234567-89ab-cdef-0123-456789abcdef",
+  "event_type": "balances#credit",
+  "sent_at": "2026-08-10T12:34:56.123Z",
+  "data": {
+    "resource": {
+      "type": "balance-account",
+      "id": 111,
+      "profile_id": 222
+    },
+    "transaction_type": "credit",
+    "amount": 975,
+    "currency": "USD",
+    "post_transaction_balance_amount": 1500,
+    "occurred_at": "2026-08-10T12:34:55.789Z"
+  }
+}
+```
+
+Expected:
+
+```text
+HTTP 200
+wise_webhook_events row stored
+processing_error = PAYMENT_REVIEW_REQUIRED: balance_credit_requires_statement_reconciliation
+NO deals.payment_status change
+NO scheduling unlock
+```
+
+This test is mandatory because prior test documentation incorrectly placed the reference, amount and currency on `resource`.
+
+---
+
+## Test 5 — exact inbound reference is required for automatic confirmation
+
+Automatic confirmation is allowed only when an authenticated inbound Wise event actually carries a payer/matter reference and all of the following are exact:
+
+```text
+reference == deals.wise_reference OR deals.deal_id
+amount == deals.amount_due
+currency == USD
+production environment is valid
+payment is not already paid
+```
+
+Then and only then:
+
+```text
+confirm_wise_payment_for_deal(...)
+→ payment_status = paid
+→ amount_paid updated
+→ payment confirmation persisted
+→ custody ledger appended
+→ activity logged
+→ payment_cleared notification emitted
+→ scheduling gate becomes eligible
+```
+
+No amount-only, name-only, timestamp-only, or balance-only match is payment authority.
+
+---
+
+## Test 6 — underpayment stays locked
+
+For a referenced inbound event where:
+
+```text
+amount_due = 975.00
+amount_received = 500.00
+```
+
+Expected:
+
+```text
+PAYMENT_REVIEW_REQUIRED: underpayment
+payment_status unchanged
+scheduling locked
+```
+
+---
+
+## Test 7 — overpayment stays locked for review
+
+For a referenced inbound event where:
+
+```text
+amount_due = 975.00
+amount_received = 1000.00
+```
+
+Expected:
+
+```text
+PAYMENT_REVIEW_REQUIRED: overpayment
+payment_status unchanged
+scheduling locked
+```
+
+---
+
+## Test 8 — currency mismatch stays locked
+
+For a referenced inbound event where the deal is USD but the event is EUR:
+
+Expected:
+
+```text
+PAYMENT_REVIEW_REQUIRED: currency_mismatch
+payment_status unchanged
+scheduling locked
+```
+
+---
+
+## Test 9 — production test notifications do not unlock payment
+
+Production must have:
+
+```text
+WISE_ENV=production
+WISE_WEBHOOK_ALLOWED_TEST=false
+```
+
+A Wise event with:
+
+```text
+X-Test-Notification: true
+```
+
+must return success/skip behavior without modifying payment authority.
+
+---
+
+## Test 10 — transfer updates are not client-payment authority
+
+`transfers#state-change` describes Wise transfer lifecycle state.
+
+`outgoing_payment_sent` means Wise sent an outbound payout. It must never be interpreted as a Milano client payment.
+
+Expected:
+
+```text
+outgoing_payment_sent
+→ PAYMENT_REVIEW_REQUIRED
+→ no client payment confirmation
+→ no scheduling unlock
+```
+
+---
+
+## Test 11 — transfer issues do not unlock payment
+
+`transfers#payout-failure` is operational failure intelligence for a payout.
+
+Expected:
+
+```text
+store/authenticate event
+never mark client matter paid
+never unlock scheduling
+```
+
+---
+
+## Test 12 — portal isolation
 
 ```bash
-curl -X POST https://themilanoseal.com/api/deals/{MATTER_ID}/schedule \
-  -H "Cookie: <operator-session>"
-
-# Expected: HTTP 200 — matter advances to "scheduled"
-# Matter must NOT jump to in_execution or beyond
-```
-
----
-
-### Test 7 — Unmatched Wise event flags review
-
-Send webhook with valid signature but `resource.reference` that does not match any deal.
-
-Expected:
-- HTTP 200 (received)
-- `wise_webhook_events` row with `processing_error = "PAYMENT_REVIEW_REQUIRED: no_matching_deal"`
-- NO payment status change on any deal
-
----
-
-### Test 8 — Test notification blocked in production
-
-Set `WISE_ENV = production`, `WISE_WEBHOOK_ALLOWED_TEST` unset or `false`.
-Send webhook with `X-Test-Notification: true`.
-
-Expected:
-- HTTP 200, body: `{ "received": true, "skipped": true, "reason": "test_notification_blocked" }`
-- Payment status unchanged
-
----
-
-### Test 9 — Portal does not expose raw Wise payload
-
-```bash
-curl https://themilanoseal.com/api/portal/me/payment \
+curl https://www.themilanoseal.com/api/portal/me/payment \
   -H "Cookie: <portal-session>"
+```
 
-# Expected: Only sanitized fields returned
-# Must NOT contain: raw_payload, wise_transfer_id, wise_api_token,
-#                   processing_error, idempotency_hash, delivery_id
+Must not expose:
+
+```text
+raw_payload
+WISE_API_TOKEN
+idempotency_hash
+delivery_id
+signature material
+provider internals
 ```
 
 ---
 
-### Test 10 — Ledger records payment confirmation
+## Wise subscription replacement sequence
 
-```sql
-SELECT * FROM deal_activity
-WHERE action = 'payment_confirmed'
-ORDER BY created_at DESC
-LIMIT 5;
--- Expected: row with actor = 'wise-webhook', amount_confirmed, scheduling_unlocked
+Do this only after the deployed webhook handler is green.
+
+For each current subscription:
+
+```text
+1. Create a replacement subscription
+2. Same callback URL
+3. Same intended event type
+4. Select latest available schema
+5. Confirm Wise automatic test notification succeeds
+6. Confirm event appears in wise_webhook_events
+7. Confirm no unauthorized payment transition occurred
+8. Only then delete the old 2.0.0 subscription
 ```
 
----
-
-### Test 11 — Migration 016 applied before webhook registration
-
-Checklist (operator sign-off required):
-
-- [ ] Migration 016 applied in Supabase
-- [ ] `wise_payment_intents` table exists
-- [ ] `wise_webhook_events` table exists
-- [ ] `payment_gate_audit` table exists
-- [ ] DB trigger `enforce_payment_gate` exists on `deals`
-- [ ] RLS policies confirmed service_role only
-- [ ] Webhook URL registered in Wise (no query params)
-- [ ] `WISE_ENV` set correctly in Vercel
-- [ ] `WISE_WEBHOOK_ALLOWED_TEST = false` in production
-- [ ] All 11 tests above passed in sandbox before switching to production
+Do not create duplicate long-lived subscriptions for the same event after validation, because Wise will deliver duplicate callbacks to every active subscription.
 
 ---
 
-## Operator Sign-Off
+## Production acceptance gate
 
-Before switching `WISE_ENV=production`:
+Do not declare Wise transaction-ready until all are true:
 
-| Check | Status | Signed By |
-|---|---|---|
-| Migration 016 applied | ☐ | |
-| Sandbox smoke test passed | ☐ | |
-| Invalid signature test passed | ☐ | |
-| Duplicate dedup confirmed | ☐ | |
-| Portal isolation confirmed | ☐ | |
-| Wise account model confirmed (personal token vs OAuth) | ☐ | |
-| Inbound payment event type confirmed with Wise | ☐ | |
+- [ ] `GET /api/webhooks/wise` returns direct HTTP 200
+- [ ] invalid signatures return 401
+- [ ] production RSA key matches current Wise documentation
+- [ ] duplicate `X-Delivery-Id` is idempotent
+- [ ] real `balances#credit` payload parses `data.amount` and `data.currency`
+- [ ] generic account deposit cannot auto-unlock a matter
+- [ ] exact referenced inbound payment can call the atomic confirmation RPC
+- [ ] underpayment remains locked
+- [ ] overpayment remains locked
+- [ ] currency mismatch remains locked
+- [ ] test notifications cannot alter production payment authority
+- [ ] transfer updates cannot masquerade as client deposits
+- [ ] transfer issues cannot masquerade as client deposits
+- [ ] client portal exposes no Wise secrets/provider payload
+- [ ] latest-schema replacement subscription test succeeds before deleting 2.0.0 subscription
 
-**DO NOT switch WISE_ENV=production until all boxes checked.**
+Until these pass, Wise remains connected but **not proven end-to-end transaction-ready**.
