@@ -13,11 +13,12 @@ const migration = fs.readFileSync(
 
 test("production schema accepts canonical unpaid intake state and persists discount amount", () => {
   assert.match(migration, /add column if not exists discount_amount/i);
-  assert.match(migration, /set payment_status = 'unpaid'/i);
   assert.match(migration, /alter column payment_status set default 'unpaid'/i);
   assert.match(migration, /drop constraint if exists deals_payment_status_check/i);
   assert.match(migration, /'unpaid'/i);
+  assert.match(migration, /'pending'/i);
   assert.match(migration, /'paid'/i);
+  assert.doesNotMatch(migration, /update\s+public\.deals[\s\S]*payment_status\s*=\s*'unpaid'/i);
 });
 
 test("intake persistence fails closed instead of silently saving a stripped fallback Matter", () => {
