@@ -5,9 +5,6 @@ import Link from "next/link";
 
 type Lang = "it" | "en";
 
-// Copy is mirrored exactly from the approved bilingual source. The Italian
-// version is canonical for this journey; the English toggle communicates the
-// same eligibility, exclusions, and legal posture without changing meaning.
 const COPY: Record<
   Lang,
   {
@@ -17,6 +14,7 @@ const COPY: Record<
     primary: string;
     secondary: string;
     courtesyRecognized: string;
+    courtesyNotRequested: string;
     switchLabel: string;
     reviewNote: string;
   }
@@ -29,7 +27,9 @@ const COPY: Record<
     primary: "Avvia una nuova pratica",
     secondary: "Richiedi assistenza",
     courtesyRecognized:
-      "Codice di cortesia DAMIANI50 riconosciuto per la verifica. L’idoneità sarà verificata e l’adeguamento applicato prima del pagamento.",
+      "Codice di cortesia DAMIANI50 riconosciuto per la verifica. L’idoneità sarà verificata dal sistema e l’adeguamento applicato solo dopo la verifica dell’identità professionale.",
+    courtesyNotRequested:
+      "Se dispone del codice di cortesia DAMIANI50, potrà inserirlo nel percorso di preventivo prima del pagamento. Nessuno sconto viene applicato automaticamente senza verifica.",
     switchLabel: "English",
     reviewNote:
       "The Milano Seal esaminerà il percorso di esecuzione proposto e confermerà i requisiti operativi prima di formulare un preventivo o programmare il servizio.",
@@ -42,7 +42,9 @@ const COPY: Record<
     primary: "Start a new matter",
     secondary: "Request assistance",
     courtesyRecognized:
-      "Courtesy code DAMIANI50 recognized for verification. Eligibility will be verified and the adjustment applied before payment.",
+      "Courtesy code DAMIANI50 recognized for verification. Eligibility will be verified by the system and the adjustment applied only after professional identity verification.",
+    courtesyNotRequested:
+      "If you have courtesy code DAMIANI50, you can enter it during the quote flow before payment. No discount is applied automatically without verification.",
     switchLabel: "Italiano",
     reviewNote:
       "The Milano Seal will review the proposed execution route and confirm operational requirements before quoting or scheduling.",
@@ -51,14 +53,22 @@ const COPY: Record<
 
 const GOLD = "#C6A55A";
 
-export function DamianiReentry({ initialLang }: { initialLang: Lang }) {
+export function DamianiReentry({
+  initialLang,
+  courtesyRequested,
+}: {
+  initialLang: Lang;
+  courtesyRequested: boolean;
+}) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const copy = COPY[lang];
 
-  // The dedicated re-entry route always requests DAMIANI50 for server-side
-  // validation. This routing signal is never authorization or redemption.
-  const intakeHref =
-    "/intake?lane=professional&courtesy=DAMIANI50&source=damiani-reentry";
+  // Carry only a courtesy-routing signal into intake. The backend remains
+  // authoritative for code validity, professional identity, eligible subtotal,
+  // redemption lifecycle, and final Wise amount.
+  const intakeHref = courtesyRequested
+    ? "/intake?lane=professional&courtesy=DAMIANI50&source=damiani-reentry"
+    : "/intake?lane=professional&source=damiani-reentry";
 
   const assistanceSubject = encodeURIComponent(
     lang === "it"
@@ -79,9 +89,7 @@ export function DamianiReentry({ initialLang }: { initialLang: Lang }) {
             onClick={() => setLang(lang === "it" ? "en" : "it")}
             className="min-h-[44px] px-4 rounded-full border text-[15px] transition-colors"
             style={{ borderColor: "rgba(198,165,90,0.5)", color: GOLD }}
-            aria-label={
-              lang === "it" ? "Switch to English" : "Passa all’italiano"
-            }
+            aria-label={lang === "it" ? "Switch to English" : "Passa all’italiano"}
           >
             {copy.switchLabel}
           </button>
@@ -114,7 +122,9 @@ export function DamianiReentry({ initialLang }: { initialLang: Lang }) {
             }}
             role="status"
           >
-            {copy.courtesyRecognized}
+            {courtesyRequested
+              ? copy.courtesyRecognized
+              : copy.courtesyNotRequested}
           </div>
         </div>
 

@@ -97,11 +97,28 @@ export async function applyDiscountToMatter(
   const retainerRatio = priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;
   const depositAmount = money(finalTotal * retainerRatio);
   const balanceDue = money(finalTotal - depositAmount);
+
   const updated = await updateMatter(matterId, {
-    discount_code: discount.code, discount_type: discount.discount_type,
-    discount_value: Number(discount.discount_value), discount_amount: discountAmount,
-    original_total: originalTotal, final_total: finalTotal, total_price: finalTotal,
-    invoice_retainer: depositAmount, invoice_balance: balanceDue, amount_due: depositAmount,
+    discount_code: discount.code,
+    discount_type: discount.discount_type,
+    discount_value: Number(discount.discount_value),
+    discount_amount: discountAmount,
+    original_total: originalTotal,
+    final_total: finalTotal,
+    total_price: finalTotal,
+    invoice_retainer: depositAmount,
+    invoice_balance: balanceDue,
+    amount_due: depositAmount,
+
+    // A pricing mutation invalidates every payment instruction derived from the
+    // previous amount. Wise must be regenerated from the new canonical amount.
+    payment_link: null,
+    balance_payment_link: null,
+    wise_payment_id: null,
+    wise_transfer_id: null,
+    payment_status: "unpaid",
+    payment_confirmed: false,
+    payment_confirmed_at: null,
   });
   if (updated.error) throw updated.error;
 
@@ -143,10 +160,27 @@ export async function removeDiscountFromMatter(
   const retainerRatio = priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;
   const depositAmount = money(originalTotal * retainerRatio);
   const balanceDue = money(originalTotal - depositAmount);
+
   const updated = await updateMatter(matterId, {
-    discount_code: null, discount_type: null, discount_value: null, discount_amount: 0,
-    final_total: originalTotal, total_price: originalTotal, invoice_retainer: depositAmount,
-    invoice_balance: balanceDue, amount_due: depositAmount,
+    discount_code: null,
+    discount_type: null,
+    discount_value: null,
+    discount_amount: 0,
+    final_total: originalTotal,
+    total_price: originalTotal,
+    invoice_retainer: depositAmount,
+    invoice_balance: balanceDue,
+    amount_due: depositAmount,
+
+    // Removing a discount also changes the canonical amount, so any existing
+    // Wise instruction must be discarded and regenerated from the restored total.
+    payment_link: null,
+    balance_payment_link: null,
+    wise_payment_id: null,
+    wise_transfer_id: null,
+    payment_status: "unpaid",
+    payment_confirmed: false,
+    payment_confirmed_at: null,
   });
   if (updated.error) throw updated.error;
   await writeEventLedger({ matterId, actorEmail, eventType: "DISCOUNT_REMOVED" });
