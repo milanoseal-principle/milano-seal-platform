@@ -285,7 +285,8 @@ function executionTruth(values: FormValues) {
     assigned_notary: values.assigned_notary?.trim() || null,
     notary_jurisdiction: values.notary_jurisdiction?.trim() || null,
     certificate_type: values.certificate_type?.trim() || null,
-    ron_kba_status: values.execution_method === "ron" ? values.ron_kba_status ?? null : null,
+    ron_kba_status:
+      values.execution_method === "ron" ? values.ron_kba_status ?? null : null,
     ron_credential_analysis_status:
       values.execution_method === "ron"
         ? values.ron_credential_analysis_status ?? null
@@ -311,44 +312,63 @@ export default function Intake() {
   });
 
   const watched = form.watch();
-  const truth = useMemo(() => executionTruth(watched), [watched]);
+  const quoteRequestJson = useMemo(() => {
+    const truth = executionTruth(watched);
+    return JSON.stringify({
+      origin_state: watched.origin_state,
+      destination_country: watched.destination_country,
+      document_type: watched.document_type,
+      docs_count: watched.docs_count,
+      signers: watched.signers,
+      witnesses: watched.witnesses,
+      witness_type:
+        watched.witnesses > 0
+          ? watched.witness_type ?? "in_person"
+          : undefined,
+      after_hours: watched.after_hours,
+      urgency: watched.urgency,
+      miles: watched.miles,
+      translation: watched.translation,
+      multi_country: watched.multi_country,
+      execution_truth: truth,
+      notarization_requirement: truth.notarization_requirement,
+      execution_method: truth.execution_method,
+      notarial_act: truth.notarial_act,
+      authentication_requirement: truth.authentication_requirement,
+    });
+  }, [
+    watched.origin_state,
+    watched.destination_country,
+    watched.document_type,
+    watched.docs_count,
+    watched.signers,
+    watched.witnesses,
+    watched.witness_type,
+    watched.after_hours,
+    watched.urgency,
+    watched.miles,
+    watched.translation,
+    watched.multi_country,
+    watched.notarization_requirement,
+    watched.execution_method,
+    watched.notarial_act,
+    watched.authentication_requirement,
+    watched.signer_location,
+    watched.execution_location,
+    watched.assigned_notary,
+    watched.notary_jurisdiction,
+    watched.certificate_type,
+    watched.ron_kba_status,
+    watched.ron_credential_analysis_status,
+  ]);
 
   useEffect(() => {
-    if (
-      !watched.document_type ||
-      !watched.destination_country ||
-      !watched.origin_state
-    ) {
-      return;
-    }
-
     const timeout = setTimeout(async () => {
       try {
         const response = await fetch("/api/pricing/quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            origin_state: watched.origin_state,
-            destination_country: watched.destination_country,
-            document_type: watched.document_type,
-            docs_count: watched.docs_count,
-            signers: watched.signers,
-            witnesses: watched.witnesses,
-            witness_type:
-              watched.witnesses > 0
-                ? watched.witness_type ?? "in_person"
-                : undefined,
-            after_hours: watched.after_hours,
-            urgency: watched.urgency,
-            miles: watched.miles,
-            translation: watched.translation,
-            multi_country: watched.multi_country,
-            execution_truth: truth,
-            notarization_requirement: truth.notarization_requirement,
-            execution_method: truth.execution_method,
-            notarial_act: truth.notarial_act,
-            authentication_requirement: truth.authentication_requirement,
-          }),
+          body: quoteRequestJson,
         });
         const json = (await response.json().catch(() => null)) as QuoteData | null;
         setQuoteData(json);
@@ -359,7 +379,7 @@ export default function Intake() {
     }, 250);
 
     return () => clearTimeout(timeout);
-  }, [watched, truth]);
+  }, [quoteRequestJson]);
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
@@ -374,8 +394,7 @@ export default function Intake() {
           name: values.client_name,
           country: values.destination_country,
           docs: values.docs_count,
-          apostille:
-            values.authentication_requirement === "apostille",
+          apostille: values.authentication_requirement === "apostille",
           apostille_required:
             values.authentication_requirement === "apostille",
           mobile: values.execution_method === "mobile",
@@ -566,7 +585,9 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Type</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="individual">Individual</SelectItem>
                           <SelectItem value="business">Business</SelectItem>
@@ -583,7 +604,9 @@ export default function Intake() {
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel>Company</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -595,7 +618,9 @@ export default function Intake() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
-                      <FormControl><Input type="email" {...field} /></FormControl>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -606,7 +631,9 @@ export default function Intake() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -626,10 +653,14 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Document type</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {DOC_TYPES.map((item) => (
-                            <SelectItem key={item} value={item}>{item}</SelectItem>
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -644,7 +675,10 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Use case (optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Italian dual citizenship" {...field} />
+                        <Input
+                          placeholder="e.g. Italian dual citizenship"
+                          {...field}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -656,10 +690,14 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Document origin / state</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {US_STATES.map((item) => (
-                            <SelectItem key={item} value={item}>{item}</SelectItem>
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -674,10 +712,14 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Destination country</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {COUNTRIES.map((item) => (
-                            <SelectItem key={item} value={item}>{item}</SelectItem>
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -691,7 +733,9 @@ export default function Intake() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Documents</FormLabel>
-                      <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                      <FormControl>
+                        <Input type="number" min={1} {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -703,7 +747,9 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Urgency</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="standard">Standard</SelectItem>
                           <SelectItem value="urgent">Urgent</SelectItem>
@@ -717,9 +763,12 @@ export default function Intake() {
 
             <Card className="border-gold bg-card">
               <CardHeader>
-                <CardTitle className="font-serif text-xl">Execution truth</CardTitle>
+                <CardTitle className="font-serif text-xl">
+                  Execution truth
+                </CardTitle>
                 <CardDescription>
-                  No field is inferred from another. Apostille does not imply notarization, and non-mobile never implies RON.
+                  No field is inferred from another. Apostille does not imply
+                  notarization, and non-mobile never implies RON.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -731,11 +780,17 @@ export default function Intake() {
                       <FormItem>
                         <FormLabel>Notarization</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="required">Required</SelectItem>
-                            <SelectItem value="not_required">Not Required</SelectItem>
-                            <SelectItem value="review_required">Review Required</SelectItem>
+                            <SelectItem value="not_required">
+                              Not Required
+                            </SelectItem>
+                            <SelectItem value="review_required">
+                              Review Required
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -754,19 +809,30 @@ export default function Intake() {
                           onValueChange={(value) => {
                             field.onChange(value);
                             if (value === "already_notarized") {
-                              form.setValue("notarization_requirement", "not_required");
+                              form.setValue(
+                                "notarization_requirement",
+                                "not_required",
+                              );
                             }
                             if (value !== "mobile") form.setValue("miles", 0);
                           }}
                         >
-                          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="ron">RON</SelectItem>
                             <SelectItem value="in_person">In-Person</SelectItem>
                             <SelectItem value="mobile">Mobile</SelectItem>
-                            <SelectItem value="already_notarized">Already Notarized</SelectItem>
-                            <SelectItem value="third_party_notary">Third-Party Notary</SelectItem>
-                            <SelectItem value="review_required">Review Required</SelectItem>
+                            <SelectItem value="already_notarized">
+                              Already Notarized
+                            </SelectItem>
+                            <SelectItem value="third_party_notary">
+                              Third-Party Notary
+                            </SelectItem>
+                            <SelectItem value="review_required">
+                              Review Required
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -781,14 +847,24 @@ export default function Intake() {
                       <FormItem>
                         <FormLabel>Notarial act</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="acknowledgment">Acknowledgment</SelectItem>
+                            <SelectItem value="acknowledgment">
+                              Acknowledgment
+                            </SelectItem>
                             <SelectItem value="jurat">Jurat</SelectItem>
-                            <SelectItem value="oath_affirmation">Oath / Affirmation</SelectItem>
-                            <SelectItem value="signature_witnessing">Signature Witnessing</SelectItem>
+                            <SelectItem value="oath_affirmation">
+                              Oath / Affirmation
+                            </SelectItem>
+                            <SelectItem value="signature_witnessing">
+                              Signature Witnessing
+                            </SelectItem>
                             <SelectItem value="other">Other</SelectItem>
-                            <SelectItem value="review_required">Review Required</SelectItem>
+                            <SelectItem value="review_required">
+                              Review Required
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -803,12 +879,20 @@ export default function Intake() {
                       <FormItem>
                         <FormLabel>Authentication</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="apostille">Apostille</SelectItem>
-                            <SelectItem value="authentication_legalization">Authentication / Legalization</SelectItem>
-                            <SelectItem value="not_required">Not Required</SelectItem>
-                            <SelectItem value="review_required">Review Required</SelectItem>
+                            <SelectItem value="authentication_legalization">
+                              Authentication / Legalization
+                            </SelectItem>
+                            <SelectItem value="not_required">
+                              Not Required
+                            </SelectItem>
+                            <SelectItem value="review_required">
+                              Review Required
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -826,7 +910,9 @@ export default function Intake() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Signers</FormLabel>
-                        <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                        <FormControl>
+                          <Input type="number" min={1} {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -837,7 +923,9 @@ export default function Intake() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Witnesses</FormLabel>
-                        <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                        <FormControl>
+                          <Input type="number" min={0} {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -849,8 +937,13 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Witness type</FormLabel>
-                          <Select value={field.value ?? "in_person"} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <Select
+                            value={field.value ?? "in_person"}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="in_person">In-Person</SelectItem>
                               <SelectItem value="ron">Remote (RON)</SelectItem>
@@ -870,7 +963,12 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Signer location</FormLabel>
-                          <FormControl><Input placeholder="City, State / Country" {...field} /></FormControl>
+                          <FormControl>
+                            <Input
+                              placeholder="City, State / Country"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -882,10 +980,14 @@ export default function Intake() {
                         <FormItem>
                           <FormLabel>RON KBA</FormLabel>
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
                             <SelectContent>
                               {RON_STATUS.map((item) => (
-                                <SelectItem key={item} value={item}>{titleCase(item)}</SelectItem>
+                                <SelectItem key={item} value={item}>
+                                  {titleCase(item)}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -900,10 +1002,14 @@ export default function Intake() {
                         <FormItem>
                           <FormLabel>Credential analysis</FormLabel>
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
                             <SelectContent>
                               {RON_STATUS.map((item) => (
-                                <SelectItem key={item} value={item}>{titleCase(item)}</SelectItem>
+                                <SelectItem key={item} value={item}>
+                                  {titleCase(item)}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -923,7 +1029,12 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Execution location</FormLabel>
-                          <FormControl><Input placeholder="Full execution address / venue" {...field} /></FormControl>
+                          <FormControl>
+                            <Input
+                              placeholder="Full execution address / venue"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -935,7 +1046,9 @@ export default function Intake() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Miles (round trip)</FormLabel>
-                            <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                            <FormControl>
+                              <Input type="number" min={0} {...field} />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -953,7 +1066,9 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Notary jurisdiction</FormLabel>
-                          <FormControl><Input placeholder="State / jurisdiction" {...field} /></FormControl>
+                          <FormControl>
+                            <Input placeholder="State / jurisdiction" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -964,7 +1079,12 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Certificate type</FormLabel>
-                          <FormControl><Input placeholder="Acknowledgment, jurat, other" {...field} /></FormControl>
+                          <FormControl>
+                            <Input
+                              placeholder="Acknowledgment, jurat, other"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -975,7 +1095,9 @@ export default function Intake() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Assigned notary</FormLabel>
-                          <FormControl><Input placeholder="Optional until assigned" {...field} /></FormControl>
+                          <FormControl>
+                            <Input placeholder="Optional until assigned" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -991,7 +1113,12 @@ export default function Intake() {
                       <FormItem className="flex items-center justify-between rounded-md border border-border p-3">
                         <FormLabel className="m-0">Certified translation</FormLabel>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={(checked) => field.onChange(Boolean(checked))} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              field.onChange(Boolean(checked))
+                            }
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -1003,7 +1130,12 @@ export default function Intake() {
                       <FormItem className="flex items-center justify-between rounded-md border border-border p-3">
                         <FormLabel className="m-0">Multi-country</FormLabel>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={(checked) => field.onChange(Boolean(checked))} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              field.onChange(Boolean(checked))
+                            }
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -1015,7 +1147,12 @@ export default function Intake() {
                       <FormItem className="flex items-center justify-between rounded-md border border-border p-3">
                         <FormLabel className="m-0">After-hours</FormLabel>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={(checked) => field.onChange(Boolean(checked))} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              field.onChange(Boolean(checked))
+                            }
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -1029,7 +1166,11 @@ export default function Intake() {
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <Textarea rows={3} placeholder="Anything the operator should know." {...field} />
+                        <Textarea
+                          rows={3}
+                          placeholder="Anything the operator should know."
+                          {...field}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -1044,18 +1185,27 @@ export default function Intake() {
                     <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
                     <div className="min-w-0 space-y-2">
                       <div>
-                        <div className="font-medium text-foreground">{failure.message}</div>
+                        <div className="font-medium text-foreground">
+                          {failure.message}
+                        </div>
                         <div className="text-sm text-muted-foreground">
-                          The Matter was not accepted as saved. Correct the issue below and try again.
+                          The Matter was not accepted as saved. Correct the issue
+                          below and try again.
                         </div>
                       </div>
                       <div className="grid gap-1 text-xs sm:grid-cols-2">
                         <div>
-                          <span className="text-muted-foreground">Error code:</span>{" "}
-                          <code className="font-mono text-foreground">{failure.code}</code>
+                          <span className="text-muted-foreground">
+                            Error code:
+                          </span>{" "}
+                          <code className="font-mono text-foreground">
+                            {failure.code}
+                          </code>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Reference:</span>{" "}
+                          <span className="text-muted-foreground">
+                            Reference:
+                          </span>{" "}
                           <code className="font-mono text-foreground">
                             {failure.correlationId ?? "Not available"}
                           </code>
@@ -1063,12 +1213,16 @@ export default function Intake() {
                         {failure.httpStatus && (
                           <div>
                             <span className="text-muted-foreground">HTTP:</span>{" "}
-                            <code className="font-mono text-foreground">{failure.httpStatus}</code>
+                            <code className="font-mono text-foreground">
+                              {failure.httpStatus}
+                            </code>
                           </div>
                         )}
                       </div>
                       {failure.reason && (
-                        <p className="text-xs text-muted-foreground">{failure.reason}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {failure.reason}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1097,18 +1251,28 @@ export default function Intake() {
               <Sparkles className="h-4 w-4 text-gold" /> Live Quote
             </CardTitle>
             <CardDescription>
-              Server-priced from the same execution truth submitted with the Matter.
+              Server-priced from the same execution truth submitted with the
+              Matter.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!quoteData ? (
-              <div className="text-sm text-muted-foreground">Computing pricing…</div>
+              <div className="text-sm text-muted-foreground">
+                Computing pricing…
+              </div>
             ) : quoteData.review_required || quoteData.total == null ? (
               <>
-                <div className="text-[11px] uppercase tracking-widest text-gold">Review Required</div>
-                <p className="text-sm text-muted-foreground">{quoteData.rationale}</p>
+                <div className="text-[11px] uppercase tracking-widest text-gold">
+                  Review Required
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {quoteData.rationale}
+                </p>
                 {quoteData.triggers?.map((trigger) => (
-                  <div key={trigger} className="rounded border border-border px-2 py-1 text-xs text-muted-foreground">
+                  <div
+                    key={trigger}
+                    className="rounded border border-border px-2 py-1 text-xs text-muted-foreground"
+                  >
                     {titleCase(trigger)}
                   </div>
                 ))}
@@ -1124,24 +1288,37 @@ export default function Intake() {
                 <div className="font-serif text-4xl text-gold">
                   {formatCurrencyDetailed(quoteData.total)}
                 </div>
-                <p className="text-xs italic text-muted-foreground">{quoteData.rationale}</p>
+                <p className="text-xs italic text-muted-foreground">
+                  {quoteData.rationale}
+                </p>
                 {quoteData.triggers && quoteData.triggers.length > 0 && (
                   <div className="space-y-1">
                     {quoteData.triggers.map((trigger) => (
-                      <div key={trigger} className="text-[11px] text-muted-foreground">• {trigger}</div>
+                      <div
+                        key={trigger}
+                        className="text-[11px] text-muted-foreground"
+                      >
+                        • {trigger}
+                      </div>
                     ))}
                   </div>
                 )}
                 <Separator className="bg-border" />
                 {quoteData.breakdown.map((item) => (
-                  <div key={item.label} className="flex justify-between gap-3 text-sm">
+                  <div
+                    key={item.label}
+                    className="flex justify-between gap-3 text-sm"
+                  >
                     <span className="text-foreground/80">{item.label}</span>
-                    <span className="text-foreground">{formatCurrencyDetailed(item.amount)}</span>
+                    <span className="text-foreground">
+                      {formatCurrencyDetailed(item.amount)}
+                    </span>
                   </div>
                 ))}
                 <Separator className="bg-border" />
                 <div className="text-[11px] text-muted-foreground">
-                  Final persisted amount, invoice, portal, discount calculation, and Wise request must use this server-authoritative quote.
+                  Final persisted amount, invoice, portal, discount calculation,
+                  and Wise request must use this server-authoritative quote.
                 </div>
               </>
             )}
