@@ -308,12 +308,6 @@ export async function POST(req: NextRequest) {
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
     const legacyExecution = executionTruthToLegacy(executionTruth);
 
-    // Locked rule: Matter CAPTURE is separated from transaction authorization.
-    // Unresolved / contradictory operator execution facts must fail closed before
-    // any pricing, invoice, or Wise request — but the Matter is still SAVED as
-    // intake_received / unpaid with its execution truth persisted. It simply
-    // receives no approved quote, no invoice, and no Wise payment request, and
-    // therefore cannot schedule or execute until execution review is cleared.
     const executionReviewRequired =
       sourceHint === "admin" &&
       (!executionValidation.valid || executionValidation.reviewRequired);
@@ -362,9 +356,6 @@ export async function POST(req: NextRequest) {
         routingWarnings: routingWarnings ?? [],
       };
 
-      // No money fields: no base_price/total/original_total/eligible_subtotal/
-      // final_total/discount/invoice_retainer/amount_due/payment_link/
-      // wise_reference. Absent = no approved total, no Wise request.
       const reviewPayload = {
         deal_id,
         access_token,
@@ -382,6 +373,10 @@ export async function POST(req: NextRequest) {
         docs_count: Number(data.docs ?? 1),
         urgency: (data.urgency as string) ?? "standard",
         mobile: legacyExecution.mobile,
+        miles:
+          executionTruth.execution_method === "mobile"
+            ? Number(data.miles ?? raw.miles ?? 0)
+            : 0,
         signers: Number(data.signers ?? 1),
         witnesses: Number(data.witnesses ?? 0),
         witness_type: data.witness_type ?? null,
@@ -464,6 +459,7 @@ export async function POST(req: NextRequest) {
         { status: 200 },
       );
     }
+
     stage = "EXECUTION_VALIDATED";
     const country = data.country || prefillCountry || "United States";
     const apostilleRequired = hasCanonicalExecution
@@ -472,8 +468,6 @@ export async function POST(req: NextRequest) {
 
     let compliance = null;
     try {
-      // Compliance receives an execution type only when the operator/client
-      // explicitly selected RON or mobile. There is no false => RON fallback.
       if (
         executionTruth.execution_method === "ron" ||
         executionTruth.execution_method === "mobile"
@@ -506,7 +500,6 @@ export async function POST(req: NextRequest) {
 
     const pricingInput = {
       ...data,
-      // Prevent the legacy Colorado shortcut from treating a non-RON Matter as RON.
       state:
         executionTruth.execution_method === "ron"
           ? (data.state as string | undefined)

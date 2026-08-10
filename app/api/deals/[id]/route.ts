@@ -54,31 +54,52 @@ export async function PATCH(
     const body = await request.json();
     const supabase = createAdminClient();
 
-    // Validate status if being updated
     const validStatuses = [
       "new",
       "reviewing",
       "quoted",
       "awaiting_payment",
-      "scheduled",
-      "in_execution",
       "apostille",
       "shipped",
       "completed",
       "lost",
     ];
     if (body.status && !validStatuses.includes(body.status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      const protectedTransition =
+        body.status === "scheduled" || body.status === "in_execution";
+      return NextResponse.json(
+        {
+          error: protectedTransition
+            ? "PROTECTED_STATE_TRANSITION"
+            : "Invalid status",
+          message: protectedTransition
+            ? "Scheduling and execution must use their governed server routes."
+            : undefined,
+        },
+        { status: protectedTransition ? 409 : 400 },
+      );
     }
 
-    // Validate payment_status if being updated
-    const validPaymentStatuses = [
-      "unpaid",
-      "partial",
-      "paid",
-      "failed",
-      "refunded",
-    ];
+    // Payment settlement is server-authoritative. The generic operator/client
+    // PATCH route may never create a paid state or mutate settlement evidence.
+    if (
+      body.payment_status === "paid" ||
+      body.payment_confirmed === true ||
+      body.payment_amount_received !== undefined ||
+      body.amount_paid !== undefined ||
+      body.payment_reference !== undefined
+    ) {
+      return NextResponse.json(
+        {
+          error: "PAYMENT_CONFIRMATION_SERVER_ONLY",
+          message:
+            "Wise settlement must be confirmed by the canonical server reconciliation path.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const validPaymentStatuses = ["unpaid", "partial", "failed", "refunded"];
     if (
       body.payment_status &&
       !validPaymentStatuses.includes(body.payment_status)
@@ -89,7 +110,7 @@ export async function PATCH(
       );
     }
 
-    const validBalanceStatuses = ["pending", "paid", "failed"];
+    const validBalanceStatuses = ["pending", "failed"];
     if (
       body.balance_payment_status &&
       !validBalanceStatuses.includes(body.balance_payment_status)
@@ -100,46 +121,21 @@ export async function PATCH(
       );
     }
 
-    const validPaymentMethods = ["wise", "stripe"];
-    if (
-      body.payment_method &&
-      !validPaymentMethods.includes(body.payment_method)
-    ) {
+    // Wise is the only canonical payment provider.
+    if (body.payment_method && body.payment_method !== "wise") {
       return NextResponse.json(
-        { error: "Invalid payment method" },
+        { error: "INVALID_PAYMENT_PROVIDER" },
         { status: 400 },
       );
     }
 
-    if (body.status === "in_execution" || body.status === "scheduled") {
-      const { data: existingDeal } = await supabase
-        .from("deals")
-        .select("payment_status")
-        .eq("id", id)
-        .single();
-
-      if (
-        existingDeal?.payment_status !== "paid" &&
-        body.payment_status !== "paid"
-      ) {
-        return NextResponse.json(
-          { error: "Payment must be confirmed before execution can proceed" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Build update object with allowed fields only
     const allowedFields = [
       "status",
       "payment_status",
       "payment_method",
-      "payment_reference",
-      "payment_amount_received",
       "payment_failure_reason",
       "payment_failed_at",
       "balance_payment_status",
-      "balance_amount_received",
       "balance_paid_at",
       "refund_amount",
       "refunded_at",
@@ -165,9 +161,7 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
-      }
+      if (body[field] !== undefined) updateData[field] = body[field];
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -177,18 +171,7 @@ export async function PATCH(
       );
     }
 
-    const { data: existingDeal } = await supabase
-      .from("deals")
-      .select("status, payment_status, balance_payment_status, deal_id")
-      .eq("id", id)
-      .single();
-
     const nowIso = new Date().toISOString();
-
-    if (updateData.payment_status === "paid") {
-      updateData.invoice_status =
-        (updateData.invoice_status as string) ?? "paid";
-    }
     if (
       updateData.payment_status === "failed" &&
       !updateData.payment_failed_at
@@ -198,14 +181,8 @@ export async function PATCH(
     if (updateData.payment_status === "refunded" && !updateData.refunded_at) {
       updateData.refunded_at = nowIso;
     }
-    if (updateData.payment_status === "disputed" && !updateData.disputed_at) {
+    if (updateData.dispute_reason && !updateData.disputed_at) {
       updateData.disputed_at = nowIso;
-    }
-    if (
-      updateData.balance_payment_status === "paid" &&
-      !updateData.balance_paid_at
-    ) {
-      updateData.balance_paid_at = nowIso;
     }
 
     const { data: deal, error } = await supabase
@@ -244,36 +221,8 @@ export async function PATCH(
             meta: { assignee: updateData.assignee },
           });
         }
-        if (updateData.payment_status === "paid") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_confirmed",
-            detail: `Payment confirmed${
-              updateData.payment_amount_received != null
-                ? ` · $${updateData.payment_amount_received}`
-                : ""
-            }${
-              updateData.payment_reference
-                ? ` · ref ${updateData.payment_reference}`
-                : ""
-            }`,
-            meta: {
-              amount: updateData.payment_amount_received ?? null,
-              reference: updateData.payment_reference ?? null,
-              method: updateData.payment_method ?? null,
-            },
-          });
-          if (updateData.status === "scheduled") {
-            await logActivity({
-              deal_id: dealRef,
-              actor,
-              action: "stage_advanced",
-              detail: "Auto-advanced to Scheduled (payment received)",
-              meta: { stage: "scheduled" },
-            });
-          }
-        } else if (updateData.payment_status === "refunded") {
+
+        if (updateData.payment_status === "refunded") {
           await logActivity({
             deal_id: dealRef,
             actor,
@@ -286,19 +235,6 @@ export async function PATCH(
             meta: {
               status: "refunded",
               amount: updateData.refund_amount ?? null,
-            },
-          });
-        } else if (updateData.payment_status === "disputed") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_updated",
-            detail: `Payment disputed${
-              updateData.dispute_reason ? `: ${updateData.dispute_reason}` : ""
-            }`,
-            meta: {
-              status: "disputed",
-              reason: updateData.dispute_reason ?? null,
             },
           });
         } else if (updateData.payment_status === "failed") {
@@ -316,10 +252,7 @@ export async function PATCH(
               reason: updateData.payment_failure_reason ?? null,
             },
           });
-        } else if (
-          updateData.payment_status &&
-          updateData.payment_status !== "paid"
-        ) {
+        } else if (updateData.payment_status) {
           await logActivity({
             deal_id: dealRef,
             actor,
@@ -329,22 +262,7 @@ export async function PATCH(
           });
         }
 
-        if (updateData.balance_payment_status === "paid") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_confirmed",
-            detail: `Balance payment confirmed${
-              updateData.balance_amount_received != null
-                ? ` · $${updateData.balance_amount_received}`
-                : ""
-            }`,
-            meta: {
-              status: "balance_paid",
-              amount: updateData.balance_amount_received ?? null,
-            },
-          });
-        } else if (updateData.balance_payment_status === "failed") {
+        if (updateData.balance_payment_status === "failed") {
           await logActivity({
             deal_id: dealRef,
             actor,
@@ -353,6 +271,7 @@ export async function PATCH(
             meta: { status: "balance_failed" },
           });
         }
+
         if (
           updateData.tracking_number !== undefined ||
           updateData.carrier !== undefined

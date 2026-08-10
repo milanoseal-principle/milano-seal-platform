@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -20,12 +21,35 @@ export async function POST(
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
     }
 
+    const executionTruth = deal.execution_truth;
+    const executionValidation =
+      executionTruth && typeof executionTruth === "object"
+        ? validateExecutionTruth(executionTruth)
+        : {
+            valid: false,
+            reviewRequired: true,
+            errors: ["EXECUTION_TRUTH_MISSING"],
+          };
+
+    if (!executionValidation.valid || executionValidation.reviewRequired) {
+      return NextResponse.json(
+        {
+          error: "EXECUTION_REVIEW_REQUIRED",
+          message:
+            "Execution requirements must be fully resolved before scheduling can begin.",
+          remaining: executionValidation.errors,
+        },
+        { status: 409 },
+      );
+    }
+
     const schedulingGate = evaluateSchedulingGate({ matter: deal });
     if (!schedulingGate.schedulingEligible) {
       return NextResponse.json(
         {
           error: "PAYMENT_REQUIRED",
-          paymentRequirementSatisfied: schedulingGate.paymentRequirementSatisfied,
+          paymentRequirementSatisfied:
+            schedulingGate.paymentRequirementSatisfied,
           paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
           message:
             "Verified payment or an active Complimentary Authorization is required before scheduling can begin.",
@@ -38,8 +62,6 @@ export async function POST(
     const { data: updated, error: updateError } = await supabase
       .from("deals")
       .update({
-        // `status` is the canonical Matter lifecycle field governed by migration 046.
-        // `deal_status` remains compatibility-only and mirrors the canonical state.
         status: "scheduled",
         deal_status: "scheduled",
         ...(body.execution_date
