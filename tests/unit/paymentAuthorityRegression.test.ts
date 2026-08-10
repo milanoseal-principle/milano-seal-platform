@@ -24,6 +24,10 @@ const dealPage = fs.readFileSync(
   path.join(root, "app/dashboard/deals/[id]/page.tsx"),
   "utf8",
 );
+const pipelineEngine = fs.readFileSync(
+  path.join(root, "lib/pipelineEngine.ts"),
+  "utf8",
+);
 
 test("generic deal PATCH cannot author paid settlement", () => {
   assert.match(dealRoute, /PAYMENT_CONFIRMATION_SERVER_ONLY/);
@@ -51,6 +55,21 @@ test("schedule route blocks unresolved execution truth before payment gate", () 
   assert.ok(paymentCheck > executionCheck);
 });
 
+test("legacy admin move pipeline cannot bypass execution or canonical scheduling gate", () => {
+  assert.match(pipelineEngine, /validateExecutionTruth/);
+  assert.match(pipelineEngine, /evaluateSchedulingGate/);
+  assert.match(pipelineEngine, /EXECUTION_REVIEW_REQUIRED/);
+  assert.doesNotMatch(
+    pipelineEngine,
+    /gatedStages\.includes\(stage\) && deal\.payment_status !== "paid"/,
+  );
+
+  const executionCheck = pipelineEngine.indexOf("validateExecutionTruth");
+  const paymentCheck = pipelineEngine.indexOf("evaluateSchedulingGate({ matter: deal })");
+  assert.ok(executionCheck > -1);
+  assert.ok(paymentCheck > executionCheck);
+});
+
 test("founder manual payment-confirm endpoint is disabled", () => {
   assert.match(confirmPaymentRoute, /MANUAL_PAYMENT_CONFIRMATION_DISABLED/);
   assert.match(confirmPaymentRoute, /wise_reconciliation_authoritative/);
@@ -66,11 +85,28 @@ test("review-required mobile capture preserves mileage", () => {
   assert.match(reviewPayload, /miles:[\s\S]*executionTruth\.execution_method === "mobile"[\s\S]*Number\(data\.miles \?\? raw\.miles \?\? 0\)/);
 });
 
-test("operator detail page no longer contains manual settlement controls", () => {
+test("operator detail page is Wise read-only while preserving payment links", () => {
   assert.doesNotMatch(dealPage, /Confirm Payment/);
   assert.doesNotMatch(dealPage, /Mark paid/);
   assert.doesNotMatch(dealPage, /Confirm Balance Payment/);
   assert.doesNotMatch(dealPage, /Mark balance paid/);
   assert.doesNotMatch(dealPage, /payment_status:\s*"paid"/);
   assert.doesNotMatch(dealPage, /balance_payment_status:\s*"paid"/);
+  assert.match(dealPage, /Wise Payment/);
+  assert.match(dealPage, /Wise reconciliation is authoritative/);
+  assert.match(dealPage, /deal\.payment_link/);
+  assert.match(dealPage, /deal\.balance_payment_link/);
+  assert.match(dealPage, /Operators cannot manually[\s\S]*mark this Matter paid/);
+});
+
+test("Matter detail restoration preserves non-payment operator UX", () => {
+  assert.match(dealPage, /Create Shipping Label/);
+  assert.match(dealPage, /Client Messages/);
+  assert.match(dealPage, /Operational Ledger/);
+  assert.match(dealPage, /Document Release/);
+  assert.match(dealPage, /MilanoReleaseSeal/);
+  assert.match(dealPage, /ShippoCustodyPanel/);
+  assert.match(dealPage, /CertificatePanel/);
+  assert.match(dealPage, /MatterRiskBadge/);
+  assert.match(dealPage, /Conversion score/);
 });
