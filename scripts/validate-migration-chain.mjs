@@ -3,7 +3,13 @@ import path from "node:path";
 
 const dir = path.join(process.cwd(), "supabase", "migrations");
 const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
-const required = ["001_initial_schema.sql", "002_rls_storage_policies.sql", "044_production_deals_payment_gate_compatibility.sql", "049_dashboard_intake_payment_status_reconciliation.sql"];
+const required = [
+  "001_initial_schema.sql",
+  "002_rls_storage_policies.sql",
+  "044_production_deals_payment_gate_compatibility.sql",
+  "049_dashboard_intake_payment_status_reconciliation.sql",
+  "050_live_intake_execution_truth_reconciliation.sql",
+];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
 
@@ -20,7 +26,16 @@ if (duplicatePrefixes.length) {
 }
 
 const baseline = fs.readFileSync(path.join(dir, "001_initial_schema.sql"), "utf8");
-for (const table of ["deals", "payments", "messages", "custody_ledger", "portal_otps", "files", "activity_logs", "compliance_rules"]) {
+for (const table of [
+  "deals",
+  "payments",
+  "messages",
+  "custody_ledger",
+  "portal_otps",
+  "files",
+  "activity_logs",
+  "compliance_rules",
+]) {
   const pattern = new RegExp(`CREATE TABLE IF NOT EXISTS\\s+(?:public\\.)?${table}\\b`, "i");
   if (!pattern.test(baseline)) throw new Error(`001 baseline does not create required table: ${table}`);
 }
@@ -46,6 +61,29 @@ for (const invariant of [
 }
 if (/update\s+public\.deals[\s\S]*payment_status\s*=\s*'unpaid'/i.test(intakeRepair)) {
   throw new Error("049 must not bulk-rewrite legacy pending payment state during the intake repair increment");
+}
+
+const executionRepair = fs.readFileSync(
+  path.join(dir, "050_live_intake_execution_truth_reconciliation.sql"),
+  "utf8",
+);
+for (const invariant of [
+  "add column if not exists discount_amount",
+  "add column if not exists execution_truth jsonb",
+  "add column if not exists due_at timestamptz",
+  "generated always as (sla_deadline) stored",
+  "drop constraint if exists deals_payment_status_check",
+  "alter column payment_status set default 'unpaid'",
+  "'unpaid'",
+  "'pending'",
+  "jsonb_typeof(execution_truth) = 'object'",
+]) {
+  if (!executionRepair.includes(invariant)) {
+    throw new Error(`050 live reconciliation missing invariant: ${invariant}`);
+  }
+}
+if (/update\s+public\.deals[\s\S]*payment_status\s*=\s*'unpaid'/i.test(executionRepair)) {
+  throw new Error("050 must preserve legacy pending rows; no bulk payment-state rewrite");
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);

@@ -1,5 +1,22 @@
-export type ExecutionPath = "Digital First" | "Field Execution" | "Hybrid Execution" | "International Coordination";
-export type ExecutionTier = "Signature" | "Priority" | "Executive" | "Hourly" | "Project-Based" | "Task Order" | "Custom Scope" | "Retainer" | "Foundation" | "Professional" | "Enterprise";
+import type { CanonicalExecutionTruth } from "@/lib/matter/executionTruth";
+
+export type ExecutionPath =
+  | "Digital First"
+  | "Field Execution"
+  | "Hybrid Execution"
+  | "International Coordination";
+export type ExecutionTier =
+  | "Signature"
+  | "Priority"
+  | "Executive"
+  | "Hourly"
+  | "Project-Based"
+  | "Task Order"
+  | "Custom Scope"
+  | "Retainer"
+  | "Foundation"
+  | "Professional"
+  | "Enterprise";
 
 export interface CanonicalMatterObject {
   matterId: string;
@@ -10,7 +27,11 @@ export interface CanonicalMatterObject {
   destinationCountry?: string;
   executionTier?: ExecutionTier;
   executionPath?: ExecutionPath;
+  /** Canonical execution authority. Legacy ron/mobile booleans are projections only. */
+  executionTruth?: CanonicalExecutionTruth;
+  /** @deprecated compatibility projection — derive from executionTruth.execution_method */
   ron?: boolean;
+  /** @deprecated compatibility projection — derive from executionTruth.execution_method */
   mobile?: boolean;
   hybrid?: boolean;
   priority?: string;
@@ -37,7 +58,7 @@ export interface CanonicalMatterObject {
   // ── Unification Phase 3 extensions (ALL OPTIONAL — additive, non-breaking) ──
   // IDENTITY
   reference?: string;
-  state?: string; // canonical state — normalize via matterStateAdapters
+  state?: string;
   substate?: string;
   urgency?: string;
   createdAt?: string;
@@ -87,7 +108,7 @@ export interface CanonicalMatterObject {
   translationStatus?: string;
   custodyEventIds?: string[];
   deliveryStatus?: string;
-  releaseEligible?: boolean | "unknown"; // read from approved release gate only
+  releaseEligible?: boolean | "unknown";
   releaseStatus?: string;
   // PORTAL
   portalAccessId?: string;
@@ -101,7 +122,7 @@ export interface CanonicalMatterObject {
   revenueEventIds?: string[];
   intelligenceNodeIds?: string[];
   sopUpdateIds?: string[];
-  // METADATA (canonical common fields)
+  // METADATA
   source?: string;
   sourceRecordId?: string;
   environment?: string;
@@ -112,8 +133,42 @@ export interface CanonicalMatterObject {
 }
 
 export const CANONICAL_MATTER_FIELDS: (keyof CanonicalMatterObject)[] = [
-  "matterId", "matterType", "clientId", "organizationId", "country", "destinationCountry", "executionTier", "executionPath", "ron", "mobile", "hybrid", "priority", "timeline", "quoteId", "invoiceId", "paymentId", "portalId", "documentIds", "witnessIds", "translatorId", "courierId", "apostilleId", "status", "qaStatus", "chainOfCustodyIds", "caseStudyId", "knowledgeGraphNodeIds", "alliancePartnerId", "governmentContractId", "revenueId", "kpiIds",
-  // Price/route-driving fields consumed by priceCanonicalMatter — previously
-  // absent from the registry (drift). Additive: no existing field removed.
-  "documentFamily", "apostilleStatus", "translationStatus", "signerLocation", "urgency", "clientType",
+  "matterId",
+  "matterType",
+  "clientId",
+  "organizationId",
+  "country",
+  "destinationCountry",
+  "executionTier",
+  "executionPath",
+  "executionTruth",
+  "ron",
+  "mobile",
+  "hybrid",
+  "priority",
+  "timeline",
+  "quoteId",
+  "invoiceId",
+  "paymentId",
+  "portalId",
+  "documentIds",
+  "witnessIds",
+  "translatorId",
+  "courierId",
+  "apostilleId",
+  "status",
+  "qaStatus",
+  "chainOfCustodyIds",
+  "caseStudyId",
+  "knowledgeGraphNodeIds",
+  "alliancePartnerId",
+  "governmentContractId",
+  "revenueId",
+  "kpiIds",
+  "documentFamily",
+  "apostilleStatus",
+  "translationStatus",
+  "signerLocation",
+  "urgency",
+  "clientType",
 ];

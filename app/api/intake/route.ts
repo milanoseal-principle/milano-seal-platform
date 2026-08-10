@@ -25,6 +25,11 @@ import {
   checkAffidavitFederalConflict,
 } from "@/lib/intake/routing-normalizer";
 import { safeText } from "@/lib/security/app-guards";
+import {
+  executionTruthToLegacy,
+  normalizeExecutionTruth,
+  validateExecutionTruth,
+} from "@/lib/matter/executionTruth";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -33,6 +38,7 @@ type IntakeStage =
   | "NORMALIZED"
   | "VALIDATED"
   | "ROUTED"
+  | "EXECUTION_VALIDATED"
   | "COMPLIANCE_COMPLETE"
   | "PRICED"
   | "INVOICE_CREATED"
@@ -42,6 +48,7 @@ type IntakeStage =
 
 type IntakeFailureCode =
   | "VALIDATION_FAILED"
+  | "EXECUTION_REVIEW_REQUIRED"
   | "COMPLIANCE_REVIEW_REQUIRED"
   | "PRICING_FAILED"
   | "PERSISTENCE_FAILED"
@@ -118,6 +125,7 @@ function autoSelectLane({
   signerCount?: number;
   apostilleRequired?: boolean;
 }): "Executive" | "Priority" | "Signature" {
+  void country;
   if (urgency === "urgent") return "Executive";
   if (apostilleRequired) return "Priority";
   if ((signerCount || 1) > 1) return "Priority";
@@ -164,6 +172,43 @@ function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
   return "LOW";
 }
 
+function legacyExecutionTruthInput(raw: Record<string, unknown>) {
+  const notarizationRequirement =
+    raw.notarization_required === true
+      ? "required"
+      : raw.notarization_required === false
+        ? "not_required"
+        : "review_required";
+  const executionMethod =
+    raw.ron_required === true
+      ? "ron"
+      : raw.mobile === true
+        ? "mobile"
+        : raw.already_notarized === true
+          ? "already_notarized"
+          : "review_required";
+  const authenticationRequirement =
+    raw.apostille === true || raw.apostille_required === true
+      ? "apostille"
+      : raw.apostille === false || raw.apostille_required === false
+        ? "not_required"
+        : "review_required";
+
+  return {
+    notarization_requirement: notarizationRequirement,
+    execution_method: executionMethod,
+    notarial_act: "review_required",
+    authentication_requirement: authenticationRequirement,
+    signer_location: raw.signer_location,
+    execution_location: raw.execution_location,
+    assigned_notary: raw.assigned_notary,
+    notary_jurisdiction: raw.notary_jurisdiction,
+    certificate_type: raw.certificate_type,
+    ron_kba_status: raw.ron_kba_status,
+    ron_credential_analysis_status: raw.ron_credential_analysis_status,
+  };
+}
+
 async function notifyHighValue(
   dealId: string,
   country: string,
@@ -195,14 +240,14 @@ export async function POST(req: NextRequest) {
   let currentSource: string | undefined;
 
   try {
-    let raw = await req.json();
+    let raw = (await req.json()) as Record<string, unknown>;
 
-    const useCase = (raw.use_case || raw.useCase || "") as string;
-    const prefillDoc = (raw.document_type || raw.document || "") as string;
-    const prefillCountry = (raw.country || raw.destination_country || "") as string;
+    const useCase = String(raw.use_case || raw.useCase || "");
+    const prefillDoc = String(raw.document_type || raw.document || "");
+    const prefillCountry = String(raw.country || raw.destination_country || "");
 
     if (raw.message && !raw.document_type) {
-      const parsed = parseIntake(raw.message);
+      const parsed = parseIntake(String(raw.message));
       raw = {
         ...raw,
         name: raw.name || parsed.client_name || "",
@@ -215,10 +260,10 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    if (raw.name) raw.name = safeText(raw.name);
-    if (raw.client_name) raw.client_name = safeText(raw.client_name);
-    if (raw.notes) raw.notes = safeText(raw.notes);
-    if (raw.message) raw.message = safeText(raw.message);
+    if (raw.name) raw.name = safeText(String(raw.name));
+    if (raw.client_name) raw.client_name = safeText(String(raw.client_name));
+    if (raw.notes) raw.notes = safeText(String(raw.notes));
+    if (raw.message) raw.message = safeText(String(raw.message));
 
     const data = normalizeMatter(raw);
     if (typeof data.email === "string") {
@@ -245,25 +290,68 @@ export async function POST(req: NextRequest) {
         code: "VALIDATION_FAILED",
         error,
       });
-      const reason = error instanceof Error ? error.message : "Matter validation failed";
+      const reason =
+        error instanceof Error ? error.message : "Matter validation failed";
       return safeFailure("VALIDATION_FAILED", correlationId, 400, reason);
     }
 
+    const hasCanonicalExecution =
+      (raw.execution_truth != null && typeof raw.execution_truth === "object") ||
+      typeof raw.execution_method === "string" ||
+      typeof raw.notarization_requirement === "string" ||
+      typeof raw.authentication_requirement === "string" ||
+      typeof raw.notarial_act === "string";
+    const executionTruth = normalizeExecutionTruth(
+      hasCanonicalExecution ? raw : legacyExecutionTruthInput(raw),
+    );
+    const executionValidation = validateExecutionTruth(executionTruth);
+    const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
+
+    // Operator intake is authoritative: unresolved/contradictory execution facts
+    // must fail closed before pricing or any Wise request is created.
+    if (
+      sourceHint === "admin" &&
+      (!executionValidation.valid || executionValidation.reviewRequired)
+    ) {
+      const reason = [
+        ...executionValidation.errors,
+        executionValidation.reviewRequired ? "EXECUTION_REVIEW_REQUIRED" : "",
+      ]
+        .filter(Boolean)
+        .join(", ");
+      return safeFailure(
+        "EXECUTION_REVIEW_REQUIRED",
+        correlationId,
+        409,
+        reason || "Execution facts require operator review",
+      );
+    }
+    stage = "EXECUTION_VALIDATED";
+
+    const legacyExecution = executionTruthToLegacy(executionTruth);
     const country = data.country || prefillCountry || "United States";
+    const apostilleRequired = hasCanonicalExecution
+      ? legacyExecution.apostille_required
+      : Boolean(raw.apostille ?? raw.apostille_required ?? data.apostille ?? false);
+
     let compliance = null;
     try {
-      compliance = validateCompliance({
-        country,
-        documentType: data.document_type || prefillDoc || "general",
-        executionType: data.mobile ? "mobile" : "ron",
-        destinationCountry: country,
-      });
-      if (compliance.apostille_required) data.apostille = true;
+      // Compliance receives an execution type only when the operator/client
+      // explicitly selected RON or mobile. There is no false => RON fallback.
+      if (
+        executionTruth.execution_method === "ron" ||
+        executionTruth.execution_method === "mobile"
+      ) {
+        compliance = validateCompliance({
+          country,
+          signerLocation: executionTruth.signer_location ?? undefined,
+          documentType: data.document_type || prefillDoc || "general",
+          executionType: executionTruth.execution_method,
+          destinationCountry: country,
+        });
+      }
       stage = "COMPLIANCE_COMPLETE";
     } catch (error) {
-      // Preserve intake capture while making the compliance failure observable.
-      // Canonical execution truth is repaired in the next production increment;
-      // until then this cannot silently disappear from operator diagnostics.
       logIntakeFailure({
         correlationId,
         stage,
@@ -277,11 +365,22 @@ export async function POST(req: NextRequest) {
       country,
       urgency: data.urgency as string,
       signerCount: Number(data.signers) || 1,
-      apostilleRequired: compliance?.apostille_required ?? data.apostille,
+      apostilleRequired,
     });
 
     const pricingInput = {
       ...data,
+      // Prevent the legacy Colorado shortcut from treating a non-RON Matter as RON.
+      state:
+        executionTruth.execution_method === "ron"
+          ? (data.state as string | undefined)
+          : undefined,
+      apostille: apostilleRequired,
+      mobile: legacyExecution.mobile,
+      miles:
+        executionTruth.execution_method === "mobile"
+          ? Number(data.miles ?? raw.miles ?? 0)
+          : 0,
       urgency: data.urgency as "standard" | "urgent" | undefined,
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
@@ -302,15 +401,17 @@ export async function POST(req: NextRequest) {
         : autoLane;
     const timeline = String(raw.timeline_preference ?? "");
     const delivery = String(raw.delivery_method ?? "");
+    const notarizationRequired = hasCanonicalExecution
+      ? legacyExecution.notarization_required
+      : raw.notarization_required === true || raw.ron_required === true;
     const canonicalPricing = calculatePrice({
       tier: pricedLane.toLowerCase(),
       document_count: Math.max(1, Number(data.docs ?? raw.docs ?? 1)),
       signer_count: Math.max(1, Number(data.signers ?? raw.signers ?? 1)),
-      notarized_signature_count:
-        raw.notarization_required === true || raw.ron_required === true
-          ? Math.max(1, Number(data.signers ?? raw.signers ?? 1))
-          : 0,
-      apostille_count: Boolean(compliance?.apostille_required ?? data.apostille)
+      notarized_signature_count: notarizationRequired
+        ? Math.max(1, Number(data.signers ?? raw.signers ?? 1))
+        : 0,
+      apostille_count: apostilleRequired
         ? Math.max(1, Number(raw.apostille_count ?? 1))
         : 0,
       urgency:
@@ -331,19 +432,12 @@ export async function POST(req: NextRequest) {
       base: canonicalPricing.base,
       total: canonicalPricing.total,
       addons: canonicalPricing.breakdown
-        .filter((x) => !x.internal_only && x.key !== "base")
-        .map((x) => ({ item: x.label, amount: x.amount })),
+        .filter((item) => !item.internal_only && item.key !== "base")
+        .map((item) => ({ item: item.label, amount: item.amount })),
       witness_total: legacyPricing.witness_total,
     };
     stage = "PRICED";
 
-    // Eligible-subtotal boundary (canonical courtesy rule): a courtesy code may
-    // only discount the eligible service subtotal, never pass-through / dispatch
-    // charges. The boundary math lives in one shared module so intake and its
-    // tests compute it identically. Invariant: eligibleSubtotal +
-    // nonDiscountableTotal === pricing.total; the discount applies to
-    // eligibleSubtotal only. Both are persisted so the canonical discount
-    // service and Wise reconciliation fail closed if the boundary is missing.
     const nonDiscountableTotal = nonDiscountableTotalFromBreakdown(
       canonicalPricing.breakdown,
     );
@@ -427,8 +521,6 @@ export async function POST(req: NextRequest) {
         );
 
       const discountValue = Number(discount.discount_value);
-      // Canonical amount calculator — applies the discount to the eligible
-      // subtotal only and caps it at that subtotal.
       const amount = computeDiscountAmount(
         {
           discount_type: discount.discount_type,
@@ -457,10 +549,10 @@ export async function POST(req: NextRequest) {
     const deal_id = genDealId();
     currentDealId = deal_id;
     const access_token = randomUUID();
-    const client_name =
-      data.name || (raw as Record<string, string>).client_name || "";
-    const source =
-      ((data as Record<string, unknown>).source_channel as string) || "web";
+    const client_name = data.name || String(raw.client_name || "");
+    const source = String(
+      (data as Record<string, unknown>).source_channel || raw.source_channel || "web",
+    );
     currentSource = source;
 
     const conversion_score = calculateScore({
@@ -520,14 +612,12 @@ export async function POST(req: NextRequest) {
     };
 
     const docType = data.document_type || prefillDoc || "";
-    const companyName =
-      ((raw as Record<string, string>).company_name as string) ||
-      ((raw as Record<string, string>).company as string) ||
-      null;
+    const companyName = String(raw.company_name || raw.company || "") || null;
 
     const intakeMetadata = {
       source,
       companyName,
+      execution_truth: executionTruth,
       originAuthorityLabel: originAuthorityLabel ?? null,
       normalizedRouting: normalizedRouting ?? null,
       routingWarnings: routingWarnings ?? [],
@@ -549,38 +639,15 @@ export async function POST(req: NextRequest) {
       compliance: compliance ?? null,
       decline_risk: decline_risk ?? null,
       followup_schedule: ["24h", "72h", "7d"],
-      matterCategory:
-        (raw as Record<string, unknown>).matterCategory ??
-        (raw as Record<string, unknown>).matter_category ??
-        null,
-      ronPreferred:
-        (raw as Record<string, unknown>).ronPreferred ??
-        (raw as Record<string, unknown>).ron_preferred ??
-        null,
-      wetInkRequired:
-        (raw as Record<string, unknown>).wetInkRequired ??
-        (raw as Record<string, unknown>).wet_ink_required ??
-        null,
+      matterCategory: raw.matterCategory ?? raw.matter_category ?? null,
       receivingAuthority:
-        (raw as Record<string, unknown>).receivingAuthority ??
-        (raw as Record<string, unknown>).receiving_authority ??
-        null,
+        raw.receivingAuthority ?? raw.receiving_authority ?? null,
       deadlineOrClosingDate:
-        (raw as Record<string, unknown>).deadlineOrClosingDate ??
-        (raw as Record<string, unknown>).deadline_or_closing_date ??
-        null,
-      courierRequired:
-        (raw as Record<string, unknown>).courierRequired ??
-        (raw as Record<string, unknown>).courier_required ??
-        null,
+        raw.deadlineOrClosingDate ?? raw.deadline_or_closing_date ?? null,
+      courierRequired: raw.courierRequired ?? raw.courier_required ?? null,
       timelinePreference:
-        (raw as Record<string, unknown>).timelinePreference ??
-        (raw as Record<string, unknown>).timeline_preference ??
-        null,
-      deliveryMethod:
-        (raw as Record<string, unknown>).deliveryMethod ??
-        (raw as Record<string, unknown>).delivery_method ??
-        null,
+        raw.timelinePreference ?? raw.timeline_preference ?? null,
+      deliveryMethod: raw.deliveryMethod ?? raw.delivery_method ?? null,
     };
 
     const safeNotes = [
@@ -602,23 +669,24 @@ export async function POST(req: NextRequest) {
       deal_id,
       access_token,
       client_name,
-      client_type:
-        ((raw as Record<string, string>).client_type as string) ?? "individual",
+      client_type: String(raw.client_type ?? "individual"),
       company_name: companyName,
       email: data.email || "",
       phone: data.phone || "",
       document_type: docType,
       use_case: useCase || null,
       destination_country: country,
-      origin_state:
-        ((raw as Record<string, string>).origin_state as string) || null,
-      apostille_required:
-        compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+      origin_state: String(raw.origin_state || data.state || "") || null,
+      apostille_required: apostilleRequired,
+      execution_truth: executionTruth,
       docs_count: Number(data.docs ?? 1),
       lane: finalLane,
       urgency: (data.urgency as string) ?? "standard",
-      mobile: Boolean(data.mobile ?? false),
-      miles: Number(data.miles ?? 0),
+      mobile: legacyExecution.mobile,
+      miles:
+        executionTruth.execution_method === "mobile"
+          ? Number(data.miles ?? raw.miles ?? 0)
+          : 0,
       signers: Number(data.signers ?? 1),
       witnesses: Number(data.witnesses ?? 0),
       witness_type: data.witness_type ?? null,
@@ -695,15 +763,16 @@ export async function POST(req: NextRequest) {
               source,
               lane: finalLane,
               country,
+              execution_truth: executionTruth,
               original_total: pricing.total,
               discount_amount: courtesyAdjustment?.amount ?? 0,
               final_total: effectiveTotal,
             },
           });
-        } catch (err) {
+        } catch (error) {
           console.error(
             "[intake] custody ledger failed:",
-            err instanceof Error ? err.message : err,
+            error instanceof Error ? error.message : error,
           );
         }
       })();
@@ -731,16 +800,15 @@ export async function POST(req: NextRequest) {
             status: "intake_received",
             payment_status: "unpaid",
             payment_link,
-            raw_text:
-              ((raw as Record<string, string>).message as string) ?? null,
-            mobile: Boolean(data.mobile ?? false),
+            raw_text: String(raw.message ?? "") || null,
+            mobile: legacyExecution.mobile,
             signers: Number(data.signers ?? 1),
             witnesses: Number(data.witnesses ?? 0),
           });
-        } catch (err) {
+        } catch (error) {
           console.error(
             "[intake] runDealEngine failed:",
-            err instanceof Error ? err.message : err,
+            error instanceof Error ? error.message : error,
           );
         }
       })();
@@ -789,6 +857,7 @@ export async function POST(req: NextRequest) {
         meta: {
           source,
           lane: finalLane,
+          execution_truth: executionTruth,
           original_total: pricing.total,
           discount_amount: courtesyAdjustment?.amount ?? 0,
           final_total: effectiveTotal,
@@ -818,10 +887,10 @@ export async function POST(req: NextRequest) {
     }
 
     const rationaleByLane: Record<string, string> = {
-      RON_SIMPLE: "Colorado RON-only path — RON Simple lane applies.",
-      MOBILE_STANDARD: "Florida mobile execution + round-trip mileage.",
-      Signature: "Standard international execution path.",
-      Priority: "Multi-signer or translation triggers Priority lane.",
+      RON_SIMPLE: "Explicit RON execution selected — RON Simple lane applies.",
+      MOBILE_STANDARD: "Explicit Florida mobile execution + round-trip mileage.",
+      Signature: "Standard execution path from resolved Matter facts.",
+      Priority: "Resolved Matter scope triggers Priority coordination.",
       Executive:
         "Urgent or multi-country routing — Executive lane handles it end-to-end.",
     };
@@ -832,6 +901,7 @@ export async function POST(req: NextRequest) {
       correlation_id: correlationId,
       deal_id: deal?.deal_id || deal_id,
       lane: finalLane,
+      execution_truth: executionTruth,
       estimated_value: effectiveTotal,
       original_total: pricing.total,
       discount_amount: courtesyAdjustment?.amount ?? 0,
@@ -870,9 +940,7 @@ export async function POST(req: NextRequest) {
         ? "PRICING_FAILED"
         : stage === "WISE_REQUEST_CREATED"
           ? "PAYMENT_REQUEST_FAILED"
-          : stage === "MATTER_PERSISTED"
-            ? "UNKNOWN_INTAKE_FAILURE"
-            : "UNKNOWN_INTAKE_FAILURE";
+          : "UNKNOWN_INTAKE_FAILURE";
     logIntakeFailure({
       correlationId,
       stage,
