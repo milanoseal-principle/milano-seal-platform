@@ -8,16 +8,12 @@ begin;
 --   * production constraint only allowed pending/partial/paid/failed/refunded/disputed
 --   * runtime persists deals.discount_amount but production lacked that column
 --
--- This migration is additive/idempotent and preserves the canonical rule that
--- payment state is independent from the operational Matter lifecycle.
+-- This migration is additive/idempotent. It accepts canonical `unpaid` for new
+-- Matters while preserving existing legacy `pending` rows until the separate
+-- canonical-state reconciliation increment audits every downstream consumer.
 
 alter table public.deals
   add column if not exists discount_amount numeric(12,2) default 0;
-
--- Normalize the legacy pre-payment alias before replacing the constraint.
-update public.deals
-set payment_status = 'unpaid'
-where payment_status = 'pending';
 
 alter table public.deals
   drop constraint if exists deals_payment_status_check;
@@ -29,6 +25,7 @@ alter table public.deals
   add constraint deals_payment_status_check
   check (payment_status in (
     'unpaid',
+    'pending',
     'partial',
     'paid',
     'failed',
