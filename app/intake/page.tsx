@@ -33,11 +33,6 @@ function normalizeCourtesyCode(value?: string): string | undefined {
   return /^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(normalized) ? normalized : undefined;
 }
 
-function normalizeQueryValue(value?: string): string | undefined {
-  const normalized = value?.trim().slice(0, 160);
-  return normalized || undefined;
-}
-
 function IntakeContent({
   searchParams,
 }: {
@@ -77,23 +72,11 @@ async function IntakeWizardWrapper({
   // hard-coding production courtesy programs into the browser layer.
   const courtesyCode = normalizeCourtesyCode(params.courtesy);
 
-  // Acquisition values are observational only. They never alter pricing,
-  // compliance, payment, scheduling, or execution state. They are retained
-  // so organic search and professional corridor conversions can be measured.
-  const acquisitionContext = {
-    landingSource: normalizeQueryValue(params.source),
-    referralSource: normalizeQueryValue(params.referral_source),
-    utmSource: normalizeQueryValue(params.utm_source),
-    utmMedium: normalizeQueryValue(params.utm_medium),
-    utmCampaign: normalizeQueryValue(params.utm_campaign),
-  };
-
   return (
     <SmartIntakeSOPWizard
       initialTier={validTier}
       prefill={prefill}
       courtesyCode={courtesyCode}
-      acquisitionContext={acquisitionContext}
     />
   );
 }
