@@ -37,7 +37,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # ── Route file existence check ─────────────────────────────────────────
       - name: Verify canonical route files exist
         run: |
           set -e
@@ -47,6 +46,9 @@ jobs:
             app/map/page.tsx
             app/countries/page.tsx
             app/notary/join/page.tsx
+            app/professional/damiani/page.tsx
+            app/professional/damiani/DamianiReentry.tsx
+            app/documents/[document]/[country]/page.tsx
             app/today/page.tsx
             app/workspace/release/page.tsx
             app/dashboard/page.tsx
@@ -55,6 +57,8 @@ jobs:
             app/dashboard/incidents/page.tsx
             app/dashboard/notary-network/page.tsx
             app/dashboard/truth/page.tsx
+            app/dashboard/workbook/page.tsx
+            app/dashboard/workbook/[sheet]/page.tsx
             app/portal/page.tsx
             app/portal/tracking/page.tsx
             app/portal/trackingNow/page.tsx
@@ -73,6 +77,7 @@ jobs:
             app/api/health/route.ts
             lib/auth/server-role.ts
             lib/dashboardAuth.ts
+            lib/seo-document-routing.ts
           )
           FAIL=0
           for f in "${REQUIRED[@]}"; do
@@ -88,7 +93,6 @@ jobs:
             exit 1
           fi
 
-      # ── Route smoke test ───────────────────────────────────────────────────
       - name: Route smoke test
         env:
           BASE_URL: ${{ inputs.production_url }}
@@ -97,7 +101,6 @@ jobs:
           PASS=0
           FAIL=0
 
-          # Helper: test a PUBLIC route — must return 200 (or safe redirect to 200)
           check_public() {
             local route="$1"
             local url="${BASE_URL}${route}"
@@ -125,7 +128,6 @@ jobs:
             PASS=$((PASS+1))
           }
 
-          # Helper: test a PROTECTED route — 200, 401, 403, or redirect to /login are all OK
           check_protected() {
             local route="$1"
             local url="${BASE_URL}${route}"
@@ -148,7 +150,6 @@ jobs:
             PASS=$((PASS+1))
           }
 
-          # Helper: test a PROTECTED API — must return 401 or 403, not 404 or 500
           check_protected_api() {
             local route="$1"
             local url="${BASE_URL}${route}"
@@ -170,11 +171,10 @@ jobs:
               PASS=$((PASS+1))
               return
             fi
-            echo "⚠️  WARN [api:protected] $route → $status (unexpected, not failing)"
+            echo "⚠️ WARN [api:protected] $route → $status (unexpected, not failing)"
             PASS=$((PASS+1))
           }
 
-          # Helper: test a PUBLIC API health endpoint — must return 200
           check_public_api() {
             local route="$1"
             local url="${BASE_URL}${route}"
@@ -208,6 +208,10 @@ jobs:
           check_public "/map"
           check_public "/countries"
           check_public "/notary/join"
+          check_public "/professional/damiani"
+          check_public "/documents/fbi-background-check/france"
+          check_public "/documents/birth-certificate/italy"
+          check_public "/documents/power-of-attorney/spain"
           check_protected "/today"
           check_protected "/workspace/release"
 
@@ -221,6 +225,8 @@ jobs:
           check_protected "/dashboard/incidents"
           check_protected "/dashboard/notary-network"
           check_protected "/dashboard/truth"
+          check_protected "/dashboard/workbook"
+          check_protected "/dashboard/workbook/START_HERE"
 
           echo ""
           echo "══════════════════════════════════════════════"
