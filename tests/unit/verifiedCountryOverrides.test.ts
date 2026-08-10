@@ -33,8 +33,8 @@ test("UAE does not receive a fabricated Hague apostille-only route", () => {
   assert.equal(uae.verificationStatus, "VERIFICATION_REQUIRED");
 });
 
-test("verified overrides preserve unaffected country profiles", () => {
-  const base = getCountryBySlug("mexico");
+test("verified overrides preserve truly unaffected country profiles", () => {
+  const base = getCountryBySlug("netherlands");
   assert.ok(base);
   assert.equal(applyVerifiedCountryOverride(base), base);
 });
