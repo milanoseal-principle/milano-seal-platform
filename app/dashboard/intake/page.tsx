@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Copy, ExternalLink, Sparkles } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, ExternalLink, Sparkles } from "lucide-react";
 import { formatCurrencyDetailed } from "@/lib/format";
 
 const US_STATES = [
@@ -124,8 +124,18 @@ interface SuccessData {
   pricing: QuoteData;
 }
 
+interface IntakeFailure {
+  code: string;
+  correlationId: string | null;
+  message: string;
+  reason?: string;
+  httpStatus?: number;
+  retryable?: boolean;
+}
+
 export default function Intake() {
   const [success, setSuccess] = useState<SuccessData | null>(null);
+  const [failure, setFailure] = useState<IntakeFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
 
@@ -191,7 +201,9 @@ export default function Intake() {
           }),
         });
         if (res.ok) setQuoteData(await res.json());
-      } catch {}
+      } catch (error) {
+        console.warn("[dashboard/intake] live quote unavailable", error);
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [
@@ -213,6 +225,7 @@ export default function Intake() {
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
+    setFailure(null);
     try {
       const res = await fetch("/api/intake", {
         method: "POST",
@@ -230,9 +243,20 @@ export default function Intake() {
           source_channel: "admin",
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        toast.error(data.error || "Failed to create matter.");
+        const nextFailure: IntakeFailure = {
+          code: typeof data.code === "string" ? data.code : "UNKNOWN_INTAKE_FAILURE",
+          correlationId:
+            typeof data.correlation_id === "string" ? data.correlation_id : null,
+          message:
+            typeof data.error === "string" ? data.error : "Unable to create Matter",
+          reason: typeof data.reason === "string" ? data.reason : undefined,
+          httpStatus: res.status,
+          retryable: Boolean(data.retryable),
+        };
+        setFailure(nextFailure);
+        toast.error("Unable to create Matter");
         return;
       }
       toast.success(`Matter ${data.deal_id} created.`);
@@ -242,7 +266,14 @@ export default function Intake() {
         pricing: data.pricing as QuoteData,
       });
     } catch {
-      toast.error("Failed to create matter.");
+      setFailure({
+        code: "NETWORK_FAILURE",
+        correlationId: null,
+        message: "Unable to create Matter",
+        reason: "The request did not reach a successful server response.",
+        retryable: true,
+      });
+      toast.error("Unable to create Matter");
     } finally {
       setSubmitting(false);
     }
@@ -340,6 +371,7 @@ export default function Intake() {
                 variant="outline"
                 onClick={() => {
                   setSuccess(null);
+                  setFailure(null);
                   form.reset();
                 }}
               >
@@ -755,6 +787,45 @@ export default function Intake() {
                 />
               </CardContent>
             </Card>
+
+            {failure && (
+              <Card className="border-destructive/60 bg-destructive/5">
+                <CardContent className="pt-5">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                    <div className="min-w-0 space-y-2">
+                      <div>
+                        <div className="font-medium text-foreground">{failure.message}</div>
+                        <div className="text-sm text-muted-foreground">
+                          The Matter was not accepted as saved. Correct the issue below and try again.
+                        </div>
+                      </div>
+                      <div className="grid gap-1 text-xs sm:grid-cols-2">
+                        <div>
+                          <span className="text-muted-foreground">Error code:</span>{" "}
+                          <code className="font-mono text-foreground">{failure.code}</code>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Reference:</span>{" "}
+                          <code className="font-mono text-foreground">
+                            {failure.correlationId ?? "Not available"}
+                          </code>
+                        </div>
+                        {failure.httpStatus && (
+                          <div>
+                            <span className="text-muted-foreground">HTTP:</span>{" "}
+                            <code className="font-mono text-foreground">{failure.httpStatus}</code>
+                          </div>
+                        )}
+                      </div>
+                      {failure.reason && (
+                        <p className="text-xs text-muted-foreground">{failure.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="flex justify-end">
               <Button

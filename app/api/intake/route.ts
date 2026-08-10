@@ -28,6 +28,79 @@ import { safeText } from "@/lib/security/app-guards";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
+type IntakeStage =
+  | "REQUEST_RECEIVED"
+  | "NORMALIZED"
+  | "VALIDATED"
+  | "ROUTED"
+  | "COMPLIANCE_COMPLETE"
+  | "PRICED"
+  | "INVOICE_CREATED"
+  | "WISE_REQUEST_CREATED"
+  | "MATTER_PERSISTED"
+  | "RESPONSE_SENT";
+
+type IntakeFailureCode =
+  | "VALIDATION_FAILED"
+  | "COMPLIANCE_REVIEW_REQUIRED"
+  | "PRICING_FAILED"
+  | "PERSISTENCE_FAILED"
+  | "PAYMENT_REQUEST_FAILED"
+  | "CONFIGURATION_ERROR"
+  | "UNKNOWN_INTAKE_FAILURE";
+
+function createIntakeCorrelationId(): string {
+  const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  return `MSERR-${day}-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function safeFailure(
+  code: IntakeFailureCode,
+  correlationId: string,
+  status = 500,
+  reason?: string,
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Unable to create Matter",
+      code,
+      correlation_id: correlationId,
+      retryable: code === "PAYMENT_REQUEST_FAILED",
+      ...(reason ? { reason } : {}),
+    },
+    { status },
+  );
+}
+
+function logIntakeFailure(params: {
+  correlationId: string;
+  stage: IntakeStage;
+  code: IntakeFailureCode;
+  error: unknown;
+  dealId?: string;
+  source?: string;
+}) {
+  const error = params.error as {
+    message?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+  console.error("[intake] critical failure", {
+    correlationId: params.correlationId,
+    stage: params.stage,
+    category: params.code,
+    dealId: params.dealId ?? null,
+    source: params.source ?? null,
+    providerCode: error?.code ?? null,
+    message: error?.message ?? String(params.error),
+    details: error?.details ?? null,
+    hint: error?.hint ?? null,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
     1000 + Math.random() * 9000,
@@ -106,10 +179,21 @@ async function notifyHighValue(
       deal_id: dealId,
       read: false,
     });
-  } catch {}
+  } catch (error) {
+    console.error("[intake] high-value notification failed", {
+      dealId,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
 export async function POST(req: NextRequest) {
+  const correlationId = createIntakeCorrelationId();
+  let stage: IntakeStage = "REQUEST_RECEIVED";
+  let currentDealId: string | undefined;
+  let currentSource: string | undefined;
+
   try {
     let raw = await req.json();
 
@@ -140,6 +224,7 @@ export async function POST(req: NextRequest) {
     if (typeof data.email === "string") {
       data.email = data.email.trim().toLowerCase();
     }
+    stage = "NORMALIZED";
 
     let normalizedRouting = normalizeIntakeRouting({ ...raw, ...data });
     normalizedRouting = checkAffidavitFederalConflict(
@@ -148,14 +233,20 @@ export async function POST(req: NextRequest) {
     );
     const originAuthorityLabel = normalizedRouting.origin_authority_label;
     const routingWarnings = normalizedRouting.warnings;
+    stage = "ROUTED";
 
     try {
       validateMatter(data);
-    } catch (e: any) {
-      return NextResponse.json(
-        { error: e.message, code: e.message },
-        { status: 400 },
-      );
+      stage = "VALIDATED";
+    } catch (error) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "VALIDATION_FAILED",
+        error,
+      });
+      const reason = error instanceof Error ? error.message : "Matter validation failed";
+      return safeFailure("VALIDATION_FAILED", correlationId, 400, reason);
     }
 
     const country = data.country || prefillCountry || "United States";
@@ -168,7 +259,19 @@ export async function POST(req: NextRequest) {
         destinationCountry: country,
       });
       if (compliance.apostille_required) data.apostille = true;
-    } catch {}
+      stage = "COMPLIANCE_COMPLETE";
+    } catch (error) {
+      // Preserve intake capture while making the compliance failure observable.
+      // Canonical execution truth is repaired in the next production increment;
+      // until then this cannot silently disappear from operator diagnostics.
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "COMPLIANCE_REVIEW_REQUIRED",
+        error,
+      });
+      compliance = null;
+    }
 
     const autoLane = autoSelectLane({
       country,
@@ -232,6 +335,7 @@ export async function POST(req: NextRequest) {
         .map((x) => ({ item: x.label, amount: x.amount })),
       witness_total: legacyPricing.witness_total,
     };
+    stage = "PRICED";
 
     // Eligible-subtotal boundary (canonical courtesy rule): a courtesy code may
     // only discount the eligible service subtotal, never pass-through / dispatch
@@ -348,13 +452,16 @@ export async function POST(req: NextRequest) {
 
     const finalLane = pricing.lane;
     const invoice = generateInvoice(effectiveTotal);
+    stage = "INVOICE_CREATED";
     const decline_risk = riskScore(data);
     const deal_id = genDealId();
+    currentDealId = deal_id;
     const access_token = randomUUID();
     const client_name =
       data.name || (raw as Record<string, string>).client_name || "";
     const source =
       ((data as Record<string, unknown>).source_channel as string) || "web";
+    currentSource = source;
 
     const conversion_score = calculateScore({
       country,
@@ -366,15 +473,29 @@ export async function POST(req: NextRequest) {
     const payment_reference = deal_id;
     const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
 
-    const wiseResult = await createWisePaymentRequest({
-      dealId: payment_reference,
-      amount: invoice.retainer,
-      currency: "USD",
-      description: payment_description,
-      clientName: client_name,
-      clientEmail: data.email || null,
-      redirectUrl: `${SITE}/portal`,
-    });
+    let wiseResult: Awaited<ReturnType<typeof createWisePaymentRequest>>;
+    try {
+      wiseResult = await createWisePaymentRequest({
+        dealId: payment_reference,
+        amount: invoice.retainer,
+        currency: "USD",
+        description: payment_description,
+        clientName: client_name,
+        clientEmail: data.email || null,
+        redirectUrl: `${SITE}/portal`,
+      });
+      stage = "WISE_REQUEST_CREATED";
+    } catch (error) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "PAYMENT_REQUEST_FAILED",
+        error,
+        dealId: deal_id,
+        source,
+      });
+      return safeFailure("PAYMENT_REQUEST_FAILED", correlationId, 503);
+    }
     const payment_link = wiseResult.url;
 
     const payment_metadata = {
@@ -535,123 +656,26 @@ export async function POST(req: NextRequest) {
 
     let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
 
-    {
-      const { data: d, error: e } = await supabase
-        .from("deals")
-        .insert([intakePayload])
-        .select()
-        .single();
+    const { data: persistedDeal, error: persistenceError } = await supabase
+      .from("deals")
+      .insert([intakePayload])
+      .select()
+      .single();
 
-      if (!e) {
-        deal = d as Record<string, unknown>;
-      } else {
-        console.error("[intake] DB insert attempt 1 failed:", {
-          message: e.message,
-          details: e.details,
-          hint: e.hint,
-          code: e.code,
-        });
-
-        if (requestedCourtesy)
-          return NextResponse.json(
-            {
-              error:
-                "Courtesy checkout is temporarily unavailable. Please contact The Milano Seal.",
-            },
-            { status: 503 },
-          );
-
-        const minimalPayload = {
-          deal_id,
-          access_token,
-          client_name,
-          email: data.email || "",
-          phone: data.phone || "",
-          document_type: docType,
-          destination_country: country,
-          apostille_required:
-            compliance?.apostille_required ?? Boolean(data.apostille ?? false),
-          urgency: (data.urgency as string) ?? "standard",
-          mobile: Boolean(data.mobile ?? false),
-          signers: Number(data.signers ?? 1),
-          witnesses: Number(data.witnesses ?? 0),
-          translation: Boolean(data.translation ?? false),
-          multi_country: Boolean(data.multi_country ?? false),
-          payment_status: "unpaid" as const,
-          status: "intake_received" as const,
-          deal_status: "awaiting_payment" as const,
-        };
-
-        const { data: d2, error: e2 } = await supabase
-          .from("deals")
-          .insert([minimalPayload])
-          .select()
-          .single();
-
-        if (e2) {
-          console.error("[intake] DB insert attempt 2 failed:", {
-            message: e2.message,
-            details: e2.details,
-            hint: e2.hint,
-            code: e2.code,
-          });
-
-          const barePayload = {
-            deal_id,
-            access_token,
-            client_name,
-            email: data.email || "",
-            payment_status: "unpaid" as const,
-            status: "intake_received" as const,
-            deal_status: "awaiting_payment" as const,
-          };
-          const { data: d3, error: e3 } = await supabase
-            .from("deals")
-            .insert([barePayload])
-            .select()
-            .single();
-
-          if (e3) {
-            console.error("[intake] DB insert attempt 3 failed:", {
-              message: e3.message,
-              details: e3.details,
-              hint: e3.hint,
-              code: e3.code,
-            });
-            return NextResponse.json(
-              {
-                error: "Failed to save matter. Please try again or contact support.",
-                code: "INTAKE_DB_INSERT_FAILED",
-                supabase_code: e3.code ?? e2.code ?? e.code ?? null,
-                attempt1_code: e.code ?? null,
-                attempt1_msg: e.message ?? null,
-                attempt2_code: e2.code ?? null,
-                attempt2_msg: e2.message ?? null,
-                attempt3_code: e3.code ?? null,
-                attempt3_msg: e3.message ?? null,
-                hint: e3.hint ?? e2.hint ?? e.hint ?? null,
-                details: e3.details ?? e2.details ?? e.details ?? null,
-              },
-              { status: 500 },
-            );
-          }
-
-          deal = d3 as Record<string, unknown>;
-          console.warn(
-            "[intake] saved via bare payload fallback — attempt1:",
-            e.code,
-            "attempt2:",
-            e2.code,
-          );
-        } else {
-          deal = d2 as Record<string, unknown>;
-          console.warn(
-            "[intake] saved via minimal payload fallback — full payload code:",
-            e.code,
-          );
-        }
-      }
+    if (persistenceError) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "PERSISTENCE_FAILED",
+        error: persistenceError,
+        dealId: deal_id,
+        source,
+      });
+      return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
     }
+
+    deal = persistedDeal as Record<string, unknown>;
+    stage = "MATTER_PERSISTED";
 
     void notifyHighValue(deal_id, country, effectiveTotal, priority_tier);
 
@@ -684,7 +708,14 @@ export async function POST(req: NextRequest) {
         }
       })();
 
-      void notifyClient(dealRowId, "intake_received");
+      void notifyClient(dealRowId, "intake_received").catch((error) => {
+        console.error("[intake] client notification failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
+      });
 
       void (async () => {
         try {
@@ -725,6 +756,13 @@ export async function POST(req: NextRequest) {
         retainer: invoice.retainer,
         paymentLink: payment_link,
         portalUrl: `${SITE}/portal/${access_token}`,
+      }).catch((error) => {
+        console.error("[intake] confirmation email failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
       });
     }
 
@@ -736,7 +774,13 @@ export async function POST(req: NextRequest) {
           data: { user },
         } = await ssr.auth.getUser();
         if (user?.email) actor = user.email;
-      } catch {}
+      } catch (error) {
+        console.warn("[intake] actor resolution unavailable", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
       await logActivity({
         deal_id,
         actor,
@@ -782,8 +826,10 @@ export async function POST(req: NextRequest) {
         "Urgent or multi-country routing — Executive lane handles it end-to-end.",
     };
 
+    stage = "RESPONSE_SENT";
     return NextResponse.json({
       success: true,
+      correlation_id: correlationId,
       deal_id: deal?.deal_id || deal_id,
       lane: finalLane,
       estimated_value: effectiveTotal,
@@ -818,11 +864,23 @@ export async function POST(req: NextRequest) {
       decline_risk,
       invoice,
     });
-  } catch (err: any) {
-    console.error("Intake error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  } catch (error) {
+    const code: IntakeFailureCode =
+      stage === "PRICED" || stage === "INVOICE_CREATED"
+        ? "PRICING_FAILED"
+        : stage === "WISE_REQUEST_CREATED"
+          ? "PAYMENT_REQUEST_FAILED"
+          : stage === "MATTER_PERSISTED"
+            ? "UNKNOWN_INTAKE_FAILURE"
+            : "UNKNOWN_INTAKE_FAILURE";
+    logIntakeFailure({
+      correlationId,
+      stage,
+      code,
+      error,
+      dealId: currentDealId,
+      source: currentSource,
+    });
+    return safeFailure(code, correlationId, 500);
   }
 }
