@@ -4,6 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
 import { calculatePrice, determineLaneAndPrice } from "@/lib/pricing";
+import {
+  nonDiscountableTotalFromBreakdown,
+  eligibleSubtotalFromTotal,
+  effectiveTotalAfterCourtesy,
+} from "@/lib/pricing/courtesyEligibility";
+import { computeDiscountAmount, type DiscountCode } from "@/lib/discountCodes";
 import { generateInvoice } from "@/lib/invoice";
 import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
@@ -227,6 +233,21 @@ export async function POST(req: NextRequest) {
       witness_total: legacyPricing.witness_total,
     };
 
+    // Eligible-subtotal boundary (canonical courtesy rule): a courtesy code may
+    // only discount the eligible service subtotal, never pass-through / dispatch
+    // charges. The boundary math lives in one shared module so intake and its
+    // tests compute it identically. Invariant: eligibleSubtotal +
+    // nonDiscountableTotal === pricing.total; the discount applies to
+    // eligibleSubtotal only. Both are persisted so the canonical discount
+    // service and Wise reconciliation fail closed if the boundary is missing.
+    const nonDiscountableTotal = nonDiscountableTotalFromBreakdown(
+      canonicalPricing.breakdown,
+    );
+    const eligibleSubtotal = eligibleSubtotalFromTotal(
+      Number(pricing.total),
+      nonDiscountableTotal,
+    );
+
     const clientQuotedTotal = Number(raw.client_quoted_total);
     if (
       Number.isFinite(clientQuotedTotal) &&
@@ -301,27 +322,28 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
 
-      const eligibleSubtotalCents = Math.round(Number(pricing.total) * 100);
       const discountValue = Number(discount.discount_value);
-      const discountCents =
-        discount.discount_type === "percentage"
-          ? Math.round((eligibleSubtotalCents * discountValue) / 100)
-          : Math.round(discountValue * 100);
+      // Canonical amount calculator — applies the discount to the eligible
+      // subtotal only and caps it at that subtotal.
+      const amount = computeDiscountAmount(
+        {
+          discount_type: discount.discount_type,
+          discount_value: discountValue,
+        } as DiscountCode,
+        eligibleSubtotal,
+      );
       courtesyAdjustment = {
         id: discount.id,
         code: String(discount.code),
         discount_type: discount.discount_type as "percentage" | "fixed_amount",
         discount_value: discountValue,
-        amount:
-          Math.min(eligibleSubtotalCents, Math.max(0, discountCents)) / 100,
+        amount,
       };
     }
 
-    const effectiveTotal = Math.max(
-      0,
-      Math.round(
-        (Number(pricing.total) - (courtesyAdjustment?.amount ?? 0)) * 100,
-      ) / 100,
+    const effectiveTotal = effectiveTotalAfterCourtesy(
+      Number(pricing.total),
+      courtesyAdjustment?.amount ?? 0,
     );
 
     const finalLane = pricing.lane;
@@ -486,8 +508,8 @@ export async function POST(req: NextRequest) {
       witness_total: pricing.witness_total,
       total_price: effectiveTotal,
       original_total: pricing.total,
-      eligible_subtotal: pricing.total,
-      non_discountable_total: 0,
+      eligible_subtotal: eligibleSubtotal,
+      non_discountable_total: nonDiscountableTotal,
       final_total: effectiveTotal,
       discount_code: courtesyAdjustment?.code ?? null,
       discount_value: courtesyAdjustment?.discount_value ?? null,
