@@ -17,13 +17,13 @@ export async function POST(
   } = await supabase.auth.getUser();
 
   await recordSecurityEvent({
-    event_name: "MANUAL_PAYMENT_CONFIRMATION_BLOCKED",
+    event_name: "PAYMENT_CONFIRMATION_REJECTED",
     severity: "high",
-    actor: user?.email ?? user?.id ?? null,
+    actor: user?.email ?? user?.id ?? undefined,
+    matter_id: id || undefined,
     route: "/api/admin/matters/[id]/confirm-payment",
     client_safe: false,
     metadata: {
-      matter_id: id || null,
       reason: "wise_reconciliation_authoritative",
     },
   });
