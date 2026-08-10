@@ -105,6 +105,66 @@ const VERIFIED_OVERRIDES: Record<string, CountryOverride> = {
       },
     ],
   },
+  brazil: {
+    hagueMember: "member",
+    hagueMemberSince: "2016-08-14",
+    apostilleRequired: true,
+    consularLegalizationRequired: false,
+    seoTitle: "U.S. Apostille & Document Authentication for Brazil | The Milano Seal™",
+    seoDescription:
+      "Authority-aware U.S. apostille and document execution coordination for Brazilian business, property, family, vital-record, and private-client matters.",
+    faqs: [
+      {
+        q: "Is Brazil a Hague Apostille Convention country?",
+        a: "Yes. The Apostille Convention entered into force for Brazil on August 14, 2016. The competent U.S. authority still depends on the origin and type of document.",
+      },
+    ],
+  },
+  mexico: {
+    hagueMember: "member",
+    hagueMemberSince: "1995-08-14",
+    apostilleRequired: true,
+    consularLegalizationRequired: false,
+    seoTitle: "U.S. Apostille & Document Execution for Mexico | The Milano Seal™",
+    seoDescription:
+      "U.S. apostille and document execution coordination for Mexican property, corporate, family, immigration, and private-client matters.",
+    faqs: [
+      {
+        q: "Is Mexico a Hague Apostille Convention country?",
+        a: "Yes. The Apostille Convention entered into force for Mexico on August 14, 1995. The U.S. competent authority depends on whether the document is state-issued, federal, or privately executed and notarized.",
+      },
+    ],
+  },
+  portugal: {
+    hagueMember: "member",
+    hagueMemberSince: "1969-02-04",
+    apostilleRequired: true,
+    consularLegalizationRequired: false,
+    seoTitle: "U.S. Apostille & Document Execution for Portugal | The Milano Seal™",
+    seoDescription:
+      "Authority-aware U.S. apostille and document execution coordination for Portuguese residency, property, estate, citizenship, corporate, and private-client matters.",
+    faqs: [
+      {
+        q: "Is Portugal a Hague Apostille Convention country?",
+        a: "Yes. The Apostille Convention entered into force for Portugal on February 4, 1969. The proper U.S. apostille authority depends on the document origin and execution path.",
+      },
+    ],
+  },
+  greece: {
+    hagueMember: "member",
+    hagueMemberSince: "1985-05-18",
+    apostilleRequired: true,
+    consularLegalizationRequired: false,
+    seoTitle: "U.S. Apostille & Document Execution for Greece | The Milano Seal™",
+    seoDescription:
+      "U.S. apostille and document execution coordination for Greek citizenship, succession, property, maritime, corporate, and private-client matters.",
+    faqs: [
+      {
+        q: "Is Greece a Hague Apostille Convention country?",
+        a: "Yes. The Apostille Convention entered into force for Greece on May 18, 1985. The competent U.S. authority depends on the origin and type of the document.",
+      },
+    ],
+  },
   canada: {
     hagueMember: "member",
     hagueMemberSince: "2024-01-11",
