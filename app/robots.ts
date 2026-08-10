@@ -74,6 +74,7 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: [
       "https://www.themilanoseal.com/sitemap.xml",
       "https://www.themilanoseal.com/apostille/sitemap.xml",
+      "https://www.themilanoseal.com/professional/sitemap.xml",
     ],
   };
 }
