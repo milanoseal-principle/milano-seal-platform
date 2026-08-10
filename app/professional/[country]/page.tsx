@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!corridor || !baseCountry) return {};
   const country = applyVerifiedCountryOverride(baseCountry);
   const canonical = `https://www.themilanoseal.com/professional/${slug}`;
-  const title = `U.S. Document Execution for ${country.name} Attorneys & Advisors | The Milano Seal™`;
-  const description = `${corridor.positioning} A professional U.S. execution desk for cross-border legal and private-client matters, with authority routing and secure matter status.`;
+  const title = `U.S. Apostille & Document Execution for ${country.name} Attorneys | The Milano Seal™`;
+  const description = `${corridor.positioning} Professional U.S. execution support for attorneys, notaries, fiduciaries, family offices, corporate counsel, and cross-border advisors.`;
 
   return {
     title,
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: "https://www.themilanoseal.com/og-image.png",
           width: 1200,
           height: 630,
-          alt: `The Milano Seal™ — professional U.S. document execution for ${country.name}`,
+          alt: `The Milano Seal™ — U.S. apostille and document execution for ${country.name}`,
         },
       ],
     },
@@ -64,17 +64,17 @@ export default async function ProfessionalCountryPage({ params }: Props) {
   const country = applyVerifiedCountryOverride(baseCountry);
   const isHague = country.hagueMember === "member";
   const canonical = `https://www.themilanoseal.com/professional/${slug}`;
-  const intakeHref = `/intake?lane=professional&destination=${slug}&country=${encodeURIComponent(country.name)}&source=professional-country-seo`;
+  const intakeHref = `/intake?lane=professional&destination=${slug}&country=${encodeURIComponent(country.name)}&source=professional-${slug}-seo`;
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: `U.S. Document Execution for ${country.name} Attorneys & Professional Advisors`,
+    name: `U.S. Apostille & Document Execution for ${country.name} Attorneys & Professional Advisors`,
     description: corridor.positioning,
     url: canonical,
     mainEntity: {
       "@type": "Service",
-      name: `Professional U.S. Document Execution for ${country.name}`,
+      name: `Professional U.S. Apostille & Document Execution for ${country.name}`,
       serviceType: "U.S. document execution and apostille coordination",
       provider: {
         "@type": "Organization",
@@ -126,18 +126,18 @@ export default async function ProfessionalCountryPage({ params }: Props) {
 
         <section className="px-4 sm:px-6 pt-16 pb-12">
           <div className="max-w-5xl mx-auto">
-            <div className="max-w-3xl">
+            <div className="max-w-4xl">
               <p className="font-mono text-[10px] tracking-[0.24em] uppercase text-[#C6A55A]/70 mb-4">
                 Professional Execution Desk · {country.name}
               </p>
               <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] font-medium text-white mb-6">
-                U.S. Document Execution for {country.name}{" "}
+                U.S. Apostille & Document Execution for {country.name}{" "}
                 <em className="text-[#C6A55A]">Attorneys & Advisors</em>
               </h1>
-              <p className="text-[#A0A0A0] text-lg leading-relaxed mb-5">
+              <p className="text-[#A0A0A0] text-lg leading-relaxed mb-5 max-w-3xl">
                 {corridor.positioning}
               </p>
-              <p className="text-[#676767] leading-relaxed max-w-2xl">
+              <p className="text-[#676767] leading-relaxed max-w-3xl">
                 The Milano Seal coordinates the U.S. side of the Matter: document-origin review, execution when required, competent-authority routing, custody, status, and secure release. The foreign receiving authority remains the source of truth for its matter-specific acceptance requirements.
               </p>
 
@@ -256,7 +256,33 @@ export default async function ProfessionalCountryPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="px-4 sm:px-6 py-14 bg-[#090909] border-t border-white/[0.05]">
+        <section className="px-4 sm:px-6 py-16 bg-[#090909] border-y border-white/[0.05]">
+          <div className="max-w-4xl mx-auto">
+            <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#C6A55A]/60 mb-3">
+              Direct Answers for {country.name} Matters
+            </p>
+            <h2 className="font-serif text-3xl mb-8">
+              U.S. apostille and document-execution questions
+            </h2>
+            <div className="space-y-4">
+              {corridor.answerEngineQuestions.map((item) => (
+                <article
+                  key={item.question}
+                  className="rounded-xl border border-white/[0.06] bg-[#060606] p-6"
+                >
+                  <h3 className="font-serif text-xl text-[#E8DCC0] mb-3">
+                    {item.question}
+                  </h3>
+                  <p className="text-[#818181] text-sm leading-relaxed">
+                    {item.answer}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 sm:px-6 py-14">
           <div className="max-w-3xl mx-auto text-center">
             <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/60 mb-3">
               Professional U.S. Execution Desk
