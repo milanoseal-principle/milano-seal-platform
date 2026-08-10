@@ -1,7 +1,21 @@
 # The Milano Seal™ — Go-Live Checklist
-**Document Reference:** MS-OPS-GOLIVE-2026-V1  
-**Run after:** All REMOTE_P0_CLEARANCE.md steps are complete  
+**Document Reference:** MS-OPS-GOLIVE-2026-V1
+**Status:** ⚠️ **LEGACY / INITIAL P0 INFRASTRUCTURE CHECKLIST**
+**Run after:** All REMOTE_P0_CLEARANCE.md steps are complete
 **Owner:** Platform Operator
+
+> **This checklist governs the original infrastructure clearance only.
+> For current production certification and Damiani go-live,
+> [MS-OPS-FINALCERT-2026-V1](./FINAL_PRODUCTION_CERTIFICATION.md) controls.**
+>
+> Several assertions below (e.g. "migration 011/012 must NOT be applied",
+> "no `alliance_partners` / `country_registry` tables") reflect the original
+> P0 infrastructure baseline. The current production architecture now includes
+> Alliance, expanded country/document intelligence, the workbook OS, Damiani,
+> and newer routing layers. Where any item here conflicts with the current
+> locked production architecture, the current architecture and
+> **FINAL_PRODUCTION_CERTIFICATION.md** control. Treat this document as the
+> historical infrastructure record, not the current release authority.
 
 Sign every item. Any unsigned item = NO-GO.
 

@@ -38,6 +38,28 @@ evidence field = **NO-GO**.
 
 ---
 
+## CONTROLLING CERTIFICATION ORDER
+
+This document is the current release authority. Gates are certified in order:
+
+```
+A. Existing infrastructure / security prerequisites   (MS-OPS-GOLIVE-2026-V1, legacy)
+B. Current production code + CI                        (main @ 310886b — CERTIFIED)
+C. Live Vercel certification                           (Phase 1)
+D. TIFFTEST50 Wise E2E                                 (Phase 2)
+E. Damiani dry run                                     (Phase 3)
+F. Final Truth Review                                  (Phase 4)
+G. GO / NO-GO                                          (Phase 5)
+```
+
+**Precedence:** If an older checklist conflicts with the current production
+architecture, the current locked architecture **and this document
+(MS-OPS-FINALCERT-2026-V1) control.** The legacy go-live checklist
+([MS-OPS-GOLIVE-2026-V1](./go-live-checklist.md)) governs the original
+infrastructure clearance only (order item A).
+
+---
+
 ## PHASE 1 — VERCEL PRODUCTION
 
 | # | Check | PASS / FAIL | Evidence ID |
@@ -63,6 +85,8 @@ Wise — execute a controlled, minimal payment only.
 |---|-------|:-----------:|-------------|
 | 2.1 | Disposable eligible Matter created | ☐ / ☐ | matter id: __________ |
 | 2.2 | Shipping / courier included on the Matter | ☐ / ☐ | — |
+| 2.3 | Beneficiary / account configuration retrieved from approved production configuration — **not** manually typed or AI-generated | ☐ / ☐ | config source: __________ |
+| 2.4 | Amount displayed in the client portal **exactly equals** the server-side reconciled `amount_due` | ☐ / ☐ | portal / server values: __________ |
 
 **Recorded pricing (from the live quote, not reconstructed):**
 
@@ -79,23 +103,29 @@ Wise — execute a controlled, minimal payment only.
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
-| 2.3 | Controlled Wise payment made | ☐ / ☐ | wise txn id: __________ |
-| 2.4 | Server reconciles **amount** | ☐ / ☐ | — |
-| 2.5 | Server reconciles **currency** | ☐ / ☐ | — |
-| 2.6 | Server reconciles **reference** | ☐ / ☐ | — |
-| 2.7 | Server reconciles **transaction ID** | ☐ / ☐ | — |
-| 2.8 | `payment_confirmed` set | ☐ / ☐ | — |
-| 2.9 | TIFFTEST50 redeemed exactly **once** | ☐ / ☐ | usage_count: __________ |
-| 2.10 | Matter scheduled **only after** confirmation | ☐ / ☐ | status ts: __________ |
-| 2.11 | Portal paid / discount state correct | ☐ / ☐ | screenshot: __________ |
+| 2.5 | Controlled Wise payment made | ☐ / ☐ | wise txn id: __________ |
+| 2.6 | Server reconciles **amount** | ☐ / ☐ | — |
+| 2.7 | Server reconciles **currency** | ☐ / ☐ | — |
+| 2.8 | Server reconciles **reference** | ☐ / ☐ | — |
+| 2.9 | Server reconciles **transaction ID** | ☐ / ☐ | — |
+| 2.10 | `payment_confirmed` set | ☐ / ☐ | — |
+| 2.11 | TIFFTEST50 redeemed exactly **once** | ☐ / ☐ | usage_count: __________ |
+| 2.12 | Matter scheduled **only after** confirmation | ☐ / ☐ | status ts: __________ |
+| 2.13 | Portal paid / discount state correct | ☐ / ☐ | screenshot: __________ |
+
+**Negative test — deliberate mismatch is rejected**
+
+| # | Check | PASS / FAIL | Evidence ID |
+|---|-------|:-----------:|-------------|
+| 2.14 | A deliberately wrong amount / reference / currency is **rejected** and does **NOT** produce `payment_confirmed` or `scheduled` | ☐ / ☐ | rejection evidence: __________ |
 
 **Idempotency — replay the same settlement / webhook**
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
-| 2.12 | No second payment | ☐ / ☐ | — |
-| 2.13 | No second redemption (usage_count unchanged) | ☐ / ☐ | usage_count: __________ |
-| 2.14 | No duplicate scheduling transition | ☐ / ☐ | — |
+| 2.15 | No second payment | ☐ / ☐ | — |
+| 2.16 | No second redemption (usage_count unchanged) | ☐ / ☐ | usage_count: __________ |
+| 2.17 | No duplicate scheduling transition | ☐ / ☐ | — |
 
 **Phase 2 result:** PASS / FAIL — recorded by: _______________
 
@@ -149,6 +179,26 @@ any AI-reproduced value. Enter the source used for each.
 | 4.9 | Final amount due | ☐ | __________ |
 
 **NO AI-REPRODUCED CRITICAL IDENTIFIERS.**
+
+**Rendered-document release gate (Damiani-specific):**
+
+| # | Check | PASS / FAIL | Evidence ID |
+|---|-------|:-----------:|-------------|
+| 4.10 | Rendered final legal document compared **character-for-character** against the verified critical identity fields before release | ☐ / ☐ | reviewer + ts: __________ |
+
+Fields compared character-for-character:
+
+```
+legal name
+codice fiscale
+document identity
+destination
+notarial certificate data
+authentication routing
+```
+
+**Any mismatch = RELEASE BLOCKED.** This control directly prevents the prior
+relationship-damaging failure class.
 
 **Phase 4 result:** PASS / FAIL — recorded by: _______________
 
