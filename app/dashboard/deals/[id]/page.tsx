@@ -243,10 +243,6 @@ export default function DealDetail() {
   const [carrier, setCarrier] = useState("FedEx International Priority");
   const [tracking, setTracking] = useState("");
   const [assigneeName, setAssigneeName] = useState("Nicholas");
-  const [payAmt, setPayAmt] = useState("");
-  const [payRef, setPayRef] = useState("");
-  const [payBalAmt, setPayBalAmt] = useState("");
-  const [payBalRef, setPayBalRef] = useState("");
 
   interface ShipAddr {
     name: string;
@@ -1096,8 +1092,11 @@ export default function DealDetail() {
           <Card className="bg-card border-gold">
             <CardHeader>
               <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <CircleDollarSign className="w-4 h-4 text-gold" /> Payment
+                <CircleDollarSign className="w-4 h-4 text-gold" /> Wise Payment
               </CardTitle>
+              <CardDescription>
+                Read-only settlement state. Wise reconciliation is authoritative.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2 p-2 rounded border border-border bg-background">
@@ -1124,48 +1123,34 @@ export default function DealDetail() {
                   </a>
                 )}
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <Badge
+                  variant="outline"
+                  className={isPaid ? "bg-paid" : "bg-await"}
+                >
+                  {deal.payment_status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Amount due</span>
+                <span>
+                  {formatCurrencyDetailed(
+                    Number(deal.amount_due ?? deal.invoice_retainer ?? 0),
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Amount paid</span>
+                <span>
+                  {formatCurrencyDetailed(Number(deal.amount_paid ?? 0))}
+                </span>
+              </div>
               {!isPaymentRequirementSatisfied && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                      Confirm Payment
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Confirm payment</DialogTitle>
-                    </DialogHeader>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Amount"
-                      value={payAmt}
-                      onChange={(e) => setPayAmt(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Wise reference (optional)"
-                      value={payRef}
-                      onChange={(e) => setPayRef(e.target.value)}
-                    />
-                    <DialogFooter>
-                      <Button
-                        onClick={() =>
-                          patchDeal(
-                            {
-                              payment_status: "paid",
-                              payment_amount_received: Number(payAmt),
-                              ...(payRef ? { payment_reference: payRef } : {}),
-                            },
-                            "Payment confirmed.",
-                          )
-                        }
-                        disabled={!payAmt}
-                      >
-                        Mark paid
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <div className="rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+                  Awaiting canonical Wise reconciliation. Operators cannot manually
+                  mark this Matter paid.
+                </div>
               )}
 
               {/* Balance payment section */}
@@ -1223,7 +1208,7 @@ export default function DealDetail() {
 
                         {deal.balance_paid_at ? (
                           <p className="text-xs text-muted-foreground">
-                            Received
+                            Received via Wise reconciliation
                             {deal.balance_amount_received
                               ? ` · $${deal.balance_amount_received.toLocaleString()}`
                               : ""}{" "}
@@ -1233,58 +1218,10 @@ export default function DealDetail() {
                             ).toLocaleDateString()}
                           </p>
                         ) : (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft"
-                              >
-                                Confirm Balance Payment
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Confirm balance payment
-                                </DialogTitle>
-                              </DialogHeader>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder={`Amount (${deal.invoice_balance ?? ""})`}
-                                value={payBalAmt}
-                                onChange={(e) => setPayBalAmt(e.target.value)}
-                              />
-                              <Input
-                                placeholder="Wise reference (optional)"
-                                value={payBalRef}
-                                onChange={(e) => setPayBalRef(e.target.value)}
-                              />
-                              <DialogFooter>
-                                <Button
-                                  onClick={() =>
-                                    patchDeal(
-                                      {
-                                        balance_payment_status: "paid",
-                                        balance_amount_received:
-                                          Number(payBalAmt),
-                                        ...(payBalRef
-                                          ? {
-                                              balance_payment_reference:
-                                                payBalRef,
-                                            }
-                                          : {}),
-                                      },
-                                      "Balance confirmed.",
-                                    )
-                                  }
-                                  disabled={!payBalAmt}
-                                >
-                                  Mark balance paid
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                          <div className="rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+                            Awaiting canonical Wise balance reconciliation. Operators
+                            cannot manually mark the balance paid.
+                          </div>
                         )}
                       </>
                     ) : (
