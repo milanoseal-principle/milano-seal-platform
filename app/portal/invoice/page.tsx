@@ -124,8 +124,8 @@ export default function ClientInvoicePage() {
           }}
         >
           No payment is due for this Matter. This authorization is a separate
-          zero-revenue disposition and is not a paid status or Wise Payment
-          Confirmed status.
+          zero-revenue disposition and{" "}
+          is not a paid status or Wise Payment Confirmed status.
         </p>
         <div
           data-critical-card=""

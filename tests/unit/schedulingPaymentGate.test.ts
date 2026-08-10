@@ -35,6 +35,8 @@ test("a courtesy discount alone never unlocks scheduling", () => {
 });
 
 test("verified payment of the discounted amount unlocks scheduling", () => {
+  // What unlocks the gate is a SETTLED payment: payment_status "paid" with
+  // amount_paid covering amount_due. The trigger is settled money, not a flag.
   const paid = {
     ...unpaidDiscountedMatter,
     payment_status: "paid",
@@ -45,6 +47,23 @@ test("verified payment of the discounted amount unlocks scheduling", () => {
   const gate = evaluateSchedulingGate({ matter: paid });
   assert.equal(gate.schedulingEligible, true);
   assert.equal(gate.paymentRequirementMethod, "verified_payment");
+});
+
+test("a payment_confirmed flag without a settled payment does NOT unlock scheduling", () => {
+  // Guards against a paid-looking row: the confirmation flag is set but no money
+  // has settled (still unpaid, amount_paid 0). The gate keys off settled money,
+  // so this must remain blocked — a flag alone can never unlock scheduling.
+  const flaggedButUnsettled = {
+    ...unpaidDiscountedMatter,
+    payment_status: "unpaid",
+    amount_paid: 0,
+    payment_confirmed: true,
+  };
+  assert.equal(evaluatePaymentGate(flaggedButUnsettled), "PAYMENT_REQUIRED");
+  assert.equal(
+    evaluateSchedulingGate({ matter: flaggedButUnsettled }).schedulingEligible,
+    false,
+  );
 });
 
 test("partial payment (underpayment) does not unlock scheduling", () => {
