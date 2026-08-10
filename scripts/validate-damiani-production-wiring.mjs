@@ -48,7 +48,11 @@ check(
 check("exact amount due stored", /amount_due:\s*invoice\.retainer/.test(intake));
 check(
   "courtesy fail closed",
-  /Courtesy checkout is temporarily unavailable/.test(intake),
+  /\.insert\(\[intakePayload\]\)[\s\S]*if \(persistenceError\)[\s\S]*safeFailure\("PERSISTENCE_FAILED"/.test(
+    intake,
+  ) &&
+    /requestedCourtesy/.test(intake) &&
+    !/minimalPayload|barePayload/.test(intake),
 );
 check(
   "discount uses deals",
