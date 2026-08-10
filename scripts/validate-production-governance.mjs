@@ -33,8 +33,14 @@ const damianiPage = source("app/professional/damiani/page.tsx");
 const damianiClient = source("app/professional/damiani/DamianiReentry.tsx");
 
 const fullInsert = section(intakeRoute, "const intakePayload = {", "let deal:");
-const minimalInsert = section(intakeRoute, "const minimalPayload = {", "const { data: d2");
-const bareInsert = section(intakeRoute, "const barePayload = {", "const { data: d3");
+// #193 replaced the tiered minimal/bare fallback inserts with ONE canonical
+// insert. Review-required operator matters are captured by a second canonical
+// insert (reviewPayload) that saves intake_received/unpaid with no invoice/Wise.
+const reviewInsert = section(
+  intakeRoute,
+  "const reviewPayload = {",
+  "const { data: reviewDeal",
+);
 const engineHandoff = section(intakeRoute, "await runDealEngine({", "});");
 
 check(
@@ -107,9 +113,8 @@ check(
 );
 
 for (const [label, block] of [
-  ["full intake insert", fullInsert],
-  ["minimal intake fallback", minimalInsert],
-  ["bare intake fallback", bareInsert],
+  ["canonical intake insert", fullInsert],
+  ["review-required intake capture", reviewInsert],
 ]) {
   check(
     `${label} separates lifecycle payment and legacy states`,
@@ -120,6 +125,15 @@ for (const [label, block] of [
     ]),
   );
 }
+
+// Review-required capture must NOT authorize a transaction: no invoice, no Wise
+// request, no approved amount are written on that path.
+check(
+  "review-required intake capture creates no invoice or Wise amount",
+  !reviewInsert.includes("amount_due:") &&
+    !reviewInsert.includes("invoice_retainer:") &&
+    !reviewInsert.includes("payment_link"),
+);
 
 check(
   "deal engine handoff starts intake_received and unpaid",

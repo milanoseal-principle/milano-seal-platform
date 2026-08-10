@@ -306,29 +306,165 @@ export async function POST(req: NextRequest) {
     );
     const executionValidation = validateExecutionTruth(executionTruth);
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
+    const legacyExecution = executionTruthToLegacy(executionTruth);
 
-    // Operator intake is authoritative: unresolved/contradictory execution facts
-    // must fail closed before pricing or any Wise request is created.
-    if (
+    // Locked rule: Matter CAPTURE is separated from transaction authorization.
+    // Unresolved / contradictory operator execution facts must fail closed before
+    // any pricing, invoice, or Wise request — but the Matter is still SAVED as
+    // intake_received / unpaid with its execution truth persisted. It simply
+    // receives no approved quote, no invoice, and no Wise payment request, and
+    // therefore cannot schedule or execute until execution review is cleared.
+    const executionReviewRequired =
       sourceHint === "admin" &&
-      (!executionValidation.valid || executionValidation.reviewRequired)
-    ) {
-      const reason = [
-        ...executionValidation.errors,
-        executionValidation.reviewRequired ? "EXECUTION_REVIEW_REQUIRED" : "",
-      ]
-        .filter(Boolean)
-        .join(", ");
-      return safeFailure(
-        "EXECUTION_REVIEW_REQUIRED",
-        correlationId,
-        409,
-        reason || "Execution facts require operator review",
+      (!executionValidation.valid || executionValidation.reviewRequired);
+
+    if (executionReviewRequired) {
+      const reviewReasons = Array.from(
+        new Set(
+          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(
+            Boolean,
+          ),
+        ),
+      );
+
+      const supabase = createAdminClient();
+      const country = data.country || prefillCountry || "United States";
+      const docType = data.document_type || prefillDoc || "";
+      const client_name = data.name || String(raw.client_name || "");
+      const companyName = String(raw.company_name || raw.company || "") || null;
+      const source = String(
+        (data as Record<string, unknown>).source_channel ||
+          raw.source_channel ||
+          "web",
+      );
+      const apostilleRequired = legacyExecution.apostille_required;
+      const conversion_score = calculateScore({
+        country,
+        useCase,
+        urgency: data.urgency as string,
+      });
+      const priority_tier = routeDeal(conversion_score);
+      const deal_id = genDealId();
+      const access_token = randomUUID();
+      currentDealId = deal_id;
+      currentSource = source;
+
+      const reviewMetadata = {
+        source,
+        companyName,
+        execution_truth: executionTruth,
+        execution_review: { required: true, reasons: reviewReasons },
+        quote_state: "review_required",
+        amount_due: null,
+        currency: "USD",
+        originAuthorityLabel: originAuthorityLabel ?? null,
+        normalizedRouting: normalizedRouting ?? null,
+        routingWarnings: routingWarnings ?? [],
+      };
+
+      // No money fields: no base_price/total/original_total/eligible_subtotal/
+      // final_total/discount/invoice_retainer/amount_due/payment_link/
+      // wise_reference. Absent = no approved total, no Wise request.
+      const reviewPayload = {
+        deal_id,
+        access_token,
+        client_name,
+        client_type: String(raw.client_type ?? "individual"),
+        company_name: companyName,
+        email: data.email || "",
+        phone: data.phone || "",
+        document_type: docType,
+        use_case: useCase || null,
+        destination_country: country,
+        origin_state: String(raw.origin_state || data.state || "") || null,
+        apostille_required: apostilleRequired,
+        execution_truth: executionTruth,
+        docs_count: Number(data.docs ?? 1),
+        urgency: (data.urgency as string) ?? "standard",
+        mobile: legacyExecution.mobile,
+        signers: Number(data.signers ?? 1),
+        witnesses: Number(data.witnesses ?? 0),
+        witness_type: data.witness_type ?? null,
+        after_hours: Boolean(data.after_hours ?? false),
+        translation: Boolean(data.translation ?? false),
+        multi_country: Boolean(data.multi_country ?? false),
+        payment_status: "unpaid",
+        payment_confirmed: false,
+        amount_paid: 0,
+        currency: "USD",
+        status: "intake_received",
+        deal_status: "awaiting_payment",
+        conversion_score,
+        priority_tier,
+        notes: [
+          (data.notes as string) || "",
+          `[execution_review_required] ${reviewReasons.join(", ")}`,
+          `[intake_metadata:${JSON.stringify(reviewMetadata)}]`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        internal_notes: JSON.stringify(reviewMetadata),
+      };
+
+      const { data: reviewDeal, error: reviewError } = await supabase
+        .from("deals")
+        .insert([reviewPayload])
+        .select()
+        .single();
+
+      if (reviewError) {
+        logIntakeFailure({
+          correlationId,
+          stage,
+          code: "PERSISTENCE_FAILED",
+          error: reviewError,
+          dealId: deal_id,
+          source,
+        });
+        return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
+      }
+      stage = "MATTER_PERSISTED";
+
+      const reviewRowId = (reviewDeal as { id?: string })?.id;
+      if (reviewRowId) {
+        void notifyClient(reviewRowId, "intake_received").catch(() => {});
+      }
+      void logActivity({
+        deal_id,
+        actor: source === "admin" ? "admin" : `${source}-intake`,
+        action: "created",
+        detail: `Intake captured — execution review required · ${country} · ${reviewReasons.join(", ")}`,
+        meta: {
+          source,
+          execution_truth: executionTruth,
+          execution_review_required: true,
+          reasons: reviewReasons,
+          conversion_score,
+          priority_tier,
+        },
+      }).catch(() => {});
+
+      stage = "RESPONSE_SENT";
+      return NextResponse.json(
+        {
+          success: true,
+          correlation_id: correlationId,
+          deal_id: (reviewDeal as { deal_id?: string })?.deal_id || deal_id,
+          quote_state: "review_required",
+          execution_truth: executionTruth,
+          execution_review: { required: true, reasons: reviewReasons },
+          status: "intake_received",
+          payment_status: "unpaid",
+          payment_confirmed: false,
+          scheduled: false,
+          message:
+            "Matter saved. An approved payment amount will become available after the remaining execution facts are resolved.",
+          remaining: reviewReasons,
+        },
+        { status: 200 },
       );
     }
     stage = "EXECUTION_VALIDATED";
-
-    const legacyExecution = executionTruthToLegacy(executionTruth);
     const country = data.country || prefillCountry || "United States";
     const apostilleRequired = hasCanonicalExecution
       ? legacyExecution.apostille_required
