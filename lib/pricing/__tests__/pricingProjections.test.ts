@@ -7,6 +7,9 @@ import {
   projectFounderPricing,
 } from "../pricingProjections";
 
+// An independently established execution service (RON) plus a required
+// apostille produces an approved canonical price. The selected execution tier
+// alone is never treated as evidence that execution is required.
 const approved = () =>
   priceCanonicalMatter({
     executionTier: "Priority",
@@ -14,20 +17,19 @@ const approved = () =>
     apostilleStatus: "required",
     ron: true,
   });
+
+// Apostille coordination without independently established execution scope
+// remains quote_after_review and must not fabricate a consumer execution price.
 const review = () =>
   priceCanonicalMatter({
     destinationCountry: "Italy",
     apostilleStatus: "required",
   });
-// An established execution service (ron) + required apostille → approved price.
-const approved = () => priceCanonicalMatter({ executionTier: "Priority", destinationCountry: "Italy", apostilleStatus: "required", ron: true });
-const review = () => priceCanonicalMatter({ destinationCountry: "Italy", apostilleStatus: "required" }); // apostille-only → review
 
 test("client projection shows approved amount from canonical result (not hard-coded)", () => {
   const p = projectClientPricing(approved());
   assert.equal(p.mode, "approved_price");
   assert.equal(p.amount, 1250);
-  assert.equal(p.amount, 1250); // 1000 Priority base + 250 apostille
   assert.equal(p.paymentGateRequired, true);
 });
 
@@ -48,10 +50,10 @@ test("apostille-only review → quote_after_review, no fabricated amount", () =>
 
 test("all three projections read the SAME underlying approved result", () => {
   const r = approved();
+  assert.notEqual(r.total, null);
   assert.equal(projectFounderPricing(r), r);
   assert.equal(projectOperatorPricing(r).total, r.total);
   assert.equal(projectClientPricing(r).amount, r.total);
-  assert.notEqual(r.total, null);
 });
 
 test("all three projections preserve review instead of inventing a price", () => {
