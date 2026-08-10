@@ -24,9 +24,9 @@ export async function GET() {
   const { data, error } = await supabase
     .from("deals")
     .select(
-      "deal_id, created_at, status, payment_status, followup_24h, followup_72h, followup_7d, follow_up_active"
+      "deal_id, created_at, status, payment_status, followup_24h, followup_72h, followup_7d, follow_up_active",
     )
-    .eq("payment_status", "pending")
+    .in("payment_status", ["unpaid", "pending"])
     .not("status", "in", '("completed","lost")')
     .limit(500);
 
@@ -45,13 +45,14 @@ export async function GET() {
         step === "24h"
           ? "followup_24h"
           : step === "72h"
-          ? "followup_72h"
-          : "followup_7d";
+            ? "followup_72h"
+            : "followup_7d";
       const done = Boolean((d as Record<string, unknown>)[flagKey]);
       const status: FollowUpRow["status"] = done ? "completed" : "pending";
 
-      if (status === "pending" && due.getTime() > Date.now() + 24 * 3600_000)
+      if (status === "pending" && due.getTime() > Date.now() + 24 * 3600_000) {
         continue;
+      }
 
       rows.push({
         id: `${d.deal_id}:${step}`,
