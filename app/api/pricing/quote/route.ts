@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { determineLaneAndPrice, type PricingData } from "@/lib/pricing";
+import {
+  calculatePrice,
+  determineLaneAndPrice,
+  type PricingData,
+} from "@/lib/pricing";
 import {
   executionQuoteReviewReasons,
   executionTruthToLegacy,
@@ -24,20 +28,30 @@ interface QuoteInput extends Record<string, unknown> {
 }
 
 const LANE_RATIONALE: Record<string, string> = {
-  RON_SIMPLE: "Explicit RON execution selected for this single-document path.",
-  MOBILE_STANDARD: "Explicit Florida mobile execution plus round-trip mileage.",
   Signature: "Standard execution lane from the resolved Matter scope.",
   Priority: "The resolved Matter scope requires Priority coordination.",
   Executive: "Urgent or multi-country handling requires Executive coordination.",
 };
 
+function canonicalLane(body: QuoteInput, apostille: boolean) {
+  if (body.urgency === "urgent" || body.multi_country) return "Executive" as const;
+  if (apostille || (body.signers ?? 1) > 1 || body.translation) {
+    return "Priority" as const;
+  }
+  return "Signature" as const;
+}
+
 function pricingTriggers(body: QuoteInput, lane: string, apostille: boolean) {
   const triggers: string[] = [];
   const truth = normalizeExecutionTruth(body);
   triggers.push(`Execution: ${truth.execution_method.replaceAll("_", " ")}`);
-  triggers.push(`Notarization: ${truth.notarization_requirement.replaceAll("_", " ")}`);
+  triggers.push(
+    `Notarization: ${truth.notarization_requirement.replaceAll("_", " ")}`,
+  );
   triggers.push(`Notarial act: ${truth.notarial_act.replaceAll("_", " ")}`);
-  triggers.push(`Authentication: ${truth.authentication_requirement.replaceAll("_", " ")}`);
+  triggers.push(
+    `Authentication: ${truth.authentication_requirement.replaceAll("_", " ")}`,
+  );
   if ((body.signers ?? 1) > 1) triggers.push(`${body.signers} signers`);
   if (body.translation) triggers.push("Translation coordination");
   if (body.multi_country) triggers.push("Multi-country routing");
@@ -68,9 +82,22 @@ export async function POST(req: NextRequest) {
     }
 
     const legacy = executionTruthToLegacy(truth);
-    const input: PricingData = {
-      // The old pricing helper has a Colorado-RON shortcut. Supplying state only
-      // for an explicit RON selection prevents non-mobile from ever meaning RON.
+    const lane = canonicalLane(body, legacy.apostille_required);
+    const canonicalPricing = calculatePrice({
+      tier: lane.toLowerCase(),
+      document_count: Math.max(1, Number(body.docs_count ?? 1)),
+      signer_count: Math.max(1, Number(body.signers ?? 1)),
+      notarized_signature_count: legacy.notarization_required
+        ? Math.max(1, Number(body.signers ?? 1))
+        : 0,
+      apostille_count: legacy.apostille_required ? 1 : 0,
+      urgency: body.urgency === "urgent" ? "rush" : "standard",
+      shipping: "none",
+    });
+
+    // Witness calculation remains the legacy read-only projection used by intake.
+    // It is reported separately and does not replace the canonical total.
+    const witnessInput: PricingData = {
       state: truth.execution_method === "ron" ? body.origin_state : undefined,
       apostille: legacy.apostille_required,
       docs: body.docs_count,
@@ -84,30 +111,22 @@ export async function POST(req: NextRequest) {
       translation: body.translation,
       multi_country: body.multi_country,
     };
+    const witnessProjection = determineLaneAndPrice(witnessInput);
 
-    const result = determineLaneAndPrice(input);
-    const breakdown: { label: string; amount: number }[] = [
-      { label: `${result.lane} base`, amount: result.base },
-    ];
-    if (result.witness_total > 0) {
-      breakdown.push({
-        label: `Witnesses · ${body.witnesses ?? 0}`,
-        amount: result.witness_total,
-      });
-    }
-    for (const addon of result.addons) {
-      breakdown.push({ label: addon.item, amount: addon.amount });
-    }
+    const breakdown = canonicalPricing.breakdown.map((item) => ({
+      label: item.label,
+      amount: item.amount,
+    }));
 
     return NextResponse.json({
-      lane: result.lane,
-      base: result.base,
-      total: result.total,
-      witness_total: result.witness_total,
+      lane,
+      base: canonicalPricing.base,
+      total: canonicalPricing.total,
+      witness_total: witnessProjection.witness_total,
       breakdown,
       review_required: false,
-      rationale: LANE_RATIONALE[result.lane] ?? "Standard pricing applied.",
-      triggers: pricingTriggers(body, result.lane, legacy.apostille_required),
+      rationale: LANE_RATIONALE[lane] ?? "Standard pricing applied.",
+      triggers: pricingTriggers(body, lane, legacy.apostille_required),
     });
   } catch (error) {
     console.error("[pricing/quote] error:", error);
