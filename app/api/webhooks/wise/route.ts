@@ -17,6 +17,12 @@ export async function GET() {
 // URL: https://themilanoseal.com/api/webhooks/wise
 // Secured via RSA-SHA256 signature on X-Signature-SHA256.
 // Deduplicated via X-Delivery-Id with a deterministic hash fallback.
+//
+// IMPORTANT:
+// Wise balance webhook schemas place amount/currency/occurred_at on `data`,
+// while the balance/profile identifiers live in `data.resource`. Do not model
+// account-deposit events as if invoice reference/amount/currency were all on
+// `resource`; that shape is not the documented Wise balance-credit payload.
 
 function isTestNotification(req: NextRequest): boolean {
   return req.headers.get("X-Test-Notification") === "true";
@@ -41,43 +47,112 @@ function toMinorUnits(value: number): number {
   return Math.round(value * 100);
 }
 
-function extractAmount(resource: Record<string, unknown>): number | null {
-  const raw =
-    resource.amount ??
-    resource.sourceAmount ??
-    resource.targetAmount ??
-    resource.value;
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
+function numericValue(value: unknown): number | null {
   const candidate =
-    typeof raw === "number"
-      ? raw
-      : typeof raw === "string"
-        ? Number(raw)
-        : typeof raw === "object" && raw !== null
-          ? Number((raw as Record<string, unknown>).value)
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : typeof value === "object" && value !== null
+          ? Number((value as Record<string, unknown>).value)
           : Number.NaN;
 
   return Number.isFinite(candidate) && candidate > 0 ? candidate : null;
 }
 
-function extractCurrency(resource: Record<string, unknown>): string | null {
-  const rawAmount =
-    resource.amount ??
-    resource.sourceAmount ??
-    resource.targetAmount ??
-    resource.value;
+function extractAmount(
+  data: Record<string, unknown>,
+  resource: Record<string, unknown>,
+): number | null {
+  const candidates = [
+    data.amount,
+    data.refund_amount,
+    data.refundAmount,
+    resource.amount,
+    resource.refund_amount,
+    resource.refundAmount,
+    resource.sourceAmount,
+    resource.targetAmount,
+    resource.value,
+  ];
 
-  const candidate =
-    resource.currency ??
-    resource.sourceCurrency ??
-    resource.targetCurrency ??
-    (typeof rawAmount === "object" && rawAmount !== null
-      ? (rawAmount as Record<string, unknown>).currency
-      : null);
+  for (const candidate of candidates) {
+    const amount = numericValue(candidate);
+    if (amount !== null) return amount;
+  }
+  return null;
+}
 
-  if (typeof candidate !== "string") return null;
-  const normalized = candidate.trim().toUpperCase();
+function normalizeCurrency(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
   return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
+}
+
+function extractCurrency(
+  data: Record<string, unknown>,
+  resource: Record<string, unknown>,
+): string | null {
+  const dataAmount = asRecord(data.amount);
+  const resourceAmount = asRecord(resource.amount);
+  const candidates = [
+    data.currency,
+    data.refund_currency,
+    data.refundCurrency,
+    dataAmount.currency,
+    resource.currency,
+    resource.refund_currency,
+    resource.refundCurrency,
+    resource.sourceCurrency,
+    resource.targetCurrency,
+    resourceAmount.currency,
+  ];
+
+  for (const candidate of candidates) {
+    const currency = normalizeCurrency(candidate);
+    if (currency) return currency;
+  }
+  return null;
+}
+
+function firstNonEmptyString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function extractMatterReference(
+  data: Record<string, unknown>,
+  resource: Record<string, unknown>,
+): string {
+  const resourceDetails = asRecord(resource.details);
+  const resourceMetadata = asRecord(resource.metadata);
+  const dataDetails = asRecord(data.details);
+  const dataMetadata = asRecord(data.metadata);
+
+  // Intentionally do NOT treat data.transfer_reference as a Milano matter
+  // reference. Wise documents transfer_reference as a Wise-side transfer
+  // correlation field (for example refunds/settlement movements), not the
+  // sender-provided Milano invoice/matter reference.
+  return firstNonEmptyString(
+    resource.reference,
+    resource.paymentReference,
+    resource.payment_reference,
+    resourceDetails.reference,
+    resourceMetadata.reference,
+    data.reference,
+    data.paymentReference,
+    data.payment_reference,
+    dataDetails.reference,
+    dataMetadata.reference,
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -116,7 +191,11 @@ export async function POST(req: NextRequest) {
 
   if (testNotification && env === "production" && !allowTestNotifications()) {
     console.info("[wise-webhook] test notification blocked in production — delivery:", deliveryId);
-    return NextResponse.json({ received: true, skipped: true, reason: "test_notification_blocked" });
+    return NextResponse.json({
+      received: true,
+      skipped: true,
+      reason: "test_notification_blocked",
+    });
   }
 
   let payload: Record<string, unknown>;
@@ -129,17 +208,26 @@ export async function POST(req: NextRequest) {
   const eventType = String(payload.event_type ?? payload.type ?? "");
   const schemaVersion = String(payload.schema_version ?? "");
   const subscriptionId = String(payload.subscription_id ?? "");
-  const occurredAt = String(
-    (payload.data as Record<string, unknown> | undefined)?.occurred_at ??
-      payload.sent_at ??
-      new Date().toISOString(),
-  );
-  const data = (payload.data ?? {}) as Record<string, unknown>;
-  const resource = (data.resource ?? payload.resource ?? {}) as Record<string, unknown>;
+  const data = asRecord(payload.data);
+  const resource = asRecord(data.resource ?? payload.resource);
+  const occurredAt = String(data.occurred_at ?? payload.sent_at ?? new Date().toISOString());
   const resourceType = String(data.resource_type ?? resource.type ?? "");
-  const resourceId = String(resource.id ?? resource.profileId ?? "");
-  const currentState = String(resource.currentState ?? resource.status ?? "");
-  const previousState = String(resource.previousState ?? "");
+  const resourceId = String(resource.id ?? resource.profileId ?? resource.profile_id ?? "");
+  const currentState = String(
+    resource.currentState ??
+      resource.current_state ??
+      resource.status ??
+      data.current_state ??
+      data.currentState ??
+      "",
+  );
+  const previousState = String(
+    resource.previousState ??
+      resource.previous_state ??
+      data.previous_state ??
+      data.previousState ??
+      "",
+  );
 
   if (!eventType) {
     return NextResponse.json({ received: true, skipped: true, reason: "no_event_type" });
@@ -201,6 +289,7 @@ export async function POST(req: NextRequest) {
   try {
     await processWiseEvent({
       eventType,
+      data,
       resource,
       currentState,
       testNotification,
@@ -224,6 +313,7 @@ export async function POST(req: NextRequest) {
 
 async function processWiseEvent(opts: {
   eventType: string;
+  data: Record<string, unknown>;
   resource: Record<string, unknown>;
   currentState: string;
   testNotification: boolean;
@@ -231,9 +321,18 @@ async function processWiseEvent(opts: {
   eventRowId: string | null;
   supabase: ReturnType<typeof createAdminClient>;
 }): Promise<void> {
-  const { eventType, resource, currentState, testNotification, env, eventRowId, supabase } = opts;
+  const {
+    eventType,
+    data,
+    resource,
+    currentState,
+    testNotification,
+    env,
+    eventRowId,
+    supabase,
+  } = opts;
 
-  let milanoStatus =
+  const milanoStatus =
     eventType === "transfers#state-change"
       ? mapWiseTransferState(currentState)
       : mapWiseBalanceEvent(eventType);
@@ -246,17 +345,31 @@ async function processWiseEvent(opts: {
     "transfers#payout-failure",
     "transfers#refund",
   ];
-  if (!handledTypes.includes(eventType)) return;
 
-  const reference = String(
-    resource.reference ??
-      (resource.details as Record<string, unknown> | undefined)?.reference ??
-      (resource.metadata as Record<string, unknown> | undefined)?.reference ??
-      "",
-  ).trim();
+  if (!handledTypes.includes(eventType)) {
+    if (eventRowId) {
+      await supabase
+        .from("wise_webhook_events")
+        .update({
+          processed: true,
+          processed_at: new Date().toISOString(),
+          processing_error: `IGNORED_EVENT_TYPE: ${eventType}`,
+        })
+        .eq("id", eventRowId);
+    }
+    return;
+  }
+
+  const reference = extractMatterReference(data, resource);
 
   if (!reference) {
-    await flagForReview(supabase, eventRowId, "no_reference", null);
+    const reason =
+      eventType === "balances#credit"
+        ? "balance_credit_requires_statement_reconciliation"
+        : eventType === "balances#update"
+          ? "balance_update_requires_statement_reconciliation"
+          : "no_reference";
+    await flagForReview(supabase, eventRowId, reason, null);
     return;
   }
 
@@ -281,22 +394,40 @@ async function processWiseEvent(opts: {
     return;
   }
 
-  const eventAmount = extractAmount(resource);
-  const eventCurrency = extractCurrency(resource);
+  const eventAmount = extractAmount(data, resource);
+  const eventCurrency = extractCurrency(data, resource);
   const amountDue = Number(deal.amount_due ?? 0);
 
   // Payment can never be confirmed from an inferred amount or inferred currency.
   // Missing/malformed values are quarantined for reconciliation review.
   if (eventAmount === null) {
-    await flagForReview(supabase, eventRowId, "missing_or_invalid_amount", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "missing_or_invalid_amount",
+      reference,
+      deal.id,
+    );
     return;
   }
   if (!eventCurrency) {
-    await flagForReview(supabase, eventRowId, "missing_or_invalid_currency", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "missing_or_invalid_currency",
+      reference,
+      deal.id,
+    );
     return;
   }
   if (!Number.isFinite(amountDue) || amountDue <= 0) {
-    await flagForReview(supabase, eventRowId, "missing_or_invalid_amount_due", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "missing_or_invalid_amount_due",
+      reference,
+      deal.id,
+    );
     return;
   }
 
@@ -315,14 +446,27 @@ async function processWiseEvent(opts: {
     return;
   }
 
-  const envMismatch = env === "production" && testNotification && !allowTestNotificationsGlobal();
+  const envMismatch =
+    env === "production" && testNotification && !allowTestNotificationsGlobal();
   if (envMismatch) {
-    await flagForReview(supabase, eventRowId, "environment_mismatch", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "environment_mismatch",
+      reference,
+      deal.id,
+    );
     return;
   }
 
   if (milanoStatus === "PAYMENT_REVIEW_REQUIRED") {
-    await flagForReview(supabase, eventRowId, "requires_reconciliation", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "requires_reconciliation",
+      reference,
+      deal.id,
+    );
     return;
   }
 
@@ -366,30 +510,68 @@ async function processWiseEvent(opts: {
       actor: "wise-webhook",
       action: "payment_updated",
       detail: "Wise payment pending",
-      meta: { event_type: eventType, wise_reference: reference, state: opts.currentState },
+      meta: {
+        event_type: eventType,
+        wise_reference: reference,
+        state: opts.currentState,
+      },
     });
     return;
   }
 
   if (milanoStatus !== "PAYMENT_CONFIRMED") {
-    await flagForReview(supabase, eventRowId, "non_confirmable_event", reference, deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      "non_confirmable_event",
+      reference,
+      deal.id,
+    );
     return;
   }
 
-  // PAYMENT_CONFIRMED: payment + attached discount redemption commit atomically.
+  // PAYMENT_CONFIRMED is permitted only after exact reference + amount +
+  // currency matching. With the current Wise event set this is expected for an
+  // inbound event that actually carries the payer reference (for example an
+  // eligible swift-in#credit payload), not a generic balance movement.
   const confirmedAmount = eventAmount;
   const willUnlockScheduling = eventMinor === dueMinor;
-  const wiseTransactionReference = String(resource.id ?? resource.transferId ?? "").trim() || null;
-  const { data: confirmation, error: confirmationError } = await supabase.rpc("confirm_wise_payment_for_deal", {
-    p_deal_id: deal.id, p_payment_reference: reference, p_wise_transaction_reference: wiseTransactionReference,
-    p_amount: confirmedAmount, p_currency: eventCurrency, p_actor: "wise-webhook",
-  });
+  const wiseTransactionReference =
+    firstNonEmptyString(
+      resource.id != null ? String(resource.id) : "",
+      resource.transferId != null ? String(resource.transferId) : "",
+      data.transaction_id != null ? String(data.transaction_id) : "",
+    ) || null;
+
+  const { data: confirmation, error: confirmationError } = await supabase.rpc(
+    "confirm_wise_payment_for_deal",
+    {
+      p_deal_id: deal.id,
+      p_payment_reference: reference,
+      p_wise_transaction_reference: wiseTransactionReference,
+      p_amount: confirmedAmount,
+      p_currency: eventCurrency,
+      p_actor: "wise-webhook",
+    },
+  );
+
   if (confirmationError) {
-    await flagForReview(supabase,eventRowId,`atomic_confirmation_failed:${confirmationError.message}`,reference,deal.id);
+    await flagForReview(
+      supabase,
+      eventRowId,
+      `atomic_confirmation_failed:${confirmationError.message}`,
+      reference,
+      deal.id,
+    );
     return;
   }
-  const redemptionId = confirmation && typeof confirmation === "object" && "redemption_id" in confirmation
-    ? (confirmation as Record<string, unknown>).redemption_id ?? null : null;
+
+  const redemptionId =
+    confirmation &&
+    typeof confirmation === "object" &&
+    "redemption_id" in confirmation
+      ? (confirmation as Record<string, unknown>).redemption_id ?? null
+      : null;
 
   if (eventRowId) {
     await supabase
