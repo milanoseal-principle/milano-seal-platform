@@ -315,7 +315,9 @@ export async function POST(req: NextRequest) {
     if (executionReviewRequired) {
       const reviewReasons = Array.from(
         new Set(
-          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(Boolean),
+          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(
+            Boolean,
+          ),
         ),
       );
 
@@ -325,7 +327,9 @@ export async function POST(req: NextRequest) {
       const client_name = data.name || String(raw.client_name || "");
       const companyName = String(raw.company_name || raw.company || "") || null;
       const source = String(
-        (data as Record<string, unknown>).source_channel || raw.source_channel || "web",
+        (data as Record<string, unknown>).source_channel ||
+          raw.source_channel ||
+          "web",
       );
       const apostilleRequired = legacyExecution.apostille_required;
       const conversion_score = calculateScore({
@@ -418,14 +422,7 @@ export async function POST(req: NextRequest) {
 
       const reviewRowId = (reviewDeal as { id?: string })?.id;
       if (reviewRowId) {
-        void notifyClient(reviewRowId, "intake_received").catch((error) => {
-          console.error("[intake] client notification failed", {
-            correlationId,
-            dealId: deal_id,
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date().toISOString(),
-          });
-        });
+        void notifyClient(reviewRowId, "intake_received").catch(() => {});
       }
       void logActivity({
         deal_id,
@@ -440,14 +437,7 @@ export async function POST(req: NextRequest) {
           conversion_score,
           priority_tier,
         },
-      }).catch((error) => {
-        console.error("[intake] review activity log failed", {
-          correlationId,
-          dealId: deal_id,
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
-        });
-      });
+      }).catch(() => {});
 
       stage = "RESPONSE_SENT";
       return NextResponse.json(
@@ -469,6 +459,7 @@ export async function POST(req: NextRequest) {
         { status: 200 },
       );
     }
+
     stage = "EXECUTION_VALIDATED";
     const country = data.country || prefillCountry || "United States";
     const apostilleRequired = hasCanonicalExecution
@@ -981,101 +972,112 @@ export async function POST(req: NextRequest) {
         } = await ssr.auth.getUser();
         if (user?.email) actor = user.email;
       } catch (error) {
-        console.error("[intake] actor resolution failed", {
+        console.warn("[intake] actor resolution unavailable", {
           correlationId,
           dealId: deal_id,
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
         });
       }
-
-      try {
-        await logActivity({
-          deal_id,
-          actor,
-          action: "created",
-          detail: `Intake submitted · ${finalLane} · ${country}`,
-          meta: {
-            source,
-            lane: finalLane,
-            country,
-            original_total: pricing.total,
-            discount_amount: courtesyAdjustment?.amount ?? 0,
-            final_total: effectiveTotal,
-            payment_status: "unpaid",
-            execution_truth: executionTruth,
-          },
-        });
-      } catch (error) {
-        console.error("[intake] activity log failed", {
-          correlationId,
-          dealId: deal_id,
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
-        });
-      }
+      await logActivity({
+        deal_id,
+        actor,
+        action: "created",
+        detail: `Intake captured · ${finalLane} lane · $${effectiveTotal} · ${country} · ${originAuthorityLabel}`,
+        meta: {
+          source,
+          lane: finalLane,
+          execution_truth: executionTruth,
+          original_total: pricing.total,
+          discount_amount: courtesyAdjustment?.amount ?? 0,
+          final_total: effectiveTotal,
+          conversion_score,
+          priority_tier,
+        },
+      });
     })();
+
+    const pricingBreakdown: { label: string; amount: number }[] = [
+      { label: `${finalLane} base`, amount: pricing.base },
+    ];
+    if (pricing.witness_total > 0) {
+      pricingBreakdown.push({
+        label: `Witnesses · ${data.witnesses ?? 0}`,
+        amount: pricing.witness_total,
+      });
+    }
+    for (const addon of pricing.addons) {
+      pricingBreakdown.push({ label: addon.item, amount: addon.amount });
+    }
+    if (courtesyAdjustment?.amount) {
+      pricingBreakdown.push({
+        label: "Professional courtesy",
+        amount: -courtesyAdjustment.amount,
+      });
+    }
+
+    const rationaleByLane: Record<string, string> = {
+      RON_SIMPLE: "Explicit RON execution selected — RON Simple lane applies.",
+      MOBILE_STANDARD: "Explicit Florida mobile execution + round-trip mileage.",
+      Signature: "Standard execution path from resolved Matter facts.",
+      Priority: "Resolved Matter scope triggers Priority coordination.",
+      Executive:
+        "Urgent or multi-country routing — Executive lane handles it end-to-end.",
+    };
 
     stage = "RESPONSE_SENT";
     return NextResponse.json({
       success: true,
       correlation_id: correlationId,
-      deal_id: deal_id,
-      access_token,
+      deal_id: deal?.deal_id || deal_id,
       lane: finalLane,
-      invoice_number: invoice.number,
-      invoice: {
-        ...invoice,
-        subtotal: effectiveTotal,
-        total: effectiveTotal,
-        original_total: pricing.total,
-        discount_amount: courtesyAdjustment?.amount ?? 0,
-        final_total: effectiveTotal,
-        amount_due: invoice.retainer,
-        courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
-      },
-      payment_link,
-      payment: payment_metadata,
-      payment_provider: "wise",
-      payment_reference,
+      execution_truth: executionTruth,
+      estimated_value: effectiveTotal,
+      original_total: pricing.total,
+      discount_amount: courtesyAdjustment?.amount ?? 0,
+      discount_value: courtesyAdjustment?.discount_value ?? null,
+      final_total: effectiveTotal,
+      amount_due: invoice.retainer,
+      courtesy_applied: Boolean(courtesyAdjustment),
+      courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
+      conversion_score,
+      priority_tier,
+      payment_method: "WISE",
       wise_invoice,
-      quote: {
+      payment_link,
+      pricing: {
         lane: finalLane,
         base: pricing.base,
-        addons: pricing.addons,
-        total: effectiveTotal,
+        witness_total: pricing.witness_total,
         original_total: pricing.total,
         discount_amount: courtesyAdjustment?.amount ?? 0,
-        final_total: effectiveTotal,
-        amount_due: invoice.retainer,
-        courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
-        courtesy: courtesyAdjustment
-          ? {
-              code: courtesyAdjustment.code,
-              type: courtesyAdjustment.discount_type,
-              value: courtesyAdjustment.discount_value,
-            }
-          : null,
+        total: effectiveTotal,
+        breakdown: pricingBreakdown,
+        rationale:
+          rationaleByLane[finalLane] ?? "Standard pricing applied.",
       },
-      compliance,
-      destination: DESTINATIONS.find(
-        (d) => d.name.toLowerCase() === country.toLowerCase(),
-      ),
-      execution_truth: executionTruth,
-      routing: normalizedRouting,
-      origin_authority_label: originAuthorityLabel,
-      routing_warnings: routingWarnings,
-      message: `Thank you for choosing The Milano Seal™. Your matter has been received.`,
+      execution_stage: "Intake Received",
+      portal_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
+      }/portal/${access_token}`,
+      compliance_result: compliance,
+      decline_risk,
+      invoice,
     });
   } catch (error) {
+    const code: IntakeFailureCode =
+      stage === "PRICED" || stage === "INVOICE_CREATED"
+        ? "PRICING_FAILED"
+        : stage === "WISE_REQUEST_CREATED"
+          ? "PAYMENT_REQUEST_FAILED"
+          : "UNKNOWN_INTAKE_FAILURE";
     logIntakeFailure({
       correlationId,
       stage,
-      code: "UNKNOWN_INTAKE_FAILURE",
+      code,
       error,
       dealId: currentDealId,
       source: currentSource,
     });
-    return safeFailure("UNKNOWN_INTAKE_FAILURE", correlationId, 500);
+    return safeFailure(code, correlationId, 500);
   }
 }
