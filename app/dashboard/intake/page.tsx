@@ -228,7 +228,35 @@ interface QuoteData {
 interface SuccessData {
   deal_id: string;
   payment_link: string;
-  pricing: QuoteData;
+  pricing: QuoteData | null;
+  reviewRequired: boolean;
+  remaining: string[];
+}
+
+// Map server execution-review reason codes to operator-facing labels.
+const REVIEW_REASON_LABELS: Record<string, string> = {
+  EXECUTION_METHOD_REVIEW_REQUIRED: "Execution Method",
+  NOTARIZATION_STATE_CONFLICT: "Notarization requirement",
+  NOTARIAL_ACT_REVIEW_REQUIRED: "Notarial Act",
+  RON_REQUIRES_NOTARIZATION: "Notarization required for RON",
+  RON_SIGNER_LOCATION_REQUIRED: "Signer physical location",
+  RON_KBA_STATUS_REQUIRED: "KBA status",
+  RON_CREDENTIAL_ANALYSIS_STATUS_REQUIRED: "Credential analysis status",
+  EXECUTION_LOCATION_REQUIRED: "Execution location",
+  ALREADY_NOTARIZED_CONFLICT: "Notarization evidence",
+  NOTARY_JURISDICTION_REQUIRED: "Notary jurisdiction",
+  CERTIFICATE_TYPE_REQUIRED: "Certificate type",
+  THIRD_PARTY_NOTARY_JURISDICTION_REQUIRED: "Notary jurisdiction",
+};
+
+function reviewReasonLabel(code: string): string {
+  return (
+    REVIEW_REASON_LABELS[code] ??
+    code
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 interface IntakeFailure {
@@ -432,11 +460,20 @@ export default function Intake() {
         return;
       }
 
-      toast.success(`Matter ${data.deal_id} created.`);
+      const reviewRequired = data.quote_state === "review_required";
+      toast.success(
+        reviewRequired
+          ? `Matter ${data.deal_id} saved — execution review required.`
+          : `Matter ${data.deal_id} created.`,
+      );
       setSuccess({
         deal_id: data.deal_id,
         payment_link: data.payment_link ?? data.wise_invoice?.wise_link ?? "",
-        pricing: data.pricing as QuoteData,
+        pricing: (data.pricing as QuoteData | undefined) ?? null,
+        reviewRequired,
+        remaining: Array.isArray(data.remaining)
+          ? (data.remaining as string[])
+          : [],
       });
     } catch {
       setFailure({
@@ -460,9 +497,13 @@ export default function Intake() {
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-7 w-7 text-gold" />
               <div>
-                <CardTitle className="font-serif text-2xl">Matter accepted</CardTitle>
+                <CardTitle className="font-serif text-2xl">
+                  {success.reviewRequired ? "Matter saved" : "Matter accepted"}
+                </CardTitle>
                 <CardDescription>
-                  Reference number, payment link, and lane assignment are below.
+                  {success.reviewRequired
+                    ? "Saved as intake — an approved payment amount becomes available once the remaining execution facts are resolved. No payment request has been created."
+                    : "Reference number, payment link, and lane assignment are below."}
                 </CardDescription>
               </div>
             </div>
@@ -477,21 +518,45 @@ export default function Intake() {
               </div>
             </div>
 
-            <div className="space-y-3 rounded-md border border-border bg-secondary/40 p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {success.pricing.lane} Lane
-                </span>
-                {success.pricing.total != null && (
-                  <span className="font-serif text-2xl text-gold">
-                    {formatCurrencyDetailed(success.pricing.total)}
-                  </span>
+            {success.reviewRequired ? (
+              <div className="space-y-3 rounded-md border border-gold/40 bg-gold-soft/40 p-4">
+                <div className="text-[11px] uppercase tracking-widest text-gold">
+                  Review required
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  The Matter is captured. An approved payment amount will become
+                  available after the remaining execution facts are resolved.
+                </p>
+                {success.remaining.length > 0 && (
+                  <ul className="space-y-1 text-sm text-foreground">
+                    {success.remaining
+                      .filter((code) => code !== "EXECUTION_REVIEW_REQUIRED")
+                      .map((code) => (
+                        <li key={code} className="flex items-start gap-2">
+                          <span className="mt-0.5 text-gold">•</span>
+                          {reviewReasonLabel(code)}
+                        </li>
+                      ))}
+                  </ul>
                 )}
               </div>
-              <p className="text-sm italic text-muted-foreground">
-                {success.pricing.rationale}
-              </p>
-            </div>
+            ) : success.pricing ? (
+              <div className="space-y-3 rounded-md border border-border bg-secondary/40 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                    {success.pricing.lane} Lane
+                  </span>
+                  {success.pricing.total != null && (
+                    <span className="font-serif text-2xl text-gold">
+                      {formatCurrencyDetailed(success.pricing.total)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm italic text-muted-foreground">
+                  {success.pricing.rationale}
+                </p>
+              </div>
+            ) : null}
 
             {success.payment_link && (
               <div className="space-y-2">
