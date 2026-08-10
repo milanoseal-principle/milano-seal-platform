@@ -30,6 +30,76 @@ async function updateMatter(id: string, values: Record<string, unknown>) {
   return supabase.from("deals").update(values).eq("id", id).select("*").single();
 }
 
+async function assertNoPaymentInMotion(
+  matterId: string,
+  actorEmail?: string | null,
+) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("payments")
+    .select("id,payment_status,wise_reference,payment_amount,payment_currency")
+    .eq("matter_id", matterId)
+    .in("payment_status", ["payment_pending", "payment_confirmed"])
+    .limit(1);
+
+  if (error) throw error;
+  if ((data ?? []).length === 0) return;
+
+  const payment = data![0];
+  await writeEventLedger({
+    matterId,
+    actorEmail,
+    eventType: "DISCOUNT_REJECTED",
+    message: "Discount mutation rejected because Wise payment activity already started.",
+    metadata: {
+      paymentStatus: payment.payment_status,
+      wiseReference: payment.wise_reference,
+      paymentAmount: payment.payment_amount,
+      paymentCurrency: payment.payment_currency,
+    },
+  });
+
+  throw new Error("Discount cannot change while a Wise payment is pending or confirmed.");
+}
+
+async function invalidateAwaitingWiseInstructions(
+  matterId: string,
+  actorEmail?: string | null,
+) {
+  const supabase = createAdminClient();
+  const { data: stale, error } = await supabase
+    .from("payments")
+    .select("id,wise_reference,payment_amount,payment_currency,payment_type")
+    .eq("matter_id", matterId)
+    .eq("payment_status", "awaiting_payment");
+
+  if (error) throw error;
+  if (!stale?.length) return;
+
+  const ids = stale.map((payment) => payment.id);
+  const { error: deleteError } = await supabase
+    .from("payments")
+    .delete()
+    .in("id", ids);
+  if (deleteError) throw deleteError;
+
+  await writeEventLedger({
+    matterId,
+    actorEmail,
+    eventType: "PAYMENT_INSTRUCTIONS_INVALIDATED",
+    message: "Unconsumed Wise payment instructions invalidated after pricing changed.",
+    metadata: {
+      count: stale.length,
+      references: stale.map((payment) => payment.wise_reference).filter(Boolean),
+      obligations: stale.map((payment) => ({
+        paymentType: payment.payment_type,
+        amount: payment.payment_amount,
+        currency: payment.payment_currency,
+      })),
+    },
+  });
+}
+
 export async function applyDiscountToMatter(
   matterId: string,
   rawCode: string,
@@ -50,6 +120,8 @@ export async function applyDiscountToMatter(
     });
     throw new Error("Discount cannot be applied after payment has started.");
   }
+
+  await assertNoPaymentInMotion(matterId, actorEmail);
 
   const code = normalizeDiscountCode(rawCode);
   const { data, error } = await supabase
@@ -91,10 +163,13 @@ export async function applyDiscountToMatter(
   const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));
   const discountAmount = computeDiscountAmount(discount, eligibleSubtotal);
   const originalTotal = money(eligibleSubtotal + nonDiscountableTotal);
-  const finalTotal = money(eligibleSubtotal - Math.min(eligibleSubtotal, discountAmount) + nonDiscountableTotal);
+  const finalTotal = money(
+    eligibleSubtotal - Math.min(eligibleSubtotal, discountAmount) + nonDiscountableTotal,
+  );
   const priorTotal = money(Number(matter.total_price ?? originalTotal));
   const priorRetainer = money(Number(matter.invoice_retainer ?? priorTotal));
-  const retainerRatio = priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;
+  const retainerRatio =
+    priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;
   const depositAmount = money(finalTotal * retainerRatio);
   const balanceDue = money(finalTotal - depositAmount);
 
@@ -110,10 +185,9 @@ export async function applyDiscountToMatter(
     invoice_balance: balanceDue,
     amount_due: depositAmount,
 
-    // A pricing mutation invalidates every payment instruction derived from the
-    // previous amount. Wise must be regenerated from the new canonical amount.
     payment_link: null,
     balance_payment_link: null,
+    wise_reference: null,
     wise_payment_id: null,
     wise_transfer_id: null,
     payment_status: "unpaid",
@@ -122,8 +196,10 @@ export async function applyDiscountToMatter(
   });
   if (updated.error) throw updated.error;
 
-  // IMPORTANT: applying/entering a code does NOT consume it. Redemption is
-  // recorded atomically only after confirmed Wise reconciliation.
+  await invalidateAwaitingWiseInstructions(matterId, actorEmail);
+
+  // Applying a code does not consume it. The atomic Wise reconciliation RPC is
+  // the only authority allowed to redeem a discount after verified settlement.
   await writeEventLedger({
     matterId,
     actorEmail,
@@ -134,6 +210,8 @@ export async function applyDiscountToMatter(
       eligibleSubtotal,
       discountAmount,
       finalTotal,
+      retainerDue: depositAmount,
+      balanceDue,
       redemptionStatus: "not_redeemed",
     },
   });
@@ -152,12 +230,17 @@ export async function removeDiscountFromMatter(
     throw new Error("Discount cannot be removed after payment has started.");
   }
 
+  await assertNoPaymentInMotion(matterId, actorEmail);
+
   const eligibleSubtotal = eligibleSubtotalForMatter(matter);
   const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));
-  const originalTotal = money(Number(matter.original_total ?? (eligibleSubtotal + nonDiscountableTotal)));
+  const originalTotal = money(
+    Number(matter.original_total ?? eligibleSubtotal + nonDiscountableTotal),
+  );
   const priorFinal = money(Number(matter.final_total ?? matter.total_price ?? originalTotal));
   const priorRetainer = money(Number(matter.invoice_retainer ?? priorFinal));
-  const retainerRatio = priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;
+  const retainerRatio =
+    priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;
   const depositAmount = money(originalTotal * retainerRatio);
   const balanceDue = money(originalTotal - depositAmount);
 
@@ -172,10 +255,9 @@ export async function removeDiscountFromMatter(
     invoice_balance: balanceDue,
     amount_due: depositAmount,
 
-    // Removing a discount also changes the canonical amount, so any existing
-    // Wise instruction must be discarded and regenerated from the restored total.
     payment_link: null,
     balance_payment_link: null,
+    wise_reference: null,
     wise_payment_id: null,
     wise_transfer_id: null,
     payment_status: "unpaid",
@@ -183,6 +265,8 @@ export async function removeDiscountFromMatter(
     payment_confirmed_at: null,
   });
   if (updated.error) throw updated.error;
+
+  await invalidateAwaitingWiseInstructions(matterId, actorEmail);
   await writeEventLedger({ matterId, actorEmail, eventType: "DISCOUNT_REMOVED" });
   return updated.data;
 }
@@ -196,7 +280,9 @@ export async function redeemDiscountAfterWiseReconciliation(params: {
 }) {
   const supabase = createAdminClient();
   const matterResult = await getMatterById(params.matterId);
-  if (matterResult.error || !matterResult.data) return { redeemed: false, reason: "matter_not_found" };
+  if (matterResult.error || !matterResult.data) {
+    return { redeemed: false, reason: "matter_not_found" };
+  }
 
   const matter = matterResult.data as Record<string, unknown>;
   const code = normalizeDiscountCode(String(matter.discount_code ?? ""));
