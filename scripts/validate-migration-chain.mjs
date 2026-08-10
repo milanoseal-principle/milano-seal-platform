@@ -3,7 +3,7 @@ import path from "node:path";
 
 const dir = path.join(process.cwd(), "supabase", "migrations");
 const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
-const required = ["001_initial_schema.sql", "002_rls_storage_policies.sql", "044_production_deals_payment_gate_compatibility.sql"];
+const required = ["001_initial_schema.sql", "002_rls_storage_policies.sql", "044_production_deals_payment_gate_compatibility.sql", "049_dashboard_intake_payment_status_reconciliation.sql"];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
 
@@ -32,6 +32,17 @@ if (!rls.includes('DROP POLICY IF EXISTS "client_own_deal_files"')) throw new Er
 const gate = fs.readFileSync(path.join(dir, "044_production_deals_payment_gate_compatibility.sql"), "utf8");
 for (const column of ["status", "payment_status", "payment_confirmed", "currency"]) {
   if (!gate.includes(`add column if not exists ${column}`)) throw new Error(`044 missing additive guard for deals.${column}`);
+}
+
+const intakeRepair = fs.readFileSync(path.join(dir, "049_dashboard_intake_payment_status_reconciliation.sql"), "utf8");
+for (const invariant of [
+  "add column if not exists discount_amount",
+  "set payment_status = 'unpaid'",
+  "alter column payment_status set default 'unpaid'",
+  "'unpaid'",
+  "drop constraint if exists deals_payment_status_check",
+]) {
+  if (!intakeRepair.includes(invariant)) throw new Error(`049 intake persistence repair missing invariant: ${invariant}`);
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
