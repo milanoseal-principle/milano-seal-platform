@@ -308,12 +308,6 @@ export async function POST(req: NextRequest) {
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
     const legacyExecution = executionTruthToLegacy(executionTruth);
 
-    // Locked rule: Matter CAPTURE is separated from transaction authorization.
-    // Unresolved / contradictory operator execution facts must fail closed before
-    // any pricing, invoice, or Wise request — but the Matter is still SAVED as
-    // intake_received / unpaid with its execution truth persisted. It simply
-    // receives no approved quote, no invoice, and no Wise payment request, and
-    // therefore cannot schedule or execute until execution review is cleared.
     const executionReviewRequired =
       sourceHint === "admin" &&
       (!executionValidation.valid || executionValidation.reviewRequired);
@@ -321,9 +315,7 @@ export async function POST(req: NextRequest) {
     if (executionReviewRequired) {
       const reviewReasons = Array.from(
         new Set(
-          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(
-            Boolean,
-          ),
+          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(Boolean),
         ),
       );
 
@@ -333,9 +325,7 @@ export async function POST(req: NextRequest) {
       const client_name = data.name || String(raw.client_name || "");
       const companyName = String(raw.company_name || raw.company || "") || null;
       const source = String(
-        (data as Record<string, unknown>).source_channel ||
-          raw.source_channel ||
-          "web",
+        (data as Record<string, unknown>).source_channel || raw.source_channel || "web",
       );
       const apostilleRequired = legacyExecution.apostille_required;
       const conversion_score = calculateScore({
@@ -362,9 +352,6 @@ export async function POST(req: NextRequest) {
         routingWarnings: routingWarnings ?? [],
       };
 
-      // No money fields: no base_price/total/original_total/eligible_subtotal/
-      // final_total/discount/invoice_retainer/amount_due/payment_link/
-      // wise_reference. Absent = no approved total, no Wise request.
       const reviewPayload = {
         deal_id,
         access_token,
@@ -382,6 +369,10 @@ export async function POST(req: NextRequest) {
         docs_count: Number(data.docs ?? 1),
         urgency: (data.urgency as string) ?? "standard",
         mobile: legacyExecution.mobile,
+        miles:
+          executionTruth.execution_method === "mobile"
+            ? Number(data.miles ?? raw.miles ?? 0)
+            : 0,
         signers: Number(data.signers ?? 1),
         witnesses: Number(data.witnesses ?? 0),
         witness_type: data.witness_type ?? null,
@@ -427,7 +418,14 @@ export async function POST(req: NextRequest) {
 
       const reviewRowId = (reviewDeal as { id?: string })?.id;
       if (reviewRowId) {
-        void notifyClient(reviewRowId, "intake_received").catch(() => {});
+        void notifyClient(reviewRowId, "intake_received").catch((error) => {
+          console.error("[intake] client notification failed", {
+            correlationId,
+            dealId: deal_id,
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        });
       }
       void logActivity({
         deal_id,
@@ -442,7 +440,14 @@ export async function POST(req: NextRequest) {
           conversion_score,
           priority_tier,
         },
-      }).catch(() => {});
+      }).catch((error) => {
+        console.error("[intake] review activity log failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
+      });
 
       stage = "RESPONSE_SENT";
       return NextResponse.json(
@@ -472,8 +477,6 @@ export async function POST(req: NextRequest) {
 
     let compliance = null;
     try {
-      // Compliance receives an execution type only when the operator/client
-      // explicitly selected RON or mobile. There is no false => RON fallback.
       if (
         executionTruth.execution_method === "ron" ||
         executionTruth.execution_method === "mobile"
@@ -506,7 +509,6 @@ export async function POST(req: NextRequest) {
 
     const pricingInput = {
       ...data,
-      // Prevent the legacy Colorado shortcut from treating a non-RON Matter as RON.
       state:
         executionTruth.execution_method === "ron"
           ? (data.state as string | undefined)
@@ -979,112 +981,101 @@ export async function POST(req: NextRequest) {
         } = await ssr.auth.getUser();
         if (user?.email) actor = user.email;
       } catch (error) {
-        console.warn("[intake] actor resolution unavailable", {
+        console.error("[intake] actor resolution failed", {
           correlationId,
           dealId: deal_id,
           error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
         });
       }
-      await logActivity({
-        deal_id,
-        actor,
-        action: "created",
-        detail: `Intake captured · ${finalLane} lane · $${effectiveTotal} · ${country} · ${originAuthorityLabel}`,
-        meta: {
-          source,
-          lane: finalLane,
-          execution_truth: executionTruth,
-          original_total: pricing.total,
-          discount_amount: courtesyAdjustment?.amount ?? 0,
-          final_total: effectiveTotal,
-          conversion_score,
-          priority_tier,
-        },
-      });
+
+      try {
+        await logActivity({
+          deal_id,
+          actor,
+          action: "created",
+          detail: `Intake submitted · ${finalLane} · ${country}`,
+          meta: {
+            source,
+            lane: finalLane,
+            country,
+            original_total: pricing.total,
+            discount_amount: courtesyAdjustment?.amount ?? 0,
+            final_total: effectiveTotal,
+            payment_status: "unpaid",
+            execution_truth: executionTruth,
+          },
+        });
+      } catch (error) {
+        console.error("[intake] activity log failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
+      }
     })();
-
-    const pricingBreakdown: { label: string; amount: number }[] = [
-      { label: `${finalLane} base`, amount: pricing.base },
-    ];
-    if (pricing.witness_total > 0) {
-      pricingBreakdown.push({
-        label: `Witnesses · ${data.witnesses ?? 0}`,
-        amount: pricing.witness_total,
-      });
-    }
-    for (const addon of pricing.addons) {
-      pricingBreakdown.push({ label: addon.item, amount: addon.amount });
-    }
-    if (courtesyAdjustment?.amount) {
-      pricingBreakdown.push({
-        label: "Professional courtesy",
-        amount: -courtesyAdjustment.amount,
-      });
-    }
-
-    const rationaleByLane: Record<string, string> = {
-      RON_SIMPLE: "Explicit RON execution selected — RON Simple lane applies.",
-      MOBILE_STANDARD: "Explicit Florida mobile execution + round-trip mileage.",
-      Signature: "Standard execution path from resolved Matter facts.",
-      Priority: "Resolved Matter scope triggers Priority coordination.",
-      Executive:
-        "Urgent or multi-country routing — Executive lane handles it end-to-end.",
-    };
 
     stage = "RESPONSE_SENT";
     return NextResponse.json({
       success: true,
       correlation_id: correlationId,
-      deal_id: deal?.deal_id || deal_id,
+      deal_id: deal_id,
+      access_token,
       lane: finalLane,
-      execution_truth: executionTruth,
-      estimated_value: effectiveTotal,
-      original_total: pricing.total,
-      discount_amount: courtesyAdjustment?.amount ?? 0,
-      discount_value: courtesyAdjustment?.discount_value ?? null,
-      final_total: effectiveTotal,
-      amount_due: invoice.retainer,
-      courtesy_applied: Boolean(courtesyAdjustment),
-      courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
-      conversion_score,
-      priority_tier,
-      payment_method: "WISE",
-      wise_invoice,
-      payment_link,
-      pricing: {
-        lane: finalLane,
-        base: pricing.base,
-        witness_total: pricing.witness_total,
+      invoice_number: invoice.number,
+      invoice: {
+        ...invoice,
+        subtotal: effectiveTotal,
+        total: effectiveTotal,
         original_total: pricing.total,
         discount_amount: courtesyAdjustment?.amount ?? 0,
-        total: effectiveTotal,
-        breakdown: pricingBreakdown,
-        rationale:
-          rationaleByLane[finalLane] ?? "Standard pricing applied.",
+        final_total: effectiveTotal,
+        amount_due: invoice.retainer,
+        courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
       },
-      execution_stage: "Intake Received",
-      portal_url: `${
-        process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
-      }/portal/${access_token}`,
-      compliance_result: compliance,
-      decline_risk,
-      invoice,
+      payment_link,
+      payment: payment_metadata,
+      payment_provider: "wise",
+      payment_reference,
+      wise_invoice,
+      quote: {
+        lane: finalLane,
+        base: pricing.base,
+        addons: pricing.addons,
+        total: effectiveTotal,
+        original_total: pricing.total,
+        discount_amount: courtesyAdjustment?.amount ?? 0,
+        final_total: effectiveTotal,
+        amount_due: invoice.retainer,
+        courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
+        courtesy: courtesyAdjustment
+          ? {
+              code: courtesyAdjustment.code,
+              type: courtesyAdjustment.discount_type,
+              value: courtesyAdjustment.discount_value,
+            }
+          : null,
+      },
+      compliance,
+      destination: DESTINATIONS.find(
+        (d) => d.name.toLowerCase() === country.toLowerCase(),
+      ),
+      execution_truth: executionTruth,
+      routing: normalizedRouting,
+      origin_authority_label: originAuthorityLabel,
+      routing_warnings: routingWarnings,
+      message: `Thank you for choosing The Milano Seal™. Your matter has been received.`,
     });
   } catch (error) {
-    const code: IntakeFailureCode =
-      stage === "PRICED" || stage === "INVOICE_CREATED"
-        ? "PRICING_FAILED"
-        : stage === "WISE_REQUEST_CREATED"
-          ? "PAYMENT_REQUEST_FAILED"
-          : "UNKNOWN_INTAKE_FAILURE";
     logIntakeFailure({
       correlationId,
       stage,
-      code,
+      code: "UNKNOWN_INTAKE_FAILURE",
       error,
       dealId: currentDealId,
       source: currentSource,
     });
-    return safeFailure(code, correlationId, 500);
+    return safeFailure("UNKNOWN_INTAKE_FAILURE", correlationId, 500);
   }
 }
