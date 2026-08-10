@@ -34,10 +34,8 @@ const LANE_RATIONALE: Record<string, string> = {
 };
 
 function canonicalLane(body: QuoteInput, apostille: boolean) {
-  if (body.urgency === "urgent" || body.multi_country) return "Executive" as const;
-  if (apostille || (body.signers ?? 1) > 1 || body.translation) {
-    return "Priority" as const;
-  }
+  if (body.urgency === "urgent") return "Executive" as const;
+  if (apostille || (body.signers ?? 1) > 1) return "Priority" as const;
   return "Signature" as const;
 }
 
