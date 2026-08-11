@@ -2,6 +2,8 @@ export interface MatterQuoteSnapshot {
   lane: string;
   base_price: number;
   witness_total: number;
+  eligible_subtotal: number;
+  non_discountable_total: number;
   original_total: number;
   discount_amount: number;
   final_total: number;
@@ -16,6 +18,8 @@ export interface MatterQuoteSnapshotInput {
   lane: string;
   basePrice: number;
   witnessTotal: number;
+  eligibleSubtotal: number;
+  nonDiscountableTotal: number;
   originalTotal: number;
   discountAmount: number;
   finalTotal: number;
@@ -37,6 +41,8 @@ export function buildMatterQuoteSnapshot(
     lane: input.lane,
     base_price: money(input.basePrice),
     witness_total: money(input.witnessTotal),
+    eligible_subtotal: money(input.eligibleSubtotal),
+    non_discountable_total: money(input.nonDiscountableTotal),
     original_total: money(input.originalTotal),
     discount_amount: money(input.discountAmount),
     final_total: finalTotal,
@@ -63,6 +69,8 @@ export function persistedMatterHasQuote(
     String(matter.lane ?? "") === expected.lane &&
     sameMoney(matter.base_price, expected.base_price) &&
     sameMoney(matter.witness_total, expected.witness_total) &&
+    sameMoney(matter.eligible_subtotal, expected.eligible_subtotal) &&
+    sameMoney(matter.non_discountable_total, expected.non_discountable_total) &&
     sameMoney(matter.original_total, expected.original_total) &&
     sameMoney(matter.discount_amount, expected.discount_amount) &&
     sameMoney(matter.final_total, expected.final_total) &&
