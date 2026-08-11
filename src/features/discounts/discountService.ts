@@ -20,6 +20,21 @@ function eligibleSubtotalForMatter(matter: Record<string, unknown>): number {
   return money(explicit);
 }
 
+function normalizeServiceScope(value: unknown): string {
+  return String(value ?? "all_eligible_services").trim().toLowerCase();
+}
+
+function serviceScopeMatches(scope: string, matter: Record<string, unknown>): boolean {
+  if (!scope || scope === "all_eligible_services" || scope === "professional_services") return true;
+  if (scope === "apostille_coordination") return matter.apostille_required === true;
+  if (scope === "notarization") {
+    const truth = (matter.execution_truth ?? {}) as Record<string, unknown>;
+    return truth.notarization_requirement === "required" || Number(matter.signers ?? 0) > 0;
+  }
+  if (scope === "document_execution") return Boolean(String(matter.document_type ?? "").trim());
+  return false;
+}
+
 async function getMatterById(id: string) {
   const supabase = createAdminClient();
   return supabase.from("deals").select("*").eq("id", id).single();
@@ -155,8 +170,22 @@ export async function applyDiscountToMatter(
     throw new Error(validation.error ?? "Discount code is not eligible.");
   }
 
-  if (discount.client_id && matter.client_id && discount.client_id !== matter.client_id) {
+  if (discount.client_id && String(discount.client_id) !== String(matter.client_id ?? "")) {
     throw new Error("Discount code is not eligible for this client.");
+  }
+
+  const metadata = (discount.metadata ?? {}) as Record<string, unknown>;
+  const allianceMemberId = String(metadata.alliance_member_id ?? "").trim();
+  const matterAllianceMemberId = String(
+    matter.alliance_member_id ?? matter.partner_id ?? "",
+  ).trim();
+  if (allianceMemberId && allianceMemberId !== matterAllianceMemberId) {
+    throw new Error("Discount code is not assigned to this Alliance account.");
+  }
+
+  const serviceScope = normalizeServiceScope(metadata.eligible_service_scope);
+  if (!serviceScopeMatches(serviceScope, matter)) {
+    throw new Error("Discount code is not eligible for this service scope.");
   }
 
   const eligibleSubtotal = eligibleSubtotalForMatter(matter);
@@ -198,8 +227,6 @@ export async function applyDiscountToMatter(
 
   await invalidateAwaitingWiseInstructions(matterId, actorEmail);
 
-  // Applying a code does not consume it. The atomic Wise reconciliation RPC is
-  // the only authority allowed to redeem a discount after verified settlement.
   await writeEventLedger({
     matterId,
     actorEmail,
@@ -267,50 +294,78 @@ export async function removeDiscountFromMatter(
   if (updated.error) throw updated.error;
 
   await invalidateAwaitingWiseInstructions(matterId, actorEmail);
-  await writeEventLedger({ matterId, actorEmail, eventType: "DISCOUNT_REMOVED" });
+
+  await writeEventLedger({
+    matterId,
+    actorEmail,
+    eventType: "DISCOUNT_REMOVED",
+    metadata: {
+      originalTotal,
+      retainerDue: depositAmount,
+      balanceDue,
+    },
+  });
   return updated.data;
 }
 
 export async function redeemDiscountAfterWiseReconciliation(params: {
   matterId: string;
-  paymentReference: string;
-  wiseTransactionReference?: string | null;
-  currency: string;
-  actor?: string;
+  wiseTransferId: string;
+  wiseEventId?: string | null;
+  wiseSettledAt?: string | null;
+  actorEmail?: string | null;
 }) {
-  const supabase = createAdminClient();
   const matterResult = await getMatterById(params.matterId);
-  if (matterResult.error || !matterResult.data) {
-    return { redeemed: false, reason: "matter_not_found" };
+  if (matterResult.error) throw matterResult.error;
+  const matter = matterResult.data as Record<string, unknown>;
+  const discountCode = matter.discount_code ? normalizeDiscountCode(String(matter.discount_code)) : null;
+  if (!discountCode) return null;
+
+  const supabase = createAdminClient();
+  const { data: discount, error: discountError } = await supabase
+    .from("discount_codes")
+    .select("id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to,matter_id,client_id,metadata")
+    .eq("code", discountCode)
+    .single();
+  if (discountError) throw discountError;
+
+  const validation = validateCodeRedeemable(discount as DiscountCode, params.matterId);
+  if (!validation.ok) throw new Error(validation.error ?? "Discount code is no longer redeemable.");
+  if (discount.client_id && String(discount.client_id) !== String(matter.client_id ?? "")) {
+    throw new Error("Discount code is not eligible for this client.");
+  }
+  const metadata = (discount.metadata ?? {}) as Record<string, unknown>;
+  const allianceMemberId = String(metadata.alliance_member_id ?? "").trim();
+  const matterAllianceMemberId = String(matter.alliance_member_id ?? matter.partner_id ?? "").trim();
+  if (allianceMemberId && allianceMemberId !== matterAllianceMemberId) {
+    throw new Error("Discount code is not assigned to this Alliance account.");
+  }
+  const serviceScope = normalizeServiceScope(metadata.eligible_service_scope);
+  if (!serviceScopeMatches(serviceScope, matter)) {
+    throw new Error("Discount code is not eligible for this service scope.");
   }
 
-  const matter = matterResult.data as Record<string, unknown>;
-  const code = normalizeDiscountCode(String(matter.discount_code ?? ""));
-  if (!code) return { redeemed: false, reason: "no_discount_attached" };
-
-  const { data: discount, error } = await supabase
-    .from("discount_codes")
-    .select("id")
-    .eq("code", code)
-    .maybeSingle();
-  if (error) throw error;
-  if (!discount?.id) return { redeemed: false, reason: "discount_not_found" };
-
-  const { data, error: rpcError } = await supabase.rpc("redeem_discount_for_matter", {
-    p_discount_code_id: discount.id,
+  const { data: redemption, error } = await supabase.rpc("redeem_discount_after_wise", {
     p_matter_id: params.matterId,
-    p_payment_reference: params.paymentReference,
-    p_wise_transaction_reference: params.wiseTransactionReference ?? null,
-    p_currency: params.currency.toUpperCase(),
-    p_created_by: params.actor ?? "wise-webhook",
+    p_discount_code_id: discount.id,
+    p_wise_transfer_id: params.wiseTransferId,
+    p_wise_event_id: params.wiseEventId ?? null,
+    p_wise_settled_at: params.wiseSettledAt ?? null,
   });
-  if (rpcError) throw rpcError;
+  if (error) throw error;
 
   await writeEventLedger({
     matterId: params.matterId,
-    actorEmail: params.actor ?? "wise-webhook",
+    actorEmail: params.actorEmail,
     eventType: "DISCOUNT_REDEEMED",
-    metadata: { code, redemptionId: data, paymentReference: params.paymentReference },
+    metadata: {
+      code: discount.code,
+      discountCodeId: discount.id,
+      wiseTransferId: params.wiseTransferId,
+      wiseEventId: params.wiseEventId ?? null,
+      wiseSettledAt: params.wiseSettledAt ?? null,
+    },
   });
-  return { redeemed: true, redemptionId: data };
+
+  return redemption;
 }
