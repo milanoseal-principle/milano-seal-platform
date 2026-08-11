@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Validator — Smart Intake Pricing Engine (Branch 1).
-// Asserts the pricing positioning lock: internal bases correct, public pricing
-// hidden, regulated matters gated to manual review, payment gate intact, and no
-// Wise / release / custody files touched by this branch.
+// Asserts the pricing positioning lock: canonical internal bases correct, public
+// pricing hidden, regulated matters gated to manual review, payment gate intact,
+// and no unauthorized Wise / release / custody drift in the current PR delta.
 
 import fs from "fs";
 import path from "path";
@@ -20,6 +20,7 @@ const exists = (rel) => fs.existsSync(path.join(repoRoot, rel));
 
 // 1. Required pricing files exist.
 const requiredFiles = [
+  "lib/pricing.ts",
   "lib/pricing/types.ts",
   "lib/pricing/pricingDoctrine.ts",
   "lib/pricing/marketAnchors.ts",
@@ -39,12 +40,17 @@ for (const f of requiredFiles) {
 }
 if (failures === 0) ok("All required pricing files present");
 
-// 2. Internal bases correct.
+// 2. Internal bases must live in the canonical monetary authority: lib/pricing.ts.
+const pricingSource = read("lib/pricing.ts");
+if (!/signature:\s*750/.test(pricingSource)) fail("Signature canonical base must be 750 in lib/pricing.ts");
+if (!/priority:\s*975/.test(pricingSource)) fail("Priority canonical base must be 975 in lib/pricing.ts");
+if (!/executive:\s*1850/.test(pricingSource)) fail("Executive canonical base must be 1850 in lib/pricing.ts");
+else ok("Canonical bases verified in lib/pricing.ts: signature 750 / priority 975 / executive 1850");
+
+// Doctrine must derive from the canonical engine rather than duplicating lane bases.
 const doctrine = read("lib/pricing/pricingDoctrine.ts");
-if (!/signature:\s*750/.test(doctrine)) fail("Signature internal base must be 750");
-if (!/priority:\s*975/.test(doctrine)) fail("Priority internal base must be 975");
-if (!/executive:\s*1850/.test(doctrine)) fail("Executive internal base must be 1850 minimum");
-ok("Internal bases: signature 750 / priority 975 / executive 1850");
+if (/\b(?:750|975|1850)\b/.test(doctrine)) fail("pricingDoctrine.ts must not duplicate canonical lane-base literals");
+else ok("pricingDoctrine.ts contains no duplicate lane-base literals");
 
 // 3-5. Public pricing page: Execution Quote, links to /intake, no exact bases.
 const pricingPage = read("app/pricing/page.tsx");
@@ -89,17 +95,14 @@ for (const s of publicSurfaces) {
 }
 ok("No checkout / cheap / competitor-anchor language on public surfaces");
 
-// 10. This branch must not touch Wise / release gate / custody ledger / payment confirmation.
+// 10. Current PR delta must not introduce unauthorized Wise / release / custody / payment-confirmation drift.
 try {
-  const base = execSync("git merge-base origin/main HEAD || git rev-parse main", {
-    cwd: repoRoot,
-    encoding: "utf8",
-  }).trim();
-  const diff = execSync(`git diff --name-only ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" });
+  execSync("git rev-parse --verify origin/main", { cwd: repoRoot, stdio: "ignore" });
+  const diff = execSync("git diff --name-only origin/main HEAD", { cwd: repoRoot, encoding: "utf8" });
   const sensitive = /wise|webhook|release-?gate|releaseGate|performFinalRelease|custody|payment-?confirm|paymentConfirm/i;
   const touched = diff.split("\n").filter((f) => f && sensitive.test(f));
-  if (touched.length) fail(`Branch touches protected files: ${touched.join(", ")}`);
-  else ok("No Wise / release gate / custody / payment-confirmation files touched");
+  if (touched.length) fail(`Current PR delta touches protected files: ${touched.join(", ")}`);
+  else ok("No Wise / release gate / custody / payment-confirmation drift in current PR delta");
 } catch (e) {
   console.log("NOTE: could not run git diff guard (", e.message, ") — skipping non-fatally");
 }
