@@ -20,6 +20,10 @@ import {
   formatApostillePath,
 } from "@/lib/intake/routing-normalizer";
 import { safeText } from "@/lib/security/app-guards";
+import {
+  buildMatterQuoteSnapshot,
+  persistedMatterHasQuote,
+} from "@/lib/pricing/matterQuoteSnapshot";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 
@@ -27,23 +31,6 @@ function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
     1000 + Math.random() * 9000,
   )}`;
-}
-
-function autoSelectLane({
-  country,
-  urgency,
-  signerCount,
-  apostilleRequired,
-}: {
-  country: string;
-  urgency?: string;
-  signerCount?: number;
-  apostilleRequired?: boolean;
-}): "Executive" | "Priority" | "Signature" {
-  if (urgency === "urgent") return "Executive";
-  if (apostilleRequired) return "Priority";
-  if ((signerCount || 1) > 1) return "Priority";
-  return "Signature";
 }
 
 function calculateScore({
@@ -173,13 +160,6 @@ export async function POST(req: NextRequest) {
       if (compliance.apostille_required) data.apostille = true;
     } catch {}
 
-    const autoLane = autoSelectLane({
-      country,
-      urgency: data.urgency as string,
-      signerCount: Number(data.signers) || 1,
-      apostilleRequired: compliance?.apostille_required ?? data.apostille,
-    });
-
     const pricingInput = {
       ...data,
       urgency: data.urgency as "standard" | "urgent" | undefined,
@@ -187,13 +167,9 @@ export async function POST(req: NextRequest) {
     };
     const pricing = determineLaneAndPrice(pricingInput);
 
-    const laneOrder = ["Signature", "Priority", "Executive"];
-    const finalLane =
-      laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
-        ? autoLane
-        : pricing.lane;
-
     const invoice = generateInvoice(pricing.total);
+    const quoteSnapshot = buildMatterQuoteSnapshot(pricing, invoice);
+    const finalLane = quoteSnapshot.lane;
     const decline_risk = riskScore(data);
     const deal_id = genDealId();
     const access_token = randomUUID();
@@ -303,7 +279,7 @@ export async function POST(req: NextRequest) {
       origin_state: ((raw as Record<string, string>).origin_state as string) || null,
       apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
       docs_count: Number(data.docs ?? 1),
-      lane: finalLane,
+      ...quoteSnapshot,
       urgency: (data.urgency as string) ?? "standard",
       mobile: Boolean(data.mobile ?? false),
       miles: Number(data.miles ?? 0),
@@ -313,11 +289,6 @@ export async function POST(req: NextRequest) {
       after_hours: Boolean(data.after_hours ?? false),
       translation: Boolean(data.translation ?? false),
       multi_country: Boolean(data.multi_country ?? false),
-      base_price: pricing.base,
-      witness_total: pricing.witness_total,
-      total_price: pricing.total,
-      invoice_retainer: invoice.retainer,
-      invoice_balance: invoice.balance,
       payment_status: "unpaid",
       payment_method: "wise",
       payment_reference,
@@ -366,7 +337,11 @@ export async function POST(req: NextRequest) {
           witnesses: Number(data.witnesses ?? 0),
           translation: Boolean(data.translation ?? false),
           multi_country: Boolean(data.multi_country ?? false),
+          ...quoteSnapshot,
           payment_status: "unpaid" as const,
+          payment_method: "wise" as const,
+          payment_reference,
+          payment_link,
           deal_status: "awaiting_payment" as const,
         };
 
@@ -384,53 +359,35 @@ export async function POST(req: NextRequest) {
             code: e2.code,
           });
 
-          // Attempt 3: absolute bare minimum — deal_id + access_token only
-          const barePayload = {
-            deal_id,
-            access_token,
-            client_name,
-            email: data.email || "",
-            payment_status: "unpaid" as const,
-            deal_status: "awaiting_payment" as const,
-          };
-          const { data: d3, error: e3 } = await supabase
-            .from("deals")
-            .insert([barePayload])
-            .select()
-            .single();
-
-          if (e3) {
-            console.error("[intake] DB insert attempt 3 failed:", {
-              message: e3.message,
-              details: e3.details,
-              hint: e3.hint,
-              code: e3.code,
-            });
-            return NextResponse.json(
-              {
-                error: "Failed to save matter. Please try again or contact support.",
-                code: "INTAKE_DB_INSERT_FAILED",
-                supabase_code: e3.code ?? e2.code ?? e.code ?? null,
-                attempt1_code: e.code ?? null,
-                attempt1_msg: e.message ?? null,
-                attempt2_code: e2.code ?? null,
-                attempt2_msg: e2.message ?? null,
-                attempt3_code: e3.code ?? null,
-                attempt3_msg: e3.message ?? null,
-                hint: e3.hint ?? e2.hint ?? e.hint ?? null,
-                details: e3.details ?? e2.details ?? e.details ?? null,
-              },
-              { status: 500 },
-            );
-          }
-
-          deal = d3 as Record<string, unknown>;
-          console.warn("[intake] saved via bare payload fallback — attempt1:", e.code, "attempt2:", e2.code);
+          return NextResponse.json(
+            {
+              error: "Failed to save the priced matter. Please try again or contact support.",
+              code: "INTAKE_DB_INSERT_FAILED",
+              supabase_code: e2.code ?? e.code ?? null,
+            },
+            { status: 500 },
+          );
         } else {
           deal = d2 as Record<string, unknown>;
           console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
         }
       }
+    }
+
+    // Never report a successful intake when its server-calculated quote was
+    // dropped by a schema fallback or database trigger.
+    if (!persistedMatterHasQuote(deal, quoteSnapshot)) {
+      console.error("[intake] persisted matter quote does not match server quote", {
+        matter_id: deal?.id ?? deal_id,
+      });
+      return NextResponse.json(
+        {
+          error: "The matter was captured, but its approved quote was not saved. Contact support before requesting payment.",
+          code: "INTAKE_QUOTE_PERSISTENCE_FAILED",
+          deal_id,
+        },
+        { status: 500 },
+      );
     }
 
     void notifyHighValue(deal_id, country, pricing.total, priority_tier);

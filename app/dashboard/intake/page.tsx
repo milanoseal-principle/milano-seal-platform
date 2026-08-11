@@ -336,6 +336,9 @@ export default function Intake() {
                   Open Matter Detail
                 </Button>
               </Link>
+              <Link href={`/dashboard/pro-forma/${success.deal_id}`}>
+                <Button variant="outline">Open Pro Forma</Button>
+              </Link>
               <Button
                 variant="outline"
                 onClick={() => {

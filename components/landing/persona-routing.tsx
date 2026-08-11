@@ -103,7 +103,7 @@ export function PersonaRouting() {
           The Milano Seal™ coordinates U.S. document execution, remote online notarization,
           apostille/authentication routing, and international release coordination. Availability and
           acceptance depend on document type, jurisdiction, destination country, and receiving-authority
-          requirements. This service does not constitute legal advice.
+          requirements. Clients should obtain guidance on legal rights and document content from qualified independent counsel.
         </p>
       </div>
     </section>

@@ -1,0 +1,3 @@
+import type { GovernmentOpportunity } from "./opportunityRegistry";
+export interface RenewalReminder { opportunityId: string; agency: string; renewalDate: string; reminderDate: string; action: string; }
+export function buildRenewalForecast(opportunities: GovernmentOpportunity[]): RenewalReminder[] { return opportunities.filter((o) => o.renewalDate).map((o) => ({ opportunityId: o.id, agency: o.agency, renewalDate: o.renewalDate as string, reminderDate: new Date(Date.parse(o.renewalDate as string) - 1000 * 60 * 60 * 24 * 120).toISOString().slice(0, 10), action: "Begin renewal intelligence review and relationship touchpoint." })); }

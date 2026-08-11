@@ -1,4 +1,4 @@
-// Provision Tiffany@bulbtech.io with founder_admin role + CUNTSEATASS 100% discount code.
+// Provision an approved operator account with founder_admin role + a 100% discount code.
 // Run where env vars exist:  node scripts/provision-tiffany.mjs
 //
 // Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
@@ -8,16 +8,16 @@ import { createClient } from "@supabase/supabase-js";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!URL || !SERVICE_KEY) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
+if (!URL || !SERVICE_KEY || !EMAIL || !PASSWORD) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TIFFANY_OPERATOR_EMAIL, or TIFFANY_OPERATOR_PASSWORD.");
   process.exit(1);
 }
 
-const EMAIL = "Tiffany@bulbtech.io";
-const PASSWORD = "Cunt123";
+const EMAIL = process.env.TIFFANY_OPERATOR_EMAIL;
+const PASSWORD = process.env.TIFFANY_OPERATOR_PASSWORD;
 const ROLE = "founder_admin";
 
-const DISCOUNT_CODE = "CUNTSEATASS";
+const DISCOUNT_CODE = process.env.TIFFANY_COMP_CODE ?? "MILANO_COMP_AUTHORIZED";
 
 const admin = createClient(URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -84,7 +84,7 @@ async function provisionDiscountCode(createdById) {
     applies_to: "service_fee",
     usage_limit: null,
     expiration_date: null,
-    internal_reason: "Tiffany / BulbTech courtesy — full access.",
+    internal_reason: "Approved operator courtesy authorization — full access.",
     client_label: "Milano Seal courtesy adjustment",
     status: "ACTIVE",
     created_by: createdById,

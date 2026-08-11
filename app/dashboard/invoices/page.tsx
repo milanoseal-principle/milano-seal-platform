@@ -15,6 +15,7 @@ interface Deal {
   destination_country: string | null;
   country: string | null;
   amount: number | null;
+  total_price: number | null;
   payment_status: string | null;
   status: string | null;
   invoice_subtotal: number | null;
@@ -37,8 +38,7 @@ const INV_LABEL: Record<InvType, string> = {
 };
 
 const PAYMENT_METHODS = [
-  { label: "Wise (Primary)", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "" },
-  { label: "Stripe", value: "Operator-issued link", icon: "S", note: "Upon operator approval" },
+  { label: "Wise", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "Payment authority" },
 ];
 
 function InvSeals() {
@@ -377,7 +377,8 @@ export default function InvoiceStudio() {
 
   const retainer = Number(sel?.invoice_retainer ?? 0);
   const subtotal = Number(
-    sel?.invoice_subtotal ||
+    sel?.total_price ||
+      sel?.invoice_subtotal ||
       sel?.amount ||
       (retainer > 0 ? Math.round(retainer * 2 * 100) / 100 : 0)
   );
@@ -469,7 +470,8 @@ export default function InvoiceStudio() {
                 </div>
                 <div className="inv-list-amt">
                   {formatCurrency(
-                    Number(d.invoice_subtotal) ||
+                    Number(d.total_price) ||
+                      Number(d.invoice_subtotal) ||
                       Number(d.amount) ||
                       (Number(d.invoice_retainer) > 0
                         ? Math.round(Number(d.invoice_retainer) * 2 * 100) / 100

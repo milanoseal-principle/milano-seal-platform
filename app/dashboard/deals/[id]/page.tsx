@@ -40,6 +40,7 @@ import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
 import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
 import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
 import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
+import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
 import {
   ArrowLeft,
   CalendarClock,
@@ -101,6 +102,17 @@ interface MilanoDeal {
   balance_amount_received: number | null;
   deal_status: string;
   payment_status: string;
+  payment_disposition?: string | null;
+  amount_before_adjustment?: number | null;
+  complimentary_adjustment_amount?: number | null;
+  amount_due?: number | null;
+  amount_paid?: number | null;
+  verified_revenue?: number | null;
+  comp_authorized?: boolean | null;
+  comp_authorized_by?: string | null;
+  comp_authorized_at?: string | null;
+  comp_reason_code?: string | null;
+  comp_authorization_id?: string | null;
   conversion_score: number;
   assignee: string | null;
   scheduled_at: string | null;
@@ -492,6 +504,8 @@ export default function DealDetail() {
   if (!deal) return <div className="text-destructive">Matter not found.</div>;
 
   const isPaid = deal.payment_status === "paid";
+  const isComplimentaryAuthorized = deal.payment_disposition === "complimentary" && deal.comp_authorized === true && Number(deal.amount_due ?? 0) === 0;
+  const isPaymentRequirementSatisfied = isPaid || isComplimentaryAuthorized;
   const stage = deal.deal_status;
 
   async function confirmDocRelease() {
@@ -704,7 +718,7 @@ export default function DealDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              {!isPaid && (
+              {!isPaymentRequirementSatisfied && (
                 <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-critical border border-red-500/20">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span className="text-sm">
@@ -775,7 +789,7 @@ export default function DealDetail() {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      disabled={!isPaid || stage !== "awaiting_payment"}
+                      disabled={!isPaymentRequirementSatisfied || stage !== "awaiting_payment"}
                       data-testid="action-schedule"
                       className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                     >
@@ -838,7 +852,7 @@ export default function DealDetail() {
                 <Button
                   variant="outline"
                   disabled={
-                    !isPaid ||
+                    !isPaymentRequirementSatisfied ||
                     (stage !== "scheduled" &&
                       !(stage === "awaiting_payment" && !!deal.scheduled_at))
                   }
@@ -856,7 +870,7 @@ export default function DealDetail() {
 
                 <Button
                   variant="outline"
-                  disabled={!isPaid || stage !== "in_execution"}
+                  disabled={!isPaymentRequirementSatisfied || stage !== "in_execution"}
                   data-testid="action-apostille"
                   className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                   onClick={() => moveStage("apostille", "Sent to apostille.")}
@@ -867,7 +881,7 @@ export default function DealDetail() {
                 <Button
                   variant="outline"
                   disabled={
-                    !isPaid ||
+                    !isPaymentRequirementSatisfied ||
                     stage !== "apostille" ||
                     !!deal.tracking_number
                   }
@@ -1063,8 +1077,27 @@ export default function DealDetail() {
                   {formatCurrencyDetailed(deal.total_price)}
                 </span>
               </div>
+              <Link
+                href={`/dashboard/pro-forma/${deal.deal_id ?? deal.id}`}
+                className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-gold/40 px-4 text-sm text-gold transition-colors hover:bg-gold/5"
+              >
+                Open Pro Forma
+              </Link>
             </CardContent>
           </Card>
+
+
+          <ComplimentaryMatterCard
+            matterId={deal.id}
+            quoteId={deal.deal_id ?? deal.id}
+            originalValue={Number(deal.amount_before_adjustment ?? deal.total_price ?? 0)}
+            authorized={isComplimentaryAuthorized}
+            authorizationId={deal.comp_authorization_id ?? null}
+            auditEventId={deal.comp_authorization_id ?? null}
+            authorizedBy={deal.comp_authorized_by ?? null}
+            reasonLabel={deal.comp_reason_code ? deal.comp_reason_code.replace(/_/g, " ") : null}
+            onChange={refresh}
+          />
 
           <Card className="bg-card border-gold">
             <CardHeader>
@@ -1097,7 +1130,7 @@ export default function DealDetail() {
                   </a>
                 )}
               </div>
-              {!isPaid && (
+              {!isPaymentRequirementSatisfied && (
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">

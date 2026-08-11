@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 
-const VALID_METHODS = ["wise", "wire", "manual"];
+const VALID_METHODS = ["wise"];
 
 export async function POST(
   req: NextRequest,

@@ -20,7 +20,7 @@ export class PaymentGateError extends Error {
   }
 }
 
-interface PaymentGateMatter {
+export interface PaymentGateMatter {
   id: string;
   deal_id?: string | null;
   payment_status?: string | null;

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { MilanoOrbAssistant } from "@/components/assistant/MilanoOrbAssistant";
 import { NavigationLoader } from "@/components/NavigationLoader";
+import { CinematicPageShell } from "@/components/motion/CinematicPageShell";
 import "./globals.css";
 import "./globe-core-fixes.css";
 
@@ -137,7 +138,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {children}
+        <CinematicPageShell>{children}</CinematicPageShell>
         <Toaster
           theme="dark"
           position="bottom-right"

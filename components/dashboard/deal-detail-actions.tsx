@@ -393,7 +393,7 @@ export function DealDetailActions({
                     onChange={(e) => setPayMethod(e.target.value)}
                     className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm focus:outline-none focus:border-primary text-foreground"
                   >
-                    {["wise", "stripe"].map((m) => (
+                    {["wise"].map((m) => (
                       <option key={m} value={m} className="bg-card">
                         {m}
                       </option>

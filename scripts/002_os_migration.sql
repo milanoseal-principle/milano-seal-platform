@@ -7,7 +7,7 @@ ALTER TABLE public.deals
   ADD COLUMN IF NOT EXISTS invoice_retainer         numeric,
   ADD COLUMN IF NOT EXISTS invoice_balance          numeric,
   ADD COLUMN IF NOT EXISTS invoice_valid_until      timestamptz,
-  ADD COLUMN IF NOT EXISTS payment_method           text DEFAULT 'stripe',
+  ADD COLUMN IF NOT EXISTS payment_method           text DEFAULT 'wise',
   ADD COLUMN IF NOT EXISTS payment_reference        text,
   ADD COLUMN IF NOT EXISTS payment_amount_received  numeric DEFAULT 0,
   ADD COLUMN IF NOT EXISTS compliance_result        text,

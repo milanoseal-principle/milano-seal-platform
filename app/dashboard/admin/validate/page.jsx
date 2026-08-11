@@ -64,7 +64,7 @@ const OP_FLOW = [
 const CANONICAL_RULES = [
   { id: "r01", rule: "Public language never says 'Compliance Map'", enforced: "Global Intel / Destination Intelligence", status: "pass" },
   { id: "r02", rule: "Route /map stays active — only copy changes", enforced: "/map → Global Document Intelligence™", status: "pass" },
-  { id: "r03", rule: "Wise is primary public payment rail — Stripe removed from public flow", enforced: "wise_primary=true, stripe=private_backup", status: "pass" },
+  { id: "r03", rule: "Wise is the sole payment authority", enforced: "wise_only=true; fallback=none", status: "pass" },
   { id: "r04", rule: "No raw fee math exposed publicly — execution lanes only", enforced: "Pricing UI: Standard / Expedited / Concierge lanes", status: "pass" },
   { id: "r05", rule: "No scheduling before payment confirmation", enforced: "Payment gate: scheduled + in_execution locked", status: "pass" },
   { id: "r06", rule: "No execution before payment confirmation", enforced: "State gate enforced at engine level", status: "pass" },
