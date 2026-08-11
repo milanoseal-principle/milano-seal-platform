@@ -124,8 +124,7 @@ export default function ClientInvoicePage() {
           }}
         >
           No payment is due for this Matter. This authorization is a separate
-          zero-revenue disposition and{" "}
-          is not a paid status or Wise Payment Confirmed status.
+          zero-revenue disposition and is not a paid status or Wise Payment Confirmed status.
         </p>
         <div
           data-critical-card=""
@@ -195,9 +194,7 @@ export default function ClientInvoicePage() {
           color: "rgba(255,255,255,0.45)",
         }}
       >
-        This invoice reflects the server-authoritative Matter amount. Any
-        professional courtesy attached to your Matter is applied automatically;
-        no coupon entry is required.
+        This invoice reflects the server-authoritative Matter amount. Any approved Partner or Courtesy Code is validated before payment and reflected in the totals below.
       </p>
 
       <div
