@@ -14,6 +14,17 @@ const REPORT_ROLES = new Set([
   "finance_operator",
 ]);
 
+interface RedemptionRow {
+  discount_code_id: string;
+  matter_id: string | null;
+  client_id: string | null;
+  eligible_subtotal: number | string | null;
+  discount_amount: number | string | null;
+  currency: string | null;
+  status: string | null;
+  redeemed_at: string | null;
+}
+
 async function requireReportAccess() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,7 +43,11 @@ export async function GET() {
   }
 
   const admin = createAdminClient();
-  const [{ data: codes, error: codeError }, { data: redemptions, error: redemptionError }, { data: referrals, error: referralError }] = await Promise.all([
+  const [
+    { data: codes, error: codeError },
+    { data: redemptions, error: redemptionError },
+    { data: referrals, error: referralError },
+  ] = await Promise.all([
     admin
       .from("discount_codes")
       .select("id,code,discount_type,discount_value,status,usage_limit,usage_count,client_id,matter_id,metadata,created_at,expires_at")
@@ -57,8 +72,9 @@ export async function GET() {
     referralCountByPartner.set(id, (referralCountByPartner.get(id) ?? 0) + 1);
   }
 
-  const redeemedByCode = new Map<string, typeof redemptions>();
-  for (const redemption of redemptions ?? []) {
+  const redemptionRows = (redemptions ?? []) as RedemptionRow[];
+  const redeemedByCode = new Map<string, RedemptionRow[]>();
+  for (const redemption of redemptionRows) {
     const key = String(redemption.discount_code_id);
     const bucket = redeemedByCode.get(key) ?? [];
     bucket.push(redemption);
