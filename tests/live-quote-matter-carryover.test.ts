@@ -6,11 +6,13 @@ import {
   persistedMatterHasQuote,
 } from "@/lib/pricing/matterQuoteSnapshot";
 
-test("canonical Matter quote snapshot preserves discounted 50/50 payment truth", () => {
+test("canonical Matter quote snapshot preserves discount basis and discounted 50/50 payment truth", () => {
   const snapshot = buildMatterQuoteSnapshot({
     lane: "Priority",
     basePrice: 975,
     witnessTotal: 0,
+    eligibleSubtotal: 1250,
+    nonDiscountableTotal: 0,
     originalTotal: 1250,
     discountAmount: 625,
     finalTotal: 625,
@@ -22,6 +24,8 @@ test("canonical Matter quote snapshot preserves discounted 50/50 payment truth",
     lane: "Priority",
     base_price: 975,
     witness_total: 0,
+    eligible_subtotal: 1250,
+    non_discountable_total: 0,
     original_total: 1250,
     discount_amount: 625,
     final_total: 625,
@@ -33,11 +37,13 @@ test("canonical Matter quote snapshot preserves discounted 50/50 payment truth",
   });
 });
 
-test("persisted quote verifier accepts Supabase numeric strings and rejects monetary drift", () => {
+test("persisted quote verifier accepts Supabase numeric strings and rejects monetary or discount-basis drift", () => {
   const expected = buildMatterQuoteSnapshot({
     lane: "Executive",
     basePrice: 1850,
     witnessTotal: 125,
+    eligibleSubtotal: 2200,
+    nonDiscountableTotal: 275,
     originalTotal: 2475,
     discountAmount: 247.5,
     finalTotal: 2227.5,
@@ -55,6 +61,14 @@ test("persisted quote verifier accepts Supabase numeric strings and rejects mone
   assert.equal(persistedMatterHasQuote(persisted, expected), true);
   assert.equal(
     persistedMatterHasQuote({ ...persisted, amount_due: "1113.74" }, expected),
+    false,
+  );
+  assert.equal(
+    persistedMatterHasQuote({ ...persisted, eligible_subtotal: null }, expected),
+    false,
+  );
+  assert.equal(
+    persistedMatterHasQuote({ ...persisted, eligible_subtotal: "2199.99" }, expected),
     false,
   );
 });
