@@ -25,6 +25,12 @@ interface RedemptionRow {
   redeemed_at: string | null;
 }
 
+interface DealIdentityRow {
+  id: string;
+  client_id: string | null;
+  email: string | null;
+}
+
 async function requireReportAccess() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,6 +41,17 @@ async function requireReportAccess() {
 
 function money(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function normalizeCurrency(value: string | null | undefined) {
+  return String(value ?? "USD").trim().toUpperCase() || "USD";
+}
+
+function identityForDeal(row: DealIdentityRow | undefined | null): string | null {
+  if (!row) return null;
+  if (row.client_id) return `client:${row.client_id}`;
+  if (row.email) return `email:${row.email.trim().toLowerCase()}`;
+  return null;
 }
 
 export async function GET() {
@@ -73,6 +90,19 @@ export async function GET() {
   }
 
   const redemptionRows = (redemptions ?? []) as RedemptionRow[];
+  const matterIds = Array.from(new Set(redemptionRows.map((row) => row.matter_id).filter(Boolean))) as string[];
+  const dealIdentityById = new Map<string, DealIdentityRow>();
+  if (matterIds.length > 0) {
+    const { data: deals, error: dealError } = await admin
+      .from("deals")
+      .select("id,client_id,email")
+      .in("id", matterIds);
+    if (dealError) return NextResponse.json({ error: dealError.message }, { status: 500 });
+    for (const deal of (deals ?? []) as DealIdentityRow[]) {
+      dealIdentityById.set(String(deal.id), deal);
+    }
+  }
+
   const redeemedByCode = new Map<string, RedemptionRow[]>();
   for (const redemption of redemptionRows) {
     const key = String(redemption.discount_code_id);
@@ -85,15 +115,35 @@ export async function GET() {
     const metadata = (code.metadata ?? {}) as Record<string, unknown>;
     const allianceMemberId = String(metadata.alliance_member_id ?? "") || null;
     const items = redeemedByCode.get(String(code.id)) ?? [];
-    const eligibleValue = money(items.reduce((sum, item) => sum + Number(item.eligible_subtotal ?? 0), 0));
-    const discountedValue = money(items.reduce((sum, item) => sum + Number(item.discount_amount ?? 0), 0));
-    const adjustedMatterValue = money(Math.max(0, eligibleValue - discountedValue));
+
+    const monetaryByCurrency = new Map<string, { eligible_value: number; discounted_value: number; adjusted_matter_value: number }>();
+    for (const item of items) {
+      const currency = normalizeCurrency(item.currency);
+      const current = monetaryByCurrency.get(currency) ?? {
+        eligible_value: 0,
+        discounted_value: 0,
+        adjusted_matter_value: 0,
+      };
+      const eligible = Number(item.eligible_subtotal ?? 0);
+      const discounted = Number(item.discount_amount ?? 0);
+      current.eligible_value = money(current.eligible_value + eligible);
+      current.discounted_value = money(current.discounted_value + discounted);
+      current.adjusted_matter_value = money(current.adjusted_matter_value + Math.max(0, eligible - discounted));
+      monetaryByCurrency.set(currency, current);
+    }
+
+    const monetary_totals = [...monetaryByCurrency.entries()].map(([currency, values]) => ({
+      currency,
+      ...values,
+    }));
 
     const clientCounts = new Map<string, number>();
     for (const item of items) {
-      if (!item.client_id) continue;
-      const clientId = String(item.client_id);
-      clientCounts.set(clientId, (clientCounts.get(clientId) ?? 0) + 1);
+      const explicit = item.client_id ? `client:${String(item.client_id)}` : null;
+      const derived = item.matter_id ? identityForDeal(dealIdentityById.get(String(item.matter_id))) : null;
+      const identity = explicit ?? derived;
+      if (!identity) continue;
+      clientCounts.set(identity, (clientCounts.get(identity) ?? 0) + 1);
     }
     const repeatClients = [...clientCounts.values()].filter((count) => count > 1).length;
     const repeatClientRate = clientCounts.size > 0 ? repeatClients / clientCounts.size : null;
@@ -112,9 +162,7 @@ export async function GET() {
       conversion_rate: null,
       conversion_rate_reason: "No governed code-impression denominator is stored; conversion is intentionally not inferred.",
       redeemed_matter_count: items.length,
-      eligible_value: eligibleValue,
-      discounted_value: discountedValue,
-      adjusted_matter_value: adjustedMatterValue,
+      monetary_totals,
       repeat_client_rate: repeatClientRate,
       alliance_member_id: allianceMemberId,
       partner_referral_volume: allianceMemberId ? referralCountByPartner.get(allianceMemberId) ?? 0 : 0,
@@ -126,20 +174,39 @@ export async function GET() {
     };
   });
 
+  const overallByCurrency = new Map<string, { eligible_value: number; discounted_value: number; adjusted_matter_value: number }>();
+  for (const row of rows) {
+    for (const monetary of row.monetary_totals) {
+      const current = overallByCurrency.get(monetary.currency) ?? {
+        eligible_value: 0,
+        discounted_value: 0,
+        adjusted_matter_value: 0,
+      };
+      current.eligible_value = money(current.eligible_value + monetary.eligible_value);
+      current.discounted_value = money(current.discounted_value + monetary.discounted_value);
+      current.adjusted_matter_value = money(current.adjusted_matter_value + monetary.adjusted_matter_value);
+      overallByCurrency.set(monetary.currency, current);
+    }
+  }
+
+  const uniquePartnerIds = new Set(rows.map((row) => row.alliance_member_id).filter(Boolean) as string[]);
+  const partnerReferralTotal = [...uniquePartnerIds].reduce(
+    (sum, partnerId) => sum + (referralCountByPartner.get(partnerId) ?? 0),
+    0,
+  );
+
   const totals = {
     codes: rows.length,
     active_codes: rows.filter((row) => row.status === "active").length,
     redeemed_matters: rows.reduce((sum, row) => sum + row.redeemed_matter_count, 0),
-    eligible_value: money(rows.reduce((sum, row) => sum + row.eligible_value, 0)),
-    discounted_value: money(rows.reduce((sum, row) => sum + row.discounted_value, 0)),
-    adjusted_matter_value: money(rows.reduce((sum, row) => sum + row.adjusted_matter_value, 0)),
-    partner_referrals: rows.reduce((sum, row) => sum + row.partner_referral_volume, 0),
+    monetary_totals: [...overallByCurrency.entries()].map(([currency, values]) => ({ currency, ...values })),
+    partner_referrals: partnerReferralTotal,
   };
 
   return NextResponse.json({
     generated_at: new Date().toISOString(),
-    authority: "discount_codes + redeemed discount_redemptions + referral_ledger",
-    revenue_note: "Adjusted matter value is an attribution basis from redeemed discount records; Wise reconciliation remains authoritative for paid revenue.",
+    authority: "discount_codes + redeemed discount_redemptions + referral_ledger + deals identity projection",
+    revenue_note: "Monetary attribution is grouped by original currency and is not converted. Wise reconciliation remains authoritative for paid revenue.",
     totals,
     rows,
   });

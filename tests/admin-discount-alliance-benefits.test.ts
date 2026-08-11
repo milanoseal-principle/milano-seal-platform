@@ -43,6 +43,37 @@ test("Alliance benefits are read-only and referral attribution is authenticated-
   assert.match(referralEngine, /referral_code/);
 });
 
+test("intake and Matter discount application enforce governed restrictions", () => {
+  const intake = read("app/api/intake/core.ts");
+  const discountService = read("src/features/discounts/discountService.ts");
+
+  assert.match(intake, /client_id,matter_id,metadata/);
+  assert.match(intake, /Courtesy code is not eligible for this client/);
+  assert.match(intake, /Courtesy code is restricted to a specific Matter/);
+  assert.match(intake, /Courtesy code is not assigned to this Alliance account/);
+  assert.match(intake, /Courtesy code is not eligible for this service scope/);
+
+  assert.match(discountService, /Discount code is not eligible for this client/);
+  assert.match(discountService, /Discount code is not assigned to this Alliance account/);
+  assert.match(discountService, /Discount code is not eligible for this service scope/);
+  assert.match(discountService, /redeemDiscountAfterWiseReconciliation/);
+});
+
+test("governed reporting preserves currency boundaries and unique partner attribution", () => {
+  const report = read("app/api/dashboard/discounts/report/route.ts");
+  const reportPage = read("app/dashboard/payments/discounts/report/page.tsx");
+  const dashboardAuth = read("lib/dashboardAuth.ts");
+
+  assert.match(report, /monetary_totals/);
+  assert.match(report, /normalizeCurrency/);
+  assert.match(report, /new Set\(rows\.map\(\(row\) => row\.alliance_member_id\)/);
+  assert.match(report, /deals identity projection/);
+  assert.match(reportPage, /monetarySummary/);
+  assert.match(reportPage, /Monetary totals stay separated by original currency/);
+  assert.match(dashboardAuth, /"finance"/);
+  assert.match(dashboardAuth, /"finance_operator"/);
+});
+
 test("governed reporting does not misstate adjusted Matter value as paid revenue", () => {
   const report = read("app/api/dashboard/discounts/report/route.ts");
   assert.match(report, /conversion_rate:\s*null/);

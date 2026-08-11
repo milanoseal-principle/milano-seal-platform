@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 const ADMIN_ROLES = new Set([
   "founder",
   "founder_admin",
+  "admin",
   "admin_operator",
+  "finance",
+  "finance_operator",
   "virtual_assistant",
 ]);
 

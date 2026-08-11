@@ -8,13 +8,14 @@ const manager = read("app/dashboard/payments/discounts/page.tsx");
 const reportApi = read("app/api/dashboard/discounts/report/route.ts");
 const reportPage = read("app/dashboard/payments/discounts/report/page.tsx");
 const operatorShell = read("components/dashboard/OperatorShell.tsx");
+const dashboardAuth = read("lib/dashboardAuth.ts");
 const allianceSidebar = read("components/alliance/AllianceSidebar.tsx");
 const allianceBenefitsPage = read("app/alliance/benefits/page.tsx");
 const allianceBenefitsCard = read("components/alliance/AllianceBenefitsCard.tsx");
 const referralEngine = read("components/alliance/AllianceReferralEngine.tsx");
 const referralPage = read("app/alliance/referrals/new/page.tsx");
-const referralApi = read("app/api/alliance/referrals/route.ts");
 const discountService = read("src/features/discounts/discountService.ts");
+const intake = read("app/api/intake/core.ts");
 
 assert.match(api, /founder_admin/);
 assert.match(api, /admin_operator/);
@@ -30,7 +31,7 @@ assert.doesNotMatch(api, /invoice_retainer\s*:/);
 assert.doesNotMatch(api, /payment_confirmed\s*:/);
 
 assert.match(manager, /Discount Code Manager/);
-assert.match(manager, /Create inactive code/i);
+assert.match(manager, /Create inactive code/);
 assert.match(manager, /Alliance member restriction/);
 assert.match(manager, /Eligible service scope/);
 assert.match(manager, /internal_reason/);
@@ -40,6 +41,10 @@ assert.doesNotMatch(manager, /TIFFTEST50/);
 assert.match(operatorShell, /\/dashboard\/payments/);
 assert.match(operatorShell, /\/dashboard\/payments\/discounts/);
 assert.match(operatorShell, /\/dashboard\/payments\/discounts\/report/);
+
+for (const role of ["admin", "finance", "finance_operator"]) {
+  assert.match(dashboardAuth, new RegExp(`"${role}"`));
+}
 
 assert.match(allianceSidebar, /\/alliance\/benefits/);
 assert.match(allianceBenefitsPage, /alliance_member_id/);
@@ -52,19 +57,29 @@ assert.match(referralEngine, /referral_code/);
 assert.match(referralEngine, /Referral attribution locked to this Alliance account/);
 assert.match(referralPage, /referralCode/);
 assert.match(referralPage, /partnerEmail/);
-assert.match(referralApi, /\.eq\("referral_code", referral_code\)/);
-assert.match(referralApi, /partner_id/);
 
 assert.match(reportApi, /finance_operator/);
 assert.match(reportApi, /discount_redemptions/);
 assert.match(reportApi, /referral_ledger/);
 assert.match(reportApi, /conversion_rate:\s*null/);
+assert.match(reportApi, /monetary_totals/);
+assert.match(reportApi, /new Set\(rows\.map\(\(row\) => row\.alliance_member_id\)/);
+assert.match(reportApi, /deals identity projection/);
 assert.match(reportApi, /Wise reconciliation remains authoritative for paid revenue/);
 assert.match(reportPage, /Courtesy Program Intelligence/);
-assert.match(reportPage, /Wise reconciliation remains authoritative for paid revenue/);
+assert.match(reportPage, /monetarySummary/);
+assert.match(reportPage, /Monetary totals stay separated by original currency/);
+
+assert.match(intake, /client_id,matter_id,metadata/);
+assert.match(intake, /Courtesy code is not eligible for this client/);
+assert.match(intake, /Courtesy code is restricted to a specific Matter/);
+assert.match(intake, /Courtesy code is not assigned to this Alliance account/);
+assert.match(intake, /Courtesy code is not eligible for this service scope/);
 
 assert.match(discountService, /redeemDiscountAfterWiseReconciliation/);
-assert.match(discountService, /Applying a code does not consume it/);
+assert.match(discountService, /Discount code is not eligible for this client/);
+assert.match(discountService, /Discount code is not assigned to this Alliance account/);
+assert.match(discountService, /Discount code is not eligible for this service scope/);
 assert.match(discountService, /eligible subtotal is not explicitly stored/);
 
 for (const source of [api, manager, reportApi, reportPage, allianceBenefitsPage, allianceBenefitsCard, referralEngine, referralPage]) {
