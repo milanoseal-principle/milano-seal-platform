@@ -33,9 +33,12 @@ export interface PortalClientMatter {
   wise_reference: string | null;
   wise_payment_url: string | null;
   original_total: number | null;
+  discount_code: string | null;
   discount_amount: number;
   discount_value: number | null;
   final_total: number | null;
+  invoice_retainer: number | null;
+  invoice_balance: number | null;
   courtesy_applied: boolean;
   courtesy_label: string | null;
   courier_tracking_id: string | null;
@@ -106,9 +109,12 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     wise_reference: (raw.wise_reference as string | null) ?? null,
     wise_payment_url: (raw.wise_payment_url as string | null) ?? null,
     original_total: numberOrNull(raw.original_total),
+    discount_code: (raw.discount_code as string | null) ?? null,
     discount_amount: numberOrNull(raw.discount_amount) ?? 0,
     discount_value: numberOrNull(raw.discount_value),
     final_total: numberOrNull(raw.final_total),
+    invoice_retainer: numberOrNull(raw.invoice_retainer),
+    invoice_balance: numberOrNull(raw.invoice_balance),
     courtesy_applied: (raw.courtesy_applied as boolean) ?? false,
     courtesy_label: (raw.courtesy_label as string | null) ?? null,
     courier_tracking_id:
