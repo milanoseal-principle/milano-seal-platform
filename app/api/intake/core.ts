@@ -209,6 +209,22 @@ function legacyExecutionTruthInput(raw: Record<string, unknown>) {
   };
 }
 
+function normalizeServiceScope(value: unknown): string {
+  return String(value ?? "all_eligible_services").trim().toLowerCase();
+}
+
+function serviceScopeMatches(scope: string, params: {
+  documentType: string;
+  apostilleRequired: boolean;
+  notarizationRequired: boolean;
+}): boolean {
+  if (!scope || scope === "all_eligible_services" || scope === "professional_services") return true;
+  if (scope === "apostille_coordination") return params.apostilleRequired;
+  if (scope === "notarization") return params.notarizationRequired;
+  if (scope === "document_execution") return Boolean(params.documentType);
+  return false;
+}
+
 async function notifyHighValue(
   dealId: string,
   country: string,
@@ -609,7 +625,7 @@ export async function POST(req: NextRequest) {
       const { data: discount, error: discountError } = await supabase
         .from("discount_codes")
         .select(
-          "id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to",
+          "id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to,client_id,matter_id,metadata",
         )
         .eq("code", requestedCourtesy)
         .maybeSingle();
@@ -648,6 +664,53 @@ export async function POST(req: NextRequest) {
           { error: "Courtesy code requires operator review." },
           { status: 400 },
         );
+
+      const restrictedClientId = String(discount.client_id ?? "").trim();
+      const intakeClientId = String(raw.client_id ?? "").trim();
+      if (restrictedClientId && restrictedClientId !== intakeClientId) {
+        return NextResponse.json(
+          { error: "Courtesy code is not eligible for this client." },
+          { status: 400 },
+        );
+      }
+
+      const restrictedMatterId = String(discount.matter_id ?? "").trim();
+      const intakeMatterId = String(raw.matter_id ?? raw.deal_id ?? "").trim();
+      if (restrictedMatterId && restrictedMatterId !== intakeMatterId) {
+        return NextResponse.json(
+          { error: "Courtesy code is restricted to a specific Matter." },
+          { status: 400 },
+        );
+      }
+
+      const metadata = (discount.metadata ?? {}) as Record<string, unknown>;
+      const restrictedAllianceMemberId = String(metadata.alliance_member_id ?? "").trim();
+      const intakeAllianceMemberId = String(
+        raw.alliance_member_id ?? raw.partner_id ?? "",
+      ).trim();
+      if (
+        restrictedAllianceMemberId &&
+        restrictedAllianceMemberId !== intakeAllianceMemberId
+      ) {
+        return NextResponse.json(
+          { error: "Courtesy code is not assigned to this Alliance account." },
+          { status: 400 },
+        );
+      }
+
+      const serviceScope = normalizeServiceScope(metadata.eligible_service_scope);
+      if (
+        !serviceScopeMatches(serviceScope, {
+          documentType: String(data.document_type || prefillDoc || ""),
+          apostilleRequired,
+          notarizationRequired,
+        })
+      ) {
+        return NextResponse.json(
+          { error: "Courtesy code is not eligible for this service scope." },
+          { status: 400 },
+        );
+      }
 
       const discountValue = Number(discount.discount_value);
       const amount = computeDiscountAmount(
