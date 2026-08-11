@@ -13,6 +13,7 @@ const allianceBenefitsPage = read("app/alliance/benefits/page.tsx");
 const allianceBenefitsCard = read("components/alliance/AllianceBenefitsCard.tsx");
 const referralEngine = read("components/alliance/AllianceReferralEngine.tsx");
 const referralPage = read("app/alliance/referrals/new/page.tsx");
+const referralApi = read("app/api/alliance/referrals/route.ts");
 const discountService = read("src/features/discounts/discountService.ts");
 
 assert.match(api, /founder_admin/);
@@ -29,7 +30,7 @@ assert.doesNotMatch(api, /invoice_retainer\s*:/);
 assert.doesNotMatch(api, /payment_confirmed\s*:/);
 
 assert.match(manager, /Discount Code Manager/);
-assert.match(manager, /Create inactive code/);
+assert.match(manager, /Create inactive code/i);
 assert.match(manager, /Alliance member restriction/);
 assert.match(manager, /Eligible service scope/);
 assert.match(manager, /internal_reason/);
@@ -51,6 +52,8 @@ assert.match(referralEngine, /referral_code/);
 assert.match(referralEngine, /Referral attribution locked to this Alliance account/);
 assert.match(referralPage, /referralCode/);
 assert.match(referralPage, /partnerEmail/);
+assert.match(referralApi, /\.eq\("referral_code", referral_code\)/);
+assert.match(referralApi, /partner_id/);
 
 assert.match(reportApi, /finance_operator/);
 assert.match(reportApi, /discount_redemptions/);
