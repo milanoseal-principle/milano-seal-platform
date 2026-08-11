@@ -47,7 +47,7 @@ export function SecurePaymentCard({
   const adjusted = Number(deal.final_total ?? deal.total_price ?? 0);
   const due = Number(deal.amount_due ?? deal.invoice_retainer ?? 0);
   const balance = Number(deal.invoice_balance ?? Math.max(0, adjusted - due));
-  const isPaid = deal.payment_status === "paid";
+  const isPaid = ["paid", "confirmed", "payment_confirmed"].includes(deal.payment_status);
   const isComplimentary = deal.payment_disposition === "complimentary";
   const balancePaid = deal.balance_payment_status === "paid";
 
@@ -66,9 +66,30 @@ export function SecurePaymentCard({
         toast.error(body.error ?? "Code could not be applied.");
         return;
       }
+
+      // Applying a discount intentionally invalidates any stale awaiting-payment
+      // Wise instruction. Recreate the retainer instruction from current server
+      // pricing truth before refreshing the shared payment surface.
+      const payRes = await fetch(`/api/deals/${deal.id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentType: "retainer" }),
+      });
+      const payBody = await payRes.json().catch(() => ({}));
+
       setCode("");
-      toast.success("Courtesy code applied. Payment instructions refreshed.");
-      onRefresh?.();
+      await onRefresh?.();
+
+      if (!payRes.ok) {
+        toast.error(
+          payBody.error === "PAYMENT_REVIEW_REQUIRED"
+            ? "Courtesy code applied. Wise payment requires reconciliation review."
+            : "Courtesy code applied, but Wise instructions could not be refreshed.",
+        );
+        return;
+      }
+
+      toast.success("Courtesy code applied. Wise payment instructions refreshed.");
     } catch {
       toast.error("Could not apply code.");
     } finally {
