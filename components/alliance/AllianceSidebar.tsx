@@ -9,6 +9,7 @@ import {
   GitFork,
   FileStack,
   Wallet,
+  Gift,
   User,
   HeadphonesIcon,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
 const NAV_ITEMS = [
   { href: "/alliance/dashboard", label: "Alliance Desk", icon: LayoutDashboard },
   { href: "/alliance/toolbelt", label: "Tool Belt", icon: Wrench },
+  { href: "/alliance/benefits", label: "Benefits", icon: Gift },
   { href: "/alliance/compliance", label: "Compliance", icon: ShieldCheck },
   { href: "/alliance/referrals", label: "Referrals", icon: GitFork },
   { href: "/alliance/matters", label: "Matters", icon: FileStack },
@@ -46,7 +48,6 @@ export function AllianceSidebar({ partnerName, routingEligible }: AllianceSideba
         flexShrink: 0,
       }}
     >
-      {/* Logo */}
       <div
         style={{
           padding: "24px 20px 20px",
@@ -70,7 +71,6 @@ export function AllianceSidebar({ partnerName, routingEligible }: AllianceSideba
         </div>
       </div>
 
-      {/* Partner name */}
       {partnerName && (
         <div
           style={{
@@ -94,7 +94,6 @@ export function AllianceSidebar({ partnerName, routingEligible }: AllianceSideba
         </div>
       )}
 
-      {/* Nav */}
       <nav style={{ flex: 1, padding: "12px 0" }}>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -124,7 +123,6 @@ export function AllianceSidebar({ partnerName, routingEligible }: AllianceSideba
         })}
       </nav>
 
-      {/* Routing eligibility indicator */}
       <div
         style={{
           padding: "16px 20px",
