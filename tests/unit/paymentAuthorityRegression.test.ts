@@ -24,6 +24,10 @@ const dealPage = fs.readFileSync(
   path.join(root, "app/dashboard/deals/[id]/page.tsx"),
   "utf8",
 );
+const securePaymentCard = fs.readFileSync(
+  path.join(root, "components/payments/SecurePaymentCard.tsx"),
+  "utf8",
+);
 const pipelineEngine = fs.readFileSync(
   path.join(root, "lib/pipelineEngine.ts"),
   "utf8",
@@ -98,10 +102,10 @@ test("operator detail delegates Wise-only payment UX to SecurePaymentCard", () =
   assert.doesNotMatch(dealPage, /payment_status:\s*"paid"/);
   assert.doesNotMatch(dealPage, /balance_payment_status:\s*"paid"/);
   assert.match(dealPage, /SecurePaymentCard/);
-  assert.match(dealPage, /Wise reconciliation is authoritative/);
   assert.match(dealPage, /deal\.payment_link/);
   assert.match(dealPage, /deal\.balance_payment_link/);
-  assert.match(dealPage, /Operators cannot manually[\s\S]*mark this Matter paid/);
+  assert.match(securePaymentCard, /Wise reconciliation is authoritative/);
+  assert.match(securePaymentCard, /Operators cannot manually[\s\S]*mark this Matter paid/);
 });
 
 test("Matter detail restoration preserves non-payment operator UX", () => {
