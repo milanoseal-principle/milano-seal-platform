@@ -41,6 +41,7 @@ import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
 import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
 import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
+import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
 import {
   ArrowLeft,
   CalendarClock,
@@ -50,7 +51,6 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
-  CircleDollarSign,
   UserPlus,
   AlertCircle,
   MessageSquare,
@@ -93,6 +93,10 @@ interface MilanoDeal {
   base_price: number;
   witness_total: number;
   total_price: number;
+  original_total?: number | null;
+  discount_code?: string | null;
+  discount_amount?: number | null;
+  final_total?: number | null;
   invoice_retainer: number | null;
   invoice_balance: number | null;
   payment_link: string;
@@ -436,7 +440,7 @@ export default function DealDetail() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <Card className="bg-card border-gold">
             <CardHeader>
               <Skeleton className="h-6 w-48 rounded" />
@@ -585,7 +589,6 @@ export default function DealDetail() {
         </Button>
       </Link>
 
-      {/* Paid & Released banner */}
       <AnimatePresence>
         {isPaidAndCompleted && (
           <motion.div
@@ -613,7 +616,6 @@ export default function DealDetail() {
         )}
       </AnimatePresence>
 
-      {/* Balance due warning */}
       {isBalanceDue && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-sm border border-amber-500/30 bg-amber-500/5">
           <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
@@ -683,7 +685,6 @@ export default function DealDetail() {
             {deal.origin_state && (
               <span>
                 {" "}(Origin Authority:{" "}
-                {/* Display origin_authority_label parsed from notes, or fall back to origin_state */}
                 {(() => {
                   const labelLine = (deal.notes || "").split("\n").find((l: string) => l.startsWith("[routing] origin_authority_label="));
                   return labelLine ? labelLine.replace("[routing] origin_authority_label=", "") : deal.origin_state;
@@ -702,7 +703,7 @@ export default function DealDetail() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
           <Card className="bg-card border-gold">
             <CardHeader>
@@ -1020,7 +1021,7 @@ export default function DealDetail() {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 xl:sticky xl:top-20 xl:self-start">
           <TrustModeGuide
             destinationCountry={deal.destination_country ?? null}
             apostilleRequired={deal.apostille_required ?? false}
@@ -1052,8 +1053,8 @@ export default function DealDetail() {
 
           <Card className="bg-card border-gold">
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Pricing</CardTitle>
-              <CardDescription>{deal.lane} lane</CardDescription>
+              <CardTitle className="font-serif text-xl">Pricing Summary</CardTitle>
+              <CardDescription>{deal.lane} lane · canonical Matter pricing</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -1068,173 +1069,62 @@ export default function DealDetail() {
               )}
               <Separator className="bg-border" />
               <div className="flex justify-between font-medium">
-                <span>Total</span>
-                <span className="text-gold">
-                  {formatCurrencyDetailed(deal.total_price)}
-                </span>
+                <span>Matter value</span>
+                <span className="text-gold">{formatCurrencyDetailed(Number(deal.original_total ?? deal.total_price))}</span>
               </div>
-            </CardContent>
-          </Card>
-
-
-          <ComplimentaryMatterCard
-            matterId={deal.id}
-            quoteId={deal.deal_id ?? deal.id}
-            originalValue={Number(deal.amount_before_adjustment ?? deal.total_price ?? 0)}
-            authorized={isComplimentaryAuthorized}
-            authorizationId={deal.comp_authorization_id ?? null}
-            auditEventId={deal.comp_authorization_id ?? null}
-            authorizedBy={deal.comp_authorized_by ?? null}
-            reasonLabel={deal.comp_reason_code ? deal.comp_reason_code.replace(/_/g, " ") : null}
-            onChange={refresh}
-          />
-
-          <Card className="bg-card border-gold">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <CircleDollarSign className="w-4 h-4 text-gold" /> Wise Payment
-              </CardTitle>
-              <CardDescription>
-                Read-only settlement state. Wise reconciliation is authoritative.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 p-2 rounded border border-border bg-background">
-                <code className="flex-1 text-xs break-all">
-                  {deal.payment_link}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    if (deal.payment_link) {
-                      navigator.clipboard.writeText(deal.payment_link);
-                      toast.success("Copied", { id: "clipboard" });
-                    }
-                  }}
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-                {deal.payment_link && (
-                  <a href={deal.payment_link} target="_blank" rel="noreferrer">
-                    <Button size="sm" variant="ghost">
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
-                  </a>
-                )}
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <Badge
-                  variant="outline"
-                  className={isPaid ? "bg-paid" : "bg-await"}
-                >
-                  {deal.payment_status}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Amount due</span>
-                <span>
-                  {formatCurrencyDetailed(
-                    Number(deal.amount_due ?? deal.invoice_retainer ?? 0),
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Amount paid</span>
-                <span>
-                  {formatCurrencyDetailed(Number(deal.amount_paid ?? 0))}
-                </span>
-              </div>
-              {!isPaymentRequirementSatisfied && (
-                <div className="rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
-                  Awaiting canonical Wise reconciliation. Operators cannot manually
-                  mark this Matter paid.
+              {Number(deal.discount_amount ?? 0) > 0 && (
+                <div className="flex justify-between text-sm text-gold">
+                  <span>Courtesy adjustment</span>
+                  <span>-{formatCurrencyDetailed(Number(deal.discount_amount ?? 0))}</span>
                 </div>
               )}
-
-              {/* Balance payment section */}
-              {(deal.balance_payment_link ||
-                ["shipped", "completed"].includes(stage)) && (
-                <>
-                  <Separator className="bg-border" />
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-                        Balance (50%)
-                      </span>
-                      {deal.balance_payment_status && (
-                        <Badge
-                          variant="outline"
-                          className={
-                            deal.balance_payment_status === "paid"
-                              ? "bg-paid"
-                              : "bg-await"
-                          }
-                        >
-                          {deal.balance_payment_status}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {deal.balance_payment_link ? (
-                      <>
-                        <div className="flex items-center gap-2 p-2 rounded border border-border bg-background">
-                          <code className="flex-1 text-xs break-all">
-                            {deal.balance_payment_link}
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                deal.balance_payment_link!,
-                              );
-                              toast.success("Copied", { id: "clipboard" });
-                            }}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                          <a
-                            href={deal.balance_payment_link}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Button size="sm" variant="ghost">
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </a>
-                        </div>
-
-                        {deal.balance_paid_at ? (
-                          <p className="text-xs text-muted-foreground">
-                            Received via Wise reconciliation
-                            {deal.balance_amount_received
-                              ? ` · $${deal.balance_amount_received.toLocaleString()}`
-                              : ""}{" "}
-                            ·{" "}
-                            {new Date(
-                              deal.balance_paid_at,
-                            ).toLocaleDateString()}
-                          </p>
-                        ) : (
-                          <div className="rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
-                            Awaiting canonical Wise balance reconciliation. Operators
-                            cannot manually mark the balance paid.
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">
-                        Balance invoice generated automatically when matter
-                        ships.
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
+
+          <SecurePaymentCard
+            deal={{
+              id: deal.id,
+              deal_id: deal.deal_id ?? deal.id,
+              lane: deal.lane,
+              total_price: Number(deal.total_price ?? 0),
+              original_total: deal.original_total ?? deal.amount_before_adjustment ?? deal.total_price,
+              discount_code: deal.discount_code ?? null,
+              discount_amount: deal.discount_amount ?? 0,
+              final_total: deal.final_total ?? deal.total_price,
+              invoice_retainer: deal.invoice_retainer,
+              invoice_balance: deal.invoice_balance,
+              amount_due: deal.amount_due,
+              amount_paid: deal.amount_paid,
+              payment_status: deal.payment_status,
+              payment_link: deal.payment_link,
+              payment_disposition: deal.payment_disposition,
+              balance_payment_link: deal.balance_payment_link,
+              balance_payment_status: deal.balance_payment_status,
+              balance_paid_at: deal.balance_paid_at,
+              balance_amount_received: deal.balance_amount_received,
+            }}
+            onRefresh={refresh}
+          />
+
+          <details className="group rounded-xl border border-[#C6A55A]/10 bg-black/10 p-4">
+            <summary className="cursor-pointer list-none text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground transition hover:text-gold">
+              More payment actions
+              <span className="ml-2 text-[10px] normal-case tracking-normal opacity-60">Founder / admin</span>
+            </summary>
+            <div className="mt-4">
+              <ComplimentaryMatterCard
+                matterId={deal.id}
+                quoteId={deal.deal_id ?? deal.id}
+                originalValue={Number(deal.amount_before_adjustment ?? deal.total_price ?? 0)}
+                authorized={isComplimentaryAuthorized}
+                authorizationId={deal.comp_authorization_id ?? null}
+                auditEventId={deal.comp_authorization_id ?? null}
+                authorizedBy={deal.comp_authorized_by ?? null}
+                reasonLabel={deal.comp_reason_code ? deal.comp_reason_code.replace(/_/g, " ") : null}
+                onChange={refresh}
+              />
+            </div>
+          </details>
 
           <Card className="bg-card border-gold">
             <CardHeader>
@@ -1349,7 +1239,6 @@ export default function DealDetail() {
             </CardContent>
           </Card>
 
-          {/* Document Release */}
           <AnimatePresence>
             {showDocRelease && (
               <motion.div
@@ -1375,7 +1264,6 @@ export default function DealDetail() {
                       Confirm that documents have been released to the recipient.
                       This records a custody ledger event.
                     </p>
-                    {/* Milano Release Seal — visual release confirmation widget */}
                     {!releaseSuccess && (
                       <MilanoReleaseSeal
                         matterId={deal.id}

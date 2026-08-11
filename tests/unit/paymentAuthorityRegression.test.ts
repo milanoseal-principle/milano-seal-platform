@@ -24,6 +24,10 @@ const dealPage = fs.readFileSync(
   path.join(root, "app/dashboard/deals/[id]/page.tsx"),
   "utf8",
 );
+const securePaymentCard = fs.readFileSync(
+  path.join(root, "components/payments/SecurePaymentCard.tsx"),
+  "utf8",
+);
 const pipelineEngine = fs.readFileSync(
   path.join(root, "lib/pipelineEngine.ts"),
   "utf8",
@@ -90,18 +94,19 @@ test("review-required mobile capture preserves mileage", () => {
   assert.match(reviewPayload, /miles:[\s\S]*executionTruth\.execution_method === "mobile"[\s\S]*Number\(data\.miles \?\? raw\.miles \?\? 0\)/);
 });
 
-test("operator detail page is Wise read-only while preserving payment links", () => {
+test("operator detail delegates Wise-only payment UX to SecurePaymentCard", () => {
   assert.doesNotMatch(dealPage, /Confirm Payment/);
   assert.doesNotMatch(dealPage, /Mark paid/);
   assert.doesNotMatch(dealPage, /Confirm Balance Payment/);
   assert.doesNotMatch(dealPage, /Mark balance paid/);
   assert.doesNotMatch(dealPage, /payment_status:\s*"paid"/);
   assert.doesNotMatch(dealPage, /balance_payment_status:\s*"paid"/);
-  assert.match(dealPage, /Wise Payment/);
-  assert.match(dealPage, /Wise reconciliation is authoritative/);
+  assert.match(dealPage, /SecurePaymentCard/);
   assert.match(dealPage, /deal\.payment_link/);
   assert.match(dealPage, /deal\.balance_payment_link/);
-  assert.match(dealPage, /Operators cannot manually[\s\S]*mark this Matter paid/);
+  assert.match(securePaymentCard, /Powered by Wise Business/);
+  assert.match(securePaymentCard, /Wise verified only/);
+  assert.match(securePaymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 
 test("Matter detail restoration preserves non-payment operator UX", () => {

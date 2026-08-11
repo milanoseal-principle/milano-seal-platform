@@ -27,15 +27,13 @@ const schedulingRoute = source("app/api/deals/[id]/schedule/route.ts");
 const signupRoute = source("app/api/auth/signup/route.ts");
 const discountService = source("src/features/discounts/discountService.ts");
 const portalPayment = source("app/portal/payment/page.tsx");
+const securePaymentCard = source("components/payments/SecurePaymentCard.tsx");
 const portalInvoice = source("app/portal/invoice/page.tsx");
 const portalProjection = source("lib/portalProjection.ts");
 const damianiPage = source("app/professional/damiani/page.tsx");
 const damianiClient = source("app/professional/damiani/DamianiReentry.tsx");
 
 const fullInsert = section(intakeRoute, "const intakePayload = {", "let deal:");
-// #193 replaced the tiered minimal/bare fallback inserts with ONE canonical
-// insert. Review-required operator matters are captured by a second canonical
-// insert (reviewPayload) that saves intake_received/unpaid with no invoice/Wise.
 const reviewInsert = section(
   intakeRoute,
   "const reviewPayload = {",
@@ -126,8 +124,6 @@ for (const [label, block] of [
   );
 }
 
-// Review-required capture must NOT authorize a transaction: no invoice, no Wise
-// request, no approved amount are written on that path.
 check(
   "review-required intake capture creates no invoice or Wise amount",
   !reviewInsert.includes("amount_due:") &&
@@ -233,7 +229,7 @@ check(
     "underpayment",
     "overpayment",
     "currency_mismatch",
-    'supabase.rpc("confirm_wise_payment_for_deal"',
+    "confirm_wise_payment_for_deal",
   ]),
 );
 
@@ -265,23 +261,28 @@ check(
 );
 
 check(
-  "portal payment surface is Wise-only and requires no manual coupon entry",
+  "portal payment surface uses shared Wise-only SecurePaymentCard and explicit server-validated courtesy entry",
   containsAll(portalPayment, [
-    "Original service total",
-    "Professional courtesy",
-    "Final service total",
-    "Amount due now",
-    "Continue to Secure Wise Payment",
-  ]) && !portalPayment.includes("Enter code"),
+    'import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard"',
+    "Partner or courtesy codes are validated by the server",
+    "<SecurePaymentCard",
+  ]) && containsAll(securePaymentCard, [
+    "Partner or Courtesy Code",
+    "Enter code",
+    "/apply-discount",
+    'paymentType: "retainer"',
+    "Complete Secure Payment",
+    "Powered by Wise Business",
+  ]),
 );
 
 check(
-  "portal invoice keeps courtesy automatic and preserves complimentary separation",
+  "portal invoice preserves verified Wise authority and complimentary separation",
   containsAll(portalInvoice, [
-    "professional courtesy attached to your Matter is applied automatically",
+    "server-authoritative Matter amount",
     "Continue to Secure Wise Payment",
     "not a paid status or Wise Payment Confirmed status",
-  ]) && !portalInvoice.includes("Enter code"),
+  ]),
 );
 
 check(

@@ -13,7 +13,8 @@ import {
 // (computeDiscountAmount + the courtesyEligibility boundary helpers), so a
 // regression in the route's calculation breaks these tests instead of passing
 // against a test-local copy.
-//  1. DAMIANI50 discounts exactly 50% of the ELIGIBLE subtotal (never pass-through).
+//  1. Percentage codes discount the configured percentage of the ELIGIBLE subtotal
+//     for any canonical Matter price (never a hard-coded example total).
 //  2. The invoice (and therefore the Wise amount) derives from the DISCOUNTED
 //     effective total — never from the original total.
 //  3. Pricing the discount performs NO redemption side effect — redemption happens
@@ -24,10 +25,37 @@ const DAMIANI50 = {
   discount_value: 50,
 } as DiscountCode;
 
+function percentageCode(percent: number): DiscountCode {
+  return {
+    ...DAMIANI50,
+    discount_value: percent,
+  };
+}
+
 test("DAMIANI50 computes exactly 50% of the eligible subtotal", () => {
   assert.equal(computeDiscountAmount(DAMIANI50, 750), 375);
   assert.equal(computeDiscountAmount(DAMIANI50, 975), 487.5);
   assert.equal(computeDiscountAmount(DAMIANI50, 1250), 625);
+  assert.equal(computeDiscountAmount(DAMIANI50, 1850), 925);
+});
+
+test("percentage codes apply their configured percentage to any canonical eligible price", () => {
+  assert.equal(computeDiscountAmount(percentageCode(10), 837.5), 83.75);
+  assert.equal(computeDiscountAmount(percentageCode(20), 1234.56), 246.91);
+  assert.equal(computeDiscountAmount(percentageCode(35), 1875), 656.25);
+  assert.equal(computeDiscountAmount(percentageCode(50), 2125), 1062.5);
+});
+
+test("50% retainer always derives after the configured percentage discount", () => {
+  const original = 1875;
+  const discount = computeDiscountAmount(percentageCode(35), original);
+  const effective = effectiveTotalAfterCourtesy(original, discount);
+  const invoice = generateInvoice(effective);
+
+  assert.equal(discount, 656.25);
+  assert.equal(effective, 1218.75);
+  assert.equal(invoice.retainer, 609.38);
+  assert.equal(invoice.balance, 609.37);
 });
 
 test("courtesy discounts only the eligible subtotal, never pass-through shipping", () => {

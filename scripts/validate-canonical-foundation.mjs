@@ -68,17 +68,25 @@ else ok("Country governance (conflict-preserving) recorded");
 try { JSON.parse(read("package.json")); ok("package.json valid JSON"); }
 catch { fail("package.json invalid JSON"); }
 
-// 7. No deletions, no protected-file changes vs main.
+// 7. No deletions, no protected-file changes in the CURRENT PR delta vs current main.
+// Use a direct two-dot comparison against origin/main. A merge-base comparison can
+// falsely re-flag protected changes that already landed on main after this branch
+// was created, which turns the governance guard into a history detector instead of
+// a PR-delta detector.
 try {
-  const base = execSync("git merge-base origin/main HEAD || git rev-parse main", { cwd: repoRoot, encoding: "utf8" }).trim();
-  const deleted = execSync(`git diff --name-only --diff-filter=D ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" }).split("\n").filter(Boolean);
+  execSync("git rev-parse --verify origin/main", { cwd: repoRoot, stdio: "ignore" });
+  const deleted = execSync("git diff --name-only --diff-filter=D origin/main HEAD", {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).split("\n").filter(Boolean);
   if (deleted.length) fail(`Files deleted (not allowed this phase): ${deleted.join(", ")}`);
-  else ok("No files deleted");
-  const diff = execSync(`git diff --name-only ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" });
+  else ok("No files deleted in current PR delta");
+
+  const diff = execSync("git diff --name-only origin/main HEAD", { cwd: repoRoot, encoding: "utf8" });
   const prot = /wise|webhook|payment-?confirm|paymentConfirm|release-?gate|releaseGate|performFinalRelease|custody|supabase\/(migrations|rls)|serviceRole|shippo|bluenotary/i;
   const touched = diff.split("\n").filter((f) => f && prot.test(f));
-  if (touched.length) fail(`Protected files changed: ${touched.join(", ")}`);
-  else ok("No protected business-logic files changed");
+  if (touched.length) fail(`Protected files changed in current PR delta: ${touched.join(", ")}`);
+  else ok("No protected business-logic files changed in current PR delta");
 } catch (e) { console.log("NOTE: git guard skipped (", e.message, ")"); }
 
 if (failures) { console.error(`\nVALIDATOR: canonical-foundation FAILED (${failures}).`); process.exit(2); }

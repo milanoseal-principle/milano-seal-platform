@@ -14,6 +14,7 @@ export interface PortalSafeMatter {
   wise_payment_url: string | null;
   payment_confirmed: boolean;
   amount_due: number | null;
+  amount_paid: number | null;
   currency: string | null;
   paid_at: string | null;
   invoice_status: string | null;
@@ -40,6 +41,8 @@ export function projectMatterForPortal(deal: {
   payment_confirmed?: boolean | null;
   amount_due?: number | null;
   payment_amount_due?: number | null;
+  amount_paid?: number | null;
+  payment_amount_received?: number | null;
   currency?: string | null;
   paid_at?: string | null;
   invoice_status?: string | null;
@@ -54,6 +57,7 @@ export function projectMatterForPortal(deal: {
   const discountAmount = Number(deal.discount_amount ?? 0);
   const courtesyApplied =
     Boolean(deal.discount_code) && Number.isFinite(discountAmount) && discountAmount > 0;
+  const amountPaid = Number(deal.amount_paid ?? deal.payment_amount_received ?? 0);
 
   return {
     id: deal.id,
@@ -75,6 +79,7 @@ export function projectMatterForPortal(deal: {
       deal.final_total ??
       deal.total_price ??
       null,
+    amount_paid: Number.isFinite(amountPaid) ? amountPaid : null,
     currency: deal.currency ?? "USD",
     paid_at: deal.paid_at ?? null,
     invoice_status: deal.invoice_status ?? null,

@@ -25,6 +25,7 @@ const PORTAL_SAFE_FIELDS = new Set([
   "comp_authorized",
   "payment_amount_due",
   "amount_due",
+  "amount_paid",
   "payment_confirmed",
   "paid_at",
   "currency",
