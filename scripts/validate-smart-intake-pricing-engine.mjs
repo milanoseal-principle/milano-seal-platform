@@ -42,9 +42,9 @@ if (failures === 0) ok("All required pricing files present");
 
 // 2. Internal bases must live in the canonical monetary authority: lib/pricing.ts.
 const pricingSource = read("lib/pricing.ts");
-if (!/signature:\s*750/.test(pricingSource)) fail("Signature canonical base must be 750 in lib/pricing.ts");
-if (!/priority:\s*975/.test(pricingSource)) fail("Priority canonical base must be 975 in lib/pricing.ts");
-if (!/executive:\s*1850/.test(pricingSource)) fail("Executive canonical base must be 1850 in lib/pricing.ts");
+if (!/signature:\s*\{\s*base:\s*750/.test(pricingSource)) fail("Signature canonical base must be 750 in lib/pricing.ts");
+if (!/priority:\s*\{\s*base:\s*975/.test(pricingSource)) fail("Priority canonical base must be 975 in lib/pricing.ts");
+if (!/executive:\s*\{\s*base:\s*1850/.test(pricingSource)) fail("Executive canonical base must be 1850 in lib/pricing.ts");
 else ok("Canonical bases verified in lib/pricing.ts: signature 750 / priority 975 / executive 1850");
 
 // Doctrine must derive from the canonical engine rather than duplicating lane bases.
@@ -111,4 +111,4 @@ if (failures > 0) {
   console.error(`\nVALIDATOR: smart-intake-pricing-engine FAILED with ${failures} error(s).`);
   process.exit(2);
 }
-console.log("\nVALIDATOR: smart-intake-pricing-engine PASSED.");
+console.log("\nVALIDATOR: smart-intake-pricing-engine PASSED.\n");
