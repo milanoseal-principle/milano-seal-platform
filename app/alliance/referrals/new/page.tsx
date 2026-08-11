@@ -10,15 +10,19 @@ export default async function AllianceNewReferralPage() {
 
   const { data: partner } = await supabase
     .from("alliance_partners")
-    .select("firm_name, contact_name, routing_eligible, email")
+    .select("*")
     .eq("user_id", user.id)
     .single();
 
+  const p = (partner ?? {}) as Record<string, unknown>;
+  const referralCode = String(p.referral_code ?? p.partner_code ?? "") || null;
+  const partnerEmail = String(p.email ?? user.email ?? "") || null;
+
   return (
     <AllianceShell
-      partnerName={partner?.contact_name ?? undefined}
-      firmName={partner?.firm_name ?? undefined}
-      routingEligible={partner?.routing_eligible ?? false}
+      partnerName={String(p.contact_name ?? p.full_name ?? "") || undefined}
+      firmName={String(p.firm_name ?? "") || undefined}
+      routingEligible={Boolean(p.routing_eligible ?? false)}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 800 }}>
         <div>
@@ -29,12 +33,12 @@ export default async function AllianceNewReferralPage() {
             Submit a Referral
           </h1>
           <p style={{ fontSize: 13, color: "#A8A29A", margin: 0, lineHeight: 1.6 }}>
-            Refer a client matter to The Milano Seal for international document execution. All referrals are reviewed before acceptance.
+            Refer a client matter to The Milano Seal for international document execution. Your authenticated Alliance account is preserved as the referral source.
           </p>
         </div>
 
         <div style={{ padding: "28px", background: "#0d0d0d", border: "1px solid rgba(198,166,91,0.14)", borderRadius: 8 }}>
-          <AllianceReferralEngine />
+          <AllianceReferralEngine partnerEmail={partnerEmail} referralCode={referralCode} />
         </div>
 
         <div style={{ padding: "16px 20px", background: "rgba(198,166,91,0.04)", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 6 }}>
