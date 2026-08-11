@@ -100,7 +100,7 @@ export async function PATCH(
       );
     }
 
-    const validPaymentMethods = ["wise", "stripe"];
+    const validPaymentMethods = ["wise"];
     if (
       body.payment_method &&
       !validPaymentMethods.includes(body.payment_method)

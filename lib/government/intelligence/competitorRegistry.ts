@@ -1,0 +1,2 @@
+export interface CompetitorIntelligence { agencyId: string; incumbentVendor?: string; pastWinners: string[]; awardAmount?: number; contractLength?: string; publicPricing?: string; strengths: string[]; weaknesses: string[]; whyTheyWon?: string; expiration?: string; renewalRisk: "Unknown" | "Low" | "Medium" | "High"; }
+export const COMPETITOR_REGISTRY: CompetitorIntelligence[] = [{ agencyId: "pinellas-county", pastWinners: [], strengths: [], weaknesses: [], renewalRisk: "Unknown" }];

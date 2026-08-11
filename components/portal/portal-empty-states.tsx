@@ -20,13 +20,13 @@ function EmptyShell({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center py-12 px-6 ${className}`}
+      className={`ms-portal-empty-state flex flex-col items-center justify-center text-center py-12 px-6 ${className}`}
     >
-      <div className="w-12 h-12 rounded-full bg-[#1a1a1c] border border-[#2a2a2d] flex items-center justify-center mb-4">
-        <Icon className="w-5 h-5 text-[#D4AF37]" />
+      <div className="w-12 h-12 rounded-full bg-[var(--ms-surface-raised)] border border-[var(--ms-border-subtle)] flex items-center justify-center mb-4">
+        <Icon aria-hidden="true" className="w-5 h-5 text-[var(--ms-gold-soft)]" />
       </div>
-      <h3 className="text-sm font-semibold text-white mb-2">{title}</h3>
-      <p className="text-xs text-gray-500 max-w-xs leading-relaxed">{body}</p>
+      <h3 className="text-base font-semibold text-[var(--ms-text)] mb-2">{title}</h3>
+      <p className="text-sm text-[var(--ms-text-muted)] max-w-sm leading-6">{body}</p>
     </div>
   );
 }

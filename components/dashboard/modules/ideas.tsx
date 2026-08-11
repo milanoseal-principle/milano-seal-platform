@@ -2,7 +2,7 @@
 import { ModuleWrapper } from "./_module-wrapper";
 
 const SUMMARY = `29 product, revenue & system upgrade ideas`;
-const DETAIL = `12 IN_CODEBASE: Stripe checkout, Supabase dashboard, compliance engine, DM Builder, Content AI
+const DETAIL = `12 IN_CODEBASE: Wise payment flow, Supabase dashboard, compliance engine, DM Builder, Content AI
 17 PLANNED: Email automation, WhatsApp auto, portal status, PDF invoice, RLS, Wise webhook`;
 
 export function IdeasModule({ mod, data }: any) {

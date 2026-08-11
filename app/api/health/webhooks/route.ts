@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const handlers = [
-    { name: "stripe", route: "/api/webhook/stripe", status: "active" },
     { name: "wise", route: "/api/webhook/wise", status: "active" },
     { name: "alliance_job", route: "/api/webhooks/alliance/job", status: "active" },
     { name: "alliance_status", route: "/api/webhooks/alliance/status", status: "active" },

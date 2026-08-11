@@ -35,7 +35,6 @@ for (const phrase of ["Live public routes", "Internal dashboard routes", "Staged
 }
 
 const code = collectFiles(["app", "components", "lib", "scripts"]).filter((file) => !file.endsWith("scripts/validate-route-registry.mjs") && !file.endsWith("lib/routes/routeRegistry.ts") && !file.endsWith("lib/seo/phaseAuthority.ts") && !file.endsWith("lib/canonical/milanoLocks.ts") && !file.endsWith("scripts/validate-canonical-locks.mjs") && !file.endsWith("scripts/validate-seo-phase-authority.mjs")).map((file) => fs.readFileSync(file, "utf8")).join("\n");
-const code = collectFiles(["app", "components", "lib", "scripts"]).filter((file) => !file.endsWith("scripts/validate-route-registry.mjs")).map((file) => fs.readFileSync(file, "utf8")).join("\n");
 if (/generateStaticParams[\s\S]{0,160}2400|targetPageCount[\s:=]+2400(?!,)|Array\.from\(\{ length: 2400 \}/.test(code)) failures.push("Code appears to generate 2400 routes");
 
 const changed = getChangedFiles();
