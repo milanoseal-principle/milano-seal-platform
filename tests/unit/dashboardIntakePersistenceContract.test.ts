@@ -5,6 +5,8 @@ import path from "node:path";
 
 const root = process.cwd();
 const intakeRoute = fs.readFileSync(path.join(root, "app/api/intake/route.ts"), "utf8");
+const intakeCore = fs.readFileSync(path.join(root, "app/api/intake/core.ts"), "utf8");
+const intake = `${intakeRoute}\n${intakeCore}`;
 const dashboardIntake = fs.readFileSync(path.join(root, "app/dashboard/intake/page.tsx"), "utf8");
 const migration = fs.readFileSync(
   path.join(root, "supabase/migrations/049_dashboard_intake_payment_status_reconciliation.sql"),
@@ -22,12 +24,12 @@ test("production schema accepts canonical unpaid intake state and persists disco
 });
 
 test("intake persistence fails closed instead of silently saving a stripped fallback Matter", () => {
-  assert.match(intakeRoute, /code: "PERSISTENCE_FAILED"/);
-  assert.match(intakeRoute, /correlation_id: correlationId/);
-  assert.match(intakeRoute, /\.insert\(\[intakePayload\]\)/);
-  assert.doesNotMatch(intakeRoute, /minimalPayload/);
-  assert.doesNotMatch(intakeRoute, /barePayload/);
-  assert.doesNotMatch(intakeRoute, /attempt1_msg|attempt2_msg|attempt3_msg|supabase_code/);
+  assert.match(intake, /code: "PERSISTENCE_FAILED"/);
+  assert.match(intake, /correlation_id: correlationId/);
+  assert.match(intake, /\.insert\(\[intakePayload\]\)/);
+  assert.doesNotMatch(intake, /minimalPayload/);
+  assert.doesNotMatch(intake, /barePayload/);
+  assert.doesNotMatch(intake, /attempt1_msg|attempt2_msg|attempt3_msg|supabase_code/);
 });
 
 test("operator intake surfaces safe error code and correlation reference", () => {
@@ -39,6 +41,6 @@ test("operator intake surfaces safe error code and correlation reference", () =>
 });
 
 test("critical intake workflow no longer silently swallows compliance failure", () => {
-  assert.doesNotMatch(intakeRoute, /validateCompliance\([\s\S]*?\}\s*catch\s*\{\s*\}/);
-  assert.match(intakeRoute, /COMPLIANCE_REVIEW_REQUIRED/);
+  assert.doesNotMatch(intake, /validateCompliance\([\s\S]*?\}\s*catch\s*\{\s*\}/);
+  assert.match(intake, /COMPLIANCE_REVIEW_REQUIRED/);
 });
