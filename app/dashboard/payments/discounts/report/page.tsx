@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+interface MonetaryTotal {
+  currency: string;
+  eligible_value: number;
+  discounted_value: number;
+  adjusted_matter_value: number;
+}
+
 interface ReportRow {
   id: string;
   code: string;
@@ -12,9 +19,7 @@ interface ReportRow {
   usage_count: number;
   redemption_rate: number | null;
   redeemed_matter_count: number;
-  eligible_value: number;
-  discounted_value: number;
-  adjusted_matter_value: number;
+  monetary_totals: MonetaryTotal[];
   repeat_client_rate: number | null;
   alliance_member_id: string | null;
   partner_referral_volume: number;
@@ -28,22 +33,30 @@ interface ReportBody {
     codes: number;
     active_codes: number;
     redeemed_matters: number;
-    eligible_value: number;
-    discounted_value: number;
-    adjusted_matter_value: number;
+    monetary_totals: MonetaryTotal[];
     partner_referrals: number;
   };
   rows: ReportRow[];
   error?: string;
 }
 
-function money(value: number) {
-  return `$${Number(value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function money(value: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value ?? 0));
 }
 
 function pct(value: number | null) {
   if (value == null) return "—";
   return `${Math.round(value * 1000) / 10}%`;
+}
+
+function monetarySummary(items: MonetaryTotal[], key: keyof Omit<MonetaryTotal, "currency">) {
+  if (items.length === 0) return "—";
+  return items.map((item) => `${item.currency} ${money(item[key], item.currency)}`).join(" · ");
 }
 
 export default function DiscountReportPage() {
@@ -77,7 +90,7 @@ export default function DiscountReportPage() {
               Courtesy Program Intelligence
             </h1>
             <p style={{ maxWidth: 780, margin: "8px 0 0", fontSize: 12, lineHeight: 1.6, color: "rgba(246,241,230,0.56)" }}>
-              Auditable code performance, redeemed Matter value, discount value, repeat-client signal, and Alliance referral attribution. Wise reconciliation remains authoritative for paid revenue.
+              Auditable code performance, redeemed Matter value, discount value, repeat-client signal, and Alliance referral attribution. Monetary totals stay separated by original currency. Wise reconciliation remains authoritative for paid revenue.
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -96,9 +109,9 @@ export default function DiscountReportPage() {
               {[
                 ["Active Codes", report.totals.active_codes],
                 ["Redeemed Matters", report.totals.redeemed_matters],
-                ["Eligible Value", money(report.totals.eligible_value)],
-                ["Courtesy Value", money(report.totals.discounted_value)],
-                ["Adjusted Matter Value", money(report.totals.adjusted_matter_value)],
+                ["Eligible Value", monetarySummary(report.totals.monetary_totals, "eligible_value")],
+                ["Courtesy Value", monetarySummary(report.totals.monetary_totals, "discounted_value")],
+                ["Adjusted Matter Value", monetarySummary(report.totals.monetary_totals, "adjusted_matter_value")],
                 ["Partner Referrals", report.totals.partner_referrals],
               ].map(([label, value]) => (
                 <div key={String(label)} style={metricCard}>
@@ -130,9 +143,9 @@ export default function DiscountReportPage() {
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(135px,1fr))", gap: 8 }}>
                     <div style={detailCard}><span style={detailLabel}>Redeemed Matters</span>{row.redeemed_matter_count}</div>
-                    <div style={detailCard}><span style={detailLabel}>Eligible Value</span>{money(row.eligible_value)}</div>
-                    <div style={detailCard}><span style={detailLabel}>Courtesy Value</span>{money(row.discounted_value)}</div>
-                    <div style={detailCard}><span style={detailLabel}>Adjusted Value</span>{money(row.adjusted_matter_value)}</div>
+                    <div style={detailCard}><span style={detailLabel}>Eligible Value</span>{monetarySummary(row.monetary_totals, "eligible_value")}</div>
+                    <div style={detailCard}><span style={detailLabel}>Courtesy Value</span>{monetarySummary(row.monetary_totals, "discounted_value")}</div>
+                    <div style={detailCard}><span style={detailLabel}>Adjusted Value</span>{monetarySummary(row.monetary_totals, "adjusted_matter_value")}</div>
                     <div style={detailCard}><span style={detailLabel}>Repeat Client Rate</span>{pct(row.repeat_client_rate)}</div>
                     <div style={detailCard}><span style={detailLabel}>Partner Referrals</span>{row.partner_referral_volume}</div>
                   </div>
