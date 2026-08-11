@@ -26,6 +26,7 @@ export interface PortalClientMatter {
   comp_authorized?: boolean | null;
   payment_amount_due: number | null;
   amount_due: number | null;
+  amount_paid: number | null;
   payment_confirmed: boolean;
   paid_at: string | null;
   currency: string | null;
@@ -84,11 +85,11 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
   return {
     id: matterId,
     matter_id: matterId,
-    display_id: (raw.display_id ?? matterId) as string,
+    display_id: (raw.display_id ?? raw.deal_id ?? matterId) as string,
     client_name: (raw.client_name as string | null) ?? null,
     document_type: (raw.document_type as string | null) ?? null,
     destination_country: (raw.destination_country as string | null) ?? null,
-    assigned_lane: (raw.assigned_lane as string | null) ?? null,
+    assigned_lane: ((raw.assigned_lane ?? raw.lane) as string | null) ?? null,
     matter_status:
       (raw.matter_status as string | null) ??
       (raw.status as string | null) ??
@@ -102,20 +103,28 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     payment_amount_due: numberOrNull(raw.payment_amount_due),
     amount_due:
       numberOrNull(raw.amount_due) ?? numberOrNull(raw.payment_amount_due),
+    amount_paid:
+      numberOrNull(raw.amount_paid) ?? numberOrNull(raw.payment_amount_received),
     payment_confirmed: (raw.payment_confirmed as boolean) ?? false,
     paid_at: (raw.paid_at as string | null) ?? null,
     currency: (raw.currency as string | null) ?? "USD",
     invoice_status: (raw.invoice_status as string | null) ?? null,
-    wise_reference: (raw.wise_reference as string | null) ?? null,
-    wise_payment_url: (raw.wise_payment_url as string | null) ?? null,
-    original_total: numberOrNull(raw.original_total),
+    wise_reference:
+      ((raw.wise_reference ?? raw.payment_reference) as string | null) ?? null,
+    wise_payment_url:
+      ((raw.wise_payment_url ?? raw.payment_link) as string | null) ?? null,
+    original_total:
+      numberOrNull(raw.original_total) ??
+      numberOrNull(raw.amount_before_adjustment) ??
+      numberOrNull(raw.total_price),
     discount_code: (raw.discount_code as string | null) ?? null,
     discount_amount: numberOrNull(raw.discount_amount) ?? 0,
     discount_value: numberOrNull(raw.discount_value),
-    final_total: numberOrNull(raw.final_total),
+    final_total: numberOrNull(raw.final_total) ?? numberOrNull(raw.total_price),
     invoice_retainer: numberOrNull(raw.invoice_retainer),
     invoice_balance: numberOrNull(raw.invoice_balance),
-    courtesy_applied: (raw.courtesy_applied as boolean) ?? false,
+    courtesy_applied:
+      (raw.courtesy_applied as boolean) ?? Number(raw.discount_amount ?? 0) > 0,
     courtesy_label: (raw.courtesy_label as string | null) ?? null,
     courier_tracking_id:
       (raw.courier_tracking_id as string | null) ??
