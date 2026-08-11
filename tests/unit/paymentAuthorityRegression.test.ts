@@ -90,14 +90,14 @@ test("review-required mobile capture preserves mileage", () => {
   assert.match(reviewPayload, /miles:[\s\S]*executionTruth\.execution_method === "mobile"[\s\S]*Number\(data\.miles \?\? raw\.miles \?\? 0\)/);
 });
 
-test("operator detail page is Wise read-only while preserving payment links", () => {
+test("operator detail delegates Wise-only payment UX to SecurePaymentCard", () => {
   assert.doesNotMatch(dealPage, /Confirm Payment/);
   assert.doesNotMatch(dealPage, /Mark paid/);
   assert.doesNotMatch(dealPage, /Confirm Balance Payment/);
   assert.doesNotMatch(dealPage, /Mark balance paid/);
   assert.doesNotMatch(dealPage, /payment_status:\s*"paid"/);
   assert.doesNotMatch(dealPage, /balance_payment_status:\s*"paid"/);
-  assert.match(dealPage, /Wise Payment/);
+  assert.match(dealPage, /SecurePaymentCard/);
   assert.match(dealPage, /Wise reconciliation is authoritative/);
   assert.match(dealPage, /deal\.payment_link/);
   assert.match(dealPage, /deal\.balance_payment_link/);
