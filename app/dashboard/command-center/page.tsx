@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { getPublicQuoteFactors, getServiceComponents } from "@/lib/command-center/pricingIntelligence";
 import { getHighPriorityBundles } from "@/lib/command-center/dealLogic";
 import { authorityPageTargets, getPublicAuthorityProfiles } from "@/lib/command-center/seoSocial";
@@ -23,6 +25,15 @@ const executionCards = ["Completed Deals", "Close Rate", "Avg Turnaround Days", 
 const complianceCards = ["Notary Commission Status", "DBA Status", "Annual Report Due", "Entity Status", "Items Expiring <90 Days"];
 const systemCards = ["Payment Gate Status", "Supabase Connection", "AI Status", "Wise Integration"];
 const sections = ["Revenue", "Pipeline", "Execution", "Compliance", "Outreach", "Ads", "Content", "System"];
+
+const workspaces = [
+  { href: "/dashboard/deals", label: "Matter Pipeline", note: "Open live Matters and payment state." },
+  { href: "/dashboard/dispatch", label: "Dispatch", note: "Route work and open Alliance dispatch actions." },
+  { href: "/dashboard/compliance-atlas", label: "Compliance", note: "Review jurisdiction and execution requirements." },
+  { href: "/dashboard/discounts", label: "Payments", note: "Open governed payment and courtesy controls." },
+  { href: "/dashboard/acquisition", label: "Acquisition", note: "Open lead and referral operating surfaces." },
+  { href: "/dashboard/operator-spine", label: "Intelligence", note: "Open operator intelligence and system controls." },
+] as const;
 
 function MetricShell({ label, value = "No live data connected yet", note = "Connect live matter records to populate this card." }: { label: string; value?: string; note?: string }) {
   return (
@@ -80,6 +91,22 @@ export default function CommandCenterPage() {
             </a>
           ))}
         </nav>
+
+        <section aria-label="Operator workspaces" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {workspaces.map((workspace) => (
+            <Link
+              key={workspace.href}
+              href={workspace.href}
+              className="group rounded-2xl border border-amber-300/15 bg-stone-950/80 p-4 transition hover:border-amber-300/35 hover:bg-amber-200/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-amber-100">{workspace.label}</p>
+                <ArrowRight className="h-4 w-4 text-amber-200/45 transition group-hover:translate-x-0.5 group-hover:text-amber-200" />
+              </div>
+              <p className="mt-2 text-sm leading-6 text-stone-400">{workspace.note}</p>
+            </Link>
+          ))}
+        </section>
 
         <Section title="Revenue">
           <div id="revenue" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
