@@ -1,0 +1,1 @@
+PR summary: founder/admin discount code governance, Payments navigation, Alliance read-only benefits, authenticated referral attribution, governed reporting, tests and validator. Business logic for pricing, Wise, payment gating, state machine, complimentary Matters, DAMIANI50 and TIFFTEST50 remains unchanged.
