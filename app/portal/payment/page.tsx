@@ -43,7 +43,7 @@ export default function PaymentStatusPage() {
           invoice_retainer: deal.invoice_retainer,
           invoice_balance: deal.invoice_balance,
           amount_due: deal.amount_due ?? deal.payment_amount_due,
-          amount_paid: deal.payment_confirmed ? Number(deal.amount_due ?? deal.payment_amount_due ?? 0) : 0,
+          amount_paid: deal.amount_paid,
           payment_status: deal.payment_status ?? (deal.payment_confirmed ? "paid" : "unpaid"),
           payment_link: deal.wise_payment_url,
           payment_disposition: deal.payment_disposition,
