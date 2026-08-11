@@ -1,0 +1,65 @@
+name: Milano Seal PR CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate package JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('JSON OK')"
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npx --yes eslint@9.39.1 .
+
+      - name: Tests
+        run: npm test
+
+      - name: Production build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: npm run build
+
+      - name: Smart Intake SOP validator
+        run: npm run validate:smart-intake-sop
+
+      - name: Route registry validator
+        run: npm run validate:route-registry
+
+      - name: Pre-execution validator
+        run: npm run validate:milano-pre-execution
+
+      - name: Alliance platform validator
+        run: npm run validate:trust-alliance-platform
+
+      - name: Topical authority validator
+        run: npm run validate:topical-authority-engine
+
+      - name: Final production regression
+        run: npm run validate:final-production-regression

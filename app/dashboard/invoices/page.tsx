@@ -37,7 +37,8 @@ const INV_LABEL: Record<InvType, string> = {
 };
 
 const PAYMENT_METHODS = [
-  { label: "Wise", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "Payment authority" },
+  { label: "Wise (Primary)", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "" },
+  { label: "Stripe", value: "Operator-issued link", icon: "S", note: "Upon operator approval" },
 ];
 
 function InvSeals() {

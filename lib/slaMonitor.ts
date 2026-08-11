@@ -1,4 +1,4 @@
-import { SLA_HOURS } from "@/lib/stateMachine";
+import { SLA_HOURS, normalizeMatterStatus } from "@/lib/stateMachine";
 import { sendAdminAlert } from "@/lib/whatsapp";
 
 export interface MonitorableDeal {
@@ -45,7 +45,8 @@ export function checkSLA(deal: MonitorableDeal): SLAVerdict {
     };
   }
 
-  const threshold = SLA_HOURS[status];
+  const normalizedStatus = normalizeMatterStatus(status);
+  const threshold = normalizedStatus ? SLA_HOURS[normalizedStatus] : undefined;
   if (!threshold) {
     return {
       ok: true,

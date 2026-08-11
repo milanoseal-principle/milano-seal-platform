@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = user.app_metadata?.role ?? user.app_metadata?.role;
   if (role !== "founder_admin") {
     await recordSecurityEvent({
       event_name: "ADMIN_ACTION_DENIED",

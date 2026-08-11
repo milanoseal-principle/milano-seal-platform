@@ -17,7 +17,7 @@ export default async function FounderPricingPage({ searchParams }: PageProps) {
 
   if (!user) redirect("/dashboard");
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = user.app_metadata?.role ?? user.app_metadata?.role;
   if (role !== "founder_admin") redirect("/dashboard");
 
   const params = await searchParams;

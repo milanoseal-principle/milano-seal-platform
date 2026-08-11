@@ -1,0 +1,15 @@
+import type { PlatformSpace } from "./types";
+
+export const PLATFORM_SPACES: PlatformSpace[] = [
+  { id: "intelligence-exchange", name: "Intelligence Exchange™", purpose: "Professional discussion and implementation support.", audience: ["Operators", "Partners", "Firms"], outcomes: ["Faster answers", "Cleaner execution", "Shared lessons"] },
+  { id: "government-opportunity-center", name: "Government Opportunity Center™", purpose: "Procurement, grants, registrations, and public sector readiness.", audience: ["Government-ready operators", "Enterprise partners"], outcomes: ["Vendor readiness", "Capability statement updates", "Opportunity tracking"] },
+  { id: "international-operations-center", name: "International Operations Center™", purpose: "Cross-border document execution and corridor intelligence.", audience: ["Apostille operators", "International partners"], outcomes: ["Country routing", "Courier planning", "Matter classification"] },
+  { id: "apostille-intelligence-center", name: "Apostille Intelligence Center™", purpose: "State, federal, Hague, and non-Hague workflow support.", audience: ["Notaries", "Apostille coordinators"], outcomes: ["Reduced rejection risk", "Clear pathway selection"] },
+  { id: "healthcare-operations-center", name: "Healthcare Operations Center™", purpose: "Hospital, hospice, skilled nursing, and directive workflow intelligence.", audience: ["Healthcare contacts", "Mobile providers"], outcomes: ["Facility readiness", "Witness planning", "Sensitive handling"] },
+  { id: "airport-operations-center", name: "Airport Operations Center™", purpose: "Travel, airport-area, and urgent international document execution support.", audience: ["Airport-area providers", "Travel coordinators"], outcomes: ["Urgent routing", "Mobile coverage", "RON readiness"] },
+  { id: "executive-resource-library", name: "Executive Resource Library™", purpose: "Templates, SOPs, playbooks, checklists, pricing tools, and dashboards.", audience: ["All tiers"], outcomes: ["Lower build time", "Consistent execution"] },
+  { id: "partner-dispatch-board", name: "Partner Dispatch Board™", purpose: "Coverage gaps, urgent dispatch needs, and partner capability matching.", audience: ["Verified partners"], outcomes: ["Faster matching", "Better assignment quality"] },
+  { id: "trust-ledger", name: "Trust Ledger™", purpose: "Versioned record of training, assignments, QA, lessons, feedback, and performance.", audience: ["Alliance"], outcomes: ["Institutional memory", "Score improvement"] },
+  { id: "compliance-center", name: "Compliance Center™", purpose: "Commission, insurance, training, agreement, and required document monitoring.", audience: ["Alliance"], outcomes: ["Readiness visibility", "Renewal tracking"] },
+  { id: "corridor-intelligence-room", name: "Corridor Intelligence Room™", purpose: "Italy, Spain, Portugal, France, Germany, Mexico, Brazil, United Kingdom, Canada, and expansion corridors.", audience: ["International partners"], outcomes: ["Country notes", "Demand signals", "Routing guidance"] }
+];

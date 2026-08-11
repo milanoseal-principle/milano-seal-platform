@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { SLA_HOURS, isOpenStage } from "@/lib/stateMachine";
+import { SLA_HOURS, isOpenStage, normalizeMatterStatus } from "@/lib/stateMachine";
 import { serializeDealMS } from "@/lib/milanoSerialize";
 
 export const runtime = "nodejs";
@@ -27,7 +27,8 @@ export async function GET() {
 
   for (const d of deals) {
     if (!isOpenStage(d.deal_status)) continue;
-    const sla = SLA_HOURS[d.deal_status];
+    const normalizedStatus = normalizeMatterStatus(d.deal_status);
+    const sla = normalizedStatus ? SLA_HOURS[normalizedStatus] : undefined;
     if (!sla) continue;
 
     const ageHours = (now - new Date(d.created_at).getTime()) / 3_600_000;

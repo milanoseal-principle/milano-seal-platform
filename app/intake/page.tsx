@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
-import { IntakeWizard } from "@/components/intake/intake-wizard";
+import { SmartIntakeSOPWizard } from "@/components/intake/smart-intake-sop-wizard";
 import { Shield } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -11,18 +11,32 @@ export const metadata: Metadata = {
     "Start your document execution process. Secure intake for Remote Online Notarization, Apostille Coordination, and International Document Execution.",
 };
 
+type IntakeSearchParams = {
+  tier?: string;
+  lane?: string;
+  destination?: string;
+  country?: string;
+  document?: string;
+  useCase?: string;
+  matter?: string;
+  courtesy?: string;
+  source?: string;
+  referral_source?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+};
+
+function normalizeCourtesyCode(value?: string): string | undefined {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) return undefined;
+  return /^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(normalized) ? normalized : undefined;
+}
+
 function IntakeContent({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <Suspense fallback={<div className="h-[600px]" />}>
@@ -34,15 +48,7 @@ function IntakeContent({
 async function IntakeWizardWrapper({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   const params = await searchParams;
   const prefill = {
@@ -60,21 +66,25 @@ async function IntakeWizardWrapper({
       ? tier
       : "priority";
 
-  return <IntakeWizard initialTier={validTier} prefill={prefill} />;
+  // URL/query values are routing hints only. The API validates existence,
+  // status, usage limit, time window, and eligibility server-side before a
+  // discount can affect pricing. This permits disposable E2E codes without
+  // hard-coding production courtesy programs into the browser layer.
+  const courtesyCode = normalizeCourtesyCode(params.courtesy);
+
+  return (
+    <SmartIntakeSOPWizard
+      initialTier={validTier}
+      prefill={prefill}
+      courtesyCode={courtesyCode}
+    />
+  );
 }
 
 export default function IntakePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    tier?: string;
-    lane?: string;
-    destination?: string;
-    country?: string;
-    document?: string;
-    useCase?: string;
-    matter?: string;
-  }>;
+  searchParams: Promise<IntakeSearchParams>;
 }) {
   return (
     <main className="ms-os-page min-h-screen bg-[#0A0A0A]">
@@ -83,34 +93,21 @@ export default function IntakePage({
       <section className="relative overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 1.5rem)" }}>
         <div className="ms-os-atmosphere" aria-hidden="true" />
         <div className="max-w-7xl mx-auto">
-          {/* Page header */}
           <div className="relative z-10 mb-10 text-center sm:mb-12">
-            {/* subtle gold halo behind the title */}
             <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2" style={{ width: 460, height: 220, background: "radial-gradient(circle, rgba(198,165,90,0.10), transparent 70%)", filter: "blur(8px)" }} />
             <div className="relative inline-flex items-center gap-2 px-4 py-2 bg-[var(--ms-gold)]/10 border border-[var(--ms-gold)]/30 rounded-full mb-6">
               <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
-              <span className="text-sm text-[var(--ms-gold)] font-medium">
-              Secure Records Intake
-              </span>
+              <span className="text-sm text-[var(--ms-gold)] font-medium">Secure Records Intake</span>
             </div>
-            <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
-              Begin Your Execution
-            </h1>
-            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">
-              Complete the controlled intake below. Destination context from
-              Global Document Intelligence is preserved when you arrive from a
-              routing corridor.
-            </p>
+            <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">Begin Your Execution</h1>
+            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">Matter-first intake with controlled document intelligence, route review, and payment-gated execution.</p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-2">
               {["Payment-Gated Scheduling", "Hague Route Review", "Courier Release Control"].map((c) => (
-                <span key={c} className="rounded-full border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.05] px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/80">
-                  {c}
-                </span>
+                <span key={c} className="rounded-full border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.05] px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/80">{c}</span>
               ))}
             </div>
           </div>
 
-          {/* Intake wizard */}
           <div className="relative z-10">
             <IntakeContent searchParams={searchParams} />
           </div>

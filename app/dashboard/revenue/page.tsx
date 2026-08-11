@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { FounderRevenueCommand } from "@/components/dashboard/revenue/FounderRevenueCommand";
+import { UnifiedRevenueCommandCenter } from "@/components/dashboard/revenue/UnifiedRevenueCommandCenter";
 
 export const metadata: Metadata = {
   title: "Revenue Close Desk | The Milano Seal™",
@@ -49,6 +50,10 @@ export default async function RevenuePage() {
 
       <div className="mb-8">
         <FounderRevenueCommand />
+      </div>
+
+      <div className="mb-8">
+        <UnifiedRevenueCommandCenter />
       </div>
 
       {!deals || deals.length === 0 ? (
