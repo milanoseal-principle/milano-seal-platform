@@ -40,3 +40,10 @@ test("Named operator identity is not hardcoded", () => {
     assert.doesNotMatch(source, new RegExp(["tiff" + "any@", "NamedOperator.*email", "user\\.email.*NamedOperator", "hardcoded.*NamedOperator"].join("|"), "i"));
   }
 });
+
+test("user-editable metadata cannot grant complimentary permissions", () => {
+  const server = read("lib/payments/complimentary-server.ts");
+  assert.doesNotMatch(server, /meta\.role|meta\.permissions/);
+  assert.match(server, /const role = String\(app\.role \?\? ""\)/);
+  assert.match(server, /Array\.isArray\(app\.permissions\)/);
+});

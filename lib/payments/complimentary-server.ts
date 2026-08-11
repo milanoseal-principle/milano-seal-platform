@@ -32,12 +32,12 @@ export function extractActor(user: {
 }): AuthenticatedCompActor {
   const app = user.app_metadata ?? {};
   const meta = user.user_metadata ?? {};
-  const role = String(app.role ?? meta.role ?? "");
+  // Authorization claims are server-controlled. User-editable metadata may be
+  // used for display only and must never grant a role or permission.
+  const role = String(app.role ?? "");
   const permissions = Array.isArray(app.permissions)
     ? app.permissions.map(String)
-    : Array.isArray(meta.permissions)
-      ? meta.permissions.map(String)
-      : [];
+    : [];
   return {
     userId: user.id,
     role,
