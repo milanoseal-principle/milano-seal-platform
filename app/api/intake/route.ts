@@ -13,6 +13,8 @@ interface IntakeSuccessBody {
   quote_state?: string;
   lane?: string;
   estimated_value?: number;
+  eligible_subtotal?: number;
+  non_discountable_total?: number;
   original_total?: number;
   discount_amount?: number;
   final_total?: number;
@@ -21,6 +23,8 @@ interface IntakeSuccessBody {
     lane?: string;
     base?: number;
     witness_total?: number;
+    eligible_subtotal?: number;
+    non_discountable_total?: number;
     original_total?: number;
     total?: number;
   };
@@ -60,13 +64,25 @@ export async function POST(req: NextRequest) {
   const finalTotal = Number(
     body.final_total ?? body.estimated_value ?? body.pricing?.total ?? 0,
   );
+  const originalTotal = Number(
+    body.original_total ?? body.pricing?.original_total ?? finalTotal,
+  );
+  const nonDiscountableTotal = Number(
+    body.non_discountable_total ?? body.pricing?.non_discountable_total ?? 0,
+  );
+  const eligibleSubtotal = Number(
+    body.eligible_subtotal ??
+      body.pricing?.eligible_subtotal ??
+      Math.max(0, originalTotal - nonDiscountableTotal),
+  );
+
   const snapshot = buildMatterQuoteSnapshot({
     lane: String(body.lane ?? body.pricing?.lane ?? ""),
     basePrice: Number(body.pricing?.base ?? 0),
     witnessTotal: Number(body.pricing?.witness_total ?? 0),
-    originalTotal: Number(
-      body.original_total ?? body.pricing?.original_total ?? finalTotal,
-    ),
+    eligibleSubtotal,
+    nonDiscountableTotal,
+    originalTotal,
     discountAmount: Number(body.discount_amount ?? 0),
     finalTotal,
     invoiceRetainer: Number(body.invoice?.retainer ?? body.amount_due ?? 0),
@@ -78,7 +94,7 @@ export async function POST(req: NextRequest) {
   const { data: persistedMatter, error } = await supabase
     .from("deals")
     .select(
-      "deal_id,lane,base_price,witness_total,original_total,discount_amount,final_total,total_price,invoice_retainer,invoice_balance,amount_due,currency",
+      "deal_id,lane,base_price,witness_total,eligible_subtotal,non_discountable_total,original_total,discount_amount,final_total,total_price,invoice_retainer,invoice_balance,amount_due,currency",
     )
     .eq("deal_id", dealId)
     .maybeSingle();
