@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BadgeDollarSign,
+  BarChart3,
   Boxes,
   BriefcaseBusiness,
   Building2,
@@ -13,6 +14,7 @@ import {
   FilePlus2,
   Handshake,
   PackageCheck,
+  Percent,
   Settings,
 } from "lucide-react";
 
@@ -24,7 +26,9 @@ const NAV = [
   { href: "/dashboard/dispatch", label: "Dispatch", icon: Boxes },
   { href: "/alliance/dashboard", label: "Alliance", icon: Handshake },
   { href: "/dashboard/compliance-atlas", label: "Compliance", icon: ClipboardCheck },
-  { href: "/dashboard/discounts", label: "Payments", icon: BadgeDollarSign },
+  { href: "/dashboard/payments", label: "Payments", icon: BadgeDollarSign },
+  { href: "/dashboard/payments/discounts", label: "Discount Codes", icon: Percent },
+  { href: "/dashboard/payments/discounts/report", label: "Discount Report", icon: BarChart3 },
   { href: "/dashboard/packaging-delivery", label: "Packaging / Delivery", icon: PackageCheck },
   { href: "/dashboard/acquisition", label: "Acquisition", icon: Building2 },
   { href: "/dashboard/operator-spine", label: "Intelligence", icon: Activity },
