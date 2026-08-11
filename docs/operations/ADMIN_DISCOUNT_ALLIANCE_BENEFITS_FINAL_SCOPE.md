@@ -1,0 +1,1 @@
+Final scope: governed founder/admin discount code manager, canonical Payments navigation, read-only Alliance benefits, authenticated referral attribution, governed reporting, tests, and validator. No pricing, Wise, state-machine, complimentary, DAMIANI50, or TIFFTEST50 business logic changes.
