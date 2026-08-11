@@ -20,6 +20,12 @@ export default function PaymentStatusPage() {
     return <div className="py-8 text-sm text-white/50">No Matter is linked to this account.</div>;
   }
 
+  const normalizedPaymentStatus =
+    deal.payment_confirmed ||
+    ["paid", "confirmed", "payment_confirmed"].includes(deal.payment_status ?? "")
+      ? "paid"
+      : deal.payment_status ?? "unpaid";
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 pb-12">
       <header className="space-y-2">
@@ -44,7 +50,7 @@ export default function PaymentStatusPage() {
           invoice_balance: deal.invoice_balance,
           amount_due: deal.amount_due ?? deal.payment_amount_due,
           amount_paid: deal.amount_paid,
-          payment_status: deal.payment_status ?? (deal.payment_confirmed ? "paid" : "unpaid"),
+          payment_status: normalizedPaymentStatus,
           payment_link: deal.wise_payment_url,
           payment_disposition: deal.payment_disposition,
         }}
