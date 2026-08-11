@@ -6,6 +6,7 @@ const securePayment = readFileSync("components/payments/SecurePaymentCard.tsx", 
 const matterDetail = readFileSync("app/dashboard/deals/[id]/page.tsx", "utf8");
 const portalPayment = readFileSync("app/portal/payment/page.tsx", "utf8");
 const portalContext = readFileSync("components/portal/portal-context.tsx", "utf8");
+const proForma = readFileSync("app/dashboard/pro-forma/[id]/page.tsx", "utf8");
 
 test("SecurePaymentCard uses the canonical server discount route", () => {
   assert.ok(securePayment.includes("/apply-discount"));
@@ -29,6 +30,13 @@ test("portal payment reuses canonical secure payment UX", () => {
   assert.ok(portalPayment.includes("Partner or courtesy codes are validated by the server"));
 });
 
+test("Pro Forma payment review reuses canonical secure payment UX", () => {
+  assert.ok(proForma.includes('import { SecurePaymentCard }'));
+  assert.ok(proForma.includes("<SecurePaymentCard"));
+  assert.ok(proForma.includes("current canonical Matter pricing"));
+  assert.ok(proForma.includes("Scheduling remains locked until verified reconciliation"));
+});
+
 test("portal payment truth preserves canonical invoice and Wise fields", () => {
   for (const field of [
     "discount_code",
@@ -44,7 +52,7 @@ test("portal payment truth preserves canonical invoice and Wise fields", () => {
 });
 
 test("Milano OS V2 payment surfaces remain Wise-only", () => {
-  for (const [name, src] of [["secure payment", securePayment], ["portal payment", portalPayment]] as const) {
+  for (const [name, src] of [["secure payment", securePayment], ["portal payment", portalPayment], ["pro forma", proForma]] as const) {
     assert.ok(!/stripe/i.test(src), `${name} must not contain Stripe`);
     assert.ok(/Wise/.test(src), `${name} must preserve Wise payment authority`);
   }
