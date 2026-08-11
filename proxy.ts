@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getHomeRouteForRole, isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
+import { isAccountDisabled } from "@/lib/auth/server-role";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -113,13 +114,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = ((user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined) ?? null;
+  // Authorization role comes ONLY from app_metadata (service-role controlled).
+  // user_metadata is user-writable and must never be consulted here. A disabled
+  // account resolves to no role and is blocked like a missing role.
+  const role = isAccountDisabled(user)
+    ? null
+    : (user.app_metadata?.role as string | undefined) ?? null;
 
   if (!pathname.startsWith("/api/") && !isRouteAllowedForRole(pathname, role)) {
-    const roleUrl = request.nextUrl.clone();
-    roleUrl.pathname = getHomeRouteForRole(role);
-    roleUrl.search = "";
-    return NextResponse.redirect(roleUrl);
+    // getHomeRouteForRole may include a query (e.g. the denied route), so build
+    // the redirect from a full URL rather than assigning pathname directly.
+    const target = getHomeRouteForRole(role);
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   if (pathname.startsWith("/api/dashboard") && !isRouteAllowedForRole("/dashboard", role)) {

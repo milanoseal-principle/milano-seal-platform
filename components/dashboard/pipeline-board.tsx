@@ -234,13 +234,28 @@ export function PipelineBoard() {
   const onAdvance = useCallback(async (deal_id: string, stage: string) => {
     setAdvancing(deal_id);
     setActionError(null);
-    const res = await fetch("/api/admin/move", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deal_id, stage }),
-    });
+    // Scheduling must pass the canonical server-side gate, which honors a
+    // verified payment OR a valid complimentary authorization. The generic
+    // /api/admin/move path only checks payment_status and would wrongly block a
+    // complimentary Matter, so route "scheduled" through the protected endpoint.
+    const res =
+      stage === "scheduled"
+        ? await fetch(`/api/deals/${deal_id}/schedule`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          })
+        : await fetch("/api/admin/move", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ deal_id, stage }),
+          });
     if (res.status === 402) {
-      setActionError("Payment required before advancing this matter.");
+      const d = await res.json().catch(() => ({}));
+      setActionError(
+        d.message ||
+          "Verified payment or an active complimentary authorization is required before scheduling.",
+      );
       setAdvancing(null);
       return;
     }

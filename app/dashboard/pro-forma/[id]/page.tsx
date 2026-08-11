@@ -2,129 +2,63 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
 import { useApi } from "@/hooks/useApi";
-import { formatCurrencyDetailed } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
-interface ProFormaMatter {
+interface MatterPaymentTruth {
   id: string;
-  deal_id: string | null;
-  client_name: string | null;
-  document_type: string | null;
-  destination_country: string | null;
+  deal_id: string;
+  client_name: string;
+  document_type: string;
+  destination_country: string;
   lane: string;
-  base_price: number;
-  witness_total: number;
   total_price: number;
-  invoice_retainer: number | null;
-  invoice_balance: number | null;
+  original_total?: number | null;
+  discount_code?: string | null;
+  discount_amount?: number | null;
+  final_total?: number | null;
+  invoice_retainer?: number | null;
+  invoice_balance?: number | null;
+  amount_due?: number | null;
+  amount_paid?: number | null;
   payment_status: string;
+  payment_link?: string | null;
+  payment_disposition?: string | null;
 }
 
-export default function MatterProFormaPage() {
-  const { id } = useParams<{ id: string }>();
-  const { data: matter, error, isLoading } = useApi<ProFormaMatter>(
-    `/api/deals/${encodeURIComponent(id)}`,
-  );
+export default function ProFormaPaymentReviewPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
+  const { data: deal, isLoading, refetch } = useApi<MatterPaymentTruth>(id ? `/api/deals/${id}` : null);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-4xl space-y-4 p-6 md:p-10">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-80 w-full" />
-      </div>
-    );
+    return <div className="py-10 text-xs font-mono uppercase tracking-[0.18em] text-[#C6A55A]/60">Loading Pro Forma…</div>;
   }
 
-  if (error || !matter) {
-    return (
-      <div className="mx-auto max-w-4xl p-6 md:p-10">
-        <Card className="border-gold bg-card">
-          <CardContent className="p-8">
-            <h1 className="font-serif text-2xl">Pro Forma unavailable</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              The Matter quote could not be loaded. No payment amount has been changed.
-            </p>
-            <Link className="mt-6 inline-block text-sm text-gold hover:underline" href={`/dashboard/deals/${id}`}>
-              Return to Matter
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!deal) {
+    return <div className="py-10 text-sm text-white/50">Matter not found.</div>;
   }
-
-  const retainer = Number(matter.invoice_retainer ?? 0);
-  const balance = Number(matter.invoice_balance ?? matter.total_price - retainer);
-  const reference = matter.deal_id ?? matter.id;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] md:p-10">
-      <div>
-        <p className="text-xs uppercase tracking-[0.28em] text-gold">Invoice &amp; Payment Authorization</p>
-        <h1 className="mt-2 font-serif text-3xl">Pro Forma</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Server-approved pricing for Matter {reference}.
-        </p>
-      </div>
-
-      <Card className="border-gold bg-card">
-        <CardHeader className="border-b border-border">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-gold">The Milano Seal</p>
-              <CardTitle className="mt-2 font-serif text-2xl">{matter.client_name ?? "Matter Client"}</CardTitle>
-            </div>
-            <div className="text-left text-xs text-muted-foreground sm:text-right">
-              <div>{reference}</div>
-              <div className="mt-1 uppercase tracking-widest">{matter.payment_status}</div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5 p-6 md:p-8">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Execution lane</p>
-              <p className="mt-1 font-medium">{matter.lane}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Matter pathway</p>
-              <p className="mt-1 font-medium">
-                {matter.document_type ?? "Document execution"}
-                {matter.destination_country ? ` - ${matter.destination_country}` : ""}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3 border-y border-border py-5 text-sm">
-            <div className="flex justify-between gap-4"><span>Lane base</span><span>{formatCurrencyDetailed(matter.base_price)}</span></div>
-            {matter.witness_total > 0 && (
-              <div className="flex justify-between gap-4"><span>Witness coordination</span><span>{formatCurrencyDetailed(matter.witness_total)}</span></div>
-            )}
-            <div className="flex justify-between gap-4 text-base font-semibold"><span>Approved total</span><span className="text-gold">{formatCurrencyDetailed(matter.total_price)}</span></div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-md border border-gold/30 bg-gold/5 p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Retainer due</p>
-              <p className="mt-2 font-serif text-2xl text-gold">{formatCurrencyDetailed(retainer)}</p>
-            </div>
-            <div className="rounded-md border border-border p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Balance before release</p>
-              <p className="mt-2 font-serif text-2xl">{formatCurrencyDetailed(balance)}</p>
-            </div>
-          </div>
-
-          <p className="text-xs leading-5 text-muted-foreground">
-            Pricing is read from the saved Matter quote. Payment-Gated Execution remains locked until Wise payment confirmation or an audited complimentary authorization.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Link className="inline-flex min-h-11 items-center rounded-md border border-gold/40 px-4 text-sm text-gold hover:bg-gold/5" href={`/dashboard/deals/${reference}`}>
-        Return to Matter cockpit
+    <div className="mx-auto w-full max-w-4xl space-y-6 pb-12">
+      <Link href={`/dashboard/deals/${deal.id}`} className="inline-flex items-center gap-2 text-xs text-white/45 transition hover:text-[#C6A55A]">
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to Matter
       </Link>
+
+      <header className="rounded-2xl border border-[#C6A55A]/15 bg-white/[0.015] p-6">
+        <div className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#C6A55A]/65">Pro Forma Review</div>
+        <h1 className="mt-2 font-serif text-3xl text-[#F6F1E6]">{deal.client_name}</h1>
+        <p className="mt-2 text-sm leading-6 text-white/45">
+          {deal.document_type} → {deal.destination_country}. This review reflects the current canonical Matter pricing. Any partner or courtesy code is validated by the server before Wise payment instructions are refreshed.
+        </p>
+      </header>
+
+      <SecurePaymentCard deal={deal} onRefresh={() => void refetch()} />
+
+      <p className="text-center text-[10px] uppercase tracking-[0.14em] text-white/30">
+        Wise secure payment · Scheduling remains locked until verified reconciliation
+      </p>
     </div>
   );
 }

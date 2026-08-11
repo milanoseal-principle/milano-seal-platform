@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canTransition } from "@/lib/stateMachine";
 import { createWisePaymentRequest } from "@/lib/wise";
 import { logActivity } from "@/lib/activity";
+import { validateExecutionTruth } from "@/lib/matter/executionTruth";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 
 const VALID_STAGES = [
   "new",
@@ -30,7 +32,7 @@ export async function moveDeal(
   const { data: deal, error: fetchErr } = await supabase
     .from("deals")
     .select(
-      "id, status, payment_status, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country, amount",
+      "id, deal_id, status, payment_status, amount_due, amount_paid, verified_revenue, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, execution_truth, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country, amount",
     )
     .eq("deal_id", deal_id)
     .single();
@@ -54,11 +56,33 @@ export async function moveDeal(
     "shipped",
     "completed",
   ];
-  if (gatedStages.includes(stage) && deal.payment_status !== "paid") {
-    return {
-      ok: false,
-      error: "Payment required before advancing to this stage",
-    };
+
+  if (gatedStages.includes(stage)) {
+    const executionTruth = deal.execution_truth;
+    const executionValidation =
+      executionTruth && typeof executionTruth === "object"
+        ? validateExecutionTruth(executionTruth)
+        : {
+            valid: false,
+            reviewRequired: true,
+            errors: ["EXECUTION_TRUTH_MISSING"],
+          };
+
+    if (!executionValidation.valid || executionValidation.reviewRequired) {
+      return {
+        ok: false,
+        error: `EXECUTION_REVIEW_REQUIRED: ${executionValidation.errors.join(", ")}`,
+      };
+    }
+
+    const schedulingGate = evaluateSchedulingGate({ matter: deal });
+    if (!schedulingGate.schedulingEligible) {
+      return {
+        ok: false,
+        error:
+          "Payment required before advancing to this stage — verified Wise settlement or an active Complimentary Authorization is required.",
+      };
+    }
   }
 
   // Enforce state machine

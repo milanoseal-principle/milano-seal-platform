@@ -2,7 +2,7 @@
 import { ModuleWrapper } from "./_module-wrapper";
 
 const SUMMARY = `DO NOT SHARE — Operator only — 16 platforms`;
-const DETAIL = `Instagram @themilanoseal | Instagram @mr.nickmilano | LinkedIn Company | LinkedIn Personal | Facebook | Google | Wise | Namecheap | Anthropic | Supabase | Vercel | Twilio | Resend`;
+const DETAIL = `Instagram @themilanoseal | Instagram @mr.nickmilano | LinkedIn Company | LinkedIn Personal | Facebook | Google | Stripe | Wise | Namecheap | Anthropic | Supabase | Vercel | Twilio | Resend`;
 
 export function CredentialsModule({ mod, data }: any) {
   return (

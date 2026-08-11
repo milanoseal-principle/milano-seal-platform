@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
 import { FileUploadZone } from "@/components/intake/FileUploadZone";
+import { classifyIntake } from "@/lib/intake/smartClassification";
+import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
+import { projectClientPricing } from "@/lib/pricing/pricingProjections";
 
 interface IntakeData {
   client_name: string;
@@ -21,6 +24,7 @@ interface IntakeData {
   signer_names: string;
   origin_state: string;
   destination_country: string;
+  mobile_address: string;
   execution_type: "RON" | "Mobile" | "Unsure";
   apostille_required: boolean;
   apostille_count: number;
@@ -152,11 +156,9 @@ const COUNTRIES = [
 ];
 
 const STEP_LABELS = [
-  "CLIENT",
-  "DOCUMENTS",
+  "YOUR MATTER",
   "EXECUTION",
-  "COMPLIANCE",
-  "CONFIRMATION",
+  "REVIEW",
 ];
 
 const INITIAL_DATA: IntakeData = {
@@ -172,6 +174,7 @@ const INITIAL_DATA: IntakeData = {
   signer_names: "",
   origin_state: "",
   destination_country: "",
+  mobile_address: "",
   execution_type: "Unsure",
   apostille_required: false,
   apostille_count: 1,
@@ -399,11 +402,19 @@ export function IntakeWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [showAiHelper, setShowAiHelper] = useState(false);
+  const [usedLocation, setUsedLocation] = useState<"domestic" | "international" | "">(
+    prefill?.country
+      ? "international"
+      : "",
+  );
+  const [apostilleChoice, setApostilleChoice] = useState<"yes" | "no" | "unsure" | "">("");
+  const [translationChoice, setTranslationChoice] = useState<"yes" | "no" | "unsure" | "">("");
   const [analysisNote, setAnalysisNote] = useState<{
     msg: string;
     targetStep?: number;
   } | null>(null);
-  const TOTAL = 5;
+  const TOTAL = 3;
 
   const resolveCountry = (raw: string): string => {
     if (!raw) return "";
@@ -432,19 +443,22 @@ export function IntakeWizard({
 
   const validate = (s: number): boolean => {
     const e: typeof errors = {};
+    // Step 1 — Tell Us About Your Matter (client-facing essentials only)
     if (s === 1) {
       if (!data.client_name.trim()) e.client_name = "Full name is required";
       if (!data.email.trim() || !data.email.includes("@"))
         e.email = "Valid email is required";
-    }
-    if (s === 2) {
       if (!data.document_type)
-        e.document_type = "Please select a document type";
+        e.document_type = "Please select what document you have";
       if (!data.document_description.trim())
         e.document_description = "A brief description is required";
-      if (!data.origin_state) e.origin_state = "Origin state is required";
     }
-    if (s === 5) {
+    // Step 2 — Execution Details (signer location required; rest optional/conditional)
+    if (s === 2) {
+      if (!data.origin_state) e.origin_state = "Please select where the signer is located";
+    }
+    // Step 3 — Review & Submit
+    if (s === 3) {
       if (!consent) e.consent = "Please confirm you have read the notice above";
     }
     setErrors(e);
@@ -465,7 +479,7 @@ export function IntakeWizard({
   };
 
   const handleSubmit = async () => {
-    if (!validate(5)) return;
+    if (!validate(3)) return;
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -486,10 +500,9 @@ export function IntakeWizard({
       country: data.destination_country || "United States",
       destination_country: data.destination_country,
       mobile: data.execution_type === "Mobile",
-      apostille:
-        data.apostille_required ||
-        (data.destination_country !== "" &&
-          data.destination_country !== "United States"),
+      // Apostille comes ONLY from explicit client intent — never fabricated from
+      // a foreign destination. (foreign country ≠ apostille required.)
+      apostille: data.apostille_required,
       apostille_count: data.apostille_count,
       translation: data.translation_needed,
       draft_ready: data.draft_ready,
@@ -501,7 +514,14 @@ export function IntakeWizard({
       weekend_holiday: data.weekend_holiday,
       source_detail: data.source_detail,
       attribution: data.attribution,
-      notes: data.notes,
+      notes: [
+        data.notes,
+        data.execution_type === "Mobile" && data.mobile_address.trim()
+          ? `Mobile signing address: ${data.mobile_address.trim()}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" — "),
       matter_category: data.matter_category || undefined,
       ron_preferred: data.ron_preferred || undefined,
       wet_ink_required: data.wet_ink_required || undefined,
@@ -584,8 +604,11 @@ export function IntakeWizard({
       const resolvedCountry = resolveCountry(x.country);
       if (resolvedCountry) merged.destination_country = resolvedCountry;
 
-      merged.apostille_required = x.apostilleRequired;
-      merged.translation_needed = x.translationNeeded;
+      // Precedence: AI may FILL an unanswered field but must never silently
+      // overturn an explicit client selection. apostilleChoice/translationChoice
+      // are set only when the client has explicitly answered in Step 2.
+      if (apostilleChoice === "") merged.apostille_required = x.apostilleRequired;
+      if (translationChoice === "") merged.translation_needed = x.translationNeeded;
 
       if (x.urgency === "urgent") merged.timeline = "Urgent (24-48 hours)";
       else if (x.urgency === "expedited")
@@ -600,19 +623,14 @@ export function IntakeWizard({
     const filledContact = !!(x.clientName || x.email);
     if (filledDoc && filledContact) {
       setAnalysisNote({
-        msg: "Matter structured — contact and document details filled.",
-        targetStep: undefined,
+        msg: "Matter structured — we filled in what we could below. Review and adjust.",
       });
     } else if (filledDoc) {
       setAnalysisNote({
-        msg: "Document details filled. Review them in Step 2.",
-        targetStep: 2,
+        msg: "Document details filled in below. Review and adjust.",
       });
     } else if (filledContact) {
-      setAnalysisNote({
-        msg: "Contact details filled.",
-        targetStep: undefined,
-      });
+      setAnalysisNote({ msg: "Contact details filled in below." });
     }
   };
 
@@ -626,46 +644,6 @@ export function IntakeWizard({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {step === 1 && (
-        <>
-          <SmartMatterIntake
-            onAnalysisReady={handleAnalysisReady}
-            onFilesPicked={handleSmartFilesPicked}
-            initialMessage={initialNLMessage}
-          />
-          {analysisNote && (
-            <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
-              <span className="text-[11px] text-[var(--ms-gold)] font-medium">
-                ✓ {analysisNote.msg}
-              </span>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {analysisNote.targetStep &&
-                  step !== analysisNote.targetStep && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStep(analysisNote.targetStep!);
-                        setAnalysisNote(null);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="text-[11px] text-[var(--ms-gold)] underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
-                    >
-                      Go to Step {analysisNote.targetStep} →
-                    </button>
-                  )}
-                <button
-                  type="button"
-                  onClick={() => setAnalysisNote(null)}
-                  className="text-[var(--ms-gold)] hover:text-[#9A9488] transition-colors cursor-pointer text-[12px] leading-none"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
       <div className="mb-10 relative">
         <div className="absolute top-3.5 left-0 right-0 h-px bg-[rgba(198,165,90,0.12)]" />
         <motion.div
@@ -741,12 +719,47 @@ export function IntakeWizard({
               {step === 1 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
-                    Contact Information
+                    Tell Us About Your Matter
                   </h2>
                   <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
-                    Your primary details for this matter.
+                    A few basics so we can review what you need. Takes about a minute.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
+
+                  {/* Optional AI helper — collapsed by default, never required */}
+                  <div className="mb-7">
+                    {!showAiHelper ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowAiHelper(true)}
+                        className="text-[11px] text-[var(--ms-gold)]/85 underline underline-offset-2 hover:text-[#D4BB7A] transition-colors cursor-pointer"
+                      >
+                        Prefer to just describe it in your own words? Let us pre-fill for you →
+                      </button>
+                    ) : (
+                      <>
+                        <SmartMatterIntake
+                          onAnalysisReady={handleAnalysisReady}
+                          onFilesPicked={handleSmartFilesPicked}
+                          initialMessage={initialNLMessage}
+                        />
+                        {analysisNote && (
+                          <div className="flex items-center justify-between gap-3 mt-2 mb-2 px-4 py-3 bg-[rgba(198,165,90,0.08)] border border-[rgba(198,165,90,0.35)] rounded-sm">
+                            <span className="text-[11px] text-[var(--ms-gold)] font-medium">
+                              ✓ {analysisNote.msg}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setAnalysisNote(null)}
+                              className="text-[var(--ms-gold)] hover:text-[#9A9488] transition-colors cursor-pointer text-[12px] leading-none flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
 
                   <FieldRow>
                     <FieldGroup>
@@ -761,9 +774,7 @@ export function IntakeWizard({
                         className={inputCls}
                       />
                       {errors.client_name && (
-                        <p className="text-[10.5px] text-red-300 mt-1">
-                          {errors.client_name}
-                        </p>
+                        <p className="text-[10.5px] text-red-300 mt-1">{errors.client_name}</p>
                       )}
                     </FieldGroup>
                     <FieldGroup>
@@ -778,68 +789,30 @@ export function IntakeWizard({
                         className={inputCls}
                       />
                       {errors.email && (
-                        <p className="text-[10.5px] text-red-300 mt-1">
-                          {errors.email}
-                        </p>
+                        <p className="text-[10.5px] text-red-300 mt-1">{errors.email}</p>
                       )}
                     </FieldGroup>
                   </FieldRow>
-                  <FieldRow>
-                    <FieldGroup>
-                      <label className={labelCls}>
-                        Phone{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (optional)
-                        </span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={data.phone}
-                        onChange={(e) => set("phone", e.target.value)}
-                        placeholder="+1 (000) 000-0000"
-                        className={inputCls}
-                      />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <label className={labelCls}>
-                        Organization / Firm{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (if applicable)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.organization}
-                        onChange={(e) => set("organization", e.target.value)}
-                        placeholder="Law firm or company"
-                        className={inputCls}
-                      />
-                    </FieldGroup>
-                  </FieldRow>
-                  <FieldGroup>
-                    <CheckRow
-                      checked={data.is_attorney}
-                      onChange={(v) => set("is_attorney", v)}
-                      label="I am an attorney or legal professional"
-                      sub="Enables law firm referral pricing and professional coordination lane"
-                    />
-                  </FieldGroup>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
-                    Document Details
-                  </h2>
-                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
-                    Tell us about the document or matter to be coordinated.
-                  </p>
-                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Document Type <span className="text-[var(--ms-gold)]">*</span>
+                      Phone{" "}
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
+                        (optional)
+                      </span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={data.phone}
+                      onChange={(e) => set("phone", e.target.value)}
+                      placeholder="+1 (000) 000-0000"
+                      className={inputCls}
+                    />
+                  </FieldGroup>
+
+                  <FieldGroup>
+                    <label className={labelCls}>
+                      What document do you have? <span className="text-[var(--ms-gold)]">*</span>
                     </label>
                     <select
                       value={data.document_type}
@@ -886,775 +859,353 @@ export function IntakeWizard({
                       </optgroup>
                     </select>
                     {errors.document_type && (
-                      <p className="text-[10.5px] text-red-300 mt-1">
-                        {errors.document_type}
-                      </p>
+                      <p className="text-[10.5px] text-red-300 mt-1">{errors.document_type}</p>
                     )}
                   </FieldGroup>
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Document Description{" "}
+                      Where will it be used? <span className="text-[var(--ms-gold)]">*</span>
+                    </label>
+                    <RadioGroup
+                      value={usedLocation}
+                      onChange={(v) => {
+                        const choice = v as "domestic" | "international";
+                        setUsedLocation(choice);
+                        if (choice === "domestic") set("destination_country", "United States");
+                        else if (data.destination_country === "United States")
+                          set("destination_country", "");
+                      }}
+                      options={[
+                        { value: "domestic", label: "In the United States" },
+                        { value: "international", label: "In another country", sub: "We'll ask which country next." },
+                      ]}
+                    />
+                  </FieldGroup>
+
+                  <FieldGroup>
+                    <label className={labelCls}>
+                      Briefly describe what you need{" "}
                       <span className="text-[var(--ms-gold)]">*</span>
                     </label>
                     <textarea
                       value={data.document_description}
-                      onChange={(e) =>
-                        set("document_description", e.target.value)
-                      }
-                      placeholder="Briefly describe the document(s) and how they will be used. Include any international context."
+                      onChange={(e) => set("document_description", e.target.value)}
+                      placeholder="e.g. I need a power of attorney notarized for use in Italy."
                       rows={3}
                       className={`${inputCls} resize-none`}
                     />
                     {errors.document_description && (
-                      <p className="text-[10.5px] text-red-300 mt-1">
-                        {errors.document_description}
-                      </p>
+                      <p className="text-[10.5px] text-red-300 mt-1">{errors.document_description}</p>
                     )}
                   </FieldGroup>
 
-                  <FieldRow>
-                    <FieldGroup>
-                      <label className={labelCls}>Number of Documents</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={data.document_count}
-                        onChange={(e) =>
-                          set("document_count", parseInt(e.target.value) || 1)
-                        }
-                        className={inputCls}
-                      />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <label className={labelCls}>Number of Signers</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={data.signer_count}
-                        onChange={(e) =>
-                          set("signer_count", parseInt(e.target.value) || 1)
-                        }
-                        className={inputCls}
-                      />
-                    </FieldGroup>
-                  </FieldRow>
+                  <FieldGroup>
+                    <label className={labelCls}>
+                      Upload documents{" "}
+                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
+                        (optional)
+                      </span>
+                    </label>
+                    <FileUploadZone value={files} onChange={setFiles} maxFiles={5} maxSizeMB={10} />
+                    <p className="text-[11px] text-[#9A9488] mt-2 font-light">
+                      Uploading now lets us review in advance. All files are handled with strict confidentiality.
+                    </p>
+                  </FieldGroup>
+                </>
+              )}
 
-                  <FieldRow>
-                    <FieldGroup>
-                      <label className={labelCls}>
-                        Origin Authority <span className="text-[var(--ms-gold)]">*</span>
-                      </label>
-                      {/* Contextual origin authority selector — backward-compatible with origin_state field */}
-                      <select
-                        value={data.origin_state}
-                        onChange={(e) => set("origin_state", e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">— Select Origin Authority —</option>
-                        <optgroup label="RON / Florida">
-                          <option value="Florida RON Notarial Act">Florida RON Notarial Act</option>
-                        </optgroup>
-                        <optgroup label="Federal Agencies">
-                          <option value="Federal (FBI)">Federal — FBI Background Check</option>
-                          <option value="Federal (U.S. Department of State)">Federal — U.S. Department of State</option>
-                          <option value="Federal (USCIS)">Federal — USCIS</option>
-                          <option value="Federal (IRS)">Federal — IRS</option>
-                          <option value="Federal (Social Security Administration)">Federal — Social Security Administration</option>
-                          <option value="Federal (U.S. Federal Court)">Federal — U.S. Federal Court</option>
-                          <option value="Federal (USPTO)">Federal — USPTO</option>
-                        </optgroup>
-                        <optgroup label="U.S. States — Vital Records / Notarial Acts">
-                          {US_STATES.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Corporate / Secretary of State">
-                          <option value="Corporate / Secretary of State">Corporate / Secretary of State Record</option>
-                        </optgroup>
-                        <optgroup label="Foreign">
-                          <option value="Foreign Issuing Authority">Foreign Issuing Authority</option>
-                        </optgroup>
-                        <option value="Other / Not Sure">Other / Not Sure — Operator Review</option>
-                      </select>
-                      {errors.origin_state && (
-                        <p className="text-[10.5px] text-red-300 mt-1">
-                          {errors.origin_state}
-                        </p>
-                      )}
-                    </FieldGroup>
-                    <FieldGroup>
-                      <label className={labelCls}>Destination Country</label>
-                      <input
-                        list="countries-list"
-                        value={data.destination_country}
-                        onChange={(e) =>
-                          set("destination_country", e.target.value)
-                        }
-                        placeholder="Italy, Germany, Mexico…"
-                        className={inputCls}
-                      />
-                      <datalist id="countries-list">
-                        {COUNTRIES.map((c) => (
-                          <option key={c} value={c} />
-                        ))}
-                      </datalist>
-                    </FieldGroup>
-                  </FieldRow>
+              {step === 2 && (
+                <>
+                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
+                    Execution Details
+                  </h2>
+                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
+                    Just enough to route your matter correctly. Optional items stay hidden until relevant.
+                  </p>
+                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Preferred Execution Method
+                      Where is the signer located? <span className="text-[var(--ms-gold)]">*</span>
                     </label>
+                    <select
+                      value={data.origin_state}
+                      onChange={(e) => set("origin_state", e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">— Select state —</option>
+                      {US_STATES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    {errors.origin_state && (
+                      <p className="text-[10.5px] text-red-300 mt-1">{errors.origin_state}</p>
+                    )}
+                  </FieldGroup>
+
+                  <FieldGroup>
+                    <label className={labelCls}>How should signing happen?</label>
                     <RadioGroup
                       value={data.execution_type}
-                      onChange={(v) =>
-                        set("execution_type", v as IntakeData["execution_type"])
-                      }
+                      onChange={(v) => set("execution_type", v as IntakeData["execution_type"])}
                       options={[
-                        {
-                          value: "RON",
-                          label: "Remote Online Notarization (RON)",
-                          sub: "Video session from any location",
-                        },
-                        {
-                          value: "Mobile",
-                          label: "Mobile / In-Person",
-                          sub: "Notary travels to the signer",
-                        },
-                        {
-                          value: "Unsure",
-                          label: "Unsure — I would like guidance",
-                          sub: "We will recommend the correct method for your matter",
-                        },
+                        { value: "RON", label: "Remote (online notarization)", sub: "Sign by secure video from anywhere." },
+                        { value: "Mobile", label: "Mobile (notary comes to you)" },
+                        { value: "Unsure", label: "Not sure", sub: "We'll recommend the right path." },
                       ]}
                     />
                   </FieldGroup>
-                </>
-              )}
 
-              {step === 3 && (
-                <>
-                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
-                    Services Required
-                  </h2>
-                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
-                    Indicate which services are needed for this matter.
-                  </p>
-                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
+                  {data.execution_type === "Mobile" && (
+                    <FieldGroup>
+                      <label className={labelCls}>Signing address</label>
+                      <input
+                        type="text"
+                        value={data.mobile_address}
+                        onChange={(e) => set("mobile_address", e.target.value)}
+                        placeholder="Street, city, state, ZIP"
+                        className={inputCls}
+                      />
+                    </FieldGroup>
+                  )}
 
-                  <SectionLabel>Authentication &amp; Translation</SectionLabel>
-
-                  <FieldGroup>
-                    <CheckRow
-                      checked={data.apostille_required}
-                      onChange={(v) => set("apostille_required", v)}
-                      label="Apostille Required"
-                      sub="Document must be authenticated for use in a Hague Convention country"
-                    />
-                    <AnimatePresence>
-                      {data.apostille_required && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mt-3 overflow-hidden"
-                        >
-                          <label className={labelCls}>
-                            Number of Apostilles Needed
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={50}
-                            value={data.apostille_count}
-                            onChange={(e) =>
-                              set(
-                                "apostille_count",
-                                parseInt(e.target.value) || 1,
-                              )
-                            }
-                            className={`${inputCls} max-w-[140px]`}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </FieldGroup>
-
-                  <FieldGroup>
-                    <CheckRow
-                      checked={data.translation_needed}
-                      onChange={(v) => set("translation_needed", v)}
-                      label="Translation Required"
-                      sub="Document needs certified translation before or after notarization"
-                    />
-                  </FieldGroup>
-
-                  <FieldGroup>
-                    <CheckRow
-                      checked={data.draft_ready}
-                      onChange={(v) => set("draft_ready", v)}
-                      label="Document is Draft-Ready"
-                      sub="A finalized draft is prepared and ready for execution"
-                    />
-                  </FieldGroup>
-
-                  <SectionLabel>Timeline &amp; Scheduling</SectionLabel>
+                  {usedLocation === "international" && (
+                    <FieldGroup>
+                      <label className={labelCls}>Destination country</label>
+                      <select
+                        value={data.destination_country === "United States" ? "" : data.destination_country}
+                        onChange={(e) => set("destination_country", e.target.value)}
+                        className={selectCls}
+                      >
+                        <option value="">— Select country —</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </FieldGroup>
+                  )}
 
                   <FieldRow>
                     <FieldGroup>
-                      <label className={labelCls}>Timeline</label>
-                      <select
-                        value={data.timeline}
-                        onChange={(e) => set("timeline", e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">— Select —</option>
-                        <option>Standard (5–10 business days)</option>
-                        <option>Expedited (2–4 business days)</option>
-                        <option>Urgent (24–48 hours)</option>
-                        <option>Same Day — subject to availability</option>
-                      </select>
+                      <label className={labelCls}>Number of documents</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={data.document_count}
+                        onChange={(e) => set("document_count", Math.max(1, Number(e.target.value) || 1))}
+                        className={inputCls}
+                      />
                     </FieldGroup>
                     <FieldGroup>
-                      <label className={labelCls}>
-                        Deadline Date{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (if applicable)
-                        </span>
-                      </label>
+                      <label className={labelCls}>Number of signers</label>
                       <input
-                        type="date"
-                        value={data.deadline_date}
-                        onChange={(e) => set("deadline_date", e.target.value)}
+                        type="number"
+                        min={1}
+                        value={data.signer_count}
+                        onChange={(e) => set("signer_count", Math.max(1, Number(e.target.value) || 1))}
                         className={inputCls}
                       />
                     </FieldGroup>
                   </FieldRow>
 
-                  <FieldGroup>
-                    <CheckRow
-                      checked={data.weekend_holiday}
-                      onChange={(v) => set("weekend_holiday", v)}
-                      label="Weekend or Holiday Execution Required"
-                      sub="Rush scheduling outside standard business hours — additional coordination fees may apply"
-                    />
-                  </FieldGroup>
-                </>
-              )}
-
-              {step === 4 && (
-                <>
-                  <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
-                    Additional Details
-                  </h2>
-                  <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
-                    Upload documents and let us know how you found us.
-                  </p>
-                  <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
-
-                  <FieldGroup>
-                    <label className={labelCls}>
-                      How did you hear about The Milano Seal?
-                    </label>
-                    <select
-                      value={data.source_detail}
-                      onChange={(e) => {
-                        set("source_detail", e.target.value);
-                        if (
-                          ![
-                            "Attorney / Law Firm Referral",
-                            "Existing Client",
-                            "Personal Referral",
-                          ].includes(e.target.value)
-                        )
-                          set("attribution", "");
-                      }}
-                      className={selectCls}
-                    >
-                      <option value="">— Select —</option>
-                      <option>Attorney / Law Firm Referral</option>
-                      <option>Existing Client</option>
-                      <option>Google Search</option>
-                      <option>Social Media</option>
-                      <option>Direct Outreach</option>
-                      <option>Personal Referral</option>
-                      <option>Other</option>
-                    </select>
-                  </FieldGroup>
-
-                  <AnimatePresence>
-                    {[
-                      "Attorney / Law Firm Referral",
-                      "Existing Client",
-                      "Personal Referral",
-                    ].includes(data.source_detail) && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden mb-5"
-                      >
-                        <label className={labelCls}>
-                          If referred, who may we thank?
-                        </label>
-                        <input
-                          type="text"
-                          value={data.attribution}
-                          onChange={(e) => set("attribution", e.target.value)}
-                          placeholder="Name or organization"
-                          className={inputCls}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <FieldGroup>
-                    <label className={labelCls}>
-                      Supporting Documents{" "}
-                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                        (optional — for advance review)
-                      </span>
-                    </label>
-                    <FileUploadZone
-                      value={files}
-                      onChange={setFiles}
-                      maxFiles={5}
-                      maxSizeMB={10}
-                    />
-                    <p className="text-[11px] text-[#9A9488] mt-2 font-light">
-                      Uploading documents now allows for advance review prior to
-                      scheduling. All files are handled with strict
-                      confidentiality.
-                    </p>
-                  </FieldGroup>
-
-                  <FieldGroup>
-                    <label className={labelCls}>
-                      Signer Names{" "}
-                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                        (optional)
-                      </span>
-                    </label>
-                    <textarea
-                      value={data.signer_names}
-                      onChange={(e) => set("signer_names", e.target.value)}
-                      placeholder="List the full name(s) and city/state of each signer, one per line."
-                      rows={3}
-                      className={`${inputCls} resize-none`}
-                    />
-                  </FieldGroup>
-
-                  <SectionLabel>Matter Details (Optional)</SectionLabel>
-
-                  <FieldGroup>
-                    <label className={labelCls}>
-                      Matter Category{" "}
-                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                        (optional)
-                      </span>
-                    </label>
-                    <select
-                      value={data.matter_category}
-                      onChange={(e) => set("matter_category", e.target.value)}
-                      className={selectCls}
-                    >
-                      <option value="">— Select —</option>
-                      <option>General apostille / notary</option>
-                      <option>Citizenship / residency</option>
-                      <option>Power of attorney</option>
-                      <option>Business / corporate</option>
-                      <option>Yacht / marine</option>
-                      <option>Equine</option>
-                      <option>Medical / healthcare</option>
-                      <option>Regenerative medicine</option>
-                      <option>Gems / diamonds / jewelry</option>
-                      <option>Luxury assets</option>
-                      <option>Private client / HNWI</option>
-                      <option>Real estate</option>
-                      <option>Other / not sure</option>
-                    </select>
-                  </FieldGroup>
-
-                  <FieldRow>
+                  {data.signer_count > 1 && (
                     <FieldGroup>
                       <label className={labelCls}>
-                        Remote online notarization preferred?{" "}
+                        Signer names{" "}
                         <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (optional)
+                          (one per line)
                         </span>
                       </label>
-                      <select
-                        value={data.ron_preferred}
-                        onChange={(e) => set("ron_preferred", e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">— Select —</option>
-                        <option>Yes</option>
-                        <option>No</option>
-                        <option>Not sure</option>
-                      </select>
+                      <textarea
+                        value={data.signer_names}
+                        onChange={(e) => set("signer_names", e.target.value)}
+                        placeholder={"Jane Doe\nJohn Doe"}
+                        rows={2}
+                        className={`${inputCls} resize-none`}
+                      />
                     </FieldGroup>
-                    <FieldGroup>
-                      <label className={labelCls}>
-                        Wet ink required?{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (optional)
-                        </span>
-                      </label>
-                      <select
-                        value={data.wet_ink_required}
-                        onChange={(e) => set("wet_ink_required", e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">— Select —</option>
-                        <option>Yes</option>
-                        <option>No</option>
-                        <option>Not sure</option>
-                      </select>
-                    </FieldGroup>
-                  </FieldRow>
+                  )}
 
                   <FieldGroup>
                     <label className={labelCls}>
-                      Receiving Authority{" "}
+                      Deadline{" "}
                       <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
                         (optional)
                       </span>
                     </label>
                     <input
-                      type="text"
-                      value={data.receiving_authority}
-                      onChange={(e) => set("receiving_authority", e.target.value)}
-                      placeholder="Consulate, court, registry office, bank, port authority, or other receiving party"
+                      type="date"
+                      value={data.deadline_date}
+                      onChange={(e) => set("deadline_date", e.target.value)}
                       className={inputCls}
                     />
                   </FieldGroup>
 
                   <FieldRow>
                     <FieldGroup>
-                      <label className={labelCls}>
-                        Deadline or Closing Date{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (optional)
-                        </span>
-                      </label>
-                      <input
-                        type="date"
-                        value={data.deadline_or_closing_date}
-                        onChange={(e) => set("deadline_or_closing_date", e.target.value)}
-                        className={inputCls}
+                      <label className={labelCls}>Apostille needed?</label>
+                      <RadioGroup
+                        value={apostilleChoice}
+                        onChange={(v) => {
+                          const c = v as "yes" | "no" | "unsure";
+                          setApostilleChoice(c);
+                          set("apostille_required", c === "yes");
+                        }}
+                        options={[
+                          { value: "yes", label: "Yes" },
+                          { value: "no", label: "No" },
+                          { value: "unsure", label: "Not sure" },
+                        ]}
                       />
+                      {apostilleChoice === "yes" && (
+                        <div className="mt-3">
+                          <label className={labelCls}>How many apostilles?</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={data.apostille_count}
+                            onChange={(e) => set("apostille_count", Math.max(1, Number(e.target.value) || 1))}
+                            className={inputCls}
+                          />
+                        </div>
+                      )}
                     </FieldGroup>
                     <FieldGroup>
-                      <label className={labelCls}>
-                        Courier tracking needed?{" "}
-                        <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                          (optional)
-                        </span>
-                      </label>
-                      <select
-                        value={data.courier_required}
-                        onChange={(e) => set("courier_required", e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="">— Select —</option>
-                        <option>Yes</option>
-                        <option>No</option>
-                        <option>Not sure</option>
-                      </select>
+                      <label className={labelCls}>Translation needed?</label>
+                      <RadioGroup
+                        value={translationChoice}
+                        onChange={(v) => {
+                          const c = v as "yes" | "no" | "unsure";
+                          setTranslationChoice(c);
+                          set("translation_needed", c === "yes");
+                        }}
+                        options={[
+                          { value: "yes", label: "Yes" },
+                          { value: "no", label: "No" },
+                          { value: "unsure", label: "Not sure" },
+                        ]}
+                      />
                     </FieldGroup>
                   </FieldRow>
-
-                  <SectionLabel>Notes</SectionLabel>
-
-                  <FieldGroup>
-                    <label className={labelCls}>
-                      Additional Notes{" "}
-                      <span className="text-[#9A9488] text-[9px] normal-case tracking-normal font-light">
-                        (optional)
-                      </span>
-                    </label>
-                    <textarea
-                      value={data.notes}
-                      onChange={(e) => set("notes", e.target.value)}
-                      placeholder="Any specific requirements, context, or questions."
-                      rows={3}
-                      className={`${inputCls} resize-none`}
-                    />
-                  </FieldGroup>
                 </>
               )}
 
-              {step === 5 && (
+              {step === 3 && (
                 <>
                   <h2 className="font-serif text-2xl text-[#E8DCC0] mb-1">
                     Review &amp; Submit
                   </h2>
                   <p className="text-[12px] text-[#9A9488] tracking-[0.04em] mb-1 font-light">
-                    Confirm your matter details before sending.
+                    A quick check before you send. We review every matter before scheduling.
                   </p>
                   <div className="w-10 h-px bg-[var(--ms-gold)] opacity-50 mb-8" />
 
-                  <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(198,165,90,0.18)] rounded-sm overflow-hidden mb-5">
-                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
-                        Contact
-                      </span>
-                    </div>
+                  <div className="bg-[#0A0A0A] border border-[rgba(198,165,90,0.14)] rounded-sm mb-6">
                     <ReviewItem label="Name" value={data.client_name} />
                     <ReviewItem label="Email" value={data.email} />
-                    {data.phone && (
-                      <ReviewItem label="Phone" value={data.phone} />
+                    {data.phone && <ReviewItem label="Phone" value={data.phone} />}
+                    <ReviewItem label="Document" value={data.document_type} />
+                    <ReviewItem
+                      label="Used in"
+                      value={usedLocation === "international" ? data.destination_country || "Another country" : "United States"}
+                    />
+                    <ReviewItem label="Description" value={data.document_description} />
+                    <ReviewItem
+                      label="Signing"
+                      value={data.execution_type === "RON" ? "Remote" : data.execution_type === "Mobile" ? "Mobile" : "Not sure"}
+                    />
+                    {data.execution_type === "Mobile" && data.mobile_address && (
+                      <ReviewItem label="Address" value={data.mobile_address} />
                     )}
-                    {data.organization && (
-                      <ReviewItem
-                        label="Organization"
-                        value={data.organization}
-                      />
-                    )}
-                    <ReviewItem
-                      label="Attorney / Firm"
-                      value={data.is_attorney}
-                    />
-                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
-                        Document
-                      </span>
-                    </div>
-                    <ReviewItem
-                      label="Document Type"
-                      value={data.document_type}
-                    />
-                    <ReviewItem
-                      label="Description"
-                      value={data.document_description}
-                    />
+                    <ReviewItem label="Signer where" value={data.origin_state} />
                     <ReviewItem label="Documents" value={data.document_count} />
                     <ReviewItem label="Signers" value={data.signer_count} />
-                    {data.signer_names && (
+                    {data.signer_count > 1 && data.signer_names && (
+                      <ReviewItem label="Signer names" value={data.signer_names} />
+                    )}
+                    {data.deadline_date && <ReviewItem label="Deadline" value={data.deadline_date} />}
+                    {apostilleChoice && (
                       <ReviewItem
-                        label="Signer Names"
-                        value={data.signer_names}
+                        label="Apostille"
+                        value={apostilleChoice === "yes" ? `Yes (${data.apostille_count})` : apostilleChoice === "no" ? "No" : "Not sure"}
                       />
                     )}
-                    <ReviewItem
-                      label="Origin Authority"
-                      value={data.origin_state}
-                    />
-                    {data.destination_country && (
+                    {translationChoice && (
                       <ReviewItem
-                        label="Destination Country"
-                        value={data.destination_country}
+                        label="Translation"
+                        value={translationChoice === "yes" ? "Yes" : translationChoice === "no" ? "No" : "Not sure"}
                       />
-                    )}
-                    <ReviewItem
-                      label="Execution Method"
-                      value={data.execution_type}
-                    />
-                    <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                      <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
-                        Services
-                      </span>
-                    </div>
-                    <ReviewItem
-                      label="Apostille"
-                      value={
-                        data.apostille_required
-                          ? `Yes — ${data.apostille_count} document${
-                              data.apostille_count > 1 ? "s" : ""
-                            }`
-                          : "Not required"
-                      }
-                    />
-                    <ReviewItem
-                      label="Translation"
-                      value={data.translation_needed}
-                    />
-                    <ReviewItem label="Draft Ready" value={data.draft_ready} />
-                    {data.timeline && (
-                      <ReviewItem label="Timeline" value={data.timeline} />
-                    )}
-                    {data.deadline_date && (
-                      <ReviewItem label="Deadline" value={data.deadline_date} />
-                    )}
-                    <ReviewItem
-                      label="Weekend / Holiday"
-                      value={data.weekend_holiday}
-                    />
-                    {(data.source_detail || data.attribution || data.notes) && (
-                      <>
-                        <div className="px-4 py-2.5 bg-[rgba(198,165,90,0.08)] border-b border-[rgba(198,165,90,0.1)] border-t border-t-[rgba(198,165,90,0.06)]">
-                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
-                            Details
-                          </span>
-                        </div>
-                        {data.source_detail && (
-                          <ReviewItem
-                            label="Source"
-                            value={data.source_detail}
-                          />
-                        )}
-                        {data.attribution && (
-                          <ReviewItem
-                            label="Attribution"
-                            value={data.attribution}
-                          />
-                        )}
-                        {data.notes && (
-                          <ReviewItem label="Notes" value={data.notes} />
-                        )}
-                      </>
                     )}
                   </div>
 
+                  {files.length > 0 && (
+                    <div className="mb-6">
+                      <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#9A9488] mb-2">
+                        Uploaded files ({files.length})
+                      </div>
+                      <ul className="space-y-1">
+                        {files.map((f) => (
+                          <li key={f.name} className="text-[12px] text-[#E8DCC0] font-light truncate">
+                            {f.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Canonical client pricing projection — no client-side math.
+                      Amount + summary come only from projectClientPricing(). */}
                   {(() => {
-                    const isIntl =
-                      data.destination_country &&
-                      data.destination_country !== "United States";
-                    const isUrgent =
-                      data.timeline?.includes("Urgent") ||
-                      data.timeline?.includes("Same Day");
-                    const isExpedited = data.timeline?.includes("Expedited");
-                    const baseLane =
-                      isIntl && data.apostille_required
-                        ? "Priority"
-                        : "Signature";
-                    const basePrice = baseLane === "Priority" ? 975 : 750;
-                    const items: { label: string; price: number }[] = [
-                      {
-                        label: `${baseLane} Lane — ${
-                          data.document_type || "Document execution"
-                        }`,
-                        price: basePrice,
+                    const classification = classifyIntake({
+                      structured: {
+                        apostille: apostilleChoice === "yes" ? true : apostilleChoice === "no" ? false : undefined,
+                        translation: translationChoice === "yes" ? true : translationChoice === "no" ? false : undefined,
+                        destinationCountry: data.destination_country || undefined,
+                        signerCount: data.signer_count,
+                        documentType: data.document_type || undefined,
+                        mobile: data.execution_type === "Mobile" ? true : undefined,
                       },
-                    ];
-                    if (data.document_count > 1)
-                      items.push({
-                        label: `Additional documents (${
-                          data.document_count - 1
-                        } × $75)`,
-                        price: (data.document_count - 1) * 75,
-                      });
-                    if (data.signer_count > 1)
-                      items.push({
-                        label: `Additional signers (${
-                          data.signer_count - 1
-                        } × $150)`,
-                        price: (data.signer_count - 1) * 150,
-                      });
-                    if (data.apostille_required)
-                      items.push({
-                        label: `Apostille coordination (${data.apostille_count} × $250)`,
-                        price: data.apostille_count * 250,
-                      });
-                    if (data.translation_needed)
-                      items.push({
-                        label: "Translation coordination",
-                        price: 150,
-                      });
-                    if (isUrgent)
-                      items.push({ label: "Urgent timeline", price: 400 });
-                    else if (isExpedited)
-                      items.push({ label: "Expedited timeline", price: 200 });
-                    if (data.weekend_holiday)
-                      items.push({
-                        label: "Weekend / Holiday execution",
-                        price: 200,
-                      });
-                    const total = items.reduce((s, i) => s + i.price, 0);
-                    const retainer = Math.round(total * 0.5);
+                    });
+                    const result = priceSmartIntake({
+                      classification,
+                      selectedLane: initialTier,
+                      commercialContext: "consumer",
+                    });
+                    const p = projectClientPricing(result);
                     return (
-                      <div className="bg-[rgba(10,10,10,0.03)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] rounded-sm mb-5">
-                        <div className="px-4 py-2.5 border-b border-[rgba(198,165,90,0.1)]">
-                          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]">
-                            Estimated Investment
-                          </span>
-                        </div>
-                        <div className="px-4 py-3 space-y-2">
-                          {items.map((item, i) => (
-                            <div
-                              key={i}
-                              className="flex justify-between items-center"
-                            >
-                              <span className="text-[12px] text-[#9A9488] font-light">
-                                {item.label}
-                              </span>
-                              <span className="text-[12px] text-[#9A9488] font-medium">
-                                ${item.price.toLocaleString()}
-                              </span>
+                      <div className="bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.28)] rounded-sm px-5 py-4 mb-6">
+                        {p.mode === "approved_price" ? (
+                          <>
+                            <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]/70 mb-1">Price</div>
+                            <div className="text-2xl font-semibold text-white">
+                              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(p.amount ?? 0)}
                             </div>
-                          ))}
-                          <div className="border-t border-[rgba(198,165,90,0.15)] pt-2 mt-2 flex justify-between items-center">
-                            <span className="text-[12px] font-semibold text-[#E8DCC0]">
-                              Estimated Total
-                            </span>
-                            <span className="text-[14px] font-semibold text-[#E8DCC0]">
-                              ${total.toLocaleString()}+
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-[11px] text-[#9A9488]">
-                              Retainer due at confirmation (50%)
-                            </span>
-                            <span className="text-[12px] text-[var(--ms-gold)] font-medium">
-                              ${retainer.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="px-4 py-2.5 border-t border-[rgba(198,165,90,0.08)]">
-                          <p className="text-[10px] text-[#9A9488] italic">
-                            Final scope and pricing confirmed by Nicholas Milano
-                            after matter review. This is an estimate based on
-                            the information provided.
-                          </p>
-                        </div>
+                            <div className="text-[12px] text-[#E8DCC0] font-light mt-1">{p.summary}</div>
+                            <div className="text-[11px] text-[#9A9488] font-light mt-2">Payment is required before scheduling.</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--ms-gold)]/70 mb-1">Quote Status</div>
+                            <div className="text-lg font-semibold text-white">Ready for review</div>
+                            <div className="text-[12px] text-[#9A9488] font-light mt-1">
+                              We have enough information to begin. The Milano Seal will confirm your final execution route and quote.
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })()}
 
                   <div className="bg-[rgba(15,26,36,0.04)] border border-[rgba(198,165,90,0.2)] border-l-[3px] border-l-[var(--ms-gold)] px-5 py-4 rounded-sm mb-6">
                     <p className="text-[12px] text-[#9A9488] leading-relaxed font-light">
-                      All matters are reviewed by Nicholas Milano before
-                      execution is scheduled. Submission of this form does not
-                      create a legally binding engagement. You will receive a
-                      follow-up with next steps, scope confirmation, and pricing
-                      within one business day.
+                      All matters are reviewed by Nicholas Milano before execution is
+                      scheduled. Submitting this form does not create a binding
+                      engagement. You&apos;ll receive follow-up with next steps, scope
+                      confirmation, and pricing within one business day.
                     </p>
                   </div>
 
-                  {/* Founder Reassurance Card */}
-                  <div className="flex items-center gap-4 bg-[rgba(198,165,90,0.06)] border border-[rgba(198,165,90,0.2)] rounded-sm px-5 py-4 mb-5">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border border-[rgba(198,165,90,0.3)] flex-shrink-0 bg-[rgba(198,165,90,0.08)] flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/nicholas-milano.jpeg"
-                        alt="Nicholas Milano"
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          const t = e.currentTarget;
-                          t.style.display = "none";
-                          const parent = t.parentElement;
-                          if (parent) {
-                            parent.innerHTML = '<span class="text-[var(--ms-gold)] text-lg font-serif">N</span>';
-                          }
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] font-semibold text-[#E8DCC0]">Nicholas Milano</div>
-                      <div className="text-[10px] text-[#9A9488] mb-1.5">Founder · The Milano Seal™</div>
-                      <p className="text-[11px] text-[#9A9488] font-light leading-relaxed">
-                        Every matter is reviewed before execution begins.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Payment Gate Notice */}
                   <p className="text-[11px] text-[#9A9488] text-center mb-5 font-light">
                     No matter is scheduled or executed until scope is confirmed and payment is complete.
                   </p>
@@ -1666,9 +1217,7 @@ export function IntakeWizard({
                       label="I understand that all matters are reviewed before execution is scheduled"
                     />
                     {errors.consent && (
-                      <p className="text-[10.5px] text-red-300 mt-1">
-                        {errors.consent}
-                      </p>
+                      <p className="text-[10.5px] text-red-300 mt-1">{errors.consent}</p>
                     )}
                   </div>
 

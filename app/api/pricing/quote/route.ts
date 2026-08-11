@@ -1,84 +1,136 @@
 import { NextRequest, NextResponse } from "next/server";
-import { determineLaneAndPrice, type PricingData } from "@/lib/pricing";
+import {
+  calculatePrice,
+  determineLaneAndPrice,
+  type PricingData,
+} from "@/lib/pricing";
+import {
+  executionQuoteReviewReasons,
+  executionTruthToLegacy,
+  normalizeExecutionTruth,
+} from "@/lib/matter/executionTruth";
 
 export const runtime = "nodejs";
 
-interface QuoteInput {
+interface QuoteInput extends Record<string, unknown> {
   origin_state?: string;
   destination_country?: string;
   document_type?: string;
-  apostille_required?: boolean;
   docs_count?: number;
   signers?: number;
   witnesses?: number;
   witness_type?: "ron" | "in_person";
   after_hours?: boolean;
   urgency?: "standard" | "urgent";
-  mobile?: boolean;
   miles?: number;
   translation?: boolean;
   multi_country?: boolean;
 }
 
 const LANE_RATIONALE: Record<string, string> = {
-  RON_SIMPLE:
-    "Single-document Colorado RON path — base RON Simple lane applies.",
-  MOBILE_STANDARD:
-    "Florida mobile execution. Base lane plus round-trip mileage.",
-  Signature: "Standard international execution path.",
-  Priority:
-    "Multi-signer or translation triggers Priority lane (faster turnaround).",
-  Executive:
-    "Urgent or multi-country routing — Executive lane handles it end-to-end.",
+  Signature: "Standard execution lane from the resolved Matter scope.",
+  Priority: "The resolved Matter scope requires Priority coordination.",
+  Executive: "Urgent or multi-country handling requires Executive coordination.",
 };
+
+function canonicalLane(body: QuoteInput, apostille: boolean) {
+  if (body.urgency === "urgent") return "Executive" as const;
+  if (apostille || (body.signers ?? 1) > 1) return "Priority" as const;
+  return "Signature" as const;
+}
+
+function pricingTriggers(body: QuoteInput, lane: string, apostille: boolean) {
+  const triggers: string[] = [];
+  const truth = normalizeExecutionTruth(body);
+  triggers.push(`Execution: ${truth.execution_method.replaceAll("_", " ")}`);
+  triggers.push(
+    `Notarization: ${truth.notarization_requirement.replaceAll("_", " ")}`,
+  );
+  triggers.push(`Notarial act: ${truth.notarial_act.replaceAll("_", " ")}`);
+  triggers.push(
+    `Authentication: ${truth.authentication_requirement.replaceAll("_", " ")}`,
+  );
+  if ((body.signers ?? 1) > 1) triggers.push(`${body.signers} signers`);
+  if (body.translation) triggers.push("Translation coordination");
+  if (body.multi_country) triggers.push("Multi-country routing");
+  if (body.urgency === "urgent") triggers.push("Urgent handling");
+  if (apostille) triggers.push("Apostille coordination");
+  triggers.push(`Lane: ${lane}`);
+  return triggers;
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as QuoteInput;
+    const truth = normalizeExecutionTruth(body);
+    const reviewReasons = executionQuoteReviewReasons(truth);
 
-    const input: PricingData = {
-      state: body.origin_state,
-      apostille: body.apostille_required,
+    if (reviewReasons.length > 0) {
+      return NextResponse.json({
+        lane: "Review Required",
+        base: 0,
+        total: null,
+        witness_total: 0,
+        breakdown: [],
+        review_required: true,
+        rationale:
+          "Execution facts require operator resolution before a payment amount can be approved.",
+        triggers: reviewReasons,
+      });
+    }
+
+    const legacy = executionTruthToLegacy(truth);
+    const lane = canonicalLane(body, legacy.apostille_required);
+    const canonicalPricing = calculatePrice({
+      tier: lane.toLowerCase(),
+      document_count: Math.max(1, Number(body.docs_count ?? 1)),
+      signer_count: Math.max(1, Number(body.signers ?? 1)),
+      notarized_signature_count: legacy.notarization_required
+        ? Math.max(1, Number(body.signers ?? 1))
+        : 0,
+      apostille_count: legacy.apostille_required ? 1 : 0,
+      urgency: body.urgency === "urgent" ? "rush" : "standard",
+      shipping: "none",
+    });
+
+    // Witness calculation remains the legacy read-only projection used by intake.
+    // It is reported separately and does not replace the canonical total.
+    const witnessInput: PricingData = {
+      state: truth.execution_method === "ron" ? body.origin_state : undefined,
+      apostille: legacy.apostille_required,
       docs: body.docs_count,
       signers: body.signers,
       witnesses: body.witnesses,
       witness_type: body.witness_type,
       after_hours: body.after_hours,
       urgency: body.urgency,
-      mobile: body.mobile,
-      miles: body.miles,
+      mobile: legacy.mobile,
+      miles: truth.execution_method === "mobile" ? body.miles : 0,
       translation: body.translation,
       multi_country: body.multi_country,
     };
+    const witnessProjection = determineLaneAndPrice(witnessInput);
 
-    const result = determineLaneAndPrice(input);
-
-    const breakdown: { label: string; amount: number }[] = [
-      { label: `${result.lane} base`, amount: result.base },
-    ];
-    if (result.witness_total > 0) {
-      breakdown.push({
-        label: `Witnesses · ${body.witnesses ?? 0}`,
-        amount: result.witness_total,
-      });
-    }
-    for (const addon of result.addons) {
-      breakdown.push({ label: addon.item, amount: addon.amount });
-    }
+    const breakdown = canonicalPricing.breakdown.map((item) => ({
+      label: item.label,
+      amount: item.amount,
+    }));
 
     return NextResponse.json({
-      lane: result.lane,
-      base: result.base,
-      total: result.total,
-      witness_total: result.witness_total,
+      lane,
+      base: canonicalPricing.base,
+      total: canonicalPricing.total,
+      witness_total: witnessProjection.witness_total,
       breakdown,
-      rationale: LANE_RATIONALE[result.lane] ?? "Standard pricing applied.",
+      review_required: false,
+      rationale: LANE_RATIONALE[lane] ?? "Standard pricing applied.",
+      triggers: pricingTriggers(body, lane, legacy.apostille_required),
     });
-  } catch (err) {
-    console.error("[pricing/quote] error:", err);
+  } catch (error) {
+    console.error("[pricing/quote] error:", error);
     return NextResponse.json(
       { error: "Failed to compute quote" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

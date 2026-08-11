@@ -17,9 +17,25 @@ for (const phrase of ["PUBLIC_LIVE_ROUTES", "INTERNAL_DASHBOARD_ROUTES", "STAGED
 }
 if (!/function isProgrammaticAllowed\(\): boolean \{\s*return false;\s*\}/m.test(registry)) failures.push("isProgrammaticAllowed must return false");
 
-const publicRoutes = ["/", "/pricing", "/secure-portal", "/intake", "/intake/confirmation", "/map", "/apostille/italy", "/apostille/brazil"];
+const publicRoutes = [
+  "/",
+  "/pricing",
+  "/secure-portal",
+  "/intake",
+  "/intake/confirmation",
+  "/map",
+  "/apostille/italy",
+  "/apostille/brazil",
+  "/international-affidavits",
+  "/international-affidavit",
+  "/power-of-attorney-international",
+  "/affidavit-name-discrepancy",
+  "/affidavit-one-and-the-same",
+  "/affidavit-non-existence-record",
+  "/affidavit-translation-accuracy",
+];
 const internalRoutes = ["/dashboard", "/dashboard/command-center", "/dashboard/discounts", "/dashboard/referrals", "/dashboard/seo-authority", "/dashboard/compliance-atlas", "/dashboard/operator-terminal", "/dashboard/invoices", "/dashboard/intelligence/sales-lab"];
-const stagedRoutes = ["/international-affidavit", "/power-of-attorney-international", "/affidavit-name-discrepancy", "/affidavit-one-and-the-same", "/affidavit-non-existence-record", "/affidavit-translation-accuracy", "/fbi-apostille", "/international-notary", "/remote-online-notary"];
+const stagedRoutes = ["/fbi-apostille", "/international-notary", "/remote-online-notary"];
 
 for (const route of publicRoutes) {
   if (!registry.includes(`"${route}"`)) failures.push(`Missing public live route: ${route}`);
@@ -30,7 +46,7 @@ for (const route of [...internalRoutes, ...stagedRoutes]) {
 if (!registry.includes("return [...PUBLIC_LIVE_ROUTES]")) failures.push("Sitemap does not return only public live routes");
 if (!registry.includes("return [...INTERNAL_DASHBOARD_ROUTES, ...STAGED_AUTHORITY_ROUTES]")) failures.push("Noindex routes do not include internal + staged routes");
 
-for (const phrase of ["Live public routes", "Internal dashboard routes", "Staged authority routes", "Future programmatic SEO rules", "Sitemap logic", "Noindex rules", "Do not create 2400 pages"]) {
+for (const phrase of ["Live public routes", "Internal dashboard routes", "Staged authority routes", "Future programmatic SEO rules", "Sitemap logic", "Noindex rules", "Do not create 2400 pages", "International Affidavit Library"]) {
   if (!docs.includes(phrase)) failures.push(`Route registry docs missing: ${phrase}`);
 }
 

@@ -26,7 +26,7 @@ async function authorize(id: string): Promise<{ ok: boolean; actorEmail: string 
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, actorEmail: null };
 
-  const role = (user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined;
+  const role = (user.app_metadata?.role ?? user.app_metadata?.role) as string | undefined;
   if (role && OPERATOR_ROLES.has(role)) {
     return { ok: true, actorEmail: user.email ?? user.id };
   }

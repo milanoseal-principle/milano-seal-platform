@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveServerRole } from "@/lib/auth/server-role";
 import { redirect } from "next/navigation";
 
 const VA_ROLES = new Set([
@@ -30,8 +31,7 @@ export async function requireVAAccess(): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/va/dashboard");
-  const role =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const role = await resolveServerRole(user);
   if (!isVARole(role)) redirect("/login?error=access_denied");
   return { userId: user.id, role };
 }
