@@ -92,9 +92,6 @@ test("founder manual payment-confirm endpoint is disabled", () => {
 });
 
 test("review-required mobile capture preserves mileage", () => {
-  const reviewStart = intakeRoute.indexOf("const reviewPayload = {");
-  const reviewEnd = intakeRoute.indexOf("const { data: reviewDeal");
-  const reviewPayload = intakeRoute.slice(reviewStart, reviewEnd);
   const reviewStart = intake.indexOf("const reviewPayload = {");
   const reviewEnd = intake.indexOf("const { data: reviewDeal");
   const reviewPayload = intake.slice(reviewStart, reviewEnd);
