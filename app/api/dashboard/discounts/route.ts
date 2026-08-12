@@ -84,6 +84,7 @@ export async function POST(request: Request) {
   if (!new Set(["percentage", "fixed_amount"]).has(body.discount_type)) {
     return NextResponse.json({ error: "Invalid discount_type" }, { status: 400 });
   }
+  if (body.discount_value <= 0 || (body.discount_type === "percentage" && body.discount_value > 100)) {
   if (
     body.discount_value <= 0 ||
     (body.discount_type === "percentage" && body.discount_value > 100)
@@ -109,6 +110,10 @@ export async function POST(request: Request) {
       usage_count: 0,
       starts_at: body.starts_at ?? null,
       expires_at: body.expires_at ?? null,
+      internal_reason: body.internal_reason ?? null,
+      client_label: body.client_label ?? "Milano Seal courtesy adjustment",
+      matter_id: body.matter_id ?? null,
+      client_id: body.client_id ?? null,
       internal_reason: body.internal_reason.trim(),
       client_label: body.client_label ?? "Milano Seal courtesy adjustment",
       matter_id: body.matter_id ?? null,

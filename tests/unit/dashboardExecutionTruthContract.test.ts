@@ -8,6 +8,10 @@ const dashboard = fs.readFileSync(
   path.join(root, "app/dashboard/intake/page.tsx"),
   "utf8",
 );
+const intake = fs.readFileSync(
+  path.join(root, "app/api/intake/route.ts"),
+  "utf8",
+);
 const intakeRoute = fs.readFileSync(
   path.join(root, "app/api/intake/route.ts"),
   "utf8",

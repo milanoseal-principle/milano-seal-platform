@@ -14,6 +14,10 @@ import {
 // is cleared, and the Matter can never become scheduled/executed unpaid.
 
 const root = process.cwd();
+const intake = fs.readFileSync(
+  path.join(root, "app/api/intake/route.ts"),
+  "utf8",
+);
 const intakeRoute = fs.readFileSync(
   path.join(root, "app/api/intake/route.ts"),
   "utf8",
