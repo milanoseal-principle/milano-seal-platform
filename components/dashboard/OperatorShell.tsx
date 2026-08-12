@@ -26,7 +26,6 @@ const NAV = [
   { href: "/dashboard/dispatch", label: "Dispatch", icon: Boxes },
   { href: "/alliance/dashboard", label: "Alliance", icon: Handshake },
   { href: "/dashboard/compliance-atlas", label: "Compliance", icon: ClipboardCheck },
-  { href: "/dashboard/discounts", label: "Payments", icon: BadgeDollarSign },
   { href: "/dashboard/payments", label: "Payments", icon: BadgeDollarSign },
   { href: "/dashboard/payments/discounts", label: "Discount Codes", icon: Percent },
   { href: "/dashboard/payments/discounts/report", label: "Discount Report", icon: BarChart3 },
