@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
 import { AllianceToolbeltMatrix, type ToolbeltModuleStatus } from "@/components/alliance/AllianceToolbeltMatrix";
+import { AllianceProfessionalTools } from "@/components/alliance/AllianceProfessionalTools";
 
 async function getToolbeltProgress(partnerId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
@@ -39,7 +40,7 @@ export default async function AllianceToolbeltPage() {
       firmName={partner?.firm_name ?? undefined}
       routingEligible={partner?.routing_eligible ?? false}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 1000 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 1200 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase", color: "#A8A29A", marginBottom: 8 }}>
@@ -61,6 +62,7 @@ export default async function AllianceToolbeltPage() {
         </div>
 
         <AllianceToolbeltMatrix progress={progress} />
+        <AllianceProfessionalTools />
       </div>
     </AllianceShell>
   );
