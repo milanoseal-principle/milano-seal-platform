@@ -1,3 +1,5 @@
+import { APOSTILLE_FEES, TIERS } from "../pricing";
+
 export const PUBLIC_PRICING_LANGUAGE = `Pricing is issued after review.
 
 Every matter is reviewed for:
@@ -17,14 +19,16 @@ The Milano Seal™ does not compete as a low-cost document checkout service.
 We provide structured international document execution, apostille/authentication coordination, secure matter tracking, and controlled final release.
 `;
 
+// Secondary pricing intelligence must derive from lib/pricing.ts.
+// Do not duplicate Milano Seal lane or apostille prices in this module.
 export const INTERNAL_BASES = {
-  signature: 750,
-  priority: 975,
-  executive: 1850,
+  signature: TIERS.signature.base,
+  priority: TIERS.priority.base,
+  executive: TIERS.executive.base,
   route_review_min: 95,
   route_review_max: 175,
-  apostille_first_min: 275,
-  apostille_first_max: 495,
+  apostille_first_min: APOSTILLE_FEES.first,
+  apostille_first_max: APOSTILLE_FEES.first,
 };
 
 export const PRICING_RULES = {

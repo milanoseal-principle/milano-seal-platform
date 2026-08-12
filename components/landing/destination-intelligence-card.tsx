@@ -109,7 +109,7 @@ export function buildDestinationIntelligence(
   const verificationRequired = destination.slug === "uae";
   const hagueRoute = destination.hague || destination.slug === "mexico";
   const routeLabel = verificationRequired
-    ? "Legalization Review Required"
+    ? "Consular Legalization Review"
     : hagueRoute
       ? "Hague Apostille Route"
       : "Consular Authentication Route";
@@ -119,7 +119,7 @@ export function buildDestinationIntelligence(
       ? "Hague Member"
       : "Non-Hague Route";
   const routeProcess = verificationRequired
-    ? "receiving-authority and consular review"
+    ? "Non-Hague authentication and consular review"
     : hagueRoute
       ? "apostille coordination"
       : "authentication and consular review";
@@ -130,7 +130,9 @@ export function buildDestinationIntelligence(
     flag: destination.flag,
     routeLabel,
     statusLabel,
-    summary: `Florida-origin documents intended for ${destination.name} may require notarization review, ${routeProcess}, and secure release depending on the receiving authority.`,
+    summary: verificationRequired
+      ? "Non-Hague authentication and consular review may apply. The required route must be verified against the document type, originating authority, and receiving party before execution."
+      : `Florida-origin documents intended for ${destination.name} may require notarization review, ${routeProcess}, and secure release depending on the receiving authority.`,
     documents: documentChips(destination),
     seoLine:
       ROUTE_COPY[destination.slug] ??
@@ -141,7 +143,15 @@ export function buildDestinationIntelligence(
     courierReview: destination.executionPath.some((step) =>
       /courier|delivery|release/i.test(step),
     ),
-    pathPreview: destination.executionPath.slice(0, 5),
+    pathPreview: verificationRequired
+      ? [
+          "Mobile notarization review",
+          "Florida authentication review",
+          "U.S. Department of State review",
+          "UAE embassy or consular review",
+          "Courier delivery",
+        ]
+      : destination.executionPath.slice(0, 5),
   };
 }
 
@@ -161,6 +171,7 @@ export function DestinationIntelligenceCard({
 
   const compact = variant === "globePreview" || variant === "atlas";
   const directory = variant === "countryDirectory";
+  const uaeCard = data.slug === "uae";
   const intakeHref = `/intake?destination=${encodeURIComponent(data.slug)}&country=${encodeURIComponent(data.name)}${matter ? `&matter=${encodeURIComponent(matter)}` : ""}`;
   const secondaryHref =
     variant === "countryDirectory"
@@ -178,12 +189,12 @@ export function DestinationIntelligenceCard({
   return (
     <article
       data-critical-card=""
-      className={`group relative overflow-hidden transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[var(--ms-gold)]/38 hover:shadow-[0_24px_70px_rgba(0,0,0,0.5),inset_0_0_30px_rgba(198,165,90,0.05)] motion-reduce:transform-none motion-reduce:transition-none ${SURFACE_CLASSES[variant]} ${className}`}
+      className={`group relative overflow-hidden transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[var(--ms-gold)]/38 hover:shadow-[0_24px_70px_rgba(0,0,0,0.5),inset_0_0_30px_rgba(198,165,90,0.05)] motion-reduce:transform-none motion-reduce:transition-none ${SURFACE_CLASSES[variant]} ${uaeCard ? "mx-4 mb-[calc(env(safe-area-inset-bottom)+7rem)] max-h-none w-[calc(100vw-32px)] max-w-full rounded-[24px] p-5 sm:mx-0 sm:mb-0 sm:w-auto sm:p-7" : ""} ${className}`}
       aria-label={`${data.name} document routing preview`}
     >
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#E1C36F]/70 to-transparent opacity-70" />
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-3 min-[390px]:flex-row min-[390px]:gap-4">
         <div className="flex min-w-0 items-center gap-3">
           {data.flag && (
             <span className={compact ? "text-xl" : "text-3xl"} aria-hidden="true">
@@ -195,7 +206,7 @@ export function DestinationIntelligenceCard({
               {directory ? "Priority Corridor" : "Execution Intelligence"}
             </p>
             <h3
-              className={`${compact ? "text-lg" : "text-2xl"} mt-1 font-serif text-white`}
+              className={`${compact ? "text-lg" : uaeCard ? "text-[1.5rem]" : "text-2xl"} mt-1 font-serif leading-tight text-white`}
             >
               {data.name}
             </h3>
@@ -212,18 +223,18 @@ export function DestinationIntelligenceCard({
         </span>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className={`${compact ? "mt-3" : "mt-4"} flex items-center gap-2`}>
         <Route className="h-3.5 w-3.5 shrink-0 text-[var(--ms-gold)]" />
         <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--ms-gold)]/80">
           {data.routeLabel}
         </p>
       </div>
 
-      <p className={`${compact ? "text-[11px]" : "text-sm"} mt-3 leading-relaxed text-white/52`}>
+      <p className={`${compact ? "mt-2 text-[12.5px] leading-5" : "mt-3 text-base leading-7"} text-white/58 sm:text-sm sm:leading-relaxed`}>
         {data.summary}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className={`${compact ? "mt-3" : "mt-4"} flex flex-wrap gap-1.5`}>
         {data.documents.slice(0, compact ? 3 : 5).map((document) => (
           <span
             key={document}
@@ -236,16 +247,18 @@ export function DestinationIntelligenceCard({
       </div>
 
       {!directory && (
-        <div className={`mt-4 grid ${compact ? "gap-1.5" : "gap-2 sm:grid-cols-3"}`}>
-          {data.pathPreview.map((step, index) => (
+        <div className={`${compact ? "mt-3" : "mt-4"} grid ${compact || uaeCard ? "gap-1.5" : "gap-2 sm:grid-cols-3"}`}>
+          {data.pathPreview
+            .slice(0, compact ? 4 : data.pathPreview.length)
+            .map((step, index) => (
             <div
               key={step}
-              className="flex items-start gap-2 rounded-lg border border-white/[0.055] bg-white/[0.015] px-2.5 py-2"
+              className={`flex items-center gap-2 rounded-lg border border-white/[0.055] bg-white/[0.015] ${compact ? "min-h-0 px-3 py-1.5" : "min-h-12 px-4 py-3"}`}
             >
               <span className="font-mono text-[8px] text-[var(--ms-gold)]/65">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span className="text-[9px] leading-4 text-white/42">{step}</span>
+              <span className={`text-white/52 ${compact ? "text-[11px] leading-4" : "text-sm leading-5 sm:text-[9px] sm:leading-4"}`}>{step}</span>
             </div>
           ))}
         </div>
@@ -270,21 +283,21 @@ export function DestinationIntelligenceCard({
         </div>
       )}
 
-      <p className="mt-4 text-[10px] leading-5 text-[var(--ms-gold)]/48">
+      <p className={`${compact ? "mt-3" : "mt-4"} text-[10px] leading-5 text-[var(--ms-gold)]/48`}>
         {data.seoLine}
       </p>
 
       <ExecutionComplianceBoundary
         text={getPublicCountryExecutionIntelligence(data.slug, data.name).complianceBoundary}
-        className="mt-3"
+        className={compact ? "mt-2" : "mt-3"}
       />
 
-      <div className={`mt-4 flex ${compact ? "gap-2" : "flex-col gap-2 sm:flex-row"}`}>
+      <div className={`grid ${compact ? "mt-3 grid-cols-2 gap-2" : "mt-4 grid-cols-1 gap-3 min-[480px]:grid-cols-2"}`}>
         <Link
           href={intakeHref}
           onClick={onPrimaryAction}
           aria-label={`Begin secure intake for ${data.name}`}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
+          className="inline-flex min-h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-3 py-2.5 font-mono text-sm font-bold uppercase tracking-[0.11em] text-[#050507] transition-colors hover:bg-[#D4B76A] sm:text-[8px]"
         >
           Begin Secure Intake
           <ArrowRight className="h-3 w-3" />
@@ -292,7 +305,7 @@ export function DestinationIntelligenceCard({
         <Link
           href={secondaryHref}
           aria-label={`${secondaryLabel} for ${data.name}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--ms-gold)]/22 px-3 py-2.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[var(--ms-gold)]/78 transition-colors hover:border-[var(--ms-gold)]/50 hover:text-[var(--ms-gold)]"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[var(--ms-gold)]/22 px-3 py-2.5 font-mono text-sm uppercase tracking-[0.1em] text-[var(--ms-gold)]/78 transition-colors hover:border-[var(--ms-gold)]/50 hover:text-[var(--ms-gold)] sm:text-[8px]"
         >
           {secondaryLabel}
         </Link>

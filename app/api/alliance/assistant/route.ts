@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   const role =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+    ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
   if (!ALLOWED_ROLES.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

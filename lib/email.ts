@@ -20,14 +20,11 @@ function base(content: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;">
     <tr><td align="center" style="padding:40px 16px;">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111111;border:1px solid #2A2A2A;border-radius:16px;overflow:hidden;">
-        <!-- Header -->
         <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #1A1A1A;">
           <p style="margin:0 0 4px;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:#C6A55A;font-family:Arial,sans-serif;">The Milano Seal™</p>
           <p style="margin:0;font-size:11px;color:#6A6A6A;font-family:Arial,sans-serif;letter-spacing:0.1em;text-transform:uppercase;">Intl. Document Execution · Florida Notary #668288</p>
         </td></tr>
-        <!-- Body -->
         <tr><td style="padding:36px 40px;">${content}</td></tr>
-        <!-- Footer -->
         <tr><td style="padding:24px 40px;border-top:1px solid #1A1A1A;background:#0A0A0A;">
           <p style="margin:0 0 6px;font-size:11px;color:#6A6A6A;font-family:Arial,sans-serif;">Questions? Reply to this email or contact Nicholas directly.</p>
           <p style="margin:0;font-size:11px;color:#4A4A4A;font-family:Arial,sans-serif;">The Milano Seal™ · Milano Seal International, LLC · <a href="${SITE}" style="color:#C6A55A;text-decoration:none;">${SITE.replace("https://", "")}</a></p>
@@ -58,8 +55,6 @@ function infoRow(label: string, value: string): string {
   </tr>`;
 }
 
-// ── 1. INTAKE CONFIRMATION ─────────────────────────────────────────────────
-
 export async function sendIntakeConfirmation({
   to,
   name,
@@ -88,34 +83,36 @@ export async function sendIntakeConfirmation({
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 28px;">
       ${infoRow("Reference", dealId)}
       ${infoRow("Execution Lane", lane)}
-      ${infoRow("Total Investment", `$${Number(total).toLocaleString()} USD`)}
-      ${infoRow("Retainer Due (50%)", `$${Number(retainer).toLocaleString()} USD`)}
+      ${infoRow("Final Service Total", `$${Number(total).toLocaleString()} USD`)}
+      ${infoRow("Amount Due Now", `$${Number(retainer).toLocaleString()} USD`)}
     </table>
 
-    ${p("To get started, pay your retainer securely via Wise. Once received, your matter moves to scheduling immediately.")}
+    ${p("To get started, complete the amount due securely through Wise. Scheduling remains locked until Wise confirms the exact payment amount, currency, and reference.")}
 
     <div style="margin:0 0 28px;">
-      ${goldBtn(paymentLink, "Pay Retainer — $" + Number(retainer).toLocaleString() + " USD")}
+      ${goldBtn(paymentLink, "Continue to Wise — $" + Number(retainer).toLocaleString() + " USD")}
     </div>
 
-    ${p(`You can track your matter progress and upload documents through your secure client portal:`)}
+    ${p("You can track your matter progress and payment status through your secure client portal:")}
 
     <div style="margin:0 0 28px;">
       <a href="${portalUrl}" style="font-size:13px;color:#C6A55A;font-family:Arial,sans-serif;">${portalUrl}</a>
     </div>
 
-    ${p("Wise is the primary payment method. A Stripe payment link may be provided upon request. Contact us directly for payment arrangements.")}
+    ${p("Wise Business is the payment method for this Matter. Payment is not treated as confirmed until server-side reconciliation is complete.")}
   `);
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: `Matter Received — ${dealId} · The Milano Seal™`,
-    html,
-  }).catch((err) => console.error("[email] intake confirmation failed:", err));
+  await getResend()
+    .emails.send({
+      from: FROM,
+      to,
+      subject: `Matter Received — ${dealId} · The Milano Seal™`,
+      html,
+    })
+    .catch((err) =>
+      console.error("[email] intake confirmation failed:", err),
+    );
 }
-
-// ── 2. SCHEDULED ──────────────────────────────────────────────────────────
 
 export async function sendScheduledNotification({
   to,
@@ -160,15 +157,17 @@ export async function sendScheduledNotification({
     </div>
   `);
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: `Appointment Confirmed — ${dealId} · The Milano Seal™`,
-    html,
-  }).catch((err) => console.error("[email] scheduled notification failed:", err));
+  await getResend()
+    .emails.send({
+      from: FROM,
+      to,
+      subject: `Appointment Confirmed — ${dealId} · The Milano Seal™`,
+      html,
+    })
+    .catch((err) =>
+      console.error("[email] scheduled notification failed:", err),
+    );
 }
-
-// ── 3. SHIPPED ────────────────────────────────────────────────────────────
 
 export async function sendShippedNotification({
   to,
@@ -201,29 +200,35 @@ export async function sendShippedNotification({
       ${trackingNumber ? infoRow("Tracking Number", trackingNumber) : ""}
     </table>
 
-    ${balanceAmount && balanceLink ? `
+    ${
+      balanceAmount && balanceLink
+        ? `
     <div style="background:#0A0A0A;border:1px solid #C6A55A33;border-radius:12px;padding:24px;margin:0 0 28px;">
       <p style="margin:0 0 8px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#C6A55A;font-family:Arial,sans-serif;">Balance Due</p>
       <p style="margin:0 0 16px;font-size:22px;color:#FFFFFF;font-family:Arial,sans-serif;font-weight:700;">$${Number(balanceAmount).toLocaleString()} USD</p>
       <p style="margin:0 0 16px;font-size:13px;color:#B0B0B0;font-family:Arial,sans-serif;line-height:1.6;">Your matter has shipped. Please settle the remaining balance at your earliest convenience.</p>
       ${goldBtn(balanceLink, "Pay Balance — $" + Number(balanceAmount).toLocaleString() + " USD")}
     </div>
-    ` : ""}
+    `
+        : ""
+    }
 
     <div style="margin:0 0 28px;">
       ${goldBtn(portalUrl, "Track Your Matter")}
     </div>
   `);
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: `Documents Shipped — ${dealId} · The Milano Seal™`,
-    html,
-  }).catch((err) => console.error("[email] shipped notification failed:", err));
+  await getResend()
+    .emails.send({
+      from: FROM,
+      to,
+      subject: `Documents Shipped — ${dealId} · The Milano Seal™`,
+      html,
+    })
+    .catch((err) =>
+      console.error("[email] shipped notification failed:", err),
+    );
 }
-
-// ── 4. COMPLETED ──────────────────────────────────────────────────────────
 
 export async function sendCompletedNotification({
   to,
@@ -251,10 +256,14 @@ export async function sendCompletedNotification({
     ${p("If you require additional document services in the future, we are here. Reply to this email or visit themilanoseal.com.")}
   `);
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: `Matter Complete — ${dealId} · The Milano Seal™`,
-    html,
-  }).catch((err) => console.error("[email] completed notification failed:", err));
+  await getResend()
+    .emails.send({
+      from: FROM,
+      to,
+      subject: `Matter Complete — ${dealId} · The Milano Seal™`,
+      html,
+    })
+    .catch((err) =>
+      console.error("[email] completed notification failed:", err),
+    );
 }

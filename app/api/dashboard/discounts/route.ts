@@ -1,27 +1,40 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeDiscountCode } from "@/lib/discountCodes";
 
 export const runtime = "nodejs";
 
+const MANAGER_ROLES = new Set([
+  "founder",
+  "founder_admin",
+  "admin",
+  "admin_operator",
+]);
+
 async function requireFounderOrAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
-  const role = ((user.app_metadata?.role ?? user.user_metadata?.role) as string) ?? "";
-  const allowed = new Set(["founder", "founder_admin", "admin", "admin_operator", "ops_manager"]);
-  return allowed.has(role) ? { user, role } : null;
+  const role = String(user.app_metadata?.role ?? "");
+  return MANAGER_ROLES.has(role) ? { user, role } : null;
 }
 
 export async function GET() {
-  if (!await requireFounderOrAdmin()) {
+  if (!(await requireFounderOrAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("discount_codes")
-    .select("id,code,discount_type,discount_value,applies_to,client_id,attorney_profile_id,matter_id,usage_limit,usage_count,expiration_date,internal_reason,client_label,status,created_at,updated_at")
+    .select(
+      "id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to,client_id,attorney_profile_id,matter_id,internal_reason,client_label,created_by,updated_by,metadata,created_at,updated_at",
+    )
     .order("created_at", { ascending: false });
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data });
 }
@@ -30,54 +43,97 @@ export async function POST(request: Request) {
   const auth = await requireFounderOrAdmin();
   if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-  const body = await request.json() as {
-    code?: string; discount_type?: string; discount_value?: number;
-    applies_to?: string; usage_limit?: number; expiration_date?: string;
-    internal_reason?: string; client_label?: string;
+  const body = (await request.json()) as {
+    code?: string;
+    discount_type?: "percentage" | "fixed_amount";
+    discount_value?: number;
+    applies_to?: "eligible_subtotal" | "specific_line_items" | "matter_total";
+    usage_limit?: number | null;
+    starts_at?: string | null;
+    expires_at?: string | null;
+    internal_reason?: string | null;
+    client_label?: string | null;
+    matter_id?: string | null;
+    client_id?: string | null;
   };
 
   if (!body.code || !body.discount_type || body.discount_value === undefined) {
-    return NextResponse.json({ error: "code, discount_type, and discount_value are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "code, discount_type, and discount_value are required" },
+      { status: 400 },
+    );
+  }
+
+  if (!new Set(["percentage", "fixed_amount"]).has(body.discount_type)) {
+    return NextResponse.json({ error: "Invalid discount_type" }, { status: 400 });
+  }
+  if (body.discount_value <= 0 || (body.discount_type === "percentage" && body.discount_value > 100)) {
+    return NextResponse.json({ error: "Invalid discount_value" }, { status: 400 });
+  }
+  if (body.usage_limit !== undefined && body.usage_limit !== null && body.usage_limit < 1) {
+    return NextResponse.json({ error: "usage_limit must be at least 1" }, { status: 400 });
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin.from("discount_codes").insert({
-    code: body.code.toUpperCase().trim(),
-    discount_type: body.discount_type === "PERCENTAGE" || body.discount_type === "percent" ? "percentage"
-      : body.discount_type === "FLAT_AMOUNT" || body.discount_type === "flat" || body.discount_type === "fixed" ? "fixed_amount"
-      : body.discount_type,
-    discount_value: body.discount_value,
-    applies_to: body.applies_to ?? "service_fee",
-    usage_limit: body.usage_limit ?? null,
-    expiration_date: body.expiration_date ?? null,
-    internal_reason: body.internal_reason ?? "",
-    client_label: body.client_label ?? "Milano Seal courtesy adjustment",
-    status: "ACTIVE",
-    created_by: auth.user.id,
-  }).select().single();
+  const { data, error } = await admin
+    .from("discount_codes")
+    .insert({
+      code: normalizeDiscountCode(body.code),
+      discount_type: body.discount_type,
+      discount_value: body.discount_value,
+      applies_to: body.applies_to ?? "eligible_subtotal",
+      usage_limit: body.usage_limit ?? null,
+      usage_count: 0,
+      starts_at: body.starts_at ?? null,
+      expires_at: body.expires_at ?? null,
+      internal_reason: body.internal_reason ?? null,
+      client_label: body.client_label ?? "Milano Seal courtesy adjustment",
+      matter_id: body.matter_id ?? null,
+      client_id: body.client_id ?? null,
+      // Creation never silently activates a courtesy code. Founder/admin must
+      // explicitly activate it after reviewing scope and eligibility.
+      status: "inactive",
+      created_by: auth.user.id,
+      updated_by: auth.user.id,
+    })
+    .select()
+    .single();
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data }, { status: 201 });
 }
 
 export async function PATCH(request: Request) {
-  if (!await requireFounderOrAdmin()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
-  const body = await request.json() as {
-    id?: string; status?: string; expiration_date?: string;
-    usage_limit?: number; client_label?: string; internal_reason?: string;
+  const auth = await requireFounderOrAdmin();
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+  const body = (await request.json()) as {
+    id?: string;
+    status?: "inactive" | "active" | "exhausted" | "expired" | "revoked";
+    starts_at?: string | null;
+    expires_at?: string | null;
+    usage_limit?: number | null;
+    client_label?: string;
+    internal_reason?: string;
   };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const update: Record<string, unknown> = {};
+  const update: Record<string, unknown> = { updated_by: auth.user.id };
   if (body.status !== undefined) update.status = body.status;
-  if (body.expiration_date !== undefined) update.expiration_date = body.expiration_date;
+  if (body.starts_at !== undefined) update.starts_at = body.starts_at;
+  if (body.expires_at !== undefined) update.expires_at = body.expires_at;
   if (body.usage_limit !== undefined) update.usage_limit = body.usage_limit;
   if (body.client_label !== undefined) update.client_label = body.client_label;
   if (body.internal_reason !== undefined) update.internal_reason = body.internal_reason;
 
   const admin = createAdminClient();
-  const { error } = await admin.from("discount_codes").update(update).eq("id", body.id);
+  const { data, error } = await admin
+    .from("discount_codes")
+    .update(update)
+    .eq("id", body.id)
+    .select()
+    .single();
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ data });
 }

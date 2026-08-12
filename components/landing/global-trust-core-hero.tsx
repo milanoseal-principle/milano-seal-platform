@@ -199,19 +199,33 @@ export function GlobalTrustCoreHero() {
   const showArcs   = !!activeId;
   const isRotating = phase === "rotating" && !selectedId;
 
-  // Popover placement — pinned to a viewport-safe zone (fixed, clamped) so it
-  // never clips or overflows on smaller / non-maximized windows or at any zoom.
+  // Popover placement — dynamic (desktop). The globe lives in the hero's right
+  // column, so a fixed top-right popover buries the cinematics. Instead we anchor
+  // the card in the quadrant OPPOSITE the selected node (node coords are in the
+  // globe's 0–400 space, centred on ~200/190), so different selections open the
+  // card in different spots and the active node + globe stay visible. Clamped to
+  // the viewport (dvh + safe-area) so it never clips at any size or zoom.
+  const nodeOnRightHalf = (selectedDest?.x ?? 200) >= 200;
+  const nodeOnTopHalf = (selectedDest?.y ?? 200) < 190;
   const popoverStyle: React.CSSProperties = {
     position: "fixed",
-    top: "calc(var(--header-total-height) + 16px + var(--sa-top, 0px))",
-    right: "clamp(12px, 3vw, 32px)",
-    left: "auto",
-    bottom: "auto",
+    ...(nodeOnRightHalf
+      ? { left: "clamp(12px, 3vw, 40px)", right: "auto" }
+      : { right: "clamp(12px, 3vw, 40px)", left: "auto" }),
+    ...(nodeOnTopHalf
+      ? { bottom: "calc(20px + var(--sa-bottom, 0px))", top: "auto" }
+      : {
+          top: "calc(var(--header-total-height) + 16px + var(--sa-top, 0px))",
+          bottom: "auto",
+        }),
     width: "min(360px, calc(100vw - 24px))",
-    maxHeight: "calc(100dvh - var(--header-total-height) - 32px)",
+    maxHeight:
+      "calc(100dvh - var(--header-total-height) - var(--sa-top, 0px) - 32px)",
     overflowY: "auto",
+    overscrollBehavior: "contain",
     zIndex: 60,
     pointerEvents: "auto",
+    transition: "top 0.35s ease, bottom 0.35s ease, left 0.35s ease, right 0.35s ease",
   };
 
   return (
@@ -608,10 +622,18 @@ export function GlobalTrustCoreHero() {
              positioning so it never disturbs the globe's absolute layout. ──── */}
       {selectedDest && (
         <div
-          className="ms-destination-mobile-card md:hidden fixed inset-x-3 bottom-3 z-40 flex justify-center"
+          className="ms-destination-mobile-card md:hidden fixed inset-x-3 z-40 flex justify-center"
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative w-full max-w-[420px]">
+          <div
+            className="relative w-full max-w-[420px] overflow-y-auto"
+            style={{
+              maxHeight:
+                "calc(100dvh - var(--header-total-height) - var(--sa-top, 0px) - 1.5rem)",
+              overscrollBehavior: "contain",
+            }}
+          >
             <button
               onClick={() => setSelectedId(null)}
               aria-label="Close"

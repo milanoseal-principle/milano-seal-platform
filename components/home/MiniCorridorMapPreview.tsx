@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import Link from "next/link";
 import {
   FLORIDA_ORIGIN,
   type HomeExecutionCorridor,
@@ -22,26 +23,21 @@ function projectY(lat: number) {
   return ((90 - lat) / 180) * H;
 }
 
-// Simplified continent silhouettes in screen-space (equirectangular).
-// Low-detail on purpose — a refined cartographic backdrop, not the full Atlas.
-const CONTINENTS: string[] = [
-  // North America
-  "M52 40 L70 30 L95 27 L112 33 L116 44 L104 52 L101 60 L95 64 L90 75 L84 70 L82 58 L72 56 L64 50 L56 48 Z",
-  // Greenland
-  "M120 22 L133 20 L135 30 L124 33 Z",
-  // South America
-  "M100 80 L113 78 L123 87 L125 101 L117 121 L110 139 L104 132 L106 112 L100 98 Z",
-  // Europe
-  "M168 38 L186 33 L201 35 L209 42 L199 48 L188 47 L178 51 L170 46 Z",
-  // Africa
-  "M176 56 L201 54 L215 63 L221 81 L211 101 L201 117 L193 110 L189 92 L181 78 L175 66 Z",
-  // Asia
-  "M210 32 L251 26 L291 30 L321 40 L327 52 L311 60 L291 58 L271 64 L251 60 L236 66 L223 58 L214 46 Z",
-  // India peninsula
-  "M250 62 L263 64 L259 79 L252 72 Z",
-  // Australia
-  "M296 104 L321 102 L333 112 L327 126 L309 128 L299 118 Z",
-];
+// Refined dot-matrix world field. A sleek "global authority network" backdrop
+// rather than hand-drawn continent polygons — reads premium and never amateur.
+const DOT_COLS = 46;
+const DOT_ROWS = 22;
+const DOTS = Array.from({ length: DOT_COLS * DOT_ROWS }, (_, i) => {
+  const col = i % DOT_COLS;
+  const row = Math.floor(i / DOT_COLS);
+  const x = (col + 0.5) * (W / DOT_COLS);
+  const y = (row + 0.5) * (H / DOT_ROWS);
+  // Deterministic opacity variation (no Math.random — stable SSR/CSR).
+  const seed = (col * 13 + row * 29 + col * row * 7) % 11;
+  const opacity = 0.05 + (seed % 4) * 0.02;
+  const r = seed % 7 === 0 ? 0.9 : 0.6;
+  return { x, y, r, opacity };
+});
 
 export function MiniCorridorMapPreview({ corridor }: Props) {
   const uid = useId().replace(/:/g, "");
@@ -73,17 +69,17 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
   const accent = hague ? "var(--ms-gold)" : "#E0876E";
 
   return (
-    <div className="rounded-xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4">
+    <div className="rounded-2xl border border-[var(--ms-gold)]/20 bg-[#070709] p-4 sm:p-5 ms-atlas-corridor-preview">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="font-mono text-[8px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">
-          Route Map
+        <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--ms-gold)]/75">
+          Atlas Corridor Preview
         </p>
         <span className="text-lg leading-none">{corridor.flag}</span>
       </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full rounded-lg border border-[var(--ms-gold)]/10"
+        className="h-[170px] max-h-[210px] min-h-[170px] w-full rounded-lg border border-[var(--ms-gold)]/10 sm:h-auto sm:max-h-none"
         role="img"
         aria-label={`Corridor map from Florida to ${corridor.country}`}
       >
@@ -118,16 +114,10 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
           ))}
         </g>
 
-        {/* Continents */}
-        <g
-          fill="var(--ms-gold)"
-          fillOpacity={0.07}
-          stroke="var(--ms-gold)"
-          strokeOpacity={0.22}
-          strokeWidth={0.5}
-        >
-          {CONTINENTS.map((d, i) => (
-            <path key={i} d={d} />
+        {/* Global dot-matrix field */}
+        <g fill="var(--ms-gold)">
+          {DOTS.map((dot, i) => (
+            <circle key={i} cx={dot.x} cy={dot.y} r={dot.r} fillOpacity={dot.opacity} />
           ))}
         </g>
 
@@ -213,19 +203,24 @@ export function MiniCorridorMapPreview({ corridor }: Props) {
         )}
       </svg>
 
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 grid gap-3 sm:flex sm:items-center sm:justify-between">
         <span className="text-xs text-white/60">
           Florida → {corridor.country}
         </span>
-        {hague ? (
-          <span className="rounded-full border border-[var(--ms-gold)]/40 bg-[var(--ms-gold)]/[0.08] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]">
-            Hague Route
-          </span>
-        ) : (
-          <span className="rounded-full border border-[#C0563E]/40 bg-[#C0563E]/[0.1] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#E0876E]">
-            Consular Review
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {hague ? (
+            <span className="rounded-full border border-[var(--ms-gold)]/40 bg-[var(--ms-gold)]/[0.08] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]">
+              Hague Route
+            </span>
+          ) : (
+            <span className="rounded-full border border-[#C0563E]/40 bg-[#C0563E]/[0.1] px-2.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#E0876E]">
+              Consular Review
+            </span>
+          )}
+          <Link href="/map" className="rounded-full border border-[var(--ms-gold)]/35 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--ms-gold)]">
+            Open Atlas
+          </Link>
+        </div>
       </div>
     </div>
   );

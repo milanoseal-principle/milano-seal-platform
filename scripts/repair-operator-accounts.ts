@@ -135,13 +135,13 @@ async function main() {
 
   try {
     await repairOperator({
-      email: "tiffany@bulbtech.io",
+      email: process.env.TIFFANY_OPERATOR_EMAIL!,
       password: TIFFANY_PASSWORD!,
-      display_name: "Tiffany",
+      display_name: process.env.TIFFANY_OPERATOR_DISPLAY_NAME ?? "Authorized Operator",
       milano_role_label: "Founder Admin / Operator",
     });
   } catch {
-    console.error("  ✗ tiffany@bulbtech.io FAILED");
+    console.error("  ✗ TIFFANY_OPERATOR_EMAIL account repair FAILED");
     failed = true;
   }
 

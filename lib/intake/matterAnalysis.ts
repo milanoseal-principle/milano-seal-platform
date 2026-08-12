@@ -229,7 +229,6 @@ const DETECTABLE: Array<{ key: keyof MatterAnalysis; label: string }> = [
   { key: "documentType", label: "Document type" },
   { key: "signerCount", label: "Signer count" },
   { key: "apostilleRequired", label: "Apostille requirement" },
-  { key: "urgency", label: "Timeline" },
   { key: "documentDescription", label: "Document description" },
 ];
 
@@ -249,7 +248,6 @@ function computeMissingFields(a: MatterAnalysis): string[] {
   if (!a.country) missing.push("Destination country");
   if (!a.documentType) missing.push("Document type");
   if (!a.documentDescription) missing.push("Matter description");
-  if (a.urgency === "standard") missing.push("Preferred execution timeline");
   return missing;
 }
 
@@ -260,7 +258,6 @@ function computeConfidence(a: MatterAnalysis): number {
   if (a.documentType) hits++;
   if (a.signerCount > 0) hits++;
   if (a.country) hits++;
-  if (a.urgency && a.urgency !== "standard") hits++;
   if (a.documentDescription) hits++;
   const ratio = hits / total;
   return Math.min(99, Math.round(ratio * 100));

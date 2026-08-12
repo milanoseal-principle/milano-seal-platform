@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PaymentGate } from "@/components/payment/PaymentGate";
+import { CreateAccountCard } from "@/components/portal/CreateAccountCard";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -262,6 +263,10 @@ function ConfirmationInner() {
           </div>
         </div>
       )}
+
+      <div className="mb-6">
+        <CreateAccountCard />
+      </div>
 
       {dealId?.startsWith("MS-") ? (
         <div className="mb-6">

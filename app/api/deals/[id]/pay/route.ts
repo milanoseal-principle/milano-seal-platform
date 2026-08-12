@@ -21,6 +21,10 @@ const VALID_PAYMENT_TYPES: PaymentType[] = [
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function minorUnits(value: number): number {
+  return Math.round(value * 100);
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -39,6 +43,7 @@ export async function POST(
       body = await req.json();
     }
   } catch {}
+
   const paymentType: PaymentType = body.paymentType || "retainer";
   if (!VALID_PAYMENT_TYPES.includes(paymentType)) {
     return NextResponse.json(
@@ -66,24 +71,11 @@ export async function POST(
     return NextResponse.json({ error: "Deal not found" }, { status: 404 });
   }
 
-  const { data: existingPayment } = await supabase
-    .from("payments")
-    .select("*")
-    .eq("matter_id", deal.id)
-    .eq("payment_type", paymentType)
-    .in("payment_status", ["awaiting_payment", "payment_pending"])
-    .maybeSingle();
-
-  if (existingPayment) {
-    return NextResponse.json({
-      paymentUrl: existingPayment.wise_payment_url,
-      reference: existingPayment.wise_reference,
-      amount: Number(existingPayment.payment_amount),
-      currency: existingPayment.payment_currency,
-      description: existingPayment.payment_description,
-      status: existingPayment.payment_status,
-      existing: true,
-    });
+  if (deal.payment_disposition === "complimentary") {
+    return NextResponse.json(
+      { error: "Complimentary Matters do not create Wise payment instructions." },
+      { status: 409 },
+    );
   }
 
   const amount = calculatePaymentAmount(deal, paymentType);
@@ -91,10 +83,85 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Payment amount is not set on this deal — fill `amount` (or the appropriate fee field) before requesting payment.",
+          "Payment amount is not canonically set for this obligation. Complete pricing review before requesting payment.",
       },
       { status: 422 },
     );
+  }
+
+  const currency = String(deal.currency || "USD").toUpperCase();
+
+  const { data: activePayments, error: activeError } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("matter_id", deal.id)
+    .eq("payment_type", paymentType)
+    .in("payment_status", ["awaiting_payment", "payment_pending"])
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (activeError) {
+    console.error("[pay] active payment lookup failed:", activeError);
+    return NextResponse.json(
+      { error: "Payment state lookup failed", detail: activeError.message },
+      { status: 500 },
+    );
+  }
+
+  const matchingPayment = (activePayments ?? []).find(
+    (payment) =>
+      minorUnits(Number(payment.payment_amount)) === minorUnits(amount) &&
+      String(payment.payment_currency || "").toUpperCase() === currency,
+  );
+
+  if (matchingPayment) {
+    // A pending Wise movement is money-in-motion and must never be silently
+    // replaced. An awaiting instruction is safe to reuse only when its amount
+    // and currency still exactly equal current canonical Matter truth.
+    return NextResponse.json({
+      paymentUrl: matchingPayment.wise_payment_url,
+      reference: matchingPayment.wise_reference,
+      amount: Number(matchingPayment.payment_amount),
+      currency: matchingPayment.payment_currency,
+      description: matchingPayment.payment_description,
+      status: matchingPayment.payment_status,
+      existing: true,
+    });
+  }
+
+  const pendingMismatch = (activePayments ?? []).find(
+    (payment) => payment.payment_status === "payment_pending",
+  );
+  if (pendingMismatch) {
+    return NextResponse.json(
+      {
+        error: "PAYMENT_REVIEW_REQUIRED",
+        detail:
+          "A Wise payment is already pending for a different amount or currency. Pricing cannot issue a replacement instruction until reconciliation review is complete.",
+      },
+      { status: 409 },
+    );
+  }
+
+  // Any unmatched awaiting_payment row is only an unconsumed instruction from
+  // an older price. It is safe to invalidate before generating current truth.
+  const staleAwaitingIds = (activePayments ?? [])
+    .filter((payment) => payment.payment_status === "awaiting_payment")
+    .map((payment) => payment.id);
+
+  if (staleAwaitingIds.length > 0) {
+    const { error: staleDeleteError } = await supabase
+      .from("payments")
+      .delete()
+      .in("id", staleAwaitingIds);
+
+    if (staleDeleteError) {
+      console.error("[pay] stale payment invalidation failed:", staleDeleteError);
+      return NextResponse.json(
+        { error: "Failed to invalidate stale Wise instruction" },
+        { status: 500 },
+      );
+    }
   }
 
   let session;
@@ -104,7 +171,7 @@ export async function POST(
       matterReference: deal.deal_id,
       paymentType,
       amount,
-      currency: deal.currency || "USD",
+      currency,
       payerName: deal.client_name,
       payerEmail: deal.email,
       founderName: deal.assigned_operator || "Nicholas Milano",
@@ -126,14 +193,16 @@ export async function POST(
     .from("payments")
     .insert({
       matter_id: deal.id,
+      client_id: deal.client_id ?? null,
       wise_payment_url: session.paymentUrl,
       wise_reference: session.reference,
       wise_session_id: session.sessionId,
       payment_type: paymentType,
       payment_amount: amount,
-      payment_currency: deal.currency || "USD",
+      payment_currency: currency,
       payment_description: session.description,
       payment_status: "awaiting_payment",
+      payment_method: "wise",
       payer_name: deal.client_name,
       payer_email: deal.email,
     })
@@ -144,6 +213,30 @@ export async function POST(
     console.error("[pay] payments insert failed:", insertError);
     return NextResponse.json(
       { error: "Failed to record payment", detail: insertError.message },
+      { status: 500 },
+    );
+  }
+
+  // Keep the Deal mirror aligned with the exact payment-row reference because
+  // the signed Wise webhook resolves that reference before atomic confirmation.
+  const { error: mirrorError } = await supabase
+    .from("deals")
+    .update({
+      wise_reference: payment.wise_reference,
+      payment_link: payment.wise_payment_url,
+      amount_due: amount,
+      payment_status: "unpaid",
+      payment_confirmed: false,
+      payment_confirmed_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", deal.id);
+
+  if (mirrorError) {
+    await supabase.from("payments").delete().eq("id", payment.id);
+    console.error("[pay] deal payment mirror failed:", mirrorError);
+    return NextResponse.json(
+      { error: "Failed to synchronize Wise payment instruction" },
       { status: 500 },
     );
   }

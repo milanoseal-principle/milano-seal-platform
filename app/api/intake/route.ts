@@ -3,7 +3,13 @@ import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
-import { determineLaneAndPrice } from "@/lib/pricing";
+import { calculatePrice, determineLaneAndPrice } from "@/lib/pricing";
+import {
+  nonDiscountableTotalFromBreakdown,
+  eligibleSubtotalFromTotal,
+  effectiveTotalAfterCourtesy,
+} from "@/lib/pricing/courtesyEligibility";
+import { computeDiscountAmount, type DiscountCode } from "@/lib/discountCodes";
 import { generateInvoice } from "@/lib/invoice";
 import { validateCompliance } from "@/lib/compliance";
 import { parseIntake } from "@/lib/parseIntake";
@@ -17,11 +23,94 @@ import { runDealEngine } from "@/lib/core/engine";
 import {
   normalizeIntakeRouting,
   checkAffidavitFederalConflict,
-  formatApostillePath,
 } from "@/lib/intake/routing-normalizer";
 import { safeText } from "@/lib/security/app-guards";
+import {
+  executionTruthToLegacy,
+  normalizeExecutionTruth,
+  validateExecutionTruth,
+} from "@/lib/matter/executionTruth";
+import {
+  buildMatterQuoteSnapshot,
+  persistedMatterHasQuote,
+} from "@/lib/pricing/matterQuoteSnapshot";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
+
+type IntakeStage =
+  | "REQUEST_RECEIVED"
+  | "NORMALIZED"
+  | "VALIDATED"
+  | "ROUTED"
+  | "EXECUTION_VALIDATED"
+  | "COMPLIANCE_COMPLETE"
+  | "PRICED"
+  | "INVOICE_CREATED"
+  | "WISE_REQUEST_CREATED"
+  | "MATTER_PERSISTED"
+  | "RESPONSE_SENT";
+
+type IntakeFailureCode =
+  | "VALIDATION_FAILED"
+  | "EXECUTION_REVIEW_REQUIRED"
+  | "COMPLIANCE_REVIEW_REQUIRED"
+  | "PRICING_FAILED"
+  | "PERSISTENCE_FAILED"
+  | "PAYMENT_REQUEST_FAILED"
+  | "CONFIGURATION_ERROR"
+  | "UNKNOWN_INTAKE_FAILURE";
+
+function createIntakeCorrelationId(): string {
+  const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  return `MSERR-${day}-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function safeFailure(
+  code: IntakeFailureCode,
+  correlationId: string,
+  status = 500,
+  reason?: string,
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Unable to create Matter",
+      code,
+      correlation_id: correlationId,
+      retryable: code === "PAYMENT_REQUEST_FAILED",
+      ...(reason ? { reason } : {}),
+    },
+    { status },
+  );
+}
+
+function logIntakeFailure(params: {
+  correlationId: string;
+  stage: IntakeStage;
+  code: IntakeFailureCode;
+  error: unknown;
+  dealId?: string;
+  source?: string;
+}) {
+  const error = params.error as {
+    message?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+  console.error("[intake] critical failure", {
+    correlationId: params.correlationId,
+    stage: params.stage,
+    category: params.code,
+    dealId: params.dealId ?? null,
+    source: params.source ?? null,
+    providerCode: error?.code ?? null,
+    message: error?.message ?? String(params.error),
+    details: error?.details ?? null,
+    hint: error?.hint ?? null,
+    timestamp: new Date().toISOString(),
+  });
+}
 
 function genDealId(): string {
   return `MS-${new Date().getFullYear()}-${Math.floor(
@@ -40,6 +129,7 @@ function autoSelectLane({
   signerCount?: number;
   apostilleRequired?: boolean;
 }): "Executive" | "Priority" | "Signature" {
+  void country;
   if (urgency === "urgent") return "Executive";
   if (apostilleRequired) return "Priority";
   if ((signerCount || 1) > 1) return "Priority";
@@ -86,6 +176,43 @@ function routeDeal(score: number): "HIGH" | "MEDIUM" | "LOW" {
   return "LOW";
 }
 
+function legacyExecutionTruthInput(raw: Record<string, unknown>) {
+  const notarizationRequirement =
+    raw.notarization_required === true
+      ? "required"
+      : raw.notarization_required === false
+        ? "not_required"
+        : "review_required";
+  const executionMethod =
+    raw.ron_required === true
+      ? "ron"
+      : raw.mobile === true
+        ? "mobile"
+        : raw.already_notarized === true
+          ? "already_notarized"
+          : "review_required";
+  const authenticationRequirement =
+    raw.apostille === true || raw.apostille_required === true
+      ? "apostille"
+      : raw.apostille === false || raw.apostille_required === false
+        ? "not_required"
+        : "review_required";
+
+  return {
+    notarization_requirement: notarizationRequirement,
+    execution_method: executionMethod,
+    notarial_act: "review_required",
+    authentication_requirement: authenticationRequirement,
+    signer_location: raw.signer_location,
+    execution_location: raw.execution_location,
+    assigned_notary: raw.assigned_notary,
+    notary_jurisdiction: raw.notary_jurisdiction,
+    certificate_type: raw.certificate_type,
+    ron_kba_status: raw.ron_kba_status,
+    ron_credential_analysis_status: raw.ron_credential_analysis_status,
+  };
+}
+
 async function notifyHighValue(
   dealId: string,
   country: string,
@@ -101,21 +228,30 @@ async function notifyHighValue(
       deal_id: dealId,
       read: false,
     });
-  } catch {}
+  } catch (error) {
+    console.error("[intake] high-value notification failed", {
+      dealId,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    let raw = await req.json();
+  const correlationId = createIntakeCorrelationId();
+  let stage: IntakeStage = "REQUEST_RECEIVED";
+  let currentDealId: string | undefined;
+  let currentSource: string | undefined;
 
-    const useCase = (raw.use_case || raw.useCase || "") as string;
-    const prefillDoc = (raw.document_type || raw.document || "") as string;
-    const prefillCountry = (raw.country ||
-      raw.destination_country ||
-      "") as string;
+  try {
+    let raw = (await req.json()) as Record<string, unknown>;
+
+    const useCase = String(raw.use_case || raw.useCase || "");
+    const prefillDoc = String(raw.document_type || raw.document || "");
+    const prefillCountry = String(raw.country || raw.destination_country || "");
 
     if (raw.message && !raw.document_type) {
-      const parsed = parseIntake(raw.message);
+      const parsed = parseIntake(String(raw.message));
       raw = {
         ...raw,
         name: raw.name || parsed.client_name || "",
@@ -128,104 +264,465 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Sanitize free-text fields before any processing
-    if (raw.name)        raw.name        = safeText(raw.name);
-    if (raw.client_name) raw.client_name = safeText(raw.client_name);
-    if (raw.notes)       raw.notes       = safeText(raw.notes);
-    if (raw.message)     raw.message     = safeText(raw.message);
+    if (raw.name) raw.name = safeText(String(raw.name));
+    if (raw.client_name) raw.client_name = safeText(String(raw.client_name));
+    if (raw.notes) raw.notes = safeText(String(raw.notes));
+    if (raw.message) raw.message = safeText(String(raw.message));
 
     const data = normalizeMatter(raw);
+    if (typeof data.email === "string") {
+      data.email = data.email.trim().toLowerCase();
+    }
+    stage = "NORMALIZED";
 
-    // ── Routing normalizer (P0 correctness fix) ───────────────────────────
-    // Converts raw origin_state overload into a deterministic NormalizedRoutingContext.
-    // origin_authority_label is used in review summaries and notifications instead of
-    // raw origin_state so that RON affidavits are never misrouted as federal documents.
-    // P1/P2: promote normalized routing fields to dedicated columns after registry migrations are approved.
-    let normalizedRouting = normalizeIntakeRouting({
-      ...raw,
-      ...data,
-    });
+    let normalizedRouting = normalizeIntakeRouting({ ...raw, ...data });
     normalizedRouting = checkAffidavitFederalConflict(
       normalizedRouting,
-      data.document_type as string || "",
+      (data.document_type as string) || "",
     );
     const originAuthorityLabel = normalizedRouting.origin_authority_label;
     const routingWarnings = normalizedRouting.warnings;
+    stage = "ROUTED";
 
     try {
       validateMatter(data);
-    } catch (e: any) {
+      stage = "VALIDATED";
+    } catch (error) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "VALIDATION_FAILED",
+        error,
+      });
+      const reason =
+        error instanceof Error ? error.message : "Matter validation failed";
+      return safeFailure("VALIDATION_FAILED", correlationId, 400, reason);
+    }
+
+    const hasCanonicalExecution =
+      (raw.execution_truth != null && typeof raw.execution_truth === "object") ||
+      typeof raw.execution_method === "string" ||
+      typeof raw.notarization_requirement === "string" ||
+      typeof raw.authentication_requirement === "string" ||
+      typeof raw.notarial_act === "string";
+    const executionTruth = normalizeExecutionTruth(
+      hasCanonicalExecution ? raw : legacyExecutionTruthInput(raw),
+    );
+    const executionValidation = validateExecutionTruth(executionTruth);
+    const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
+    const legacyExecution = executionTruthToLegacy(executionTruth);
+
+    const executionReviewRequired =
+      sourceHint === "admin" &&
+      (!executionValidation.valid || executionValidation.reviewRequired);
+
+    if (executionReviewRequired) {
+      const reviewReasons = Array.from(
+        new Set(
+          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(
+            Boolean,
+          ),
+        ),
+      );
+
+      const supabase = createAdminClient();
+      const country = data.country || prefillCountry || "United States";
+      const docType = data.document_type || prefillDoc || "";
+      const client_name = data.name || String(raw.client_name || "");
+      const companyName = String(raw.company_name || raw.company || "") || null;
+      const source = String(
+        (data as Record<string, unknown>).source_channel ||
+          raw.source_channel ||
+          "web",
+      );
+      const apostilleRequired = legacyExecution.apostille_required;
+      const conversion_score = calculateScore({
+        country,
+        useCase,
+        urgency: data.urgency as string,
+      });
+      const priority_tier = routeDeal(conversion_score);
+      const deal_id = genDealId();
+      const access_token = randomUUID();
+      currentDealId = deal_id;
+      currentSource = source;
+
+      const reviewMetadata = {
+        source,
+        companyName,
+        execution_truth: executionTruth,
+        execution_review: { required: true, reasons: reviewReasons },
+        quote_state: "review_required",
+        amount_due: null,
+        currency: "USD",
+        originAuthorityLabel: originAuthorityLabel ?? null,
+        normalizedRouting: normalizedRouting ?? null,
+        routingWarnings: routingWarnings ?? [],
+      };
+
+      const reviewPayload = {
+        deal_id,
+        access_token,
+        client_name,
+        client_type: String(raw.client_type ?? "individual"),
+        company_name: companyName,
+        email: data.email || "",
+        phone: data.phone || "",
+        document_type: docType,
+        use_case: useCase || null,
+        destination_country: country,
+        origin_state: String(raw.origin_state || data.state || "") || null,
+        apostille_required: apostilleRequired,
+        execution_truth: executionTruth,
+        docs_count: Number(data.docs ?? 1),
+        urgency: (data.urgency as string) ?? "standard",
+        mobile: legacyExecution.mobile,
+        miles:
+          executionTruth.execution_method === "mobile"
+            ? Number(data.miles ?? raw.miles ?? 0)
+            : 0,
+        signers: Number(data.signers ?? 1),
+        witnesses: Number(data.witnesses ?? 0),
+        witness_type: data.witness_type ?? null,
+        after_hours: Boolean(data.after_hours ?? false),
+        translation: Boolean(data.translation ?? false),
+        multi_country: Boolean(data.multi_country ?? false),
+        payment_status: "unpaid",
+        payment_confirmed: false,
+        amount_paid: 0,
+        currency: "USD",
+        status: "intake_received",
+        deal_status: "awaiting_payment",
+        conversion_score,
+        priority_tier,
+        notes: [
+          (data.notes as string) || "",
+          `[execution_review_required] ${reviewReasons.join(", ")}`,
+          `[intake_metadata:${JSON.stringify(reviewMetadata)}]`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        internal_notes: JSON.stringify(reviewMetadata),
+      };
+
+      const { data: reviewDeal, error: reviewError } = await supabase
+        .from("deals")
+        .insert([reviewPayload])
+        .select()
+        .single();
+
+      if (reviewError) {
+        logIntakeFailure({
+          correlationId,
+          stage,
+          code: "PERSISTENCE_FAILED",
+          error: reviewError,
+          dealId: deal_id,
+          source,
+        });
+        return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
+      }
+      stage = "MATTER_PERSISTED";
+
+      const reviewRowId = (reviewDeal as { id?: string })?.id;
+      if (reviewRowId) {
+        void notifyClient(reviewRowId, "intake_received").catch(() => {});
+      }
+      void logActivity({
+        deal_id,
+        actor: source === "admin" ? "admin" : `${source}-intake`,
+        action: "created",
+        detail: `Intake captured — execution review required · ${country} · ${reviewReasons.join(", ")}`,
+        meta: {
+          source,
+          execution_truth: executionTruth,
+          execution_review_required: true,
+          reasons: reviewReasons,
+          conversion_score,
+          priority_tier,
+        },
+      }).catch(() => {});
+
+      stage = "RESPONSE_SENT";
       return NextResponse.json(
-        { error: e.message, code: e.message },
-        { status: 400 },
+        {
+          success: true,
+          correlation_id: correlationId,
+          deal_id: (reviewDeal as { deal_id?: string })?.deal_id || deal_id,
+          quote_state: "review_required",
+          execution_truth: executionTruth,
+          execution_review: { required: true, reasons: reviewReasons },
+          status: "intake_received",
+          payment_status: "unpaid",
+          payment_confirmed: false,
+          scheduled: false,
+          message:
+            "Matter saved. An approved payment amount will become available after the remaining execution facts are resolved.",
+          remaining: reviewReasons,
+        },
+        { status: 200 },
       );
     }
 
+    stage = "EXECUTION_VALIDATED";
     const country = data.country || prefillCountry || "United States";
+    const apostilleRequired = hasCanonicalExecution
+      ? legacyExecution.apostille_required
+      : Boolean(raw.apostille ?? raw.apostille_required ?? data.apostille ?? false);
+
     let compliance = null;
     try {
-      compliance = validateCompliance({
-        country,
-        documentType: data.document_type || prefillDoc || "general",
-        executionType: data.mobile ? "mobile" : "ron",
-        destinationCountry: country,
+      if (
+        executionTruth.execution_method === "ron" ||
+        executionTruth.execution_method === "mobile"
+      ) {
+        compliance = validateCompliance({
+          country,
+          signerLocation: executionTruth.signer_location ?? undefined,
+          documentType: data.document_type || prefillDoc || "general",
+          executionType: executionTruth.execution_method,
+          destinationCountry: country,
+        });
+      }
+      stage = "COMPLIANCE_COMPLETE";
+    } catch (error) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "COMPLIANCE_REVIEW_REQUIRED",
+        error,
       });
-      if (compliance.apostille_required) data.apostille = true;
-    } catch {}
+      compliance = null;
+    }
 
     const autoLane = autoSelectLane({
       country,
       urgency: data.urgency as string,
       signerCount: Number(data.signers) || 1,
-      apostilleRequired: compliance?.apostille_required ?? data.apostille,
+      apostilleRequired,
     });
 
     const pricingInput = {
       ...data,
+      state:
+        executionTruth.execution_method === "ron"
+          ? (data.state as string | undefined)
+          : undefined,
+      apostille: apostilleRequired,
+      mobile: legacyExecution.mobile,
+      miles:
+        executionTruth.execution_method === "mobile"
+          ? Number(data.miles ?? raw.miles ?? 0)
+          : 0,
       urgency: data.urgency as "standard" | "urgent" | undefined,
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
-    const pricing = determineLaneAndPrice(pricingInput);
+    const legacyPricing = determineLaneAndPrice(pricingInput);
+    const requestedTier = String(raw.tier ?? "").toLowerCase();
+    const requestedLane: "Signature" | "Priority" | "Executive" =
+      requestedTier === "executive"
+        ? "Executive"
+        : requestedTier === "signature"
+          ? "Signature"
+          : requestedTier === "priority"
+            ? "Priority"
+            : autoLane;
+    const laneOrder = ["Signature", "Priority", "Executive"] as const;
+    const pricedLane =
+      laneOrder.indexOf(requestedLane) >= laneOrder.indexOf(autoLane)
+        ? requestedLane
+        : autoLane;
+    const timeline = String(raw.timeline_preference ?? "");
+    const delivery = String(raw.delivery_method ?? "");
+    const notarizationRequired = hasCanonicalExecution
+      ? legacyExecution.notarization_required
+      : raw.notarization_required === true || raw.ron_required === true;
+    const canonicalPricing = calculatePrice({
+      tier: pricedLane.toLowerCase(),
+      document_count: Math.max(1, Number(data.docs ?? raw.docs ?? 1)),
+      signer_count: Math.max(1, Number(data.signers ?? raw.signers ?? 1)),
+      notarized_signature_count: notarizationRequired
+        ? Math.max(1, Number(data.signers ?? raw.signers ?? 1))
+        : 0,
+      apostille_count: apostilleRequired
+        ? Math.max(1, Number(raw.apostille_count ?? 1))
+        : 0,
+      urgency:
+        timeline === "urgent"
+          ? "rush"
+          : timeline === "expedited"
+            ? "expedited"
+            : data.urgency ?? "standard",
+      shipping:
+        delivery === "international_courier"
+          ? "international"
+          : delivery === "domestic_courier"
+            ? "standard_domestic"
+            : "none",
+    });
+    const pricing = {
+      lane: pricedLane,
+      base: canonicalPricing.base,
+      total: canonicalPricing.total,
+      addons: canonicalPricing.breakdown
+        .filter((item) => !item.internal_only && item.key !== "base")
+        .map((item) => ({ item: item.label, amount: item.amount })),
+      witness_total: legacyPricing.witness_total,
+    };
+    stage = "PRICED";
 
-    const laneOrder = ["Signature", "Priority", "Executive"];
-    const finalLane =
-      laneOrder.indexOf(autoLane) > laneOrder.indexOf(pricing.lane)
-        ? autoLane
-        : pricing.lane;
+    const nonDiscountableTotal = nonDiscountableTotalFromBreakdown(
+      canonicalPricing.breakdown,
+    );
+    const eligibleSubtotal = eligibleSubtotalFromTotal(
+      Number(pricing.total),
+      nonDiscountableTotal,
+    );
 
-    const invoice = generateInvoice(pricing.total);
+    const clientQuotedTotal = Number(raw.client_quoted_total);
+    if (
+      Number.isFinite(clientQuotedTotal) &&
+      Math.abs(clientQuotedTotal - pricing.total) > 0.009
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Pricing changed after server validation. Please review the updated matter scope before payment.",
+          code: "PRICING_REVIEW_REQUIRED",
+          quoted_total: clientQuotedTotal,
+          authoritative_total: pricing.total,
+        },
+        { status: 409 },
+      );
+    }
+
+    const supabase = createAdminClient();
+    const requestedCourtesy =
+      typeof raw.courtesy_code === "string"
+        ? raw.courtesy_code.trim().toUpperCase()
+        : "";
+    let courtesyAdjustment: null | {
+      id: string;
+      code: string;
+      discount_type: "percentage" | "fixed_amount";
+      discount_value: number;
+      amount: number;
+    } = null;
+
+    if (requestedCourtesy) {
+      const { data: discount, error: discountError } = await supabase
+        .from("discount_codes")
+        .select(
+          "id,code,discount_type,discount_value,status,usage_limit,usage_count,starts_at,expires_at,applies_to",
+        )
+        .eq("code", requestedCourtesy)
+        .maybeSingle();
+      if (discountError) throw discountError;
+      if (!discount)
+        return NextResponse.json(
+          { error: "Courtesy code not found." },
+          { status: 400 },
+        );
+      const now = Date.now();
+      if (discount.status !== "active")
+        return NextResponse.json(
+          { error: "Courtesy code is not active." },
+          { status: 400 },
+        );
+      if (discount.starts_at && new Date(discount.starts_at).getTime() > now)
+        return NextResponse.json(
+          { error: "Courtesy code is not active yet." },
+          { status: 400 },
+        );
+      if (discount.expires_at && new Date(discount.expires_at).getTime() < now)
+        return NextResponse.json(
+          { error: "Courtesy code has expired." },
+          { status: 400 },
+        );
+      if (
+        discount.usage_limit != null &&
+        Number(discount.usage_count ?? 0) >= Number(discount.usage_limit)
+      )
+        return NextResponse.json(
+          { error: "Courtesy code has already been used." },
+          { status: 400 },
+        );
+      if (discount.applies_to !== "eligible_subtotal")
+        return NextResponse.json(
+          { error: "Courtesy code requires operator review." },
+          { status: 400 },
+        );
+
+      const discountValue = Number(discount.discount_value);
+      const amount = computeDiscountAmount(
+        {
+          discount_type: discount.discount_type,
+          discount_value: discountValue,
+        } as DiscountCode,
+        eligibleSubtotal,
+      );
+      courtesyAdjustment = {
+        id: discount.id,
+        code: String(discount.code),
+        discount_type: discount.discount_type as "percentage" | "fixed_amount",
+        discount_value: discountValue,
+        amount,
+      };
+    }
+
+    const effectiveTotal = effectiveTotalAfterCourtesy(
+      Number(pricing.total),
+      courtesyAdjustment?.amount ?? 0,
+    );
+
+    const finalLane = pricing.lane;
+    const invoice = generateInvoice(effectiveTotal);
+    stage = "INVOICE_CREATED";
     const decline_risk = riskScore(data);
     const deal_id = genDealId();
+    currentDealId = deal_id;
     const access_token = randomUUID();
-    const client_name =
-      data.name || (raw as Record<string, string>).client_name || "";
-    const source =
-      ((data as Record<string, unknown>).source_channel as string) || "web";
+    const client_name = data.name || String(raw.client_name || "");
+    const source = String(
+      (data as Record<string, unknown>).source_channel || raw.source_channel || "web",
+    );
+    currentSource = source;
 
     const conversion_score = calculateScore({
       country,
       useCase,
       urgency: data.urgency as string,
     });
-
     const priority_tier = routeDeal(conversion_score);
 
-    // Payment reference is always matterReference-R for retainer reconciliation
-    const payment_reference = `${deal_id}-R`;
+    const payment_reference = deal_id;
     const payment_description = `The Milano Seal™ — Retainer (50%) — ${client_name}`;
 
-    const wiseResult = await createWisePaymentRequest({
-      dealId: payment_reference,
-      amount: invoice.retainer,
-      currency: "USD",
-      description: payment_description,
-      clientName: client_name,
-      clientEmail: data.email || null,
-      redirectUrl: `${SITE}/portal`,
-    });
+    let wiseResult: Awaited<ReturnType<typeof createWisePaymentRequest>>;
+    try {
+      wiseResult = await createWisePaymentRequest({
+        dealId: payment_reference,
+        amount: invoice.retainer,
+        currency: "USD",
+        description: payment_description,
+        clientName: client_name,
+        clientEmail: data.email || null,
+        redirectUrl: `${SITE}/portal`,
+      });
+      stage = "WISE_REQUEST_CREATED";
+    } catch (error) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "PAYMENT_REQUEST_FAILED",
+        error,
+        dealId: deal_id,
+        source,
+      });
+      return safeFailure("PAYMENT_REQUEST_FAILED", correlationId, 503);
+    }
     const payment_link = wiseResult.url;
 
-    // P1/P2: promote payment metadata to dedicated columns after registry migrations approved.
     const payment_metadata = {
       provider: "wise",
       amount_due: invoice.retainer,
@@ -248,32 +745,42 @@ export async function POST(req: NextRequest) {
     };
 
     const docType = data.document_type || prefillDoc || "";
-    const companyName =
-      ((raw as Record<string, string>).company_name as string) ||
-      ((raw as Record<string, string>).company as string) ||
-      null;
+    const companyName = String(raw.company_name || raw.company || "") || null;
 
     const intakeMetadata = {
       source,
       companyName,
+      execution_truth: executionTruth,
       originAuthorityLabel: originAuthorityLabel ?? null,
       normalizedRouting: normalizedRouting ?? null,
       routingWarnings: routingWarnings ?? [],
       payment_metadata: payment_metadata ?? null,
       wise_invoice: wise_invoice ?? null,
       wise_reference: deal_id,
-      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${pricing.total}&currency=USD`,
-      amount_due: pricing.total,
+      wise_payment_url: `https://wise.com/pay/business/themilanoseal?reference=${encodeURIComponent(deal_id)}&amount=${invoice.retainer}&currency=USD`,
+      amount_due: invoice.retainer,
       currency: "USD",
+      courtesy: courtesyAdjustment
+        ? {
+            code: courtesyAdjustment.code,
+            discount_type: courtesyAdjustment.discount_type,
+            discount_value: courtesyAdjustment.discount_value,
+            discount_amount: courtesyAdjustment.amount,
+            redemption_status: "not_redeemed",
+          }
+        : null,
       compliance: compliance ?? null,
       decline_risk: decline_risk ?? null,
       followup_schedule: ["24h", "72h", "7d"],
-      matterCategory: (raw as Record<string, unknown>).matterCategory ?? (raw as Record<string, unknown>).matter_category ?? null,
-      ronPreferred: (raw as Record<string, unknown>).ronPreferred ?? (raw as Record<string, unknown>).ron_preferred ?? null,
-      wetInkRequired: (raw as Record<string, unknown>).wetInkRequired ?? (raw as Record<string, unknown>).wet_ink_required ?? null,
-      receivingAuthority: (raw as Record<string, unknown>).receivingAuthority ?? (raw as Record<string, unknown>).receiving_authority ?? null,
-      deadlineOrClosingDate: (raw as Record<string, unknown>).deadlineOrClosingDate ?? (raw as Record<string, unknown>).deadline_or_closing_date ?? null,
-      courierRequired: (raw as Record<string, unknown>).courierRequired ?? (raw as Record<string, unknown>).courier_required ?? null,
+      matterCategory: raw.matterCategory ?? raw.matter_category ?? null,
+      receivingAuthority:
+        raw.receivingAuthority ?? raw.receiving_authority ?? null,
+      deadlineOrClosingDate:
+        raw.deadlineOrClosingDate ?? raw.deadline_or_closing_date ?? null,
+      courierRequired: raw.courierRequired ?? raw.courier_required ?? null,
+      timelinePreference:
+        raw.timelinePreference ?? raw.timeline_preference ?? null,
+      deliveryMethod: raw.deliveryMethod ?? raw.delivery_method ?? null,
     };
 
     const safeNotes = [
@@ -281,7 +788,9 @@ export async function POST(req: NextRequest) {
       `[routing] origin_authority_type=${normalizedRouting?.origin_authority_type ?? "unknown"}`,
       `[routing] origin_authority_label=${originAuthorityLabel ?? "unknown"}`,
       `[routing] apostille_path=${normalizedRouting?.apostille_path ?? "unknown"}`,
-      (routingWarnings?.length ?? 0) > 0 ? `[routing_warnings] ${routingWarnings.join(" | ")}` : "",
+      (routingWarnings?.length ?? 0) > 0
+        ? `[routing_warnings] ${routingWarnings.join(" | ")}`
+        : "",
       `[intake_metadata:${JSON.stringify(intakeMetadata)}]`,
     ]
       .filter(Boolean)
@@ -289,39 +798,60 @@ export async function POST(req: NextRequest) {
 
     const safeInternalNotes = JSON.stringify(intakeMetadata);
 
+    const quoteSnapshot = buildMatterQuoteSnapshot({
+      lane: finalLane,
+      base_price: pricing.base,
+      witness_total: pricing.witness_total,
+      total_price: effectiveTotal,
+      original_total: pricing.total,
+      eligible_subtotal: eligibleSubtotal,
+      non_discountable_total: nonDiscountableTotal,
+      final_total: effectiveTotal,
+      discount_code: courtesyAdjustment?.code ?? null,
+      discount_value: courtesyAdjustment?.discount_value ?? null,
+      discount_amount: courtesyAdjustment?.amount ?? 0,
+      invoice_retainer: invoice.retainer,
+      invoice_balance: invoice.balance,
+      amount_due: invoice.retainer,
+    });
+
     const intakePayload = {
       deal_id,
       access_token,
       client_name,
-      client_type: ((raw as Record<string, string>).client_type as string) ?? "individual",
+      client_type: String(raw.client_type ?? "individual"),
       company_name: companyName,
       email: data.email || "",
       phone: data.phone || "",
       document_type: docType,
       use_case: useCase || null,
       destination_country: country,
-      origin_state: ((raw as Record<string, string>).origin_state as string) || null,
-      apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
+      origin_state: String(raw.origin_state || data.state || "") || null,
+      apostille_required: apostilleRequired,
+      execution_truth: executionTruth,
       docs_count: Number(data.docs ?? 1),
-      lane: finalLane,
+      ...quoteSnapshot,
       urgency: (data.urgency as string) ?? "standard",
-      mobile: Boolean(data.mobile ?? false),
-      miles: Number(data.miles ?? 0),
+      mobile: legacyExecution.mobile,
+      miles:
+        executionTruth.execution_method === "mobile"
+          ? Number(data.miles ?? raw.miles ?? 0)
+          : 0,
       signers: Number(data.signers ?? 1),
       witnesses: Number(data.witnesses ?? 0),
       witness_type: data.witness_type ?? null,
       after_hours: Boolean(data.after_hours ?? false),
       translation: Boolean(data.translation ?? false),
       multi_country: Boolean(data.multi_country ?? false),
-      base_price: pricing.base,
-      witness_total: pricing.witness_total,
-      total_price: pricing.total,
-      invoice_retainer: invoice.retainer,
-      invoice_balance: invoice.balance,
       payment_status: "unpaid",
+      payment_confirmed: false,
       payment_method: "wise",
+      amount_paid: 0,
       payment_reference,
+      wise_reference: payment_reference,
+      currency: "USD",
       payment_link,
+      status: "intake_received",
       deal_status: "awaiting_payment",
       conversion_score,
       priority_tier,
@@ -329,111 +859,43 @@ export async function POST(req: NextRequest) {
       internal_notes: safeInternalNotes,
     };
 
-    const supabase = createAdminClient();
     let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;
 
-    // Attempt 1: full payload
-    {
-      const { data: d, error: e } = await supabase
-        .from("deals")
-        .insert([intakePayload])
-        .select()
-        .single();
+    const { data: persistedDeal, error: persistenceError } = await supabase
+      .from("deals")
+      .insert([intakePayload])
+      .select()
+      .single();
 
-      if (!e) {
-        deal = d as Record<string, unknown>;
-      } else {
-        console.error("[intake] DB insert attempt 1 failed:", {
-          message: e.message,
-          details: e.details,
-          hint: e.hint,
-          code: e.code,
-        });
-
-        // Attempt 2: strip large text fields — notes/internal_notes may exceed PostgREST limits
-        const minimalPayload = {
-          deal_id,
-          access_token,
-          client_name,
-          email: data.email || "",
-          phone: data.phone || "",
-          document_type: docType,
-          destination_country: country,
-          apostille_required: compliance?.apostille_required ?? Boolean(data.apostille ?? false),
-          urgency: (data.urgency as string) ?? "standard",
-          mobile: Boolean(data.mobile ?? false),
-          signers: Number(data.signers ?? 1),
-          witnesses: Number(data.witnesses ?? 0),
-          translation: Boolean(data.translation ?? false),
-          multi_country: Boolean(data.multi_country ?? false),
-          payment_status: "unpaid" as const,
-          deal_status: "awaiting_payment" as const,
-        };
-
-        const { data: d2, error: e2 } = await supabase
-          .from("deals")
-          .insert([minimalPayload])
-          .select()
-          .single();
-
-        if (e2) {
-          console.error("[intake] DB insert attempt 2 failed:", {
-            message: e2.message,
-            details: e2.details,
-            hint: e2.hint,
-            code: e2.code,
-          });
-
-          // Attempt 3: absolute bare minimum — deal_id + access_token only
-          const barePayload = {
-            deal_id,
-            access_token,
-            client_name,
-            email: data.email || "",
-            payment_status: "unpaid" as const,
-            deal_status: "awaiting_payment" as const,
-          };
-          const { data: d3, error: e3 } = await supabase
-            .from("deals")
-            .insert([barePayload])
-            .select()
-            .single();
-
-          if (e3) {
-            console.error("[intake] DB insert attempt 3 failed:", {
-              message: e3.message,
-              details: e3.details,
-              hint: e3.hint,
-              code: e3.code,
-            });
-            return NextResponse.json(
-              {
-                error: "Failed to save matter. Please try again or contact support.",
-                code: "INTAKE_DB_INSERT_FAILED",
-                supabase_code: e3.code ?? e2.code ?? e.code ?? null,
-                attempt1_code: e.code ?? null,
-                attempt1_msg: e.message ?? null,
-                attempt2_code: e2.code ?? null,
-                attempt2_msg: e2.message ?? null,
-                attempt3_code: e3.code ?? null,
-                attempt3_msg: e3.message ?? null,
-                hint: e3.hint ?? e2.hint ?? e.hint ?? null,
-                details: e3.details ?? e2.details ?? e.details ?? null,
-              },
-              { status: 500 },
-            );
-          }
-
-          deal = d3 as Record<string, unknown>;
-          console.warn("[intake] saved via bare payload fallback — attempt1:", e.code, "attempt2:", e2.code);
-        } else {
-          deal = d2 as Record<string, unknown>;
-          console.warn("[intake] saved via minimal payload fallback — full payload code:", e.code);
-        }
-      }
+    if (persistenceError) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "PERSISTENCE_FAILED",
+        error: persistenceError,
+        dealId: deal_id,
+        source,
+      });
+      return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
     }
 
-    void notifyHighValue(deal_id, country, pricing.total, priority_tier);
+    deal = persistedDeal as Record<string, unknown>;
+
+    if (!persistedMatterHasQuote(deal, quoteSnapshot)) {
+      logIntakeFailure({
+        correlationId,
+        stage,
+        code: "PERSISTENCE_FAILED",
+        error: new Error("Persisted Matter pricing differs from the authoritative quote"),
+        dealId: deal_id,
+        source,
+      });
+      return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
+    }
+
+    stage = "MATTER_PERSISTED";
+
+    void notifyHighValue(deal_id, country, effectiveTotal, priority_tier);
 
     if (deal?.id) {
       const dealRowId = deal.id as string;
@@ -451,19 +913,28 @@ export async function POST(req: NextRequest) {
               source,
               lane: finalLane,
               country,
-              total: pricing.total,
+              execution_truth: executionTruth,
+              original_total: pricing.total,
+              discount_amount: courtesyAdjustment?.amount ?? 0,
+              final_total: effectiveTotal,
             },
           });
-        } catch (err) {
+        } catch (error) {
           console.error(
             "[intake] custody ledger failed:",
-            err instanceof Error ? err.message : err,
+            error instanceof Error ? error.message : error,
           );
         }
       })();
 
-      // Client notification log entry for intake (non-blocking; never throws).
-      void notifyClient(dealRowId, "intake_received");
+      void notifyClient(dealRowId, "intake_received").catch((error) => {
+        console.error("[intake] client notification failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
+      });
 
       void (async () => {
         try {
@@ -476,19 +947,18 @@ export async function POST(req: NextRequest) {
             document_type: data.document_type as string | undefined,
             destination_country: country,
             country,
-            status: "awaiting_payment",
+            status: "intake_received",
             payment_status: "unpaid",
             payment_link,
-            raw_text:
-              ((raw as Record<string, string>).message as string) ?? null,
-            mobile: Boolean(data.mobile ?? false),
+            raw_text: String(raw.message ?? "") || null,
+            mobile: legacyExecution.mobile,
             signers: Number(data.signers ?? 1),
             witnesses: Number(data.witnesses ?? 0),
           });
-        } catch (err) {
+        } catch (error) {
           console.error(
             "[intake] runDealEngine failed:",
-            err instanceof Error ? err.message : err,
+            error instanceof Error ? error.message : error,
           );
         }
       })();
@@ -500,10 +970,17 @@ export async function POST(req: NextRequest) {
         name: client_name,
         dealId: deal_id,
         lane: finalLane,
-        total: pricing.total,
+        total: effectiveTotal,
         retainer: invoice.retainer,
         paymentLink: payment_link,
         portalUrl: `${SITE}/portal/${access_token}`,
+      }).catch((error) => {
+        console.error("[intake] confirmation email failed", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
       });
     }
 
@@ -515,15 +992,25 @@ export async function POST(req: NextRequest) {
           data: { user },
         } = await ssr.auth.getUser();
         if (user?.email) actor = user.email;
-      } catch {}
+      } catch (error) {
+        console.warn("[intake] actor resolution unavailable", {
+          correlationId,
+          dealId: deal_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
       await logActivity({
         deal_id,
         actor,
         action: "created",
-        detail: `Intake captured · ${finalLane} lane · $${pricing.total} · ${country} · ${originAuthorityLabel}`,
+        detail: `Intake captured · ${finalLane} lane · $${effectiveTotal} · ${country} · ${originAuthorityLabel}`,
         meta: {
           source,
           lane: finalLane,
+          execution_truth: executionTruth,
+          original_total: pricing.total,
+          discount_amount: courtesyAdjustment?.amount ?? 0,
+          final_total: effectiveTotal,
           conversion_score,
           priority_tier,
         },
@@ -542,20 +1029,37 @@ export async function POST(req: NextRequest) {
     for (const addon of pricing.addons) {
       pricingBreakdown.push({ label: addon.item, amount: addon.amount });
     }
+    if (courtesyAdjustment?.amount) {
+      pricingBreakdown.push({
+        label: "Professional courtesy",
+        amount: -courtesyAdjustment.amount,
+      });
+    }
+
     const rationaleByLane: Record<string, string> = {
-      RON_SIMPLE: "Colorado RON-only path — RON Simple lane applies.",
-      MOBILE_STANDARD: "Florida mobile execution + round-trip mileage.",
-      Signature: "Standard international execution path.",
-      Priority: "Multi-signer or translation triggers Priority lane.",
+      RON_SIMPLE: "Explicit RON execution selected — RON Simple lane applies.",
+      MOBILE_STANDARD: "Explicit Florida mobile execution + round-trip mileage.",
+      Signature: "Standard execution path from resolved Matter facts.",
+      Priority: "Resolved Matter scope triggers Priority coordination.",
       Executive:
         "Urgent or multi-country routing — Executive lane handles it end-to-end.",
     };
 
+    stage = "RESPONSE_SENT";
     return NextResponse.json({
       success: true,
+      correlation_id: correlationId,
       deal_id: deal?.deal_id || deal_id,
       lane: finalLane,
-      estimated_value: pricing.total,
+      execution_truth: executionTruth,
+      estimated_value: effectiveTotal,
+      original_total: pricing.total,
+      discount_amount: courtesyAdjustment?.amount ?? 0,
+      discount_value: courtesyAdjustment?.discount_value ?? null,
+      final_total: effectiveTotal,
+      amount_due: invoice.retainer,
+      courtesy_applied: Boolean(courtesyAdjustment),
+      courtesy_label: courtesyAdjustment ? "Professional courtesy" : null,
       conversion_score,
       priority_tier,
       payment_method: "WISE",
@@ -565,11 +1069,14 @@ export async function POST(req: NextRequest) {
         lane: finalLane,
         base: pricing.base,
         witness_total: pricing.witness_total,
-        total: pricing.total,
+        original_total: pricing.total,
+        discount_amount: courtesyAdjustment?.amount ?? 0,
+        total: effectiveTotal,
         breakdown: pricingBreakdown,
-        rationale: rationaleByLane[finalLane] ?? "Standard pricing applied.",
+        rationale:
+          rationaleByLane[finalLane] ?? "Standard pricing applied.",
       },
-      execution_stage: "Awaiting Payment",
+      execution_stage: "Intake Received",
       portal_url: `${
         process.env.NEXT_PUBLIC_SITE_URL || "https://themilanoseal.com"
       }/portal/${access_token}`,
@@ -577,11 +1084,21 @@ export async function POST(req: NextRequest) {
       decline_risk,
       invoice,
     });
-  } catch (err: any) {
-    console.error("Intake error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  } catch (error) {
+    const code: IntakeFailureCode =
+      stage === "PRICED" || stage === "INVOICE_CREATED"
+        ? "PRICING_FAILED"
+        : stage === "WISE_REQUEST_CREATED"
+          ? "PAYMENT_REQUEST_FAILED"
+          : "UNKNOWN_INTAKE_FAILURE";
+    logIntakeFailure({
+      correlationId,
+      stage,
+      code,
+      error,
+      dealId: currentDealId,
+      source: currentSource,
+    });
+    return safeFailure(code, correlationId, 500);
   }
 }

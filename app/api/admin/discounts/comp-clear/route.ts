@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const role = (user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined;
+  const role = (user.app_metadata?.role ?? user.app_metadata?.role) as string | undefined;
   if (!canApproveComp(role, user.email)) {
     await recordSecurityEvent({
       event_name: "ADMIN_ACTION_DENIED",

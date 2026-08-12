@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   const user = sessionData.user;
   const actualRole =
-    ((user.user_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+    ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
 
   // Virtual assistants → VA portal
   if ([
