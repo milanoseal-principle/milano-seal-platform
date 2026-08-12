@@ -12,6 +12,15 @@ const intake = fs.readFileSync(
   path.join(root, "app/api/intake/route.ts"),
   "utf8",
 );
+const intakeRoute = fs.readFileSync(
+  path.join(root, "app/api/intake/route.ts"),
+  "utf8",
+);
+const intakeCore = fs.readFileSync(
+  path.join(root, "app/api/intake/core.ts"),
+  "utf8",
+);
+const intake = `${intakeRoute}\n${intakeCore}`;
 const quote = fs.readFileSync(
   path.join(root, "app/api/pricing/quote/route.ts"),
   "utf8",

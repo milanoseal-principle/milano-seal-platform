@@ -22,6 +22,22 @@ async function requireFounderOrAdmin() {
   return MANAGER_ROLES.has(role) ? { user, role } : null;
 }
 
+function safeMetadata(input: unknown) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  const raw = input as Record<string, unknown>;
+  return {
+    alliance_member_id:
+      typeof raw.alliance_member_id === "string" && raw.alliance_member_id.trim()
+        ? raw.alliance_member_id.trim()
+        : null,
+    eligible_service_scope:
+      typeof raw.eligible_service_scope === "string" && raw.eligible_service_scope.trim()
+        ? raw.eligible_service_scope.trim()
+        : "all_eligible_services",
+    stackable: false,
+  };
+}
+
 export async function GET() {
   if (!(await requireFounderOrAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -55,6 +71,7 @@ export async function POST(request: Request) {
     client_label?: string | null;
     matter_id?: string | null;
     client_id?: string | null;
+    metadata?: Record<string, unknown> | null;
   };
 
   if (!body.code || !body.discount_type || body.discount_value === undefined) {
@@ -68,10 +85,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid discount_type" }, { status: 400 });
   }
   if (body.discount_value <= 0 || (body.discount_type === "percentage" && body.discount_value > 100)) {
+  if (
+    body.discount_value <= 0 ||
+    (body.discount_type === "percentage" && body.discount_value > 100)
+  ) {
     return NextResponse.json({ error: "Invalid discount_value" }, { status: 400 });
   }
   if (body.usage_limit !== undefined && body.usage_limit !== null && body.usage_limit < 1) {
     return NextResponse.json({ error: "usage_limit must be at least 1" }, { status: 400 });
+  }
+  if (!body.internal_reason?.trim()) {
+    return NextResponse.json({ error: "internal_reason is required" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -90,6 +114,11 @@ export async function POST(request: Request) {
       client_label: body.client_label ?? "Milano Seal courtesy adjustment",
       matter_id: body.matter_id ?? null,
       client_id: body.client_id ?? null,
+      internal_reason: body.internal_reason.trim(),
+      client_label: body.client_label ?? "Milano Seal courtesy adjustment",
+      matter_id: body.matter_id ?? null,
+      client_id: body.client_id ?? null,
+      metadata: safeMetadata(body.metadata),
       // Creation never silently activates a courtesy code. Founder/admin must
       // explicitly activate it after reviewing scope and eligibility.
       status: "inactive",
@@ -115,6 +144,7 @@ export async function PATCH(request: Request) {
     usage_limit?: number | null;
     client_label?: string;
     internal_reason?: string;
+    metadata?: Record<string, unknown> | null;
   };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -124,7 +154,13 @@ export async function PATCH(request: Request) {
   if (body.expires_at !== undefined) update.expires_at = body.expires_at;
   if (body.usage_limit !== undefined) update.usage_limit = body.usage_limit;
   if (body.client_label !== undefined) update.client_label = body.client_label;
-  if (body.internal_reason !== undefined) update.internal_reason = body.internal_reason;
+  if (body.internal_reason !== undefined) {
+    if (!body.internal_reason.trim()) {
+      return NextResponse.json({ error: "internal_reason cannot be blank" }, { status: 400 });
+    }
+    update.internal_reason = body.internal_reason.trim();
+  }
+  if (body.metadata !== undefined) update.metadata = safeMetadata(body.metadata);
 
   const admin = createAdminClient();
   const { data, error } = await admin

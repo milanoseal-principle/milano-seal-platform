@@ -20,6 +20,11 @@ const intakeRoute = fs.readFileSync(
   path.join(root, "app/api/intake/route.ts"),
   "utf8",
 );
+const intakeCore = fs.readFileSync(
+  path.join(root, "app/api/intake/core.ts"),
+  "utf8",
+);
+const intake = `${intakeRoute}\n${intakeCore}`;
 const dealPage = fs.readFileSync(
   path.join(root, "app/dashboard/deals/[id]/page.tsx"),
   "utf8",
@@ -90,6 +95,9 @@ test("review-required mobile capture preserves mileage", () => {
   const reviewStart = intakeRoute.indexOf("const reviewPayload = {");
   const reviewEnd = intakeRoute.indexOf("const { data: reviewDeal");
   const reviewPayload = intakeRoute.slice(reviewStart, reviewEnd);
+  const reviewStart = intake.indexOf("const reviewPayload = {");
+  const reviewEnd = intake.indexOf("const { data: reviewDeal");
+  const reviewPayload = intake.slice(reviewStart, reviewEnd);
   assert.match(reviewPayload, /mobile:\s*legacyExecution\.mobile/);
   assert.match(reviewPayload, /miles:[\s\S]*executionTruth\.execution_method === "mobile"[\s\S]*Number\(data\.miles \?\? raw\.miles \?\? 0\)/);
 });

@@ -18,6 +18,15 @@ const intake = fs.readFileSync(
   path.join(root, "app/api/intake/route.ts"),
   "utf8",
 );
+const intakeRoute = fs.readFileSync(
+  path.join(root, "app/api/intake/route.ts"),
+  "utf8",
+);
+const intakeCore = fs.readFileSync(
+  path.join(root, "app/api/intake/core.ts"),
+  "utf8",
+);
+const intake = `${intakeRoute}\n${intakeCore}`;
 const dashboard = fs.readFileSync(
   path.join(root, "app/dashboard/intake/page.tsx"),
   "utf8",

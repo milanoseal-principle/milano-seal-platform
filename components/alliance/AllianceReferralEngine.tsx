@@ -1,9 +1,10 @@
 "use client";
-import { useState } from 'react';
 
+import { useMemo, useState } from "react";
 import { Send, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface FormState {
+  referral_code: string;
   partner_email: string;
   client_name: string;
   destination_country: string;
@@ -13,22 +14,28 @@ interface FormState {
   notes: string;
 }
 
-const INITIAL: FormState = {
-  partner_email: "",
-  client_name: "",
-  destination_country: "",
-  document_type: "",
-  matter_type: "",
-  urgency: "",
-  notes: "",
-};
+interface AllianceReferralEngineProps {
+  partnerEmail?: string | null;
+  referralCode?: string | null;
+}
 
 const DOCUMENT_TYPES = ["Apostille", "Notarization", "Authentication", "Translation", "Legalization", "Power of Attorney", "Birth Certificate", "Marriage Certificate", "Degree Verification", "Corporate Documents", "Other"];
 const MATTER_TYPES = ["Immigration", "Relocation", "Real Estate", "Business Formation", "Estate Planning", "Education", "Marriage / Family", "Other"];
 const URGENCY_OPTIONS = ["Standard (10–15 business days)", "Expedited (5–7 business days)", "Urgent (2–3 business days)", "Emergency (same day / next day)"];
 
-export function AllianceReferralEngine() {
-  const [form, setForm] = useState<FormState>(INITIAL);
+export function AllianceReferralEngine({ partnerEmail = "", referralCode = "" }: AllianceReferralEngineProps) {
+  const initial = useMemo<FormState>(() => ({
+    referral_code: referralCode ?? "",
+    partner_email: partnerEmail ?? "",
+    client_name: "",
+    destination_country: "",
+    document_type: "",
+    matter_type: "",
+    urgency: "",
+    notes: "",
+  }), [partnerEmail, referralCode]);
+
+  const [form, setForm] = useState<FormState>(initial);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; referral_id?: string; error?: string } | null>(null);
 
@@ -38,7 +45,7 @@ export function AllianceReferralEngine() {
 
   function canSubmit() {
     return (
-      form.partner_email.trim() &&
+      (form.partner_email.trim() || form.referral_code.trim()) &&
       form.client_name.trim() &&
       form.destination_country.trim() &&
       form.document_type &&
@@ -58,7 +65,7 @@ export function AllianceReferralEngine() {
       });
       const data = await res.json();
       setResult(data);
-      if (data.success) setForm(INITIAL);
+      if (data.success) setForm(initial);
     } catch {
       setResult({ error: "Submission failed. Please try again." });
     } finally {
@@ -90,10 +97,16 @@ export function AllianceReferralEngine() {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {(form.referral_code || partnerEmail) && (
+        <div style={{ padding: "10px 12px", background: "rgba(198,166,91,0.04)", border: "1px solid rgba(198,166,91,0.12)", borderRadius: 4, fontSize: 11, color: "#A8A29A" }}>
+          Referral attribution locked to this Alliance account{form.referral_code ? ` · ${form.referral_code}` : ""}.
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         <div>
           <label style={labelStyle}>Partner Email <span style={{ color: "#C6A55A" }}>*</span></label>
-          <input type="email" required value={form.partner_email} onChange={(e) => set("partner_email", e.target.value)} style={inputStyle} />
+          <input type="email" required={!form.referral_code} value={form.partner_email} onChange={(e) => set("partner_email", e.target.value)} readOnly={Boolean(partnerEmail)} style={{ ...inputStyle, opacity: partnerEmail ? 0.72 : 1 }} />
         </div>
         <div>
           <label style={labelStyle}>Client Name <span style={{ color: "#C6A55A" }}>*</span></label>

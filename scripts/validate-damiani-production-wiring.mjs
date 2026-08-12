@@ -9,6 +9,7 @@ const damianiReentry = read("app/professional/damiani/DamianiReentry.tsx");
 const page = read("app/intake/page.tsx");
 const wizard = read("components/intake/smart-intake-sop-wizard.tsx");
 const intake = read("app/api/intake/route.ts");
+const intake = `${read("app/api/intake/route.ts")}\n${read("app/api/intake/core.ts")}`;
 const discount = read("src/features/discounts/discountService.ts");
 const wise = read("app/api/webhooks/wise/route.ts");
 const migration = read("supabase/migrations/047_discount_wise_deal_wiring.sql");
