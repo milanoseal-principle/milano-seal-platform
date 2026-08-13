@@ -30,18 +30,21 @@ export interface SecurePaymentDeal {
   balance_amount_received?: number | null;
 }
 
+type MutationPhase = "idle" | "validating" | "refreshing";
+
 export function SecurePaymentCard({
   deal,
   onRefresh,
   allowDiscount = true,
 }: {
   deal: SecurePaymentDeal;
-  onRefresh?: () => void;
+  onRefresh?: () => void | Promise<void>;
   allowDiscount?: boolean;
 }) {
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [mutationPhase, setMutationPhase] = useState<MutationPhase>("idle");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const busy = mutationPhase !== "idle";
   const original = Number(deal.original_total ?? deal.total_price ?? 0);
   const discount = Number(deal.discount_amount ?? 0);
   const adjusted = Number(deal.final_total ?? deal.total_price ?? 0);
@@ -54,7 +57,7 @@ export function SecurePaymentCard({
   async function applyDiscount() {
     const normalized = code.trim();
     if (!normalized || busy) return;
-    setBusy(true);
+    setMutationPhase("validating");
     try {
       const res = await fetch(`/api/deals/${deal.id}/apply-discount`, {
         method: "POST",
@@ -70,6 +73,7 @@ export function SecurePaymentCard({
       // Applying a discount intentionally invalidates any stale awaiting-payment
       // Wise instruction. Recreate the retainer instruction from current server
       // pricing truth before refreshing the shared payment surface.
+      setMutationPhase("refreshing");
       const payRes = await fetch(`/api/deals/${deal.id}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,12 +97,19 @@ export function SecurePaymentCard({
     } catch {
       toast.error("Could not apply code.");
     } finally {
-      setBusy(false);
+      setMutationPhase("idle");
     }
   }
 
+  const mutationLabel =
+    mutationPhase === "validating"
+      ? "Validating code…"
+      : mutationPhase === "refreshing"
+        ? "Refreshing Wise instructions…"
+        : "";
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#C6A55A]/25 bg-[linear-gradient(180deg,#11110f_0%,#090909_100%)] shadow-[0_22px_80px_rgba(0,0,0,.32)]">
+    <section aria-busy={busy} className="overflow-hidden rounded-2xl border border-[#C6A55A]/25 bg-[linear-gradient(180deg,#11110f_0%,#090909_100%)] shadow-[0_22px_80px_rgba(0,0,0,.32)]">
       <div className="border-b border-[#C6A55A]/10 px-5 py-5 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -121,11 +132,12 @@ export function SecurePaymentCard({
               <input
                 id={`discount-${deal.id}`}
                 value={code}
+                disabled={busy}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                onKeyDown={(e) => { if (e.key === "Enter") void applyDiscount(); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !busy) void applyDiscount(); }}
                 placeholder="Enter code"
                 autoComplete="off"
-                className="min-h-11 min-w-0 rounded-lg border border-[#C6A55A]/15 bg-[#080808] px-3 text-sm text-[#F6F1E6] outline-none transition focus:border-[#C6A55A]/45 focus:ring-1 focus:ring-[#C6A55A]/20"
+                className="min-h-11 min-w-0 rounded-lg border border-[#C6A55A]/15 bg-[#080808] px-3 text-sm text-[#F6F1E6] outline-none transition focus:border-[#C6A55A]/45 focus:ring-1 focus:ring-[#C6A55A]/20 disabled:cursor-wait disabled:opacity-60"
               />
               <button
                 type="button"
@@ -133,8 +145,11 @@ export function SecurePaymentCard({
                 onClick={() => void applyDiscount()}
                 className="min-h-11 rounded-lg border border-[#C6A55A]/35 bg-[#C6A55A]/10 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#F6E8B8] transition hover:-translate-y-px hover:bg-[#C6A55A]/15 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {busy ? "Applying…" : "Apply"}
+                {mutationPhase === "validating" ? "Validating…" : mutationPhase === "refreshing" ? "Refreshing…" : "Apply"}
               </button>
+            </div>
+            <div aria-live="polite" className="mt-2 min-h-4 text-[11px] text-[#8e897f]">
+              {mutationLabel}
             </div>
           </div>
         )}
