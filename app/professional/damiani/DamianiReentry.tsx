@@ -14,7 +14,6 @@ const COPY: Record<
     primary: string;
     secondary: string;
     courtesyRecognized: string;
-    courtesyNotRequested: string;
     switchLabel: string;
     reviewNote: string;
   }
@@ -28,8 +27,6 @@ const COPY: Record<
     secondary: "Richiedi assistenza",
     courtesyRecognized:
       "Codice di cortesia DAMIANI50 riconosciuto per la verifica. L’idoneità sarà verificata dal sistema e l’adeguamento applicato solo dopo la verifica dell’identità professionale.",
-    courtesyNotRequested:
-      "Se dispone del codice di cortesia DAMIANI50, potrà inserirlo nel percorso di preventivo prima del pagamento. Nessuno sconto viene applicato automaticamente senza verifica.",
     switchLabel: "English",
     reviewNote:
       "The Milano Seal esaminerà il percorso di esecuzione proposto e confermerà i requisiti operativi prima di formulare un preventivo o programmare il servizio.",
@@ -43,8 +40,6 @@ const COPY: Record<
     secondary: "Request assistance",
     courtesyRecognized:
       "Courtesy code DAMIANI50 recognized for verification. Eligibility will be verified by the system and the adjustment applied only after professional identity verification.",
-    courtesyNotRequested:
-      "If you have courtesy code DAMIANI50, you can enter it during the quote flow before payment. No discount is applied automatically without verification.",
     switchLabel: "Italiano",
     reviewNote:
       "The Milano Seal will review the proposed execution route and confirm operational requirements before quoting or scheduling.",
@@ -55,20 +50,18 @@ const GOLD = "#C6A55A";
 
 export function DamianiReentry({
   initialLang,
-  courtesyRequested,
 }: {
   initialLang: Lang;
-  courtesyRequested: boolean;
 }) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const copy = COPY[lang];
 
-  // Carry only a courtesy-routing signal into intake. The backend remains
-  // authoritative for code validity, professional identity, eligible subtotal,
-  // redemption lifecycle, and final Wise amount.
-  const intakeHref = courtesyRequested
-    ? "/intake?lane=professional&courtesy=DAMIANI50&source=damiani-reentry"
-    : "/intake?lane=professional&source=damiani-reentry";
+  // DAMIANI50 is always carried by the dedicated re-entry route as a routing
+  // signal. It is never client-authoritative: the backend still validates code
+  // status, source/program restrictions, eligible subtotal, usage, and Wise
+  // redemption before any pricing or payment state can change.
+  const intakeHref =
+    "/intake?lane=professional&courtesy=DAMIANI50&source=damiani-reentry";
 
   const assistanceSubject = encodeURIComponent(
     lang === "it"
@@ -122,9 +115,7 @@ export function DamianiReentry({
             }}
             role="status"
           >
-            {courtesyRequested
-              ? copy.courtesyRecognized
-              : copy.courtesyNotRequested}
+            {copy.courtesyRecognized}
           </div>
         </div>
 
