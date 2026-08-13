@@ -1,15 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { resolveServerRole } from "@/lib/auth/server-role";
 import { logActivity } from "@/lib/activity";
 import { serializeDealMS } from "@/lib/milanoSerialize";
 import { revalidatePath } from "next/cache";
+
+const DEAL_API_ROLES = new Set([
+  "founder",
+  "founder_admin",
+  "admin",
+  "admin_operator",
+  "ops_manager",
+  "finance",
+  "finance_operator",
+  "execution_coordinator",
+  "apostille_coordinator",
+  "client_support",
+  "virtual_assistant",
+]);
+
+async function requireDealApiAccess() {
+  const ssr = await createClient();
+  const {
+    data: { user },
+  } = await ssr.auth.getUser();
+
+  if (!user) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 }),
+    };
+  }
+
+  const role = await resolveServerRole(user);
+  if (!DEAL_API_ROLES.has(role)) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "FORBIDDEN" }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    actor: user.email ?? user.id,
+    role,
+  };
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const access = await requireDealApiAccess();
+    if (!access.ok) return access.response;
+
     const { id } = await params;
     const supabase = createAdminClient();
 
@@ -50,6 +96,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const access = await requireDealApiAccess();
+    if (!access.ok) return access.response;
+
     const { id } = await params;
     const body = await request.json();
     const supabase = createAdminClient();
@@ -205,11 +254,7 @@ export async function PATCH(
 
     void (async () => {
       try {
-        const ssr = await createClient();
-        const {
-          data: { user },
-        } = await ssr.auth.getUser();
-        const actor = user?.email ?? "admin";
+        const actor = access.actor;
         const dealRef = (deal?.deal_id as string) ?? id;
 
         if (updateData.assignee !== undefined) {
