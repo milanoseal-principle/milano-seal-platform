@@ -17,6 +17,7 @@ export function PortalEntryRitual({ onComplete }: { onComplete: () => void }) {
       steps={STEPS}
       sectionLabel="Preparing your matter portal"
       footerText="SECURE WORKSPACE READY"
+      sessionKey="ms-portal-entry"
       onComplete={onComplete}
     />
   );

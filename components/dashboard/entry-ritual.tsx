@@ -18,6 +18,7 @@ export function MilanoSealEntryRitual({ onComplete }: { onComplete: () => void }
       steps={STEPS}
       sectionLabel="Structuring execution environment"
       footerText="WORKSPACE READY"
+      sessionKey="ms-operator-entry"
       onComplete={onComplete}
     />
   );
