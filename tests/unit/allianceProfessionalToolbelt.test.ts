@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildApostilleRoute,
   evaluateDocumentReadiness,
   projectApostilleRoute,
+  scanDocumentReadiness,
 } from "../../lib/alliance/professionalToolbelt";
 
 test("Italy private document projects a Hague route without an acceptance guarantee", () => {
@@ -14,7 +16,6 @@ test("Italy private document projects a Hague route without an acceptance guaran
     issuingAuthority: "private",
     urgency: "standard",
   });
-
   assert.equal(result.destination.routeType, "hague_apostille");
   assert.equal(result.routeStatus, "READY");
   assert.ok(result.authorityPath.some((step) => /Hague apostille/i.test(step)));
@@ -29,7 +30,6 @@ test("federal non-Hague / consular route fails closed to review", () => {
     issuingAuthority: "federal",
     urgency: "standard",
   });
-
   assert.equal(result.routeStatus, "REVIEW_REQUIRED");
   assert.ok(result.authorityPath.some((step) => /Department of State/i.test(step)));
   assert.ok(result.reviewReasons.length > 0);
@@ -43,7 +43,6 @@ test("rush timing is review-required even when destination route is otherwise kn
     issuingAuthority: "private",
     urgency: "rush",
   });
-
   assert.equal(result.routeStatus, "REVIEW_REQUIRED");
   assert.ok(result.reviewReasons.some((reason) => /rush timing/i.test(reason)));
 });
@@ -63,7 +62,6 @@ test("document readiness blocks missing document or unusable scan and otherwise 
     destinationConfirmed: true,
     authenticationPathConfirmed: true,
   });
-
   assert.equal(blocked.status, "BLOCKED");
   assert.ok(blocked.blockers.length >= 2);
 
@@ -81,13 +79,10 @@ test("document readiness blocks missing document or unusable scan and otherwise 
     destinationConfirmed: true,
     authenticationPathConfirmed: true,
   });
-
   assert.equal(ready.status, "READY");
   assert.equal(ready.blockers.length, 0);
   assert.equal(ready.reviewItems.length, 0);
-import assert from "node:assert/strict";
-import test from "node:test";
-import { buildApostilleRoute, scanDocumentReadiness } from "@/lib/alliance/professionalToolbelt";
+});
 
 test("route architect leaves unresolved authority questions for review", () => {
   const result = buildApostilleRoute({
