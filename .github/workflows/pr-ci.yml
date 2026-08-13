@@ -35,11 +35,14 @@ jobs:
       - name: Duplicate-source corruption gate
         run: npm run validate:duplicate-source
 
+      - name: Visual-system hardening gate
+        run: node scripts/validate-final-visual-system-hardening.mjs
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Lint
-        run: npx --yes eslint@9.39.1 .
+        run: npm run lint
 
       - name: Tests
         run: npm test
