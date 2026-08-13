@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
 import { AllianceToolbeltMatrix, type ToolbeltModuleStatus } from "@/components/alliance/AllianceToolbeltMatrix";
+import { AllianceProfessionalTools } from "@/components/alliance/AllianceProfessionalTools";
 
 async function getToolbeltProgress(partnerId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
@@ -61,6 +62,7 @@ export default async function AllianceToolbeltPage() {
         </div>
 
         <AllianceToolbeltMatrix progress={progress} />
+        <AllianceProfessionalTools />
       </div>
     </AllianceShell>
   );
