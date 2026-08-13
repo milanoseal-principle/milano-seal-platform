@@ -57,11 +57,8 @@ export function authSourceScan() {
     .filter(Boolean)
     .filter((line) => {
       const code = line.replace(/^[^:]*:\d+:/, "").trim();
-      // Allow comments (explanatory) and the documented display-name use.
       if (code.startsWith("//") || code.startsWith("*")) return false;
       if (/never|must not|user-writable|display name|solely for/i.test(code)) return false;
-      // Allow test assertions that reference the pattern as a string / negated
-      // regex (they verify ABSENCE of the read, not perform one).
       if (/assert|\.test\(|!\/|expect\(/.test(code)) return false;
       return true;
     });
@@ -73,9 +70,6 @@ export function authSourceScan() {
 }
 
 export function secretExposureScan() {
-  // The risk is a secret VALUE reaching the client — i.e. a `process.env.<SECRET>`
-  // read in a client/public surface. Displaying a secret's NAME as a config-label
-  // string (e.g. the operator go-live checklist) is not exposure.
   const { out } = rg(
     "process\\.env\\.(SUPABASE_SERVICE_ROLE|WISE_API|WISE_TOKEN|SHIPPO_API|BLUENOTARY_API|PRIVATE_KEY|SECRET_KEY)",
     ["app", "components", "public"],
@@ -83,8 +77,6 @@ export function secretExposureScan() {
   const offending = out
     .split("\n")
     .filter(Boolean)
-    // API route handlers (server-only) legitimately read secrets; the client
-    // risk is components / public assets.
     .filter((line) => !/^app\/api\//.test(line))
     .filter((line) => {
       const code = line.replace(/^[^:]*:\d+:/, "").trim();
@@ -97,9 +89,6 @@ export function secretExposureScan() {
   };
 }
 
-// Release-critical validators: security, canonical structure, and the
-// complimentary-Matter flow. These MUST be green to ship — the meta-gate
-// hard-fails on any of them. (All are green on the baseline commit.)
 export const REQUIRED_VALIDATORS = [
   "validate:damiani-production-wiring",
   "validate:complimentary-matter-flow",
@@ -110,29 +99,23 @@ export const REQUIRED_VALIDATORS = [
   "validate:final-wiring-confirmation",
 ];
 
-// Discover existing validators to chain: pure `node scripts/*.mjs` validate:*
-// scripts (offline, no network), excluding this meta-gate itself.
 export function collectValidators(pkg) {
   const scripts = pkg.scripts ?? {};
   const toRun = [];
   for (const [name, cmd] of Object.entries(scripts)) {
     if (!name.startsWith("validate:")) continue;
     if (name === SELF_SCRIPT) continue;
-    if (!/^node\s+scripts\/[\w.-]+\.mjs$/.test(cmd.trim())) continue; // pure node only
+    if (!/^node\s+scripts\/[\w.-]+\.mjs$/.test(cmd.trim())) continue;
     toRun.push(name);
   }
   return toRun;
 }
 
-// Advisory validators = every pure-node validator that is NOT release-critical.
-// They are run and REPORTED but do not block the gate (many are content/copy
-// linters with pre-existing findings tracked separately).
 export function collectAdvisory(pkg) {
   const required = new Set(REQUIRED_VALIDATORS);
   return collectValidators(pkg).filter((n) => !required.has(n));
 }
 
-// Report which of a preferred list are present vs missing (skipped).
 export function partitionPreferred(pkg, preferred) {
   const scripts = pkg.scripts ?? {};
   const present = preferred.filter((n) => n in scripts);
@@ -169,12 +152,10 @@ async function main() {
     process.exit(code);
   };
 
-  // 1. package.json must be valid.
   const pkg = parsePackage();
   results.push({ label: "package.json valid", ok: pkg !== null });
   if (!pkg) stopWith(results, 1);
 
-  // 2. Preflight scans BEFORE any build.
   for (const scan of [mergeArtifactScan(), authSourceScan(), secretExposureScan()]) {
     results.push({ label: scan.name, ok: scan.ok });
     if (!scan.ok) {
@@ -183,7 +164,6 @@ async function main() {
     }
   }
 
-  // 3. Release-critical validators — hard fail.
   for (const name of REQUIRED_VALIDATORS) {
     if (!(name in (pkg.scripts ?? {}))) {
       results.push({ label: `${name} (missing)`, ok: false });
@@ -194,11 +174,12 @@ async function main() {
     if (!r.ok) stopWith(results, 1);
   }
 
-  // 4. Core gates — hard fail. Lint intentionally mirrors PR CI's pinned
-  // clean-runner command because eslint is not declared in package devDependencies.
+  // Core gates — hard fail. Use the repository's canonical scripts so the
+  // final gate remains deterministic/offline and cannot drift by downloading a
+  // different tool version from the network during release validation.
   for (const [label, cmd, args] of [
     ["typecheck", "npm", ["run", "--silent", "typecheck"]],
-    ["lint", "npx", ["--yes", "eslint@9.39.1", "."]],
+    ["lint", "npm", ["run", "--silent", "lint"]],
     ["test", "npm", ["test", "--silent"]],
     ["build", "npm", ["run", "--silent", "build"]],
   ]) {
@@ -207,8 +188,6 @@ async function main() {
     if (!r.ok) stopWith(results, 1);
   }
 
-  // 5. Advisory validators — REPORTED, non-blocking. Pre-existing findings are
-  // surfaced here honestly without failing the release gate or hiding them.
   const advisory = [];
   for (const name of collectAdvisory(pkg)) {
     const r = runStep(name, "npm", ["run", "--silent", name]);
@@ -222,7 +201,6 @@ async function main() {
     for (const r of advisoryFail) console.log(`    REPORT ${r.label}`);
   }
 
-  // Exit reflects REQUIRED gates only.
   stopWith(results, results.every((r) => r.ok) ? 0 : 1);
 }
 
