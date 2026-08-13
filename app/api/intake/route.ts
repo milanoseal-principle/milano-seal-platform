@@ -34,8 +34,116 @@ interface IntakeSuccessBody {
   };
 }
 
+type IntakeRequestBody = Record<string, unknown>;
+
+function sameOriginDamianiSource(req: NextRequest): boolean {
+  const referer = req.headers.get("referer");
+  if (!referer) return false;
+  try {
+    const requestUrl = new URL(req.url);
+    const ref = new URL(referer);
+    return (
+      ref.origin === requestUrl.origin &&
+      ref.pathname === "/intake" &&
+      ref.searchParams.get("source")?.trim().toLowerCase() === "damiani-reentry"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function normalizedSourceChannel(req: NextRequest, body: IntakeRequestBody): string {
+  // The wizard's generic Website Form label remains valid for ordinary intake.
+  // A same-origin dedicated re-entry URL may narrow that attribution. This is
+  // routing provenance only; it is never payment, identity, or discount authority.
+  if (sameOriginDamianiSource(req)) return "damiani-reentry";
+  const raw = String(body.source_channel ?? "Website Form").trim();
+  return raw || "Website Form";
+}
+
+async function enforceCourtesySourceRestriction(
+  body: IntakeRequestBody,
+  sourceChannel: string,
+): Promise<NextResponse | null> {
+  const code =
+    typeof body.courtesy_code === "string"
+      ? body.courtesy_code.trim().toUpperCase()
+      : "";
+  if (!code) return null;
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("discount_codes")
+    .select("metadata")
+    .eq("code", code)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[intake] courtesy source policy lookup failed", {
+      code,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Courtesy code could not be verified.",
+        code: "COURTESY_POLICY_LOOKUP_FAILED",
+      },
+      { status: 500 },
+    );
+  }
+
+  const metadata = (data?.metadata ?? {}) as Record<string, unknown>;
+  const allowedSource = String(metadata.allowed_source_channel ?? "")
+    .trim()
+    .toLowerCase();
+  if (allowedSource && allowedSource !== sourceChannel.trim().toLowerCase()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Courtesy code is not eligible for this intake source.",
+        code: "COURTESY_SOURCE_RESTRICTED",
+      },
+      { status: 400 },
+    );
+  }
+
+  return null;
+}
+
+async function canonicalizeRequest(req: NextRequest): Promise<{
+  request: NextRequest;
+  sourceChannel: string;
+  failure: NextResponse | null;
+}> {
+  let body: IntakeRequestBody;
+  try {
+    body = (await req.clone().json()) as IntakeRequestBody;
+  } catch {
+    return { request: req, sourceChannel: "Website Form", failure: null };
+  }
+
+  const sourceChannel = normalizedSourceChannel(req, body);
+  const failure = await enforceCourtesySourceRestriction(body, sourceChannel);
+  if (failure) return { request: req, sourceChannel, failure };
+
+  const headers = new Headers(req.headers);
+  headers.delete("content-length");
+  const request = new NextRequest(req.url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ ...body, source_channel: sourceChannel }),
+  });
+
+  return { request, sourceChannel, failure: null };
+}
+
 export async function POST(req: NextRequest) {
-  const response = await handleCanonicalIntakePost(req);
+  const normalized = await canonicalizeRequest(req);
+  if (normalized.failure) return normalized.failure;
+
+  const response = await handleCanonicalIntakePost(normalized.request);
   if (!response.ok) return response;
 
   let body: IntakeSuccessBody;
@@ -45,10 +153,41 @@ export async function POST(req: NextRequest) {
     return response;
   }
 
-  // Review-required Matter capture intentionally has no approved quote yet.
-  if (!body.success || body.quote_state === "review_required") return response;
+  if (!body.success) return response;
 
   const dealId = String(body.deal_id ?? "");
+
+  // Review-required capture is intentionally pre-price. It must persist as
+  // reviewing, never as awaiting_payment, because there is no approved payment
+  // obligation yet. Fail closed if that legacy state cannot be reconciled.
+  if (body.quote_state === "review_required") {
+    if (!dealId) return response;
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from("deals")
+      .update({ deal_status: "reviewing" })
+      .eq("deal_id", dealId);
+    if (error) {
+      console.error("[intake] review status reconciliation failed", {
+        dealId,
+        sourceChannel: normalized.sourceChannel,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "The Matter was captured but its review state could not be verified.",
+          code: "INTAKE_REVIEW_STATUS_PERSISTENCE_FAILED",
+          correlation_id: body.correlation_id ?? null,
+          deal_id: dealId,
+        },
+        { status: 500 },
+      );
+    }
+    return response;
+  }
+
   if (!dealId) {
     return NextResponse.json(
       {
