@@ -36,7 +36,12 @@ test("projection is deterministic and provenance-backed", () => {
   const first = getCommandCenterWorkbookProjection();
   const second = getCommandCenterWorkbookProjection();
   assert.deepEqual(second, first);
-  assert.equal(first.projectionId, "9c3d5f14920f207925275c903dbe0b38dcf39f63:command-center-v1");
-  assert.equal(first.sourceAttribution["WORKBOOK-ABUJHAISHA-120"], "Snapdocs");
+  assert.match(first.projectionId, /^[a-f0-9]{64}:command-center-v2$/);
+  assert.equal(first.sourceSha256, first.projectionId.split(":")[0]);
+
+  const abujhaisha = first.opportunities.find((item) => item.clientName === "Abujhaisha");
+  assert.ok(abujhaisha);
+  assert.equal(first.sourceAttribution[abujhaisha.id], "Snapdocs");
   assert.equal(first.opportunities.every((item) => item.provenance.authority === "evidence_only"), true);
+  assert.equal(first.opportunities.every((item) => item.provenance.sourceSha256 === first.sourceSha256), true);
 });
