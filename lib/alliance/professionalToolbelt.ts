@@ -2,8 +2,10 @@ import {
   getCountryExecutionIntelligence,
   type CountryExecutionIntelligence,
 } from "@/data/country-execution-intelligence";
+import { routeApostille } from "@/lib/apostille-rules/apostilleRoutingEngine";
 
 export type ReadinessStatus = "READY" | "REVIEW_REQUIRED" | "BLOCKED";
+export type ScanReadinessStatus = "READY" | "REVIEW REQUIRED" | "BLOCKED";
 
 export type IssuingAuthority =
   | "state"
@@ -105,7 +107,6 @@ export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRout
   }
 
   const routeStatus: ReadinessStatus = reviewReasons.length ? "REVIEW_REQUIRED" : "READY";
-
   const translationConsideration =
     destination.translationRisk === "none"
       ? "No standing translation risk indicated by the current country registry."
@@ -114,7 +115,6 @@ export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRout
         : destination.translationRisk === "possible"
           ? "Translation may be requested by the receiving authority."
           : "Translation requirements are authority-specific and must be confirmed.";
-
   const consularConsideration =
     destination.routeType === "consular_legalization"
       ? "Embassy / consular review is indicated before release."
@@ -148,7 +148,6 @@ export function evaluateDocumentReadiness(
   check(input.documentPresent, "Document present", "block");
   check(!input.missingPages, "No missing pages detected", "block");
   check(input.scanUsable, "Scan quality usable", "block");
-
   check(input.signatureBlocksPresent, "Signature blocks confirmed", "review");
   check(input.signerCountKnown, "Signer count confirmed", "review");
   check(input.datesComplete, "Date fields complete", "review");
@@ -158,11 +157,8 @@ export function evaluateDocumentReadiness(
   check(input.destinationConfirmed, "Destination confirmed", "review");
   check(input.authenticationPathConfirmed, "Authentication path confirmed", "review");
 
-  if (input.foreignLanguage) {
-    reviewItems.push("Foreign-language document requires translation / authority review.");
-  } else {
-    passedChecks.push("No foreign-language review flag");
-  }
+  if (input.foreignLanguage) reviewItems.push("Foreign-language document requires translation / authority review.");
+  else passedChecks.push("No foreign-language review flag");
 
   const status: ReadinessStatus = blockers.length
     ? "BLOCKED"
@@ -171,9 +167,9 @@ export function evaluateDocumentReadiness(
       : "READY";
 
   return { status, blockers, reviewItems, passedChecks };
-import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
-import { routeApostille } from "@/lib/apostille-rules/apostilleRoutingEngine";
+}
 
+// Compatibility API retained for Alliance Tool Belt V2 consumers.
 export interface RouteArchitectInput {
   originatingState: string;
   destinationCountry: string;
@@ -258,8 +254,6 @@ export interface ReadinessScanInput {
   authenticationPathConfirmed: boolean;
 }
 
-export type ReadinessStatus = "READY" | "REVIEW REQUIRED" | "BLOCKED";
-
 export function scanDocumentReadiness(input: ReadinessScanInput) {
   const blockers = [
     !input.documentPresent && "Document is not present.",
@@ -278,14 +272,16 @@ export function scanDocumentReadiness(input: ReadinessScanInput) {
     !input.authenticationPathConfirmed && "Authentication pathway requires review.",
   ].filter((item): item is string => Boolean(item));
 
-  const status: ReadinessStatus = blockers.length
+  const status: ScanReadinessStatus = blockers.length
     ? "BLOCKED"
     : reviewFlags.length
       ? "REVIEW REQUIRED"
       : "READY";
+
   return {
     status,
     findings: [...blockers, ...reviewFlags],
-    disclaimer: "This readiness scan supports document operations and does not replace legal or receiving-authority review.",
+    disclaimer:
+      "This readiness scan supports document operations and does not replace legal or receiving-authority review.",
   };
 }
