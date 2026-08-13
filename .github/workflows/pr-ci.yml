@@ -38,6 +38,18 @@ jobs:
       - name: Visual-system hardening gate
         run: node scripts/validate-final-visual-system-hardening.mjs
 
+      - name: Cinematic UI validator
+        run: npm run validate:cinematic-ui-system
+
+      - name: Cinematic route coverage
+        run: npm run validate:cinematic-route-coverage
+
+      - name: Responsive safety
+        run: npm run validate:responsive-safety
+
+      - name: Final mobile cosmetic pass
+        run: npm run validate:final-mobile-cosmetic-pass
+
       - name: Typecheck
         run: npm run typecheck
 
