@@ -8,10 +8,13 @@ const damianiPage = read("app/professional/damiani/page.tsx");
 const damianiReentry = read("app/professional/damiani/DamianiReentry.tsx");
 const page = read("app/intake/page.tsx");
 const wizard = read("components/intake/smart-intake-sop-wizard.tsx");
-const intake = `${read("app/api/intake/route.ts")}\n${read("app/api/intake/core.ts")}`;
+const intakeRoute = read("app/api/intake/route.ts");
+const intake = `${intakeRoute}\n${read("app/api/intake/core.ts")}`;
 const discount = read("src/features/discounts/discountService.ts");
+const discountRoute = read("app/api/deals/[id]/apply-discount/route.ts");
 const wise = read("app/api/webhooks/wise/route.ts");
 const migration = read("supabase/migrations/047_discount_wise_deal_wiring.sql");
+const governedDamiani = read("supabase/migrations/051_damiani50_governed_scope.sql");
 
 check(
   "dedicated Damiani route auto-carries courtesy",
@@ -59,6 +62,29 @@ check(
   /from\("deals"\)/.test(discount) && !/matterRepository/.test(discount),
 );
 check("explicit eligible subtotal", /DISCOUNT_REVIEW_REQUIRED/.test(discount));
+check(
+  "Damiani source is preserved server-side",
+  /damiani-reentry/.test(intakeRoute) &&
+    /source_channel:\s*sourceChannel/.test(intakeRoute),
+);
+check(
+  "review-required intake is not awaiting payment",
+  /update\(\{\s*deal_status:\s*"reviewing"\s*\}\)/.test(intakeRoute) &&
+    /INTAKE_REVIEW_STATUS_PERSISTENCE_FAILED/.test(intakeRoute),
+);
+check(
+  "discount source restriction enforced",
+  /allowed_source_channel/.test(intakeRoute) &&
+    /allowed_source_channel/.test(discountRoute) &&
+    /Discount code is not eligible for this intake source/.test(discountRoute),
+);
+check(
+  "DAMIANI50 governed metadata is additive",
+  /allowed_source_channel',\s*'damiani-reentry'/.test(governedDamiani) &&
+    /eligible_service_scope',\s*'professional_services'/.test(governedDamiani) &&
+    /where upper\(code\) = 'DAMIANI50'/.test(governedDamiani) &&
+    !/usage_count\s*=|discount_value\s*=|status\s*=/.test(governedDamiani),
+);
 check(
   "atomic Wise RPC",
   /confirm_wise_payment_for_deal/.test(wise) &&
