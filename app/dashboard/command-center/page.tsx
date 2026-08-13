@@ -5,6 +5,8 @@ import { getPublicQuoteFactors, getServiceComponents } from "@/lib/command-cente
 import { getHighPriorityBundles } from "@/lib/command-center/dealLogic";
 import { authorityPageTargets, getPublicAuthorityProfiles } from "@/lib/command-center/seoSocial";
 import { MASTER_STATUS, REVENUE_STATUS } from "@/lib/command-center/status";
+import { getCommandCenterWorkbookProjection } from "@/lib/command-center/workbookIntelligence";
+import { WorkbookIntelligencePanel } from "@/components/dashboard/WorkbookIntelligencePanel";
 
 export const metadata: Metadata = {
   title: "Command Center — The Milano Seal™",
@@ -62,6 +64,7 @@ export default function CommandCenterPage() {
   const factors = getPublicQuoteFactors();
   const serviceComponents = getServiceComponents();
   const profiles = getPublicAuthorityProfiles();
+  const workbookProjection = getCommandCenterWorkbookProjection();
 
   return (
     <main className="min-h-screen bg-black px-4 py-8 text-stone-100 sm:px-6 lg:px-8">
@@ -83,6 +86,8 @@ export default function CommandCenterPage() {
             </div>
           </div>
         </header>
+
+        <WorkbookIntelligencePanel projection={workbookProjection} />
 
         <nav className="flex flex-wrap gap-2" aria-label="Command Center sections">
           {sections.map((section) => (
