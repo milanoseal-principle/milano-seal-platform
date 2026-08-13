@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 
 const required = [
+  "app/loading.tsx",
+  "app/error.tsx",
   "components/NavigationLoader.tsx",
   "components/motion/CinematicPageShell.tsx",
   "components/animations/StatusTransitionPill.tsx",
@@ -30,9 +32,24 @@ if (shell.includes("key={pathname}")) {
   throw new Error("Global cinematic shell must not remount the full application on pathname change");
 }
 
+const loading = readFileSync("app/loading.tsx", "utf8");
+for (const token of ["Preparing secure workspace", "aria-busy", "The Milano Seal™"]) {
+  if (!loading.includes(token)) throw new Error(`Global loading state missing: ${token}`);
+}
+
+const recovery = readFileSync("app/error.tsx", "utf8");
+for (const token of ["Retry view", "error.digest", "no successful transaction should be inferred"]) {
+  if (!recovery.includes(token)) throw new Error(`Global recovery state missing: ${token}`);
+}
+
 const portal = readFileSync("app/portal/page.tsx", "utf8");
 for (const token of ["MatterJourneyCard", "CustodyTimeline", "PortalCourierCustody", "PortalEntryRitual"]) {
   if (!portal.includes(token)) throw new Error(`Portal visual projection missing: ${token}`);
+}
+
+const portalStates = readFileSync("components/portal/portal-empty-states.tsx", "utf8");
+for (const token of ["ExpiredPortalToken", "PaymentPending", "ReviewNeeded", "CourierTrackingUnavailable"]) {
+  if (!portalStates.includes(token)) throw new Error(`Portal state language missing: ${token}`);
 }
 
 const payment = readFileSync("components/payments/SecurePaymentCard.tsx", "utf8");
