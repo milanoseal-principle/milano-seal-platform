@@ -2,8 +2,10 @@ import {
   getCountryExecutionIntelligence,
   type CountryExecutionIntelligence,
 } from "@/data/country-execution-intelligence";
+import { routeApostille } from "@/lib/apostille-rules/apostilleRoutingEngine";
 
 export type ReadinessStatus = "READY" | "REVIEW_REQUIRED" | "BLOCKED";
+export type ScanReadinessStatus = "READY" | "REVIEW REQUIRED" | "BLOCKED";
 
 export type IssuingAuthority =
   | "state"
@@ -105,7 +107,6 @@ export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRout
   }
 
   const routeStatus: ReadinessStatus = reviewReasons.length ? "REVIEW_REQUIRED" : "READY";
-
   const translationConsideration =
     destination.translationRisk === "none"
       ? "No standing translation risk indicated by the current country registry."
@@ -114,7 +115,6 @@ export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRout
         : destination.translationRisk === "possible"
           ? "Translation may be requested by the receiving authority."
           : "Translation requirements are authority-specific and must be confirmed.";
-
   const consularConsideration =
     destination.routeType === "consular_legalization"
       ? "Embassy / consular review is indicated before release."
@@ -138,7 +138,6 @@ export function evaluateDocumentReadiness(
   const blockers: string[] = [];
   const reviewItems: string[] = [];
   const passedChecks: string[] = [];
-
   const check = (condition: boolean, label: string, mode: "block" | "review") => {
     if (condition) passedChecks.push(label);
     else if (mode === "block") blockers.push(label);
@@ -148,7 +147,6 @@ export function evaluateDocumentReadiness(
   check(input.documentPresent, "Document present", "block");
   check(!input.missingPages, "No missing pages detected", "block");
   check(input.scanUsable, "Scan quality usable", "block");
-
   check(input.signatureBlocksPresent, "Signature blocks confirmed", "review");
   check(input.signerCountKnown, "Signer count confirmed", "review");
   check(input.datesComplete, "Date fields complete", "review");
@@ -158,21 +156,12 @@ export function evaluateDocumentReadiness(
   check(input.destinationConfirmed, "Destination confirmed", "review");
   check(input.authenticationPathConfirmed, "Authentication path confirmed", "review");
 
-  if (input.foreignLanguage) {
-    reviewItems.push("Foreign-language document requires translation / authority review.");
-  } else {
-    passedChecks.push("No foreign-language review flag");
-  }
+  if (input.foreignLanguage) reviewItems.push("Foreign-language document requires translation / authority review.");
+  else passedChecks.push("No foreign-language review flag");
 
-  const status: ReadinessStatus = blockers.length
-    ? "BLOCKED"
-    : reviewItems.length
-      ? "REVIEW_REQUIRED"
-      : "READY";
-
+  const status: ReadinessStatus = blockers.length ? "BLOCKED" : reviewItems.length ? "REVIEW_REQUIRED" : "READY";
   return { status, blockers, reviewItems, passedChecks };
-import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
-import { routeApostille } from "@/lib/apostille-rules/apostilleRoutingEngine";
+}
 
 export interface RouteArchitectInput {
   originatingState: string;
@@ -209,7 +198,6 @@ export function buildApostilleRoute(input: RouteArchitectInput): RouteArchitectR
     input.signingRequirement === "unknown" ||
     country.routeType === "authority_review" ||
     country.routeType === "hybrid_review";
-
   const authorityPath = [
     `${input.originatingState || "Originating jurisdiction"} document authority review`,
     ...(input.signingRequirement === "notarized"
@@ -258,8 +246,6 @@ export interface ReadinessScanInput {
   authenticationPathConfirmed: boolean;
 }
 
-export type ReadinessStatus = "READY" | "REVIEW REQUIRED" | "BLOCKED";
-
 export function scanDocumentReadiness(input: ReadinessScanInput) {
   const blockers = [
     !input.documentPresent && "Document is not present.",
@@ -277,12 +263,7 @@ export function scanDocumentReadiness(input: ReadinessScanInput) {
     !input.receivingCountryConfirmed && "Receiving country is not confirmed.",
     !input.authenticationPathConfirmed && "Authentication pathway requires review.",
   ].filter((item): item is string => Boolean(item));
-
-  const status: ReadinessStatus = blockers.length
-    ? "BLOCKED"
-    : reviewFlags.length
-      ? "REVIEW REQUIRED"
-      : "READY";
+  const status: ScanReadinessStatus = blockers.length ? "BLOCKED" : reviewFlags.length ? "REVIEW REQUIRED" : "READY";
   return {
     status,
     findings: [...blockers, ...reviewFlags],
