@@ -3,6 +3,7 @@ import { Hero } from "@/components/landing/hero";
 import { TrustStrip } from "@/components/landing/trust-strip";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
 import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
+import { TrustCoreCinematicField } from "@/components/landing/TrustCoreCinematicField";
 import { Services } from "@/components/landing/services";
 import { DocumentIntelligence } from "@/components/landing/document-intelligence";
 import { PaymentFounder } from "@/components/landing/payment-founder";
@@ -57,7 +58,9 @@ export default function HomePage() {
 
         {/* 3. Milano Trust Core — 6 pillars */}
         <div id="principles">
-          <MilanoTrustCore />
+          <TrustCoreCinematicField>
+            <MilanoTrustCore />
+          </TrustCoreCinematicField>
         </div>
 
         {/* 4. Services — RON, Apostille, International Execution, Mobile Notary */}
