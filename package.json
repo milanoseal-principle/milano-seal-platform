@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
+    "validate:duplicate-source": "node scripts/validate-duplicate-source.mjs",
     "validate:project": "npx tsx scripts/validate-project.ts",
     "seed:tiffany-e2e": "npx tsx scripts/seed-tiffany-e2e.ts",
     "repair:operators": "npx tsx scripts/repair-operator-accounts.ts",

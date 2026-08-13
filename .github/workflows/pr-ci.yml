@@ -32,6 +32,9 @@ jobs:
       - name: Diff check
         run: git diff --check
 
+      - name: Duplicate-source corruption gate
+        run: npm run validate:duplicate-source
+
       - name: Typecheck
         run: npm run typecheck
 
