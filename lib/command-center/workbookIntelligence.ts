@@ -1,160 +1,147 @@
+import generated from "@/data/command-center/workbook-intelligence.generated.json";
+
 export type WorkbookRecordKind = "matter_opportunity" | "lost_opportunity" | "collected_payment";
 export type WorkbookAuthority = "evidence_only";
 
 export interface WorkbookProvenance {
   sourceFile: string;
   sourceSheet: "COMMAND_CENTER" | "CLIENT_REGISTRY";
+  sourceRow: number;
   sourceRecordId: string;
   importedCommit: string;
+  sourceSha256: string;
   authority: WorkbookAuthority;
 }
 
 export interface WorkbookOpportunityProjection {
   id: string;
   clientName: string;
+  sourceClientName: string;
   clientType: string;
   country: string | null;
   status: string;
-  stage: "Pre-Revenue" | "Closed";
+  stage: string;
   lane: string | null;
+  serviceType: string | null;
   documentScope: string | null;
   paymentStatus: "None" | "Collected";
+  quotedValue: number;
+  finalValue: number;
   collectedRevenue: number;
-  closeStatus: "Open" | "Lost" | "Closed";
+  closeStatus: string;
   referralSource: string | null;
   protectedCode: string | null;
+  phone: string | null;
+  sourceUrl: string | null;
+  externalOrderId: string | null;
   recordKind: WorkbookRecordKind;
   notes: readonly string[];
   provenance: WorkbookProvenance;
 }
 
 export interface WorkbookClientProjection {
+  clientId: string;
   clientName: string;
+  clientType: string;
+  organization: string | null;
+  email: string | null;
+  phone: string | null;
+  country: string | null;
+  referralSource: string | null;
   totalHistoricalAndOpportunityRecords: number;
   lifetimeCollectedValue: number;
   openOpportunities: number;
+  lostOpportunities: number;
+  completedDeals: number;
   provenance: WorkbookProvenance;
 }
 
 export interface CommandCenterWorkbookProjection {
   projectionId: string;
+  sourceSha256: string;
   opportunities: readonly WorkbookOpportunityProjection[];
   clients: readonly WorkbookClientProjection[];
   collectedRevenue: number;
   sourceAttribution: Readonly<Record<string, string>>;
 }
 
-const SOURCE_FILE = "Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx";
-const SOURCE_COMMIT = "9c3d5f14920f207925275c903dbe0b38dcf39f63";
+type GeneratedDeal = (typeof generated.deals)[number];
+type GeneratedClient = (typeof generated.clients)[number];
 
-function provenance(sourceSheet: WorkbookProvenance["sourceSheet"], sourceRecordId: string): WorkbookProvenance {
+function dealProvenance(record: GeneratedDeal): WorkbookProvenance {
   return {
-    sourceFile: SOURCE_FILE,
-    sourceSheet,
-    sourceRecordId,
-    importedCommit: SOURCE_COMMIT,
+    sourceFile: generated.source.file,
+    sourceSheet: "COMMAND_CENTER",
+    sourceRow: record.sourceRow,
+    sourceRecordId: record.sourceRecordId,
+    importedCommit: generated.source.commit,
+    sourceSha256: generated.source.sha256,
     authority: "evidence_only",
   };
 }
 
-const opportunities: readonly WorkbookOpportunityProjection[] = [
-  {
-    id: "MS-DAMIANI-2026-003",
-    clientName: "Irene Damiani",
-    clientType: "Attorney / Reorder",
-    country: "Italy",
-    status: "New Intake",
-    stage: "Pre-Revenue",
-    lane: "Priority",
-    documentScope: null,
-    paymentStatus: "None",
-    collectedRevenue: 0,
-    closeStatus: "Open",
-    referralSource: null,
-    protectedCode: "DAMIANI50",
-    recordKind: "matter_opportunity",
-    notes: [
-      "Confirm document scope.",
-      "Calculate with the canonical pricing engine.",
-      "Persist the eligible subtotal before applying any adjustment.",
-      "Validate DAMIANI50 on the server before applying the 50% courtesy adjustment.",
-      "Derive the 50% retainer and 50% balance from the validated final total.",
-      "No redemption, payment, scheduling, or execution is recorded.",
-    ],
-    provenance: provenance("COMMAND_CENTER", "MS-DAMIANI-2026-003"),
-  },
-  {
-    id: "WORKBOOK-DAMIANI-REJECTED-1100",
-    clientName: "Irene Damiani",
-    clientType: "Attorney",
-    country: "Italy",
-    status: "Lost",
-    stage: "Closed",
-    lane: null,
-    documentScope: null,
-    paymentStatus: "None",
-    collectedRevenue: 0,
-    closeStatus: "Lost",
-    referralSource: null,
-    protectedCode: null,
-    recordKind: "lost_opportunity",
-    notes: ["Rejected $1,100 opportunity; the quoted value is not revenue."],
-    provenance: provenance("COMMAND_CENTER", "DAMIANI-REJECTED-1100"),
-  },
-  {
-    id: "WORKBOOK-COLOMBIA-LOST-500",
-    clientName: "Colombia Lead",
-    clientType: "Lead",
-    country: "Colombia",
-    status: "Lost",
-    stage: "Closed",
-    lane: null,
-    documentScope: null,
-    paymentStatus: "None",
-    collectedRevenue: 0,
-    closeStatus: "Lost",
-    referralSource: null,
-    protectedCode: null,
-    recordKind: "lost_opportunity",
-    notes: ["Lost $500 lead; the lead value is not revenue."],
-    provenance: provenance("COMMAND_CENTER", "COLOMBIA-LOST-500"),
-  },
-  {
-    id: "WORKBOOK-ABUJHAISHA-120",
-    clientName: "Abujhaisha",
-    clientType: "Client",
-    country: null,
-    status: "Completed",
-    stage: "Closed",
-    lane: null,
-    documentScope: null,
-    paymentStatus: "Collected",
-    collectedRevenue: 120,
-    closeStatus: "Closed",
-    referralSource: "Snapdocs",
-    protectedCode: null,
-    recordKind: "collected_payment",
-    notes: ["$120 is workbook-recorded collected revenue; Snapdocs is source attribution."],
-    provenance: provenance("COMMAND_CENTER", "ABUJHAISHA-SNAPDOCS-120"),
-  },
-] as const;
-
-const clients: readonly WorkbookClientProjection[] = [
-  {
-    clientName: "Irene Damiani",
-    totalHistoricalAndOpportunityRecords: 3,
-    lifetimeCollectedValue: 760.03,
-    openOpportunities: 1,
-    provenance: provenance("CLIENT_REGISTRY", "IRENE-DAMIANI"),
-  },
-] as const;
+function clientProvenance(record: GeneratedClient): WorkbookProvenance {
+  return {
+    sourceFile: generated.source.file,
+    sourceSheet: "CLIENT_REGISTRY",
+    sourceRow: record.sourceRow,
+    sourceRecordId: record.clientId,
+    importedCommit: generated.source.commit,
+    sourceSha256: generated.source.sha256,
+    authority: "evidence_only",
+  };
+}
 
 export function getCommandCenterWorkbookProjection(): CommandCenterWorkbookProjection {
+  const opportunities: WorkbookOpportunityProjection[] = generated.deals.map((record) => ({
+    id: record.id,
+    clientName: record.clientName,
+    sourceClientName: record.sourceClientName,
+    clientType: record.clientType,
+    country: record.country,
+    status: record.status,
+    stage: record.stage,
+    lane: record.lane,
+    serviceType: record.serviceType,
+    documentScope: record.documentScope,
+    paymentStatus: record.paymentStatus as "None" | "Collected",
+    quotedValue: record.quotedValue,
+    finalValue: record.finalValue,
+    collectedRevenue: record.collectedRevenue,
+    closeStatus: record.closeStatus,
+    referralSource: record.referralSource,
+    protectedCode: record.protectedCode,
+    phone: record.phone,
+    sourceUrl: record.sourceUrl,
+    externalOrderId: record.externalOrderId,
+    recordKind: record.recordKind as WorkbookRecordKind,
+    notes: record.notes,
+    provenance: dealProvenance(record),
+  }));
+
+  const clients: WorkbookClientProjection[] = generated.clients.map((record) => ({
+    clientId: record.clientId,
+    clientName: record.clientName,
+    clientType: record.clientType,
+    organization: record.organization,
+    email: record.email,
+    phone: record.phone,
+    country: record.country,
+    referralSource: record.referralSource,
+    totalHistoricalAndOpportunityRecords: record.totalHistoricalAndOpportunityRecords,
+    lifetimeCollectedValue: record.lifetimeCollectedValue,
+    openOpportunities: record.openOpportunities,
+    lostOpportunities: record.lostOpportunities,
+    completedDeals: record.completedDeals,
+    provenance: clientProvenance(record),
+  }));
+
   return {
-    projectionId: `${SOURCE_COMMIT}:command-center-v1`,
+    projectionId: `${generated.source.sha256}:command-center-v2`,
+    sourceSha256: generated.source.sha256,
     opportunities,
     clients,
-    collectedRevenue: opportunities.reduce((sum, record) => sum + record.collectedRevenue, 0),
-    sourceAttribution: { "WORKBOOK-ABUJHAISHA-120": "Snapdocs" },
+    collectedRevenue: generated.collectedRevenue,
+    sourceAttribution: generated.sourceAttribution,
   };
 }
