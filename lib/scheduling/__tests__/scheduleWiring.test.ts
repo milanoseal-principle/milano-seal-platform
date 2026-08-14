@@ -6,6 +6,7 @@ const pipelineBoard = readFileSync("components/dashboard/pipeline-board.tsx", "u
 const scheduleRoute = readFileSync("app/api/deals/[id]/schedule/route.ts", "utf8");
 const executeRoute = readFileSync("app/api/deals/[id]/execute/route.ts", "utf8");
 const adminMoveRoute = readFileSync("app/api/admin/move/route.ts", "utf8");
+const founderStatusRoute = readFileSync("app/api/admin/matters/[id]/status/route.ts", "utf8");
 const protectedPolicy = readFileSync("lib/auth/protectedMatterTransitions.ts", "utf8");
 const drawer = readFileSync("components/dashboard/MatterDetailDrawer.tsx", "utf8");
 
@@ -34,6 +35,7 @@ test("canonical schedule endpoint authenticates and authorizes before privileged
   assert.ok(stateGate > read);
   assert.ok(executionGate > stateGate);
   assert.ok(paymentGate > executionGate);
+  assert.match(scheduleRoute, /normalizedCurrent !== "awaiting_payment"/);
   assert.match(scheduleRoute, /UNAUTHENTICATED/);
   assert.match(scheduleRoute, /FORBIDDEN/);
   assert.match(scheduleRoute, /INVALID_STATE_TRANSITION/);
@@ -54,7 +56,7 @@ test("schedule accepts UUID and public Matter identifiers", () => {
   assert.match(scheduleRoute, /\.eq\("deal_id", id\)/);
 });
 
-test("canonical execute endpoint enforces state, execution truth, and payment-or-complimentary gate", () => {
+test("canonical execute endpoint enforces exact state, execution truth, and payment-or-complimentary gate", () => {
   const auth = executeRoute.indexOf("ssr.auth.getUser()");
   const role = executeRoute.indexOf("resolveServerRole(user)");
   const read = executeRoute.indexOf('.from("deals")');
@@ -67,6 +69,7 @@ test("canonical execute endpoint enforces state, execution truth, and payment-or
   assert.ok(stateGate > read);
   assert.ok(executionGate > stateGate);
   assert.ok(paymentGate > executionGate);
+  assert.match(executeRoute, /normalizedCurrent !== "scheduled"/);
   assert.match(executeRoute, /required_status:\s*"scheduled"/);
   assert.match(executeRoute, /PAYMENT_REQUIRED/);
 });
@@ -85,6 +88,15 @@ test("legacy admin move cannot grant VA protected scheduling or execution author
   assert.match(adminMoveRoute, /PROTECTED_STAGES/);
   assert.match(adminMoveRoute, /canPerformProtectedMatterTransition\(role\)/);
   assert.match(adminMoveRoute, /FORBIDDEN/);
+});
+
+test("founder generic status route cannot bypass dedicated scheduling or execution", () => {
+  assert.match(founderStatusRoute, /DEDICATED_TRANSITIONS/);
+  assert.match(founderStatusRoute, /USE_GOVERNED_TRANSITION_ENDPOINT/);
+  assert.match(founderStatusRoute, /canTransition\(currentRaw, status\)/);
+  assert.match(founderStatusRoute, /evaluateSchedulingGate/);
+  assert.match(founderStatusRoute, /STALE_MATTER_STATE/);
+  assert.match(founderStatusRoute, /resolveServerRole\(user\)/);
 });
 
 test("Matter drawer has no manual payment-confirm mutation", () => {
