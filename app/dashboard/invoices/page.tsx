@@ -37,8 +37,7 @@ const INV_LABEL: Record<InvType, string> = {
 };
 
 const PAYMENT_METHODS = [
-  { label: "Wise (Primary)", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "" },
-  { label: "Stripe", value: "Operator-issued link", icon: "S", note: "Upon operator approval" },
+  { label: "Wise", value: "wise.com/pay/me/nicholassamm1", icon: "W", note: "Verified settlement required" },
 ];
 
 function InvSeals() {
@@ -111,7 +110,7 @@ function ProForma({ sel, subtotal, retainer }: Omit<InvCardProps, "type" | "bala
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
           <div className="inv-brand">The Milano Seal™</div>
-          <div className="inv-tag">Sealing Trust in Every Signature</div>
+          <div className="inv-tag">Sealing Trust with Every Signature</div>
         </div>
         <MedallionStamp />
       </div>
@@ -195,7 +194,7 @@ function FinalInv({ sel, subtotal, retainer, balance }: InvCardProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
           <div className="inv-brand">The Milano Seal™</div>
-          <div className="inv-tag">Sealing Trust in Every Signature</div>
+          <div className="inv-tag">Sealing Trust with Every Signature</div>
         </div>
         <MedallionStamp />
       </div>
@@ -284,7 +283,7 @@ function PaidDoc({ sel, subtotal }: Pick<InvCardProps, "sel" | "subtotal">) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
           <div className="inv-brand">The Milano Seal™</div>
-          <div className="inv-tag">Sealing Trust in Every Signature</div>
+          <div className="inv-tag">Sealing Trust with Every Signature</div>
         </div>
         <MedallionStamp check />
       </div>
