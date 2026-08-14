@@ -275,7 +275,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflowY: "auto" }}>
-      {/* Header */}
       <div
         style={{
           padding: "1.25rem 1.5rem",
@@ -310,9 +309,7 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
         </button>
       </div>
 
-      {/* Body */}
       <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.75rem" }}>
-        {/* Client Block */}
         <div>
           <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 20, fontFamily: "Georgia, serif", fontWeight: 400, marginBottom: 4 }}>
             {matter.client_name ?? "—"}
@@ -323,7 +320,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           <p style={{ color: textMuted, fontSize: 12 }}>{matter.destination_country}</p>
         </div>
 
-        {/* Execution Readiness */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.875rem" }}>
             Execution Readiness
@@ -358,7 +354,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           </div>
         </div>
 
-        {/* Fields Grid */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.875rem" }}>
             Procedural Fields
@@ -375,7 +370,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           </div>
         </div>
 
-        {/* Status Block */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.875rem" }}>
             Current Status
@@ -426,10 +420,8 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           </p>
         </div>
 
-        {/* Operator Actions — manual payment confirmation + status advance */}
         <OperatorActions matter={matter} />
 
-        {/* Payment Integrity — founder/operator view of payment gate state */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
             Payment Integrity
@@ -443,10 +435,8 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           />
         </div>
 
-        {/* Founder Release Override — founder_admin only, settlement-pending bridge */}
         <FounderReleaseOverridePanel matter={matter} />
 
-        {/* Execution QA Matrix — pre-flight check state */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
             Execution QA
@@ -461,7 +451,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           />
         </div>
 
-        {/* Final Seal Review — release gate checklist */}
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
             Final Seal Review
@@ -476,11 +465,6 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
   );
 }
 
-// Founder-only control to release a final packet when payment is visible but not
-// yet settlement-cleared (e.g. card-funded Wise). Calls the release route with a
-// written override_reason; the server still enforces founder_admin, the payment
-// gate, settlement clearance, and the Codice Fiscale lock. Never shown to
-// admin_operator, virtual_assistant, or clients.
 function FounderReleaseOverridePanel({ matter }: { matter: MatterDetail }) {
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideBusy, setOverrideBusy] = useState(false);
@@ -631,7 +615,6 @@ export function MatterDetailDrawer({ matterId, onClose }: Props) {
     <AnimatePresence>
       {matterId && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -647,7 +630,6 @@ export function MatterDetailDrawer({ matterId, onClose }: Props) {
             }}
           />
 
-          {/* Drawer */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
