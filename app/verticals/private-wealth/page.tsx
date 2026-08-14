@@ -5,12 +5,12 @@ import { Footer } from "@/components/landing/footer";
 import { ArrowRight, ChevronRight } from "lucide-react";
 
 const GLOBAL_DISCLAIMER =
-  "The Milano Seal provides document coordination, notarization support, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country, receiving-authority, document-type, and signer-location requirements. Document execution coordination only. The Milano Seal™ does not provide legal guidance, tax advice, customs advice, immigration advice, medical advice, investment advice, asset appraisal, or Final acceptance remains subject to the receiving authority..";
+  "The Milano Seal provides document coordination, notarization support, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country, receiving-authority, document-type, and signer-location requirements. Document execution coordination only. The Milano Seal™ does not provide legal guidance, tax advice, customs advice, immigration advice, medical advice, investment advice, or asset appraisal. Final acceptance remains subject to the receiving authority.";
 
 const VERTICAL_DISCLAIMER =
   "The Milano Seal does not provide legal, tax, estate, investment, immigration, or financial advice. Final acceptance is subject to the receiving authority, foreign counsel, institution, government office, or professional advisor.";
 
-const canonical = "https://themilanoseal.com/verticals/private-wealth";
+const canonical = "https://www.themilanoseal.com/verticals/private-wealth";
 
 export const metadata: Metadata = {
   title: "Private Wealth International Document Execution | The Milano Seal",
