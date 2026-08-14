@@ -87,7 +87,8 @@
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
     "validate:production-governance": "node scripts/validate-production-governance.mjs",
-    "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs"
+    "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs",
+    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

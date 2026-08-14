@@ -225,3 +225,118 @@ FINAL TRUTH REVIEW          PASS / FAIL
 
 *A single FAIL, or any blank evidence field, is a NO-GO. Do not certify any
 gate that was not executed against live production infrastructure.*
+
+---
+
+## PHASE 2A — TIFF REAL CLIENT-TO-CLOSE ACCEPTANCE
+
+This controlling acceptance is run at `https://www.themilanoseal.com` after Phase 2. Use one disposable Matter clearly marked production QA, never Damiani or sensitive client material. Do not use direct database edits, manual payment confirmation, manual redemption, or fabricated revenue. Retain the Matter and evidence under production retention policy.
+
+**Evidence contract:** Every step requires a **PASS / FAIL**, **Timestamp**, **Matter ID**, **Evidence ID**, **Screen / route**, and **Authoritative backend source** where applicable. A blank field is a FAIL. “Implemented,” “code looks correct,” and “should work” are not evidence. **Live PASS remains manual production evidence only**; repository validators never execute or claim these results.
+
+### STEP 1 — MOBILE FRESH LOAD
+Open production fresh/incognito on a physical mobile browser. Verify the production hostname, first load without cached auth/session state, no broken UI or horizontal clipping, and no console-visible false-success state.
+
+### STEP 2 — NORMAL INTAKE NAVIGATION
+Navigate normally to **Secure Records Intake** through the public navigation/CTA; a manually typed route is not primary proof. Verify the CTA, destination, and load are functional with no dead link.
+
+### STEP 3 — MATTER SUBMISSION
+Submit one realistic international QA Matter with clearly marked test identity/data. Verify one intake, no duplicate Matter, no fake payment, and no premature scheduling.
+
+### STEP 4 — DOCUMENT UPLOAD
+Upload approved nonsensitive test documents. Verify upload, persisted metadata, association to this Matter, and later retrieval through the portal.
+
+### STEP 5 — SINGLE MATTER PERSISTENCE
+Verify exactly one record and capture public `deal_id`, internal UUID, `created_at`, and `source_channel`.
+
+### STEP 6 — QUOTE / MATTER PARITY
+Compare the server record and UI: `original_total`, `eligible_subtotal`, `non_discountable_total`, `discount_amount`, `final_total`, `invoice_retainer`, `invoice_balance`, `amount_due`, and `currency`. Exact logical and numeric parity is required.
+
+### STEP 7 — TIFFTEST50
+Apply TIFFTEST50 and capture `usage_count` before payment. Verify 50% applies only to canonical `eligible_subtotal`, non-discountable value is untouched, totals and the 50/50 invoice regenerate, payment remains unpaid, `payment_confirmed` remains false, and scheduling/execution remain locked. TIFFTEST50 is not a public reusable client discount.
+
+### STEP 8 — WISE PAYMENT
+Use only approved production Wise configuration. Verify the Matter reference, amount, and currency exactly; never invent beneficiary/account details.
+
+### STEP 9 — WISE RECONCILIATION / IDEMPOTENCY
+Verify the same UUID/`deal_id` updates once, `payment_confirmed` is true, `amount_paid` is exact, the Wise transaction ID is preserved, there is no duplicate payment, and **TIFFTEST50 redeemed exactly once**. Replay the settlement/webhook and prove replay does not create a second redemption, payment, or state transition.
+
+### STEP 10 — PAYMENT → SCHEDULING GATE
+**Before verified payment: scheduling is blocked**. After verified payment it becomes eligible. Prove there is no client unlock, manual bypass, or generic-admin bypass.
+
+### STEP 11 — CLIENT PORTAL ENTRY
+Enter the **Matter Control Portal through the actual client path**, not an operator route. Verify client authentication, the correct Matter/payment state, and rejection of cross-client Matter access.
+
+### STEP 12 — NOTIFICATION DELIVERY
+For each applicable intake, payment, scheduling/update, execution, and release/delivery communication, distinguish notification generated from **notification actually delivered**. Record channel, provider delivery state where available, timestamp, and Matter ID/reference. An application function returning success is not delivery evidence.
+
+### STEP 13 — PORTAL ↔ SUPABASE PARITY
+Perform a read-only comparison of canonical Matter truth and client projection for `deal_id`, `deal_status`, `payment_status`, `payment_confirmed`, `original_total`, `eligible_subtotal`, `discount_amount`, `final_total`, `invoice_retainer`, `invoice_balance`, `amount_due`, `amount_paid`, `currency`, documents, and timeline milestones. Also compare scheduling and execution state. No stale projection is permitted; the portal cannot report paid before canonical backend truth.
+
+### STEP 14 — GOVERNED EXECUTION → CLOSE
+Use canonical controls and dedicated governed endpoints, never the generic founder status route when a dedicated endpoint exists. Follow the complete canonical chain without skipping: verified payment → `scheduled → in_execution` → execution QA → `apostille_processing` → apostille received/final payment/release controls → label/courier release → `in_transit → delivered → completed`. At every transition verify the predecessor, execution/payment truth, timestamp, activity/audit event, and portal update. The regression locks are explicit: apostille cannot skip execution; delivery cannot skip canonical release and transit stages.
+
+### STEP 15 — MOBILE UX / DEAD-ACTION SWEEP
+Repeat intake, payment, portal, documents, timeline, status, navigation, buttons, forms, modals, and download/open actions on mobile. Fail for clipping, overflow, dead/invisible controls, unclear next step, wrong status, stale amount, false-success UI/toast, inert active-looking controls, or operator controls leaking to a client.
+
+### Step evidence ledger
+
+| Step | PASS / FAIL | Timestamp | Matter ID | Evidence ID | Screen / route | Authoritative backend source |
+|---:|:---:|---|---|---|---|---|
+| 1 | ☐ / ☐ | ___ | ___ | ___ | ___ | n/a |
+| 2 | ☐ / ☐ | ___ | ___ | ___ | ___ | n/a |
+| 3 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 4 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 5 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 6 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 7 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 8 | ☐ / ☐ | ___ | ___ | ___ | ___ | Wise + ___ |
+| 9 | ☐ / ☐ | ___ | ___ | ___ | ___ | Wise + Supabase |
+| 10 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 11 | ☐ / ☐ | ___ | ___ | ___ | ___ | ___ |
+| 12 | ☐ / ☐ | ___ | ___ | ___ | ___ | provider: ___ |
+| 13 | ☐ / ☐ | ___ | ___ | ___ | ___ | Supabase |
+| 14 | ☐ / ☐ | ___ | ___ | ___ | ___ | Supabase audit/activity |
+| 15 | ☐ / ☐ | ___ | ___ | ___ | ___ | n/a |
+
+### Read-only parity procedure
+
+Use the production Supabase read-only console/role and inspect the single captured UUID. Select only the Step 13 fields from the canonical Matter/deal source and related authorized document/timeline projections; compare the returned values to the authenticated client UI. Do not paste credentials into evidence, run writes, infer absent values, or bypass row-level access. Capture query ID/time and redacted results as evidence.
+
+### Dead-action regression lock
+
+Audit Secure Records Intake, Matter cockpit, SecurePaymentCard, Matter Control Portal, Command Center, Dispatch, execution timeline, and shipping/courier actions. Each rendered operational control must be classified **LIVE**, **ACTIONABLE**, **CONTROLLED EMPTY**, or **READ-ONLY**. Actionable controls require real destinations/handlers and failed mutations must not emit false-success UI.
+
+### QA code governance lock
+
+TIFFTEST50 remains governed: eligibility uses canonical subtotal, application changes the Matter obligation but not payment truth, redemption occurs only through verified Wise settlement, and single redemption survives replay. Do not remove usage controls for convenience. For future testing, use an approved reset/reissue lifecycle.
+
+`NICKTEST50`: **DO NOT CREATE**, alter, activate, or migrate it unless a canonical production record or explicit founder-approved specification is first verified.
+
+### TIFF acceptance output
+
+```text
+MILANO SEAL — TIFF REAL 15-STEP CERTIFICATION
+1 MOBILE FRESH LOAD                         PASS / FAIL
+2 NORMAL INTAKE NAVIGATION                 PASS / FAIL
+3 MATTER SUBMISSION                        PASS / FAIL
+4 DOCUMENT UPLOAD                          PASS / FAIL
+5 SINGLE MATTER PERSISTENCE                PASS / FAIL   MATTER ID: ___
+6 QUOTE / MATTER PARITY                    PASS / FAIL
+7 TIFFTEST50                               PASS / FAIL   USAGE BEFORE PAYMENT: ___
+8 WISE PAYMENT                             PASS / FAIL
+9 WISE RECONCILIATION / IDEMPOTENCY        PASS / FAIL   USAGE AFTER PAYMENT: ___
+10 PAYMENT → SCHEDULING GATE               PASS / FAIL
+11 CLIENT PORTAL ENTRY                     PASS / FAIL
+12 NOTIFICATION DELIVERY                   PASS / FAIL
+13 PORTAL ↔ SUPABASE PARITY                PASS / FAIL
+14 GOVERNED EXECUTION → CLOSE              PASS / FAIL
+15 MOBILE UX / DEAD-ACTION SWEEP           PASS / FAIL
+APPLICATION DEFECTS: ___   UX DEFECTS: ___
+DEAD CONTROLS: ___         FALSE-SUCCESS STATES: ___
+PAYMENT DUPLICATES: ___ (0 REQUIRED)
+DISCOUNT REDEMPTIONS: ___ (1 REQUIRED)
+FINAL: GO / NO-GO
+```
+
+A GO requires all 15 PASS results with evidence. Do not certify delivery from generation, portal state without Supabase parity, closeout without the state machine, or mobile UX from desktop review.

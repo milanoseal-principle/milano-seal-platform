@@ -244,13 +244,18 @@ check(
 );
 
 check(
-  "scheduling is payment gated and advances canonical status",
+  "scheduling is state, execution-truth, and payment gated before an optimistic canonical transition",
   containsAll(schedulingRoute, [
+    'canTransition(currentStatus, "scheduled")',
+    "validateExecutionTruth(executionTruth)",
+    "EXECUTION_REVIEW_REQUIRED",
+    "evaluateSchedulingGate({ matter: deal })",
     "PAYMENT_REQUIRED",
     "status: 402",
     'status: "scheduled"',
     'deal_status: "scheduled"',
-    "SCHEDULING_TRANSITION_FAILED",
+    'eq("status", deal.status)',
+    "STALE_MATTER_STATE",
   ]),
 );
 
