@@ -3,6 +3,7 @@ import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
+import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
 import { stageLabel } from "@/lib/format";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
@@ -11,6 +12,7 @@ import { notifyClient } from "@/lib/notifications/orchestrator";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
 const MOVE_ROLES = new Set(["founder", "founder_admin", "admin", "admin_operator", "ops_manager", "execution_coordinator", "apostille_coordinator", "virtual_assistant"]);
+const PROTECTED_STAGES = new Set(["scheduled", "in_execution"]);
 
 export const runtime = "nodejs";
 
@@ -23,6 +25,9 @@ export async function POST(req: NextRequest) {
 
   const { deal_id, stage } = await req.json();
   if (!deal_id || !stage) return NextResponse.json({ error: "deal_id and stage required" }, { status: 400 });
+  if (PROTECTED_STAGES.has(stage) && !canPerformProtectedMatterTransition(role)) {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  }
 
   const result = await moveDeal(deal_id, stage);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.error?.includes("Payment") ? 402 : 409 });

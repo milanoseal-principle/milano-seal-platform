@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
+import { validateExecutionTruth } from "@/lib/matter/executionTruth";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
@@ -20,8 +24,14 @@ const VALID_STATUSES = [
 
 type MatterStatus = (typeof VALID_STATUSES)[number];
 
-// POST /api/admin/matters/[id]/status
-// founder_admin only — advances matter status through the execution state machine.
+const DEDICATED_TRANSITIONS = new Set<MatterStatus>(["scheduled", "in_execution"]);
+const EXECUTION_GATED = new Set<MatterStatus>([
+  "apostille_processing",
+  "in_transit",
+  "delivered",
+  "completed",
+]);
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -38,7 +48,7 @@ export async function POST(
     return NextResponse.json({ ok: false, code: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role ?? user.app_metadata?.role;
+  const role = await resolveServerRole(user);
   if (role !== "founder_admin") {
     return NextResponse.json({ ok: false, code: "FOUNDER_ONLY" }, { status: 403 });
   }
@@ -62,29 +72,124 @@ export async function POST(
     );
   }
 
+  if (DEDICATED_TRANSITIONS.has(status)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "USE_GOVERNED_TRANSITION_ENDPOINT",
+        message:
+          status === "scheduled"
+            ? "Use the canonical scheduling action for this transition."
+            : "Use the canonical execution action for this transition.",
+      },
+      { status: 409 },
+    );
+  }
+
   const admin = createAdminClient();
+  const { data: matter, error: matterError } = await admin
+    .from("deals")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (matterError || !matter) {
+    return NextResponse.json({ ok: false, code: "MATTER_NOT_FOUND" }, { status: 404 });
+  }
+
+  const currentRaw = String(matter.deal_status ?? matter.status ?? "");
+  const current = normalizeMatterStatus(currentRaw);
+  if (!current || !canTransition(currentRaw, status) || current === status) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "INVALID_STATE_TRANSITION",
+        current_status: currentRaw || null,
+        requested_status: status,
+      },
+      { status: 409 },
+    );
+  }
+
+  if (EXECUTION_GATED.has(status)) {
+    const executionTruth = matter.execution_truth;
+    const executionValidation =
+      executionTruth && typeof executionTruth === "object"
+        ? validateExecutionTruth(executionTruth)
+        : {
+            valid: false,
+            reviewRequired: true,
+            errors: ["EXECUTION_TRUTH_MISSING"],
+          };
+
+    if (!executionValidation.valid || executionValidation.reviewRequired) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "EXECUTION_REVIEW_REQUIRED",
+          remaining: executionValidation.errors,
+        },
+        { status: 409 },
+      );
+    }
+
+    const paymentGate = evaluateSchedulingGate({ matter });
+    if (!paymentGate.schedulingEligible) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "PAYMENT_REQUIRED",
+          paymentRequirementMethod: paymentGate.paymentRequirementMethod,
+        },
+        { status: 402 },
+      );
+    }
+  }
+
   const actorEmail = user.email ?? user.id;
   const now = new Date().toISOString();
+  const timestamps: Partial<Record<MatterStatus, Record<string, string>>> = {
+    apostille_processing: { apostille_at: now },
+    in_transit: { shipped_at: now, delivery_at: now },
+    delivered: { delivered_at: now },
+    completed: { completed_at: now },
+  };
 
-  const { error } = await admin
+  let updateQuery = admin
     .from("deals")
-    .update({ deal_status: status })
-    .eq("id", id);
+    .update({
+      status,
+      deal_status: status,
+      last_activity: now,
+      ...(timestamps[status] ?? {}),
+    })
+    .eq("id", id)
+    .eq("status", matter.status);
 
-  if (error) {
-    console.error("[matter-status] update failed:", error.message);
+  updateQuery =
+    matter.deal_status == null
+      ? updateQuery.is("deal_status", null)
+      : updateQuery.eq("deal_status", matter.deal_status);
+
+  const { data: updated, error } = await updateQuery.select("id").maybeSingle();
+
+  if (error || !updated) {
     return NextResponse.json(
-      { ok: false, code: "STATUS_UPDATE_FAILED", message: error.message },
-      { status: 500 },
+      {
+        ok: false,
+        code: "STALE_MATTER_STATE",
+        message: "Matter state changed before the transition completed. Refresh and retry.",
+      },
+      { status: 409 },
     );
   }
 
   try {
     await logActivity({
-      deal_id: id,
+      deal_id: matter.deal_id ?? id,
       actor: actorEmail,
       action: "status_advanced",
-      detail: `Matter status set to ${status}.`,
+      detail: `Matter status advanced to ${status}.`,
       meta: { actor: actorEmail, status, timestamp: now },
     });
   } catch {}
