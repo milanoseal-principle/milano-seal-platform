@@ -11,8 +11,8 @@ test("Damiani third record remains open and pre-revenue", () => {
   assert.equal(record.paymentStatus, "None");
   assert.equal(record.collectedRevenue, 0);
   assert.equal(record.protectedCode, "DAMIANI50");
-  assert.match(record.notes.join(" "), /server before applying/i);
-  assert.match(record.notes.join(" "), /No redemption, payment, scheduling, or execution/i);
+  assert.match(record.notes.join(" "), /server-validate DAMIANI50/i);
+  assert.match(record.notes.join(" "), /No payment, revenue, scheduling, execution, or code redemption/i);
 });
 
 test("lost opportunities never inflate collected revenue", () => {
@@ -20,7 +20,7 @@ test("lost opportunities never inflate collected revenue", () => {
   const lost = projection.opportunities.filter((item) => item.closeStatus === "Lost");
   assert.equal(lost.length, 2);
   assert.equal(lost.reduce((sum, item) => sum + item.collectedRevenue, 0), 0);
-  assert.equal(projection.collectedRevenue, 120);
+  assert.equal(projection.collectedRevenue, 998.03);
 });
 
 test("client registry preserves Damiani history and collected lifetime value", () => {

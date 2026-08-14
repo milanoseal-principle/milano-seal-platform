@@ -402,6 +402,27 @@ export default function DealDetail() {
     refresh();
   }
 
+  async function postProtectedTransition(
+    action: "schedule" | "execute",
+    body: Record<string, unknown>,
+    successMsg: string,
+  ) {
+    if (!deal) return false;
+    const res = await fetch(`/api/deals/${deal.id}/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.message ?? data.error ?? "Protected transition failed.");
+      return false;
+    }
+    toast.success(successMsg);
+    refresh();
+    return true;
+  }
+
   async function patchDeal(body: Record<string, unknown>, successMsg: string) {
     if (!deal) return;
     const res = await fetch(`/api/deals/${deal.id}`, {
@@ -814,25 +835,15 @@ export default function DealDetail() {
                         onClick={async () => {
                           if (!scheduledAt || !deal) return;
 
-                          const patchRes = await fetch(
-                            `/api/deals/${deal.id}`,
+                          const scheduled = await postProtectedTransition(
+                            "schedule",
                             {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                scheduled_at: new Date(
-                                  scheduledAt,
-                                ).toISOString(),
-                                ...(actionNote ? { notes: actionNote } : {}),
-                              }),
+                              scheduled_at: new Date(scheduledAt).toISOString(),
+                              ...(actionNote ? { notes: actionNote } : {}),
                             },
+                            "Scheduled",
                           );
-                          if (!patchRes.ok) {
-                            const d = await patchRes.json().catch(() => ({}));
-                            toast.error(d.error ?? "Failed to save schedule.");
-                            return;
-                          }
-                          await moveStage("scheduled", "Scheduled");
+                          if (!scheduled) return;
                           setScheduledAt("");
                           setActionNote("");
                           setScheduleDialogOpen(false);
@@ -850,16 +861,12 @@ export default function DealDetail() {
                   variant="outline"
                   disabled={
                     !isPaymentRequirementSatisfied ||
-                    (stage !== "scheduled" &&
-                      !(stage === "awaiting_payment" && !!deal.scheduled_at))
+                    stage !== "scheduled"
                   }
                   data-testid="action-execute"
                   className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
                   onClick={async () => {
-                    if (stage === "awaiting_payment" && deal.scheduled_at) {
-                      await moveStage("scheduled", "");
-                    }
-                    await moveStage("in_execution", "Execution started.");
+                    await postProtectedTransition("execute", {}, "Execution started.");
                   }}
                 >
                   <ShieldCheck className="w-4 h-4" /> Mark Executed
