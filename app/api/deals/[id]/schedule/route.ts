@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveServerRole } from "@/lib/auth/server-role";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
+
+const SCHEDULE_ROLES = new Set([
+  "founder",
+  "founder_admin",
+  "admin",
+  "admin_operator",
+  "ops_manager",
+  "execution_coordinator",
+  "apostille_coordinator",
+  "virtual_assistant",
+]);
 
 export async function POST(
   req: NextRequest,
@@ -10,7 +23,21 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const ssr = await createClient();
+    const {
+      data: { user },
+    } = await ssr.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+
+    const role = await resolveServerRole(user);
+    if (!SCHEDULE_ROLES.has(role)) {
+      return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+    }
+
+    const supabase = createAdminClient();
     const { data: deal } = await supabase
       .from("deals")
       .select("*")
@@ -83,25 +110,21 @@ export async function POST(
       );
     }
 
-    void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      await logActivity({
-        deal_id: (updated?.deal_id as string) ?? id,
-        actor: user?.email ?? "admin",
-        action: "scheduled",
-        detail: body.execution_date
-          ? `Scheduled for ${body.execution_date}`
-          : "Marked scheduled",
-        meta: {
-          execution_date: body.execution_date ?? null,
-          payment_requirement_method:
-            schedulingGate.paymentRequirementMethod,
-          canonical_status: "scheduled",
-        },
-      });
-    })();
+    void logActivity({
+      deal_id: (updated?.deal_id as string) ?? id,
+      actor: user.email ?? user.id,
+      action: "scheduled",
+      detail: body.execution_date
+        ? `Scheduled for ${body.execution_date}`
+        : "Marked scheduled",
+      meta: {
+        execution_date: body.execution_date ?? null,
+        payment_requirement_method: schedulingGate.paymentRequirementMethod,
+        canonical_status: "scheduled",
+      },
+    }).catch((error) =>
+      console.error("[activity] scheduling log failed:", error),
+    );
 
     return NextResponse.json({ success: true, deal: updated });
   } catch {
