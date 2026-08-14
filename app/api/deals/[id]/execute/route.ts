@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
-import { canTransition } from "@/lib/stateMachine";
+import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
@@ -41,7 +41,11 @@ export async function POST(
     }
 
     const currentStatus = String(deal.deal_status ?? deal.status ?? "");
-    if (!canTransition(currentStatus, "in_execution")) {
+    const normalizedCurrent = normalizeMatterStatus(currentStatus);
+    if (
+      normalizedCurrent !== "scheduled" ||
+      !canTransition(currentStatus, "in_execution")
+    ) {
       return NextResponse.json(
         {
           error: "INVALID_STATE_TRANSITION",
