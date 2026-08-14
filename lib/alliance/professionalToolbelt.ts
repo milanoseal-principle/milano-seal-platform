@@ -3,6 +3,7 @@ import {
   type CountryExecutionIntelligence,
 } from "@/data/country-execution-intelligence";
 import { routeApostille } from "@/lib/apostille-rules/apostilleRoutingEngine";
+import { COUNTRY_REGISTRY } from "@/lib/compliance/countries";
 
 export type ReadinessStatus = "READY" | "REVIEW_REQUIRED" | "BLOCKED";
 export type ScanReadinessStatus = "READY" | "REVIEW REQUIRED" | "BLOCKED";
@@ -63,8 +64,23 @@ function normalizeSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function canonicalDestinationSlug(value: string): string {
+  const normalized = normalizeSlug(value);
+  const compact = value.trim().toLowerCase();
+  const alias = COUNTRY_REGISTRY.find((country) => {
+    const candidates = [
+      country.slug,
+      normalizeSlug(country.name),
+      country.iso2.toLowerCase(),
+      country.iso3.toLowerCase(),
+    ];
+    return candidates.includes(normalized) || candidates.includes(compact);
+  });
+  return alias?.slug ?? normalized;
+}
+
 export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRouteProjection {
-  const destinationSlug = normalizeSlug(input.destinationCountry);
+  const destinationSlug = canonicalDestinationSlug(input.destinationCountry);
   const destination = getCountryExecutionIntelligence(
     destinationSlug,
     input.destinationCountry.trim() || "Destination",
@@ -104,6 +120,15 @@ export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRout
   } else {
     authorityPath.push("Receiving-authority pathway review");
     reviewReasons.push("Destination route is authority-specific and requires review.");
+  }
+
+  if (
+    input.issuingAuthority === "federal" &&
+    (destination.routeType === "consular_legalization" ||
+      destination.routeType === "hybrid_review" ||
+      destination.routeType === "authority_review")
+  ) {
+    reviewReasons.push("Federal destination routing requires manual authority review before release.");
   }
 
   const routeStatus: ReadinessStatus = reviewReasons.length ? "REVIEW_REQUIRED" : "READY";
@@ -169,7 +194,6 @@ export function evaluateDocumentReadiness(
   return { status, blockers, reviewItems, passedChecks };
 }
 
-// Compatibility API retained for Alliance Tool Belt V2 consumers.
 export interface RouteArchitectInput {
   originatingState: string;
   destinationCountry: string;
@@ -194,7 +218,8 @@ export interface RouteArchitectResult {
 }
 
 export function buildApostilleRoute(input: RouteArchitectInput): RouteArchitectResult {
-  const country = getCountryExecutionIntelligence(input.destinationSlug, input.destinationCountry);
+  const destinationSlug = canonicalDestinationSlug(input.destinationSlug || input.destinationCountry);
+  const country = getCountryExecutionIntelligence(destinationSlug, input.destinationCountry);
   const canonical = routeApostille({
     documentType: input.issuance === "federal" ? `federal ${input.documentType}` : input.documentType,
     destinationCountry: input.destinationCountry,
@@ -204,7 +229,8 @@ export function buildApostilleRoute(input: RouteArchitectInput): RouteArchitectR
     input.issuance === "unknown" ||
     input.signingRequirement === "unknown" ||
     country.routeType === "authority_review" ||
-    country.routeType === "hybrid_review";
+    country.routeType === "hybrid_review" ||
+    (input.issuance === "federal" && country.routeType === "consular_legalization");
 
   const authorityPath = [
     `${input.originatingState || "Originating jurisdiction"} document authority review`,
