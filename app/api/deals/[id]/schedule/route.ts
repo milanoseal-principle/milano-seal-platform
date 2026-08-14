@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { canManageProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
+import { canTransition } from "@/lib/stateMachine";
 
 export async function POST(
   req: NextRequest,
@@ -11,14 +14,42 @@ export async function POST(
   try {
     const { id } = await params;
     const supabase = await createClient();
-    const { data: deal } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+    const role = await resolveServerRole(user);
+    if (!canManageProtectedMatterTransition(role)) {
+      return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+    }
+
+    let { data: deal } = await supabase
       .from("deals")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
+
+    if (!deal) {
+      const fallback = await supabase
+        .from("deals")
+        .select("*")
+        .eq("deal_id", id)
+        .maybeSingle();
+      deal = fallback.data;
+    }
 
     if (!deal) {
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
+
+    if (!canTransition(deal.status, "scheduled")) {
+      return NextResponse.json(
+        {
+          error: "INVALID_STATE_TRANSITION",
+          message: `The Matter cannot move from ${deal.status} to scheduled.`,
+        },
+        { status: 409 },
+      );
     }
 
     const executionTruth = deal.execution_truth;
@@ -59,16 +90,22 @@ export async function POST(
     }
 
     const body = await req.json().catch(() => ({}));
+    const now = new Date().toISOString();
     const { data: updated, error: updateError } = await supabase
       .from("deals")
       .update({
         status: "scheduled",
         deal_status: "scheduled",
-        ...(body.execution_date
-          ? { execution_date: body.execution_date }
+        last_activity: now,
+        ...(body.scheduled_at
+          ? { scheduled_at: body.scheduled_at }
+          : {}),
+        ...(typeof body.notes === "string" && body.notes.trim()
+          ? { notes: body.notes.trim() }
           : {}),
       })
-      .eq("id", id)
+      .eq("id", deal.id)
+      .eq("status", deal.status)
       .select()
       .single();
 
@@ -84,18 +121,15 @@ export async function POST(
     }
 
     void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       await logActivity({
         deal_id: (updated?.deal_id as string) ?? id,
         actor: user?.email ?? "admin",
         action: "scheduled",
-        detail: body.execution_date
-          ? `Scheduled for ${body.execution_date}`
+        detail: body.scheduled_at
+          ? `Scheduled for ${body.scheduled_at}`
           : "Marked scheduled",
         meta: {
-          execution_date: body.execution_date ?? null,
+          scheduled_at: body.scheduled_at ?? null,
           payment_requirement_method:
             schedulingGate.paymentRequirementMethod,
           canonical_status: "scheduled",

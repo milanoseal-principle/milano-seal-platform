@@ -64,7 +64,10 @@ function normalizeSlug(value: string): string {
 }
 
 export function projectApostilleRoute(input: ApostilleRouteInput): ApostilleRouteProjection {
-  const destinationSlug = normalizeSlug(input.destinationCountry);
+  const normalizedDestination = normalizeSlug(input.destinationCountry);
+  const destinationSlug = normalizedDestination === "united-arab-emirates"
+    ? "uae"
+    : normalizedDestination;
   const destination = getCountryExecutionIntelligence(
     destinationSlug,
     input.destinationCountry.trim() || "Destination",
