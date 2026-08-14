@@ -22,19 +22,22 @@ test("protected Matter transition policy excludes virtual assistants", () => {
   assert.match(executeRoute, /canPerformProtectedMatterTransition\(role\)/);
 });
 
-test("canonical schedule endpoint authenticates and authorizes before privileged read", () => {
+test("canonical schedule endpoint enforces every protected scheduling invariant", () => {
   const auth = scheduleRoute.indexOf("ssr.auth.getUser()");
   const role = scheduleRoute.indexOf("resolveServerRole(user)");
   const read = scheduleRoute.indexOf('.from("deals")');
   const stateGate = scheduleRoute.indexOf("canTransition(currentStatus, \"scheduled\")");
-  const executionGate = scheduleRoute.indexOf("validateExecutionTruth");
-  const paymentGate = scheduleRoute.indexOf("evaluateSchedulingGate");
   assert.ok(auth > -1);
   assert.ok(role > auth);
   assert.ok(read > role);
   assert.ok(stateGate > read);
-  assert.ok(executionGate > stateGate);
-  assert.ok(paymentGate > executionGate);
+  assert.match(scheduleRoute, /canTransition\(currentStatus, "scheduled"\)/);
+  assert.match(scheduleRoute, /validateExecutionTruth\(executionTruth\)/);
+  assert.match(scheduleRoute, /!executionValidation\.valid \|\| executionValidation\.reviewRequired/);
+  assert.match(scheduleRoute, /EXECUTION_REVIEW_REQUIRED/);
+  assert.match(scheduleRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
+  assert.match(scheduleRoute, /!schedulingGate\.schedulingEligible/);
+  assert.match(scheduleRoute, /PAYMENT_REQUIRED/);
   assert.match(scheduleRoute, /normalizedCurrent !== "awaiting_payment"/);
   assert.match(scheduleRoute, /UNAUTHENTICATED/);
   assert.match(scheduleRoute, /FORBIDDEN/);
@@ -56,19 +59,22 @@ test("schedule accepts UUID and public Matter identifiers", () => {
   assert.match(scheduleRoute, /\.eq\("deal_id", id\)/);
 });
 
-test("canonical execute endpoint enforces exact state, execution truth, and payment-or-complimentary gate", () => {
+test("canonical execute endpoint enforces every protected execution invariant", () => {
   const auth = executeRoute.indexOf("ssr.auth.getUser()");
   const role = executeRoute.indexOf("resolveServerRole(user)");
   const read = executeRoute.indexOf('.from("deals")');
   const stateGate = executeRoute.indexOf("canTransition(currentStatus, \"in_execution\")");
-  const executionGate = executeRoute.indexOf("validateExecutionTruth");
-  const paymentGate = executeRoute.indexOf("evaluateSchedulingGate");
   assert.ok(auth > -1);
   assert.ok(role > auth);
   assert.ok(read > role);
   assert.ok(stateGate > read);
-  assert.ok(executionGate > stateGate);
-  assert.ok(paymentGate > executionGate);
+  assert.match(executeRoute, /canTransition\(currentStatus, "in_execution"\)/);
+  assert.match(executeRoute, /validateExecutionTruth\(executionTruth\)/);
+  assert.match(executeRoute, /!executionValidation\.valid \|\| executionValidation\.reviewRequired/);
+  assert.match(executeRoute, /EXECUTION_REVIEW_REQUIRED/);
+  assert.match(executeRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
+  assert.match(executeRoute, /!executionGate\.schedulingEligible/);
+  assert.match(executeRoute, /PAYMENT_REQUIRED/);
   assert.match(executeRoute, /normalizedCurrent !== "scheduled"/);
   assert.match(executeRoute, /required_status:\s*"scheduled"/);
   assert.match(executeRoute, /PAYMENT_REQUIRED/);

@@ -45,15 +45,18 @@ test("protected scheduling and execution share governed role policy without virt
   assert.match(adminMoveRoute, /canPerformProtectedMatterTransition\(role\)/);
 });
 
-test("schedule route blocks invalid state before execution truth and payment gate", () => {
-  const stateGate = scheduleRoute.indexOf("canTransition(currentStatus, \"scheduled\")");
-  const executionValidation = scheduleRoute.indexOf("validateExecutionTruth");
-  const executionBlock = scheduleRoute.indexOf("EXECUTION_REVIEW_REQUIRED");
-  const paymentGateEvaluation = scheduleRoute.indexOf("evaluateSchedulingGate");
-  assert.ok(stateGate > -1);
-  assert.ok(executionValidation > stateGate);
-  assert.ok(executionBlock > executionValidation);
-  assert.ok(paymentGateEvaluation > executionBlock);
+test("schedule route requires canonical state, execution truth, and payment authority", () => {
+  assert.match(scheduleRoute, /normalizeMatterStatus\(currentStatus\)/);
+  assert.match(scheduleRoute, /canTransition\(currentStatus, "scheduled"\)/);
+  assert.match(scheduleRoute, /INVALID_STATE_TRANSITION/);
+  assert.match(scheduleRoute, /validateExecutionTruth\(executionTruth\)/);
+  assert.match(scheduleRoute, /!executionValidation\.valid \|\| executionValidation\.reviewRequired/);
+  assert.match(scheduleRoute, /EXECUTION_REVIEW_REQUIRED/);
+  assert.match(scheduleRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
+  assert.match(scheduleRoute, /!schedulingGate\.schedulingEligible/);
+  assert.match(scheduleRoute, /PAYMENT_REQUIRED/);
+  assert.match(scheduleRoute, /Verified payment or an active Complimentary Authorization is required/);
+  assert.doesNotMatch(scheduleRoute, /payment_confirmed\s*:\s*true/);
 });
 
 test("schedule and execute routes authenticate before privileged Matter reads", () => {
