@@ -5,20 +5,20 @@ import { Footer } from "@/components/landing/footer";
 import { Users, CheckCircle, ArrowRight, FileCheck, Globe } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "USCIS Document Support & Immigration Documents | The Milano Seal™",
+  title: "Immigration Document Execution Support | The Milano Seal™",
   description:
-    "Affidavit preparation, translation coordination, and notarization support for USCIS immigration documents. Identity verification and administrative coordination for immigration-related paperwork.",
-  alternates: { canonical: "https://themilanoseal.com/services/immigration-documents" },
+    "Affidavit execution, translation coordination, notarization support, and apostille routing for immigration-related documents. Independent document coordination; not affiliated with USCIS.",
+  alternates: { canonical: "https://www.themilanoseal.com/services/immigration-documents" },
 };
 
 const services = [
-  "Affidavit of support preparation and notarization",
-  "Sworn statement notarization for USCIS submissions",
+  "Affidavit preparation support and notarization",
+  "Sworn statement notarization for immigration-related submissions",
   "Document translation coordination (certified translators)",
-  "Identity verification for immigration-related submissions",
-  "Power of attorney for immigration matters",
+  "Identity verification for notarized immigration-related documents",
+  "Power of attorney execution support for immigration matters",
   "Apostille coordination for foreign document use",
-  "Birth certificate and civil document authentication",
+  "Birth certificate and civil document authentication routing",
   "Supporting declaration notarization",
 ];
 
@@ -27,18 +27,17 @@ export default function ImmigrationDocumentsPage() {
     <main className="min-h-screen bg-[#0A0A0A]">
       <Header />
 
-      {/* Hero */}
       <section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-6">
             <Users className="w-4 h-4 text-[#C6A55A]" />
-            <span className="text-sm text-[#C6A55A] font-medium">USCIS Document Support</span>
+            <span className="text-sm text-[#C6A55A] font-medium">Immigration Document Support</span>
           </div>
           <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
             Affidavit, Translation &amp; Support Execution
           </h1>
           <p className="text-lg text-[#B0B0B0] mb-8 max-w-2xl mx-auto leading-relaxed">
-            Administrative coordination and notarization support for immigration-related documents. Document sequencing, identity validation workflows, and USCIS submission preparation.
+            Independent administrative coordination and notarization support for immigration-related documents, including document sequencing, signer readiness, translation coordination, and submission-document preparation.
           </p>
           <Link
             href="/intake"
@@ -50,7 +49,6 @@ export default function ImmigrationDocumentsPage() {
         </div>
       </section>
 
-      {/* Services */}
       <section className="py-16 px-6 bg-[#111111]">
         <div className="max-w-4xl mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-8 text-center">
@@ -67,13 +65,12 @@ export default function ImmigrationDocumentsPage() {
         </div>
       </section>
 
-      {/* Trust Signals */}
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
           {[
-            { icon: Users, title: "Identity Verified", body: "Multi-factor identity verification per Florida notarial requirements before execution." },
-            { icon: FileCheck, title: "USCIS-Ready Format", body: "Documents structured and sealed for USCIS submission standards." },
-            { icon: Globe, title: "Translation Coordination", body: "Certified translation services coordinated for foreign-language document requirements." },
+            { icon: Users, title: "Signer Readiness", body: "Identity and signer-readiness workflows coordinated in accordance with the applicable notarial process." },
+            { icon: FileCheck, title: "Document Readiness", body: "Administrative document readiness is reviewed before execution. Receiving-agency acceptance is never guaranteed." },
+            { icon: Globe, title: "Translation Coordination", body: "Certified translation services can be coordinated when foreign-language document requirements apply." },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="bg-[#111111] border border-[#2A2A2A] rounded-xl p-6 text-center">
               <div className="inline-flex p-3 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] mb-4">
@@ -86,16 +83,14 @@ export default function ImmigrationDocumentsPage() {
         </div>
       </section>
 
-      {/* Disclaimer Notice */}
       <section className="py-8 px-6 bg-[#111111]">
         <div className="max-w-3xl mx-auto p-6 border border-[#2A2A2A] rounded-xl">
           <p className="text-sm text-[#6A6A6A] leading-relaxed text-center">
-            This service covers document sequencing, identity validation workflows, and administrative coordination only. We do not provide immigration legal guidance, case strategy, or representation. Consult a licensed immigration attorney for legal guidance.
+            The Milano Seal™ provides independent document execution and administrative coordination. We are not affiliated with USCIS or any immigration agency, do not provide immigration legal advice, and do not guarantee agency acceptance. Consult a licensed immigration attorney for legal guidance.
           </p>
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-16 px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4">
@@ -112,7 +107,8 @@ export default function ImmigrationDocumentsPage() {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
           <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed max-w-lg mx-auto">
-            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Document execution coordination only. The Milano Seal™ does not provide legal guidance. Legal questions should be handled by a licensed attorney.</p>
+            The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. Legal questions should be handled by a licensed attorney.
+          </p>
         </div>
       </section>
 

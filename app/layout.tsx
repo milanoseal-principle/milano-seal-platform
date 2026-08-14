@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 const fontVariables = "font-sans";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://themilanoseal.com"),
+  metadataBase: new URL("https://www.themilanoseal.com"),
   title: {
     default: "The Milano Seal™ | U.S. Document Execution for International Use",
     template: "%s | The Milano Seal™",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     "international document coordination",
   ],
   authors: [
-    { name: "Nicholas Milano", url: "https://themilanoseal.com/founder" },
+    { name: "Nicholas Milano", url: "https://www.themilanoseal.com/founder" },
   ],
   icons: {
     icon: [
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://themilanoseal.com",
+    url: "https://www.themilanoseal.com",
     siteName: "The Milano Seal™",
     title: "The Milano Seal™ | U.S. Document Execution for International Use",
     description:
@@ -73,11 +73,11 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "ProfessionalService",
-      "@id": "https://themilanoseal.com/#business",
+      "@id": "https://www.themilanoseal.com/#business",
       name: "The Milano Seal™",
-      url: "https://themilanoseal.com",
-      logo: "https://themilanoseal.com/milano-seal-orb-v2.png",
-      image: "https://themilanoseal.com/milano-seal-orb-v2.png",
+      url: "https://www.themilanoseal.com",
+      logo: "https://www.themilanoseal.com/milano-seal-orb-v2.png",
+      image: "https://www.themilanoseal.com/milano-seal-orb-v2.png",
       description:
         "U.S. Document Execution for International Use — Remote Online Notarization, Apostille Coordination, and International Document Execution Support.",
       address: {
@@ -92,31 +92,31 @@ const jsonLd = {
         "International Document Execution",
         "Mobile Notary",
       ],
-      founder: { "@id": "https://themilanoseal.com/founder#person" },
-      sameAs: ["https://themilanoseal.com"],
+      founder: { "@id": "https://www.themilanoseal.com/founder#person" },
+      sameAs: ["https://www.themilanoseal.com"],
     },
     {
       "@type": "Person",
-      "@id": "https://themilanoseal.com/founder#person",
+      "@id": "https://www.themilanoseal.com/founder#person",
       name: "Nicholas Milano",
       jobTitle: "Founder, Florida Notary Public, Remote Online Notary",
-      worksFor: { "@id": "https://themilanoseal.com/#business" },
-      url: "https://themilanoseal.com/founder",
-      image: "https://themilanoseal.com/nicholas-milano.jpeg",
+      worksFor: { "@id": "https://www.themilanoseal.com/#business" },
+      url: "https://www.themilanoseal.com/founder",
+      image: "https://www.themilanoseal.com/nicholas-milano.jpeg",
       description:
         "Nicholas Milano is a Florida Notary Public and Remote Online Notary supporting apostille coordination and international document coordination. Founder of The Milano Seal™.",
     },
     {
       "@type": "WebSite",
-      "@id": "https://themilanoseal.com/#website",
-      url: "https://themilanoseal.com",
+      "@id": "https://www.themilanoseal.com/#website",
+      url: "https://www.themilanoseal.com",
       name: "The Milano Seal™",
-      publisher: { "@id": "https://themilanoseal.com/#business" },
+      publisher: { "@id": "https://www.themilanoseal.com/#business" },
       potentialAction: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: "https://themilanoseal.com/map?q={search_term_string}",
+          urlTemplate: "https://www.themilanoseal.com/map?q={search_term_string}",
         },
         "query-input": "required name=search_term_string",
       },

@@ -8,7 +8,7 @@ const items = [
   {
     icon: Shield,
     label: "Florida Notary #668288",
-    sub: "Licensed & Commissioned",
+    sub: "Commissioned in Florida",
     href: "/founder",
   },
   {
@@ -20,7 +20,7 @@ const items = [
   {
     icon: Video,
     label: "Remote Online Notarization",
-    sub: "Remote Online Notary Network",
+    sub: "Florida RON Coordination",
     href: "/services/remote-online-notary",
   },
   {
@@ -31,8 +31,8 @@ const items = [
   },
   {
     icon: Users,
-    label: "USCIS Document Support",
-    sub: "Clearance Validation",
+    label: "Immigration Document Support",
+    sub: "Document Readiness Review",
     href: "/services/immigration-documents",
   },
   {

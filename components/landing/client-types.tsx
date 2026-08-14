@@ -46,7 +46,6 @@ export function ClientTypes() {
   return (
     <section className="relative py-24 md:py-32 bg-[#050507]">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -58,7 +57,7 @@ export function ClientTypes() {
             Who We Serve
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Trusted by Professionals Worldwide
+            Built for Professionals Worldwide
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
             We coordinate the U.S. side of your matter with the precision and
@@ -66,7 +65,6 @@ export function ClientTypes() {
           </p>
         </motion.div>
 
-        {/* Desktop: grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {clientTypes.map((type, index) => (
             <motion.div
@@ -101,7 +99,6 @@ export function ClientTypes() {
           ))}
         </div>
 
-        {/* Mobile: single-column vertical stack */}
         <div className="flex flex-col space-y-4 md:hidden touch-pan-y">
           {clientTypes.map((type, index) => (
             <motion.div
