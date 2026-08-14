@@ -6,7 +6,7 @@ import { ShieldCheck, Globe, FileText, Landmark } from "lucide-react";
 
 const CREDENTIALS = [
   { icon: ShieldCheck, text: "Florida Notary Public" },
-  { icon: Globe,       text: "Remote Online Notary Specialist" },
+  { icon: Globe,       text: "Florida Remote Online Notary" },
   { icon: FileText,    text: "International Document Execution Liaison" },
   { icon: Landmark,    text: "Florida Notary Commission #668288" },
 ];
@@ -61,7 +61,6 @@ export function PaymentFounder() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.15 }}
       >
-        {/* Section header */}
         <motion.div variants={fadeUp} className="text-center mb-12">
           <span className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#6A5520] mb-4 block">
             Founder Trust Anchor
@@ -71,14 +70,12 @@ export function PaymentFounder() {
           </h2>
         </motion.div>
 
-        {/* Card */}
         <motion.div
           variants={fadeUp}
           className="relative rounded-2xl overflow-hidden border border-[#C6A55A]/25 group"
           style={{ background: "linear-gradient(145deg, #0D0D0D 0%, #080806 60%, #0A0908 100%)" }}
         >
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C6A55A]/60 to-transparent" />
-          {/* Single-pass gold border sweep on viewport entry */}
           <motion.div
             initial={{ x: "-100%" }}
             whileInView={{ x: "100%" }}
@@ -88,7 +85,6 @@ export function PaymentFounder() {
           />
 
           <div className="flex flex-col md:flex-row">
-            {/* Photo — slides in from left */}
             <motion.div
               variants={slideLeft}
               className="relative md:w-[42%] aspect-[3/4] md:aspect-auto overflow-hidden"
@@ -104,7 +100,6 @@ export function PaymentFounder() {
               <div className="absolute inset-0 md:bg-gradient-to-r from-transparent via-transparent to-[#0D0D0D]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-transparent md:bg-none" />
 
-              {/* Crest overlay fades in last */}
               <motion.div variants={fadeIn} className="absolute top-5 left-5">
                 <Image
                   src="/milano-seal-gold-transparent-512.png"
@@ -116,7 +111,6 @@ export function PaymentFounder() {
               </motion.div>
             </motion.div>
 
-            {/* Credentials column — each child staggered */}
             <motion.div
               className="flex flex-col justify-center md:w-[58%] px-8 md:px-12 py-10 md:py-14"
               variants={section}
@@ -153,7 +147,6 @@ export function PaymentFounder() {
                 ))}
               </ul>
 
-              {/* Founder-Led Execution trust copy */}
               <motion.div variants={fadeUp} className="mb-3">
                 <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
                   Founder-Led Execution // Personally Overseen
@@ -168,7 +161,6 @@ export function PaymentFounder() {
                 </p>
               </motion.div>
 
-              {/* Social trust chips */}
               <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-8">
                 {PRIMARY_SOCIALS.map((chip) => (
                   <motion.a
