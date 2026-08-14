@@ -1,4 +1,3 @@
-const PROTECTED_MATTER_TRANSITION_ROLES = new Set([
 export const PROTECTED_MATTER_TRANSITION_ROLES = new Set([
   "founder",
   "founder_admin",
@@ -9,7 +8,6 @@ export const PROTECTED_MATTER_TRANSITION_ROLES = new Set([
   "apostille_coordinator",
 ]);
 
-export function canManageProtectedMatterTransition(role: string): boolean {
 export function canPerformProtectedMatterTransition(role: string): boolean {
   return PROTECTED_MATTER_TRANSITION_ROLES.has(role);
 }
