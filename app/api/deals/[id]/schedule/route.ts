@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
-import { canTransition } from "@/lib/stateMachine";
+import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
@@ -41,7 +41,11 @@ export async function POST(
     }
 
     const currentStatus = String(deal.deal_status ?? deal.status ?? "");
-    if (!canTransition(currentStatus, "scheduled")) {
+    const normalizedCurrent = normalizeMatterStatus(currentStatus);
+    if (
+      normalizedCurrent !== "awaiting_payment" ||
+      !canTransition(currentStatus, "scheduled")
+    ) {
       return NextResponse.json(
         {
           error: "INVALID_STATE_TRANSITION",
@@ -94,7 +98,9 @@ export async function POST(
     const scheduledAt =
       typeof body.scheduled_at === "string" && body.scheduled_at.trim()
         ? body.scheduled_at
-        : null;
+        : typeof deal.scheduled_at === "string"
+          ? deal.scheduled_at
+          : null;
     const note = typeof body.notes === "string" ? body.notes.trim() : "";
     const nextNotes = note
       ? [typeof deal.notes === "string" ? deal.notes.trim() : "", note]
