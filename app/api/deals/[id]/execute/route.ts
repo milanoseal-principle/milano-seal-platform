@@ -2,19 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
-import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
+import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
+import { canTransition } from "@/lib/stateMachine";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
 
-const EXECUTION_ROLES = new Set([
-  "founder",
-  "founder_admin",
-  "admin",
-  "admin_operator",
-  "ops_manager",
-  "execution_coordinator",
-  "apostille_coordinator",
-  "virtual_assistant",
-]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(
   req: NextRequest,
@@ -32,65 +26,120 @@ export async function POST(
     }
 
     const role = await resolveServerRole(user);
-    if (!EXECUTION_ROLES.has(role)) {
+    if (!canPerformProtectedMatterTransition(role)) {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
 
     const supabase = createAdminClient();
-    const { data: deal } = await supabase
-      .from("deals")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const baseQuery = supabase.from("deals").select("*");
+    const { data: deal, error: fetchError } = UUID_RE.test(id)
+      ? await baseQuery.or(`id.eq.${id},deal_id.eq.${id}`).maybeSingle()
+      : await baseQuery.eq("deal_id", id).maybeSingle();
 
-    if (!deal) {
+    if (fetchError || !deal) {
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
     }
 
-    try {
-      assertPaymentConfirmed(deal, "execute");
-    } catch (err) {
-      const code = err instanceof PaymentGateError ? err.code : "PAYMENT_REQUIRED";
+    const currentStatus = String(deal.deal_status ?? deal.status ?? "");
+    if (!canTransition(currentStatus, "in_execution")) {
       return NextResponse.json(
         {
-          error: code,
-          message: "Payment must be confirmed before execution can begin.",
+          error: "INVALID_STATE_TRANSITION",
+          message: `Matter cannot transition from ${currentStatus || "unknown"} to in_execution.`,
+          current_status: currentStatus || null,
+          required_status: "scheduled",
+        },
+        { status: 409 },
+      );
+    }
+
+    const executionTruth = deal.execution_truth;
+    const executionValidation =
+      executionTruth && typeof executionTruth === "object"
+        ? validateExecutionTruth(executionTruth)
+        : {
+            valid: false,
+            reviewRequired: true,
+            errors: ["EXECUTION_TRUTH_MISSING"],
+          };
+
+    if (!executionValidation.valid || executionValidation.reviewRequired) {
+      return NextResponse.json(
+        {
+          error: "EXECUTION_REVIEW_REQUIRED",
+          message:
+            "Execution requirements must be fully resolved before execution can begin.",
+          remaining: executionValidation.errors,
+        },
+        { status: 409 },
+      );
+    }
+
+    const executionGate = evaluateSchedulingGate({ matter: deal });
+    if (!executionGate.schedulingEligible) {
+      return NextResponse.json(
+        {
+          error: "PAYMENT_REQUIRED",
+          paymentRequirementSatisfied:
+            executionGate.paymentRequirementSatisfied,
+          paymentRequirementMethod: executionGate.paymentRequirementMethod,
+          message:
+            "Verified payment or an active Complimentary Authorization is required before execution can begin.",
         },
         { status: 402 },
       );
     }
 
     const body = await req.json().catch(() => ({}));
-    const { data: updated, error: updateError } = await supabase
+    const now = new Date().toISOString();
+    const executionDate =
+      typeof body.execution_date === "string" && body.execution_date.trim()
+        ? body.execution_date
+        : now;
+
+    let updateQuery = supabase
       .from("deals")
       .update({
         status: "in_execution",
         deal_status: "in_execution",
-        ...(body.execution_date
-          ? { execution_date: body.execution_date }
-          : {}),
+        execution_date: executionDate,
+        execution_at: now,
+        executed_at: now,
+        last_activity: now,
       })
-      .eq("id", id)
+      .eq("id", deal.id)
+      .eq("status", deal.status);
+
+    updateQuery =
+      deal.deal_status == null
+        ? updateQuery.is("deal_status", null)
+        : updateQuery.eq("deal_status", deal.deal_status);
+
+    const { data: updated, error: updateError } = await updateQuery
       .select()
-      .single();
+      .maybeSingle();
 
     if (updateError || !updated) {
       return NextResponse.json(
         {
-          error: "EXECUTION_TRANSITION_FAILED",
+          error: "STALE_MATTER_STATE",
           message:
-            "The Matter could not be moved to execution. No execution state was fabricated.",
+            "The Matter changed before execution began. Refresh and retry; no execution state was fabricated.",
         },
         { status: 409 },
       );
     }
 
     void logActivity({
-      deal_id: (updated?.deal_id as string) ?? id,
+      deal_id: (updated.deal_id as string) ?? id,
       actor: user.email ?? user.id,
       action: "executed",
       detail: "Execution started",
-      meta: { canonical_status: "in_execution" },
+      meta: {
+        executed_at: now,
+        payment_requirement_method: executionGate.paymentRequirementMethod,
+        canonical_status: "in_execution",
+      },
     }).catch((error) =>
       console.error("[activity] execution log failed:", error),
     );
