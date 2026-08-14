@@ -1,8 +1,6 @@
 name: Milano Seal PR CI
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
