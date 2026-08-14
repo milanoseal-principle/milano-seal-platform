@@ -2,20 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
+import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
+import { canTransition } from "@/lib/stateMachine";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
 
-const SCHEDULE_ROLES = new Set([
-  "founder",
-  "founder_admin",
-  "admin",
-  "admin_operator",
-  "ops_manager",
-  "execution_coordinator",
-  "apostille_coordinator",
-  "virtual_assistant",
-]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(
   req: NextRequest,
@@ -33,19 +26,31 @@ export async function POST(
     }
 
     const role = await resolveServerRole(user);
-    if (!SCHEDULE_ROLES.has(role)) {
+    if (!canPerformProtectedMatterTransition(role)) {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
 
     const supabase = createAdminClient();
-    const { data: deal } = await supabase
-      .from("deals")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const baseQuery = supabase.from("deals").select("*");
+    const { data: deal, error: fetchError } = UUID_RE.test(id)
+      ? await baseQuery.or(`id.eq.${id},deal_id.eq.${id}`).maybeSingle()
+      : await baseQuery.eq("deal_id", id).maybeSingle();
 
-    if (!deal) {
+    if (fetchError || !deal) {
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
+
+    const currentStatus = String(deal.deal_status ?? deal.status ?? "");
+    if (!canTransition(currentStatus, "scheduled")) {
+      return NextResponse.json(
+        {
+          error: "INVALID_STATE_TRANSITION",
+          message: `Matter cannot transition from ${currentStatus || "unknown"} to scheduled.`,
+          current_status: currentStatus || null,
+          required_status: "awaiting_payment",
+        },
+        { status: 409 },
+      );
     }
 
     const executionTruth = deal.execution_truth;
@@ -86,39 +91,57 @@ export async function POST(
     }
 
     const body = await req.json().catch(() => ({}));
-    const { data: updated, error: updateError } = await supabase
+    const scheduledAt =
+      typeof body.scheduled_at === "string" && body.scheduled_at.trim()
+        ? body.scheduled_at
+        : null;
+    const note = typeof body.notes === "string" ? body.notes.trim() : "";
+    const nextNotes = note
+      ? [typeof deal.notes === "string" ? deal.notes.trim() : "", note]
+          .filter(Boolean)
+          .join("\n")
+      : deal.notes;
+    const now = new Date().toISOString();
+
+    let updateQuery = supabase
       .from("deals")
       .update({
         status: "scheduled",
         deal_status: "scheduled",
-        ...(body.execution_date
-          ? { execution_date: body.execution_date }
-          : {}),
+        scheduled_at: scheduledAt,
+        notes: nextNotes,
+        last_activity: now,
       })
-      .eq("id", id)
+      .eq("id", deal.id)
+      .eq("status", deal.status);
+
+    updateQuery =
+      deal.deal_status == null
+        ? updateQuery.is("deal_status", null)
+        : updateQuery.eq("deal_status", deal.deal_status);
+
+    const { data: updated, error: updateError } = await updateQuery
       .select()
-      .single();
+      .maybeSingle();
 
     if (updateError || !updated) {
       return NextResponse.json(
         {
-          error: "SCHEDULING_TRANSITION_FAILED",
+          error: "STALE_MATTER_STATE",
           message:
-            "The Matter could not be moved to scheduled. No scheduling state was fabricated.",
+            "The Matter changed before scheduling completed. Refresh and retry; no scheduling state was fabricated.",
         },
         { status: 409 },
       );
     }
 
     void logActivity({
-      deal_id: (updated?.deal_id as string) ?? id,
+      deal_id: (updated.deal_id as string) ?? id,
       actor: user.email ?? user.id,
       action: "scheduled",
-      detail: body.execution_date
-        ? `Scheduled for ${body.execution_date}`
-        : "Marked scheduled",
+      detail: scheduledAt ? `Scheduled for ${scheduledAt}` : "Marked scheduled",
       meta: {
-        execution_date: body.execution_date ?? null,
+        scheduled_at: scheduledAt,
         payment_requirement_method: schedulingGate.paymentRequirementMethod,
         canonical_status: "scheduled",
       },
