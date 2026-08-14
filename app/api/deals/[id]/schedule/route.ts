@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
+import { resolveServerRole } from "@/lib/auth/server-role";
+
+const SCHEDULING_ROLES = new Set([
+  "founder", "founder_admin", "admin", "admin_operator", "ops_manager",
+  "execution_coordinator", "apostille_coordinator", "virtual_assistant",
+]);
 
 export async function POST(
   req: NextRequest,
@@ -11,6 +17,15 @@ export async function POST(
   try {
     const { id } = await params;
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+    const role = await resolveServerRole(user);
+    if (!SCHEDULING_ROLES.has(role)) {
+      return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+    }
+
     const { data: deal } = await supabase
       .from("deals")
       .select("*")
@@ -84,9 +99,6 @@ export async function POST(
     }
 
     void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       await logActivity({
         deal_id: (updated?.deal_id as string) ?? id,
         actor: user?.email ?? "admin",

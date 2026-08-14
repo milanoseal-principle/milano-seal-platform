@@ -172,31 +172,6 @@ function OperatorActions({ matter }: { matter: MatterDetail }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [nextStatus, setNextStatus] = useState<string>(matter.deal_status);
 
-  const paid =
-    matter.payment_status === "paid" ||
-    matter.payment_status === "payment_confirmed" ||
-    matter.payment_status === "confirmed";
-
-  async function confirmPayment() {
-    setBusy("payment");
-    setMsg(null);
-    try {
-      const res = await fetch(`/api/admin/matters/${matter.id}/confirm-payment`, {
-        method: "POST",
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.ok) {
-        setMsg(json.message || json.code || "Failed to confirm payment.");
-      } else {
-        setMsg("Payment confirmed — scheduling unlocked. Refresh to update.");
-      }
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Network error.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function advanceStatus() {
     setBusy("status");
     setMsg(null);
@@ -224,26 +199,6 @@ function OperatorActions({ matter }: { matter: MatterDetail }) {
       <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.875rem" }}>
         Operator Actions
       </p>
-
-      <button
-        onClick={() => void confirmPayment()}
-        disabled={busy !== null || paid}
-        style={{
-          width: "100%",
-          background: paid ? "rgba(34,197,94,0.06)" : "rgba(198,165,90,0.1)",
-          border: paid ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(198,165,90,0.4)",
-          color: paid ? "rgba(34,197,94,0.85)" : gold,
-          fontSize: 11,
-          fontFamily: "monospace",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          padding: "10px 14px",
-          cursor: busy !== null || paid ? "not-allowed" : "pointer",
-          marginBottom: "0.75rem",
-        }}
-      >
-        {paid ? "Payment Confirmed" : busy === "payment" ? "Confirming…" : "Confirm Payment"}
-      </button>
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
         <select

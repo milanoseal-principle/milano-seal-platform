@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const pipelineBoard = readFileSync("components/dashboard/pipeline-board.tsx", "utf8");
-const dealActions = readFileSync("components/dashboard/deal-detail-actions.tsx", "utf8");
+const dealPage = readFileSync("app/dashboard/deals/[id]/page.tsx", "utf8");
 const scheduleRoute = readFileSync("app/api/deals/[id]/schedule/route.ts", "utf8");
 
 test("pipeline board routes 'scheduled' through the canonical schedule endpoint", () => {
@@ -20,8 +20,12 @@ test("pipeline board does NOT route scheduling through /api/admin/move", () => {
 });
 
 test("deal-detail Schedule dialog uses the canonical schedule endpoint", () => {
-  assert.match(dealActions, /postScheduledAction\("schedule"/);
-  assert.match(dealActions, /\/api\/deals\/\$\{id\}\/\$\{path\}/);
+  assert.match(dealPage, /postProtectedTransition\([\s\S]*"schedule"/);
+  assert.match(dealPage, /\/api\/deals\/\$\{deal\.id\}\/\$\{action\}/);
+});
+
+test("deal-detail execution uses the governed execute endpoint", () => {
+  assert.match(dealPage, /postProtectedTransition\("execute"/);
 });
 
 test("canonical schedule endpoint evaluates the scheduling gate (payment OR complimentary)", () => {

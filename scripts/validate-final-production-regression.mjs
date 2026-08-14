@@ -188,6 +188,8 @@ async function main() {
     if (!r.ok) stopWith(results, 1);
   }
 
+  // 5. Advisory validators are reported for release visibility. A failure here
+  // does not block the required production gate above.
   const advisory = [];
   for (const name of collectAdvisory(pkg)) {
     const r = runStep(name, "npm", ["run", "--silent", name]);
