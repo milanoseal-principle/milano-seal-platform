@@ -5,9 +5,9 @@ import { Footer } from "@/components/landing/footer";
 import { ArrowRight, ChevronRight } from "lucide-react";
 
 const GLOBAL_DISCLAIMER =
-  "The Milano Seal provides document coordination, notarization support, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country, receiving-authority, document-type, and signer-location requirements. Document execution coordination only. The Milano Seal™ does not provide legal guidance, tax advice, customs advice, immigration advice, medical advice, investment advice, asset appraisal, or Final acceptance remains subject to the receiving authority..";
+  "The Milano Seal provides document coordination, notarization support, apostille/authentication routing review, courier custody, and release support. International use remains subject to destination-country, receiving-authority, document-type, and signer-location requirements. Document execution coordination only. The Milano Seal™ does not provide legal guidance, tax advice, customs advice, immigration advice, medical advice, investment advice, or asset appraisal. Final acceptance remains subject to the receiving authority.";
 
-const canonical = "https://themilanoseal.com/professionals/institutional-access";
+const canonical = "https://www.themilanoseal.com/professionals/institutional-access";
 
 export const metadata: Metadata = {
   title: "Institutional Access | The Milano Seal",
@@ -33,7 +33,7 @@ export default function InstitutionalAccessPage() {
         <nav className="max-w-5xl mx-auto px-6 pt-8 flex items-center gap-2" aria-label="Breadcrumb">
           <Link href="/" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Home</Link>
           <ChevronRight className="w-3 h-3 text-[#2A2A2A]" />
-          <Link href="/professionals" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Professionals</Link>
+          <Link href="/professional" className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors">Professionals</Link>
           <ChevronRight className="w-3 h-3 text-[#2A2A2A]" />
           <span className="font-mono text-[10px] text-[#C6A55A]/70 tracking-widest uppercase">Institutional Access</span>
         </nav>
