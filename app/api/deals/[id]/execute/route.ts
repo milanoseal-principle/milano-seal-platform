@@ -4,14 +4,11 @@ import { evaluateSchedulingGate } from "@/lib/scheduling/complimentaryScheduling
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
 import { resolveServerRole } from "@/lib/auth/server-role";
-
-const EXECUTION_ROLES = new Set([
-  "founder", "founder_admin", "admin", "admin_operator", "ops_manager",
-  "execution_coordinator", "apostille_coordinator", "virtual_assistant",
-]);
+import { canManageProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
+import { canTransition } from "@/lib/stateMachine";
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -22,17 +19,35 @@ export async function POST(
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }
     const role = await resolveServerRole(user);
-    if (!EXECUTION_ROLES.has(role)) {
+    if (!canManageProtectedMatterTransition(role)) {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
 
-    const { data: deal } = await supabase
+    let { data: deal } = await supabase
       .from("deals")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
+    if (!deal) {
+      const fallback = await supabase
+        .from("deals")
+        .select("*")
+        .eq("deal_id", id)
+        .maybeSingle();
+      deal = fallback.data;
+    }
     if (!deal)
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+
+    if (!canTransition(deal.status, "in_execution")) {
+      return NextResponse.json(
+        {
+          error: "INVALID_STATE_TRANSITION",
+          message: `The Matter cannot move from ${deal.status} to in_execution.`,
+        },
+        { status: 409 },
+      );
+    }
 
     const executionTruth = deal.execution_truth;
     const executionValidation = executionTruth && typeof executionTruth === "object"
@@ -62,14 +77,17 @@ export async function POST(
       );
     }
 
-    const body = await req.json().catch(() => ({}));
+    const now = new Date().toISOString();
     const { data: updated, error: updateError } = await supabase
       .from("deals")
       .update({
+        status: "in_execution",
         deal_status: "in_execution",
-        ...(body.execution_date ? { execution_date: body.execution_date } : {}),
+        executed_at: now,
+        last_activity: now,
       })
-      .eq("id", id)
+      .eq("id", deal.id)
+      .eq("status", deal.status)
       .select()
       .single();
 

@@ -837,7 +837,10 @@ export default function DealDetail() {
 
                           const scheduled = await postProtectedTransition(
                             "schedule",
-                            { execution_date: new Date(scheduledAt).toISOString() },
+                            {
+                              scheduled_at: new Date(scheduledAt).toISOString(),
+                              ...(actionNote ? { notes: actionNote } : {}),
+                            },
                             "Scheduled",
                           );
                           if (!scheduled) return;
@@ -858,8 +861,7 @@ export default function DealDetail() {
                   variant="outline"
                   disabled={
                     !isPaymentRequirementSatisfied ||
-                    (stage !== "scheduled" &&
-                      !(stage === "awaiting_payment" && !!deal.scheduled_at))
+                    stage !== "scheduled"
                   }
                   data-testid="action-execute"
                   className="justify-start gap-2 border-border/60 hover:border-gold/60 hover:text-gold hover:bg-gold-soft disabled:opacity-40"
