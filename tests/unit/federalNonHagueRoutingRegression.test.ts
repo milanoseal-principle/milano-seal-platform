@@ -15,6 +15,7 @@ test("federal non-Hague consular projection cannot resolve READY", () => {
     urgency: "standard",
   });
 
+  assert.equal(result.destination.slug, "uae");
   assert.equal(result.destination.routeType, "consular_legalization");
   assert.equal(result.routeStatus, "REVIEW_REQUIRED");
   assert.ok(result.authorityPath.some((step) => /Department of State/i.test(step)));
@@ -22,11 +23,11 @@ test("federal non-Hague consular projection cannot resolve READY", () => {
   assert.ok(result.reviewReasons.some((reason) => /Non-Hague|consular/i.test(reason)));
 });
 
-test("compatibility route architect preserves federal non-Hague manual review", () => {
+test("compatibility route architect resolves UAE aliases through canonical registry", () => {
   const result = buildApostilleRoute({
     originatingState: "Florida",
     destinationCountry: "United Arab Emirates",
-    destinationSlug: "uae",
+    destinationSlug: "United Arab Emirates",
     documentType: "FBI background check",
     signingRequirement: "already_issued",
     issuance: "federal",
