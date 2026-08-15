@@ -236,7 +236,7 @@ export async function loadOperationalLedger(options: {
       matterId: id.matterId,
       clientName: id.clientName,
       eventName: row.event,
-      description: row.notes ?? context || null,
+      description: row.notes ?? (context || null),
       actor: row.actor_id ?? row.actor_type,
       currentState: id.currentState,
       occurredAt: row.created_at,
