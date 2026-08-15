@@ -3,6 +3,21 @@ import {
   normalizeExecutionTruth,
   validateExecutionTruth,
 } from "@/lib/matter/executionTruth";
+import {
+  isOperationalTerminalState,
+  operationalClientName,
+  operationalDestinationCountry,
+  operationalDocumentType,
+  operationalDueAt,
+  operationalMatterDisplayId,
+  operationalMatterHref,
+  operationalMatterId,
+  operationalPaymentStatus,
+  operationalPaymentVerified,
+  resolveOperationalMatterState,
+  withMatterQuery,
+  type OperationalMatterSourceRow,
+} from "@/lib/matter/canonicalOperationalRead";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const OPERATOR_ACTION_CLASSES = [
@@ -59,27 +74,9 @@ export interface OperatorIntelligenceSnapshot {
   actions: OperatorMatterAction[];
 }
 
-interface RawMatterRow {
+interface RawMatterRow extends OperationalMatterSourceRow {
   id?: string | null;
   deal_id?: string | null;
-  client_name?: string | null;
-  status?: string | null;
-  deal_status?: string | null;
-  payment_status?: string | null;
-  payment_confirmed?: boolean | null;
-  amount_paid?: number | null;
-  destination_country?: string | null;
-  country?: string | null;
-  document_type?: string | null;
-  document?: string | null;
-  execution_truth?: unknown;
-  created_at?: string | null;
-  updated_at?: string | null;
-  due_at?: string | null;
-  followup_24h?: boolean | null;
-  followup_72h?: boolean | null;
-  followup_7d?: boolean | null;
-  follow_up_active?: boolean | null;
 }
 
 interface MatterReadResult {
@@ -92,19 +89,38 @@ const RICH_COLUMNS = [
   "id",
   "deal_id",
   "client_name",
+  "full_name",
   "status",
   "deal_status",
   "payment_status",
   "payment_confirmed",
+  "payment_settlement_status",
+  "amount_due",
   "amount_paid",
+  "verified_revenue",
   "destination_country",
   "country",
   "document_type",
   "document",
+  "service_type",
   "execution_truth",
+  "apostille_required",
+  "requires_apostille",
   "created_at",
   "updated_at",
   "due_at",
+  "sla_deadline",
+  "scheduled_at",
+  "apostille_at",
+  "shipped_at",
+  "delivery_at",
+  "delivery_timestamp",
+  "completed_at",
+  "tracking_number",
+  "carrier",
+  "delivery_status",
+  "delivery_eta",
+  "is_paid_and_released",
   "followup_24h",
   "followup_72h",
   "followup_7d",
@@ -115,6 +131,7 @@ const FALLBACK_COLUMNS = [
   "id",
   "deal_id",
   "client_name",
+  "full_name",
   "status",
   "deal_status",
   "payment_status",
@@ -123,18 +140,14 @@ const FALLBACK_COLUMNS = [
   "country",
   "document_type",
   "document",
+  "service_type",
   "created_at",
   "updated_at",
   "due_at",
+  "sla_deadline",
 ].join(", ");
 
 const CANONICAL_STATE_SET = new Set<string>(MATTER_STATES);
-
-const TERMINAL_STATES = new Set([
-  "completed",
-  "lost",
-  "cancelled",
-]);
 
 const PAYMENT_GATE_STATES = new Set([
   "quoted",
@@ -144,8 +157,6 @@ const PAYMENT_GATE_STATES = new Set([
   "scheduling_unlocked",
   "final_balance_due",
   "final_payment_pending_review",
-  "awaiting_payment",
-  "payment_pending",
 ]);
 
 const DOCUMENT_BLOCK_STATES = new Set([
@@ -187,48 +198,9 @@ const PRIORITY_WEIGHT: Record<OperatorPriority, number> = {
   normal: 2,
 };
 
-function cleanString(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const cleaned = value.trim();
-  return cleaned || null;
-}
-
-function firstString(...values: unknown[]): string | null {
-  for (const value of values) {
-    const cleaned = cleanString(value);
-    if (cleaned) return cleaned;
-  }
-  return null;
-}
-
 function normalizedState(row: RawMatterRow): string {
-  return firstString(row.status, row.deal_status)?.toLowerCase() ?? "unknown";
-}
-
-function normalizedPaymentStatus(row: RawMatterRow): string {
-  return cleanString(row.payment_status)?.toLowerCase() ?? "unknown";
-}
-
-function paymentVerified(row: RawMatterRow): boolean {
-  const status = normalizedPaymentStatus(row);
-  return (
-    row.payment_confirmed === true ||
-    status === "paid" ||
-    status === "confirmed" ||
-    status === "payment_confirmed"
-  );
-}
-
-function destinationCountry(row: RawMatterRow): string | null {
-  return firstString(row.destination_country, row.country);
-}
-
-function documentType(row: RawMatterRow): string | null {
-  return firstString(row.document_type, row.document);
-}
-
-function isTerminalState(state: string): boolean {
-  return TERMINAL_STATES.has(state);
+  const resolution = resolveOperationalMatterState(row);
+  return resolution.state ?? resolution.rawState ?? "unknown";
 }
 
 function validDate(value: string | null | undefined): Date | null {
@@ -276,41 +248,37 @@ function overdueFollowUpReason(
   if (!capabilities.followUps) return null;
   if (row.follow_up_active === false) return null;
 
-  const paymentStatus = normalizedPaymentStatus(row);
+  const paymentStatus = operationalPaymentStatus(row);
   if (!["unpaid", "pending"].includes(paymentStatus)) return null;
 
-  const state = normalizedState(row);
-  if (isTerminalState(state)) return null;
+  const state = resolveOperationalMatterState(row).state;
+  if (isOperationalTerminalState(state)) return null;
 
   const hours = ageHours(row.created_at, now);
   if (hours === null) return null;
 
   if (hours >= 168 && row.followup_7d !== true) {
-    return { reason: "7-day canonical payment follow-up is overdue.", priority: "critical" };
+    return {
+      reason: "7-day canonical payment follow-up is overdue.",
+      priority: "critical",
+    };
   }
 
   if (hours >= 72 && row.followup_72h !== true) {
-    return { reason: "72-hour canonical payment follow-up is overdue.", priority: "high" };
+    return {
+      reason: "72-hour canonical payment follow-up is overdue.",
+      priority: "high",
+    };
   }
 
   if (hours >= 24 && row.followup_24h !== true) {
-    return { reason: "24-hour canonical payment follow-up is overdue.", priority: "high" };
+    return {
+      reason: "24-hour canonical payment follow-up is overdue.",
+      priority: "high",
+    };
   }
 
   return null;
-}
-
-function internalId(row: RawMatterRow): string {
-  return cleanString(row.id) ?? "unknown";
-}
-
-function displayMatterId(row: RawMatterRow): string {
-  return cleanString(row.deal_id) ?? internalId(row);
-}
-
-function matterHref(row: RawMatterRow): string {
-  const id = cleanString(row.id);
-  return id ? `/dashboard/deals/${encodeURIComponent(id)}` : "/dashboard/pipeline";
 }
 
 function buildAction(
@@ -319,24 +287,29 @@ function buildAction(
   priority: OperatorPriority,
   reason: string,
 ): OperatorMatterAction {
-  const internal = internalId(row);
+  const internal = operationalMatterId(row);
+  const destinationCountry = operationalDestinationCountry(row);
+
   return {
     id: `${internal}:${actionClass.toLowerCase().replaceAll(" ", "-")}`,
-    matterId: displayMatterId(row),
+    matterId: operationalMatterDisplayId(row),
     internalId: internal,
-    clientName: cleanString(row.client_name) ?? "Matter",
+    clientName: operationalClientName(row),
     actionClass,
     priority,
     reason,
     state: normalizedState(row),
-    paymentStatus: normalizedPaymentStatus(row),
-    destinationCountry: destinationCountry(row),
-    documentType: documentType(row),
-    dueAt: cleanString(row.due_at),
-    createdAt: cleanString(row.created_at),
-    updatedAt: cleanString(row.updated_at),
-    actionHref: ACTION_DESTINATIONS[actionClass],
-    matterHref: matterHref(row),
+    paymentStatus: operationalPaymentStatus(row),
+    destinationCountry,
+    documentType: operationalDocumentType(row),
+    dueAt: operationalDueAt(row),
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
+    actionHref: withMatterQuery(ACTION_DESTINATIONS[actionClass], row, {
+      focus: actionClass,
+      country: actionClass === "Authority Review" ? destinationCountry : null,
+    }),
+    matterHref: operationalMatterHref(row),
   };
 }
 
@@ -345,8 +318,10 @@ function deriveMatterActions(
   now: Date,
   capabilities: OperatorIntelligenceCapabilities,
 ): OperatorMatterAction[] {
-  const state = normalizedState(row);
-  if (isTerminalState(state)) return [];
+  const stateResolution = resolveOperationalMatterState(row);
+  const state = stateResolution.state;
+
+  if (isOperationalTerminalState(state)) return [];
 
   const actions = new Map<OperatorActionClass, OperatorMatterAction>();
   const add = (
@@ -359,16 +334,18 @@ function deriveMatterActions(
     }
   };
 
-  const paymentStatus = normalizedPaymentStatus(row);
-  const verifiedPayment = paymentVerified(row);
+  const paymentStatus = operationalPaymentStatus(row);
+  const verifiedPayment = operationalPaymentVerified(row);
 
-  if (PAYMENT_GATE_STATES.has(state) && !verifiedPayment) {
+  if (state && PAYMENT_GATE_STATES.has(state) && !verifiedPayment) {
     const mismatchAfterConfirmationState =
       state === "deposit_confirmed" || state === "scheduling_unlocked";
 
     add(
       "Payment Blocked",
-      paymentStatus === "failed" || paymentStatus === "disputed" || mismatchAfterConfirmationState
+      paymentStatus === "failed" ||
+        paymentStatus === "disputed" ||
+        mismatchAfterConfirmationState
         ? "critical"
         : "high",
       mismatchAfterConfirmationState
@@ -379,7 +356,7 @@ function deriveMatterActions(
     );
   }
 
-  if (DOCUMENT_BLOCK_STATES.has(state)) {
+  if (state && DOCUMENT_BLOCK_STATES.has(state)) {
     add(
       "Document Blocked",
       state === "document_correction_required" ? "critical" : "high",
@@ -394,7 +371,7 @@ function deriveMatterActions(
     if (executionReason) add("Authority Review", "high", executionReason);
   }
 
-  if (state === "under_review" && !destinationCountry(row)) {
+  if (state === "under_review" && !operationalDestinationCountry(row)) {
     add(
       "Authority Review",
       "high",
@@ -402,22 +379,22 @@ function deriveMatterActions(
     );
   }
 
-  if (SCHEDULING_DUE_STATES.has(state) && verifiedPayment) {
+  if (state && SCHEDULING_DUE_STATES.has(state) && verifiedPayment) {
     add(
       "Scheduling Due",
-      isPast(row.due_at, now) ? "critical" : "high",
+      isPast(operationalDueAt(row), now) ? "critical" : "high",
       state === "scheduling_unlocked"
         ? "Canonical scheduling gate is unlocked and the Matter is awaiting scheduling."
         : "Verified payment is present and the Matter is ready for the canonical scheduling-unlock transition.",
     );
   }
 
-  if (APOSTILLE_PENDING_STATES.has(state)) {
+  if (state && APOSTILLE_PENDING_STATES.has(state)) {
     add(
       "Apostille Pending",
       state === "apostille_rejected"
         ? "critical"
-        : isPast(row.due_at, now)
+        : isPast(operationalDueAt(row), now)
           ? "high"
           : "normal",
       state === "apostille_rejected"
@@ -426,13 +403,28 @@ function deriveMatterActions(
     );
   }
 
-  if (state === "customs_watch") {
+  const deliveryStatus = row.delivery_status?.trim().toLowerCase() ?? "";
+  if (
+    ["failed", "exception", "returned", "return_to_sender"].includes(
+      deliveryStatus,
+    )
+  ) {
+    add(
+      "Courier Exception",
+      "critical",
+      `Carrier delivery state is ${deliveryStatus.replaceAll("_", " ")}; operator courier review is required.`,
+    );
+  } else if (state === "customs_watch") {
     add(
       "Courier Exception",
       "critical",
       "Canonical Matter state is customs watch; operator courier review is required.",
     );
-  } else if (state === "in_transit" && capabilities.slaDeadline && isPast(row.due_at, now)) {
+  } else if (
+    state === "in_transit" &&
+    capabilities.slaDeadline &&
+    isPast(operationalDueAt(row), now)
+  ) {
     add(
       "Courier Exception",
       "high",
@@ -440,10 +432,10 @@ function deriveMatterActions(
     );
   }
 
-  if (RELEASE_READY_STATES.has(state)) {
+  if (state && RELEASE_READY_STATES.has(state)) {
     add(
       "Release Ready",
-      isPast(row.due_at, now) ? "critical" : "high",
+      isPast(operationalDueAt(row), now) ? "critical" : "high",
       state === "ready_for_release"
         ? "Canonical Matter state is ready for governed release QA."
         : "Final payment is confirmed and the Matter is eligible for the canonical ready-for-release transition.",
@@ -451,7 +443,9 @@ function deriveMatterActions(
   }
 
   const followUp = overdueFollowUpReason(row, now, capabilities);
-  if (followUp) add("Overdue Follow-Up", followUp.priority, followUp.reason);
+  if (followUp) {
+    add("Overdue Follow-Up", followUp.priority, followUp.reason);
+  }
 
   return [...actions.values()];
 }
@@ -532,7 +526,8 @@ export async function loadOperatorIntelligence(
   );
 
   actions.sort((a, b) => {
-    const priorityDifference = PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
+    const priorityDifference =
+      PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
     if (priorityDifference !== 0) return priorityDifference;
 
     const dueDifference = actionDate(a) - actionDate(b);
@@ -551,7 +546,7 @@ export async function loadOperatorIntelligence(
     degraded: result.sourceTier === "fallback",
     warning:
       result.sourceTier === "fallback"
-        ? "Rich canonical Matter columns are unavailable. Execution-truth and follow-up signals are suppressed; do not interpret zero counts for those classes as an all-clear condition."
+        ? "Rich canonical Matter columns are unavailable. Execution-truth, shipment and follow-up signals are suppressed; do not interpret zero counts for those classes as an all-clear condition."
         : null,
     mattersRead: result.rows.length,
     counts,
