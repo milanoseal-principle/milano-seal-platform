@@ -25,6 +25,7 @@ test("operator intelligence uses one read-only canonical projection", () => {
   assert.doesNotMatch(helper, /\.from\(/);
   assert.match(operator, /canonicalOperationalRead/);
   assert.match(operator, /withMatterQuery/);
+  assert.match(operator, /evaluateSchedulingGate/);
 });
 
 test("ledger and review queues no longer use hardcoded empty arrays", () => {
@@ -49,11 +50,14 @@ test("pipeline is canonical read-only and does not render legacy mutation board"
 
 test("apostille, courier and release reads do not depend on nonexistent or stale status fields", () => {
   assert.match(apostille, /resolveOperationalMatterState/);
+  assert.match(apostille, /APOSTILLE_RELATED_STATES/);
   assert.doesNotMatch(apostille, /\.select\([\s\S]{0,500}matter_status/);
   assert.doesNotMatch(courierApi, /\.eq\(\s*["']deal_status["']\s*,\s*["']shipped["']/);
   assert.match(courierApi, /resolveOperationalMatterState/);
 
-  const releaseSelect = releaseApi.match(/\.select\(\s*([`"'])([\s\S]*?)\1\s*\)/);
+  const releaseSelect = releaseApi.match(
+    /\.select\(\s*([`"'])([\s\S]*?)\1\s*,?\s*\)/,
+  );
   assert.ok(releaseSelect);
   assert.doesNotMatch(releaseSelect[2], /\bmatter_status\b/);
   assert.doesNotMatch(releaseSelect[2], /\bdelivered_at\b/);
