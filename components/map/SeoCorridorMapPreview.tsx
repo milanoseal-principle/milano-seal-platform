@@ -54,7 +54,16 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
   const source = project(FLORIDA.lat, FLORIDA.lng);
   const destination = project(route.lat, route.lng);
   const activePath = routePath(source, destination);
-  const accent = route.hague ? "#C6A55A" : "#D87963";
+  const accent = route.verificationRequired
+    ? "#D3B35A"
+    : route.hague
+      ? "#C6A55A"
+      : "#D87963";
+  const routeLabel = route.verificationRequired
+    ? "Route verification required"
+    : route.hague
+      ? "Hague execution corridor"
+      : "Authentication / consular corridor";
   const contextRoutes = GLOBAL_ROUTE_DATA.filter(
     (candidate) => candidate.slug !== route.slug,
   )
@@ -100,7 +109,7 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             <div>
               <div className="text-[15px] font-semibold text-white">Florida → {route.name}</div>
               <div className="mt-1 text-[9px] uppercase tracking-[0.13em] text-white/35">
-                {route.hague ? "Hague execution corridor" : "Authentication / consular corridor"}
+                {routeLabel}
               </div>
             </div>
           </div>
@@ -139,7 +148,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             </filter>
           </defs>
 
-          {/* Geographic field */}
           <g fill="none" stroke="#C6A55A">
             {[90, 180, 270].map((y) => (
               <path
@@ -159,7 +167,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             ))}
           </g>
 
-          {/* Contextual real destination nodes and dormant corridors */}
           <g>
             {contextRoutes.slice(0, 5).map((candidate) => {
               const point = project(candidate.lat, candidate.lng);
@@ -192,7 +199,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             })}
           </g>
 
-          {/* Destination atmosphere */}
           <circle
             className="ms-corridor-halo"
             cx={destination.x}
@@ -219,7 +225,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             strokeOpacity="0.12"
           />
 
-          {/* Active execution route */}
           <path
             d={activePath}
             fill="none"
@@ -246,7 +251,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             </circle>
           )}
 
-          {/* Origin */}
           <circle cx={source.x} cy={source.y} r="8" fill="none" stroke="#C6A55A" strokeWidth="1" strokeOpacity="0.32" />
           <circle cx={source.x} cy={source.y} r="4" fill="#C6A55A" filter={`url(#glow-${uid})`} />
           <circle cx={source.x} cy={source.y} r="1.7" fill="#FFF6E2" />
@@ -254,7 +258,6 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
             FLORIDA
           </text>
 
-          {/* Destination */}
           <circle cx={destination.x} cy={destination.y} r="11" fill="none" stroke={accent} strokeWidth="1.2" strokeOpacity="0.55" />
           <circle cx={destination.x} cy={destination.y} r="5.5" fill={accent} filter={`url(#glow-${uid})`} />
           <circle cx={destination.x} cy={destination.y} r="2" fill="#FFF6E2" />
