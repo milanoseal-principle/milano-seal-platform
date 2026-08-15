@@ -1,14 +1,26 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface ReleaseRow {
   id: string;
+  deal_id: string;
+  client_name: string;
   destination_country: string;
   document_type: string;
   matter_status: string;
+  canonical_state: string | null;
+  raw_state: string | null;
+  alias_applied: boolean;
   updated_at: string;
   days_in_state: number;
+  payment_status: string;
+  payment_confirmed: boolean;
+  tracking_number: string | null;
+  carrier: string | null;
+  delivery_status: string | null;
 }
 
 interface ReleaseData {
@@ -17,14 +29,28 @@ interface ReleaseData {
   waiting_courier: ReleaseRow[];
   waiting_verification: ReleaseRow[];
   completed: ReleaseRow[];
+  unresolved?: ReleaseRow[];
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
-  Italy: "🇮🇹", Portugal: "🇵🇹", Mexico: "🇲🇽", Spain: "🇪🇸",
-  France: "🇫🇷", Germany: "🇩🇪", Brazil: "🇧🇷", Argentina: "🇦🇷",
-  Colombia: "🇨🇴", Peru: "🇵🇪", Chile: "🇨🇱", Japan: "🇯🇵",
-  China: "🇨🇳", UAE: "🇦🇪", UK: "🇬🇧", Canada: "🇨🇦",
-  Australia: "🇦🇺", Netherlands: "🇳🇱",
+  Italy: "🇮🇹",
+  Portugal: "🇵🇹",
+  Mexico: "🇲🇽",
+  Spain: "🇪🇸",
+  France: "🇫🇷",
+  Germany: "🇩🇪",
+  Brazil: "🇧🇷",
+  Argentina: "🇦🇷",
+  Colombia: "🇨🇴",
+  Peru: "🇵🇪",
+  Chile: "🇨🇱",
+  Japan: "🇯🇵",
+  China: "🇨🇳",
+  UAE: "🇦🇪",
+  UK: "🇬🇧",
+  Canada: "🇨🇦",
+  Australia: "🇦🇺",
+  Netherlands: "🇳🇱",
 };
 
 const QUEUE_CONFIG = [
@@ -37,23 +63,34 @@ const QUEUE_CONFIG = [
 
 function MatterCard({
   row,
-  showRelease,
+  showReviewAction,
+  focused,
 }: {
   row: ReleaseRow;
-  showRelease?: boolean;
+  showReviewAction?: boolean;
+  focused?: boolean;
 }) {
   const [marking, setMarking] = useState(false);
   const [marked, setMarked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const flag = COUNTRY_FLAGS[row.destination_country] ?? "🌍";
 
   async function markForReview() {
     setMarking(true);
-    // Marks for operator review — does not auto-release
-    await fetch(`/api/deals/${row.id}`, {
+    setError(null);
+    const response = await fetch(`/api/deals/${encodeURIComponent(row.id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notes: "[release-review-requested]" }),
     });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "Could not request release review.");
+      setMarking(false);
+      return;
+    }
+
     setMarked(true);
     setMarking(false);
   }
@@ -61,29 +98,49 @@ function MatterCard({
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: focused ? "rgba(198,165,90,0.07)" : "rgba(255,255,255,0.02)",
+        border: focused
+          ? "1px solid rgba(198,165,90,0.45)"
+          : "1px solid rgba(255,255,255,0.06)",
         borderRadius: 2,
         padding: "10px 12px",
         marginBottom: 6,
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        <div>
+        <div style={{ minWidth: 0 }}>
+          <Link
+            href={`/dashboard/deals/${encodeURIComponent(row.id)}`}
+            style={{
+              display: "block",
+              fontSize: 10,
+              color: "#C6A55A",
+              fontFamily: "monospace",
+              textDecoration: "none",
+              marginBottom: 3,
+            }}
+          >
+            {row.deal_id}
+          </Link>
           <div style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.8)", marginBottom: 2 }}>
             {flag} {row.destination_country}
           </div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>
-            {row.document_type}
+            {row.client_name} · {row.document_type}
           </div>
         </div>
-        <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div
             style={{
               fontSize: 11,
               fontFamily: "monospace",
               fontWeight: 700,
-              color: row.days_in_state >= 7 ? "#ef4444" : row.days_in_state >= 3 ? "#f59e0b" : "rgba(255,255,255,0.5)",
+              color:
+                row.days_in_state >= 7
+                  ? "#ef4444"
+                  : row.days_in_state >= 3
+                    ? "#f59e0b"
+                    : "rgba(255,255,255,0.5)",
             }}
           >
             {row.days_in_state}d
@@ -93,18 +150,25 @@ function MatterCard({
           </div>
         </div>
       </div>
-      {showRelease && (
+
+      {row.alias_applied ? (
+        <div style={{ marginTop: 6, fontSize: 8, color: "rgba(245,158,11,0.65)", fontFamily: "monospace", letterSpacing: "0.08em" }}>
+          LEGACY STATE PROJECTED · READ ONLY
+        </div>
+      ) : null}
+
+      {showReviewAction && (
         <button
           onClick={() => void markForReview()}
           disabled={marking || marked}
           style={{
             marginTop: 8,
             width: "100%",
-            padding: "5px 0",
-            fontSize: 10,
+            padding: "6px 0",
+            fontSize: 9,
             fontFamily: "monospace",
             letterSpacing: "0.1em",
-            textTransform: "uppercase" as const,
+            textTransform: "uppercase",
             color: marked ? "rgba(198,165,90,0.4)" : "#C6A55A",
             background: marked ? "rgba(198,165,90,0.04)" : "rgba(198,165,90,0.08)",
             border: `1px solid ${marked ? "rgba(198,165,90,0.15)" : "rgba(198,165,90,0.3)"}`,
@@ -112,9 +176,15 @@ function MatterCard({
             cursor: marking || marked ? "default" : "pointer",
           }}
         >
-          {marked ? "Marked for Review" : marking ? "Marking..." : "Mark Released"}
+          {marked ? "Review Requested" : marking ? "Requesting..." : "Request Release Review"}
         </button>
       )}
+
+      {error ? (
+        <p style={{ marginTop: 6, fontSize: 9, color: "#c05050", fontFamily: "monospace" }}>
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -123,12 +193,14 @@ function QueueColumn({
   label,
   color,
   rows,
-  showRelease,
+  showReviewAction,
+  focusMatter,
 }: {
   label: string;
   color: string;
   rows: ReleaseRow[];
-  showRelease?: boolean;
+  showReviewAction?: boolean;
+  focusMatter: string | null;
 }) {
   return (
     <div
@@ -136,21 +208,13 @@ function QueueColumn({
         background: "rgba(3,3,5,0.9)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 2,
-        padding: "16px",
+        padding: 16,
         flex: 1,
-        minWidth: 200,
+        minWidth: 220,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div
-          style={{
-            fontSize: 9,
-            fontFamily: "monospace",
-            letterSpacing: "0.32em",
-            textTransform: "uppercase" as const,
-            color: "rgba(198,165,90,0.5)",
-          }}
-        >
+        <div style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)" }}>
           {label}
         </div>
         <span
@@ -168,11 +232,17 @@ function QueueColumn({
           {rows.length}
         </span>
       </div>
+
       {rows.length === 0 ? (
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontStyle: "italic" }}>Empty</div>
       ) : (
-        rows.slice(0, 20).map((r) => (
-          <MatterCard key={r.id} row={r} showRelease={showRelease} />
+        rows.slice(0, 30).map((row) => (
+          <MatterCard
+            key={row.id}
+            row={row}
+            showReviewAction={showReviewAction}
+            focused={focusMatter === row.id || focusMatter === row.deal_id}
+          />
         ))
       )}
     </div>
@@ -197,10 +267,10 @@ function DeliveredNotReleasedSection() {
 
   useEffect(() => {
     fetch("/api/dashboard/shippo/delivered-not-released")
-      .then((r) => r.json() as Promise<{ shipments: DeliveredNotReleasedRow[]; notice?: string }>)
-      .then((d) => {
-        setRows(d.shipments ?? []);
-        setNotice(d.notice ?? null);
+      .then((response) => response.json() as Promise<{ shipments: DeliveredNotReleasedRow[]; notice?: string }>)
+      .then((data) => {
+        setRows(data.shipments ?? []);
+        setNotice(data.notice ?? null);
       })
       .catch(() => setNotice("Unable to load — check configuration"))
       .finally(() => setLoading(false));
@@ -217,52 +287,23 @@ function DeliveredNotReleasedSection() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 9,
-            fontFamily: "monospace",
-            letterSpacing: "0.26em",
-            textTransform: "uppercase",
-            color: "#B85C5C",
-          }}
-        >
+        <div style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: "0.26em", textTransform: "uppercase", color: "#B85C5C" }}>
           Delivered · Not Released
         </div>
         {rows.length > 0 && (
-          <span
-            style={{
-              fontSize: 10,
-              padding: "2px 8px",
-              borderRadius: 99,
-              background: "rgba(184,92,92,0.12)",
-              border: "1px solid rgba(184,92,92,0.3)",
-              color: "#B85C5C",
-            }}
-          >
+          <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(184,92,92,0.12)", border: "1px solid rgba(184,92,92,0.3)", color: "#B85C5C" }}>
             {rows.length}
           </span>
         )}
       </div>
 
-      {loading && (
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
-          Loading…
-        </div>
-      )}
-
-      {!loading && notice && (
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>
-          {notice}
-        </div>
-      )}
-
-      {!loading && !notice && rows.length === 0 && (
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
-          No delivered-not-released matters.
-        </div>
-      )}
-
-      {!loading && rows.length > 0 && (
+      {loading ? (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>Loading…</div>
+      ) : notice ? (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>{notice}</div>
+      ) : rows.length === 0 ? (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>No delivered-not-released matters.</div>
+      ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {rows.map((row) => (
             <div
@@ -292,8 +333,8 @@ function DeliveredNotReleasedSection() {
                   Delivered {new Date(row.delivered_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </div>
               )}
-              <a
-                href={`/dashboard/releases?matter_id=${row.matter_id}`}
+              <Link
+                href={`/dashboard/releases?matter=${encodeURIComponent(row.matter_id)}`}
                 style={{
                   fontSize: 10,
                   padding: "4px 10px",
@@ -306,7 +347,7 @@ function DeliveredNotReleasedSection() {
                 }}
               >
                 Review Release →
-              </a>
+              </Link>
             </div>
           ))}
         </div>
@@ -316,58 +357,87 @@ function DeliveredNotReleasedSection() {
 }
 
 export function ReleaseControlCenter() {
+  const searchParams = useSearchParams();
+  const focusMatter = searchParams.get("matter") ?? searchParams.get("deal");
   const [data, setData] = useState<ReleaseData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/releases")
-      .then((r) => r.json())
-      .then((d) => { setData(d as ReleaseData); setLoading(false); })
-      .catch(() => setLoading(false));
+    fetch("/api/dashboard/releases", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.message ?? body.error ?? "Release data unavailable");
+        }
+        return response.json() as Promise<ReleaseData>;
+      })
+      .then((responseData) => {
+        setData(responseData);
+        setLoadError(null);
+      })
+      .catch((error) => setLoadError(error instanceof Error ? error.message : "Release data unavailable"))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#050507", padding: "32px 40px", color: "rgba(255,255,255,0.75)" }}>
+    <div style={{ minHeight: "100vh", background: "#050507", padding: "32px 24px", color: "rgba(255,255,255,0.75)" }}>
       <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            fontSize: 9,
-            fontFamily: "monospace",
-            letterSpacing: "0.32em",
-            textTransform: "uppercase" as const,
-            color: "rgba(198,165,90,0.5)",
-            marginBottom: 6,
-          }}
-        >
+        <div style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", marginBottom: 6 }}>
           Milano Seal — Operations
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.9)", margin: 0 }}>
           Release Control Center
         </h1>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "4px 0 0" }}>
-          Document release queue. Operator-only. No automatic releases.
+          Canonical release queues. Operator-only. No automatic releases.
         </p>
       </div>
 
-      {loading && (
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
-          Loading release data...
+      {focusMatter ? (
+        <div style={{ marginBottom: 20, padding: "10px 12px", background: "rgba(198,165,90,0.05)", border: "1px solid rgba(198,165,90,0.18)", borderRadius: 3 }}>
+          <div style={{ fontSize: 8, fontFamily: "monospace", color: "rgba(198,165,90,0.55)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+            Focused Matter
+          </div>
+          <div style={{ marginTop: 4, fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.5)", wordBreak: "break-all" }}>
+            {focusMatter}
+          </div>
         </div>
-      )}
+      ) : null}
 
-      {data && (
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" as const, alignItems: "flex-start" }}>
-          {QUEUE_CONFIG.map(({ key, label, color }) => (
-            <QueueColumn
-              key={key}
-              label={label}
-              color={color}
-              rows={data[key as keyof ReleaseData] ?? []}
-              showRelease={key === "ready_for_release"}
-            />
-          ))}
+      {loading ? (
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>Loading release data...</div>
+      ) : loadError ? (
+        <div style={{ padding: 16, border: "1px solid rgba(192,80,80,0.25)", background: "rgba(192,80,80,0.05)", color: "#c05050", fontSize: 12 }}>
+          {loadError}. This is not an empty release queue.
         </div>
-      )}
+      ) : data ? (
+        <>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+            {QUEUE_CONFIG.map(({ key, label, color }) => (
+              <QueueColumn
+                key={key}
+                label={label}
+                color={color}
+                rows={data[key] ?? []}
+                showReviewAction={key === "ready_for_release"}
+                focusMatter={focusMatter}
+              />
+            ))}
+          </div>
+
+          {(data.unresolved?.length ?? 0) > 0 ? (
+            <div style={{ marginTop: 20, padding: 14, border: "1px solid rgba(245,158,11,0.22)", background: "rgba(245,158,11,0.05)", borderRadius: 3 }}>
+              <div style={{ fontSize: 9, fontFamily: "monospace", color: "#f59e0b", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                Unresolved State Rows · {data.unresolved?.length ?? 0}
+              </div>
+              <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                These Matters are visible for review and are not silently assigned to a release queue.
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       <DeliveredNotReleasedSection />
     </div>
