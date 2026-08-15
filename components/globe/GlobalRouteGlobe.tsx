@@ -43,6 +43,12 @@ function buildArc(route: GlobalRouteRecord) {
   return `M ${fx} ${fy} Q ${mx + px * lift} ${my + py * lift} ${tx} ${ty}`;
 }
 
+function routeAccent(route: GlobalRouteRecord | null) {
+  if (!route) return "#C6A55A";
+  if (route.verificationRequired) return "#D3B35A";
+  return route.hague ? "#C6A55A" : "#D87963";
+}
+
 export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: Props) {
   const uid = useId().replace(/:/g, "");
   const reduceMotion = useReducedMotion();
@@ -59,7 +65,7 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
 
   const [fx, fy] = project(...FLORIDA);
   const selectedRoute = GLOBAL_ROUTE_DATA.find((route) => route.slug === selectedSlug) ?? null;
-  const selectedAccent = selectedRoute?.hague ? "#C6A55A" : "#D87963";
+  const selectedAccent = routeAccent(selectedRoute);
   const selectedPath = selectedRoute ? buildArc(selectedRoute) : null;
   const ambientRoutes = GLOBAL_ROUTE_DATA.filter(
     (route, index) => route.slug !== selectedSlug && index % 5 === 0,
@@ -110,7 +116,11 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
               className="mt-1 font-mono text-[8px] uppercase tracking-[0.14em]"
               style={{ color: selectedAccent }}
             >
-              {selectedRoute.hague ? "Hague route" : "Authentication / consular route"}
+              {selectedRoute.verificationRequired
+                ? "Route verification required"
+                : selectedRoute.hague
+                  ? "Hague route"
+                  : "Authentication / consular route"}
             </div>
           </div>
         ) : (
@@ -137,9 +147,9 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
               <stop offset="100%" stopColor="#040406" />
             </radialGradient>
             <radialGradient id={`selected-halo-${uid}`} cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={selectedAccent ?? "#C6A55A"} stopOpacity="0.25" />
-              <stop offset="50%" stopColor={selectedAccent ?? "#C6A55A"} stopOpacity="0.07" />
-              <stop offset="100%" stopColor={selectedAccent ?? "#C6A55A"} stopOpacity="0" />
+              <stop offset="0%" stopColor={selectedAccent} stopOpacity="0.25" />
+              <stop offset="50%" stopColor={selectedAccent} stopOpacity="0.07" />
+              <stop offset="100%" stopColor={selectedAccent} stopOpacity="0" />
             </radialGradient>
             <filter id={`authority-glow-${uid}`} x="-80%" y="-80%" width="260%" height="260%">
               <feGaussianBlur stdDeviation="3" result="blur" />
@@ -160,7 +170,6 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             strokeOpacity="0.25"
           />
 
-          {/* Curved geographic field */}
           <g
             clipPath={`url(#globe-clip-${uid})`}
             fill="none"
@@ -190,7 +199,6 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             })}
           </g>
 
-          {/* Dormant real execution corridors */}
           <g clipPath={`url(#globe-clip-${uid})`}>
             {ambientRoutes.map((route) => (
               <path
@@ -204,7 +212,6 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             ))}
           </g>
 
-          {/* Selected destination atmosphere and route */}
           {selectedRoute && selectedPath && (() => {
             const [tx, ty] = project(selectedRoute.lat, selectedRoute.lng);
             return (
@@ -244,13 +251,12 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             );
           })()}
 
-          {/* Canonical destination nodes */}
           <g clipPath={`url(#globe-clip-${uid})`}>
             {GLOBAL_ROUTE_DATA.map((route) => {
               const [cx, cy] = project(route.lat, route.lng);
               const isSelected = selectedSlug === route.slug;
               const isHovered = hovered === route.slug;
-              const nodeAccent = route.hague ? "#C6A55A" : "#D87963";
+              const nodeAccent = routeAccent(route);
               const r = isSelected ? 5.2 : isHovered ? 4.2 : 3;
 
               return (
@@ -299,7 +305,6 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             })}
           </g>
 
-          {/* Florida source */}
           <circle cx={fx} cy={fy} r="9" fill="none" stroke="#C6A55A" strokeWidth="1" strokeOpacity="0.4" />
           <circle cx={fx} cy={fy} r="4.5" fill="#C6A55A" filter={`url(#authority-glow-${uid})`} />
           <circle cx={fx} cy={fy} r="1.7" fill="#FFF6E2" />
@@ -307,7 +312,6 @@ export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: P
             FLORIDA
           </text>
 
-          {/* Hover context */}
           {hovered && (() => {
             const route = GLOBAL_ROUTE_DATA.find((candidate) => candidate.slug === hovered);
             if (!route) return null;
