@@ -87,7 +87,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] pt-[calc(var(--header-total-height)+clamp(16px,3vw,40px))] pb-8 lg:pb-10 flex flex-col lg:flex-row items-start lg:items-center justify-center overflow-x-clip"
+      className="relative min-h-[calc(100svh-var(--header-total-height))] pt-[calc(var(--header-total-height)+clamp(12px,2vw,24px))] pb-8 lg:pb-10 flex flex-col lg:flex-row items-start justify-start overflow-x-clip"
     >
       <div className="absolute inset-0 bg-[#050507]" />
       <div
@@ -179,7 +179,7 @@ export function Hero() {
                       {icon === "shield" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
                       {icon === "monitor" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
                       {icon === "check" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>}
-                      {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
+                      {icon === "globe" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
                       {icon === "lock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
                       {icon === "eye" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                     </div>

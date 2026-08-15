@@ -131,14 +131,14 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
             <span className="pointer-events-none hidden md:inline-block rounded-full border border-[var(--ms-gold)]/30 bg-[#050507]/85 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/85 opacity-0 -translate-x-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
               Ask Milano AI
             </span>
-            <span className="relative flex items-center justify-center" style={{ width: 52, height: 52 }}>
+            <span className="relative flex h-[72px] w-[72px] items-center justify-center md:h-[76px] md:w-[76px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/brand/milano-seal-orb-v2.png"
                 alt=""
                 aria-hidden="true"
-                width={52}
-                height={52}
+                width={76}
+                height={76}
                 className="ms-ai-orb"
                 style={{
                   display: "block",
@@ -148,7 +148,7 @@ export function MilanoOrbAssistant({ roleMode = 'PUBLIC' }: MilanoOrbAssistantPr
                 }}
               />
               {/* live status dot */}
-              <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[#050507]" />
+              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#050507]" />
             </span>
           </motion.button>
         ) : (
