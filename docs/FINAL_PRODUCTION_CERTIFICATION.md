@@ -1,7 +1,7 @@
 # The Milano Seal™ — Final Production Certification
 
 **Document Reference:** MS-OPS-FINALCERT-2026-V1
-**Code baseline:** `main @ 310886b`
+**CERTIFIED PRODUCTION SHA:** `________________________`
 **Run from:** An environment with **live** Vercel, Wise, and Supabase production access
 **Owner / Executor:** _______________
 **Run date:** _______________
@@ -10,10 +10,11 @@
 
 ## Why this runbook exists
 
-Code and CI are certified. The remaining gates — live Vercel, Wise production
-E2E, and the Damiani dry run — **cannot** be certified from the build/CI
-environment, because that environment cannot reach the live site or production
-Wise/Supabase infrastructure. Calling those gates "passed" from there would be
+Repository validation is certified only when the **Vercel external merge gate**
+passes for the exact SHA entered above. GitHub-hosted Actions are not a launch
+dependency. The remaining gates — live production, Wise production E2E, and the
+Damiani dry run — **cannot** be certified from the build environment, because
+that environment cannot prove live Wise/Supabase transaction truth. Calling those gates "passed" from there would be
 false. This checklist is the manual production certification to be executed
 from an environment that *can* reach production, with every result recorded
 against a pass/fail field and an evidence ID.
@@ -26,7 +27,7 @@ value exists.
 **Entry status:**
 
 ```
-CODE + CI CERTIFIED
+CODE + VERCEL MERGE GATE   PASS / FAIL
 LIVE VERCEL CERTIFICATION   PENDING
 WISE PRODUCTION E2E         PENDING
 DAMIANI DRY RUN             PENDING
@@ -44,7 +45,7 @@ This document is the current release authority. Gates are certified in order:
 
 ```
 A. Existing infrastructure / security prerequisites   (MS-OPS-GOLIVE-2026-V1, legacy)
-B. Current production code + CI                        (main @ 310886b — CERTIFIED)
+B. Current production code + external merge gate       (exact CERTIFIED PRODUCTION SHA — PASS required)
 C. Live Vercel certification                           (Phase 1)
 D. TIFFTEST50 Wise E2E                                 (Phase 2)
 E. Damiani dry run                                     (Phase 3)
@@ -60,11 +61,30 @@ infrastructure clearance only (order item A).
 
 ---
 
+## BILLING-INDEPENDENT MERGE GATE
+
+The repository does **not** depend on GitHub-hosted Actions for launch certification.
+Every Vercel preview/production deployment executes `node scripts/run-vercel-merge-gate.mjs` before `next build`.
+That command runs the canonical validators, typecheck, lint, test suite, production-governance,
+Damiani wiring, and TIFF certification checks. A failed gate prevents the Vercel deployment
+from reaching a successful status.
+
+For protected `main`, require the external status check:
+
+`Vercel – milano-seal-platform`
+
+The GitHub Actions workflow remains manual-only as a recovery/future secondary runner.
+Its billing availability does not control GO / NO-GO.
+
+**Source-validation PASS is not live transaction proof.** TIFF and Damiani live gates remain mandatory.
+
+---
+
 ## PHASE 1 — VERCEL PRODUCTION
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
-| 1.1 | Production deployment source = `main @ 310886b` | ☐ / ☐ | deploy id: __________ |
+| 1.1 | Production deployment SHA exactly equals **CERTIFIED PRODUCTION SHA** above | ☐ / ☐ | deploy id + sha: __________ |
 | 1.2 | All production deployments status **Ready** | ☐ / ☐ | screenshot: __________ |
 | 1.3 | `/api/health` returns healthy payload | ☐ / ☐ | ts: __________ |
 | 1.4 | `/professional/damiani` loads | ☐ / ☐ | screenshot: __________ |

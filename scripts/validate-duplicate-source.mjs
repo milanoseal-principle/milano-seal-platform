@@ -3,7 +3,7 @@
 // duplicated block, while short/common implementation fragments are ignored.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { pathToFileURL } from "node:url";
@@ -93,11 +93,12 @@ export function inspectSource(fileName, source) {
 
 function trackedFiles() {
   return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
-    .split("\0").filter((file) => SOURCE_RE.test(file) && !file.endsWith(".d.ts"));
+    .split("\0")
+    .filter((file) => SOURCE_RE.test(file) && !file.endsWith(".d.ts") && existsSync(file));
 }
 
 export function inspectFiles(files = trackedFiles()) {
-  return files.flatMap((file) => inspectSource(file, readFileSync(file, "utf8")));
+  return files.filter((file) => existsSync(file)).flatMap((file) => inspectSource(file, readFileSync(file, "utf8")));
 }
 
 function main() {

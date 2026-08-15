@@ -1,4 +1,6 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/run-vercel-merge-gate.mjs && next build",
   "crons": [
     {
       "path": "/api/cron/sla-watch",
