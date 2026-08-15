@@ -1,7 +1,9 @@
 "use client";
 
-import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+import { useApi } from "@/hooks/useApi";
 
 interface ActiveShipment {
   id: string;
@@ -13,11 +15,16 @@ interface ActiveShipment {
   delivery_status: string | null;
   delivery_eta: string | null;
   shipped_at: string | null;
-  deal_status: string | null;
+  canonical_state: string | null;
+  raw_state: string | null;
+  alias_applied: boolean;
+  due_at: string | null;
 }
 
 interface ActiveResponse {
   shipments: ActiveShipment[];
+  deliveredLast7Days: number;
+  generatedAt: string;
 }
 
 const GOLD = "rgba(212,175,55,1)";
@@ -44,12 +51,32 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string 
     color: GOLD,
     border: GOLD_BORDER,
   },
+  customs_watch: {
+    bg: "rgba(245,158,11,0.10)",
+    color: "#f59e0b",
+    border: "rgba(245,158,11,0.25)",
+  },
   delivered: {
     bg: "rgba(74,158,107,0.10)",
     color: "#4a9e6b",
     border: "rgba(74,158,107,0.25)",
   },
   failed: {
+    bg: "rgba(192,80,80,0.08)",
+    color: "#c05050",
+    border: "rgba(192,80,80,0.18)",
+  },
+  exception: {
+    bg: "rgba(192,80,80,0.08)",
+    color: "#c05050",
+    border: "rgba(192,80,80,0.18)",
+  },
+  returned: {
+    bg: "rgba(192,80,80,0.08)",
+    color: "#c05050",
+    border: "rgba(192,80,80,0.18)",
+  },
+  return_to_sender: {
     bg: "rgba(192,80,80,0.08)",
     color: "#c05050",
     border: "rgba(192,80,80,0.18)",
@@ -61,46 +88,26 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string 
   },
 };
 
-function statusLabel(s: string | null): string {
-  if (!s) return "Unknown";
-  return s
+function statusLabel(status: string | null): string {
+  if (!status) return "Unknown";
+  return status
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function formatEta(eta: string | null): string {
   if (!eta) return "—";
-  try {
-    return new Date(eta).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "—";
-  }
-}
-
-function SkeletonRow() {
-  return (
-    <div
-      className="flex items-center gap-4 px-4 py-3 rounded-sm animate-pulse"
-      style={{ background: GOLD_SOFT }}
-    >
-      <div className="w-20 h-3 rounded-sm" style={{ background: GOLD_BORDER }} />
-      <div className="w-32 h-3 rounded-sm" style={{ background: GOLD_BORDER }} />
-      <div className="w-16 h-3 rounded-sm" style={{ background: GOLD_BORDER }} />
-      <div className="flex-1 h-3 rounded-sm" style={{ background: GOLD_BORDER }} />
-      <div className="w-20 h-3 rounded-sm" style={{ background: GOLD_BORDER }} />
-    </div>
-  );
+  const date = new Date(eta);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function CarrierBadge({ carrier }: { carrier: string | null }) {
-  const c = (carrier || "").toLowerCase();
-  const style = CARRIER_COLORS[c] || { bg: GOLD_SOFT, color: GOLD_DIM };
+  const key = (carrier || "").toLowerCase();
+  const style = CARRIER_COLORS[key] || { bg: GOLD_SOFT, color: GOLD_DIM };
   return (
     <span
-      className="px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-widest"
+      className="rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest"
       style={{ background: style.bg, color: style.color }}
     >
       {carrier?.toUpperCase() || "—"}
@@ -108,43 +115,70 @@ function CarrierBadge({ carrier }: { carrier: string | null }) {
   );
 }
 
-function StatusBadge({ status }: { status: string | null }) {
-  const s = STATUS_STYLES[status ?? "unknown"] || STATUS_STYLES.unknown;
+function StatusBadge({ shipment }: { shipment: ActiveShipment }) {
+  const status = shipment.delivery_status ?? shipment.canonical_state ?? "unknown";
+  const style = STATUS_STYLES[status] || STATUS_STYLES.unknown;
   return (
     <span
-      className="px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-widest"
-      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+      className="rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest"
+      style={{ background: style.bg, color: style.color, border: `1px solid ${style.border}` }}
     >
       {statusLabel(status)}
     </span>
   );
 }
 
+function SkeletonRow() {
+  return (
+    <div className="flex animate-pulse items-center gap-4 rounded-sm px-4 py-3" style={{ background: GOLD_SOFT }}>
+      <div className="h-3 w-20 rounded-sm" style={{ background: GOLD_BORDER }} />
+      <div className="h-3 w-32 rounded-sm" style={{ background: GOLD_BORDER }} />
+      <div className="h-3 w-16 rounded-sm" style={{ background: GOLD_BORDER }} />
+      <div className="h-3 flex-1 rounded-sm" style={{ background: GOLD_BORDER }} />
+      <div className="h-3 w-20 rounded-sm" style={{ background: GOLD_BORDER }} />
+    </div>
+  );
+}
+
 export function CourierOperationsPanel() {
   const { data, isLoading } = useApi<ActiveResponse>("/api/courier/active");
+  const searchParams = useSearchParams();
+  const focusMatter = searchParams.get("matter") ?? searchParams.get("deal");
   const shipments = data?.shipments ?? [];
 
-  // Stats
-  const inTransit = shipments.filter(
-    (s) => s.delivery_status === "in_transit" || s.delivery_status === "out_for_delivery",
+  const inTransit = shipments.filter((shipment) =>
+    ["in_transit", "out_for_delivery"].includes(
+      shipment.delivery_status ?? shipment.canonical_state ?? "",
+    ),
   ).length;
 
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const deliveredThisWeek = 0; // active endpoint excludes delivered; shown as 0
-
-  const failed = shipments.filter((s) => s.delivery_status === "failed").length;
+  const failed = shipments.filter((shipment) =>
+    ["failed", "exception", "returned", "return_to_sender", "customs_watch"].includes(
+      shipment.delivery_status ?? shipment.canonical_state ?? "",
+    ),
+  ).length;
 
   return (
     <div className="space-y-8">
-      {/* Section 1: Active Shipments */}
+      {focusMatter ? (
+        <div className="flex items-center justify-between gap-3 rounded-sm border px-4 py-3" style={{ background: GOLD_SOFT, borderColor: GOLD_BORDER }}>
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: GOLD_DIM }}>
+              Focused Matter
+            </p>
+            <p className="mt-1 break-all font-mono text-[10px] text-white/50">{focusMatter}</p>
+          </div>
+          <Link href="/dashboard/courier" className="font-mono text-[9px] uppercase tracking-widest" style={{ color: GOLD }}>
+            Clear
+          </Link>
+        </div>
+      ) : null}
+
       <section>
-        <div
-          className="text-[9px] font-mono uppercase tracking-[0.28em] mb-1"
-          style={{ color: GOLD_DIM }}
-        >
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.28em]" style={{ color: GOLD_DIM }}>
           Live Courier View
         </div>
-        <h2 className="font-serif text-lg mb-4" style={{ color: GOLD }}>
+        <h2 className="mb-4 font-serif text-lg" style={{ color: GOLD }}>
           Active Shipments
         </h2>
 
@@ -155,184 +189,113 @@ export function CourierOperationsPanel() {
             <SkeletonRow />
           </div>
         ) : shipments.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center py-12 rounded-sm border"
-            style={{
-              background: BG,
-              borderColor: GOLD_BORDER,
-            }}
-          >
-            <div
-              className="text-[10px] font-mono uppercase tracking-widest mb-2"
-              style={{ color: GOLD_DIM }}
-            >
+          <div className="flex flex-col items-center justify-center rounded-sm border py-12" style={{ background: BG, borderColor: GOLD_BORDER }}>
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-widest" style={{ color: GOLD_DIM }}>
               No Active Shipments
             </div>
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-              All matters are either delivered or not yet shipped.
+              No canonical transit, customs, delivery or carrier-exception state is active.
             </p>
           </div>
         ) : (
-          <div
-            className="rounded-sm border overflow-hidden"
-            style={{ background: BG, borderColor: GOLD_BORDER }}
-          >
-            {/* Table header */}
-            <div
-              className="grid gap-4 px-4 py-2 border-b text-[9px] font-mono uppercase tracking-widest"
-              style={{
-                gridTemplateColumns: "120px 1fr 80px 110px 120px 100px",
-                borderColor: GOLD_BORDER,
-                color: GOLD_DIM,
-              }}
-            >
-              <span>Matter ID</span>
-              <span>Client</span>
-              <span>Carrier</span>
-              <span>Status</span>
-              <span>Destination</span>
-              <span>ETA</span>
-            </div>
-
-            {shipments.map((s) => (
-              <Link
-                key={s.id}
-                href={`/dashboard/deals/${s.id}`}
-                className="block border-b last:border-0 transition-colors"
-                style={{ borderColor: GOLD_BORDER }}
+          <div className="overflow-x-auto rounded-sm border" style={{ background: BG, borderColor: GOLD_BORDER }}>
+            <div className="min-w-[820px]">
+              <div
+                className="grid gap-4 border-b px-4 py-2 font-mono text-[9px] uppercase tracking-widest"
+                style={{
+                  gridTemplateColumns: "120px 1fr 80px 130px 120px 100px",
+                  borderColor: GOLD_BORDER,
+                  color: GOLD_DIM,
+                }}
               >
-                <div
-                  className="grid gap-4 px-4 py-3 items-center hover:opacity-80 transition-opacity"
-                  style={{
-                    gridTemplateColumns: "120px 1fr 80px 110px 120px 100px",
-                  }}
-                >
-                  <span
-                    className="text-xs font-mono truncate"
-                    style={{ color: GOLD }}
+                <span>Matter ID</span>
+                <span>Client</span>
+                <span>Carrier</span>
+                <span>Status</span>
+                <span>Destination</span>
+                <span>ETA</span>
+              </div>
+
+              {shipments.map((shipment) => {
+                const focused = focusMatter === shipment.id || focusMatter === shipment.deal_id;
+                return (
+                  <Link
+                    key={shipment.id}
+                    href={`/dashboard/deals/${encodeURIComponent(shipment.id)}`}
+                    className="block border-b last:border-0"
+                    style={{
+                      borderColor: GOLD_BORDER,
+                      background: focused ? "rgba(212,175,55,0.06)" : undefined,
+                    }}
                   >
-                    {s.deal_id || s.id.slice(0, 8)}
-                  </span>
-                  <span
-                    className="text-xs truncate"
-                    style={{ color: "rgba(255,255,255,0.75)" }}
-                  >
-                    {s.client_name
-                      ? s.client_name.length > 22
-                        ? s.client_name.slice(0, 22) + "…"
-                        : s.client_name
-                      : "—"}
-                  </span>
-                  <CarrierBadge carrier={s.carrier} />
-                  <StatusBadge status={s.delivery_status} />
-                  <span
-                    className="text-xs truncate"
-                    style={{ color: "rgba(255,255,255,0.5)" }}
-                  >
-                    {s.destination_country || "—"}
-                  </span>
-                  <span
-                    className="text-xs font-mono"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
-                  >
-                    {formatEta(s.delivery_eta)}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                    <div
+                      className="grid items-center gap-4 px-4 py-3 transition-opacity hover:opacity-80"
+                      style={{ gridTemplateColumns: "120px 1fr 80px 130px 120px 100px" }}
+                    >
+                      <span className="truncate font-mono text-xs" style={{ color: GOLD }}>
+                        {shipment.deal_id || shipment.id.slice(0, 8)}
+                      </span>
+                      <span className="truncate text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>
+                        {shipment.client_name || "—"}
+                      </span>
+                      <CarrierBadge carrier={shipment.carrier} />
+                      <StatusBadge shipment={shipment} />
+                      <span className="truncate text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {shipment.destination_country || "—"}
+                      </span>
+                      <span className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        {formatEta(shipment.delivery_eta)}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </section>
 
-      {/* Section 2: Courier Readiness */}
       <section>
-        <div
-          className="text-[9px] font-mono uppercase tracking-[0.28em] mb-1"
-          style={{ color: GOLD_DIM }}
-        >
+        <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.28em]" style={{ color: GOLD_DIM }}>
           Operational Summary
         </div>
-        <h2 className="font-serif text-lg mb-4" style={{ color: GOLD }}>
+        <h2 className="mb-4 font-serif text-lg" style={{ color: GOLD }}>
           Courier Readiness
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* In Transit */}
-          <div
-            className="rounded-sm border p-5"
-            style={{ background: BG, borderColor: GOLD_BORDER }}
-          >
-            <div
-              className="text-[9px] font-mono uppercase tracking-widest mb-2"
-              style={{ color: GOLD_DIM }}
-            >
-              In Transit
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            {
+              label: "In Transit",
+              value: inTransit,
+              color: GOLD,
+              note: "Active shipments en route",
+            },
+            {
+              label: "Delivered (7d)",
+              value: data?.deliveredLast7Days ?? 0,
+              color: "#4a9e6b",
+              note: "Completed deliveries this week",
+            },
+            {
+              label: "Failed / Stuck",
+              value: failed,
+              color: failed > 0 ? "#c05050" : "rgba(255,255,255,0.4)",
+              note: failed > 0 ? "Requires intervention" : "No issues detected",
+            },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-sm border p-5" style={{ background: BG, borderColor: GOLD_BORDER }}>
+              <div className="mb-2 font-mono text-[9px] uppercase tracking-widest" style={{ color: GOLD_DIM }}>
+                {stat.label}
+              </div>
+              <div className="font-serif text-3xl font-light" style={{ color: stat.color }}>
+                {isLoading ? "—" : stat.value}
+              </div>
+              <div className="mt-1 text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                {stat.note}
+              </div>
             </div>
-            <div
-              className="font-serif text-3xl font-light"
-              style={{ color: GOLD }}
-            >
-              {isLoading ? "—" : inTransit}
-            </div>
-            <div
-              className="text-[10px] mt-1"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              Active shipments en route
-            </div>
-          </div>
-
-          {/* Delivered This Week */}
-          <div
-            className="rounded-sm border p-5"
-            style={{ background: BG, borderColor: GOLD_BORDER }}
-          >
-            <div
-              className="text-[9px] font-mono uppercase tracking-widest mb-2"
-              style={{ color: GOLD_DIM }}
-            >
-              Delivered (7d)
-            </div>
-            <div
-              className="font-serif text-3xl font-light"
-              style={{ color: "#4a9e6b" }}
-            >
-              {isLoading ? "—" : deliveredThisWeek}
-            </div>
-            <div
-              className="text-[10px] mt-1"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              Completed deliveries this week
-            </div>
-          </div>
-
-          {/* Failed / Stuck */}
-          <div
-            className="rounded-sm border p-5"
-            style={{ background: BG, borderColor: GOLD_BORDER }}
-          >
-            <div
-              className="text-[9px] font-mono uppercase tracking-widest mb-2"
-              style={{ color: GOLD_DIM }}
-            >
-              Failed / Stuck
-            </div>
-            <div
-              className="font-serif text-3xl font-light"
-              style={{ color: failed > 0 ? "#c05050" : "rgba(255,255,255,0.4)" }}
-            >
-              {isLoading ? "—" : failed}
-            </div>
-            <div
-              className="text-[10px] mt-1"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              {failed > 0
-                ? "Requires intervention"
-                : "No issues detected"}
-            </div>
-          </div>
+          ))}
         </div>
       </section>
     </div>
