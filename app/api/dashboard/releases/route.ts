@@ -33,7 +33,7 @@ export async function GET() {
   const { data, error } = await admin
     .from("deals")
     .select(
-      "id, deal_id, client_name, full_name, destination_country, country, document_type, document, service_type, status, deal_status, updated_at, created_at, payment_status, payment_confirmed, is_paid_and_released, tracking_number, carrier, delivery_status, delivery_timestamp, delivered_at, final_total, total_price",
+      "id, deal_id, client_name, full_name, destination_country, country, document_type, document, service_type, status, deal_status, updated_at, created_at, payment_status, payment_confirmed, is_paid_and_released, tracking_number, carrier, delivery_status, delivery_timestamp, final_total, total_price",
     )
     .order("updated_at", { ascending: false })
     .limit(500);
