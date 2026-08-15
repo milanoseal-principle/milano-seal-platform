@@ -64,6 +64,10 @@ assert.ok(
   source.operator.includes("withMatterQuery"),
   "Operator Intelligence action links must carry Matter focus into downstream workspaces",
 );
+assert.ok(
+  source.operator.includes("evaluateSchedulingGate"),
+  "Operator Intelligence must reuse the canonical scheduling payment gate",
+);
 
 for (const destination of [
   "/dashboard/ledger",
@@ -150,6 +154,10 @@ assert.ok(
   source.apostille.includes("resolveOperationalMatterState"),
   "Apostille tracker must use canonical operational state projection",
 );
+assert.ok(
+  source.apostille.includes("APOSTILLE_RELATED_STATES"),
+  "Apostille tracker must include canonical apostille-state Matters even when legacy flags drift",
+);
 
 assert.ok(
   !/\.eq\(\s*["']deal_status["']\s*,\s*["']shipped["']\s*\)/.test(
@@ -170,17 +178,21 @@ assert.ok(
   "Courier panel must not hardcode delivered-this-week as zero",
 );
 
-const releaseSelectMatch = source.releaseApi.match(/\.select\(\s*([`"'])([\s\S]*?)\1\s*\)/);
-if (releaseSelectMatch) {
-  assert.ok(
-    !releaseSelectMatch[2].includes("matter_status"),
-    "Release API must not query nonexistent deals.matter_status",
-  );
-  assert.ok(
-    !releaseSelectMatch[2].includes("delivered_at"),
-    "Release API must not query nonexistent deals.delivered_at",
-  );
-}
+const releaseSelectMatch = source.releaseApi.match(
+  /\.select\(\s*([`"'])([\s\S]*?)\1\s*,?\s*\)/,
+);
+assert.ok(
+  releaseSelectMatch,
+  "Release API validator could not parse the Supabase select column string",
+);
+assert.ok(
+  !releaseSelectMatch[2].includes("matter_status"),
+  "Release API must not query nonexistent deals.matter_status",
+);
+assert.ok(
+  !releaseSelectMatch[2].includes("delivered_at"),
+  "Release API must not query nonexistent deals.delivered_at",
+);
 assert.ok(
   !source.releaseApi.includes('matter_status.in.(courier_ready'),
   "Release API must not classify queues from legacy courier_ready/shipped SQL filters",
