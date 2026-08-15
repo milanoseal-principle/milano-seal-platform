@@ -4,6 +4,7 @@ import {
   getCorridorIntel,
   type MatterVector,
 } from "@/data/corridor-intel";
+import { getCountryBySlug } from "@/lib/compliance/countries";
 
 export type { MatterVector };
 
@@ -15,6 +16,7 @@ export interface GlobalRouteRecord {
   lng: number;
   hague: boolean;
   hagueStatus: string;
+  verificationRequired: boolean;
   demand: number;
   timeline: string;
   translationRequired: boolean;
@@ -25,10 +27,8 @@ export interface GlobalRouteRecord {
   matterVectors: MatterVector[];
 }
 
-// Visual-routing fallbacks for canonical destinations whose legacy source rows
-// predate coordinate enrichment. These are public capital/city coordinates used
-// only to place the destination in Milano Seal route visualizations; they do not
-// alter compliance, apostille, pricing, Matter, or execution logic.
+// Visual-routing fallbacks for destination rows that predate coordinate enrichment.
+// These are display coordinates only and do not alter compliance or execution logic.
 const ROUTE_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> = {
   "united-kingdom": { lat: 51.5074, lng: -0.1278 },
   netherlands: { lat: 52.3676, lng: 4.9041 },
@@ -50,32 +50,98 @@ const ROUTE_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> =
   "saudi-arabia": { lat: 24.7136, lng: 46.6753 },
 };
 
+function safeExecutionPath({
+  hague,
+  verificationRequired,
+}: {
+  hague: boolean;
+  verificationRequired: boolean;
+}) {
+  if (verificationRequired) {
+    return [
+      "Document-origin and receiving-authority review",
+      "Execution requirements confirmed before notarization",
+      "Apostille / authentication pathway verified",
+      "Destination release / courier coordination",
+    ];
+  }
+
+  if (hague) {
+    return [
+      "Document-origin and receiving-authority review",
+      "Notarization or certified-copy review, if required",
+      "Competent-authority apostille routing",
+      "Destination release / courier coordination",
+    ];
+  }
+
+  return [
+    "Document-origin and receiving-authority review",
+    "Execution / notarization review, if required",
+    "Authentication / consular pathway confirmation",
+    "Destination release / courier coordination",
+  ];
+}
+
 export const GLOBAL_ROUTE_DATA: GlobalRouteRecord[] = DESTINATIONS.flatMap((destination) => {
+  // Public corridor visuals defer to the canonical compliance registry whenever
+  // that registry has a profile. Legacy DESTINATIONS data remains a fallback only.
+  const compliance = getCountryBySlug(destination.slug);
+  const hague = compliance
+    ? compliance.hagueMember === "member"
+    : destination.hague;
+  const verificationRequired =
+    compliance?.verificationStatus === "VERIFICATION_REQUIRED";
+
   const coordinates =
-    typeof destination.lat === "number" && typeof destination.lng === "number"
-      ? { lat: destination.lat, lng: destination.lng }
-      : ROUTE_COORDINATE_FALLBACKS[destination.slug];
+    typeof compliance?.lat === "number" && typeof compliance?.lng === "number"
+      ? { lat: compliance.lat, lng: compliance.lng }
+      : typeof destination.lat === "number" && typeof destination.lng === "number"
+        ? { lat: destination.lat, lng: destination.lng }
+        : ROUTE_COORDINATE_FALLBACKS[destination.slug];
 
   if (!coordinates) return [];
 
-  const intel = getCorridorIntel(destination.slug, destination.hague);
+  const intel = getCorridorIntel(destination.slug, hague);
+  const legacyRouteMatchesCanonical = destination.hague === hague;
+  const shouldUseLegacyPath =
+    legacyRouteMatchesCanonical && !verificationRequired;
+
+  const routeType = verificationRequired
+    ? "Route Verification Required"
+    : hague
+      ? "Hague Convention"
+      : "Consular Authentication";
+
   return [
     {
       slug: destination.slug,
-      name: destination.name,
+      name: compliance?.name ?? destination.name,
       flag: destination.flag,
       lat: coordinates.lat,
       lng: coordinates.lng,
-      hague: destination.hague,
-      hagueStatus: destination.hagueStatus,
+      hague,
+      hagueStatus: compliance
+        ? compliance.hagueMember === "member"
+          ? "Hague Convention Member"
+          : compliance.hagueMember === "bilateral"
+            ? "Bilateral / authority review"
+            : "Non-Hague"
+        : destination.hagueStatus,
+      verificationRequired,
       demand: destination.demand,
       timeline: intel.timeline,
       translationRequired: intel.translationRequired,
-      routeType: intel.routeType,
-      executionPath: destination.executionPath,
+      routeType,
+      executionPath: shouldUseLegacyPath
+        ? destination.executionPath
+        : safeExecutionPath({ hague, verificationRequired }),
       commonDocuments: destination.commonDocuments,
       note: destination.note,
-      matterVectors: intel.matterVectors,
+      matterVectors:
+        shouldUseLegacyPath && intel.routeType === routeType
+          ? intel.matterVectors
+          : [],
     },
   ];
 });
