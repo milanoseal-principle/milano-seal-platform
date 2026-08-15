@@ -1,210 +1,351 @@
 "use client";
 
-/**
- * MiniAtlasPreview — the homepage "command widget".
- *
- * This is intentionally NOT the full Atlas. Embedding the real Leaflet world
- * map made the homepage *be* Atlas instead of teasing it. Instead this is a
- * minimal, cinematic HUD — a living corridor readout (Florida → destination)
- * with orbital arcs, a self-drawing gold route, marker pulses and a scan beam.
- *
- * It still speaks the canonical Atlas language: canonical `DESTINATIONS` data,
- * gold palette, Hague / Consular badge vocabulary, Florida execution origin —
- * and it deep-links into the full Atlas (`/map?country=<slug>`), which remains
- * the place where users actually explore the world.
- */
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { setActiveCorridor } from "@/lib/homepage/activeCorridorStore";
 
 interface Props {
   selected: Destination;
   onSelect: (dest: Destination) => void;
-  /** When false, the auto-cycle is suspended. */
   autoCycle?: boolean;
 }
 
-// Priority cycle order (canonical supported destinations first, then the rest).
 const PRIORITY_SLUGS = [
-  "italy", "germany", "uae", "mexico", "brazil",
-  "spain", "france", "portugal", "united-kingdom", "canada",
+  "italy",
+  "germany",
+  "uae",
+  "mexico",
+  "brazil",
+  "spain",
+  "france",
+  "portugal",
+  "united-kingdom",
+  "canada",
 ];
 
 function buildCycleOrder(): Destination[] {
-  const bySlug = new Map(DESTINATIONS.map((d) => [d.slug, d]));
+  const bySlug = new Map(DESTINATIONS.map((destination) => [destination.slug, destination]));
   const ordered: Destination[] = [];
   const seen = new Set<string>();
   for (const slug of PRIORITY_SLUGS) {
-    const d = bySlug.get(slug);
-    if (d && !seen.has(slug)) { ordered.push(d); seen.add(slug); }
+    const destination = bySlug.get(slug);
+    if (destination && !seen.has(slug)) {
+      ordered.push(destination);
+      seen.add(slug);
+    }
   }
-  for (const d of DESTINATIONS) {
-    if (!seen.has(d.slug)) { ordered.push(d); seen.add(d.slug); }
+  for (const destination of DESTINATIONS) {
+    if (!seen.has(destination.slug)) {
+      ordered.push(destination);
+      seen.add(destination.slug);
+    }
   }
   return ordered;
 }
 
 const CYCLE_ORDER = buildCycleOrder();
 const CYCLE_INTERVAL_MS = 5000;
+const ORIGIN = { x: 78, y: 118 };
 
-function translationLikely(d: Destination): boolean {
-  return d.executionPath.some((s) => /translation/i.test(s));
+function translationLikely(destination: Destination): boolean {
+  return destination.executionPath.some((step) => /translation/i.test(step));
+}
+
+function fallbackPosition(slug: string) {
+  let hash = 0;
+  for (let index = 0; index < slug.length; index += 1) {
+    hash = (hash * 31 + slug.charCodeAt(index)) >>> 0;
+  }
+  return {
+    x: 188 + (hash % 76),
+    y: 88 + ((hash >> 4) % 104),
+  };
+}
+
+function destinationPoint(destination: Destination) {
+  if (typeof destination.lat !== "number" || typeof destination.lng !== "number") {
+    return fallbackPosition(destination.slug);
+  }
+  return {
+    x: 42 + ((destination.lng + 180) / 360) * 238,
+    y: 50 + ((90 - destination.lat) / 180) * 156,
+  };
+}
+
+function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }) {
+  const mx = (from.x + to.x) / 2;
+  const my = (from.y + to.y) / 2;
+  const vx = to.x - from.x;
+  const vy = to.y - from.y;
+  const dist = Math.hypot(vx, vy) || 1;
+  let px = -vy / dist;
+  let py = vx / dist;
+  if (py > 0) {
+    px = -px;
+    py = -py;
+  }
+  const lift = Math.min(42, Math.max(22, dist * 0.24));
+  return `M ${from.x} ${from.y} Q ${mx + px * lift} ${my + py * lift} ${to.x} ${to.y}`;
 }
 
 export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props) {
   const pausedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
   const [analyzing, setAnalyzing] = useState(false);
 
-  const idx = CYCLE_ORDER.findIndex((d) => d.slug === selected.slug);
-  const nextDest = CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length];
+  const index = CYCLE_ORDER.findIndex((destination) => destination.slug === selected.slug);
+  const nextDest = CYCLE_ORDER[(index + 1) % CYCLE_ORDER.length];
+  const destination = useMemo(() => destinationPoint(selected), [selected]);
+  const activePath = useMemo(
+    () => curvedPath(ORIGIN, destination),
+    [destination],
+  );
+  const contextDestinations = useMemo(
+    () =>
+      CYCLE_ORDER.filter((destinationRecord) => destinationRecord.slug !== selected.slug).slice(0, 8),
+    [selected.slug],
+  );
 
-  // Auto-cycle through canonical destinations, pausing on hover/focus/manual.
   useEffect(() => {
     if (!autoCycle) return;
-    const id = setInterval(() => {
+    const timer = setInterval(() => {
       if (pausedRef.current) return;
-      const i = CYCLE_ORDER.findIndex((d) => d.slug === selected.slug);
-      const next = CYCLE_ORDER[(i + 1) % CYCLE_ORDER.length];
+      const currentIndex = CYCLE_ORDER.findIndex(
+        (destinationRecord) => destinationRecord.slug === selected.slug,
+      );
+      const next = CYCLE_ORDER[(currentIndex + 1) % CYCLE_ORDER.length];
       if (next) onSelect(next);
     }, CYCLE_INTERVAL_MS);
-    return () => clearInterval(id);
+    return () => clearInterval(timer);
   }, [selected.slug, autoCycle, onSelect]);
 
-  // Brief "Analyzing…" → badge reveal each time the corridor changes.
   useEffect(() => {
     setAnalyzing(true);
-    const t = setTimeout(() => setAnalyzing(false), 850);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setAnalyzing(false), 850);
+    return () => clearTimeout(timer);
   }, [selected.slug]);
 
-  // Publish the featured corridor so the Milano Trust Core engine can sync to it.
   useEffect(() => {
     setActiveCorridor(selected.slug);
   }, [selected.slug]);
 
-  const pause = () => { pausedRef.current = true; };
-  const resume = () => { pausedRef.current = false; };
+  const pause = () => {
+    pausedRef.current = true;
+  };
+  const resume = () => {
+    pausedRef.current = false;
+  };
 
   const hague = selected.hague;
-  const accent = hague ? "var(--ms-gold)" : "#E0876E";
+  const accent = hague ? "var(--ms-gold)" : "#D87963";
   const translate = translationLikely(selected);
 
   return (
     <div
-      className="ms-mini-atlas relative overflow-hidden rounded-2xl border border-[var(--ms-gold)]/20 bg-[#060608]"
+      className="ms-mini-atlas group relative overflow-hidden rounded-2xl border border-[var(--ms-gold)]/20 bg-[#060608] transition-colors duration-300 hover:border-[var(--ms-gold)]/30"
       onMouseEnter={pause}
       onMouseLeave={resume}
       onFocusCapture={pause}
       onBlurCapture={resume}
     >
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-4">
+      <style>{`
+        @keyframes msMiniRouteDraw {
+          from { stroke-dashoffset: 1; }
+          to { stroke-dashoffset: 0; }
+        }
+        @keyframes msMiniFieldDrift {
+          0%, 100% { transform: translate3d(0,0,0); opacity: .55; }
+          50% { transform: translate3d(4px,-2px,0); opacity: .75; }
+        }
+        @keyframes msMiniDestinationBreath {
+          0%, 100% { opacity: .14; transform: scale(.96); }
+          50% { opacity: .28; transform: scale(1.04); }
+        }
+        .ms-mini-route-draw {
+          animation: msMiniRouteDraw 1050ms cubic-bezier(.16,1,.3,1) forwards;
+        }
+        .ms-mini-field {
+          animation: msMiniFieldDrift 24s ease-in-out infinite;
+        }
+        .ms-mini-destination-halo {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: msMiniDestinationBreath 8s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ms-mini-route-draw,
+          .ms-mini-field,
+          .ms-mini-destination-halo { animation: none !important; }
+        }
+      `}</style>
+
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/[0.04] px-4 py-4 sm:px-5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--ms-gold)]/70" />
+            {!reduceMotion && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--ms-gold)]/55" />
+            )}
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--ms-gold)]" />
           </span>
           <span className="font-mono text-[8px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/75">
             Global Execution Network
           </span>
         </div>
-        <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/30">Live Corridor</span>
+        <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/30">
+          Execution Corridor
+        </span>
       </div>
 
-      {/* Cinematic corridor stage */}
-      <div className="relative">
-        <svg viewBox="0 0 320 260" className="h-[240px] w-full sm:h-[268px]" role="img" aria-label={`Live corridor from Florida to ${selected.name}`}>
+      <div className="relative overflow-hidden">
+        <svg
+          viewBox="0 0 320 260"
+          className="h-[250px] w-full sm:h-[285px]"
+          role="img"
+          aria-label={`Execution corridor from Florida to ${selected.name}`}
+        >
           <defs>
-            <radialGradient id="ma-bg" cx="50%" cy="42%" r="75%">
-              <stop offset="0%" stopColor="#0C0D12" />
+            <radialGradient id="ma-bg" cx="55%" cy="42%" r="78%">
+              <stop offset="0%" stopColor="#0E1016" />
+              <stop offset="58%" stopColor="#08090D" />
               <stop offset="100%" stopColor="#040406" />
             </radialGradient>
             <linearGradient id="ma-route" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={accent} stopOpacity="0.2" />
+              <stop offset="0%" stopColor="var(--ms-gold)" stopOpacity="0.35" />
               <stop offset="50%" stopColor={accent} stopOpacity="1" />
-              <stop offset="100%" stopColor={accent} stopOpacity="0.5" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0.7" />
             </linearGradient>
-            <filter id="ma-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2.4" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            <radialGradient id="ma-halo" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={accent} stopOpacity="0.25" />
+              <stop offset="55%" stopColor={accent} stopOpacity="0.07" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0" />
+            </radialGradient>
+            <filter id="ma-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="2.6" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
             </filter>
           </defs>
 
           <rect x={0} y={0} width={320} height={260} fill="url(#ma-bg)" />
 
-          {/* Region illumination — soft light where the destination sits */}
-          <ellipse cx={222} cy={188} rx={70} ry={44} fill={accent} opacity={0.05} />
-
-          {/* Orbital arcs — hint of a globe without a full map */}
-          <g stroke="var(--ms-gold)" fill="none" opacity={0.14}>
-            <ellipse cx={160} cy={150} rx={130} ry={44} strokeWidth={0.5}>
-              <animateTransform attributeName="transform" type="rotate" from="0 160 150" to="360 160 150" dur="34s" repeatCount="indefinite" />
-            </ellipse>
-            <ellipse cx={160} cy={150} rx={96} ry={78} strokeWidth={0.5} opacity={0.7}>
-              <animateTransform attributeName="transform" type="rotate" from="360 160 150" to="0 160 150" dur="46s" repeatCount="indefinite" />
-            </ellipse>
-          </g>
-
-          {/* Curved horizon — global network without continents */}
-          <path d="M -20 236 Q 160 176 340 236" fill="none" stroke="var(--ms-gold)" strokeWidth={0.8} opacity={0.16} />
-          <path d="M -20 246 Q 160 190 340 246" fill="none" stroke="var(--ms-gold)" strokeWidth={0.5} opacity={0.08} />
-
-          {/* Drifting particles */}
-          <g fill="var(--ms-gold)">
-            {[
-              { x: 54, y: 74, d: "7s" }, { x: 260, y: 96, d: "9s" }, { x: 120, y: 52, d: "8s" },
-              { x: 210, y: 60, d: "6.5s" }, { x: 80, y: 120, d: "10s" }, { x: 250, y: 150, d: "7.5s" },
-            ].map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={0.9} fillOpacity={0.5}>
-                <animate attributeName="opacity" values="0.1;0.6;0.1" dur={p.d} repeatCount="indefinite" />
-                <animate attributeName="cy" values={`${p.y};${p.y - 6};${p.y}`} dur={p.d} repeatCount="indefinite" />
-              </circle>
+          {/* Geographic field and horizon */}
+          <g className="ms-mini-field" fill="none" stroke="var(--ms-gold)">
+            {[76, 124, 172, 220].map((y) => (
+              <path
+                key={`lat-${y}`}
+                d={`M -12 ${y} Q 160 ${y - 12} 332 ${y}`}
+                strokeWidth="0.45"
+                strokeOpacity="0.07"
+              />
             ))}
+            {[72, 132, 192, 252].map((x) => (
+              <path
+                key={`lng-${x}`}
+                d={`M ${x} 24 Q ${x - 18} 142 ${x} 244`}
+                strokeWidth="0.4"
+                strokeOpacity="0.055"
+              />
+            ))}
+            <path d="M -20 238 Q 160 182 340 238" strokeWidth="0.8" strokeOpacity="0.13" />
+            <path d="M -20 248 Q 160 198 340 248" strokeWidth="0.5" strokeOpacity="0.07" />
           </g>
 
-          {/* Scan beam sweep */}
-          <line x1={160} y1={150} x2={160} y2={30} stroke={accent} strokeWidth={0.8} opacity={0.16}>
-            <animateTransform attributeName="transform" type="rotate" from="0 160 150" to="360 160 150" dur="9s" repeatCount="indefinite" />
-          </line>
+          {/* Context destinations and dormant routes */}
+          <g>
+            {contextDestinations.slice(0, 4).map((contextDestination) => {
+              const point = destinationPoint(contextDestination);
+              return (
+                <path
+                  key={`ghost-${contextDestination.slug}`}
+                  d={curvedPath(ORIGIN, point)}
+                  fill="none"
+                  stroke="var(--ms-gold)"
+                  strokeWidth="0.55"
+                  strokeOpacity="0.065"
+                />
+              );
+            })}
+            {contextDestinations.map((contextDestination) => {
+              const point = destinationPoint(contextDestination);
+              return (
+                <circle
+                  key={`node-${contextDestination.slug}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="1.5"
+                  fill="var(--ms-gold)"
+                  fillOpacity="0.2"
+                />
+              );
+            })}
+          </g>
 
-          {/* Self-drawing route — re-mounts (keyed) each corridor change */}
+          {/* Selected destination atmosphere */}
+          <circle
+            className="ms-mini-destination-halo"
+            cx={destination.x}
+            cy={destination.y}
+            r="52"
+            fill="url(#ma-halo)"
+          />
+          <circle
+            cx={destination.x}
+            cy={destination.y}
+            r="24"
+            fill="none"
+            stroke={accent}
+            strokeWidth="0.6"
+            strokeOpacity="0.14"
+          />
+
+          {/* Active route */}
           <g key={selected.slug}>
             <path
-              d="M 86 96 Q 160 118 226 190"
+              d={activePath}
+              fill="none"
+              stroke={accent}
+              strokeWidth="5"
+              strokeOpacity="0.07"
+              filter="url(#ma-glow)"
+            />
+            <path
+              pathLength={1}
+              d={activePath}
               fill="none"
               stroke="url(#ma-route)"
-              strokeWidth={1.6}
+              strokeWidth="1.8"
               strokeLinecap="round"
-              strokeDasharray="220"
-              strokeDashoffset="220"
-            >
-              <animate attributeName="stroke-dashoffset" from="220" to="0" dur="1.1s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1" />
-            </path>
-            {/* Travelling pulse */}
-            <circle r={2.1} fill="#FFF6E2">
-              <animateMotion dur="2.8s" repeatCount="indefinite" path="M 86 96 Q 160 118 226 190" />
-            </circle>
+              strokeDasharray="1"
+              strokeDashoffset={reduceMotion ? 0 : 1}
+              className={reduceMotion ? undefined : "ms-mini-route-draw"}
+            />
+            {!reduceMotion && (
+              <circle r="2.2" fill="#FFF6E2" filter="url(#ma-glow)">
+                <animateMotion dur="3.7s" repeatCount="indefinite" path={activePath} />
+              </circle>
+            )}
           </g>
 
-          {/* Florida origin node */}
-          <circle cx={86} cy={96} r={3} fill="var(--ms-gold)" filter="url(#ma-glow)" />
-          <circle cx={86} cy={96} r={1.3} fill="#FFF6E2" />
-          <text x={86} y={84} textAnchor="middle" fontSize={7} fontFamily="monospace" fill="var(--ms-gold)" opacity={0.8}>FLORIDA</text>
+          {/* Florida origin */}
+          <circle cx={ORIGIN.x} cy={ORIGIN.y} r="7" fill="none" stroke="var(--ms-gold)" strokeWidth="0.8" strokeOpacity="0.32" />
+          <circle cx={ORIGIN.x} cy={ORIGIN.y} r="3.3" fill="var(--ms-gold)" filter="url(#ma-glow)" />
+          <circle cx={ORIGIN.x} cy={ORIGIN.y} r="1.4" fill="#FFF6E2" />
+          <text x={ORIGIN.x} y={ORIGIN.y - 13} textAnchor="middle" fontSize="7" fontFamily="monospace" fill="var(--ms-gold)" opacity="0.8">
+            FLORIDA
+          </text>
 
-          {/* Destination node + ping */}
-          <circle cx={226} cy={190} r={5} fill="none" stroke={accent} strokeWidth={1}>
-            <animate attributeName="r" values="4;10;4" dur="2.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite" />
-          </circle>
-          <circle cx={226} cy={190} r={3.2} fill={accent} filter="url(#ma-glow)" />
-          <circle cx={226} cy={190} r={1.5} fill="#FFF6E2" />
+          {/* Destination */}
+          <circle cx={destination.x} cy={destination.y} r="8" fill="none" stroke={accent} strokeWidth="1" strokeOpacity="0.55" />
+          <circle cx={destination.x} cy={destination.y} r="3.8" fill={accent} filter="url(#ma-glow)" />
+          <circle cx={destination.x} cy={destination.y} r="1.5" fill="#FFF6E2" />
         </svg>
 
-        {/* Destination readout overlay */}
-        <div className="pointer-events-none absolute right-4 top-1/2 z-10 max-w-[52%] -translate-y-1/2 text-right">
+        <div className="pointer-events-none absolute right-4 top-1/2 z-10 max-w-[54%] -translate-y-1/2 text-right sm:right-5">
           <div className="mb-1 flex items-center justify-end gap-1.5">
             <span className="text-xl leading-none">{selected.flag}</span>
             <span className="font-serif text-lg leading-tight text-white">{selected.name}</span>
@@ -225,21 +366,22 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             )}
           </div>
           {!analyzing && translate && (
-            <p className="mt-1.5 font-mono text-[8px] uppercase tracking-[0.14em] text-white/35">Translation Review</p>
+            <p className="mt-1.5 font-mono text-[8px] uppercase tracking-[0.14em] text-white/35">
+              Translation Review
+            </p>
           )}
         </div>
       </div>
 
-      {/* Footer — next corridor + Atlas link */}
-      <div className="relative z-10 flex items-center justify-between gap-3 border-t border-white/[0.05] px-4 py-3">
+      <div className="relative z-10 flex items-center justify-between gap-3 border-t border-white/[0.05] px-4 py-3 sm:px-5">
         <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/30">
           Next <span className="text-white/55">{nextDest?.name}</span>
         </span>
         <Link
           href={`/map?country=${encodeURIComponent(selected.slug)}`}
-          className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--ms-gold)]/35 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--ms-gold)] transition-colors hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/[0.06]"
+          className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--ms-gold)]/35 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--ms-gold)] transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/[0.07] group-hover:shadow-[0_0_28px_rgba(198,165,90,0.06)]"
         >
-          Launch Atlas <ArrowRight className="h-3 w-3" />
+          Launch Atlas <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
         </Link>
       </div>
     </div>
