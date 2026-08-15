@@ -1,39 +1,89 @@
-# Environment Wiring Audit
+# The Milano Seal™ — Production Environment Wiring Audit
 
+**Status:** ACTIVE  
+**Production Domain:** `https://themilanoseal.com`
+
+```text
 DEPLOYMENT_WIRING = INJECTED
-COMPLIANCE_WIRING = PARTIAL
-PAYMENT_WIRING = INJECTED
-SCHEDULING_WIRING = PARTIAL
-BLUENOTARY_WIRING = PARTIAL
+PAYMENT_WIRING = WISE_ONLY
+OPERATOR_INTELLIGENCE = READ_ONLY
+TRANSACTION_CERTIFICATION = LIVE_ACCEPTANCE_REQUIRED
+```
 
 ## Deployment
 
-Build/typecheck scripts exist. Vercel/Next deployment path exists. Production branch expectation: `main`. Route registry exists. Sitemap/noindex rules do not expose dashboard routes.
+- Production branch: `main`.
+- Vercel Git integration remains connected.
+- Non-production preview builds are intentionally skipped by `vercel.json`.
+- GitHub-hosted Actions remain manual-only.
+- Vercel production build executes `node scripts/run-vercel-merge-gate.mjs && next build`.
+- Generated production-critical route registry: `docs/ROUTE_MAP.md`.
 
-## Compliance
+## Supabase
 
-Compliance engine/atlas exists as internal routing intelligence. Manual review fallback is required for unknown jurisdictions; Mexico and UAE require manual review in the internal atlas UI. Public copy must not present legal conclusions.
+Canonical server-side variables:
 
-## Payment and Scheduling
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
 
-Wise-first payment flow exists. Payment cannot be client-side trusted. Payment status controls scheduling/release. Public pages do not expose Stripe. Scheduling unlock depends on `payment_confirmed` or `paid_comped`. No route should schedule directly from unpaid intake. Canonical state flow exists.
+`SUPABASE_SERVICE_ROLE_KEY` is server-side only.
 
-## BlueNotary Files Checked
+## Wise Payment
 
-- `docs/BLUENOTARY_WEBHOOK_SETUP.md`
-- `supabase/migrations/018_bluenotary_ron.sql`
-- `app/api/webhooks/bluenotary/route.ts`
-- `lib/bluenotary/client.ts`
-- `lib/bluenotary/webhook.ts`
-- `lib/bluenotary/session.ts`
-- `lib/bluenotary/documents.ts`
-- `lib/bluenotary/redaction.ts`
+Canonical production variables:
 
-## Environment Names Only
+```text
+WISE_ENV=production
+WISE_API_TOKEN
+WISE_PROFILE_ID
+WISE_WEBHOOK_ALLOWED_TEST=false
+PAYMENT_BASE_URL=https://themilanoseal.com
+```
 
-Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-Wise: `WISE_API_KEY`, `WISE_WEBHOOK_SECRET`
-BlueNotary: provider API and webhook variables by name only
-Vercel: project production environment variables by name only
-App URL: `NEXT_PUBLIC_SITE_URL`
-Webhook URLs: Wise, Shippo, BlueNotary route URLs by name only
+Production webhook:
+
+```text
+POST https://themilanoseal.com/api/webhooks/wise
+```
+
+Wise webhook authenticity is verified by RSA-SHA256 using the Wise production public key in `lib/wise.ts`.
+
+`WISE_WEBHOOK_TEST_BYPASS` must remain unset in production.
+
+Payment confirmation requires exact canonical Matter/reference, amount and currency reconciliation. Client navigation or manual database edits cannot confirm payment.
+
+## Scheduling / Execution
+
+The canonical Matter state machine controls progression.
+
+Scheduling remains payment-gated.
+
+The Milano Operator Intelligence layer reads canonical Matter truth but cannot mutate Matter, payment, scheduling, execution, apostille, custody, release, delivery, or completion state.
+
+## RON / BlueNotary
+
+BlueNotary variables remain governed by `docs/BLUENOTARY_WEBHOOK_SETUP.md` and current code.
+
+No payment architecture is inferred from RON provider configuration.
+
+## Shipping
+
+Shippo variables remain governed by the current carrier integration code and production environment configuration.
+
+Shipping status does not override canonical Matter release or custody state.
+
+## Certification Boundary
+
+A green deployment is not a transaction certification.
+
+Required after production deployment:
+
+```text
+TIFF real 15-step client-to-close acceptance
+→ Damiani production dry-run with no payment
+→ Final Truth Review
+→ GO / NO-GO
+```
