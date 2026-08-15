@@ -21,6 +21,7 @@ console.log("PASS billing-independent CI governance");
 const gates = [
   ["npm", ["run", "validate:duplicate-source"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
+  ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
   ["npm", ["run", "validate:cinematic-route-coverage"]],
   ["npm", ["run", "validate:responsive-safety"]],
