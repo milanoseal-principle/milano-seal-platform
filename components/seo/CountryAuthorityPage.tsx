@@ -28,11 +28,11 @@ export function CountryAuthorityPage({
   const standardIntakeHref = `/intake?destination=${country.slug}&country=${encodeURIComponent(country.name)}&source=country-seo`;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <p className="text-[#C6A55A] text-xs tracking-[0.3em] uppercase font-medium mb-4">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-[#C6A55A]">
         {country.region} · {isHague ? "Hague Convention Member" : "Non-Hague Member"}
       </p>
-      <h1 className="font-serif text-3xl md:text-5xl font-medium text-white mb-5">
+      <h1 className="mb-5 max-w-4xl font-serif text-3xl font-medium text-white md:text-5xl">
         {authMode === "apostille"
           ? premiumCorridor
             ? "U.S. Apostille & Document Execution for "
@@ -40,30 +40,28 @@ export function CountryAuthorityPage({
           : "Document Authentication for "}
         <em className="text-[#C6A55A]">{country.name}</em>
       </h1>
-      <p className="text-[#8A8A8A] text-base md:text-lg font-light max-w-2xl mb-4 leading-relaxed">
+      <p className="mb-4 max-w-3xl text-base font-light leading-relaxed text-[#8A8A8A] md:text-lg">
         {premiumCorridor?.positioning ?? memberNote}
       </p>
       {premiumCorridor && (
-        <p className="text-[#666] text-sm max-w-2xl mb-8 leading-relaxed">
+        <p className="mb-8 max-w-3xl text-sm leading-relaxed text-[#666]">
           U.S.-side execution, authority routing, custody, and release are coordinated as one Matter. The receiving authority and document origin are reviewed before any notarization, apostille, authentication, or courier path is confirmed.
         </p>
       )}
 
       <div
+        className="mb-8 h-px w-20"
         style={{
-          width: 80,
-          height: 1,
           background:
             "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)",
-          marginBottom: 32,
         }}
       />
 
       {premiumCorridor && (
         <section className="mb-10 rounded-xl border border-[#C6A55A]/20 bg-[#0A0906] p-6 md:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#C6A55A]/70 mb-2">
+              <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-[#C6A55A]/70">
                 Professional Corridor · Priority {premiumCorridor.rank}
               </p>
               <h2 className="font-serif text-2xl text-white">
@@ -75,32 +73,32 @@ export function CountryAuthorityPage({
             </span>
           </div>
 
-          <p className="text-[#A0A0A0] text-sm leading-relaxed mb-6">
+          <p className="mb-6 text-sm leading-relaxed text-[#A0A0A0]">
             {premiumCorridor.professionalAudience}
           </p>
 
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <h3 className="text-white text-sm font-medium mb-3">
+              <h3 className="mb-3 text-sm font-medium text-white">
                 Common U.S.-side matters
               </h3>
               <ul className="space-y-2">
                 {premiumCorridor.commonMatters.map((matter) => (
                   <li
                     key={matter}
-                    className="flex items-start gap-2 text-[#888] text-sm leading-relaxed"
+                    className="flex items-start gap-2 text-sm leading-relaxed text-[#888]"
                   >
-                    <span className="text-[#C6A55A] mt-1">•</span>
+                    <span className="mt-1 text-[#C6A55A]">•</span>
                     <span>{matter}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-white text-sm font-medium mb-3">
+              <h3 className="mb-3 text-sm font-medium text-white">
                 What the desk coordinates
               </h3>
-              <ul className="space-y-2 text-[#888] text-sm leading-relaxed">
+              <ul className="space-y-2 text-sm leading-relaxed text-[#888]">
                 <li>• Document-origin and competent-authority review</li>
                 <li>• Notarization or execution only when required</li>
                 <li>• State or federal apostille/authentication routing</li>
@@ -110,18 +108,18 @@ export function CountryAuthorityPage({
             </div>
           </div>
 
-          <div className="mt-6 pt-5 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="mt-6 flex flex-col gap-4 border-t border-white/[0.06] pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-[#555] mb-1">
+              <p className="mb-1 font-mono text-[8px] uppercase tracking-[0.12em] text-[#555]">
                 Cross-border request language
               </p>
-              <p className="text-[#8A8A8A] text-sm">
+              <p className="text-sm text-[#8A8A8A]">
                 {premiumCorridor.nativeLanguageQuery}
               </p>
             </div>
             <Link
               href={professionalIntakeHref}
-              className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-[#C6A55A] text-[#050507] font-bold text-[10px] uppercase tracking-[0.12em] hover:bg-[#D4B76A] transition-colors"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#C6A55A] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
             >
               {premiumCorridor.professionalCta} →
             </Link>
@@ -129,52 +127,54 @@ export function CountryAuthorityPage({
         </section>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6 mb-10">
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">
-            Authority Coverage
-          </p>
+      <section
+        aria-label={`${country.name} execution intelligence`}
+        className="mb-10 grid items-stretch gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]"
+      >
+        <div className="min-w-0">
           <GlobalRouteGlobe
+            key={`authority-${country.slug}`}
             selectedSlug={country.slug}
-            className="w-full max-w-[400px]"
+            className="h-full w-full"
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/60 mb-2">
-            Corridor Preview
-          </p>
-          <SeoCorridorMapPreview slug={country.slug} className="w-full" />
+        <div className="min-w-0">
+          <SeoCorridorMapPreview
+            key={`corridor-${country.slug}`}
+            slug={country.slug}
+            className="h-full"
+          />
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-wrap gap-3 mb-10">
+      <div className="mb-10 flex flex-wrap gap-3">
         <Link
           href={premiumCorridor ? professionalIntakeHref : standardIntakeHref}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A] text-[#050507] font-bold text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-[#D4B76A] transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#C6A55A] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#050507] transition-colors hover:bg-[#D4B76A]"
         >
           Begin {country.name} Intake →
         </Link>
         <Link
           href={`/map?country=${country.slug}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase tracking-[0.1em] rounded-lg hover:border-[#C6A55A] transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C6A55A]/30 px-5 py-2.5 text-[11px] uppercase tracking-[0.1em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]"
         >
           View in Atlas →
         </Link>
       </div>
 
       <div className="mb-12">
-        <h2 className="text-white font-serif text-xl mb-6">Common Documents</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <h2 className="mb-6 font-serif text-xl text-white">Common Documents</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {apostillableDocs.map((document) => (
             <Link
               key={document.slug}
               href={`/apostille/${country.slug}/${document.slug}`}
-              className="group flex items-center justify-between p-4 border border-white/5 bg-[#0D0D0D] hover:border-[#C6A55A]/30 transition-colors"
+              className="group flex min-h-12 items-center justify-between border border-white/5 bg-[#0D0D0D] p-4 transition-colors hover:border-[#C6A55A]/30"
             >
-              <span className="text-[#D0D0D0] text-sm group-hover:text-white transition-colors">
+              <span className="text-sm text-[#D0D0D0] transition-colors group-hover:text-white">
                 {document.name}
               </span>
-              <span className="text-[#C6A55A] text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-xs text-[#C6A55A] opacity-0 transition-opacity group-hover:opacity-100">
                 →
               </span>
             </Link>
@@ -184,7 +184,7 @@ export function CountryAuthorityPage({
 
       {country.faqs.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-white font-serif text-xl mb-6">
+          <h2 className="mb-6 font-serif text-xl text-white">
             Frequently Asked Questions
           </h2>
           <div className="space-y-6">
@@ -193,16 +193,16 @@ export function CountryAuthorityPage({
                 key={index}
                 className="border-l-2 border-[#C6A55A]/30 pl-5"
               >
-                <p className="text-white text-sm font-medium mb-2">{faq.q}</p>
-                <p className="text-[#8A8A8A] text-sm leading-relaxed">{faq.a}</p>
+                <p className="mb-2 text-sm font-medium text-white">{faq.q}</p>
+                <p className="text-sm leading-relaxed text-[#8A8A8A]">{faq.a}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="p-4 border border-white/5 bg-[#0A0A0A]">
-        <p className="text-[#5A5A5A] text-xs leading-relaxed">
+      <div className="border border-white/5 bg-[#0A0A0A] p-4">
+        <p className="text-xs leading-relaxed text-[#5A5A5A]">
           {CLIENT_COPY.disclaimer}
         </p>
       </div>
