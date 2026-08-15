@@ -18,6 +18,7 @@ const paths = {
   corridor: "components/map/SeoCorridorMapPreview.tsx",
   globe: "components/globe/GlobalRouteGlobe.tsx",
   mini: "components/home/MiniAtlasPreview.tsx",
+  routeData: "src/features/corridors/globalRouteData.ts",
 };
 
 for (const path of Object.values(paths)) {
@@ -47,9 +48,24 @@ check(
   "corridor preview must use canonical GLOBAL_ROUTE_DATA/getGlobalRoute",
 );
 check(
+  /getCountryBySlug/.test(source.routeData) && /verificationRequired/.test(source.routeData),
+  "public corridor data defers to canonical compliance truth",
+  "global route data must defer to getCountryBySlug and preserve verification-required state",
+);
+check(
+  /getGlobalRoute/.test(source.mini) && /routeRecord/.test(source.mini),
+  "Mini Atlas uses canonical route status instead of stale destination flags",
+  "Mini Atlas must bind selected-country visual status to canonical global route data",
+);
+check(
   /selectedSlug/.test(source.globe) && /GLOBAL_ROUTE_DATA/.test(source.globe),
   "authority coverage supports selected country context",
   "authority coverage must support selectedSlug with canonical route data",
+);
+check(
+  /Route verification required/.test(source.globe) && /route\.verificationRequired/.test(source.corridor),
+  "verification-required corridors render a distinct safe state",
+  "verification-required corridors must not be mislabeled as automatically Hague or consular",
 );
 check(
   /useReducedMotion/.test(source.corridor) && /useReducedMotion/.test(source.globe) && /useReducedMotion/.test(source.mini),
