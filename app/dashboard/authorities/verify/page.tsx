@@ -1,494 +1,308 @@
-"use client";
-import { useState } from 'react';
+export const dynamic = "force-dynamic";
 
-import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
-const GOLD = "#C6A55A";
-const EMERALD = "#4a9e6b";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  operationalDestinationCountry,
+  operationalDocumentType,
+  operationalMatterDisplayId,
+  resolveOperationalMatterState,
+  stateLabel,
+  type OperationalMatterSourceRow,
+} from "@/lib/matter/canonicalOperationalRead";
 
-const STAGES = [
-  "Research",
-  "Source Capture",
-  "Evidence Upload",
-  "Partner Confirmation",
-  "Promotion Request",
-  "Approval",
-  "MULTI_SOURCE_CONFIRMED",
-];
-
-const CONFIDENCE_LEVELS = [
-  "VERIFICATION_REQUIRED",
-  "OBSERVED",
-  "PARTNER_CONFIRMED",
-  "MULTI_SOURCE_CONFIRMED",
-];
-
-const SOURCE_TYPES = [
-  "Official Website",
-  "Government Gazette",
-  "Partner Confirmation",
-  "Direct Contact",
-  "Public Registry",
-];
-
-const AUDIT_EVENTS = [
-  {
-    id: 1,
-    text: "Authority record created — VERIFICATION_REQUIRED",
-    actor: "Operator",
-    date: "2025-01-15 09:14:22",
-  },
-  {
-    id: 2,
-    text: "Confidence level set to OBSERVED",
-    actor: "Operator",
-    date: "2025-01-15 11:32:08",
-  },
-  {
-    id: 3,
-    text: "Source added: Official Website",
-    actor: "Operator",
-    date: "2025-01-15 11:33:45",
-  },
-  {
-    id: 4,
-    text: "Research stage marked complete",
-    actor: "Operator",
-    date: "2025-01-16 14:05:11",
-  },
-];
-
-const SLA_CHIPS = [
-  { label: "Research Due", days: 14 },
-  { label: "Partner Confirmation Due", days: 30 },
-  { label: "Promotion Review Due", days: 45 },
-];
-
-function confidenceForStage(stage: number): number {
-  if (stage >= 6) return 3;
-  if (stage >= 4) return 2;
-  if (stage >= 1) return 1;
-  return 0;
+interface PageProps {
+  searchParams: Promise<{
+    matter?: string;
+    deal?: string;
+    country?: string;
+    focus?: string;
+  }>;
 }
 
-export default function AuthorityVerifyPage() {
-  const [activeStage, setActiveStage] = useState(0);
-  const [checkedSources, setCheckedSources] = useState<Set<string>>(new Set());
-  const [showRing, setShowRing] = useState(false);
+interface AuthorityRow {
+  id: string;
+  name: string;
+  authority_type: string;
+  country: string;
+  city: string | null;
+  accepted_documents: string[] | null;
+  language_rules: string | null;
+  apostille_required: boolean | null;
+  legalization_required: boolean | null;
+  translation_required: boolean | null;
+  document_age_limit_days: number | null;
+  ron_accepted: boolean | null;
+  rejection_triggers: string[] | null;
+  source_confidence: string | null;
+  last_verified_at: string | null;
+  notes: string | null;
+  updated_at: string | null;
+}
 
-  const currentConfidence = confidenceForStage(activeStage);
+interface MatterRow extends OperationalMatterSourceRow {
+  id: string;
+}
 
-  function advanceStage() {
-    if (activeStage < STAGES.length - 1) {
-      const next = activeStage + 1;
-      const nextConf = confidenceForStage(next);
-      if (nextConf > currentConfidence) {
-        setShowRing(true);
-        setTimeout(() => setShowRing(false), 500);
-      }
-      setActiveStage(next);
+function formatDate(value: string | null) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function booleanLabel(value: boolean | null) {
+  if (value === true) return "Yes";
+  if (value === false) return "No";
+  return "Unknown";
+}
+
+export default async function AuthorityVerifyPage({ searchParams }: PageProps) {
+  await requireDashboardAccess();
+  const params = await searchParams;
+  const supabase = createAdminClient();
+
+  const matterId = params.matter?.trim() || null;
+  const dealId = params.deal?.trim() || null;
+  let selectedMatter: MatterRow | null = null;
+
+  if (matterId || dealId) {
+    let query = supabase
+      .from("deals")
+      .select(
+        "id, deal_id, client_name, full_name, status, deal_status, destination_country, country, document_type, document, service_type, execution_truth, due_at, sla_deadline",
+      );
+
+    query = matterId ? query.eq("id", matterId) : query.eq("deal_id", dealId!);
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      console.error("[authority-verify] selected Matter read failed:", error.message);
+    } else if (data) {
+      selectedMatter = data as MatterRow;
     }
   }
 
-  function toggleSource(src: string) {
-    setCheckedSources((prev) => {
-      const next = new Set(prev);
-      if (next.has(src)) next.delete(src);
-      else next.add(src);
-      return next;
-    });
+  const selectedCountry =
+    operationalDestinationCountry(selectedMatter ?? {}) ??
+    params.country?.trim() ??
+    null;
+
+  let authorityQuery = supabase
+    .from("receiving_authorities")
+    .select(
+      "id, name, authority_type, country, city, accepted_documents, language_rules, apostille_required, legalization_required, translation_required, document_age_limit_days, ron_accepted, rejection_triggers, source_confidence, last_verified_at, notes, updated_at",
+    )
+    .order("country", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (selectedCountry) {
+    authorityQuery = authorityQuery.ilike("country", selectedCountry);
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen p-6 space-y-8"
-      style={{ background: "#0A0A0A" }}
-    >
-      {/* Header */}
-      <div>
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-2"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Authority Operations Center / Verification Workbench
-        </p>
-        <h1 className="text-2xl font-semibold" style={{ color: GOLD }}>
-          Authority Verification Workbench
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
-          Confidence promotion workflow — operator-controlled
-        </p>
-      </div>
+  const { data: authoritiesData, error: authoritiesError } = await authorityQuery;
+  const authorities = (authoritiesData ?? []) as AuthorityRow[];
+  const selectedState = selectedMatter
+    ? resolveOperationalMatterState(selectedMatter).state
+    : null;
 
-      {/* Workflow Pipeline */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-6"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Verification Pipeline
-        </p>
-        <div className="flex items-center gap-0 overflow-x-auto pb-2">
-          {STAGES.map((stage, i) => {
-            const isComplete = i < activeStage;
-            const isActive = i === activeStage;
-            return (
-              <div key={stage} className="flex items-center">
-                <div className="flex flex-col items-center gap-2 min-w-[80px]">
-                  <motion.button
-                    onClick={() => setActiveStage(i)}
-                    whileHover={{ y: -2 }}
-                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold border-2"
-                    style={{
-                      borderColor: isComplete
-                        ? EMERALD
-                        : isActive
-                        ? GOLD
-                        : "rgba(255,255,255,0.15)",
-                      background: isComplete
-                        ? `${EMERALD}22`
-                        : isActive
-                        ? `${GOLD}22`
-                        : "transparent",
-                      color: isComplete
-                        ? EMERALD
-                        : isActive
-                        ? GOLD
-                        : "rgba(255,255,255,0.25)",
-                    }}
-                  >
-                    {isComplete ? "✓" : i + 1}
-                  </motion.button>
-                  <span
-                    className="text-[9px] font-mono text-center leading-tight"
-                    style={{
-                      color: isComplete
-                        ? EMERALD
-                        : isActive
-                        ? GOLD
-                        : "rgba(255,255,255,0.25)",
-                      maxWidth: 72,
-                    }}
-                  >
-                    {stage}
+  return (
+    <div className="space-y-6">
+      <section className="rounded-xl border border-[#C6A55A]/15 bg-[#080808] p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[#C6A55A]/55">
+              Authority Operations Center
+            </p>
+            <h1 className="mt-2 font-serif text-2xl font-normal text-[#F4E5B8]">
+              Authority Verification Evidence
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/40">
+              Production receiving-authority records only. Confidence is read from
+              Supabase; this workspace does not fabricate or locally promote authority
+              status.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {(matterId || dealId || selectedCountry) && (
+              <Link
+                href="/dashboard/authorities/verify"
+                className="rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-white/55 hover:border-[#C6A55A]/30"
+              >
+                Clear Focus
+              </Link>
+            )}
+            <Link
+              href="/dashboard/authorities"
+              className="rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#E4CA8C]/75 hover:border-[#C6A55A]/40"
+            >
+              Authority Operations Center
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {selectedMatter ? (
+        <section className="rounded-xl border border-white/[0.07] bg-[#090909] p-4 sm:p-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/20">
+                Matter
+              </p>
+              <Link
+                href={`/dashboard/deals/${encodeURIComponent(selectedMatter.id)}`}
+                className="mt-1 block font-mono text-[11px] text-[#E4CA8C] hover:underline"
+              >
+                {operationalMatterDisplayId(selectedMatter)}
+              </Link>
+            </div>
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/20">
+                State
+              </p>
+              <p className="mt-1 text-[11px] capitalize text-white/45">
+                {stateLabel(selectedState)}
+              </p>
+            </div>
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/20">
+                Destination
+              </p>
+              <p className="mt-1 text-[11px] text-white/45">
+                {operationalDestinationCountry(selectedMatter) ?? "Unknown"}
+              </p>
+            </div>
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/20">
+                Document
+              </p>
+              <p className="mt-1 text-[11px] text-white/45">
+                {operationalDocumentType(selectedMatter) ?? "Unknown"}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {authoritiesError ? (
+        <section className="rounded-xl border border-red-500/25 bg-red-500/[0.05] p-5">
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-red-300/70">
+            Authority Source Unavailable
+          </p>
+          <p className="mt-2 text-xs leading-5 text-white/45">
+            Receiving-authority data could not be read. Do not infer approval or
+            acceptance from this failure.
+          </p>
+        </section>
+      ) : authorities.length === 0 ? (
+        <section className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] p-5">
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-amber-200/70">
+            Verification Required
+          </p>
+          <h2 className="mt-2 font-serif text-xl text-white/80">
+            No production authority record for {selectedCountry ?? "this destination"}
+          </h2>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-white/45">
+            The database contains no matching receiving-authority record. Keep the
+            Matter in review until an approved authority record is created through the
+            governed authority workflow.
+          </p>
+        </section>
+      ) : (
+        <section className="space-y-3">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/45">
+                Production Authority Records
+              </p>
+              <h2 className="mt-1 font-serif text-xl text-white/80">
+                {selectedCountry ? `${selectedCountry} authority evidence` : "All receiving authorities"}
+              </h2>
+            </div>
+            <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+              {authorities.length} records
+            </p>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {authorities.map((authority) => (
+              <article
+                key={authority.id}
+                className="rounded-xl border border-white/[0.07] bg-[#090909] p-4 sm:p-5"
+              >
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-[#C6A55A]/50">
+                      {authority.authority_type}
+                    </p>
+                    <h3 className="mt-1 text-sm font-medium text-white/75">
+                      {authority.name}
+                    </h3>
+                    <p className="mt-1 text-[11px] text-white/35">
+                      {[authority.city, authority.country].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+
+                  <span className="rounded border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] px-2 py-1 font-mono text-[8px] uppercase tracking-[0.13em] text-[#E4CA8C]/70">
+                    {authority.source_confidence ?? "VERIFICATION REQUIRED"}
                   </span>
                 </div>
-                {i < STAGES.length - 1 && (
-                  <div
-                    className="relative h-[2px] w-8 mx-1 flex-shrink-0"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
-                  >
-                    {isComplete && (
-                      <motion.div
-                        className="absolute inset-0 rounded"
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ background: GOLD, transformOrigin: "left" }}
-                      />
-                    )}
+
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">Apostille</p>
+                    <p className="mt-1 text-[11px] text-white/45">{booleanLabel(authority.apostille_required)}</p>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={advanceStage}
-            disabled={activeStage >= STAGES.length - 1}
-            className="px-4 py-2 rounded text-sm font-mono transition-opacity disabled:opacity-30"
-            style={{
-              background: `${GOLD}22`,
-              border: `1px solid ${GOLD}44`,
-              color: GOLD,
-            }}
-          >
-            Advance Stage →
-          </button>
-          <button
-            onClick={() => setActiveStage(0)}
-            className="px-4 py-2 rounded text-sm font-mono"
-            style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.45)",
-            }}
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-
-      {/* Confidence Promotion Visualizer */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-4"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Confidence Level
-        </p>
-        <div className="flex items-center gap-3 flex-wrap">
-          {CONFIDENCE_LEVELS.map((level, i) => {
-            const isActive = i === currentConfidence;
-            const isPast = i < currentConfidence;
-            return (
-              <div key={level} className="flex items-center gap-3">
-                <div className="relative">
-                  <AnimatePresence>
-                    {isActive && showRing && (
-                      <motion.div
-                        key="ring"
-                        initial={{ scale: 1, opacity: 1 }}
-                        animate={{ scale: 1.4, opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="absolute inset-0 rounded border-2 pointer-events-none"
-                        style={{ borderColor: GOLD }}
-                      />
-                    )}
-                  </AnimatePresence>
-                  <motion.div
-                    animate={{
-                      borderColor: isActive
-                        ? GOLD
-                        : isPast
-                        ? EMERALD
-                        : "rgba(255,255,255,0.1)",
-                      background: isActive
-                        ? `${GOLD}18`
-                        : isPast
-                        ? `${EMERALD}18`
-                        : "transparent",
-                      color: isActive
-                        ? GOLD
-                        : isPast
-                        ? EMERALD
-                        : "rgba(255,255,255,0.2)",
-                    }}
-                    transition={{ duration: 0.4 }}
-                    className="px-3 py-1.5 rounded border font-mono text-[10px] tracking-wider"
-                  >
-                    {level}
-                  </motion.div>
+                  <div>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">Legalization</p>
+                    <p className="mt-1 text-[11px] text-white/45">{booleanLabel(authority.legalization_required)}</p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">Translation</p>
+                    <p className="mt-1 text-[11px] text-white/45">{booleanLabel(authority.translation_required)}</p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">RON Accepted</p>
+                    <p className="mt-1 text-[11px] text-white/45">{booleanLabel(authority.ron_accepted)}</p>
+                  </div>
                 </div>
-                {i < CONFIDENCE_LEVELS.length - 1 && (
-                  <span style={{ color: "rgba(255,255,255,0.15)" }}>→</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Source Vault Panel */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <p
-            className="font-mono text-[9px] tracking-[0.32em] uppercase"
-            style={{ color: "rgba(198,165,90,0.5)" }}
-          >
-            Source Vault
-          </p>
-          <span
-            className="font-mono text-xs px-2 py-1 rounded"
-            style={{
-              background: `${GOLD}18`,
-              border: `1px solid ${GOLD}33`,
-              color: GOLD,
-            }}
-          >
-            Evidence sources captured: {checkedSources.size}
-          </span>
-        </div>
+                {authority.accepted_documents?.length ? (
+                  <div className="mt-4">
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">Accepted Documents</p>
+                    <p className="mt-1 text-[11px] leading-5 text-white/40">
+                      {authority.accepted_documents.join(" · ")}
+                    </p>
+                  </div>
+                ) : null}
 
-        <div
-          className="rounded border-2 border-dashed p-4 mb-4 text-center text-xs font-mono"
-          style={{
-            borderColor: "rgba(212,175,55,0.15)",
-            color: "rgba(255,255,255,0.25)",
-          }}
-        >
-          Drop evidence files here — stored in secure vault
-        </div>
+                {authority.rejection_triggers?.length ? (
+                  <div className="mt-4 rounded-lg border border-red-500/15 bg-red-500/[0.03] p-3">
+                    <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-red-300/60">Rejection Triggers</p>
+                    <p className="mt-1 text-[11px] leading-5 text-white/40">
+                      {authority.rejection_triggers.join(" · ")}
+                    </p>
+                  </div>
+                ) : null}
 
-        <div className="space-y-2">
-          {SOURCE_TYPES.map((src) => {
-            const checked = checkedSources.has(src);
-            return (
-              <motion.div
-                key={src}
-                layout
-                className="flex items-center gap-3 p-3 rounded cursor-pointer"
-                style={{
-                  background: checked ? `${GOLD}0a` : "transparent",
-                  border: `1px solid ${
-                    checked ? GOLD + "30" : "rgba(255,255,255,0.05)"
-                  }`,
-                }}
-                onClick={() => toggleSource(src)}
-                whileHover={{ y: -1 }}
-                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div
-                  className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
-                  style={{
-                    borderColor: checked ? GOLD : "rgba(255,255,255,0.2)",
-                    background: checked ? `${GOLD}33` : "transparent",
-                  }}
-                >
-                  {checked && (
-                    <span style={{ color: GOLD, fontSize: 10 }}>✓</span>
-                  )}
+                <div className="mt-4 border-t border-white/[0.05] pt-3">
+                  <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-white/20">Last Verified</p>
+                  <p className="mt-1 text-[11px] text-white/35">
+                    {formatDate(authority.last_verified_at)}
+                  </p>
                 </div>
-                <AnimatePresence>
-                  {checked && (
-                    <motion.div
-                      initial={{ x: -8, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: -8, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: GOLD }}
-                    />
-                  )}
-                </AnimatePresence>
-                <span
-                  className="text-sm"
-                  style={{
-                    color: checked
-                      ? "rgba(255,255,255,0.85)"
-                      : "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  {src}
-                </span>
-              </motion.div>
-            );
-          })}
-        </div>
-        <p
-          className="text-[10px] mt-4 font-mono"
-          style={{ color: "rgba(255,255,255,0.25)" }}
-        >
-          Source entries are operator-logged. Documents stored in secure vault.
-        </p>
-      </div>
-
-      {/* SLA Tracker */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-4"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Verification SLA Tracker
-        </p>
-        <div className="flex gap-3 flex-wrap">
-          {SLA_CHIPS.map((chip) => (
-            <div
-              key={chip.label}
-              className="px-4 py-2 rounded"
-              style={{
-                background: "rgba(245,158,11,0.08)",
-                border: "1px solid rgba(245,158,11,0.2)",
-              }}
-            >
-              <p
-                className="text-[9px] font-mono uppercase tracking-widest"
-                style={{ color: "rgba(245,158,11,0.6)" }}
-              >
-                {chip.label}
-              </p>
-              <p
-                className="text-sm font-semibold mt-0.5"
-                style={{ color: "#f59e0b" }}
-              >
-                {chip.days} days
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Audit Trail */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-4"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Audit Trail
-        </p>
-        <div className="space-y-2 max-h-52 overflow-y-auto">
-          {AUDIT_EVENTS.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-start gap-3 py-1.5 border-b"
-              style={{ borderColor: "rgba(255,255,255,0.04)" }}
-            >
-              <span
-                className="font-mono text-[10px] flex-shrink-0 pt-0.5"
-                style={{ color: "rgba(255,255,255,0.2)" }}
-              >
-                {event.date}
-              </span>
-              <span
-                className="font-mono text-[11px]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
-                {event.text} — {event.actor}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Operator Note */}
-      <div
-        className="rounded-lg p-4"
-        style={{
-          background: "rgba(198,165,90,0.04)",
-          border: "1px solid rgba(198,165,90,0.12)",
-        }}
-      >
-        <p className="text-xs font-mono" style={{ color: "rgba(198,165,90,0.7)" }}>
-          All confidence promotions require operator approval. No automated
-          promotions. Evidence is stored in the source vault and never exposed
-          to clients or alliance partners.
-        </p>
-      </div>
-    </motion.div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
