@@ -13,11 +13,11 @@ import {
   operationalMatterHref,
   operationalMatterId,
   operationalPaymentStatus,
-  operationalPaymentVerified,
   resolveOperationalMatterState,
   withMatterQuery,
   type OperationalMatterSourceRow,
 } from "@/lib/matter/canonicalOperationalRead";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const OPERATOR_ACTION_CLASSES = [
@@ -77,6 +77,11 @@ export interface OperatorIntelligenceSnapshot {
 interface RawMatterRow extends OperationalMatterSourceRow {
   id?: string | null;
   deal_id?: string | null;
+  payment_disposition?: string | null;
+  comp_authorized?: boolean | null;
+  comp_authorization_id?: string | null;
+  comp_authorized_at?: string | null;
+  comp_revoked_at?: string | null;
 }
 
 interface MatterReadResult {
@@ -85,6 +90,20 @@ interface MatterReadResult {
   capabilities: OperatorIntelligenceCapabilities;
 }
 
+const PAYMENT_COLUMNS = [
+  "payment_status",
+  "payment_confirmed",
+  "payment_settlement_status",
+  "payment_disposition",
+  "amount_due",
+  "amount_paid",
+  "verified_revenue",
+  "comp_authorized",
+  "comp_authorization_id",
+  "comp_authorized_at",
+  "comp_revoked_at",
+];
+
 const RICH_COLUMNS = [
   "id",
   "deal_id",
@@ -92,12 +111,7 @@ const RICH_COLUMNS = [
   "full_name",
   "status",
   "deal_status",
-  "payment_status",
-  "payment_confirmed",
-  "payment_settlement_status",
-  "amount_due",
-  "amount_paid",
-  "verified_revenue",
+  ...PAYMENT_COLUMNS,
   "destination_country",
   "country",
   "document_type",
@@ -134,8 +148,7 @@ const FALLBACK_COLUMNS = [
   "full_name",
   "status",
   "deal_status",
-  "payment_status",
-  "payment_confirmed",
+  ...PAYMENT_COLUMNS,
   "destination_country",
   "country",
   "document_type",
@@ -181,6 +194,18 @@ const RELEASE_READY_STATES = new Set([
   "ready_for_release",
 ]);
 
+const CARRIER_EXCEPTION_STATUSES = new Set([
+  "failed",
+  "exception",
+  "returned",
+  "return_to_sender",
+]);
+
+const CARRIER_ACTIVE_STATUSES = new Set([
+  "in_transit",
+  "out_for_delivery",
+]);
+
 const ACTION_DESTINATIONS: Record<OperatorActionClass, string> = {
   "Payment Blocked": "/dashboard/ledger",
   "Document Blocked": "/dashboard/needs-review",
@@ -218,6 +243,30 @@ function ageHours(createdAt: string | null | undefined, now: Date): number | nul
   const created = validDate(createdAt);
   if (!created) return null;
   return Math.max(0, (now.getTime() - created.getTime()) / 3_600_000);
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function schedulingGate(row: RawMatterRow) {
+  return evaluateSchedulingGate({
+    matter: {
+      id: operationalMatterId(row),
+      deal_id: operationalMatterDisplayId(row),
+      payment_status: operationalPaymentStatus(row),
+      amount_due: numberOrNull(row.amount_due),
+      amount_paid: numberOrNull(row.amount_paid),
+      verified_revenue: numberOrNull(row.verified_revenue),
+      payment_disposition: row.payment_disposition ?? null,
+      comp_authorized: row.comp_authorized ?? null,
+      comp_authorization_id: row.comp_authorization_id ?? null,
+      comp_authorized_at: row.comp_authorized_at ?? null,
+      comp_revoked_at: row.comp_revoked_at ?? null,
+    },
+  });
 }
 
 function hasExecutionTruth(row: RawMatterRow): boolean {
@@ -320,10 +369,9 @@ function deriveMatterActions(
 ): OperatorMatterAction[] {
   const stateResolution = resolveOperationalMatterState(row);
   const state = stateResolution.state;
-
-  if (isOperationalTerminalState(state)) return [];
-
+  const deliveryStatus = row.delivery_status?.trim().toLowerCase() ?? "";
   const actions = new Map<OperatorActionClass, OperatorMatterAction>();
+
   const add = (
     actionClass: OperatorActionClass,
     priority: OperatorPriority,
@@ -334,25 +382,35 @@ function deriveMatterActions(
     }
   };
 
-  const paymentStatus = operationalPaymentStatus(row);
-  const verifiedPayment = operationalPaymentVerified(row);
+  // Terminal lifecycle rows normally need no operator action. A carrier state that
+  // still says active/failed after completion is an explicit source contradiction,
+  // so surface it instead of silently hiding the mismatch.
+  if (isOperationalTerminalState(state)) {
+    if (
+      state === "completed" &&
+      (CARRIER_ACTIVE_STATUSES.has(deliveryStatus) ||
+        CARRIER_EXCEPTION_STATUSES.has(deliveryStatus))
+    ) {
+      add(
+        "Courier Exception",
+        "critical",
+        `Matter is completed while carrier delivery state is ${deliveryStatus.replaceAll("_", " ")}; reconcile custody truth.`,
+      );
+    }
+    return [...actions.values()];
+  }
 
-  if (state && PAYMENT_GATE_STATES.has(state) && !verifiedPayment) {
-    const mismatchAfterConfirmationState =
+  const gate = schedulingGate(row);
+
+  if (state && PAYMENT_GATE_STATES.has(state) && !gate.paymentRequirementSatisfied) {
+    const progressedPastPaymentReview =
       state === "deposit_confirmed" || state === "scheduling_unlocked";
-
     add(
       "Payment Blocked",
-      paymentStatus === "failed" ||
-        paymentStatus === "disputed" ||
-        mismatchAfterConfirmationState
-        ? "critical"
-        : "high",
-      mismatchAfterConfirmationState
-        ? "Matter state indicates payment progression but canonical payment truth is not verified. Reconcile before scheduling."
-        : paymentStatus === "failed" || paymentStatus === "disputed"
-          ? `Canonical payment state is ${paymentStatus}; reconciliation is required before progression.`
-          : "Matter is at a payment-gated state and verified payment is not confirmed.",
+      progressedPastPaymentReview ? "critical" : "high",
+      progressedPastPaymentReview
+        ? `Matter state indicates payment progression, but the canonical scheduling payment gate is not satisfied: ${gate.reason}`
+        : gate.reason,
     );
   }
 
@@ -379,13 +437,13 @@ function deriveMatterActions(
     );
   }
 
-  if (state && SCHEDULING_DUE_STATES.has(state) && verifiedPayment) {
+  if (state && SCHEDULING_DUE_STATES.has(state) && gate.schedulingEligible) {
     add(
       "Scheduling Due",
       isPast(operationalDueAt(row), now) ? "critical" : "high",
       state === "scheduling_unlocked"
         ? "Canonical scheduling gate is unlocked and the Matter is awaiting scheduling."
-        : "Verified payment is present and the Matter is ready for the canonical scheduling-unlock transition.",
+        : `Canonical scheduling payment gate is satisfied by ${gate.paymentRequirementMethod.replaceAll("_", " ")}; scheduling-unlock action is due.`,
     );
   }
 
@@ -403,12 +461,7 @@ function deriveMatterActions(
     );
   }
 
-  const deliveryStatus = row.delivery_status?.trim().toLowerCase() ?? "";
-  if (
-    ["failed", "exception", "returned", "return_to_sender"].includes(
-      deliveryStatus,
-    )
-  ) {
+  if (CARRIER_EXCEPTION_STATUSES.has(deliveryStatus)) {
     add(
       "Courier Exception",
       "critical",
