@@ -1,74 +1,96 @@
 # The Milano Seal™ — Vercel Production Environment Variables
-**Document Reference:** MS-OPS-ENV-2026-V1  
+
+**Document Reference:** MS-OPS-ENV-2026-V2  
 **Owner:** Platform Operator  
 **Location:** Vercel Dashboard → Project → Settings → Environment Variables
 
-Do not commit real values to the repository.  
+Do not commit real values to the repository.
 All values listed here are variable names only.
 
 ---
 
-## Required for P0 Launch
+## Required for production launch
 
-Set scope to **Production** for all entries below.  
-Also set to **Preview** if the portal auth flow is tested in preview deployments.
+Set scope to **Production** for all required entries below.
 
-```
+```text
+NEXT_PUBLIC_APP_URL=https://themilanoseal.com
+NEXT_PUBLIC_SITE_URL=https://themilanoseal.com
+NEXT_PUBLIC_ENVIRONMENT=production
+LOG_LEVEL=info
 PORTAL_SESSION_SECRET=
 ```
-Generate with:
+
+Generate `PORTAL_SESSION_SECRET` with:
+
 ```bash
 openssl rand -hex 32
 ```
-Paste the output as the value. This must be a 64-character hex string.  
-Never share this value. Never commit this value. Never log this value.
 
-```
-NEXT_PUBLIC_APP_URL=https://themilanoseal.com
-NEXT_PUBLIC_ENVIRONMENT=production
-NEXT_PUBLIC_VERSION=1.0.0
-LOG_LEVEL=info
-```
+Never share, commit, or log the resulting value.
 
 ---
 
-## Supabase (required — must already exist)
+## Supabase — required
 
-```
+```text
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Find these in: Supabase Dashboard → Project Settings → API
+`SUPABASE_SERVICE_ROLE_KEY` is server-side only.
 
 ---
 
-## Resend (required — must already exist)
+## Resend — required when production email is active
 
-```
+```text
 RESEND_API_KEY=
-RESEND_FROM=
+RESEND_FROM=The Milano Seal™ <hello@themilanoseal.com>
 ```
-
-`RESEND_FROM` format: `The Milano Seal™ <hello@themilanoseal.com>`
 
 ---
 
-## Wise Payment (required if payment flows are live)
+## Wise Business — canonical production payment system
 
-```
+```text
+WISE_ENV=production
 WISE_API_TOKEN=
 WISE_PROFILE_ID=
+WISE_WEBHOOK_ALLOWED_TEST=false
 PAYMENT_BASE_URL=https://themilanoseal.com
-WISE_WEBHOOK_SECRET=
 ```
+
+Canonical webhook:
+
+```text
+https://themilanoseal.com/api/webhooks/wise
+```
+
+Wise webhook verification uses RSA-SHA256 against the Wise production public key embedded in `lib/wise.ts`.
+
+A shared Wise webhook secret is not the canonical production signature-verification mechanism.
+
+`WISE_WEBHOOK_TEST_BYPASS` must remain **unset** in production.
 
 ---
 
-## Twilio SMS/WhatsApp (required if SMS notifications are active)
+## Operator access
 
+```text
+OPERATOR_EMAILS=
+ADMIN_EMAILS=
 ```
+
+Use comma-separated authorized addresses where the current runtime still consumes these allowlists.
+Role authorization remains governed by the current authentication implementation.
+
+---
+
+## Twilio — required only when SMS/WhatsApp notification channels are active
+
+```text
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_FROM_NUMBER=
@@ -78,20 +100,34 @@ ADMIN_WHATSAPP=
 
 ---
 
-## Shipping (required when live carrier is configured — P1)
+## Shipping — required when live carrier execution is active
 
-```
+```text
 SHIPPO_API_KEY=
 SHIPPO_WEBHOOK_SECRET=
+SHIPPO_MODE=live
 ```
-
-Not required for P0 launch. The shipping route returns 501 until this is configured.
 
 ---
 
-## AI / Model Overrides (optional — defaults apply if unset)
+## BlueNotary — required when live RON integration is active
 
+```text
+BLUENOTARY_API_KEY=
+BLUENOTARY_WEBHOOK_SECRET=
+BLUENOTARY_MODE=
+BLUENOTARY_BASE_URL=
+BLUENOTARY_DEFAULT_NOTARY_EMAIL=
+BLUENOTARY_FINAL_DOCUMENT_DELIVERY_MODE=
 ```
+
+Follow `docs/BLUENOTARY_WEBHOOK_SETUP.md` for provider-specific configuration.
+
+---
+
+## AI / model overrides — optional unless a live route explicitly requires them
+
+```text
 ANTHROPIC_API_KEY=
 GROQ_API_KEY=
 OPENAI_API_KEY=
@@ -102,51 +138,63 @@ OPENAI_CLASSIFIER_MODEL=
 
 ---
 
-## Operator Access (required)
+## Internal webhook / cron bus
 
-```
-OPERATOR_EMAILS=
-ADMIN_EMAILS=
-```
-
-Comma-separated list of authorized email addresses.  
-Example: `nick@themilanoseal.com,operator@themilanoseal.com`
-
----
-
-## Internal Webhook Bus (optional)
-
-```
+```text
 CRON_SECRET=
 WEBHOOK_SECRET=
 WEBHOOK_URL=https://themilanoseal.com/api/webhooks
 ```
 
-Generate `CRON_SECRET` and `WEBHOOK_SECRET` with `openssl rand -hex 32`.
+Generate secrets with:
+
+```bash
+openssl rand -hex 32
+```
 
 ---
 
-## Validation Rules
+## Founder production QA runner — optional
 
-Before saving any variable in Vercel, confirm:
+```text
+PRODUCTION_TEST_SECRET=
+```
 
-- No value contains `xxx`, `example.com`, `generate-a-`, or other placeholder text
-- `PORTAL_SESSION_SECRET` is exactly 64 hexadecimal characters
-- `NEXT_PUBLIC_APP_URL` does not end with a trailing slash
-- `NEXT_PUBLIC_ENVIRONMENT` is exactly `production` (lowercase)
-- `RESEND_FROM` is a valid RFC 5322 formatted address string
+When configured, it is used only by the guarded founder production-test path implemented in code.
+It must never be exposed publicly.
 
 ---
 
-## Rotation Policy
+## Production validation rules
 
-| Variable | Rotate when |
-|---|---|
-| `PORTAL_SESSION_SECRET` | If exposed in logs, code, or chat |
-| `SUPABASE_SERVICE_ROLE_KEY` | If exposed or if project access is compromised |
-| `RESEND_API_KEY` | If Resend dashboard shows unauthorized sends |
-| `WISE_API_TOKEN` | If any unauthorized payment activity detected |
-| `CRON_SECRET` / `WEBHOOK_SECRET` | If exposed in any public surface |
+Before production deployment confirm:
 
-Rotating `PORTAL_SESSION_SECRET` invalidates all active portal sessions immediately.  
-Notify active clients before rotating in production.
+- no real secret is committed to Git;
+- `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SITE_URL` use `https://themilanoseal.com`;
+- `WISE_ENV` is exactly `production`;
+- `WISE_WEBHOOK_ALLOWED_TEST` is exactly `false`;
+- `WISE_WEBHOOK_TEST_BYPASS` is unset;
+- service-role and provider secrets are not exposed through `NEXT_PUBLIC_*` variables;
+- the canonical Wise webhook is `/api/webhooks/wise`;
+- scheduling is not considered eligible until verified Wise reconciliation satisfies the canonical payment gate.
+
+---
+
+## Rotation policy
+
+Rotate a secret immediately if it is exposed in source, logs, screenshots, chat, or unauthorized activity.
+
+At minimum this applies to:
+
+- `PORTAL_SESSION_SECRET`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `WISE_API_TOKEN`
+- `TWILIO_AUTH_TOKEN`
+- `SHIPPO_API_KEY`
+- `BLUENOTARY_API_KEY`
+- `CRON_SECRET`
+- `WEBHOOK_SECRET`
+- `PRODUCTION_TEST_SECRET`
+
+Rotating session/auth secrets may invalidate active sessions. Coordinate production rotation accordingly.
