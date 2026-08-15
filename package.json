@@ -8,7 +8,7 @@
     "prebuild": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "npx --yes eslint@9.39.5 .",
     "pretypecheck": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "typecheck": "tsc --noEmit",
     "pretest": "node scripts/generate-command-center-workbook-intelligence.mjs",
