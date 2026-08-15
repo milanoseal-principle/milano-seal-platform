@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { setActiveCorridor } from "@/lib/homepage/activeCorridorStore";
+import { getGlobalRoute } from "@/src/features/corridors/globalRouteData";
 
 interface Props {
   selected: Destination;
@@ -65,7 +66,7 @@ function fallbackPosition(slug: string) {
   };
 }
 
-function destinationPoint(destination: Destination) {
+function destinationPoint(destination: { slug: string; lat?: number; lng?: number }) {
   if (typeof destination.lat !== "number" || typeof destination.lng !== "number") {
     return fallbackPosition(destination.slug);
   }
@@ -96,9 +97,13 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
   const reduceMotion = useReducedMotion();
   const [analyzing, setAnalyzing] = useState(false);
 
+  const routeRecord = useMemo(() => getGlobalRoute(selected.slug), [selected.slug]);
   const index = CYCLE_ORDER.findIndex((destination) => destination.slug === selected.slug);
   const nextDest = CYCLE_ORDER[(index + 1) % CYCLE_ORDER.length];
-  const destination = useMemo(() => destinationPoint(selected), [selected]);
+  const destination = useMemo(
+    () => destinationPoint(routeRecord ?? selected),
+    [routeRecord, selected],
+  );
   const activePath = useMemo(
     () => curvedPath(ORIGIN, destination),
     [destination],
@@ -139,9 +144,15 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
     pausedRef.current = false;
   };
 
-  const hague = selected.hague;
+  const hague = routeRecord?.hague ?? selected.hague;
+  const verificationRequired = routeRecord?.verificationRequired ?? false;
   const accent = hague ? "var(--ms-gold)" : "#D87963";
-  const translate = translationLikely(selected);
+  const translate = routeRecord?.translationRequired ?? translationLikely(selected);
+  const routeStatus = verificationRequired
+    ? "Route Verification"
+    : hague
+      ? "Hague Member ✓"
+      : "Consular Review";
 
   return (
     <div
@@ -233,7 +244,6 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
 
           <rect x={0} y={0} width={320} height={260} fill="url(#ma-bg)" />
 
-          {/* Geographic field and horizon */}
           <g className="ms-mini-field" fill="none" stroke="var(--ms-gold)">
             {[76, 124, 172, 220].map((y) => (
               <path
@@ -255,10 +265,9 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             <path d="M -20 248 Q 160 198 340 248" strokeWidth="0.5" strokeOpacity="0.07" />
           </g>
 
-          {/* Context destinations and dormant routes */}
           <g>
             {contextDestinations.slice(0, 4).map((contextDestination) => {
-              const point = destinationPoint(contextDestination);
+              const point = destinationPoint(getGlobalRoute(contextDestination.slug) ?? contextDestination);
               return (
                 <path
                   key={`ghost-${contextDestination.slug}`}
@@ -271,7 +280,7 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
               );
             })}
             {contextDestinations.map((contextDestination) => {
-              const point = destinationPoint(contextDestination);
+              const point = destinationPoint(getGlobalRoute(contextDestination.slug) ?? contextDestination);
               return (
                 <circle
                   key={`node-${contextDestination.slug}`}
@@ -285,7 +294,6 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             })}
           </g>
 
-          {/* Selected destination atmosphere */}
           <circle
             className="ms-mini-destination-halo"
             cx={destination.x}
@@ -303,7 +311,6 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             strokeOpacity="0.14"
           />
 
-          {/* Active route */}
           <g key={selected.slug}>
             <path
               d={activePath}
@@ -331,7 +338,6 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             )}
           </g>
 
-          {/* Florida origin */}
           <circle cx={ORIGIN.x} cy={ORIGIN.y} r="7" fill="none" stroke="var(--ms-gold)" strokeWidth="0.8" strokeOpacity="0.32" />
           <circle cx={ORIGIN.x} cy={ORIGIN.y} r="3.3" fill="var(--ms-gold)" filter="url(#ma-glow)" />
           <circle cx={ORIGIN.x} cy={ORIGIN.y} r="1.4" fill="#FFF6E2" />
@@ -339,7 +345,6 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
             FLORIDA
           </text>
 
-          {/* Destination */}
           <circle cx={destination.x} cy={destination.y} r="8" fill="none" stroke={accent} strokeWidth="1" strokeOpacity="0.55" />
           <circle cx={destination.x} cy={destination.y} r="3.8" fill={accent} filter="url(#ma-glow)" />
           <circle cx={destination.x} cy={destination.y} r="1.5" fill="#FFF6E2" />
@@ -361,7 +366,7 @@ export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props
                     : "border-[#C0563E]/40 bg-[#C0563E]/[0.1] text-[#E0876E]"
                 }`}
               >
-                {hague ? "Hague Member ✓" : "Consular Review"}
+                {routeStatus}
               </span>
             )}
           </div>
