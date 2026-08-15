@@ -200,18 +200,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const supabase = createAdminClient();
+  const { data: persistedMatter, error } = await supabase
+    .from("deals")
+    .select(
+      "deal_id,lane,base_price,witness_total,eligible_subtotal,non_discountable_total,original_total,discount_amount,final_total,total_price,invoice_retainer,invoice_balance,amount_due,currency",
+    )
+    .eq("deal_id", dealId)
+    .maybeSingle();
+
   const finalTotal = Number(
     body.final_total ?? body.estimated_value ?? body.pricing?.total ?? 0,
   );
   const originalTotal = Number(
     body.original_total ?? body.pricing?.original_total ?? finalTotal,
   );
+
+  // The canonical intake core persists discount-boundary totals before this
+  // wrapper verifies the quote. Older success payloads did not echo those two
+  // fields, which caused a false 500 after a valid Matter had already saved.
+  // Use the just-persisted authoritative values only when the response omitted
+  // them, then echo the normalized values back to the client after verification.
   const nonDiscountableTotal = Number(
-    body.non_discountable_total ?? body.pricing?.non_discountable_total ?? 0,
+    body.non_discountable_total ??
+      body.pricing?.non_discountable_total ??
+      persistedMatter?.non_discountable_total ??
+      0,
   );
   const eligibleSubtotal = Number(
     body.eligible_subtotal ??
       body.pricing?.eligible_subtotal ??
+      persistedMatter?.eligible_subtotal ??
       Math.max(0, originalTotal - nonDiscountableTotal),
   );
 
@@ -228,15 +247,6 @@ export async function POST(req: NextRequest) {
     invoiceBalance: Number(body.invoice?.balance ?? 0),
     currency: "USD",
   });
-
-  const supabase = createAdminClient();
-  const { data: persistedMatter, error } = await supabase
-    .from("deals")
-    .select(
-      "deal_id,lane,base_price,witness_total,eligible_subtotal,non_discountable_total,original_total,discount_amount,final_total,total_price,invoice_retainer,invoice_balance,amount_due,currency",
-    )
-    .eq("deal_id", dealId)
-    .maybeSingle();
 
   if (error || !persistedMatterHasQuote(persistedMatter, snapshot)) {
     console.error("[intake] persisted Matter quote mismatch", {
@@ -260,5 +270,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return response;
+  const normalizedBody: IntakeSuccessBody = {
+    ...body,
+    eligible_subtotal: eligibleSubtotal,
+    non_discountable_total: nonDiscountableTotal,
+    pricing: {
+      ...body.pricing,
+      eligible_subtotal: eligibleSubtotal,
+      non_discountable_total: nonDiscountableTotal,
+    },
+  };
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  return NextResponse.json(normalizedBody, {
+    status: response.status,
+    headers,
+  });
 }
