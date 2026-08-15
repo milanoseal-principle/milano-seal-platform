@@ -1,235 +1,231 @@
-"use client";
+export const dynamic = "force-dynamic";
 
-import { ScrollText } from "lucide-react";
+import Link from "next/link";
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const GOLD = "rgba(212,175,55,1)";
-const GOLD_DIM = "rgba(212,175,55,0.45)";
-const BORDER = "rgba(212,175,55,0.12)";
-const SURFACE = "rgba(255,255,255,0.03)";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { loadOperationalLedger } from "@/lib/operator-intelligence/ledger-read-model";
 
-// ── Canonical event names ──────────────────────────────────────────────────────
-type CanonicalEvent =
-  | "SMART_REQUEST_PARSED"
-  | "STRUCTURED_INTAKE_CREATED"
-  | "MATTER_CREATED"
-  | "COMPLIANCE_VERIFIED"
-  | "LANE_ASSIGNED"
-  | "INVOICE_CREATED"
-  | "INVOICE_SENT"
-  | "PAYMENT_CONFIRMED"
-  | "SCHEDULING_UNLOCKED"
-  | "EXECUTION_SCHEDULED"
-  | "RON_COMPLETED"
-  | "APOSTILLE_SUBMITTED"
-  | "APOSTILLE_COMPLETED"
-  | "COURIER_RELEASED"
-  | "DELIVERY_CONFIRMED"
-  | "PAID_AND_RELEASED";
-
-type ActorRole = "operator" | "system" | "client" | "notary" | "courier" | "authority";
-
-// ── State machine alignment ────────────────────────────────────────────────────
-// intake_received → under_review → awaiting_payment → scheduled →
-// in_execution → apostille_processing → in_transit → delivered → completed
-type MatterStatus =
-  | "intake_received"
-  | "under_review"
-  | "awaiting_payment"
-  | "scheduled"
-  | "in_execution"
-  | "apostille_processing"
-  | "in_transit"
-  | "delivered"
-  | "completed";
-
-interface LedgerEvent {
-  event_id: string;
-  matter_id: string;
-  actor: string;
-  actor_role: ActorRole;
-  event_name: CanonicalEvent;
-  event_description: string;
-  previous_status: MatterStatus | null;
-  next_status: MatterStatus;
-  reference: string;
-  created_at: string;
+interface PageProps {
+  searchParams: Promise<{
+    matter?: string;
+    deal?: string;
+    focus?: string;
+  }>;
 }
 
-// ── Safe empty state — no live data ───────────────────────────────────────────
-// const SEED_EVENTS: LedgerEvent[] = [
-//   {
-//     event_id: "EVT-0001",
-//     matter_id: "MTR-0001",
-//     actor: "Nicholas Milano",
-//     actor_role: "operator",
-//     event_name: "MATTER_CREATED",
-//     event_description: "Matter created from structured intake. Operator review initiated.",
-//     previous_status: "intake_received",
-//     next_status: "under_review",
-//     reference: "INK-0001",
-//     created_at: "2026-06-10T09:00:00Z",
-//   },
-// ];
+const SOURCE_LABEL = {
+  matter_events: "MATTER",
+  deal_events: "DEAL",
+  custody_ledger: "CUSTODY",
+} as const;
 
-const EVENTS: LedgerEvent[] = []; // Empty state — no events recorded
+function formatTimestamp(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
 
-// ── Event color by lifecycle phase ────────────────────────────────────────────
-const EVENT_PHASE_COLOR: Partial<Record<CanonicalEvent, string>> = {
-  SMART_REQUEST_PARSED: "rgba(255,255,255,0.4)",
-  STRUCTURED_INTAKE_CREATED: "rgba(255,255,255,0.4)",
-  MATTER_CREATED: "rgba(212,175,55,0.6)",
-  COMPLIANCE_VERIFIED: "rgba(212,175,55,0.6)",
-  LANE_ASSIGNED: "rgba(212,175,55,0.6)",
-  INVOICE_CREATED: "rgba(96,165,250,0.6)",
-  INVOICE_SENT: "rgba(96,165,250,0.6)",
-  PAYMENT_CONFIRMED: "rgba(34,197,94,0.7)",
-  SCHEDULING_UNLOCKED: "rgba(34,197,94,0.6)",
-  EXECUTION_SCHEDULED: "rgba(34,197,94,0.6)",
-  RON_COMPLETED: "rgba(212,175,55,0.75)",
-  APOSTILLE_SUBMITTED: "rgba(212,175,55,0.65)",
-  APOSTILLE_COMPLETED: "rgba(212,175,55,0.75)",
-  COURIER_RELEASED: "rgba(212,175,55,0.65)",
-  DELIVERY_CONFIRMED: "rgba(34,197,94,0.7)",
-  PAID_AND_RELEASED: "rgba(34,197,94,0.8)",
-};
+export default async function LedgerPage({ searchParams }: PageProps) {
+  await requireDashboardAccess();
+  const params = await searchParams;
+  const matterFilter = params.matter?.trim() || null;
 
-const ROLE_COLOR: Record<ActorRole, string> = {
-  operator: "rgba(212,175,55,0.55)",
-  system: "rgba(255,255,255,0.25)",
-  client: "rgba(255,255,255,0.35)",
-  notary: "rgba(96,165,250,0.5)",
-  courier: "rgba(251,191,36,0.5)",
-  authority: "rgba(239,68,68,0.45)",
-};
-
-const ALL_EVENTS: CanonicalEvent[] = [
-  "SMART_REQUEST_PARSED", "STRUCTURED_INTAKE_CREATED", "MATTER_CREATED", "COMPLIANCE_VERIFIED",
-  "LANE_ASSIGNED", "INVOICE_CREATED", "INVOICE_SENT", "PAYMENT_CONFIRMED",
-  "SCHEDULING_UNLOCKED", "EXECUTION_SCHEDULED", "RON_COMPLETED", "APOSTILLE_SUBMITTED",
-  "APOSTILLE_COMPLETED", "COURIER_RELEASED", "DELIVERY_CONFIRMED", "PAID_AND_RELEASED",
-];
-
-export default function LedgerPage() {
-  return (
-    <div style={{ color: "#e8e4dc", fontFamily: "monospace" }}>
-      {/* Header */}
-      <div className="mb-6">
-        <p style={{ fontSize: 9, letterSpacing: "0.25em", color: GOLD_DIM, marginBottom: 4 }}>
-          OPERATOR CONTROL LAYER
-        </p>
-        <div className="flex items-center gap-3 mb-2">
-          <ScrollText size={16} style={{ color: GOLD }} />
-          <h1 style={{ fontSize: "clamp(1.1rem,2.5vw,1.5rem)", fontFamily: "Georgia,serif", fontWeight: "normal", color: "#f4e5b8" }}>
+  let snapshot;
+  try {
+    snapshot = await loadOperationalLedger({
+      matterId: matterFilter,
+      limit: matterFilter ? 250 : 150,
+    });
+  } catch (error) {
+    console.error("[ledger] live operational ledger unavailable:", error);
+    return (
+      <div className="space-y-6">
+        <section className="rounded-xl border border-red-500/25 bg-red-500/[0.05] p-6">
+          <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-red-300/70">
             Operational Ledger
+          </p>
+          <h1 className="mt-2 font-serif text-2xl text-white/90">
+            Live event sources unavailable
           </h1>
-        </div>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-          Immutable event log across all matters. State transitions are append-only.
-          Operator verification required before any release operations.
-        </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">
+            The ledger could not be read safely. This is not an empty-ledger state.
+          </p>
+        </section>
       </div>
+    );
+  }
 
-      {/* Canonical event reference */}
-      <div
-        className="rounded-sm px-4 py-3 mb-6"
-        style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
-      >
-        <p style={{ fontSize: 8, color: GOLD_DIM, letterSpacing: "0.18em", marginBottom: 8 }}>
-          CANONICAL EVENT NAMES
-        </p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-          {ALL_EVENTS.map((e) => (
-            <span
-              key={e}
-              style={{
-                fontSize: 8,
-                color: EVENT_PHASE_COLOR[e] ?? "rgba(255,255,255,0.3)",
-                letterSpacing: "0.1em",
-              }}
+  return (
+    <div className="space-y-6">
+      <section className="rounded-xl border border-[#C6A55A]/15 bg-[#080808] p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[#C6A55A]/55">
+              Operator Control Layer
+            </p>
+            <h1 className="mt-2 font-serif text-2xl font-normal text-[#F4E5B8]">
+              Operational Ledger
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/40">
+              Live append-only evidence from Matter events, deal events and custody
+              ledger sources. This page reads production truth only; it does not
+              advance Matter state.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {matterFilter ? (
+              <Link
+                href="/dashboard/ledger"
+                className="rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-white/55 hover:border-[#C6A55A]/30 hover:text-white/80"
+              >
+                Clear Matter Filter
+              </Link>
+            ) : null}
+            <Link
+              href="/today"
+              className="rounded-lg border border-[#C6A55A]/20 bg-[#C6A55A]/[0.04] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#E4CA8C]/75 hover:border-[#C6A55A]/40"
             >
-              {e}
-            </span>
-          ))}
+              Back to Today
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {EVENTS.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center py-20 rounded-sm"
-          style={{ border: `1px solid ${BORDER}`, background: SURFACE }}
-        >
-          <ScrollText size={28} style={{ color: GOLD_DIM, marginBottom: 12 }} />
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
-            No Events Recorded
-          </p>
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 6 }}>
-            Events will appear here as matters move through the execution lifecycle
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-sm" style={{ border: `1px solid ${BORDER}` }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: SURFACE }}>
-                {["Event ID", "Matter", "Actor", "Role", "Event", "Description", "Prev Status", "Next Status", "Reference", "Timestamp"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "10px 12px",
-                      textAlign: "left",
-                      fontSize: 8,
-                      letterSpacing: "0.18em",
-                      color: GOLD_DIM,
-                      fontWeight: "normal",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {h.toUpperCase()}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {EVENTS.map((evt) => (
-                <tr
-                  key={evt.event_id}
-                  style={{ borderBottom: `1px solid ${BORDER}` }}
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          {(["matter_events", "deal_events", "custody_ledger"] as const).map(
+            (source) => {
+              const count = snapshot.entries.filter((entry) => entry.source === source).length;
+              return (
+                <div
+                  key={source}
+                  className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-3"
                 >
-                  <td style={{ padding: "10px 12px", color: "#f4e5b8", whiteSpace: "nowrap" }}>{evt.event_id}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>{evt.matter_id}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>{evt.actor}</td>
-                  <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                    <span style={{ fontSize: 8, color: ROLE_COLOR[evt.actor_role], letterSpacing: "0.12em" }}>
-                      {evt.actor_role.toUpperCase()}
-                    </span>
-                  </td>
-                  <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                    <span style={{ fontSize: 8, color: EVENT_PHASE_COLOR[evt.event_name] ?? GOLD_DIM, letterSpacing: "0.08em" }}>
-                      {evt.event_name}
-                    </span>
-                  </td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.35)", maxWidth: 200, fontSize: 9 }}>{evt.event_description}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap", fontSize: 9 }}>{evt.previous_status ?? "—"}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", fontSize: 9 }}>{evt.next_status}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap", fontSize: 9 }}>{evt.reference}</td>
-                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: 9 }}>{evt.created_at}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-white/25">
+                    {SOURCE_LABEL[source]}
+                  </p>
+                  <p className="mt-1 text-xl font-light text-[#E4CA8C]">{count}</p>
+                </div>
+              );
+            },
+          )}
         </div>
-      )}
+      </section>
 
-      {/* Footer */}
-      <div className="mt-6 flex items-center justify-between flex-wrap gap-2">
-        <span style={{ fontSize: 8, color: "rgba(255,255,255,0.15)", letterSpacing: "0.15em" }}>
-          {EVENTS.length} EVENTS · APPEND-ONLY · OPERATOR REVIEW ONLY · NO DELETIONS
-        </span>
-        <span style={{ fontSize: 8, color: GOLD_DIM, letterSpacing: "0.15em" }}>
-          THE MILANO SEAL™
-        </span>
-      </div>
+      {snapshot.degraded ? (
+        <section className="rounded-lg border border-amber-400/20 bg-amber-400/[0.05] p-4">
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-amber-200/70">
+            Partial Ledger Read
+          </p>
+          <p className="mt-2 text-xs leading-5 text-white/45">
+            {snapshot.sourceErrors.join(" · ")}
+          </p>
+        </section>
+      ) : null}
+
+      {matterFilter ? (
+        <section className="rounded-lg border border-[#C6A55A]/15 bg-[#C6A55A]/[0.03] px-4 py-3">
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#C6A55A]/55">
+            Focused Matter
+          </p>
+          <p className="mt-1 break-all font-mono text-[11px] text-white/55">
+            {matterFilter}
+          </p>
+        </section>
+      ) : null}
+
+      <section className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#090909]">
+        <div className="border-b border-white/[0.06] px-4 py-3 sm:px-5">
+          <div className="flex items-center justify-between gap-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/45">
+              Live Events
+            </p>
+            <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+              {snapshot.entries.length} records
+            </p>
+          </div>
+        </div>
+
+        {snapshot.entries.length === 0 ? (
+          <div className="px-5 py-16 text-center">
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">
+              No matching ledger entries
+            </p>
+            <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-white/25">
+              The connected production event sources returned no entries for this
+              filter. This is a real empty result, not a hardcoded placeholder.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/[0.05]">
+            {snapshot.entries.map((entry) => (
+              <article key={entry.id} className="px-4 py-4 sm:px-5">
+                <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] px-2 py-1 font-mono text-[8px] uppercase tracking-[0.14em] text-[#C6A55A]/70">
+                        {SOURCE_LABEL[entry.source]}
+                      </span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/45">
+                        {entry.eventName.replaceAll("_", " ")}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <Link
+                        href={entry.matterHref}
+                        className="font-mono text-[11px] text-[#E4CA8C] hover:underline"
+                      >
+                        {entry.matterId}
+                      </Link>
+                      <span className="text-xs text-white/45">{entry.clientName}</span>
+                    </div>
+
+                    {entry.description ? (
+                      <p className="mt-2 max-w-3xl break-words text-xs leading-5 text-white/38">
+                        {entry.description}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid shrink-0 grid-cols-2 gap-x-5 gap-y-2 lg:min-w-[320px]">
+                    <div>
+                      <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+                        Current State
+                      </p>
+                      <p className="mt-1 text-[11px] capitalize text-white/45">
+                        {entry.currentState}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+                        Actor
+                      </p>
+                      <p className="mt-1 truncate text-[11px] text-white/45">
+                        {entry.actor ?? "system / unknown"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+                        Timestamp
+                      </p>
+                      <p className="mt-1 text-[11px] text-white/35">
+                        {formatTimestamp(entry.occurredAt)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

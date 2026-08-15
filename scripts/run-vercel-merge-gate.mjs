@@ -45,6 +45,7 @@ const gates = [
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
   ["node", ["scripts/validate-wise-only-active-ops-docs.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
+  ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
   ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
