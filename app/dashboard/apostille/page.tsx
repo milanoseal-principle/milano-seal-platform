@@ -33,6 +33,25 @@ interface ApostilleMatter extends OperationalMatterSourceRow {
   requires_apostille?: boolean | null;
 }
 
+const APOSTILLE_RELATED_STATES = new Set([
+  "apostille_packet_ready",
+  "apostille_submitted",
+  "apostille_processing",
+  "apostille_received",
+  "apostille_rejected",
+  "final_balance_due",
+  "final_payment_pending_review",
+  "final_payment_confirmed",
+  "ready_for_release",
+  "final_packet_assembled",
+  "label_created",
+  "in_transit",
+  "customs_watch",
+  "out_for_delivery",
+  "delivered",
+  "completed",
+]);
+
 const SUBMITTED_STATES = new Set([
   "apostille_submitted",
   "apostille_processing",
@@ -95,33 +114,50 @@ export default async function ApostillePage({ searchParams }: PageProps) {
   const focusMatter = params.matter?.trim() || params.deal?.trim() || null;
   const supabase = createAdminClient();
 
+  // Read the canonical Matter state as well as historical apostille flags. Some
+  // legacy production rows reached apostille states before both flag columns were
+  // backfilled, so a flag-only SQL filter can produce a false-empty tracker.
   const { data, error } = await supabase
     .from("deals")
     .select(
       "id, deal_id, client_name, full_name, destination_country, country, document_type, document, service_type, status, deal_status, apostille_required, requires_apostille, apostille_at, scheduled_at, created_at, updated_at, due_at, sla_deadline",
     )
-    .or("apostille_required.eq.true,requires_apostille.eq.true")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(500);
 
   if (error) {
     console.error("[apostille] canonical read failed:", error.message);
   }
 
-  const matters = ((data ?? []) as ApostilleMatter[]).map((row) => ({
-    row,
-    state: resolveOperationalMatterState(row).state,
-  }));
+  const matters = ((data ?? []) as ApostilleMatter[])
+    .map((row) => ({
+      row,
+      state: resolveOperationalMatterState(row).state,
+    }))
+    .filter(
+      ({ row, state }) =>
+        row.apostille_required === true ||
+        row.requires_apostille === true ||
+        Boolean(state && APOSTILLE_RELATED_STATES.has(state)),
+    );
 
   const counts = {
-    pending: matters.filter(({ state }) =>
-      !state ||
-      (!SUBMITTED_STATES.has(state) &&
-        !RECEIVED_OR_LATER_STATES.has(state) &&
-        state !== "apostille_rejected"),
+    pending: matters.filter(
+      ({ state }) =>
+        !state ||
+        (!SUBMITTED_STATES.has(state) &&
+          !RECEIVED_OR_LATER_STATES.has(state) &&
+          state !== "apostille_rejected"),
     ).length,
-    submitted: matters.filter(({ state }) => state && SUBMITTED_STATES.has(state)).length,
-    exceptions: matters.filter(({ state }) => state === "apostille_rejected").length,
-    received: matters.filter(({ state }) => state && RECEIVED_OR_LATER_STATES.has(state)).length,
+    submitted: matters.filter(
+      ({ state }) => state && SUBMITTED_STATES.has(state),
+    ).length,
+    exceptions: matters.filter(
+      ({ state }) => state === "apostille_rejected",
+    ).length,
+    received: matters.filter(
+      ({ state }) => state && RECEIVED_OR_LATER_STATES.has(state),
+    ).length,
   };
 
   return (
@@ -136,9 +172,9 @@ export default async function ApostillePage({ searchParams }: PageProps) {
               Apostille Submission Tracker
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/40">
-              Live apostille-required Matters projected from canonical Matter state.
-              Legacy status labels are compatibility-read only and are never written from
-              this surface.
+              Live apostille Matters projected from canonical Matter state plus
+              historical apostille flags. Legacy status labels are compatibility-read
+              only and are never written from this surface.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -166,8 +202,13 @@ export default async function ApostillePage({ searchParams }: PageProps) {
             ["Exceptions", counts.exceptions],
             ["Received / Complete", counts.received],
           ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-3">
-              <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/25">{label}</p>
+            <div
+              key={String(label)}
+              className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-3"
+            >
+              <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/25">
+                {label}
+              </p>
               <p className="mt-1 text-xl font-light text-[#E4CA8C]">{value}</p>
             </div>
           ))}
@@ -186,7 +227,7 @@ export default async function ApostillePage({ searchParams }: PageProps) {
       ) : matters.length === 0 ? (
         <section className="rounded-xl border border-white/[0.07] bg-[#090909] px-5 py-16 text-center">
           <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">
-            No apostille-required Matters
+            No apostille-related Matters
           </p>
         </section>
       ) : (
@@ -195,8 +236,20 @@ export default async function ApostillePage({ searchParams }: PageProps) {
             <table className="w-full min-w-[920px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  {["Matter", "Client", "Destination", "Document", "Canonical State", "Submitted", "Scheduled", "Apostille Status"].map((header) => (
-                    <th key={header} className="px-4 py-3 font-mono text-[8px] font-normal uppercase tracking-[0.16em] text-[#C6A55A]/45">
+                  {[
+                    "Matter",
+                    "Client",
+                    "Destination",
+                    "Document",
+                    "Canonical State",
+                    "Submitted",
+                    "Scheduled",
+                    "Apostille Status",
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className="px-4 py-3 font-mono text-[8px] font-normal uppercase tracking-[0.16em] text-[#C6A55A]/45"
+                    >
                       {header}
                     </th>
                   ))}
@@ -205,7 +258,8 @@ export default async function ApostillePage({ searchParams }: PageProps) {
               <tbody>
                 {matters.map(({ row, state }) => {
                   const displayId = operationalMatterDisplayId(row);
-                  const focused = focusMatter === row.id || focusMatter === displayId;
+                  const focused =
+                    focusMatter === row.id || focusMatter === displayId;
                   const meta = statusMeta(state);
                   return (
                     <tr
@@ -213,18 +267,35 @@ export default async function ApostillePage({ searchParams }: PageProps) {
                       className={`border-b border-white/[0.04] ${focused ? "bg-[#C6A55A]/[0.05]" : ""}`}
                     >
                       <td className="px-4 py-3">
-                        <Link href={`/dashboard/deals/${encodeURIComponent(row.id)}`} className="font-mono text-[10px] text-[#E4CA8C] hover:underline">
+                        <Link
+                          href={`/dashboard/deals/${encodeURIComponent(row.id)}`}
+                          className="font-mono text-[10px] text-[#E4CA8C] hover:underline"
+                        >
                           {displayId}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-xs text-white/65">{operationalClientName(row)}</td>
-                      <td className="px-4 py-3 text-xs text-white/50">{operationalDestinationCountry(row) ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-white/45">{operationalDocumentType(row) ?? "—"}</td>
-                      <td className="px-4 py-3 font-mono text-[10px] capitalize text-white/45">{stateLabel(state)}</td>
-                      <td className="px-4 py-3 font-mono text-[10px] text-white/35">{formatDate(row.apostille_at)}</td>
-                      <td className="px-4 py-3 font-mono text-[10px] text-white/35">{formatDate(row.scheduled_at)}</td>
+                      <td className="px-4 py-3 text-xs text-white/65">
+                        {operationalClientName(row)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-white/50">
+                        {operationalDestinationCountry(row) ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-white/45">
+                        {operationalDocumentType(row) ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[10px] capitalize text-white/45">
+                        {stateLabel(state)}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[10px] text-white/35">
+                        {formatDate(row.apostille_at)}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[10px] text-white/35">
+                        {formatDate(row.scheduled_at)}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded border px-2 py-1 font-mono text-[8px] uppercase tracking-[0.1em] ${meta.className}`}>
+                        <span
+                          className={`rounded border px-2 py-1 font-mono text-[8px] uppercase tracking-[0.1em] ${meta.className}`}
+                        >
                           {meta.label}
                         </span>
                       </td>
