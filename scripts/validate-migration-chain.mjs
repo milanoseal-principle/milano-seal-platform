@@ -9,6 +9,8 @@ const required = [
   "044_production_deals_payment_gate_compatibility.sql",
   "049_dashboard_intake_payment_status_reconciliation.sql",
   "050_live_intake_execution_truth_reconciliation.sql",
+  "055_matter_evidence_ledger.sql",
+  "056_matter_truth_snapshot_archive.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -85,5 +87,14 @@ for (const invariant of [
 if (/update\s+public\.deals[\s\S]*payment_status\s*=\s*'unpaid'/i.test(executionRepair)) {
   throw new Error("050 must preserve legacy pending rows; no bulk payment-state rewrite");
 }
+
+const evidenceLedger = fs.readFileSync(path.join(dir, "055_matter_evidence_ledger.sql"), "utf8");
+if (!evidenceLedger.includes("prevent_matter_evidence_ledger_mutation")) throw new Error("055 must preserve append-only Matter evidence history");
+if (!evidenceLedger.includes("auth.jwt() -> 'app_metadata'")) throw new Error("055 RLS must use app_metadata role authority");
+
+const truthArchive = fs.readFileSync(path.join(dir, "056_matter_truth_snapshot_archive.sql"), "utf8");
+if (!truthArchive.includes("prevent_matter_truth_snapshot_mutation")) throw new Error("056 must preserve append-only Matter Truth snapshots");
+if (!truthArchive.includes("status in ('ACCEPTED','PENDING_REVIEW','REJECTED')")) throw new Error("056 must constrain snapshot lifecycle states");
+if (!truthArchive.includes("auth.jwt() -> 'app_metadata'")) throw new Error("056 RLS must use app_metadata role authority");
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
