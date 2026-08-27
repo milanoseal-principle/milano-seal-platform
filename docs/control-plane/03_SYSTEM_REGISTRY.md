@@ -70,7 +70,7 @@ These statuses are monotonic descriptions of evidence, not marketing labels. GAT
 
 A registry entry may be canonical, derived, externally verified or procedural. Derived intelligence must identify the canonical evidence it reads and must not become an independent source of truth.
 
-For Convention-country status, competent authority, receiving-authority requirements and similar external legal-execution facts, source-backed external verification is required. The platform currently recognizes the HCCH 1961 Apostille Convention as having **129 Contracting Parties**, while preserving Matter-specific routing review.
+For Convention-country status, competent authority, receiving-authority requirements and similar external legal-execution facts, source-backed external verification is required. The platform currently recognizes the HCCH 1961 Apostille Convention as having **130 Contracting Parties**, while preserving Matter-specific routing review.
 
 ## Mutation Rule
 
@@ -95,11 +95,17 @@ The international execution domain specialization is defined in:
 
 - `lib/control-plane/internationalDocumentExecutionProfile.ts`.
 
+Matter 360 hardening capabilities are defined and surfaced through:
+
+- `lib/control-plane/hardeningRegistry.ts`.
+- `docs/control-plane/09_MATTER_360_PROJECTION_GOVERNANCE.md`.
+
 ## Canonical Implementation
 
 - Registry: `lib/control-plane/systemRegistry.ts`.
+- Hardening registry: `lib/control-plane/hardeningRegistry.ts`.
 - International execution profile: `lib/control-plane/internationalDocumentExecutionProfile.ts`.
 - Placement gate: `lib/control-plane/placementGate.ts`.
 - Operator view: `/dashboard/control-plane`.
 - Production validator: `scripts/validate-system-control-plane.mjs`.
-- Unit tests: `lib/control-plane/__tests__/systemControlPlane.test.ts` and `lib/control-plane/__tests__/internationalDocumentExecutionProfile.test.ts`.
+- Unit tests: `lib/control-plane/__tests__/systemControlPlane.test.ts`, `lib/control-plane/__tests__/internationalDocumentExecutionProfile.test.ts`, and `tests/matter-360-governance.test.ts`.
