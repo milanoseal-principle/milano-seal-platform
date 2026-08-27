@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { logActivity } from "@/lib/activity";
 import { serializeDealMS } from "@/lib/milanoSerialize";
+import { MATTER_STATES } from "@/data/matter-state-machine";
 import { revalidatePath } from "next/cache";
 
 const DEAL_API_ROLES = new Set([
@@ -65,40 +66,9 @@ const PROTECTED_LIFECYCLE_FIELDS = new Set([
   "completed_at",
 ]);
 
-const PROTECTED_LIFECYCLE_STATUSES = new Set([
-  "intake_received",
-  "under_review",
-  "needs_client_info",
-  "document_correction_required",
-  "quoted",
-  "awaiting_deposit",
-  "deposit_pending_review",
-  "deposit_confirmed",
-  "scheduling_unlocked",
-  "scheduled",
-  "in_execution",
-  "ron_completed",
-  "execution_qa",
-  "apostille_packet_ready",
-  "apostille_submitted",
-  "apostille_processing",
-  "apostille_received",
-  "apostille_rejected",
-  "final_balance_due",
-  "final_payment_pending_review",
-  "final_payment_confirmed",
-  "ready_for_release",
-  "final_packet_assembled",
-  "label_created",
-  "in_transit",
-  "customs_watch",
-  "out_for_delivery",
-  "delivered",
-  "completed",
-  "dormant",
-  "lost",
-  "cancelled",
-]);
+// The generic endpoint does not own any canonical Matter transition. Derive this
+// firewall from the single state-machine registry instead of duplicating states.
+const PROTECTED_LIFECYCLE_STATUSES = new Set<string>(MATTER_STATES);
 
 const GENERIC_METADATA_FIELDS = [
   "followup_24h",
