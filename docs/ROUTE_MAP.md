@@ -22,6 +22,7 @@ This document does not replace role authorization, the canonical Matter state ma
 | `/professional/damiani` | PAGE | `app/professional/damiani/page.tsx` |
 | `/today` | PAGE | `app/today/page.tsx` |
 | `/dashboard` | PAGE | `app/dashboard/page.tsx` |
+| `/dashboard/control-plane` | PAGE | `app/dashboard/control-plane/page.tsx` |
 | `/dashboard/pipeline` | PAGE | `app/dashboard/pipeline/page.tsx` |
 | `/dashboard/needs-review` | PAGE | `app/dashboard/needs-review/page.tsx` |
 | `/dashboard/follow-ups` | PAGE | `app/dashboard/follow-ups/page.tsx` |
@@ -47,6 +48,7 @@ This document does not replace role authorization, the canonical Matter state ma
 - Add/remove the underlying source route, then regenerate this file.
 - Vercel production validation fails when this file drifts from source.
 - `/today` is a read-only Milano Operator Intelligence surface.
+- `/dashboard/control-plane` is the canonical platform meta-governance and system-registry surface.
 - `/portal/payment` remains canonical-Matter and Wise-reconciliation driven.
 - `/api/webhooks/wise` is the canonical production Wise webhook.
 - Live TIFF and Damiani acceptance remain mandatory after code/deployment validation.
