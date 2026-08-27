@@ -20,7 +20,7 @@ const RAIL_B: { route: string; workflow: string }[] = [
   { route: "FLORIDA → SPAIN",    workflow: "Apostille Review Pathway" },
   { route: "FLORIDA → UAE",      workflow: "Consular Authentication Workflow" },
   { route: "FLORIDA → BRAZIL",   workflow: "International Release Corridor" },
-  { route: "FLORIDA → MEXICO",   workflow: "Cross-Border Legalization Path" },
+  { route: "FLORIDA → MEXICO",   workflow: "Hague Apostille Review Path" },
   { route: "FLORIDA → PORTUGAL", workflow: "Hague Apostille Review Path" },
   { route: "FLORIDA → GREECE",   workflow: "Hague Convention Document Route" },
 ];

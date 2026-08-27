@@ -37,7 +37,7 @@ const CORRIDORS = [
   {
     origin: "Florida",
     destination: "Mexico",
-    label: "Cross-Border Legalization Path",
+    label: "Hague Apostille Review Path",
     href: "/apostille/mexico",
     icon: Landmark,
   },
