@@ -98,7 +98,7 @@ if (!failures.length) {
     if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(migration)) failures.push("Evidence/snapshot migration reintroduced user_metadata role authority.");
   }
 
-  for (const token of ["Liaison pattern → Milano-specific implementation", "UNKNOWN", "NO_SECOND_MATTER_ENGINE", "EXACT_MATCH", "CHANGED", "UNCHANGED"]) if (!matter360Doc.includes(token)) failures.push(`Matter 360 governance document missing: ${token}`);
+  for (const token of ["external architecture pattern → Milano-specific implementation", "UNKNOWN", "NO_SECOND_MATTER_ENGINE", "EXACT_MATCH", "CHANGED", "UNCHANGED"]) if (!matter360Doc.includes(token)) failures.push(`Matter 360 governance document missing: ${token}`);
 
   const secretNamesOnly = architecture.match(/environmentVariables:\s*\[[^\]]*\]/g) ?? [];
   if (!secretNamesOnly.length) failures.push("Environment dependency registry is missing variable-name metadata.");
