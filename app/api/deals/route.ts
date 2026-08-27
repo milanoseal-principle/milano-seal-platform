@@ -39,15 +39,16 @@ export async function GET(request: NextRequest) {
   const paymentStatus = searchParams.get("payment_status");
   const assignee = searchParams.get("assignee");
   const search = searchParams.get("search");
-  const requestedLimit = Number(searchParams.get("limit") ?? 500);
+  const requestedLimit = Number(searchParams.get("limit") ?? 100);
   const requestedOffset = Number(searchParams.get("offset") ?? 0);
-  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 500) : 500;
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 500) : 100;
   const offset = Number.isFinite(requestedOffset) ? Math.max(Math.trunc(requestedOffset), 0) : 0;
 
   let query = supabase
     .from("deals")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (status) query = query.eq("status", status);
@@ -67,13 +68,24 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) {
     console.error("[GET /api/deals]", { code: error.code, message: error.message });
     return NextResponse.json({ error: "Failed to fetch deals" }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(serializeDealMS), {
-    headers: { "Cache-Control": "private, no-store" },
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  const hasMore = offset + rows.length < total;
+
+  return NextResponse.json(rows.map(serializeDealMS), {
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Total-Count": String(total),
+      "X-Page-Offset": String(offset),
+      "X-Page-Limit": String(limit),
+      "X-Has-More": hasMore ? "true" : "false",
+      ...(hasMore ? { "X-Next-Offset": String(offset + rows.length) } : {}),
+    },
   });
 }
