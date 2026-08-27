@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { logActivity } from "@/lib/activity";
 import { serializeDealMS } from "@/lib/milanoSerialize";
+import { MATTER_STATES } from "@/data/matter-state-machine";
 import { revalidatePath } from "next/cache";
 
 const DEAL_API_ROLES = new Set([
@@ -19,6 +20,68 @@ const DEAL_API_ROLES = new Set([
   "client_support",
   "virtual_assistant",
 ]);
+
+// Canonical Wise settlement is owned by the governed payment/reconciliation path.
+// The generic Matter detail endpoint must never create, downgrade, refund, dispute,
+// or otherwise author payment truth.
+const PAYMENT_FIELDS = new Set([
+  "payment_status",
+  "payment_method",
+  "payment_confirmed",
+  "payment_amount_received",
+  "amount_paid",
+  "payment_reference",
+  "wise_reference",
+  "payment_failure_reason",
+  "payment_failed_at",
+  "balance_payment_status",
+  "balance_paid_at",
+  "refund_amount",
+  "refunded_at",
+  "dispute_reason",
+  "disputed_at",
+  "invoice_status",
+]);
+
+// These fields are evidence-bearing lifecycle truth owned by the canonical state
+// machine, scheduling/execution, apostille/authentication, custody/release and
+// carrier/delivery paths. A generic PATCH may not synthesize them.
+const PROTECTED_LIFECYCLE_FIELDS = new Set([
+  "status",
+  "execution_date",
+  "scheduled_at",
+  "schedule_at",
+  "execution_at",
+  "executed_at",
+  "apostille_at",
+  "apostille_status",
+  "shipped_at",
+  "tracking_number",
+  "carrier",
+  "delivery_status",
+  "delivery_at",
+  "delivered_at",
+  "release_verified",
+  "is_paid_and_released",
+  "completed_at",
+]);
+
+// The generic endpoint does not own any canonical Matter transition. Derive this
+// firewall from the single state-machine registry instead of duplicating states.
+const PROTECTED_LIFECYCLE_STATUSES = new Set<string>(MATTER_STATES);
+
+const GENERIC_METADATA_FIELDS = [
+  "followup_24h",
+  "followup_72h",
+  "follow_up_active",
+  "decline_risk",
+  "assignee",
+  "notes",
+] as const;
+
+function suppliedFields(body: Record<string, unknown>, fields: Set<string>) {
+  return [...fields].filter((field) => Object.prototype.hasOwnProperty.call(body, field));
+}
 
 async function requireDealApiAccess() {
   const ssr = await createClient();
@@ -100,116 +163,37 @@ export async function PATCH(
     if (!access.ok) return access.response;
 
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const supabase = createAdminClient();
 
-    const validStatuses = [
-      "new",
-      "reviewing",
-      "quoted",
-      "awaiting_payment",
-      "apostille",
-      "shipped",
-      "completed",
-      "lost",
-    ];
-    if (body.status && !validStatuses.includes(body.status)) {
-      const protectedTransition =
-        body.status === "scheduled" || body.status === "in_execution";
+    const paymentFields = suppliedFields(body, PAYMENT_FIELDS);
+    if (paymentFields.length > 0) {
       return NextResponse.json(
         {
-          error: protectedTransition
-            ? "PROTECTED_STATE_TRANSITION"
-            : "Invalid status",
-          message: protectedTransition
-            ? "Scheduling and execution must use their governed server routes."
-            : undefined,
-        },
-        { status: protectedTransition ? 409 : 400 },
-      );
-    }
-
-    // Payment settlement is server-authoritative. The generic operator/client
-    // PATCH route may never create a paid state or mutate settlement evidence.
-    if (
-      body.payment_status === "paid" ||
-      body.payment_confirmed === true ||
-      body.payment_amount_received !== undefined ||
-      body.amount_paid !== undefined ||
-      body.payment_reference !== undefined
-    ) {
-      return NextResponse.json(
-        {
-          error: "PAYMENT_CONFIRMATION_SERVER_ONLY",
-          message:
-            "Wise settlement must be confirmed by the canonical server reconciliation path.",
+          error: "PAYMENT_MUTATION_GOVERNED_PATH_REQUIRED",
+          message: "Wise settlement and payment lifecycle changes must use the canonical payment/reconciliation path.",
+          protectedFields: paymentFields,
         },
         { status: 409 },
       );
     }
 
-    const validPaymentStatuses = ["unpaid", "partial", "failed", "refunded"];
-    if (
-      body.payment_status &&
-      !validPaymentStatuses.includes(body.payment_status)
-    ) {
+    const lifecycleFields = suppliedFields(body, PROTECTED_LIFECYCLE_FIELDS);
+    if (lifecycleFields.length > 0) {
+      const requestedStatus = typeof body.status === "string" ? body.status : null;
       return NextResponse.json(
-        { error: "Invalid payment status" },
-        { status: 400 },
+        {
+          error: "GOVERNED_LIFECYCLE_MUTATION_REQUIRED",
+          message: "Matter state, scheduling, execution, apostille/authentication, shipment, delivery, release and completion truth must use their governed owning paths.",
+          protectedFields: lifecycleFields,
+          protectedStatus: requestedStatus && PROTECTED_LIFECYCLE_STATUSES.has(requestedStatus) ? requestedStatus : null,
+        },
+        { status: 409 },
       );
     }
-
-    const validBalanceStatuses = ["pending", "failed"];
-    if (
-      body.balance_payment_status &&
-      !validBalanceStatuses.includes(body.balance_payment_status)
-    ) {
-      return NextResponse.json(
-        { error: "Invalid balance payment status" },
-        { status: 400 },
-      );
-    }
-
-    // Wise is the only canonical payment provider.
-    if (body.payment_method && body.payment_method !== "wise") {
-      return NextResponse.json(
-        { error: "INVALID_PAYMENT_PROVIDER" },
-        { status: 400 },
-      );
-    }
-
-    const allowedFields = [
-      "status",
-      "payment_status",
-      "payment_method",
-      "payment_failure_reason",
-      "payment_failed_at",
-      "balance_payment_status",
-      "balance_paid_at",
-      "refund_amount",
-      "refunded_at",
-      "dispute_reason",
-      "disputed_at",
-      "invoice_status",
-      "execution_date",
-      "completed_at",
-      "followup_24h",
-      "followup_72h",
-      "follow_up_active",
-      "decline_risk",
-      "assignee",
-      "scheduled_at",
-      "execution_at",
-      "apostille_at",
-      "delivery_at",
-      "shipped_at",
-      "tracking_number",
-      "carrier",
-      "notes",
-    ];
 
     const updateData: Record<string, unknown> = {};
-    for (const field of allowedFields) {
+    for (const field of GENERIC_METADATA_FIELDS) {
       if (body[field] !== undefined) updateData[field] = body[field];
     }
 
@@ -218,20 +202,6 @@ export async function PATCH(
         { error: "No valid fields to update" },
         { status: 400 },
       );
-    }
-
-    const nowIso = new Date().toISOString();
-    if (
-      updateData.payment_status === "failed" &&
-      !updateData.payment_failed_at
-    ) {
-      updateData.payment_failed_at = nowIso;
-    }
-    if (updateData.payment_status === "refunded" && !updateData.refunded_at) {
-      updateData.refunded_at = nowIso;
-    }
-    if (updateData.dispute_reason && !updateData.disputed_at) {
-      updateData.disputed_at = nowIso;
     }
 
     const { data: deal, error } = await supabase
@@ -267,73 +237,6 @@ export async function PATCH(
           });
         }
 
-        if (updateData.payment_status === "refunded") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_updated",
-            detail: `Payment refunded${
-              updateData.refund_amount != null
-                ? ` ($${updateData.refund_amount})`
-                : ""
-            }`,
-            meta: {
-              status: "refunded",
-              amount: updateData.refund_amount ?? null,
-            },
-          });
-        } else if (updateData.payment_status === "failed") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_updated",
-            detail: `Payment failed${
-              updateData.payment_failure_reason
-                ? `: ${updateData.payment_failure_reason}`
-                : ""
-            }`,
-            meta: {
-              status: "failed",
-              reason: updateData.payment_failure_reason ?? null,
-            },
-          });
-        } else if (updateData.payment_status) {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_updated",
-            detail: `Payment status → ${updateData.payment_status}`,
-            meta: { payment_status: updateData.payment_status },
-          });
-        }
-
-        if (updateData.balance_payment_status === "failed") {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "payment_updated",
-            detail: "Balance payment failed",
-            meta: { status: "balance_failed" },
-          });
-        }
-
-        if (
-          updateData.tracking_number !== undefined ||
-          updateData.carrier !== undefined
-        ) {
-          await logActivity({
-            deal_id: dealRef,
-            actor,
-            action: "tracking_added",
-            detail: `Tracking ${updateData.tracking_number ?? "—"} via ${
-              updateData.carrier ?? "carrier"
-            }`,
-            meta: {
-              tracking_number: updateData.tracking_number,
-              carrier: updateData.carrier,
-            },
-          });
-        }
         if (updateData.notes !== undefined) {
           await logActivity({
             deal_id: dealRef,

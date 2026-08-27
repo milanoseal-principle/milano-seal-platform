@@ -14,8 +14,9 @@ assert.equal(
 assert.ok(
   typeof vercel.ignoreCommand === "string" &&
     vercel.ignoreCommand.includes("VERCEL_ENV") &&
-    vercel.ignoreCommand.includes("production"),
-  "Vercel must retain production-only build behavior to suppress preview spend",
+    vercel.ignoreCommand.includes("production") &&
+    vercel.ignoreCommand.includes("[validate-preview]"),
+  "Vercel must suppress ordinary preview spend while allowing an explicit one-commit validation override",
 );
 assert.ok(!workflow.includes("pull_request:"), "GitHub-hosted PR CI must remain manual-only during billing bypass");
 assert.ok(workflow.includes("workflow_dispatch:"), "Legacy GitHub Actions validation must remain manually recoverable");
@@ -35,10 +36,14 @@ const gates = [
   ["node", ["scripts/validate-nonhuman-production-hardening.mjs"]],
   ["node", ["scripts/validate-institutional-expansion.mjs"]],
   ["node", ["scripts/validate-system-control-plane.mjs"]],
+  ["node", ["scripts/validate-control-plane-module-coverage.mjs"]],
+  ["node", ["scripts/validate-control-plane-route-coverage.mjs"]],
+  ["node", ["scripts/validate-full-system-hardening.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
   ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
+  ["npm", ["run", "validate:migration-chain"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
   ["npm", ["run", "validate:cinematic-route-coverage"]],
   ["npm", ["run", "validate:responsive-safety"]],

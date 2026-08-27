@@ -21,7 +21,7 @@ The platform is purpose-built around the real variables that determine whether a
 - apostille, authentication or consular legalization path
 - custody, courier and final delivery evidence
 
-The HCCH 1961 Apostille Convention currently has **129 Contracting Parties**. This is a coverage fact, not a universal apostille guarantee. Each Matter still requires document-specific and receiving-authority review.
+The HCCH 1961 Apostille Convention currently has **130 Contracting Parties**. This is a coverage fact, not a universal apostille guarantee. Each Matter still requires document-specific and receiving-authority review.
 
 ## The Five-System Model
 

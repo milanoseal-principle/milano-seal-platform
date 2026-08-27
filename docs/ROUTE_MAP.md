@@ -8,7 +8,7 @@
 ## Purpose
 
 This registry is generated from current `app/**/page.*` and `app/**/route.*` source files.
-It protects the production-critical Milano Seal client, operator, payment, intake, release and Wise surfaces from documentation drift.
+It protects the production-critical Milano Seal client, operator, payment, intake, Matter Truth, reconciliation, release and Wise surfaces from documentation drift.
 
 The complete application route tree remains the source of truth for every non-critical route.
 This document does not replace role authorization, the canonical Matter state machine, execution truth, Wise reconciliation, RLS, or live transaction certification.
@@ -23,6 +23,8 @@ This document does not replace role authorization, the canonical Matter state ma
 | `/today` | PAGE | `app/today/page.tsx` |
 | `/dashboard` | PAGE | `app/dashboard/page.tsx` |
 | `/dashboard/control-plane` | PAGE | `app/dashboard/control-plane/page.tsx` |
+| `/dashboard/reconciliation` | PAGE | `app/dashboard/reconciliation/page.tsx` |
+| `/dashboard/matters/[matterId]/truth` | PAGE | `app/dashboard/matters/[matterId]/truth/page.tsx` |
 | `/dashboard/pipeline` | PAGE | `app/dashboard/pipeline/page.tsx` |
 | `/dashboard/needs-review` | PAGE | `app/dashboard/needs-review/page.tsx` |
 | `/dashboard/follow-ups` | PAGE | `app/dashboard/follow-ups/page.tsx` |
@@ -49,6 +51,8 @@ This document does not replace role authorization, the canonical Matter state ma
 - Vercel production validation fails when this file drifts from source.
 - `/today` is a read-only Milano Operator Intelligence surface.
 - `/dashboard/control-plane` is the canonical platform meta-governance and system-registry surface.
+- `/dashboard/reconciliation` is the canonical read-only cross-domain discrepancy surface.
+- `/dashboard/matters/[matterId]/truth` is the operator Matter Truth inspection surface and does not own canonical state.
 - `/portal/payment` remains canonical-Matter and Wise-reconciliation driven.
 - `/api/webhooks/wise` is the canonical production Wise webhook.
 - Live TIFF and Damiani acceptance remain mandatory after code/deployment validation.

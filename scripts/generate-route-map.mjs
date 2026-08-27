@@ -19,6 +19,8 @@ const CRITICAL_ROUTES = [
   "/today",
   "/dashboard",
   "/dashboard/control-plane",
+  "/dashboard/reconciliation",
+  "/dashboard/matters/[matterId]/truth",
   "/dashboard/pipeline",
   "/dashboard/needs-review",
   "/dashboard/follow-ups",
@@ -50,19 +52,13 @@ function fail(message) {
 function walk(dir, output = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === "node_modules" || entry.name === ".next") continue;
-
     const fullPath = join(dir, entry.name);
-
     if (entry.isDirectory()) {
       walk(fullPath, output);
       continue;
     }
-
-    if (PAGE_FILE_RE.test(entry.name) || ROUTE_FILE_RE.test(entry.name)) {
-      output.push(fullPath);
-    }
+    if (PAGE_FILE_RE.test(entry.name) || ROUTE_FILE_RE.test(entry.name)) output.push(fullPath);
   }
-
   return output;
 }
 
@@ -70,28 +66,13 @@ function cleanSegment(segment) {
   if (!segment) return null;
   if (segment.startsWith("@")) return null;
   if (segment.startsWith("(") && segment.endsWith(")")) return null;
-
-  return segment
-    .replace(/^\(\.\.\.\)/, "")
-    .replace(/^\(\.\.\)/, "")
-    .replace(/^\(\.\)/, "");
+  return segment.replace(/^\(\.\.\.\)/, "").replace(/^\(\.\.\)/, "").replace(/^\(\.\)/, "");
 }
 
 function routeFromFile(fullPath) {
-  const appRelative = relative(APP_DIR, fullPath)
-    .split(sep)
-    .join("/");
-
-  const withoutLeaf = appRelative.replace(
-    /\/?(?:page\.(?:js|jsx|ts|tsx)|route\.(?:js|ts))$/,
-    "",
-  );
-
-  const segments = withoutLeaf
-    .split("/")
-    .map(cleanSegment)
-    .filter(Boolean);
-
+  const appRelative = relative(APP_DIR, fullPath).split(sep).join("/");
+  const withoutLeaf = appRelative.replace(/\/?(?:page\.(?:js|jsx|ts|tsx)|route\.(?:js|ts))$/, "");
+  const segments = withoutLeaf.split("/").map(cleanSegment).filter(Boolean);
   return segments.length ? `/${segments.join("/")}` : "/";
 }
 
@@ -99,21 +80,15 @@ function escapeCell(value) {
   return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
-if (!existsSync(APP_DIR)) {
-  fail("app/ directory not found");
-}
+if (!existsSync(APP_DIR)) fail("app/ directory not found");
 
 const discovered = new Map();
-
 for (const fullPath of walk(APP_DIR)) {
   const route = routeFromFile(fullPath);
   const repoPath = relative(ROOT, fullPath).split(sep).join("/");
   const leaf = fullPath.split(sep).at(-1) ?? "";
   const kind = PAGE_FILE_RE.test(leaf) ? "PAGE" : "API";
-
-  if (!discovered.has(route)) {
-    discovered.set(route, { route, file: repoPath, kind });
-  }
+  if (!discovered.has(route)) discovered.set(route, { route, file: repoPath, kind });
 }
 
 const rows = CRITICAL_ROUTES.map((route) => {
@@ -132,7 +107,7 @@ const generated = `# The Milano Seal™ — Generated Canonical Route Map
 ## Purpose
 
 This registry is generated from current \`app/**/page.*\` and \`app/**/route.*\` source files.
-It protects the production-critical Milano Seal client, operator, payment, intake, release and Wise surfaces from documentation drift.
+It protects the production-critical Milano Seal client, operator, payment, intake, Matter Truth, reconciliation, release and Wise surfaces from documentation drift.
 
 The complete application route tree remains the source of truth for every non-critical route.
 This document does not replace role authorization, the canonical Matter state machine, execution truth, Wise reconciliation, RLS, or live transaction certification.
@@ -141,12 +116,7 @@ This document does not replace role authorization, the canonical Matter state ma
 
 | Route | Kind | Source File |
 |---|---|---|
-${rows
-  .map(
-    (row) =>
-      `| \`${escapeCell(row.route)}\` | ${escapeCell(row.kind)} | \`${escapeCell(row.file)}\` |`,
-  )
-  .join("\n")}
+${rows.map((row) => `| \`${escapeCell(row.route)}\` | ${escapeCell(row.kind)} | \`${escapeCell(row.file)}\` |`).join("\n")}
 
 ## Governance
 
@@ -155,26 +125,21 @@ ${rows
 - Vercel production validation fails when this file drifts from source.
 - \`/today\` is a read-only Milano Operator Intelligence surface.
 - \`/dashboard/control-plane\` is the canonical platform meta-governance and system-registry surface.
+- \`/dashboard/reconciliation\` is the canonical read-only cross-domain discrepancy surface.
+- \`/dashboard/matters/[matterId]/truth\` is the operator Matter Truth inspection surface and does not own canonical state.
 - \`/portal/payment\` remains canonical-Matter and Wise-reconciliation driven.
 - \`/api/webhooks/wise\` is the canonical production Wise webhook.
 - Live TIFF and Damiani acceptance remain mandatory after code/deployment validation.
 `;
 
 if (CHECK_MODE) {
-  if (!existsSync(OUTPUT_FILE)) {
-    fail("docs/ROUTE_MAP.md does not exist; regenerate it");
-  }
-
+  if (!existsSync(OUTPUT_FILE)) fail("docs/ROUTE_MAP.md does not exist; regenerate it");
   const existing = readFileSync(OUTPUT_FILE, "utf8");
-
   if (existing !== generated) {
-    console.error(
-      "FAIL route-map: docs/ROUTE_MAP.md does not match current production-critical routes.",
-    );
+    console.error("FAIL route-map: docs/ROUTE_MAP.md does not match current production-critical routes.");
     console.error("Run: node scripts/generate-route-map.mjs");
     process.exit(1);
   }
-
   console.log(`PASS route-map: ${rows.length} production-critical routes match source`);
   process.exit(0);
 }

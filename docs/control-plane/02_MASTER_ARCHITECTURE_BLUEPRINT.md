@@ -40,7 +40,7 @@ Intake, review, pricing, Wise payment, scheduling, RON/notarial execution, apost
 - **Translation** is a separate Matter decision.
 - **Receiving authority** controls final acceptance.
 
-The HCCH 1961 Apostille Convention currently has **129 Contracting Parties**. The system treats this as externally verified coverage metadata, not as an automatic per-document apostille conclusion.
+The HCCH 1961 Apostille Convention currently has **130 Contracting Parties**. The system treats this as externally verified coverage metadata, not as an automatic per-document apostille conclusion.
 
 ## 7. Data Authorities
 
