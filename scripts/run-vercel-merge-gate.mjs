@@ -17,26 +17,11 @@ assert.ok(
     vercel.ignoreCommand.includes("production"),
   "Vercel must retain production-only build behavior to suppress preview spend",
 );
-assert.ok(
-  !workflow.includes("pull_request:"),
-  "GitHub-hosted PR CI must remain manual-only during billing bypass",
-);
-assert.ok(
-  workflow.includes("workflow_dispatch:"),
-  "Legacy GitHub Actions validation must remain manually recoverable",
-);
-assert.ok(
-  certification.includes("CERTIFIED PRODUCTION SHA"),
-  "Certification must bind to an exact deployed SHA",
-);
-assert.ok(
-  !certification.includes("main @ 310886b"),
-  "Stale hardcoded certification SHA must be removed",
-);
-assert.ok(
-  certification.includes("Vercel external merge gate"),
-  "Certification must name the external merge gate",
-);
+assert.ok(!workflow.includes("pull_request:"), "GitHub-hosted PR CI must remain manual-only during billing bypass");
+assert.ok(workflow.includes("workflow_dispatch:"), "Legacy GitHub Actions validation must remain manually recoverable");
+assert.ok(certification.includes("CERTIFIED PRODUCTION SHA"), "Certification must bind to an exact deployed SHA");
+assert.ok(!certification.includes("main @ 310886b"), "Stale hardcoded certification SHA must be removed");
+assert.ok(certification.includes("Vercel external merge gate"), "Certification must name the external merge gate");
 
 console.log("PASS billing-independent CI governance");
 
@@ -48,6 +33,7 @@ const gates = [
   ["node", ["scripts/validate-milano-os-surface-unification.mjs"]],
   ["node", ["scripts/validate-milano-brand-throughout.mjs"]],
   ["node", ["scripts/validate-nonhuman-production-hardening.mjs"]],
+  ["node", ["scripts/validate-institutional-expansion.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
@@ -73,25 +59,20 @@ const gates = [
 for (const [command, args] of gates) {
   const label = `${command} ${args.join(" ")}`;
   console.log(`\n=== VERCEL MERGE GATE: ${label} ===`);
-
   const result = spawnSync(command, args, {
     stdio: "inherit",
     env: { ...process.env, CI: "1" },
     shell: process.platform === "win32",
   });
-
   if (result.error) {
     console.error(`Gate could not start: ${label}`);
     console.error(result.error);
     process.exit(1);
   }
-
   if (result.status !== 0) {
     console.error(`Gate failed (${result.status}): ${label}`);
     process.exit(result.status ?? 1);
   }
 }
 
-console.log(
-  "\nPASS: billing-independent Vercel merge gate completed. next build may proceed.",
-);
+console.log("\nPASS: billing-independent Vercel merge gate completed. next build may proceed.");
