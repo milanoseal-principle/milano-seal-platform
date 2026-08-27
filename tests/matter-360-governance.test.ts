@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   buildMatterTruthChangeSummary,
   compareAcceptedMatterTruth,
+  isAcceptedMatterTruthSnapshot,
   selectAcceptedMatterTruthBaseline,
   type MatterTruthSnapshot,
 } from "@/lib/matter/matterTruthArchive";
@@ -32,6 +33,14 @@ test("Matter Truth baseline uses only the prior accepted snapshot", () => {
   assert.equal(selectAcceptedMatterTruthBaseline([prior, pending, current], current)?.snapshotId, "snap-prior");
 });
 
+test("Matter Truth accepted state requires valid internally ordered acceptance evidence", () => {
+  assert.equal(isAcceptedMatterTruthSnapshot(accepted()), true);
+  assert.equal(isAcceptedMatterTruthSnapshot(accepted({ acceptedAt: "not-a-date" })), false);
+  assert.equal(isAcceptedMatterTruthSnapshot(accepted({ acceptedAt: "2026-08-27T11:59:59Z" })), false);
+  assert.equal(isAcceptedMatterTruthSnapshot(accepted({ buildVersion: "  " })), false);
+  assert.equal(selectAcceptedMatterTruthBaseline([accepted({ snapshotId: "prior" })], accepted({ capturedAt: "invalid" })), null);
+});
+
 test("Matter Truth delta returns CHANGED UNCHANGED and UNKNOWN without manufacturing differences", () => {
   const prior = accepted({
     snapshotId: "snap-prior",
@@ -49,16 +58,23 @@ test("Matter Truth delta returns CHANGED UNCHANGED and UNKNOWN without manufactu
   assert.equal(summary.unknown.some((delta) => delta.domain === "delivery"), true);
 });
 
-test("Matter Truth comparison is deterministic across evidence order and object key order", () => {
+test("Matter Truth comparison is deterministic across evidence order duplicates and object key order", () => {
   const prior = accepted({
     snapshotId: "snap-prior",
     capturedAt: "2026-08-26T12:00:00Z",
     acceptedAt: "2026-08-26T12:01:00Z",
-    domains: { payment: { state: "VERIFIED", sourceAuthority: "Wise", authorityVersion: "wise-1", evidenceRefs: ["b", "a"], value: { b: 2, a: 1 } } },
+    domains: { payment: { state: "VERIFIED", sourceAuthority: "Wise", authorityVersion: "wise-1", evidenceRefs: ["b", "a", "a"], value: { b: 2, a: 1 } } },
   });
   const current = accepted({ domains: { payment: { state: "VERIFIED", sourceAuthority: "Wise", authorityVersion: "wise-1", evidenceRefs: ["a", "b"], value: { a: 1, b: 2 } } } });
   const payment = compareAcceptedMatterTruth(prior, current).find((delta) => delta.domain === "payment");
   assert.equal(payment?.state, "UNCHANGED");
+});
+
+test("Matter Truth comparison prohibits cross-Matter baselines", () => {
+  const prior = accepted({ snapshotId: "other-prior", matterId: "matter-2", capturedAt: "2026-08-26T12:00:00Z", acceptedAt: "2026-08-26T12:01:00Z" });
+  const deltas = compareAcceptedMatterTruth(prior, accepted());
+  assert.equal(deltas.every((delta) => delta.state === "UNKNOWN"), true);
+  assert.match(deltas[0]?.reason ?? "", /different Matters/);
 });
 
 test("Matter output envelope is explicitly a MATTER_CONTROL projection and cannot become a state engine", () => {
@@ -75,23 +91,27 @@ test("Matter output envelope is explicitly a MATTER_CONTROL projection and canno
   assert.equal(envelope.mutationPolicy, "READ_ONLY");
   assert.equal(envelope.invariants.includes("NO_SECOND_MATTER_ENGINE"), true);
   assert.equal(envelope.invariants.includes("NO_SECOND_PAYMENT_ENGINE"), true);
+  assert.equal(envelope.invariants.includes("UNKNOWN_IS_NOT_FALSE"), true);
   assert.equal(validateMatterOutputEnvelope(envelope).valid, true);
+  assert.throws(() => createMatterOutputEnvelope({ matterId: "matter-1", projectionId: "bad", audience: "operator", buildVersion: "v1", generatedAt: "invalid", payload: {} }));
+  assert.throws(() => createMatterOutputEnvelope({ matterId: "matter-1", projectionId: "bad", audience: "operator", buildVersion: "v1", authorityVersions: { " ": "x" }, payload: {} }));
 });
 
 test("evidence reconciliation uses strong references for exact match but never authorizes canonical mutation", () => {
-  const result = reconcileMatterEvidence({
-    sourceType: "wise_webhook",
+  const input = {
+    sourceType: "wise_webhook" as const,
     evidenceHash: "sha256:abc",
     occurredAt: "2026-08-27T12:00:00Z",
-    wiseReference: "WISE-123",
-  }, [
+    wiseReference: " WISE-123 ",
+  };
+  const result = reconcileMatterEvidence(input, [
     { matterId: "matter-1", wiseReference: "WISE-123" },
     { matterId: "matter-2", wiseReference: "WISE-456" },
   ]);
   assert.equal(result.state, "EXACT_MATCH");
   assert.equal(result.matterId, "matter-1");
   assert.equal(result.canonicalMutationAuthorized, false);
-  assert.equal(buildEvidenceLedgerAppend({ sourceType: "wise_webhook", evidenceHash: "sha256:abc", occurredAt: "2026-08-27T12:00:00Z", wiseReference: "WISE-123" }, result)?.metadata.canonicalMutationAuthorized, false);
+  assert.equal(buildEvidenceLedgerAppend(input, result)?.metadata.canonicalMutationAuthorized, false);
 });
 
 test("conflicting strong evidence references fail into conflict review", () => {
@@ -109,18 +129,32 @@ test("conflicting strong evidence references fail into conflict review", () => {
   assert.equal(result.matterId, null);
 });
 
-test("identity-only evidence remains review-required rather than silently creating truth", () => {
-  const result = reconcileMatterEvidence({
-    sourceType: "email_import",
+test("identity-only evidence remains review-required and cannot attach to a Matter ledger", () => {
+  const input = {
+    sourceType: "email_import" as const,
     evidenceHash: "sha256:ghi",
     occurredAt: "2026-08-27T12:00:00Z",
     clientEmail: "client@example.com",
     destinationCountry: "Italy",
-  }, [
+  };
+  const result = reconcileMatterEvidence(input, [
     { matterId: "matter-1", clientEmail: "client@example.com", destinationCountry: "Italy" },
   ]);
   assert.equal(result.state, "REVIEW_REQUIRED");
   assert.equal(result.canonicalMutationAuthorized, false);
+  assert.equal(buildEvidenceLedgerAppend(input, result), null);
+});
+
+test("invalid evidence time fails unmatched before Matter attachment", () => {
+  const result = reconcileMatterEvidence({
+    sourceType: "operator_upload",
+    evidenceHash: "sha256:invalid-time",
+    occurredAt: "not-a-time",
+    explicitMatterId: "matter-1",
+  }, [{ matterId: "matter-1" }]);
+  assert.equal(result.state, "UNMATCHED");
+  assert.equal(result.matterId, null);
+  assert.equal(buildEvidenceLedgerAppend({ sourceType: "operator_upload", evidenceHash: "sha256:invalid-time", occurredAt: "not-a-time", explicitMatterId: "matter-1" }, result), null);
 });
 
 test("Matter provenance matrix preserves separate authorities and UNKNOWN for missing domains", () => {
@@ -132,4 +166,16 @@ test("Matter provenance matrix preserves separate authorities and UNKNOWN for mi
   assert.equal(matrix.find((row) => row.domain === "payment")?.sourceAuthority, "Wise verified settlement");
   assert.equal(matrix.find((row) => row.domain === "delivery")?.state, "UNKNOWN");
   assert.equal(summary.unknown > 0, true);
+});
+
+test("Matter provenance fails closed for future timestamps missing evidence and invalid cadence", () => {
+  const now = new Date("2026-08-27T12:00:00Z");
+  const matrix = buildMatterProvenanceMatrix([
+    { domain: "payment", sourceAuthority: "Wise", authorityMode: "EXTERNAL_VERIFIED", evidenceRefs: ["wise-1"], verifiedAt: "2026-08-28T12:00:00Z" },
+    { domain: "authority", sourceAuthority: "HCCH", authorityMode: "EXTERNAL_VERIFIED", evidenceRefs: [], verifiedAt: "2026-08-27T10:00:00Z" },
+    { domain: "delivery", sourceAuthority: "Carrier", authorityMode: "EXTERNAL_VERIFIED", evidenceRefs: ["delivery-1"], verifiedAt: "2026-08-27T10:00:00Z", reviewCadenceDays: 0 },
+  ], now);
+  assert.equal(matrix.find((row) => row.domain === "payment")?.state, "UNKNOWN");
+  assert.equal(matrix.find((row) => row.domain === "authority")?.state, "UNKNOWN");
+  assert.equal(matrix.find((row) => row.domain === "delivery")?.state, "UNKNOWN");
 });
