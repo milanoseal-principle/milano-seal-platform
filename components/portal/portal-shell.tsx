@@ -100,7 +100,11 @@ export function PortalShell({ children }: { children: ReactNode }) {
       title="Secure Matter Portal"
       subtitle="One Matter · one verified status · one clear next action"
       brandSubtitle="Secure Matter Portal"
-      topStrip={<CredentialTicker />}
+      topStrip={
+        <div style={{ paddingTop: "var(--sa-top)", background: "#070707" }}>
+          <CredentialTicker />
+        </div>
+      }
       sidebarContext={sidebarContext}
       identity={{
         name: deal?.client_name ?? "Client",
