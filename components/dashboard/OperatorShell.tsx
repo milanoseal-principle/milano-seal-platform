@@ -12,6 +12,7 @@ const NAV: MilanoOSNavItem[] = [
   { href: "/dashboard/compliance-atlas", label: "Compliance", icon: "clipboard", group: "Intelligence", hint: "Authority and pathway review" },
   { href: "/dashboard/acquisition", label: "Acquisition", icon: "building", group: "Intelligence", hint: "Commercial pipeline" },
   { href: "/dashboard/operator-spine", label: "Intelligence", icon: "activity", group: "Intelligence", hint: "Read-only operator context" },
+  { href: "/dashboard/expansion", label: "Expansion", icon: "compass", group: "Intelligence", hint: "Institutional reconciliation, trust and network engines" },
   { href: "/dashboard/payments", label: "Payments", icon: "dollar", group: "Finance", hint: "Wise settlement truth" },
   { href: "/dashboard/payments/discounts", label: "Discount Codes", icon: "percent", group: "Finance", hint: "Governed courtesy controls" },
   { href: "/dashboard/payments/discounts/report", label: "Discount Report", icon: "chart", group: "Finance", hint: "Courtesy audit" },
