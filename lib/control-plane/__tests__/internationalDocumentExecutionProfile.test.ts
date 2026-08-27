@@ -6,6 +6,7 @@ import {
   INTERNATIONAL_EXECUTION_LANES,
   INTERNATIONAL_MATTER_FACTS,
   deriveInternationalExecutionPath,
+  type InternationalExecutionLaneId,
 } from "@/lib/control-plane/internationalDocumentExecutionProfile";
 
 test("HCCH Apostille Convention profile is locked to 129 Contracting Parties with Matter-specific caveat", () => {
@@ -16,15 +17,22 @@ test("HCCH Apostille Convention profile is locked to 129 Contracting Parties wit
 });
 
 test("international execution model includes RON, state apostille, federal and non-Hague lanes", () => {
-  const ids = new Set(INTERNATIONAL_EXECUTION_LANES.map((lane) => lane.id));
-  for (const id of ["ron_execution", "state_apostille", "federal_authentication", "non_hague_legalization", "international_courier_release"]) {
+  const ids = new Set<InternationalExecutionLaneId>(INTERNATIONAL_EXECUTION_LANES.map((lane) => lane.id));
+  const required: readonly InternationalExecutionLaneId[] = [
+    "ron_execution",
+    "state_apostille",
+    "federal_authentication",
+    "non_hague_legalization",
+    "international_courier_release",
+  ];
+  for (const id of required) {
     assert.equal(ids.has(id), true, `missing execution lane ${id}`);
   }
 });
 
 test("canonical international Matter facts include origin, destination, receiving authority and notarial decisions", () => {
-  for (const fact of ["document_identity", "origin_country_or_state", "destination_country", "receiving_authority", "notarial_act", "execution_method", "apostille_or_authentication_requirement", "competent_authority"]) {
-    assert.equal(INTERNATIONAL_MATTER_FACTS.includes(fact as never), true, `missing Matter fact ${fact}`);
+  for (const fact of ["document_identity", "origin_country_or_state", "destination_country", "receiving_authority", "notarial_act", "execution_method", "apostille_or_authentication_requirement", "competent_authority"] as const) {
+    assert.equal(INTERNATIONAL_MATTER_FACTS.includes(fact), true, `missing Matter fact ${fact}`);
   }
 });
 
