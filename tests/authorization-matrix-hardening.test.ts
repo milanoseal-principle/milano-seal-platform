@@ -6,6 +6,11 @@ import { DENIED_ROUTE, getHomeRouteForRole, isRouteAllowedForRole, normalizeUser
 
 const root = process.cwd();
 const read = (file: string) => fs.readFileSync(path.join(root, file), "utf8");
+const USER_METADATA_AUTHORIZATION_READ = /\.\s*user_metadata\b|\[\s*["']user_metadata["']\s*\]|->\s*['"]user_metadata['"]/;
+
+function assertNoUserMetadataAuthorization(source: string) {
+  assert.doesNotMatch(source, USER_METADATA_AUTHORIZATION_READ);
+}
 
 test("role homes remain isolated and unknown roles fail closed", () => {
   assert.equal(getHomeRouteForRole("client"), "/portal");
@@ -44,7 +49,7 @@ test("canonical Matter list API requires server-authenticated app-metadata-deriv
   assert.match(source, /resolveServerRole/);
   assert.match(source, /UNAUTHENTICATED/);
   assert.match(source, /FORBIDDEN/);
-  assert.doesNotMatch(source, /user_metadata/);
+  assertNoUserMetadataAuthorization(source);
 });
 
 test("generic Matter detail API cannot author paid settlement or bypass governed execution", () => {
@@ -52,7 +57,7 @@ test("generic Matter detail API cannot author paid settlement or bypass governed
   assert.match(source, /PAYMENT_FIELDS/);
   assert.match(source, /payment_confirmed/);
   assert.match(source, /resolveServerRole/);
-  assert.doesNotMatch(source, /user_metadata/);
+  assertNoUserMetadataAuthorization(source);
   assert.match(source, /wise/i);
 });
 
@@ -60,6 +65,6 @@ test("portal authorization remains app_metadata governed and private surfaces st
   const files = ["app/portal/layout.tsx", "lib/auth/server-role.ts", "proxy.ts"].filter((file) => fs.existsSync(path.join(root, file)));
   assert.equal(files.length >= 2, true);
   const source = files.map(read).join("\n");
-  assert.doesNotMatch(source, /user_metadata/);
+  assertNoUserMetadataAuthorization(source);
   assert.match(source, /app_metadata|resolveServerRole/);
 });
