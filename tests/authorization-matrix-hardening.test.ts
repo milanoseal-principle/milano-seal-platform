@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { MATTER_STATES } from "@/data/matter-state-machine";
 import { DENIED_ROUTE, getHomeRouteForRole, isRouteAllowedForRole, normalizeUserRole } from "@/lib/auth/roleRedirect";
 
 const root = process.cwd();
@@ -79,20 +80,9 @@ test("generic Matter detail API cannot author Wise payment or governed lifecycle
     assert.match(source, new RegExp(`\\"${protectedField}\\"`), protectedField);
   }
 
-  for (const protectedStatus of [
-    "deposit_confirmed",
-    "scheduling_unlocked",
-    "scheduled",
-    "in_execution",
-    "apostille_submitted",
-    "final_payment_confirmed",
-    "ready_for_release",
-    "in_transit",
-    "delivered",
-    "completed",
-  ]) {
-    assert.match(source, new RegExp(`\\"${protectedStatus}\\"`), protectedStatus);
-  }
+  assert.match(source, /import \{ MATTER_STATES \} from "@\/data\/matter-state-machine"/);
+  assert.match(source, /new Set<string>\(MATTER_STATES\)/);
+  assert.ok(MATTER_STATES.length > 0, "Canonical Matter state registry must not be empty.");
 
   const metadataMatch = source.match(/const GENERIC_METADATA_FIELDS = \[([\s\S]*?)\] as const;/);
   assert.ok(metadataMatch, "Generic metadata allowlist must remain explicit.");
