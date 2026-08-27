@@ -48,24 +48,51 @@ export interface MatterEvidenceReconciliation {
 }
 
 const normalize = (value: string | null | undefined) => value?.trim().toLowerCase() ?? "";
+const cleanStrongReference = (value: string | null | undefined) => value?.trim() ?? "";
+
+function sameStrongReference(a: string | null | undefined, b: string | null | undefined) {
+  const left = cleanStrongReference(a);
+  const right = cleanStrongReference(b);
+  return Boolean(left) && left === right;
+}
+
+function listContainsStrongReference(values: readonly string[] | undefined, value: string | null | undefined) {
+  const expected = cleanStrongReference(value);
+  return Boolean(expected) && Boolean(values?.some((candidate) => cleanStrongReference(candidate) === expected));
+}
 
 function uniqueMatterIds(candidates: readonly MatterEvidenceCandidate[]) {
-  return [...new Set(candidates.map((candidate) => candidate.matterId))];
+  return [...new Set(candidates.map((candidate) => candidate.matterId.trim()).filter(Boolean))];
 }
 
 function exactReferenceMatches(input: MatterEvidenceInput, candidates: readonly MatterEvidenceCandidate[]) {
   const matches = new Map<string, string[]>();
-  const add = (matterId: string, reason: string) => matches.set(matterId, [...(matches.get(matterId) ?? []), reason]);
+  const add = (matterId: string, reason: string) => {
+    const id = matterId.trim();
+    if (!id) return;
+    matches.set(id, [...(matches.get(id) ?? []), reason]);
+  };
 
   for (const candidate of candidates) {
-    if (input.explicitMatterId && candidate.matterId === input.explicitMatterId) add(candidate.matterId, "explicit_matter_id");
-    if (input.providerEventId && candidate.providerEventIds?.includes(input.providerEventId)) add(candidate.matterId, "provider_event_id");
-    if (input.sourceReference && candidate.sourceReferences?.includes(input.sourceReference)) add(candidate.matterId, "source_reference");
-    if (input.wiseReference && candidate.wiseReference === input.wiseReference) add(candidate.matterId, "wise_reference");
-    if (input.trackingNumber && candidate.trackingNumber === input.trackingNumber) add(candidate.matterId, "tracking_number");
+    if (sameStrongReference(input.explicitMatterId, candidate.matterId)) add(candidate.matterId, "explicit_matter_id");
+    if (listContainsStrongReference(candidate.providerEventIds, input.providerEventId)) add(candidate.matterId, "provider_event_id");
+    if (listContainsStrongReference(candidate.sourceReferences, input.sourceReference)) add(candidate.matterId, "source_reference");
+    if (sameStrongReference(input.wiseReference, candidate.wiseReference)) add(candidate.matterId, "wise_reference");
+    if (sameStrongReference(input.trackingNumber, candidate.trackingNumber)) add(candidate.matterId, "tracking_number");
   }
 
   return matches;
+}
+
+function unmatched(reason: string): MatterEvidenceReconciliation {
+  return {
+    state: "UNMATCHED",
+    matterId: null,
+    candidateMatterIds: [],
+    matchedBy: [],
+    reasons: [reason],
+    canonicalMutationAuthorized: false,
+  };
 }
 
 export function reconcileMatterEvidence(
@@ -73,25 +100,15 @@ export function reconcileMatterEvidence(
   candidates: readonly MatterEvidenceCandidate[],
 ): MatterEvidenceReconciliation {
   if (!MATTER_EVIDENCE_SOURCE_TYPES.includes(input.sourceType)) {
-    return {
-      state: "UNMATCHED",
-      matterId: null,
-      candidateMatterIds: [],
-      matchedBy: [],
-      reasons: ["Evidence source type is not governed."],
-      canonicalMutationAuthorized: false,
-    };
+    return unmatched("Evidence source type is not governed.");
   }
 
   if (!input.evidenceHash.trim()) {
-    return {
-      state: "UNMATCHED",
-      matterId: null,
-      candidateMatterIds: [],
-      matchedBy: [],
-      reasons: ["Evidence hash is required before Matter reconciliation."],
-      canonicalMutationAuthorized: false,
-    };
+    return unmatched("Evidence hash is required before Matter reconciliation.");
+  }
+
+  if (!Number.isFinite(Date.parse(input.occurredAt))) {
+    return unmatched("Evidence occurredAt must be a valid timestamp before Matter reconciliation.");
   }
 
   const exact = exactReferenceMatches(input, candidates);
@@ -114,7 +131,7 @@ export function reconcileMatterEvidence(
       state: "EXACT_MATCH",
       matterId,
       candidateMatterIds: [matterId],
-      matchedBy: exact.get(matterId) ?? [],
+      matchedBy: [...new Set(exact.get(matterId) ?? [])],
       reasons: ["A unique canonical Matter matched through explicit or provider-controlled reference evidence."],
       canonicalMutationAuthorized: false,
     };
@@ -154,18 +171,11 @@ export function reconcileMatterEvidence(
     };
   }
 
-  return {
-    state: "UNMATCHED",
-    matterId: null,
-    candidateMatterIds: [],
-    matchedBy: [],
-    reasons: ["Evidence does not match a canonical Matter with governed certainty."],
-    canonicalMutationAuthorized: false,
-  };
+  return unmatched("Evidence does not match a canonical Matter with governed certainty.");
 }
 
 export function buildEvidenceLedgerAppend(input: MatterEvidenceInput, reconciliation: MatterEvidenceReconciliation) {
-  if (!reconciliation.matterId) return null;
+  if (reconciliation.state !== "EXACT_MATCH" || !reconciliation.matterId) return null;
   return {
     matterId: reconciliation.matterId,
     eventType: "evidence_ingested",
@@ -173,7 +183,7 @@ export function buildEvidenceLedgerAppend(input: MatterEvidenceInput, reconcilia
     occurredAt: input.occurredAt,
     source: input.sourceType,
     sourceReference: input.sourceReference ?? input.providerEventId ?? null,
-    evidenceReference: input.evidenceHash,
+    evidenceReference: input.evidenceHash.trim(),
     reason: reconciliation.reasons.join(" "),
     metadata: {
       reconciliationState: reconciliation.state,
