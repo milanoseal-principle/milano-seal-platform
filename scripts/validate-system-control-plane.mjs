@@ -139,7 +139,7 @@ if (!failures.length) {
   for (const capability of ["matter_truth_snapshot_archive", "matter_output_envelopes", "matter_evidence_reconciliation", "matter_provenance_matrix"]) {
     if (!hardeningRegistry.includes(`id: \"${capability}\"`)) failures.push(`Matter 360 capability missing from hardening registry: ${capability}`);
   }
-  if (!matter360Doc.includes("Liaison pattern → Milano-specific implementation")) failures.push("Matter 360 governance does not preserve the cross-project boundary rule.");
+  if (!matter360Doc.includes("external architecture pattern → Milano-specific implementation")) failures.push("Matter 360 governance does not preserve the external-pattern / Milano-runtime boundary rule.");
 
   if (!shell.includes('href: "/dashboard/control-plane"')) failures.push("Operator navigation does not expose the System Control Plane.");
   if (!routeMap.includes("`/dashboard/control-plane`")) failures.push("Canonical route map does not register the System Control Plane.");
