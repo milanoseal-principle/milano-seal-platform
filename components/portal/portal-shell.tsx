@@ -1,29 +1,17 @@
 "use client";
 
-import { ReactNode, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  ClipboardList,
-  Receipt,
-  Truck,
-  FolderOpen,
-  MessageCircle,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-} from "lucide-react";
-import { usePortal } from "./portal-context";
+import type { ReactNode } from "react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
+import { MilanoOSShell, type MilanoOSNavItem } from "@/components/os/MilanoOSShell";
+import { usePortal } from "./portal-context";
 
 const PAYMENT_LABELS: Record<string, string> = {
-  paid: "Payment Confirmed",
-  confirmed: "Payment Confirmed",
-  pending: "Payment Pending",
-  awaiting: "Payment Required",
-  unpaid: "Payment Required",
-  failed: "Payment Failed",
+  paid: "Confirmed",
+  confirmed: "Confirmed",
+  pending: "Pending",
+  awaiting: "Required",
+  unpaid: "Required",
+  failed: "Failed",
 };
 
 const MATTER_STATUS_LABELS: Record<string, string> = {
@@ -38,7 +26,8 @@ const MATTER_STATUS_LABELS: Record<string, string> = {
   in_execution: "In Execution",
   apostille_processing: "Apostille Processing",
   courier_ready: "Courier Ready",
-  shipped: "Shipped",
+  shipped: "In Transit",
+  in_transit: "In Transit",
   delivered: "Delivered",
   completed: "Matter Closed",
   closed: "Matter Closed",
@@ -47,239 +36,88 @@ const MATTER_STATUS_LABELS: Record<string, string> = {
   dormant: "Paused",
 };
 
-const NAV = [
-  { href: "/portal", label: "Matter Control", icon: ClipboardList },
-  { href: "/portal/invoice", label: "Invoice & Payment", icon: Receipt },
-  { href: "/portal/tracking", label: "Courier Release Tracking", icon: Truck },
-  { href: "/portal/documents", label: "Controlled Records", icon: FolderOpen },
-  { href: "/portal/messages", label: "Messages", icon: MessageCircle },
+const NAV: MilanoOSNavItem[] = [
+  { href: "/portal", label: "Matter Control", icon: "clipboard", group: "Matter", hint: "Status and next action" },
+  { href: "/portal/invoice", label: "Invoice & Payment", icon: "receipt", group: "Matter", hint: "Verified payment status" },
+  { href: "/portal/documents", label: "Controlled Records", icon: "folder", group: "Records", hint: "Secure document vault" },
+  { href: "/portal/tracking", label: "Courier Tracking", icon: "truck", group: "Records", hint: "Release and delivery visibility" },
+  { href: "/portal/messages", label: "Messages", icon: "message", group: "Support", hint: "Matter communication" },
 ];
 
-function LogoMark({ size = 32 }: { size?: number }) {
-  const g = "var(--ms-gold)";
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <circle cx="50" cy="50" r="46" style={{ stroke: g, strokeWidth: 1.8, fill: "none" }} />
-      <path d="M60 20 C76 24 80 44 74 60 C68 50 62 45 56 43 C68 39 68 27 60 20Z" style={{ fill: g, opacity: 0.88 }} />
-      <path d="M22,72 L22,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
-      <path d="M78,72 L78,28 L50,53" style={{ stroke: g, strokeWidth: 5.5, fill: "none", strokeLinecap: "butt" as const, strokeLinejoin: "miter" as const }} />
-      <line x1="15" y1="28" x2="29" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
-      <line x1="15" y1="72" x2="29" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
-      <line x1="71" y1="28" x2="85" y2="28" style={{ stroke: g, strokeWidth: 3.5 }} />
-      <line x1="71" y1="72" x2="85" y2="72" style={{ stroke: g, strokeWidth: 3.5 }} />
-    </svg>
-  );
+function cleanStatus(value: string | null | undefined) {
+  if (!value) return "Pending review";
+  return MATTER_STATUS_LABELS[value] ?? value.replaceAll("_", " ");
 }
 
 export function PortalShell({ children }: { children: ReactNode }) {
   const { deals, deal, activeDealId, setActiveDealId } = usePortal();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const pathname = usePathname();
 
-  const sidebar = (onNav?: () => void) => (
-    <>
-      <div className="ps-brand">
-        <LogoMark size={32} />
-        <div>
-          <div className="ps-brand-name">Milano Seal™</div>
-          <div className="ps-brand-sub">Private Matter Access</div>
-        </div>
+  const matterRef = deal?.display_id?.slice(0, 12).toUpperCase() ?? deal?.id.slice(0, 8).toUpperCase() ?? "—";
+  const matterStatus = deal?.client_facing_status ?? cleanStatus(deal?.matter_status);
+  const paymentStatus = deal?.payment_confirmed
+    ? "Confirmed"
+    : PAYMENT_LABELS[deal?.payment_status ?? ""] ?? "Pending";
+
+  const sidebarContext = (
+    <div className="ms-os-context-card">
+      <div className="ms-os-context-label">Active Matter</div>
+      <div className="ms-os-context-title">{deal?.document_type ?? "Secure Matter"}</div>
+      <div className="ms-os-context-meta">
+        {deal?.destination_country ?? "Destination pending"} · {matterRef}
       </div>
-
-      {deals.length > 1 && (
-        <div className="ps-switcher-wrap">
-          <div className="ps-nav-sec ps-switcher-label">Your Matters</div>
-          <button
-            type="button"
-            onClick={() => setSwitcherOpen((o) => !o)}
-            className="ps-switcher-toggle"
-          >
-            <div className="ps-switcher-toggle-inner">
-              <div className="ps-switcher-cur-name">
-                {deal?.document_type ?? "Matter"}
-              </div>
-              <div className="ps-switcher-cur-id">
-                {deal?.id.slice(0, 8).toUpperCase()}
-              </div>
-            </div>
-            <ChevronDown
-              className={`w-3.5 h-3.5 ps-chevron${switcherOpen ? " open" : ""}`}
-            />
-          </button>
-          {switcherOpen && (
-            <div className="ps-switcher-dd">
-              {deals.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveDealId(d.id);
-                    setSwitcherOpen(false);
-                    onNav?.();
-                  }}
-                  className="ps-switcher-item"
-                  style={{
-                    background:
-                      d.id === activeDealId
-                        ? "rgba(198,165,90,.10)"
-                        : "transparent",
-                    borderLeft:
-                      d.id === activeDealId
-                        ? "2px solid var(--ms-gold)"
-                        : "2px solid transparent",
-                  }}
-                >
-                  <span className="ps-switcher-item-name">
-                    {d.document_type ?? "Matter"}
-                  </span>
-                  <span className="ps-switcher-item-meta">
-                    {d.destination_country ?? "—"} ·{" "}
-                    {d.display_id?.slice(0, 8).toUpperCase() ?? d.id.slice(0, 8).toUpperCase()}
-                  </span>
-                  <span
-                    className="ps-switcher-item-status"
-                    style={{
-                      color: d.matter_status === "completed" ? "#4a9e6b" : "var(--ms-gold)",
-                    }}
-                  >
-                    {MATTER_STATUS_LABELS[d.matter_status ?? ""] ?? (d.matter_status ?? "").replace(/_/g, " ")}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <nav className="ps-nav">
-        <div className="ps-nav-sec">Navigation</div>
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          const active =
-            item.href === "/portal"
-              ? pathname === "/portal"
-              : pathname.startsWith(item.href);
-          return (
-            <Link key={item.href} href={item.href} onClick={onNav}>
-              <div className={`ps-btn ${active ? "active" : ""}`}>
-                <Icon className="w-4 h-4" style={{ color: "var(--ms-gold)" }} />
-                {item.label}
-              </div>
-            </Link>
-          );
-        })}
-
-        {deal?.matter_status && (
-          <>
-            <div className="ps-nav-sec" style={{ marginTop: 18 }}>
-              Live Status
-            </div>
-            <div className="ps-status-wrap">
-              <div className="ps-status-card">
-                <div className="ps-status-row">
-                  <div className="ps-notif" />
-                  <span className="ps-status-l">
-                    {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
-                  </span>
-                </div>
-                {deal.payment_status && (
-                  <div className="ps-status-sub">
-                    {PAYMENT_LABELS[deal.payment_status] ?? "Payment Pending"}
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </nav>
-
-      <div className="ps-foot">
-        <div className="ps-foot-user">
-          <div className="ps-avatar">
-            {(deal?.client_name ?? "C").charAt(0).toUpperCase()}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="ps-foot-name">
-              {deal?.client_name ?? "Client"}
-            </div>
-            <div className="ps-foot-email">
-              {deal?.display_id ? `#${deal.display_id.slice(0, 8).toUpperCase()}` : ""}
-            </div>
-          </div>
-        </div>
-        <form
-          action="/api/auth/signout"
-          method="post"
-          className="ps-signout-form"
+      {deals.length > 1 ? (
+        <select
+          className="ms-os-context-select"
+          aria-label="Switch active Matter"
+          value={activeDealId ?? deal?.id ?? ""}
+          onChange={(event) => setActiveDealId(event.target.value)}
         >
-          <button type="submit" className="ps-signout">
-            <LogOut className="w-3.5 h-3.5" />
-            Sign out
-          </button>
-        </form>
+          {deals.map((item) => (
+            <option key={item.id} value={item.id}>
+              {(item.document_type ?? "Matter")} · {(item.destination_country ?? "Pending")}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      <div className="mt-3 grid gap-1.5 text-[9px] uppercase tracking-[0.13em] text-white/35">
+        <div className="flex items-center justify-between gap-3">
+          <span>Status</span>
+          <strong className="truncate text-right font-medium text-[#D8C188]/80">{matterStatus}</strong>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>Payment</span>
+          <strong className="truncate text-right font-medium text-white/60">{paymentStatus}</strong>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="ps-bg">
-      <div className="ps-ticker-fixed">
-        <CredentialTicker />
-      </div>
-      <aside className={`ps-sb ${mobileOpen ? "open" : ""}`}>
-        {sidebar(() => setMobileOpen(false))}
-        <button
-          type="button"
-          onClick={() => setMobileOpen(false)}
-          className="ps-close-btn"
-          style={{ display: mobileOpen ? "block" : "none" }}
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </aside>
-
-      {mobileOpen && (
-        <div className="ps-overlay" onClick={() => setMobileOpen(false)} />
-      )}
-
-      <div className="ps-main">
-        <div className="ps-topbar">
-          <div className="ps-topbar-left">
-            <button
-              type="button"
-              className="ps-mobile-trigger"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div>
-              <div className="ps-tb-title">
-                {NAV.find((n) =>
-                  n.href === "/portal"
-                    ? pathname === "/portal"
-                    : pathname.startsWith(n.href),
-                )?.label ?? "Portal"}
-              </div>
-              <div className="ps-tb-sub">
-                The Milano Seal™ · Private Matter Access
-              </div>
-            </div>
-          </div>
-          {deal?.matter_status && (
-            <div className="ps-topbar-status">
-              <span className="ps-topbar-badge">
-                {deal.client_facing_status ?? deal.matter_status.replace(/_/g, " ")}
-              </span>
-              {deal.payment_status === "paid" && (
-                <span className="ps-topbar-badge-paid">Paid</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <main className="ps-content ms-safe-bottom" style={{ minWidth: 0, overflowX: "hidden" }}>{children}</main>
-      </div>
-    </div>
+    <MilanoOSShell
+      mode="client"
+      nav={NAV}
+      eyebrow="Private Matter Access"
+      title="Secure Matter Portal"
+      subtitle="One Matter · one verified status · one clear next action"
+      brandSubtitle="Secure Matter Portal"
+      topStrip={<CredentialTicker />}
+      sidebarContext={sidebarContext}
+      identity={{
+        name: deal?.client_name ?? "Client",
+        meta: matterRef === "—" ? "Secure access" : `Matter ${matterRef}`,
+      }}
+      statusItems={[
+        { label: "Matter", value: matterStatus, tone: "gold" },
+        {
+          label: "Payment",
+          value: paymentStatus,
+          tone: deal?.payment_confirmed ? "green" : deal?.payment_status === "failed" ? "red" : "neutral",
+        },
+      ]}
+      footerNote="Client-safe projection · private Matter data only"
+      maxWidth={1360}
+    >
+      {children}
+    </MilanoOSShell>
   );
 }
