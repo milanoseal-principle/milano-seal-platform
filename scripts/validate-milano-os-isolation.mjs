@@ -5,19 +5,27 @@ import { extname, join } from "node:path";
 const ROOTS = ["app", "components", "lib", "data", "docs"];
 const TEXT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".md", ".json", ".css"]);
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git"]);
-const ALLOWLIST_FILES = new Set(["docs/MILANO_SEAL_OS_PORTAL_STANDARD.md"]);
 
 const FOREIGN_PRODUCT_PATTERNS = [
-  { label: "Liaison OS", pattern: /\bLiaison\s+OS\b/i },
-  { label: "EnsureProtect", pattern: /\bEnsureProtect\b/i },
-  { label: "Demesmin", pattern: /\bDemesmin\b/i },
-  { label: "Dover", pattern: /\bDover\b/i },
-  { label: "WCI", pattern: /\bWCI\b/ },
+  { label: "foreign liaison product", pattern: /\bLiaison\s+OS\b/i },
+  { label: "foreign insurance reference brand", pattern: /\bEnsureProtect\b/i },
+  { label: "outside employer name", pattern: /\bDemesmin\b/i },
+  { label: "outside employer name", pattern: /\bDover\b/i },
+  { label: "foreign event-intelligence product", pattern: /\bWCI\b/ },
+  { label: "foreign case-recovery acronym", pattern: /\bPIP\b/ },
+  { label: "foreign claimant model", pattern: /\bclaimant\b/i },
+  { label: "foreign provider-BD model", pattern: /\bprovider\s+BD\b/i },
+  { label: "foreign medical-legal model", pattern: /\bmedical[- ]legal\b/i },
+  { label: "foreign accident-attorney model", pattern: /\baccident attorney\b/i },
+  { label: "foreign chiropractor model", pattern: /\bchiropractor\b/i },
+  { label: "foreign demand-package model", pattern: /\bdemand package\b/i },
+  { label: "foreign carrier-posture model", pattern: /\bcarrier posture\b/i },
 ];
 
-// These are not forbidden English words. They are implementation-level markers
-// of an insurance/claims product model and therefore must not become Milano Seal
-// platform schema/navigation by copy-paste from a reference application.
+// These implementation-level markers are blocked when they come from a copied
+// claims/policy product model. Milano Seal's genuine corporate procurement
+// readiness registry is explicitly exempt because it tracks the company's own
+// required business coverage evidence, not customer-policy or claims workflow.
 const FOREIGN_INSURANCE_MODEL_PATTERNS = [
   { label: "policyNumber", pattern: /\bpolicyNumber\b/ },
   { label: "claimNumber", pattern: /\bclaimNumber\b/ },
@@ -25,6 +33,9 @@ const FOREIGN_INSURANCE_MODEL_PATTERNS = [
   { label: "insuranceCarrier", pattern: /\binsuranceCarrier\b/ },
   { label: "claimsAdministration", pattern: /\bclaimsAdministration\b/i },
 ];
+const LEGITIMATE_INSURANCE_MODEL_FILES = new Set([
+  "lib/procurement/readiness/insuranceRegistry.ts",
+]);
 
 function walk(dir, files = []) {
   if (!existsSync(dir)) return files;
@@ -33,7 +44,7 @@ function walk(dir, files = []) {
     const path = join(dir, name).replaceAll("\\", "/");
     const stat = statSync(path);
     if (stat.isDirectory()) walk(path, files);
-    else if (TEXT_EXTENSIONS.has(extname(path)) && !ALLOWLIST_FILES.has(path)) files.push(path);
+    else if (TEXT_EXTENSIONS.has(extname(path))) files.push(path);
   }
   return files;
 }
@@ -43,15 +54,20 @@ const violations = [];
 
 for (const file of files) {
   const source = readFileSync(file, "utf8");
-  for (const rule of [...FOREIGN_PRODUCT_PATTERNS, ...FOREIGN_INSURANCE_MODEL_PATTERNS]) {
+  for (const rule of FOREIGN_PRODUCT_PATTERNS) {
     if (rule.pattern.test(source)) violations.push(`${file}: ${rule.label}`);
+  }
+  if (!LEGITIMATE_INSURANCE_MODEL_FILES.has(file)) {
+    for (const rule of FOREIGN_INSURANCE_MODEL_PATTERNS) {
+      if (rule.pattern.test(source)) violations.push(`${file}: ${rule.label}`);
+    }
   }
 }
 
 assert.deepEqual(
   violations,
   [],
-  `Foreign product/insurance-model contamination found:\n${violations.join("\n")}`,
+  `Foreign product/workflow contamination found:\n${violations.join("\n")}`,
 );
 
 const roleMap = readFileSync("lib/auth/roleRedirect.ts", "utf8");
