@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
+import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 
 const navLinks = [
   { label: "Services", href: "/#services" },
@@ -29,8 +30,6 @@ export function Header() {
 
   return (
     <>
-      {/* paddingTop: var(--sa-top) keeps header content below the notch/Dynamic Island.
-          Requires viewport-fit=cover (set in app/layout.tsx). */}
       <header
         className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]"
         style={{ paddingTop: "var(--sa-top)" }}
@@ -41,7 +40,7 @@ export function Header() {
               <Link
                 href="/"
                 className="group flex-shrink-0 select-none flex items-center gap-3"
-                aria-label="The Milano Seal home"
+                aria-label={`${MILANO_BRAND.name} home`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -55,7 +54,7 @@ export function Header() {
                 />
                 <span className="flex flex-col leading-none">
                   <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">
-                    The Milano Seal
+                    {MILANO_BRAND.name}
                   </span>
                   <span className="hidden sm:block mt-1.5 text-[7px] md:text-[8px] uppercase tracking-[0.32em] text-[#8B743C]">
                     Global Document Execution
