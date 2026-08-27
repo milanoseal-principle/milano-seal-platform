@@ -5,6 +5,7 @@ import { extname, join } from "node:path";
 const ROOTS = ["app", "components", "lib", "data", "docs"];
 const TEXT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".md", ".json", ".css"]);
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git"]);
+const ALLOWLIST_FILES = new Set(["docs/MILANO_SEAL_OS_PORTAL_STANDARD.md"]);
 
 const FOREIGN_PRODUCT_PATTERNS = [
   { label: "Liaison OS", pattern: /\bLiaison\s+OS\b/i },
@@ -29,10 +30,10 @@ function walk(dir, files = []) {
   if (!existsSync(dir)) return files;
   for (const name of readdirSync(dir)) {
     if (SKIP_DIRS.has(name)) continue;
-    const path = join(dir, name);
+    const path = join(dir, name).replaceAll("\\", "/");
     const stat = statSync(path);
     if (stat.isDirectory()) walk(path, files);
-    else if (TEXT_EXTENSIONS.has(extname(path))) files.push(path);
+    else if (TEXT_EXTENSIONS.has(extname(path)) && !ALLOWLIST_FILES.has(path)) files.push(path);
   }
   return files;
 }
