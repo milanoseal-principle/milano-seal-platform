@@ -52,13 +52,63 @@ test("canonical Matter list API requires server-authenticated app-metadata-deriv
   assertNoUserMetadataAuthorization(source);
 });
 
-test("generic Matter detail API cannot author paid settlement or bypass governed execution", () => {
+test("generic Matter detail API cannot author Wise payment or governed lifecycle truth", () => {
   const source = read("app/api/deals/[id]/route.ts");
-  assert.match(source, /PAYMENT_FIELDS/);
-  assert.match(source, /payment_confirmed/);
+  assert.match(source, /const PAYMENT_FIELDS = new Set/);
+  assert.match(source, /const PROTECTED_LIFECYCLE_FIELDS = new Set/);
+  assert.match(source, /const PROTECTED_LIFECYCLE_STATUSES = new Set/);
+  assert.match(source, /PAYMENT_MUTATION_GOVERNED_PATH_REQUIRED/);
+  assert.match(source, /GOVERNED_LIFECYCLE_MUTATION_REQUIRED/);
   assert.match(source, /resolveServerRole/);
   assertNoUserMetadataAuthorization(source);
-  assert.match(source, /wise/i);
+  assert.match(source, /Wise settlement/);
+
+  for (const protectedField of [
+    "payment_status",
+    "payment_confirmed",
+    "payment_reference",
+    "scheduled_at",
+    "execution_at",
+    "apostille_at",
+    "shipped_at",
+    "tracking_number",
+    "delivery_at",
+    "release_verified",
+    "completed_at",
+  ]) {
+    assert.match(source, new RegExp(`\\"${protectedField}\\"`), protectedField);
+  }
+
+  for (const protectedStatus of [
+    "deposit_confirmed",
+    "scheduling_unlocked",
+    "scheduled",
+    "in_execution",
+    "apostille_submitted",
+    "final_payment_confirmed",
+    "ready_for_release",
+    "in_transit",
+    "delivered",
+    "completed",
+  ]) {
+    assert.match(source, new RegExp(`\\"${protectedStatus}\\"`), protectedStatus);
+  }
+
+  const metadataMatch = source.match(/const GENERIC_METADATA_FIELDS = \[([\s\S]*?)\] as const;/);
+  assert.ok(metadataMatch, "Generic metadata allowlist must remain explicit.");
+  const metadataAllowlist = metadataMatch?.[1] ?? "";
+  for (const forbidden of [
+    "status",
+    "payment_status",
+    "scheduled_at",
+    "execution_at",
+    "apostille_at",
+    "tracking_number",
+    "delivery_at",
+    "completed_at",
+  ]) {
+    assert.doesNotMatch(metadataAllowlist, new RegExp(`\\"${forbidden}\\"`), forbidden);
+  }
 });
 
 test("portal authorization remains app_metadata governed and private surfaces stay noindex", () => {
