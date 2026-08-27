@@ -1,6 +1,10 @@
 import { ReactNode } from "react";
 import { PortalFrame } from "@/components/portal/portal-frame";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getHomeRouteForRole,
+  normalizeUserRole,
+} from "@/lib/auth/roleRedirect";
 import { redirect } from "next/navigation";
 
 export const metadata = {
@@ -8,23 +12,21 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const FOUNDER_PREVIEW_ROLES = new Set(["founder", "founder_admin", "admin", "admin_operator"]);
-const ALLIANCE_ROLES = new Set(["alliance", "alliance_partner", "alliance_member"]);
-const VA_ROLES = new Set(["virtual_assistant"]);
-
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/login?next=/portal");
 
-  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  // Authorization is derived only from service-controlled app_metadata and the
+  // canonical Milano Seal role map. Client Portal access is client-only.
+  const rawRole = (user.app_metadata?.role as string | undefined) ?? null;
+  const role = normalizeUserRole(rawRole);
 
-  // Founder/admin may preview the client portal — do not bounce them.
-  // Real VA / alliance roles remain locked to their own dashboard.
-  if (!FOUNDER_PREVIEW_ROLES.has(role)) {
-    if (ALLIANCE_ROLES.has(role)) redirect("/alliance/dashboard");
-    if (VA_ROLES.has(role)) redirect("/va/dashboard");
+  if (role !== "client") {
+    redirect(getHomeRouteForRole(rawRole));
   }
 
   return <PortalFrame>{children}</PortalFrame>;

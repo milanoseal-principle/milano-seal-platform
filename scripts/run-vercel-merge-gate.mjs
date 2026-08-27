@@ -44,6 +44,7 @@ const gates = [
   ["npm", ["run", "validate:duplicate-source"]],
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
   ["node", ["scripts/validate-wise-only-active-ops-docs.mjs"]],
+  ["node", ["scripts/validate-milano-os-isolation.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
