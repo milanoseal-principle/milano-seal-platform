@@ -46,6 +46,7 @@ const gates = [
   ["node", ["scripts/validate-wise-only-active-ops-docs.mjs"]],
   ["node", ["scripts/validate-milano-os-isolation.mjs"]],
   ["node", ["scripts/validate-milano-os-surface-unification.mjs"]],
+  ["node", ["scripts/validate-milano-brand-throughout.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
