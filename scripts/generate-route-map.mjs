@@ -18,6 +18,7 @@ const CRITICAL_ROUTES = [
   "/professional/damiani",
   "/today",
   "/dashboard",
+  "/dashboard/control-plane",
   "/dashboard/pipeline",
   "/dashboard/needs-review",
   "/dashboard/follow-ups",
@@ -153,6 +154,7 @@ ${rows
 - Add/remove the underlying source route, then regenerate this file.
 - Vercel production validation fails when this file drifts from source.
 - \`/today\` is a read-only Milano Operator Intelligence surface.
+- \`/dashboard/control-plane\` is the canonical platform meta-governance and system-registry surface.
 - \`/portal/payment\` remains canonical-Matter and Wise-reconciliation driven.
 - \`/api/webhooks/wise\` is the canonical production Wise webhook.
 - Live TIFF and Damiani acceptance remain mandatory after code/deployment validation.
