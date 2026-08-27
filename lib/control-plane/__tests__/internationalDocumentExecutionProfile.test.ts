@@ -6,8 +6,9 @@ import {
   INTERNATIONAL_EXECUTION_LANES,
   INTERNATIONAL_MATTER_FACTS,
   deriveInternationalExecutionPath,
-  type InternationalExecutionLaneId,
 } from "@/lib/control-plane/internationalDocumentExecutionProfile";
+
+type InternationalExecutionLaneId = (typeof INTERNATIONAL_EXECUTION_LANES)[number]["id"];
 
 test("HCCH Apostille Convention profile is locked to 129 Contracting Parties with Matter-specific caveat", () => {
   assert.equal(APOSTILLE_CONVENTION_PROFILE.contractingParties, 129);
@@ -25,9 +26,7 @@ test("international execution model includes RON, state apostille, federal and n
     "non_hague_legalization",
     "international_courier_release",
   ];
-  for (const id of required) {
-    assert.equal(ids.has(id), true, `missing execution lane ${id}`);
-  }
+  for (const id of required) assert.equal(ids.has(id), true, `missing execution lane ${id}`);
 });
 
 test("canonical international Matter facts include origin, destination, receiving authority and notarial decisions", () => {
@@ -37,72 +36,26 @@ test("canonical international Matter facts include origin, destination, receivin
 });
 
 test("RON is never selected when eligibility is unresolved", () => {
-  const decision = deriveInternationalExecutionPath({
-    destinationHagueVerified: true,
-    destinationHagueOperativeForMatter: true,
-    documentOriginLevel: "state",
-    notarizationRequired: true,
-    notarialActKnown: true,
-    ronRequested: true,
-    ronEligible: null,
-    receivingAuthorityWetInkRequired: false,
-  });
+  const decision = deriveInternationalExecutionPath({ destinationHagueVerified: true, destinationHagueOperativeForMatter: true, documentOriginLevel: "state", notarizationRequired: true, notarialActKnown: true, ronRequested: true, ronEligible: null, receivingAuthorityWetInkRequired: false });
   assert.equal(decision.status, "REVIEW_REQUIRED");
   assert.equal(decision.lane, "unresolved");
 });
 
 test("wet-ink receiving-authority requirement blocks RON routing", () => {
-  const decision = deriveInternationalExecutionPath({
-    destinationHagueVerified: true,
-    destinationHagueOperativeForMatter: true,
-    documentOriginLevel: "state",
-    notarizationRequired: true,
-    notarialActKnown: true,
-    ronRequested: true,
-    ronEligible: true,
-    receivingAuthorityWetInkRequired: true,
-  });
+  const decision = deriveInternationalExecutionPath({ destinationHagueVerified: true, destinationHagueOperativeForMatter: true, documentOriginLevel: "state", notarizationRequired: true, notarialActKnown: true, ronRequested: true, ronEligible: true, receivingAuthorityWetInkRequired: true });
   assert.equal(decision.status, "REVIEW_REQUIRED");
 });
 
 test("federal origin never falls into state apostille routing", () => {
-  const decision = deriveInternationalExecutionPath({
-    destinationHagueVerified: true,
-    destinationHagueOperativeForMatter: true,
-    documentOriginLevel: "federal",
-    notarizationRequired: false,
-    notarialActKnown: true,
-    ronRequested: false,
-    ronEligible: false,
-    receivingAuthorityWetInkRequired: false,
-  });
+  const decision = deriveInternationalExecutionPath({ destinationHagueVerified: true, destinationHagueOperativeForMatter: true, documentOriginLevel: "federal", notarizationRequired: false, notarialActKnown: true, ronRequested: false, ronEligible: false, receivingAuthorityWetInkRequired: false });
   assert.equal(decision.status, "READY_FOR_OPERATOR_ROUTING");
   assert.equal(decision.lane, "federal_authentication");
 });
 
 test("state Hague route requires operative Matter-specific Convention evidence", () => {
-  const blocked = deriveInternationalExecutionPath({
-    destinationHagueVerified: true,
-    destinationHagueOperativeForMatter: false,
-    documentOriginLevel: "state",
-    notarizationRequired: false,
-    notarialActKnown: true,
-    ronRequested: false,
-    ronEligible: false,
-    receivingAuthorityWetInkRequired: false,
-  });
+  const blocked = deriveInternationalExecutionPath({ destinationHagueVerified: true, destinationHagueOperativeForMatter: false, documentOriginLevel: "state", notarizationRequired: false, notarialActKnown: true, ronRequested: false, ronEligible: false, receivingAuthorityWetInkRequired: false });
   assert.equal(blocked.status, "REVIEW_REQUIRED");
-
-  const ready = deriveInternationalExecutionPath({
-    destinationHagueVerified: true,
-    destinationHagueOperativeForMatter: true,
-    documentOriginLevel: "state",
-    notarizationRequired: false,
-    notarialActKnown: true,
-    ronRequested: false,
-    ronEligible: false,
-    receivingAuthorityWetInkRequired: false,
-  });
+  const ready = deriveInternationalExecutionPath({ destinationHagueVerified: true, destinationHagueOperativeForMatter: true, documentOriginLevel: "state", notarizationRequired: false, notarialActKnown: true, ronRequested: false, ronEligible: false, receivingAuthorityWetInkRequired: false });
   assert.equal(ready.lane, "state_apostille");
 });
 
