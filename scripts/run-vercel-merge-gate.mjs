@@ -34,6 +34,7 @@ const gates = [
   ["node", ["scripts/validate-milano-brand-throughout.mjs"]],
   ["node", ["scripts/validate-nonhuman-production-hardening.mjs"]],
   ["node", ["scripts/validate-institutional-expansion.mjs"]],
+  ["node", ["scripts/validate-system-control-plane.mjs"]],
   ["node", ["scripts/validate-milano-operator-intelligence.mjs"]],
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
