@@ -12,6 +12,7 @@ import {
   Twitter,
   Youtube,
 } from "lucide-react";
+import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 
 const socialLinks = [
   {
@@ -131,9 +132,8 @@ export function Footer() {
     <footer className="bg-[#0A0A0A] border-t border-[#2A2A2A]">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-          {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-3 mb-6">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6" aria-label={`${MILANO_BRAND.name} home`}>
               <Image
                 src="/brand/milano-seal-orb-v2.png"
                 alt=""
@@ -143,13 +143,12 @@ export function Footer() {
                 style={{ width: 96, height: 96, objectFit: "contain", flexShrink: 0 }}
               />
               <span className="flex flex-col leading-none">
-                <span className="font-serif text-[15px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em]">The Milano Seal</span>
+                <span className="font-serif text-[15px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em]">{MILANO_BRAND.name}</span>
                 <span className="mt-1 text-[7px] uppercase tracking-[0.3em] text-[#8B743C]">Global Document Execution</span>
               </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
-              U.S. Document Execution & Apostille Liaison. Sealing trust with
-              every signature.
+              {MILANO_BRAND.positioning}. {MILANO_BRAND.brandPromise}.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
@@ -158,10 +157,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <Mail className="w-4 h-4 text-[var(--ms-gold)]" />
-                <a
-                  href="mailto:contact@themilanoseal.com"
-                  className="hover:text-white transition-colors"
-                >
+                <a href="mailto:contact@themilanoseal.com" className="hover:text-white transition-colors">
                   contact@themilanoseal.com
                 </a>
               </div>
@@ -172,27 +168,19 @@ export function Footer() {
             </div>
             <div className="mt-6 space-y-2">
               {networkLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors"
-                >
+                <Link key={link.href} href={link.href} className="block text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors">
                   {link.label}
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Services column */}
           <div>
             <h4 className="text-white font-medium mb-6">Services</h4>
             <ul className="space-y-3">
               {serviceLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -200,16 +188,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Documents column */}
           <div>
             <h4 className="text-white font-medium mb-6">Documents</h4>
             <ul className="space-y-3">
               {documentLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -217,16 +201,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Countries column */}
           <div>
             <h4 className="text-white font-medium mb-6">Apostille Services</h4>
             <ul className="space-y-3">
               {countryLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -235,9 +215,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t border-[#2A2A2A]">
-          {/* Social icons */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             {socialLinks.map(({ label, href, icon: Icon }) => (
               <a
@@ -263,19 +241,13 @@ export function Footer() {
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-[#B0B0B0]">
-              &copy; {currentYear} The Milano Seal™. All rights reserved.
+              &copy; {currentYear} {MILANO_BRAND.name}. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <Link
-                href="/privacy"
-                className="text-sm text-[#B0B0B0] hover:text-white transition-colors"
-              >
+              <Link href="/privacy" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link
-                href="/terms"
-                className="text-sm text-[#B0B0B0] hover:text-white transition-colors"
-              >
+              <Link href="/terms" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">
                 Terms of Service
               </Link>
             </div>
