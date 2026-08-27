@@ -1,9 +1,9 @@
 const BLOCKED_TERMS = [
   "external case recovery",
-  "external claimant workflow",
+  "external party recovery workflow",
   "external provider business development",
   "external medical referral workflow",
-  "personal injury routing",
+  "external injury-case routing",
   "demand recovery package",
   "outside employer intake",
 ] as const;
