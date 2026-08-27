@@ -27,6 +27,7 @@ const operatorAliases = new Set([
   "ops_manager",
   "execution_coordinator",
   "apostille_coordinator",
+  "finance",
   "finance_operator",
   "client_support",
   "compliance_reviewer",
