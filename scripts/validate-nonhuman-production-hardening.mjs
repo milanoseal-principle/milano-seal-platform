@@ -22,8 +22,6 @@ const email = read("lib/email.ts");
 const certification = read("docs/FINAL_PRODUCTION_CERTIFICATION.md");
 const mergeGate = read("scripts/run-vercel-merge-gate.mjs");
 
-// Brand token lock: active shared public chrome may not reintroduce pre-canonical
-// gold/brown one-offs after the Milano brand source has been established.
 for (const [label, source] of [["header", header], ["footer", footer]]) {
   assert.ok(source.includes("MILANO_BRAND"), `${label} lost canonical brand source`);
   assert.ok(source.includes("var(--ms-gold)"), `${label} lost canonical Milano gold token`);
@@ -35,8 +33,6 @@ for (const [label, source] of [["header", header], ["footer", footer]]) {
 assert.ok(brand.includes('milanoGold: "#C6A65B"'), "Canonical Milano Gold changed");
 assert.ok(brand.includes('matteBlack: "#0A0A0A"'), "Canonical Archive Black changed");
 
-// Authorization matrix at source level. Dashboard must be operator/admin/owner only;
-// VA and Alliance must remain in their role-specific guards; Client Portal is client-only.
 assert.ok(dashboardAuth.includes('normalizeUserRole'), "Dashboard guard must normalize through canonical role map");
 assert.ok(dashboardAuth.includes('new Set(["operator", "admin", "owner"])'), "Dashboard guard must be limited to operator/admin/owner canonical roles");
 assert.ok(!dashboardAuth.includes('"virtual_assistant"'), "VA must never be granted dashboard access by dashboardAuth");
@@ -47,7 +43,6 @@ assert.ok(portalLayout.includes('role !== "client"'), "Client Portal must remain
 assert.ok(vaAuth.includes('requireVAAccess'), "VA role-specific guard missing");
 assert.ok(allianceAuth.includes('requireAllianceAccess'), "Alliance role-specific guard missing");
 
-// Universal operator exception spine must preserve all canonical action classes.
 for (const actionClass of [
   "Payment Blocked",
   "Document Blocked",
@@ -61,7 +56,6 @@ for (const actionClass of [
   assert.ok(operatorReadModel.includes(`\"${actionClass}\"`), `Operator exception class missing: ${actionClass}`);
 }
 
-// Authority provenance contract. No active authority routing without source + freshness.
 for (const field of [
   "source_url",
   "source_type",
@@ -80,7 +74,6 @@ assert.ok(authorityMigration.includes("routing_status = 'REVIEW_REQUIRED'"), "Au
 assert.ok(authorityMigration.includes("source_url is null"), "Missing source URL must force authority review");
 assert.ok(authorityMigration.includes("last_verified_at is null"), "Missing verification time must force authority review");
 
-// Notification evidence: application send success may only prove provider acceptance.
 for (const field of [
   "delivery_status",
   "delivered_at",
@@ -96,12 +89,11 @@ assert.ok(email.includes('delivery_status: input.status === "sent" ? "provider_a
 assert.ok(email.includes('final_delivery_proven: false'), "Email evidence must explicitly remain non-final until provider/live evidence exists");
 assert.ok(!email.includes('delivery_status: "delivered"'), "Application send path must never self-certify delivery");
 
-// Human/live gates must remain human/live gates. Repository work must never stamp them PASS.
 assert.ok(certification.includes("LIVE VERCEL CERTIFICATION   PENDING"), "Live Vercel certification must remain PENDING until executed live");
 assert.ok(certification.includes("WISE PRODUCTION E2E         PENDING"), "Wise production E2E must remain PENDING until real settlement evidence exists");
 assert.ok(certification.includes("DAMIANI DRY RUN             PENDING"), "Damiani dry run must remain PENDING until manually executed");
 assert.ok(certification.includes("DAMIANI                     NO-GO"), "Damiani must remain NO-GO before live evidence");
-assert.ok(certification.includes("blank evidence field = **NO-GO**"), "Certification must continue to fail closed on missing evidence");
+assert.ok(/blank\s+evidence\s+field\s*=\s*\*\*NO-GO\*\*/i.test(certification), "Certification must continue to fail closed on missing evidence");
 
 assert.ok(
   mergeGate.includes("validate-nonhuman-production-hardening.mjs"),
