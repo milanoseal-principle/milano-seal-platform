@@ -1,11 +1,11 @@
 export const APOSTILLE_CONVENTION_PROFILE = {
   convention: "HCCH 1961 Apostille Convention",
-  contractingParties: 129,
+  contractingParties: 130,
   authority: "HCCH",
   officialStatusSource: "https://www.hcch.net/en/instruments/conventions/status-table/?cid=41",
   verifiedAsOf: "2026-08-27",
   governanceNote:
-    "129 is the current number of Contracting Parties, not a blanket promise that every document or destination uses an apostille-only route. Entry into force, territorial scope, objections, document origin, document category and receiving-authority requirements remain controlling.",
+    "130 is the current number of Contracting Parties in the official HCCH status table last updated 2026-06-30. Contracting Party status is not a blanket promise that the Convention is already in force for every Party or that every document uses an apostille-only route. Entry into force, territorial scope, objections, document origin, document category and receiving-authority requirements remain controlling.",
 } as const;
 
 export const INTERNATIONAL_EXECUTION_LANES = [
