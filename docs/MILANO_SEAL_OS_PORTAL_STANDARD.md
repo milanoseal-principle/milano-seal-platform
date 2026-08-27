@@ -10,16 +10,9 @@ The production application is The Milano Seal™ only.
 
 ## Foreign-product isolation
 
-Active Milano Seal source must not contain or depend on:
+Active Milano Seal source must not contain or depend on foreign product branding, outside-employer workflows, unrelated event-intelligence systems, provider-business-development systems, case-recovery systems, medical-referral systems, or copied claims-administration schema.
 
-- Liaison OS
-- EnsureProtect
-- Demesmin
-- Dover
-- WCI
-- insurance-policy or claims-administration schema copied from another application
-
-Insurance-related words may exist only when they are legitimate subject matter of an actual Milano Seal document or client Matter. They must never define Milano Seal platform navigation, role logic, canonical Matter state, payment logic, or operating-system schema.
+Insurance-related words may exist only when they are legitimate subject matter of an actual Milano Seal document, procurement requirement, or company compliance record. They must never define Milano Seal platform navigation, role logic, canonical Matter state, payment logic, or operating-system schema by copy-paste from another product.
 
 ## Milano Seal canonical object model
 
@@ -44,7 +37,7 @@ Core Milano Seal concepts are:
 - Alliance Assignment
 - Execution Support Task
 
-No policy, claim, coverage, provider-referral, PIP, WCI, or Liaison relationship engine is part of the Milano Seal canonical product model.
+No unrelated claims, provider-referral, event-targeting, case-recovery, or outside-employer engine is part of the Milano Seal canonical product model.
 
 ## One operating-system shell
 
@@ -96,7 +89,7 @@ Public access gateway:
 - `/login`
 - `/access`
 
-All internal navigation should use same-origin relative paths. No separate Liaison, Ensure, insurance, Demesmin & Dover, or third-party portal domain may become an alternate Milano Seal application shell.
+All internal navigation should use same-origin relative paths. No foreign product or third-party portal domain may become an alternate Milano Seal application shell.
 
 ## Role isolation
 
@@ -152,7 +145,7 @@ It may expose only actions permitted to the role. Financial settlement, payment 
 
 ## Alliance Portal
 
-The Alliance portal is a partner execution surface, not a Liaison/referral CRM.
+The Alliance portal is a partner execution surface, not a referral CRM.
 
 Its domain concepts are Milano Seal concepts such as:
 
@@ -166,7 +159,7 @@ Its domain concepts are Milano Seal concepts such as:
 - governed compensation / commission truth where applicable
 - audit history
 
-Do not import provider-relations, PIP, WCI, insurance claims, or Demesmin & Dover terminology.
+Do not import provider-relations, medical-referral, claims-recovery, unrelated event-targeting, or outside-employer terminology.
 
 ## Domain and link standard
 
@@ -182,7 +175,7 @@ Protected workspaces use relative internal navigation so authenticated users rem
 
 `scripts/validate-milano-os-isolation.mjs` is a blocking production gate.
 
-It must fail the production build if active source reintroduces foreign product identity, copied insurance-model implementation fields, conflicting client-portal authorization, or non-canonical portal topology.
+It must fail the production build if active source reintroduces foreign product identity, copied claims-model implementation fields, conflicting client-portal authorization, or non-canonical portal topology.
 
 ## Final doctrine
 
@@ -200,8 +193,7 @@ ONE TRUST MODEL.
 
 MULTIPLE ROLE-SPECIFIC PROJECTIONS.
 
-No Liaison OS.
-No EnsureProtect product identity.
-No Demesmin & Dover product logic.
-No copied insurance/claims application model.
+No foreign product branding.
+No outside-employer product logic.
+No copied claims-administration model.
 No disconnected portal products.
