@@ -1,16 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from "@/lib/auth/server-role";
+import { normalizeUserRole } from "@/lib/auth/roleRedirect";
 import { redirect } from "next/navigation";
 
-const ADMIN_ROLES = new Set([
-  "founder",
-  "founder_admin",
-  "admin",
-  "admin_operator",
-  "finance",
-  "finance_operator",
-  "virtual_assistant",
-]);
+const DASHBOARD_ROLES = new Set(["operator", "admin", "owner"]);
 
 export async function requireDashboardAccess(): Promise<{
   userId: string;
@@ -24,8 +17,9 @@ export async function requireDashboardAccess(): Promise<{
   if (!user) redirect("/login?next=/dashboard");
 
   const role = await resolveServerRole(user);
+  const normalizedRole = normalizeUserRole(role);
 
-  if (!ADMIN_ROLES.has(role)) {
+  if (!normalizedRole || !DASHBOARD_ROLES.has(normalizedRole)) {
     redirect("/login?error=access_denied");
   }
 
