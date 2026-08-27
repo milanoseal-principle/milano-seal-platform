@@ -63,6 +63,7 @@ test("governed reporting preserves currency boundaries and unique partner attrib
   const report = read("app/api/dashboard/discounts/report/route.ts");
   const reportPage = read("app/dashboard/payments/discounts/report/page.tsx");
   const dashboardAuth = read("lib/dashboardAuth.ts");
+  const roleRedirect = read("lib/auth/roleRedirect.ts");
 
   assert.match(report, /monetary_totals/);
   assert.match(report, /normalizeCurrency/);
@@ -70,8 +71,10 @@ test("governed reporting preserves currency boundaries and unique partner attrib
   assert.match(report, /deals identity projection/);
   assert.match(reportPage, /monetarySummary/);
   assert.match(reportPage, /Monetary totals stay separated by original currency/);
-  assert.match(dashboardAuth, /"finance"/);
-  assert.match(dashboardAuth, /"finance_operator"/);
+  assert.match(dashboardAuth, /normalizeUserRole/);
+  assert.doesNotMatch(dashboardAuth, /"virtual_assistant"/);
+  assert.match(roleRedirect, /"finance"/);
+  assert.match(roleRedirect, /"finance_operator"/);
 });
 
 test("governed reporting does not misstate adjusted Matter value as paid revenue", () => {
