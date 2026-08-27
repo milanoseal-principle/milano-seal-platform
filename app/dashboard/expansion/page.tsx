@@ -14,28 +14,28 @@ const MODULES = [
     key: "execution_reconciliation",
     title: "Execution Reconciliation Center",
     summary: "Reconciles Matter, Wise payment, execution, authority, apostille, custody, courier, delivery, release and close evidence without creating a second Matter engine.",
-    href: "/dashboard/deals",
+    href: "/dashboard/reconciliation",
     status: "BUILT",
   },
   {
     key: "truth_failure_alerts",
     title: "Truth-Failure Alert Center",
     summary: "Converts canonical reconciliation contradictions into operator-visible critical alerts. Alerts never mutate payment, scheduling, release or Matter state.",
-    href: "/dashboard/command-center",
+    href: "/dashboard/reconciliation",
     status: "BUILT",
   },
   {
     key: "operator_knowledge_graph",
     title: "Operator Knowledge Graph",
-    summary: "Builds explicit evidence edges between clients, Matters, destination countries, document types and Alliance records. No relationship is inferred from silence.",
+    summary: "Builds explicit evidence edges between clients, Matters, destination countries, document types and Alliance records. Every edge must expose provenance and no relationship is inferred from silence.",
     href: "/dashboard/operator-spine",
     status: "BUILT",
   },
   {
     key: "client_return_engine",
-    title: "Client Return Engine",
-    summary: "Creates a return signal only from prior completed Matter evidence and preserves canonical pricing, intake and execution review on every new Matter.",
-    href: "/dashboard/deals",
+    title: "Client Return Intelligence",
+    summary: "Creates return context only from prior completed Matter evidence and keeps every new request inside canonical intake, pricing and execution review.",
+    href: "/dashboard/acquisition",
     status: "BUILT",
   },
   {
@@ -48,8 +48,8 @@ const MODULES = [
   {
     key: "alliance_intelligence",
     title: "Advanced Alliance Intelligence",
-    summary: "Evaluates dispatch eligibility from explicit active status, compliance, capacity and open exceptions. No uncontrolled payout or synthetic partner ranking logic.",
-    href: "/alliance/dashboard",
+    summary: "Evaluates dispatch eligibility from explicit active status, compliance, capacity, capability and open exceptions. No uncontrolled payout or synthetic partner ranking logic.",
+    href: "/dashboard/dispatch",
     status: "BUILT",
   },
 ] as const;
@@ -65,7 +65,7 @@ export default function InstitutionalExpansionPage() {
         <div className="text-xs uppercase tracking-[0.24em] text-[var(--ms-gold)]">Institutional Expansion Layer</div>
         <h1 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Next-Generation Milano Seal OS</h1>
         <p className="mt-4 max-w-4xl text-sm leading-7 text-white/65 md:text-base">
-          Six governed expansion engines now sit above the canonical Matter, payment, execution, authority, custody and Alliance systems. This layer is read-only by default and cannot self-certify live transaction evidence.
+          Six governed expansion projections sit above the canonical Matter, payment, execution, authority, custody and Alliance systems. Each resolves into an existing owning workspace so intelligence does not become a second operating system.
         </p>
       </section>
 
