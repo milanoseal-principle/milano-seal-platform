@@ -14,7 +14,7 @@ export function InternationalExecutionControlPanel() {
       <div>
         <div className="text-xs uppercase tracking-[0.2em] text-[var(--ms-gold)]">International Execution Governance</div>
         <h2 className="mt-2 text-2xl font-semibold text-white">Authority evidence, Hague coverage and document-origin routing</h2>
-        <p className="mt-3 max-w-5xl text-sm leading-7 text-white/55">This layer extends the canonical Compliance Atlas. It does not create a second country database. 129 Contracting Parties is a Convention coverage fact; every Matter still requires operative relationship, document origin, competent authority, territorial scope and receiving-authority review.</p>
+        <p className="mt-3 max-w-5xl text-sm leading-7 text-white/55">This layer extends the canonical Compliance Atlas. It does not create a second country database. {coverage.contractingParties} Contracting Parties is a Convention coverage fact; every Matter still requires operative relationship, document origin, competent authority, territorial scope and receiving-authority review.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-8">
