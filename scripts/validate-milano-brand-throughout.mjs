@@ -20,7 +20,6 @@ const requiredFiles = [
   "components/alliance/AllianceShell.tsx",
   "scripts/validate-milano-os-isolation.mjs",
   "scripts/validate-milano-os-surface-unification.mjs",
-  "scripts/validate:responsive-safety.mjs",
 ].filter((file) => existsSync(file));
 
 for (const file of requiredFiles) {
@@ -82,7 +81,6 @@ for (const [label, source] of [
 
 assert.ok(theme.includes('--ms-milano-gold'), "Canonical theme must expose Milano gold token");
 assert.ok(theme.includes('--ms-matte-black'), "Canonical theme must expose Archive Black token");
-assert.ok(theme.includes('@media (prefers-reduced-motion: reduce)'), "Canonical visual system must retain reduced-motion safety");
 
 const roots = ["app", "components", "styles"];
 const activeFiles = [];
@@ -100,6 +98,14 @@ function walk(root) {
   }
 }
 roots.forEach(walk);
+
+const reducedMotionSources = activeFiles
+  .map((file) => readFileSync(file, "utf8"))
+  .filter((source) => source.includes("prefers-reduced-motion: reduce"));
+assert.ok(
+  shell.includes("useReducedMotion") && reducedMotionSources.length > 0,
+  "Canonical visual system must retain both component and CSS reduced-motion safety",
+);
 
 const foreignBrandPatterns = [
   /\bLiaison\s+OS\b/i,
