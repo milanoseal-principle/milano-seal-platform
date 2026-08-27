@@ -2,10 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ARCHITECTURE_DECISIONS, DEPENDENCY_GRAPH, ENVIRONMENT_DEPENDENCIES, detectDependencyCycles, validateArchitectureGovernance } from "@/lib/control-plane/architectureGovernance";
 import { HARDENING_REGISTRY } from "@/lib/control-plane/hardeningRegistry";
-import { DOCUMENT_ORIGIN_ROUTING_MATRIX, evaluateDocumentMedium, evaluateRonEligibility, evaluateTranslationGovernance, evaluateWitnessGovernance } from "@/lib/international-execution/operationalGovernance";
+import { DOCUMENT_ORIGIN_ROUTING_MATRIX, evaluateDocumentMedium, evaluateRonEligibility, evaluateTranslationGovernance, evaluateWitnessGovernance, summarizeHagueCoverage } from "@/lib/international-execution/operationalGovernance";
 import { buildMatterTruthSections, deriveMatterCompleteness, findMatterDiscrepancies } from "@/lib/matter/matterTruthGovernance";
 import { deriveDispatchDecision, transitionAssignment, type AllianceExecutionCapability } from "@/lib/alliance/executionGovernance";
 import { buildProvenanceEdge, deriveClientReturnProjection } from "@/lib/intelligence/controlCenter";
+
+const MATTER_360_CAPABILITIES = [
+  "matter_truth_snapshot_archive",
+  "matter_output_envelopes",
+  "matter_evidence_reconciliation",
+  "matter_provenance_matrix",
+] as const;
 
 test("architecture decisions 001-010 remain active and graph is acyclic", () => {
   assert.equal(ARCHITECTURE_DECISIONS.length >= 10, true);
@@ -19,9 +26,32 @@ test("architecture decisions 001-010 remain active and graph is acyclic", () => 
 
 test("hardening capabilities remain registered without a second payment or Matter authority", () => {
   const ids = new Set(HARDENING_REGISTRY.map((entry) => entry.id));
-  for (const id of ["international_execution_governance", "matter_truth_view", "execution_reconciliation_center", "alliance_execution_governance", "matter_evidence_ledger", "live_acceptance_37_45"]) assert.equal(ids.has(id), true, id);
+  for (const id of [
+    "international_execution_governance",
+    "matter_truth_view",
+    "execution_reconciliation_center",
+    "alliance_execution_governance",
+    "matter_evidence_ledger",
+    ...MATTER_360_CAPABILITIES,
+    "live_acceptance_37_45",
+  ]) assert.equal(ids.has(id), true, id);
   assert.equal(HARDENING_REGISTRY.filter((entry) => entry.authorityIds.includes("payment") && entry.authorityMode === "canonical").length, 0);
   assert.equal(HARDENING_REGISTRY.filter((entry) => entry.id.includes("state_machine")).length, 0);
+});
+
+test("Matter 360 capabilities remain derived and cannot become competing Matter/payment authorities", () => {
+  for (const id of MATTER_360_CAPABILITIES) {
+    const capability = HARDENING_REGISTRY.find((entry) => entry.id === id);
+    assert.ok(capability, id);
+    assert.equal(capability.authorityMode, "derived");
+    assert.equal(capability.mutationPolicy === "governed_write", false);
+  }
+});
+
+test("HCCH Convention coverage is 130 parties while Matter applicability remains separate", () => {
+  const coverage = summarizeHagueCoverage();
+  assert.equal(coverage.contractingParties, 130);
+  assert.equal(typeof coverage.mappedDestinations, "number");
 });
 
 test("RON fails closed on missing signer/notarial evidence and rejects wet ink", () => {
