@@ -5,6 +5,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const dealRoute = fs.readFileSync(path.join(root, "app/api/deals/[id]/route.ts"), "utf8");
+const stateMachine = fs.readFileSync(path.join(root, "data/matter-state-machine.ts"), "utf8");
 const scheduleRoute = fs.readFileSync(path.join(root, "app/api/deals/[id]/schedule/route.ts"), "utf8");
 const executeRoute = fs.readFileSync(path.join(root, "app/api/deals/[id]/execute/route.ts"), "utf8");
 const confirmPaymentRoute = fs.readFileSync(path.join(root, "app/api/admin/matters/[id]/confirm-payment/route.ts"), "utf8");
@@ -19,23 +20,60 @@ const pipelineEngine = fs.readFileSync(path.join(root, "lib/pipelineEngine.ts"),
 const protectedPolicy = fs.readFileSync(path.join(root, "lib/auth/protectedMatterTransitions.ts"), "utf8");
 const orphanedPaymentActions = path.join(root, "components/dashboard/deal-detail-actions.tsx");
 
-test("generic deal PATCH cannot author paid settlement", () => {
-  assert.match(dealRoute, /PAYMENT_CONFIRMATION_SERVER_ONLY/);
-  assert.match(dealRoute, /body\.payment_status === "paid"/);
-  assert.match(dealRoute, /body\.payment_confirmed === true/);
-  assert.match(dealRoute, /body\.payment_amount_received !== undefined/);
-  assert.match(dealRoute, /body\.payment_reference !== undefined/);
+test("generic deal PATCH cannot author any Wise settlement or payment lifecycle field", () => {
+  assert.match(dealRoute, /const PAYMENT_FIELDS = new Set/);
+  assert.match(dealRoute, /PAYMENT_MUTATION_GOVERNED_PATH_REQUIRED/);
+  assert.match(dealRoute, /Wise settlement and payment lifecycle changes must use the canonical payment\/reconciliation path/);
+  for (const field of [
+    "payment_status",
+    "payment_method",
+    "payment_confirmed",
+    "payment_amount_received",
+    "amount_paid",
+    "payment_reference",
+    "wise_reference",
+    "balance_payment_status",
+    "refund_amount",
+    "dispute_reason",
+    "invoice_status",
+  ]) {
+    assert.match(dealRoute, new RegExp(`\\"${field}\\"`), field);
+  }
 });
 
-test("generic deal PATCH rejects Stripe and only accepts Wise", () => {
-  assert.match(dealRoute, /body\.payment_method && body\.payment_method !== "wise"/);
+test("generic deal PATCH rejects payment-provider mutation entirely and never references Stripe", () => {
+  assert.match(dealRoute, /"payment_method"/);
+  assert.match(dealRoute, /PAYMENT_FIELDS/);
   assert.doesNotMatch(dealRoute, /"stripe"/i);
 });
 
-test("generic deal PATCH cannot jump directly to scheduled or in_execution", () => {
-  assert.match(dealRoute, /PROTECTED_STATE_TRANSITION/);
-  assert.match(dealRoute, /body\.status === "scheduled"/);
-  assert.match(dealRoute, /body\.status === "in_execution"/);
+test("generic deal PATCH cannot author any canonical Matter state", () => {
+  assert.match(dealRoute, /import \{ MATTER_STATES \} from "@\/data\/matter-state-machine"/);
+  assert.match(dealRoute, /const PROTECTED_LIFECYCLE_STATUSES = new Set<string>\(MATTER_STATES\)/);
+  assert.match(dealRoute, /"status"/);
+  assert.match(dealRoute, /GOVERNED_LIFECYCLE_MUTATION_REQUIRED/);
+  assert.match(stateMachine, /"scheduled"/);
+  assert.match(stateMachine, /"in_execution"/);
+  assert.match(stateMachine, /"completed"/);
+});
+
+test("generic deal PATCH cannot author execution-through-delivery evidence", () => {
+  assert.match(dealRoute, /const PROTECTED_LIFECYCLE_FIELDS = new Set/);
+  for (const field of [
+    "scheduled_at",
+    "execution_at",
+    "executed_at",
+    "apostille_at",
+    "shipped_at",
+    "tracking_number",
+    "delivery_status",
+    "delivery_at",
+    "delivered_at",
+    "release_verified",
+    "completed_at",
+  ]) {
+    assert.match(dealRoute, new RegExp(`\\"${field}\\"`), field);
+  }
 });
 
 test("protected scheduling and execution share governed role policy without virtual assistants", () => {
