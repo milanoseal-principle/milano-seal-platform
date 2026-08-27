@@ -38,14 +38,26 @@ function parseDate(value?: string | null): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function deriveMatterProvenanceState(entry: MatterProvenanceEntry, now = new Date()): MatterProvenanceRow {
-  const verifiedAt = parseDate(entry.verifiedAt);
-  if (!verifiedAt) return { ...entry, state: "UNKNOWN", ageDays: null };
+function unknownRow(entry: MatterProvenanceEntry): MatterProvenanceRow {
+  return { ...entry, state: "UNKNOWN", ageDays: null };
+}
 
-  const ageDays = Math.max(0, Math.floor((now.getTime() - verifiedAt.getTime()) / 86_400_000));
+function hasEvidenceReference(entry: MatterProvenanceEntry) {
+  return Boolean(entry.sourceReference?.trim()) || entry.evidenceRefs.some((reference) => Boolean(reference.trim()));
+}
+
+export function deriveMatterProvenanceState(entry: MatterProvenanceEntry, now = new Date()): MatterProvenanceRow {
+  if (!entry.sourceAuthority.trim() || !hasEvidenceReference(entry)) return unknownRow(entry);
+
+  const verifiedAt = parseDate(entry.verifiedAt);
+  if (!verifiedAt) return unknownRow(entry);
+  if (verifiedAt.getTime() > now.getTime()) return unknownRow(entry);
+
+  const ageDays = Math.floor((now.getTime() - verifiedAt.getTime()) / 86_400_000);
   const cadence = entry.reviewCadenceDays ?? null;
 
-  if (!cadence || cadence <= 0) return { ...entry, state: "CURRENT", ageDays };
+  if (cadence !== null && (!Number.isFinite(cadence) || cadence <= 0)) return unknownRow(entry);
+  if (cadence === null) return { ...entry, state: "CURRENT", ageDays };
   if (ageDays > cadence) return { ...entry, state: "STALE", ageDays };
   if (ageDays >= Math.max(0, cadence - 14)) return { ...entry, state: "DUE_SOON", ageDays };
   return { ...entry, state: "CURRENT", ageDays };
