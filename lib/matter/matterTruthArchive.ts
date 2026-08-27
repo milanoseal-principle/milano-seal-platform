@@ -45,6 +45,12 @@ export interface MatterTruthDelta {
   reason: string;
 }
 
+function parseTimestamp(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (value && typeof value === "object") {
@@ -62,29 +68,51 @@ function comparableDomain(domain: MatterTruthDomainSnapshot) {
     state: domain.state,
     sourceAuthority: domain.sourceAuthority,
     authorityVersion: domain.authorityVersion ?? null,
-    evidenceRefs: [...domain.evidenceRefs].sort(),
+    evidenceRefs: [...new Set(domain.evidenceRefs)].sort(),
     value: domain.value ?? null,
   });
 }
 
+function unknownDeltas(previous: MatterTruthSnapshot | null, current: MatterTruthSnapshot, reason: string): MatterTruthDelta[] {
+  return MATTER_TRUTH_DOMAINS.map((domain) => ({
+    domain,
+    state: "UNKNOWN" as const,
+    previousState: previous?.domains[domain]?.state ?? null,
+    currentState: current.domains[domain]?.state ?? null,
+    previousAuthorityVersion: previous?.domains[domain]?.authorityVersion ?? null,
+    currentAuthorityVersion: current.domains[domain]?.authorityVersion ?? null,
+    reason,
+  }));
+}
+
 export function isAcceptedMatterTruthSnapshot(snapshot: MatterTruthSnapshot): boolean {
-  return snapshot.status === "ACCEPTED" && Boolean(snapshot.acceptedAt) && Boolean(snapshot.acceptedBy);
+  const capturedAt = parseTimestamp(snapshot.capturedAt);
+  const acceptedAt = parseTimestamp(snapshot.acceptedAt);
+  return snapshot.status === "ACCEPTED"
+    && Boolean(snapshot.snapshotId.trim())
+    && Boolean(snapshot.matterId.trim())
+    && Boolean(snapshot.buildVersion.trim())
+    && Boolean(snapshot.acceptedBy?.trim())
+    && capturedAt !== null
+    && acceptedAt !== null
+    && acceptedAt >= capturedAt;
 }
 
 export function selectAcceptedMatterTruthBaseline(
   snapshots: readonly MatterTruthSnapshot[],
   currentSnapshot: MatterTruthSnapshot,
 ): MatterTruthSnapshot | null {
-  const currentTime = Date.parse(currentSnapshot.capturedAt);
+  const currentTime = parseTimestamp(currentSnapshot.capturedAt);
+  const matterId = currentSnapshot.matterId.trim();
+  if (currentTime === null || !matterId) return null;
+
   return snapshots
     .filter((snapshot) => snapshot.snapshotId !== currentSnapshot.snapshotId)
     .filter(isAcceptedMatterTruthSnapshot)
-    .filter((snapshot) => snapshot.matterId === currentSnapshot.matterId)
-    .filter((snapshot) => {
-      const time = Date.parse(snapshot.capturedAt);
-      return Number.isFinite(time) && (!Number.isFinite(currentTime) || time < currentTime);
-    })
-    .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0] ?? null;
+    .filter((snapshot) => snapshot.matterId.trim() === matterId)
+    .map((snapshot) => ({ snapshot, capturedAt: parseTimestamp(snapshot.capturedAt) }))
+    .filter((entry): entry is { snapshot: MatterTruthSnapshot; capturedAt: number } => entry.capturedAt !== null && entry.capturedAt < currentTime)
+    .sort((a, b) => b.capturedAt - a.capturedAt)[0]?.snapshot ?? null;
 }
 
 export function compareAcceptedMatterTruth(
@@ -92,22 +120,22 @@ export function compareAcceptedMatterTruth(
   current: MatterTruthSnapshot,
 ): MatterTruthDelta[] {
   if (!isAcceptedMatterTruthSnapshot(current)) {
-    return MATTER_TRUTH_DOMAINS.map((domain) => ({
-      domain,
-      state: "UNKNOWN" as const,
-      previousState: previous?.domains[domain]?.state ?? null,
-      currentState: current.domains[domain]?.state ?? null,
-      previousAuthorityVersion: previous?.domains[domain]?.authorityVersion ?? null,
-      currentAuthorityVersion: current.domains[domain]?.authorityVersion ?? null,
-      reason: "Current Matter Truth snapshot is not accepted; deterministic change truth is unavailable.",
-    }));
+    return unknownDeltas(previous, current, "Current Matter Truth snapshot is not accepted with valid acceptance evidence; deterministic change truth is unavailable.");
+  }
+
+  if (previous && previous.matterId.trim() !== current.matterId.trim()) {
+    return unknownDeltas(previous, current, "Snapshots belong to different Matters; cross-Matter comparison is prohibited.");
+  }
+
+  if (!previous || !isAcceptedMatterTruthSnapshot(previous)) {
+    return unknownDeltas(previous, current, "A prior accepted Matter Truth baseline is unavailable; no difference is inferred.");
   }
 
   return MATTER_TRUTH_DOMAINS.map((domain) => {
-    const before = previous?.domains[domain];
+    const before = previous.domains[domain];
     const after = current.domains[domain];
 
-    if (!previous || !isAcceptedMatterTruthSnapshot(previous) || !before || !after) {
+    if (!before || !after) {
       return {
         domain,
         state: "UNKNOWN" as const,
