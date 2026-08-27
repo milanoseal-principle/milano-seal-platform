@@ -54,9 +54,11 @@ test("canonical Matter list API requires server-authenticated app-metadata-deriv
 
 test("generic Matter detail API cannot author Wise payment or governed lifecycle truth", () => {
   const source = read("app/api/deals/[id]/route.ts");
+  const stateMachine = read("data/matter-state-machine.ts");
   assert.match(source, /const PAYMENT_FIELDS = new Set/);
   assert.match(source, /const PROTECTED_LIFECYCLE_FIELDS = new Set/);
-  assert.match(source, /const PROTECTED_LIFECYCLE_STATUSES = new Set/);
+  assert.match(source, /import \{ MATTER_STATES \} from "@\/data\/matter-state-machine"/);
+  assert.match(source, /const PROTECTED_LIFECYCLE_STATUSES = new Set<string>\(MATTER_STATES\)/);
   assert.match(source, /PAYMENT_MUTATION_GOVERNED_PATH_REQUIRED/);
   assert.match(source, /GOVERNED_LIFECYCLE_MUTATION_REQUIRED/);
   assert.match(source, /resolveServerRole/);
@@ -79,7 +81,7 @@ test("generic Matter detail API cannot author Wise payment or governed lifecycle
     assert.match(source, new RegExp(`\\"${protectedField}\\"`), protectedField);
   }
 
-  for (const protectedStatus of [
+  for (const canonicalStatus of [
     "deposit_confirmed",
     "scheduling_unlocked",
     "scheduled",
@@ -91,7 +93,7 @@ test("generic Matter detail API cannot author Wise payment or governed lifecycle
     "delivered",
     "completed",
   ]) {
-    assert.match(source, new RegExp(`\\"${protectedStatus}\\"`), protectedStatus);
+    assert.match(stateMachine, new RegExp(`\\"${canonicalStatus}\\"`), canonicalStatus);
   }
 
   const metadataMatch = source.match(/const GENERIC_METADATA_FIELDS = \[([\s\S]*?)\] as const;/);
