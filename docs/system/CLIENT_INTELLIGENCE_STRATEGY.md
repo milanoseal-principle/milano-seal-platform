@@ -1,143 +1,74 @@
 # The Milano Seal™ — Client Intelligence Strategy
 
-**Status:** Staged — Phase 1 complete. Do not activate advanced personalization until P0 live verification passes.
-
----
+**Status:** Active strategy. Advanced personalization remains subordinate to live production certification and canonical Matter truth.
 
 ## Executive Summary
 
-The Milano Seal OS accumulates execution intelligence from every completed matter. This intelligence is used to make future intake, portal, dashboard, and VA experiences faster, clearer, and more precise — without exposing private client data, inventing automation that does not exist, or making claims the system cannot support.
+The Milano Seal OS may accumulate execution intelligence from completed Matters to make future intake, portal, dashboard, alliance, and execution-support experiences faster, clearer, and more precise without exposing private client data, inventing automation, or overriding canonical facts.
 
 The ecosystem may learn. It must never leak.
-
----
 
 ## Client Experience Growth Model
 
 | Level | User | Experience |
 |---|---|---|
 | 0 | New visitor | Clear public education, no personal data, basic intake guidance |
-| 1 | First matter client | Current required action, document checklist, payment/scheduling clarity |
-| 2 | Repeat client | Start similar matter, safe prefill, prior pathway shortcut |
-| 3 | Professional / law firm | Matter history summary, office delivery language, recurring patterns |
+| 1 | First Matter client | Current required action, document checklist, payment/scheduling clarity |
+| 2 | Repeat client | Safe prefill, prior pathway shortcut, faster Matter setup |
+| 3 | Professional client | Matter history summary, recurring document patterns, office delivery preferences |
 | 4 | Internal operator | Aggregate patterns, bottlenecks, client history, delivery/review timing |
 
----
+## Data Categories
 
-## Data Categories to Collect
+Client profile data may include identity, client type, repeat-client state, prior document types, destinations, signer/origin patterns, completed Matter count, and last Matter date.
 
-**Client profile data:**
-- client email, name, client type
-- repeat client flag
-- prior document types and destination countries
-- prior signer location and origin jurisdiction
-- completed matter count, last matter date
+Matter pattern data may include document type, destination country, origin jurisdiction, apostille/authentication needs, translation likelihood, execution method, turnaround time, blockers, and checklist history.
 
-**Matter pattern data:**
-- document type, destination country, origin jurisdiction
-- apostille required, translation likely, RON possible
-- lane selected, turnaround time
-- common missing fields, required checklist items
+UX event data may include intake start/submission, invoice/payment-view activity, document-vault activity, custody/tracking activity, review requests, and support requests.
 
-**UX event data:**
-- intake started/submitted
-- invoice viewed, payment clicked
-- vault opened, custody rail opened
-- review requested/clicked, support requested
-
-**Operational data:**
-- time from intake to quote/payment/scheduling/execution/release
-- delayed states, repeated blockers
-- VA task outcomes, founder interventions
-
----
+Operational data may include elapsed time across canonical lifecycle states, repeated blockers, execution-support task outcomes, and founder/operator interventions.
 
 ## Data That Must Never Be Exposed to Clients
 
-- `internal_notes`
-- `operator_notes`
-- `discount_note`
-- `discount_reason`
-- `raw_webhook`
-- `raw_event`
-- `margin` / `net_margin`
-- `shipping_cost` / `label_url`
-- `raw_courier_payload`
-- Founder-only pricing notes
-- PIP / provider / referral / chiropractic language (completely forbidden)
-
----
+- internal notes
+- operator notes
+- internal discount rationale
+- raw webhook/event payloads
+- margin or net margin
+- internal shipping cost or label URLs
+- founder-only pricing notes
+- outside-employer workflow language
+- unrelated case-recovery or provider-business-development concepts
 
 ## Per-Surface Strategy
 
 ### Public Site
-Use aggregate, non-private intelligence only. Highlight high-demand destinations, common document types, apostille pathways. Never expose client names, matter IDs, or private histories.
+Use aggregate, non-private intelligence only. Never expose client names, Matter IDs, private histories, or unsupported acceptance claims.
 
 ### Intake
-Adapt for repeat clients: safe prefill of name, email, frequent destination, prior document type. Dynamic guidance: if Italy + affidavit → show client-safe apostille note. If UAE → explain legalization may be required. Never force autofill or expose prior matter data before authentication.
+Use safe prefill only after identity and authorization are established. Recommendations may guide but must not silently decide legal/compliance facts.
 
 ### Secure Matter Portal
-Show one clear next action, one current status, one next step. Add client-safe pathway summary card when pathway_intelligence data exists. Add prior matter shortcut for repeat clients. Never dump backend jargon.
+Show one clear next action, current verified state, next step, payment/scheduling truth, document status, custody/release status, and relevant client-safe history.
 
 ### Execution Center
-Show client intelligence inside matter drawer only (not main surface): repeat client flag, prior destination countries, common missing fields, recommended checklist, similar prior matters. Recommendations only — never auto-change pricing, auto-confirm payment, or auto-release documents.
+Show internal client intelligence only where it helps the operator execute the Matter safely. Recommendations may never auto-change pricing, auto-confirm payment, auto-schedule, auto-release, or override authority review.
 
-### Operations Desk
-Preflight checklist based on pathway_intelligence common missing fields. Client follow-up template suggestions. Founder approval required flags. VA must never see: margins, discount reasons, founder notes, payment override controls.
+### Execution Support Workspace
+Provide checklist guidance, document-prep support, follow-up tasks, and founder/operator review requests. Protected financial, payment-confirmation, release, or canonical transition controls remain role-gated.
 
 ### The Vault
-Consistent folder structure, generated file naming protocol, Paid & Released certificate history, delivery logs, locked PDF indicators. Never overwrite sent files.
+Preserve deterministic file naming, version history, release history, delivery logs, and locked-document indicators. Never overwrite released source files.
 
 ### The Atlas
-Grow from aggregate execution intelligence: country routing notes, Hague/non-Hague classification, RON availability, translation likelihood, common blockers. Never expose specific client matters or internal operator notes.
-
----
-
-## Recommended Database Tables
-
-| Table | Purpose |
-|---|---|
-| `client_profiles` | Persistent client identity and repeat-client memory |
-| `client_matter_preferences` | Repeat matter preferences and pathway reuse |
-| `pathway_intelligence` | Country/document execution knowledge |
-| `ux_learning_events` | Safe UX behavior/friction tracking |
-| `client_guidance_rules` | Deterministic next-action messages |
-
-All tables: RLS enabled, client reads own data only, service role for operator access.
-
----
-
-## Implementation Phases
-
-| Phase | Work | Status |
-|---|---|---|
-| 1 | Strategy doc, migration `029`, TypeScript helpers, UI cards | Complete |
-| 2 | Wire NextActionCard into portal, MatterIntelligencePanel into drawer, PreflightGuidanceCard into VA portal | Post P0 |
-| 3 | Populate pathway_intelligence with real country/document data | Post P0 |
-| 4 | Intake repeat-client prefill | Post P0 |
-| 5 | Reporting: repeat clients, common destinations, common blockers, turnaround | Post P0 |
-
----
+Use governed country/document intelligence and source-backed routing guidance. Never expose private Matters or internal operator notes.
 
 ## Safety Rules
 
-1. No AI calls in helpers — all logic is deterministic
-2. All DB calls wrapped in try/catch with safe fallbacks
-3. `operator_notes` in `pathway_intelligence` is never serialized to client
-4. `ux_learning_events` has no client read policy
-5. Client reads own profile only — never another client's data
-6. UI cards add intelligence, never replace working modules
-7. Recommendations are labeled as suggestions — never claimed as guaranteed facts
-
----
-
-## What NOT to Build Yet
-
-- Automatic pricing changes based on patterns
-- Automatic payment confirmation
-- Automatic document release
-- AI-generated copy in client portal
-- Public claims about "AI-powered" features
-- Automated courier if Shippo is not live
-- Cryptographic audit trail if hash-chain is not implemented
-- Any PIP, provider, referral, or chiropractic logic (permanently forbidden)
+1. Canonical Matter, payment, scheduling, custody, and release truth always outrank inferred intelligence.
+2. Client-facing projections never expose internal-only data.
+3. Recommendations remain suggestions unless backed by deterministic governed rules.
+4. Missing data remains UNKNOWN or NOT LOADED rather than false or zero.
+5. No automatic payment confirmation or document release.
+6. No foreign product, outside-employer, unrelated provider/referral, event-targeting, or case-recovery logic may enter the Milano Seal model.
+7. Client intelligence must remain role-scoped, provenance-aware, and auditable.
