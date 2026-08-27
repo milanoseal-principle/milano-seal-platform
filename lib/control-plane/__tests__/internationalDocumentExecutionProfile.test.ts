@@ -10,8 +10,8 @@ import {
 
 type InternationalExecutionLaneId = (typeof INTERNATIONAL_EXECUTION_LANES)[number]["id"];
 
-test("HCCH Apostille Convention profile is locked to 129 Contracting Parties with Matter-specific caveat", () => {
-  assert.equal(APOSTILLE_CONVENTION_PROFILE.contractingParties, 129);
+test("HCCH Apostille Convention profile is locked to 130 Contracting Parties with Matter-specific caveat", () => {
+  assert.equal(APOSTILLE_CONVENTION_PROFILE.contractingParties, 130);
   assert.equal(APOSTILLE_CONVENTION_PROFILE.authority, "HCCH");
   assert.match(APOSTILLE_CONVENTION_PROFILE.governanceNote, /not a blanket promise/i);
   assert.match(APOSTILLE_CONVENTION_PROFILE.governanceNote, /receiving-authority/i);
