@@ -2,15 +2,15 @@
 
 ## Controlling rule
 
-Liaison OS architecture may be studied for system patterns, but Milano Seal business logic, data, providers, events and domain code remain isolated inside `milano-seal-platform`.
+External architecture patterns may inform Milano-specific implementation, but Milano Seal business logic, data, providers, events and domain code remain isolated inside `milano-seal-platform`.
 
 The transfer direction is:
 
-`Liaison pattern → Milano-specific implementation`
+`external architecture pattern → Milano-specific implementation`
 
 Never:
 
-`Liaison domain data/code → Milano runtime`
+`foreign domain data/code → Milano runtime`
 
 ## Matter 360 authority firewall
 
