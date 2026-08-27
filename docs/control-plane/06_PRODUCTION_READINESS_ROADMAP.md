@@ -15,29 +15,47 @@ Use only these statuses:
 
 ## Evidence Rule
 
-Never infer a higher readiness state from a lower one. A passing build cannot prove Wise settlement, physical mobile behavior, provider delivery, role-session isolation or Final Truth Review.
+Never infer a higher readiness state from a lower one. A passing build cannot prove Wise settlement, physical mobile behavior, RON identity/KBA completion, notarial execution, apostille/authentication issuance, receiving-authority acceptance, carrier delivery, role-session isolation or Final Truth Review.
+
+## International Execution Evidence Classes
+
+Code can validate routing rules and fail-closed behavior, but production readiness for an international Matter depends on actual evidence classes:
+
+- document identity and origin evidence
+- destination / HCCH status evidence
+- receiving-authority evidence
+- RON or physical notarial execution evidence
+- identity / credential / KBA evidence when RON applies
+- apostille or authentication issuance evidence
+- translation / witness evidence when applicable
+- Wise settlement evidence
+- custody / release evidence
+- carrier tracking and delivery evidence
+- final operator truth review
+
+The HCCH 1961 Apostille Convention currently has **129 Contracting Parties**. Country coverage must never be treated as proof that an individual document is apostille-ready.
 
 ## Current Platform Roadmap Structure
 
 ### Demand
 
-Keep public authority, professional/institutional acquisition, referrals, SEO and client-return acquisition inside the Demand parent system. Do not create separate products for individual acquisition engines.
+Keep public international authority, country/document education, professional/institutional acquisition, referrals, SEO and client-return acquisition inside the Demand parent system. Do not create separate products for individual acquisition engines.
 
 ### Matter Control
 
-Prioritize canonical Matter integrity, payment, scheduling, execution, authority, custody, delivery and release before adding new workflow abstractions.
+Prioritize canonical Matter integrity, document origin/destination, RON/notarial execution truth, payment, scheduling, apostille/authentication authority routing, custody, courier, delivery and release before adding new workflow abstractions.
 
 ### Execution Network
 
-Expand Alliance/partner capacity only through explicit certification, compliance, availability and scoped execution evidence.
+Expand Alliance/partner capacity only through explicit certification, compliance, availability and scoped execution evidence. RON, mobile notary, translation and courier capacity must remain capability-scoped rather than presumed.
 
 ### Intelligence & Control
 
-New intelligence must be a derived projection over canonical evidence, read-only by default, and placed inside the existing Operator workspace unless another user genuinely requires the surface.
+New intelligence must be a derived projection over canonical evidence, read-only by default, and placed inside the existing Operator workspace unless another user genuinely requires the surface. Intelligence may identify stale authority evidence but cannot select a notarial act or authorize release.
 
 ### Governance & Platform
 
-Maintain role isolation, source governance, validators, deployment controls, observability, brand consistency, architecture decisions and production certification.
+Maintain role isolation, source governance, HCCH/authority provenance, validators, deployment controls, observability, brand consistency, architecture decisions and production certification.
 
 ## Live-Proof Gates That Cannot Be Self-Certified by Code
 
@@ -45,7 +63,10 @@ Maintain role isolation, source governance, validators, deployment controls, obs
 - Real TIFF 15-step Matter execution.
 - Real Wise settlement/replay/idempotency evidence.
 - Physical authenticated Client / Operator / VA / Alliance sessions.
+- Actual RON/notarial evidence when the Matter uses that lane.
+- Actual apostille/authentication/legalization completion evidence.
 - Actual notification/provider delivered evidence where required.
+- Actual carrier delivery evidence.
 - Human character-for-character Final Truth Review.
 - Browser screenshot/pixel regression evidence where required.
 
@@ -65,5 +86,7 @@ Before merge, every new production capability must pass the System Placement Gat
 6. Existing UX placement.
 7. Production validation.
 8. Registry entry.
+
+If the capability affects international execution, it must additionally identify document-origin, destination, receiving-authority, state/federal, RON/notarial and apostille/authentication dependencies.
 
 No unregistered production module should merge.
