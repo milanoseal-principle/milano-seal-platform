@@ -39,13 +39,41 @@ for (const mode of ["operator", "client", "va", "alliance"]) {
   assert.ok(shared.includes(`\"${mode}\"`), `Shared shell missing ${mode} mode`);
 }
 
-assert.ok(theme.startsWith('@import "../../styles/components/milano-os-shell.css";'), "Canonical Milano theme must load shared OS shell CSS");
+assert.ok(
+  theme.startsWith('@import "../../styles/components/milano-os-shell.css";'),
+  "Canonical Milano theme must load shared OS shell CSS",
+);
+assert.ok(
+  shared.includes("@/components/motion/motionPresets") &&
+    shared.includes("panelTransition") &&
+    shared.includes("routeTransition"),
+  "Shared shell must reuse the existing canonical Milano motion presets",
+);
 assert.ok(shared.includes("useReducedMotion"), "Shared shell must honor reduced motion");
-assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "CSS motion system must include reduced-motion fallback");
-assert.ok(shared.includes("metaKey") && shared.includes("ctrlKey") && shared.includes("key.toLowerCase() === \"k\""), "Workspace command palette must support Cmd/Ctrl+K");
-assert.ok(shared.includes("ms-os-mobile-drawer") && shared.includes("aria-modal=\"true\""), "Shared shell must include an accessible mobile navigation drawer");
-assert.ok(shared.includes("Navigation only · no state mutation"), "Command palette must remain navigation-only");
-assert.ok(!shared.includes("createClient") && !shared.includes("createAdminClient") && !shared.includes("supabase"), "Shared visual shell must not create a second data/auth layer");
+assert.ok(
+  css.includes("@media (prefers-reduced-motion: reduce)"),
+  "CSS motion system must include reduced-motion fallback",
+);
+assert.ok(
+  shared.includes("metaKey") &&
+    shared.includes("ctrlKey") &&
+    shared.includes('key.toLowerCase() === "k"'),
+  "Workspace command palette must support Cmd/Ctrl+K",
+);
+assert.ok(
+  shared.includes("ms-os-mobile-drawer") && shared.includes('aria-modal="true"'),
+  "Shared shell must include an accessible mobile navigation drawer",
+);
+assert.ok(
+  shared.includes("Navigation only · no state mutation"),
+  "Command palette must remain navigation-only",
+);
+assert.ok(
+  !shared.includes("createClient") &&
+    !shared.includes("createAdminClient") &&
+    !shared.includes("supabase"),
+  "Shared visual shell must not create a second data/auth layer",
+);
 assert.ok(!shared.includes("fetch("), "Shared visual shell must not fetch or mutate Matter data");
 
 for (const route of [
@@ -60,11 +88,30 @@ for (const route of [
   );
 }
 
-assert.ok(portal.includes("usePortal()"), "Client shell must preserve the existing client-safe portal projection");
-assert.ok(portal.includes("setActiveDealId"), "Client shell must preserve multi-Matter switching");
-assert.ok(va.includes("RitualEntryLock"), "VA shell must preserve the controlled session entry ritual");
-assert.ok(alliance.includes("routingEligible"), "Alliance shell must preserve routing readiness truth");
-assert.ok(operator.includes("Wise settlement truth"), "Operator shell must preserve Wise-governed payment language");
+assert.ok(
+  portal.includes("usePortal()"),
+  "Client shell must preserve the existing client-safe portal projection",
+);
+assert.ok(
+  portal.includes("setActiveDealId"),
+  "Client shell must preserve multi-Matter switching",
+);
+assert.ok(
+  portal.includes("CredentialTicker"),
+  "Client shell must preserve the existing trust/corridor ticker",
+);
+assert.ok(
+  va.includes("RitualEntryLock"),
+  "VA shell must preserve the controlled session entry ritual",
+);
+assert.ok(
+  alliance.includes("routingEligible"),
+  "Alliance shell must preserve routing readiness truth",
+);
+assert.ok(
+  operator.includes("Wise settlement truth"),
+  "Operator shell must preserve Wise-governed payment language",
+);
 
 for (const source of [shared, operator, portal, va, alliance]) {
   assert.ok(!/\bLiaison\s+OS\b/i.test(source), "Foreign workflow branding is prohibited from unified surfaces");
@@ -72,4 +119,6 @@ for (const source of [shared, operator, portal, va, alliance]) {
   assert.ok(!/\bDemesmin\b|\bDover\b/i.test(source), "Outside-employer branding is prohibited from unified surfaces");
 }
 
-console.log("PASS Milano OS surface unification: Dashboard, Client Portal, VA and Alliance share one cinematic responsive chrome with preserved role/data boundaries");
+console.log(
+  "PASS Milano OS surface unification: Dashboard, Client Portal, VA and Alliance share one cinematic responsive chrome with preserved role/data boundaries",
+);
