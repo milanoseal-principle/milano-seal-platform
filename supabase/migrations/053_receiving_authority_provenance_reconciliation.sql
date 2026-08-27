@@ -25,28 +25,44 @@ begin
     select 1 from information_schema.columns
     where table_schema='public' and table_name='receiving_authorities' and column_name='name'
   ) then
-    execute 'update public.receiving_authorities set authority_name = coalesce(nullif(trim(authority_name), ''''), name) where authority_name is null or trim(authority_name) = ''''';
+    execute $sql$
+      update public.receiving_authorities
+      set authority_name = coalesce(nullif(trim(authority_name), ''), name)
+      where authority_name is null or trim(authority_name) = ''
+    $sql$;
   end if;
 
   if exists (
     select 1 from information_schema.columns
     where table_schema='public' and table_name='receiving_authorities' and column_name='accepted_documents'
   ) then
-    execute 'update public.receiving_authorities set accepted_document_types = accepted_documents where accepted_document_types is null and accepted_documents is not null';
+    execute $sql$
+      update public.receiving_authorities
+      set accepted_document_types = accepted_documents
+      where accepted_document_types is null and accepted_documents is not null
+    $sql$;
   end if;
 
   if exists (
     select 1 from information_schema.columns
     where table_schema='public' and table_name='receiving_authorities' and column_name='language_rules'
   ) then
-    execute 'update public.receiving_authorities set language_requirements = language_rules where language_requirements is null and language_rules is not null';
+    execute $sql$
+      update public.receiving_authorities
+      set language_requirements = language_rules
+      where language_requirements is null and language_rules is not null
+    $sql$;
   end if;
 
   if exists (
     select 1 from information_schema.columns
     where table_schema='public' and table_name='receiving_authorities' and column_name='source_confidence'
   ) then
-    execute 'update public.receiving_authorities set confidence_level = coalesce(nullif(trim(confidence_level), ''''), source_confidence) where source_confidence is not null';
+    execute $sql$
+      update public.receiving_authorities
+      set confidence_level = coalesce(nullif(trim(confidence_level), ''), source_confidence)
+      where source_confidence is not null
+    $sql$;
   end if;
 end $$;
 
