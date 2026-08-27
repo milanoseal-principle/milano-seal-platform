@@ -28,6 +28,7 @@ if (!failures.length) {
   const page = read("app/dashboard/control-plane/page.tsx");
   const shell = read("components/dashboard/OperatorShell.tsx");
   const runGate = read("scripts/run-vercel-merge-gate.mjs");
+  const routeMap = read("docs/ROUTE_MAP.md");
 
   for (const system of [
     "demand",
@@ -90,7 +91,6 @@ if (!failures.length) {
   }
 
   for (const surface of [
-    "/dashboard/control-plane",
     "Canonical sources of truth",
     "System Placement Gate",
     "Standardized delivery states",
@@ -101,6 +101,9 @@ if (!failures.length) {
 
   if (!shell.includes('href: "/dashboard/control-plane"')) {
     failures.push("Operator navigation does not expose the System Control Plane.");
+  }
+  if (!routeMap.includes("`/dashboard/control-plane`")) {
+    failures.push("Canonical route map does not register the System Control Plane.");
   }
 
   if (!runGate.includes("scripts/validate-system-control-plane.mjs")) {
@@ -114,12 +117,10 @@ if (!failures.length) {
     failures.push("Institutional expansion modules are not adapted into the master System Registry.");
   }
 
-  const forbidden = ["Stripe", "second Matter engine", "automatic release authority"];
   if (registry.includes("Stripe")) failures.push("System Control Plane reintroduced prohibited Stripe language.");
-  if (!registry.includes("noSecondMatterEngine") && !registry.includes("oneMatterEngine")) {
+  if (!registry.includes("oneMatterEngine")) {
     failures.push("System Control Plane does not preserve one-Matter-engine governance.");
   }
-  void forbidden;
 }
 
 if (failures.length) {
