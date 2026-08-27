@@ -16,6 +16,7 @@ const requiredFiles = [
   "docs/control-plane/05_WORKSPACE_UX_MAP.md",
   "docs/control-plane/06_PRODUCTION_READINESS_ROADMAP.md",
   "docs/control-plane/07_INTERNATIONAL_EXECUTION_DOMAIN_PROFILE.md",
+  "docs/control-plane/09_MATTER_360_PROJECTION_GOVERNANCE.md",
 ];
 
 const failures = [];
@@ -27,6 +28,7 @@ for (const file of requiredFiles) {
 
 if (!failures.length) {
   const registry = read("lib/control-plane/systemRegistry.ts");
+  const hardeningRegistry = read("lib/control-plane/hardeningRegistry.ts");
   const placement = read("lib/control-plane/placementGate.ts");
   const domain = read("lib/control-plane/internationalDocumentExecutionProfile.ts");
   const page = read("app/dashboard/control-plane/page.tsx");
@@ -34,6 +36,7 @@ if (!failures.length) {
   const runGate = read("scripts/run-vercel-merge-gate.mjs");
   const routeMap = read("docs/ROUTE_MAP.md");
   const domainDoc = read("docs/control-plane/07_INTERNATIONAL_EXECUTION_DOMAIN_PROFILE.md");
+  const matter360Doc = read("docs/control-plane/09_MATTER_360_PROJECTION_GOVERNANCE.md");
 
   for (const system of ["demand", "matter_control", "execution_network", "intelligence_control", "governance_platform"]) {
     if (!registry.includes(`\"${system}\"`)) failures.push(`Missing parent system: ${system}`);
@@ -93,7 +96,7 @@ if (!failures.length) {
   }
 
   for (const domainToken of [
-    "contractingParties: 129",
+    "contractingParties: 130",
     'authority: "HCCH"',
     'id: "ron_execution"',
     'id: "state_apostille"',
@@ -123,7 +126,7 @@ if (!failures.length) {
   }
 
   for (const phrase of [
-    "129 Contracting Parties",
+    "130 Contracting Parties",
     "Remote Online Notarization",
     "State Apostille",
     "Federal Authentication",
@@ -133,13 +136,19 @@ if (!failures.length) {
     if (!domainDoc.includes(phrase)) failures.push(`International execution documentation missing: ${phrase}`);
   }
 
+  for (const capability of ["matter_truth_snapshot_archive", "matter_output_envelopes", "matter_evidence_reconciliation", "matter_provenance_matrix"]) {
+    if (!hardeningRegistry.includes(`id: \"${capability}\"`)) failures.push(`Matter 360 capability missing from hardening registry: ${capability}`);
+  }
+  if (!matter360Doc.includes("Liaison pattern → Milano-specific implementation")) failures.push("Matter 360 governance does not preserve the cross-project boundary rule.");
+
   if (!shell.includes('href: "/dashboard/control-plane"')) failures.push("Operator navigation does not expose the System Control Plane.");
   if (!routeMap.includes("`/dashboard/control-plane`")) failures.push("Canonical route map does not register the System Control Plane.");
   if (!runGate.includes("scripts/validate-system-control-plane.mjs")) failures.push("Vercel production merge gate does not enforce System Control Plane governance.");
   if (!registry.includes("INTERNAL_MODULES.map")) failures.push("Legacy internal module registry is not adapted into the master System Registry.");
   if (!registry.includes("EXPANSION_MODULES.map")) failures.push("Institutional expansion modules are not adapted into the master System Registry.");
-  if (registry.includes("Stripe") || domain.includes("Stripe")) failures.push("System Control Plane reintroduced prohibited Stripe language.");
+  if (registry.includes("Stripe") || domain.includes("Stripe") || hardeningRegistry.includes("Stripe")) failures.push("System Control Plane reintroduced prohibited Stripe language.");
   if (!registry.includes("oneMatterEngine")) failures.push("System Control Plane does not preserve one-Matter-engine governance.");
+  if (/129 Contracting Parties|contractingParties:\s*129/.test([domain, domainDoc, hardeningRegistry].join("\n"))) failures.push("Stale HCCH 129-party truth remains in active Control Plane sources.");
 }
 
 if (failures.length) {
@@ -148,4 +157,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS System Control Plane: five-system hierarchy plus international document execution, RON, 129-party Hague Apostille Convention governance, state/federal routing, receiving-authority review and fail-closed release controls are locked.");
+console.log("PASS System Control Plane: five-system hierarchy plus international document execution, RON, 130-party Hague Apostille Convention governance, state/federal routing, Matter 360 projections, receiving-authority review and fail-closed release controls are locked.");
