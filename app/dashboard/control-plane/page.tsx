@@ -1,4 +1,5 @@
 import { SystemControlPlaneModes } from "@/components/control-plane/SystemControlPlaneModes";
+import { InternationalExecutionControlPanel } from "@/components/control-plane/InternationalExecutionControlPanel";
 import { assertSystemRegistryIntegrity } from "@/lib/control-plane/placementGate";
 import { validateArchitectureGovernance } from "@/lib/control-plane/architectureGovernance";
 
@@ -19,9 +20,14 @@ export default function SystemControlPlanePage() {
   }
 
   return (
-    <SystemControlPlaneModes
-      runtimeSha={process.env.VERCEL_GIT_COMMIT_SHA ?? "Runtime SHA unavailable"}
-      environment={process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown"}
-    />
+    <>
+      <SystemControlPlaneModes
+        runtimeSha={process.env.VERCEL_GIT_COMMIT_SHA ?? "Runtime SHA unavailable"}
+        environment={process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown"}
+      />
+      <div className="pb-16">
+        <InternationalExecutionControlPanel />
+      </div>
+    </>
   );
 }
