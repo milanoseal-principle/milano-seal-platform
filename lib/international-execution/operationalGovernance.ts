@@ -74,7 +74,7 @@ export function evaluateAuthorityFreshness(record: AuthorityEvidenceRecord, now 
 export function summarizeHagueCoverage(records: readonly AuthorityEvidenceRecord[] = AUTHORITY_EVIDENCE_REGISTRY) {
   const count = (predicate: (record: AuthorityEvidenceRecord) => boolean) => records.filter(predicate).length;
   return {
-    contractingParties: 129,
+    contractingParties: 130,
     mappedDestinations: records.length,
     verified: count((r) => r.routingStatus === "VERIFIED"),
     stale: count((r) => evaluateAuthorityFreshness(r) === "STALE"),
