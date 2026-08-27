@@ -5,7 +5,9 @@ const root = process.cwd();
 const requiredFiles = [
   "lib/control-plane/systemRegistry.ts",
   "lib/control-plane/placementGate.ts",
+  "lib/control-plane/internationalDocumentExecutionProfile.ts",
   "lib/control-plane/__tests__/systemControlPlane.test.ts",
+  "lib/control-plane/__tests__/internationalDocumentExecutionProfile.test.ts",
   "app/dashboard/control-plane/page.tsx",
   "docs/control-plane/01_EXECUTIVE_PLATFORM_OVERVIEW.md",
   "docs/control-plane/02_MASTER_ARCHITECTURE_BLUEPRINT.md",
@@ -13,6 +15,7 @@ const requiredFiles = [
   "docs/control-plane/04_CANONICAL_MATTER_EXECUTION_CONTRACT.md",
   "docs/control-plane/05_WORKSPACE_UX_MAP.md",
   "docs/control-plane/06_PRODUCTION_READINESS_ROADMAP.md",
+  "docs/control-plane/07_INTERNATIONAL_EXECUTION_DOMAIN_PROFILE.md",
 ];
 
 const failures = [];
@@ -25,31 +28,18 @@ for (const file of requiredFiles) {
 if (!failures.length) {
   const registry = read("lib/control-plane/systemRegistry.ts");
   const placement = read("lib/control-plane/placementGate.ts");
+  const domain = read("lib/control-plane/internationalDocumentExecutionProfile.ts");
   const page = read("app/dashboard/control-plane/page.tsx");
   const shell = read("components/dashboard/OperatorShell.tsx");
   const runGate = read("scripts/run-vercel-merge-gate.mjs");
   const routeMap = read("docs/ROUTE_MAP.md");
+  const domainDoc = read("docs/control-plane/07_INTERNATIONAL_EXECUTION_DOMAIN_PROFILE.md");
 
-  for (const system of [
-    "demand",
-    "matter_control",
-    "execution_network",
-    "intelligence_control",
-    "governance_platform",
-  ]) {
+  for (const system of ["demand", "matter_control", "execution_network", "intelligence_control", "governance_platform"]) {
     if (!registry.includes(`\"${system}\"`)) failures.push(`Missing parent system: ${system}`);
   }
 
-  for (const status of [
-    "CONCEPT",
-    "SPECIFIED",
-    "BUILT",
-    "WIRED",
-    "GATED",
-    "DEPLOYED",
-    "LIVE_PROVEN",
-    "CERTIFIED",
-  ]) {
+  for (const status of ["CONCEPT", "SPECIFIED", "BUILT", "WIRED", "GATED", "DEPLOYED", "LIVE_PROVEN", "CERTIFIED"]) {
     if (!registry.includes(`\"${status}\"`)) failures.push(`Missing standardized delivery status: ${status}`);
   }
 
@@ -95,32 +85,61 @@ if (!failures.length) {
     "System Placement Gate",
     "Standardized delivery states",
     "Present the software by workspace, not by module",
+    "Purpose-built international document execution controls",
+    "RON, apostille, authentication and release stay distinct",
+    "International execution facts every Matter can require",
   ]) {
     if (!page.includes(surface)) failures.push(`Control-plane UI missing surface: ${surface}`);
   }
 
-  if (!shell.includes('href: "/dashboard/control-plane"')) {
-    failures.push("Operator navigation does not expose the System Control Plane.");
-  }
-  if (!routeMap.includes("`/dashboard/control-plane`")) {
-    failures.push("Canonical route map does not register the System Control Plane.");
-  }
-
-  if (!runGate.includes("scripts/validate-system-control-plane.mjs")) {
-    failures.push("Vercel production merge gate does not enforce System Control Plane governance.");
-  }
-
-  if (!registry.includes("INTERNAL_MODULES.map")) {
-    failures.push("Legacy internal module registry is not adapted into the master System Registry.");
-  }
-  if (!registry.includes("EXPANSION_MODULES.map")) {
-    failures.push("Institutional expansion modules are not adapted into the master System Registry.");
+  for (const domainToken of [
+    "contractingParties: 129",
+    'authority: "HCCH"',
+    'id: "ron_execution"',
+    'id: "state_apostille"',
+    'id: "federal_authentication"',
+    'id: "non_hague_legalization"',
+    "receivingAuthorityAlwaysControlsFinalAcceptance: true",
+    "noAutomaticNotarialActSelection: true",
+    "noAutomaticApostilleSelection: true",
+    "noAutomaticRONSelection: true",
+    "stateAndFederalAuthoritiesRemainDistinct: true",
+  ]) {
+    if (!domain.includes(domainToken)) failures.push(`International execution domain model missing: ${domainToken}`);
   }
 
-  if (registry.includes("Stripe")) failures.push("System Control Plane reintroduced prohibited Stripe language.");
-  if (!registry.includes("oneMatterEngine")) {
-    failures.push("System Control Plane does not preserve one-Matter-engine governance.");
+  for (const fact of [
+    "document_identity",
+    "origin_country_or_state",
+    "destination_country",
+    "receiving_authority",
+    "notarial_act",
+    "execution_method",
+    "translation_requirement",
+    "apostille_or_authentication_requirement",
+    "competent_authority",
+  ]) {
+    if (!domain.includes(`\"${fact}\"`)) failures.push(`International Matter contract missing fact: ${fact}`);
   }
+
+  for (const phrase of [
+    "129 Contracting Parties",
+    "Remote Online Notarization",
+    "State Apostille",
+    "Federal Authentication",
+    "Non-Hague Authentication / Consular Legalization",
+    "Final Acceptance Boundary",
+  ]) {
+    if (!domainDoc.includes(phrase)) failures.push(`International execution documentation missing: ${phrase}`);
+  }
+
+  if (!shell.includes('href: "/dashboard/control-plane"')) failures.push("Operator navigation does not expose the System Control Plane.");
+  if (!routeMap.includes("`/dashboard/control-plane`")) failures.push("Canonical route map does not register the System Control Plane.");
+  if (!runGate.includes("scripts/validate-system-control-plane.mjs")) failures.push("Vercel production merge gate does not enforce System Control Plane governance.");
+  if (!registry.includes("INTERNAL_MODULES.map")) failures.push("Legacy internal module registry is not adapted into the master System Registry.");
+  if (!registry.includes("EXPANSION_MODULES.map")) failures.push("Institutional expansion modules are not adapted into the master System Registry.");
+  if (registry.includes("Stripe") || domain.includes("Stripe")) failures.push("System Control Plane reintroduced prohibited Stripe language.");
+  if (!registry.includes("oneMatterEngine")) failures.push("System Control Plane does not preserve one-Matter-engine governance.");
 }
 
 if (failures.length) {
@@ -129,4 +148,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS System Control Plane: five-system hierarchy, canonical authorities, standardized readiness, registry adapters, workspace map and placement gate are locked.");
+console.log("PASS System Control Plane: five-system hierarchy plus international document execution, RON, 129-party Hague Apostille Convention governance, state/federal routing, receiving-authority review and fail-closed release controls are locked.");
