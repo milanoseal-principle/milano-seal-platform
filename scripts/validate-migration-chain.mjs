@@ -93,8 +93,21 @@ if (!evidenceLedger.includes("prevent_matter_evidence_ledger_mutation")) throw n
 if (!evidenceLedger.includes("auth.jwt() -> 'app_metadata'")) throw new Error("055 RLS must use app_metadata role authority");
 
 const truthArchive = fs.readFileSync(path.join(dir, "056_matter_truth_snapshot_archive.sql"), "utf8");
-if (!truthArchive.includes("prevent_matter_truth_snapshot_mutation")) throw new Error("056 must preserve append-only Matter Truth snapshots");
-if (!truthArchive.includes("status in ('ACCEPTED','PENDING_REVIEW','REJECTED')")) throw new Error("056 must constrain snapshot lifecycle states");
-if (!truthArchive.includes("auth.jwt() -> 'app_metadata'")) throw new Error("056 RLS must use app_metadata role authority");
+for (const invariant of [
+  "prevent_matter_truth_snapshot_mutation",
+  "status in ('ACCEPTED','PENDING_REVIEW','REJECTED')",
+  "length(btrim(build_version)) > 0",
+  "jsonb_typeof(authority_versions) = 'object'",
+  "jsonb_typeof(domains) = 'object'",
+  "array_position(source_evidence_ids, null) is null",
+  "status = 'ACCEPTED' and accepted_at is not null and accepted_by is not null and accepted_at >= captured_at",
+  "status <> 'ACCEPTED' and accepted_at is null and accepted_by is null",
+  "auth.jwt() -> 'app_metadata'",
+]) {
+  if (!truthArchive.includes(invariant)) throw new Error(`056 Matter Truth snapshot archive missing invariant: ${invariant}`);
+}
+if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(truthArchive)) {
+  throw new Error("056 must never authorize snapshot access from user_metadata");
+}
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
