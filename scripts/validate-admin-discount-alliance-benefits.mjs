@@ -9,6 +9,7 @@ const reportApi = read("app/api/dashboard/discounts/report/route.ts");
 const reportPage = read("app/dashboard/payments/discounts/report/page.tsx");
 const operatorShell = read("components/dashboard/OperatorShell.tsx");
 const dashboardAuth = read("lib/dashboardAuth.ts");
+const roleRedirect = read("lib/auth/roleRedirect.ts");
 const allianceSidebar = read("components/alliance/AllianceSidebar.tsx");
 const allianceBenefitsPage = read("app/alliance/benefits/page.tsx");
 const allianceBenefitsCard = read("components/alliance/AllianceBenefitsCard.tsx");
@@ -42,8 +43,13 @@ assert.match(operatorShell, /\/dashboard\/payments/);
 assert.match(operatorShell, /\/dashboard\/payments\/discounts/);
 assert.match(operatorShell, /\/dashboard\/payments\/discounts\/report/);
 
-for (const role of ["admin", "finance", "finance_operator"]) {
-  assert.match(dashboardAuth, new RegExp(`"${role}"`));
+assert.match(dashboardAuth, /normalizeUserRole/);
+assert.match(dashboardAuth, /"operator"/);
+assert.match(dashboardAuth, /"admin"/);
+assert.match(dashboardAuth, /"owner"/);
+assert.doesNotMatch(dashboardAuth, /"virtual_assistant"/);
+for (const alias of ["finance", "finance_operator"]) {
+  assert.match(roleRedirect, new RegExp(`"${alias}"`));
 }
 
 assert.match(allianceSidebar, /\/alliance\/benefits/);
