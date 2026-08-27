@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CANONICAL_AUTHORITIES, DELIVERY_STATUSES, PARENT_SYSTEMS, SYSTEM_LABELS, SYSTEM_REGISTRY, type DeliveryStatus, type ParentSystem } from "@/lib/control-plane/systemRegistry";
+import { CANONICAL_AUTHORITIES, DELIVERY_STATUSES, PARENT_SYSTEMS, SYSTEM_LABELS, type DeliveryStatus, type ParentSystem } from "@/lib/control-plane/systemRegistry";
+import { FULL_SYSTEM_REGISTRY } from "@/lib/control-plane/hardeningRegistry";
 import { ARCHITECTURE_DECISIONS, CAPABILITY_OWNERSHIP, DEPENDENCY_GRAPH, ENVIRONMENT_DEPENDENCIES, TECHNICAL_DEBT, WEBHOOK_REGISTRY, detectDependencyCycles } from "@/lib/control-plane/architectureGovernance";
 import { AUTHORITY_EVIDENCE_REGISTRY, DOCUMENT_ORIGIN_ROUTING_MATRIX, evaluateAuthorityFreshness, summarizeHagueCoverage } from "@/lib/international-execution/operationalGovernance";
 
@@ -32,11 +33,11 @@ export function SystemControlPlaneModes({ runtimeSha, environment }: { runtimeSh
   const coverage = summarizeHagueCoverage();
   const staleAuthorities = AUTHORITY_EVIDENCE_REGISTRY.filter((record) => ["STALE", "MISSING_SOURCE", "MISSING_VERIFICATION", "REVIEW_REQUIRED"].includes(evaluateAuthorityFreshness(record))).length;
   const cycles = detectDependencyCycles();
-  const statusCounts = DELIVERY_STATUSES.reduce<Record<string, number>>((acc, status) => { acc[status] = SYSTEM_REGISTRY.filter((entry) => entry.status === status).length; return acc; }, {});
+  const statusCounts = DELIVERY_STATUSES.reduce<Record<string, number>>((acc, status) => { acc[status] = FULL_SYSTEM_REGISTRY.filter((entry) => entry.status === status).length; return acc; }, {});
 
   const filteredRegistry = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return SYSTEM_REGISTRY.filter((entry) => {
+    return FULL_SYSTEM_REGISTRY.filter((entry) => {
       if (systemFilter !== "all" && entry.parentSystem !== systemFilter) return false;
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
       if (!q) return true;
@@ -54,8 +55,8 @@ export function SystemControlPlaneModes({ runtimeSha, environment }: { runtimeSh
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Runtime SHA" value={runtimeSha === "Runtime SHA unavailable" ? "UNAVAILABLE" : runtimeSha.slice(0, 8)} detail={environment.toUpperCase()} />
-        <Metric label="Registered Capabilities" value={SYSTEM_REGISTRY.length} />
-        <Metric label="HCCH Contracting Parties" value={129} detail="Matter-specific applicability still required" />
+        <Metric label="Registered Capabilities" value={FULL_SYSTEM_REGISTRY.length} />
+        <Metric label="HCCH Contracting Parties" value={coverage.contractingParties} detail="Matter-specific applicability still required" />
         <Metric label="Authority Review Queue" value={staleAuthorities} detail="stale/missing/review evidence" />
       </div>
     </section>
@@ -74,9 +75,9 @@ function ExecutiveView({ coverage, statusCounts }: { coverage: ReturnType<typeof
     <Section eyebrow="Transaction Flow" title="From intake to international release">
       <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-8">{["Client / Professional", "Secure Intake", "Quote / Wise", "Execution / RON", "Apostille / Authentication", "Translation / Custody", "International Delivery", "Completion / Return"].map((item, i) => <div key={item} className="rounded-xl border border-white/8 bg-black/25 p-4 text-sm text-white/65"><span className="mr-2 text-[var(--ms-gold)]">{i + 1}.</span>{item}</div>)}</div>
     </Section>
-    <Section eyebrow="International Coverage" title="129-party Hague network, governed per Matter">
+    <Section eyebrow="International Coverage" title={`${coverage.contractingParties}-party Hague network, governed per Matter`}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Mapped Destinations" value={coverage.mappedDestinations} /><Metric label="Officially Verified" value={coverage.verified} /><Metric label="Review / Incomplete" value={coverage.reviewRequired + coverage.incompleteEvidence} /><Metric label="Non-Hague" value={coverage.nonHague} /></div>
-      <p className="text-sm leading-6 text-white/45">129 Contracting Parties is a Convention coverage fact, not an automatic apostille promise. Operative relationship, document origin, competent authority, territorial scope and receiving authority control each Matter.</p>
+      <p className="text-sm leading-6 text-white/45">{coverage.contractingParties} Contracting Parties is a Convention coverage fact, not an automatic apostille promise. Operative relationship, document origin, competent authority, territorial scope and receiving authority control each Matter.</p>
     </Section>
     <Section eyebrow="Moat" title="Why the operating system compounds">
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">{["Authority Content", "International Routing Knowledge", "Execution Network", "Matter History", "Compliance Evidence", "SOP / Process IP"].map((item) => <div key={item} className="rounded-xl border border-white/8 bg-[#111] p-4 text-sm font-medium text-white/75">{item}</div>)}</div>
@@ -87,7 +88,7 @@ function ExecutiveView({ coverage, statusCounts }: { coverage: ReturnType<typeof
   </div>;
 }
 
-function CtoView({ query, setQuery, systemFilter, setSystemFilter, statusFilter, setStatusFilter, filteredRegistry, cycles }: { query: string; setQuery: (v: string) => void; systemFilter: ParentSystem | "all"; setSystemFilter: (v: ParentSystem | "all") => void; statusFilter: DeliveryStatus | "all"; setStatusFilter: (v: DeliveryStatus | "all") => void; filteredRegistry: typeof SYSTEM_REGISTRY; cycles: string[][] }) {
+function CtoView({ query, setQuery, systemFilter, setSystemFilter, statusFilter, setStatusFilter, filteredRegistry, cycles }: { query: string; setQuery: (v: string) => void; systemFilter: ParentSystem | "all"; setSystemFilter: (v: ParentSystem | "all") => void; statusFilter: DeliveryStatus | "all"; setStatusFilter: (v: DeliveryStatus | "all") => void; filteredRegistry: typeof FULL_SYSTEM_REGISTRY; cycles: string[][] }) {
   return <div className="space-y-8">
     <Section eyebrow="Architecture Health" title="Registry, dependencies, ownership and permanent decisions">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Metric label="Authorities" value={CANONICAL_AUTHORITIES.length} /><Metric label="Dependency Edges" value={DEPENDENCY_GRAPH.length} /><Metric label="Dependency Cycles" value={cycles.length} /><Metric label="ADRs" value={ARCHITECTURE_DECISIONS.length} /><Metric label="Technical Debt" value={TECHNICAL_DEBT.length} /></div>
