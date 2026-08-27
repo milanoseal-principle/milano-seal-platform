@@ -31,7 +31,7 @@ export function Header() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#0A0A0A]"
+        className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[var(--ms-black)]"
         style={{ paddingTop: "var(--sa-top)" }}
       >
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
@@ -53,10 +53,10 @@ export function Header() {
                   style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(56px, 6vw, 72px)", height: "clamp(56px, 6vw, 72px)" }}
                 />
                 <span className="flex flex-col leading-none">
-                  <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[#D3B35A] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,165,90,0.18)]">
+                  <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[var(--ms-gold)] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)]">
                     {MILANO_BRAND.name}
                   </span>
-                  <span className="hidden sm:block mt-1.5 text-[7px] md:text-[8px] uppercase tracking-[0.32em] text-[#8B743C]">
+                  <span className="hidden sm:block mt-1.5 text-[7px] md:text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60">
                     Global Document Execution
                   </span>
                 </span>
@@ -83,7 +83,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/intake"
-                  className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--ms-gold)] text-[#0A0A0A] text-sm font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
+                  className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--ms-gold)] text-[var(--ms-black)] text-sm font-medium rounded-lg transition-all duration-300 hover:brightness-110"
                 >
                   <span>Begin Secure Intake</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -110,7 +110,7 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 z-40 md:hidden bg-[#0A0A0A] border-b border-[#2A2A2A]"
+            className="fixed inset-x-0 z-40 md:hidden bg-[var(--ms-black)] border-b border-[#2A2A2A]"
             style={{ top: "calc(var(--header-total-height) + var(--sa-top))" }}
           >
             <nav className="flex flex-col p-6 space-y-4">
@@ -134,7 +134,7 @@ export function Header() {
               <Link
                 href="/intake"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[#0A0A0A] font-medium rounded-lg"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[var(--ms-black)] font-medium rounded-lg"
               >
                 <span>Begin Secure Intake</span>
                 <ArrowRight className="w-4 h-4" />
