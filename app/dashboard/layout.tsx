@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { role } = await requireDashboardAccess();
 
   return (
-    <OperatorShell>
+    <OperatorShell role={role}>
       {role === "founder_admin" && <FounderAccessBar />}
       {children}
     </OperatorShell>
