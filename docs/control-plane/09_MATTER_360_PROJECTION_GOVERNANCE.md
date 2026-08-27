@@ -105,6 +105,12 @@ Provenance states are:
 
 No weighted trust score, ranking score or synthetic confidence percentage is permitted.
 
+## Cost-controlled validation
+
+Ordinary Vercel preview builds remain suppressed to control spend. A deliberate commit whose message contains `[validate-preview]` is the explicit opt-in path for running the billing-independent Vercel merge gate on a branch before merge. Production builds always run the gate.
+
+GitHub-hosted Actions remain manual recovery only while runner billing is unavailable.
+
 ## Production lifecycle
 
 Code presence does not certify live operation.
