@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
@@ -7,6 +8,108 @@ const FROM =
   process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const SITE =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://themilanoseal.com";
+const CANONICAL_GOLD = "#C6A65B";
+
+type TransactionalEmailType =
+  | "intake_confirmation"
+  | "scheduled_notification"
+  | "shipped_notification"
+  | "completed_notification";
+
+async function recordEmailEvidence(input: {
+  matterReference: string;
+  recipientEmail: string;
+  type: TransactionalEmailType;
+  subject: string;
+  providerMessageId?: string | null;
+  status: "sent" | "failed";
+  errorMessage?: string | null;
+}) {
+  try {
+    const admin = createAdminClient();
+    await admin.from("notifications").insert({
+      deal_id: null,
+      recipient_email: input.recipientEmail,
+      channel: "email",
+      type: input.type,
+      subject: input.subject,
+      message: `${input.type} for ${input.matterReference}`,
+      status: input.status,
+      provider: "resend",
+      provider_message_id: input.providerMessageId ?? null,
+      error_message: input.errorMessage ?? null,
+      delivery_status: input.status === "sent" ? "provider_accepted" : "failed",
+      delivery_attempts: 1,
+      sent_at: input.status === "sent" ? new Date().toISOString() : null,
+      failed_at: input.status === "failed" ? new Date().toISOString() : null,
+      last_provider_event_at: new Date().toISOString(),
+      metadata: {
+        matter_reference: input.matterReference,
+        evidence_scope: "provider_acceptance_only",
+        final_delivery_proven: false,
+      },
+    });
+  } catch (error) {
+    console.error("[email] notification evidence write failed", {
+      matterReference: input.matterReference,
+      type: input.type,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function sendTrackedEmail(input: {
+  to: string;
+  matterReference: string;
+  type: TransactionalEmailType;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return;
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+    });
+
+    if (result.error) {
+      const errorMessage = result.error.message ?? "Resend rejected email request";
+      console.error(`[email] ${input.type} failed:`, errorMessage);
+      await recordEmailEvidence({
+        matterReference: input.matterReference,
+        recipientEmail: input.to,
+        type: input.type,
+        subject: input.subject,
+        status: "failed",
+        errorMessage,
+      });
+      return;
+    }
+
+    await recordEmailEvidence({
+      matterReference: input.matterReference,
+      recipientEmail: input.to,
+      type: input.type,
+      subject: input.subject,
+      providerMessageId: result.data?.id ?? null,
+      status: "sent",
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[email] ${input.type} failed:`, errorMessage);
+    await recordEmailEvidence({
+      matterReference: input.matterReference,
+      recipientEmail: input.to,
+      type: input.type,
+      subject: input.subject,
+      status: "failed",
+      errorMessage,
+    });
+  }
+}
 
 function base(content: string): string {
   return `<!DOCTYPE html>
@@ -21,13 +124,13 @@ function base(content: string): string {
     <tr><td align="center" style="padding:40px 16px;">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111111;border:1px solid #2A2A2A;border-radius:16px;overflow:hidden;">
         <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #1A1A1A;">
-          <p style="margin:0 0 4px;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:#C6A55A;font-family:Arial,sans-serif;">The Milano Seal™</p>
+          <p style="margin:0 0 4px;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:${CANONICAL_GOLD};font-family:Arial,sans-serif;">The Milano Seal™</p>
           <p style="margin:0;font-size:11px;color:#6A6A6A;font-family:Arial,sans-serif;letter-spacing:0.1em;text-transform:uppercase;">Intl. Document Execution · Florida Notary #668288</p>
         </td></tr>
         <tr><td style="padding:36px 40px;">${content}</td></tr>
         <tr><td style="padding:24px 40px;border-top:1px solid #1A1A1A;background:#0A0A0A;">
           <p style="margin:0 0 6px;font-size:11px;color:#6A6A6A;font-family:Arial,sans-serif;">Questions? Reply to this email or contact Nicholas directly.</p>
-          <p style="margin:0;font-size:11px;color:#4A4A4A;font-family:Arial,sans-serif;">The Milano Seal™ · Milano Seal International, LLC · <a href="${SITE}" style="color:#C6A55A;text-decoration:none;">${SITE.replace("https://", "")}</a></p>
+          <p style="margin:0;font-size:11px;color:#4A4A4A;font-family:Arial,sans-serif;">The Milano Seal™ · Milano Seal International, LLC · <a href="${SITE}" style="color:${CANONICAL_GOLD};text-decoration:none;">${SITE.replace("https://", "")}</a></p>
         </td></tr>
       </table>
     </td></tr>
@@ -37,7 +140,7 @@ function base(content: string): string {
 }
 
 function goldBtn(href: string, label: string): string {
-  return `<a href="${href}" target="_blank" style="display:inline-block;padding:14px 28px;background:#C6A55A;color:#0A0A0A;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;border-radius:10px;letter-spacing:0.05em;">${label}</a>`;
+  return `<a href="${href}" target="_blank" style="display:inline-block;padding:14px 28px;background:${CANONICAL_GOLD};color:#0A0A0A;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;border-radius:10px;letter-spacing:0.05em;">${label}</a>`;
 }
 
 function h1(text: string): string {
@@ -96,22 +199,19 @@ export async function sendIntakeConfirmation({
     ${p("You can track your matter progress and payment status through your secure client portal:")}
 
     <div style="margin:0 0 28px;">
-      <a href="${portalUrl}" style="font-size:13px;color:#C6A55A;font-family:Arial,sans-serif;">${portalUrl}</a>
+      <a href="${portalUrl}" style="font-size:13px;color:${CANONICAL_GOLD};font-family:Arial,sans-serif;">${portalUrl}</a>
     </div>
 
     ${p("Wise Business is the payment method for this Matter. Payment is not treated as confirmed until server-side reconciliation is complete.")}
   `);
 
-  await getResend()
-    .emails.send({
-      from: FROM,
-      to,
-      subject: `Matter Received — ${dealId} · The Milano Seal™`,
-      html,
-    })
-    .catch((err) =>
-      console.error("[email] intake confirmation failed:", err),
-    );
+  await sendTrackedEmail({
+    to,
+    matterReference: dealId,
+    type: "intake_confirmation",
+    subject: `Matter Received — ${dealId} · The Milano Seal™`,
+    html,
+  });
 }
 
 export async function sendScheduledNotification({
@@ -157,16 +257,13 @@ export async function sendScheduledNotification({
     </div>
   `);
 
-  await getResend()
-    .emails.send({
-      from: FROM,
-      to,
-      subject: `Appointment Confirmed — ${dealId} · The Milano Seal™`,
-      html,
-    })
-    .catch((err) =>
-      console.error("[email] scheduled notification failed:", err),
-    );
+  await sendTrackedEmail({
+    to,
+    matterReference: dealId,
+    type: "scheduled_notification",
+    subject: `Appointment Confirmed — ${dealId} · The Milano Seal™`,
+    html,
+  });
 }
 
 export async function sendShippedNotification({
@@ -203,8 +300,8 @@ export async function sendShippedNotification({
     ${
       balanceAmount && balanceLink
         ? `
-    <div style="background:#0A0A0A;border:1px solid #C6A55A33;border-radius:12px;padding:24px;margin:0 0 28px;">
-      <p style="margin:0 0 8px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#C6A55A;font-family:Arial,sans-serif;">Balance Due</p>
+    <div style="background:#0A0A0A;border:1px solid ${CANONICAL_GOLD}33;border-radius:12px;padding:24px;margin:0 0 28px;">
+      <p style="margin:0 0 8px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:${CANONICAL_GOLD};font-family:Arial,sans-serif;">Balance Due</p>
       <p style="margin:0 0 16px;font-size:22px;color:#FFFFFF;font-family:Arial,sans-serif;font-weight:700;">$${Number(balanceAmount).toLocaleString()} USD</p>
       <p style="margin:0 0 16px;font-size:13px;color:#B0B0B0;font-family:Arial,sans-serif;line-height:1.6;">Your matter has shipped. Please settle the remaining balance at your earliest convenience.</p>
       ${goldBtn(balanceLink, "Pay Balance — $" + Number(balanceAmount).toLocaleString() + " USD")}
@@ -218,16 +315,13 @@ export async function sendShippedNotification({
     </div>
   `);
 
-  await getResend()
-    .emails.send({
-      from: FROM,
-      to,
-      subject: `Documents Shipped — ${dealId} · The Milano Seal™`,
-      html,
-    })
-    .catch((err) =>
-      console.error("[email] shipped notification failed:", err),
-    );
+  await sendTrackedEmail({
+    to,
+    matterReference: dealId,
+    type: "shipped_notification",
+    subject: `Documents Shipped — ${dealId} · The Milano Seal™`,
+    html,
+  });
 }
 
 export async function sendCompletedNotification({
@@ -256,14 +350,11 @@ export async function sendCompletedNotification({
     ${p("If you require additional document services in the future, we are here. Reply to this email or visit themilanoseal.com.")}
   `);
 
-  await getResend()
-    .emails.send({
-      from: FROM,
-      to,
-      subject: `Matter Complete — ${dealId} · The Milano Seal™`,
-      html,
-    })
-    .catch((err) =>
-      console.error("[email] completed notification failed:", err),
-    );
+  await sendTrackedEmail({
+    to,
+    matterReference: dealId,
+    type: "completed_notification",
+    subject: `Matter Complete — ${dealId} · The Milano Seal™`,
+    html,
+  });
 }
