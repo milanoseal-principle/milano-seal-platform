@@ -18,10 +18,14 @@ create table if not exists public.matter_truth_snapshots (
   source_evidence_ids uuid[] not null default '{}',
   created_at timestamptz not null default now(),
   constraint matter_truth_snapshot_status_check check (status in ('ACCEPTED','PENDING_REVIEW','REJECTED')),
+  constraint matter_truth_snapshot_build_version_check check (length(btrim(build_version)) > 0),
+  constraint matter_truth_snapshot_authority_versions_check check (jsonb_typeof(authority_versions) = 'object'),
+  constraint matter_truth_snapshot_domains_check check (jsonb_typeof(domains) = 'object'),
+  constraint matter_truth_snapshot_source_evidence_check check (array_position(source_evidence_ids, null) is null),
   constraint matter_truth_snapshot_acceptance_check check (
-    (status = 'ACCEPTED' and accepted_at is not null and accepted_by is not null)
+    (status = 'ACCEPTED' and accepted_at is not null and accepted_by is not null and accepted_at >= captured_at)
     or
-    (status <> 'ACCEPTED')
+    (status <> 'ACCEPTED' and accepted_at is null and accepted_by is null)
   )
 );
 
@@ -29,7 +33,7 @@ create index if not exists matter_truth_snapshots_matter_idx
   on public.matter_truth_snapshots(matter_id, captured_at desc);
 
 create index if not exists matter_truth_snapshots_accepted_idx
-  on public.matter_truth_snapshots(matter_id, accepted_at desc)
+  on public.matter_truth_snapshots(matter_id, captured_at desc, accepted_at desc)
   where status = 'ACCEPTED';
 
 alter table public.matter_truth_snapshots enable row level security;
