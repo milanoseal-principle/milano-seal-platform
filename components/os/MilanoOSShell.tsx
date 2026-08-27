@@ -8,7 +8,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  BadgeDollarSign,
   BarChart3,
   BookOpenCheck,
   Boxes,
@@ -47,6 +46,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { panelTransition, routeTransition } from "@/components/motion/motionPresets";
 
 export type MilanoOSMode = "operator" | "client" | "va" | "alliance";
 
@@ -291,7 +291,9 @@ export function MilanoOSShell({
                     className={`ms-os-nav__item ${active ? "is-active" : ""}`}
                     aria-current={active ? "page" : undefined}
                   >
-                    <span className="ms-os-nav__icon"><Icon size={16} strokeWidth={1.7} /></span>
+                    <span className="ms-os-nav__icon">
+                      <Icon size={16} strokeWidth={1.7} />
+                    </span>
                     <span className="ms-os-nav__copy">
                       <span className="ms-os-nav__label">{item.label}</span>
                       {item.hint ? <span className="ms-os-nav__hint">{item.hint}</span> : null}
@@ -363,9 +365,14 @@ export function MilanoOSShell({
               initial={reduceMotion ? false : { x: -24, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={reduceMotion ? { opacity: 0 } : { x: -24, opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+              transition={reduceMotion ? { duration: 0 } : panelTransition}
             >
-              <button type="button" className="ms-os-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
+              <button
+                type="button"
+                className="ms-os-mobile-close"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation"
+              >
                 <X size={18} />
               </button>
               {navigation}
@@ -378,7 +385,12 @@ export function MilanoOSShell({
         <header className="ms-os-topbar">
           <div className="ms-os-topbar__inner">
             <div className="ms-os-topbar__left">
-              <button type="button" className="ms-os-menu lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+              <button
+                type="button"
+                className="ms-os-menu lg:hidden"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation"
+              >
                 <Menu size={19} />
               </button>
               <div className="min-w-0">
@@ -393,9 +405,16 @@ export function MilanoOSShell({
 
             <div className="ms-os-topbar__right">
               <div className="ms-os-topbar__statuses hidden xl:flex">
-                {statusItems.slice(0, 2).map((item) => <StatusPill key={`${item.label}-${item.value ?? ""}`} item={item} />)}
+                {statusItems.slice(0, 2).map((item) => (
+                  <StatusPill key={`${item.label}-${item.value ?? ""}`} item={item} />
+                ))}
               </div>
-              <button type="button" className="ms-os-command-trigger" onClick={() => setPaletteOpen(true)} aria-label="Open workspace command palette">
+              <button
+                type="button"
+                className="ms-os-command-trigger"
+                onClick={() => setPaletteOpen(true)}
+                aria-label="Open workspace command palette"
+              >
                 <Search size={15} strokeWidth={1.8} />
                 <span className="hidden md:inline">Jump</span>
                 <kbd className="hidden md:inline">⌘K</kbd>
@@ -412,7 +431,9 @@ export function MilanoOSShell({
 
         {statusItems.length > 0 ? (
           <div className="ms-os-mobile-statuses xl:hidden">
-            {statusItems.map((item) => <StatusPill key={`${item.label}-${item.value ?? ""}`} item={item} />)}
+            {statusItems.map((item) => (
+              <StatusPill key={`${item.label}-${item.value ?? ""}`} item={item} />
+            ))}
           </div>
         ) : null}
 
@@ -421,7 +442,7 @@ export function MilanoOSShell({
           className={`ms-os-shell__content ms-safe-bottom ${contentClassName}`}
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduceMotion ? { duration: 0 } : routeTransition}
         >
           {children}
         </motion.main>
@@ -435,7 +456,7 @@ export function MilanoOSShell({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.16 }}
+            transition={reduceMotion ? { duration: 0 } : panelTransition}
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) setPaletteOpen(false);
             }}
@@ -448,7 +469,7 @@ export function MilanoOSShell({
               initial={reduceMotion ? false : { opacity: 0, scale: 0.985, y: -8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.985, y: -8 }}
-              transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+              transition={reduceMotion ? { duration: 0 } : panelTransition}
             >
               <div className="ms-os-palette__search">
                 <Search size={18} strokeWidth={1.7} />
@@ -459,33 +480,45 @@ export function MilanoOSShell({
                   placeholder={`Search ${MODE_LABELS[mode]}…`}
                   aria-label="Search workspace destinations"
                 />
-                <button type="button" onClick={() => setPaletteOpen(false)} aria-label="Close command palette">ESC</button>
+                <button type="button" onClick={() => setPaletteOpen(false)} aria-label="Close command palette">
+                  ESC
+                </button>
               </div>
               <div className="ms-os-palette__meta">
                 <span>THE MILANO SEAL™</span>
                 <span>{MODE_LABELS[mode]}</span>
               </div>
               <div className="ms-os-palette__results">
-                {paletteItems.length ? paletteItems.map((item) => {
-                  const Icon = ICONS[item.icon];
-                  const active = isActiveRoute(pathname, item.href);
-                  return (
-                    <Link key={item.href} href={item.href} className={`ms-os-palette__item ${active ? "is-active" : ""}`}>
-                      <span className="ms-os-palette__item-icon"><Icon size={17} strokeWidth={1.7} /></span>
-                      <span className="ms-os-palette__item-copy">
-                        <strong>{item.label}</strong>
-                        <small>{item.hint ?? item.group ?? "Workspace"}</small>
-                      </span>
-                      <span className="ms-os-palette__item-route">{item.href}</span>
-                      <ChevronRight size={14} />
-                    </Link>
-                  );
-                }) : (
+                {paletteItems.length ? (
+                  paletteItems.map((item) => {
+                    const Icon = ICONS[item.icon];
+                    const active = isActiveRoute(pathname, item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`ms-os-palette__item ${active ? "is-active" : ""}`}
+                      >
+                        <span className="ms-os-palette__item-icon">
+                          <Icon size={17} strokeWidth={1.7} />
+                        </span>
+                        <span className="ms-os-palette__item-copy">
+                          <strong>{item.label}</strong>
+                          <small>{item.hint ?? item.group ?? "Workspace"}</small>
+                        </span>
+                        <span className="ms-os-palette__item-route">{item.href}</span>
+                        <ChevronRight size={14} />
+                      </Link>
+                    );
+                  })
+                ) : (
                   <div className="ms-os-palette__empty">No workspace destination matches “{query}”.</div>
                 )}
               </div>
               <div className="ms-os-palette__footer">
-                <span><Command size={12} /> K to open</span>
+                <span>
+                  <Command size={12} /> K to open
+                </span>
                 <span>ESC to close</span>
                 <span>Navigation only · no state mutation</span>
               </div>
