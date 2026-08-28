@@ -19,11 +19,7 @@ export type ProfessionalDocumentClass =
   | "federal_document"
   | "other";
 
-export type OriginPosture =
-  | "florida"
-  | "other_us_state"
-  | "federal"
-  | "unknown";
+export type OriginPosture = "florida" | "other_us_state" | "federal" | "unknown";
 
 export type SignerPosture =
   | "us"
@@ -75,23 +71,33 @@ export const PROFESSIONAL_DOCUMENT_OPTIONS: Array<{
   { value: "other", label: "Other" },
 ];
 
-export const HAGUE_PROFESSIONAL_DESTINATIONS = DESTINATIONS.filter(
+/**
+ * Destination data has accumulated historical rows over time. Professional UX
+ * must resolve exactly one authority record per slug. Later rows intentionally
+ * win so a newer, more specific jurisdiction record supersedes an older row
+ * without creating a second professional workflow.
+ */
+export const CANONICAL_PROFESSIONAL_DESTINATIONS = Array.from(
+  DESTINATIONS.reduce((bySlug, destination) => {
+    bySlug.set(destination.slug, destination);
+    return bySlug;
+  }, new Map<string, Destination>()).values(),
+);
+
+export const HAGUE_PROFESSIONAL_DESTINATIONS = CANONICAL_PROFESSIONAL_DESTINATIONS.filter(
   (destination) => destination.hague,
 ).sort((a, b) => b.demand - a.demand || a.name.localeCompare(b.name));
 
 export function getProfessionalDestination(slug?: string) {
   if (!slug) return null;
-  return DESTINATIONS.find((destination) => destination.slug === slug) ?? null;
+  return CANONICAL_PROFESSIONAL_DESTINATIONS.find((destination) => destination.slug === slug) ?? null;
 }
 
-function documentLabel(value?: ProfessionalDocumentClass) {
-  return (
-    PROFESSIONAL_DOCUMENT_OPTIONS.find((item) => item.value === value)?.label ??
-    "Document"
-  );
+export function getProfessionalDocumentLabel(value?: ProfessionalDocumentClass) {
+  return PROFESSIONAL_DOCUMENT_OPTIONS.find((item) => item.value === value)?.label ?? "Document";
 }
 
-function originLabel(origin?: OriginPosture) {
+export function getProfessionalOriginLabel(origin?: OriginPosture) {
   switch (origin) {
     case "florida":
       return "Florida";
@@ -109,7 +115,7 @@ function buildRoute(
   documentClass?: ProfessionalDocumentClass,
   origin?: OriginPosture,
 ) {
-  const doc = documentLabel(documentClass);
+  const doc = getProfessionalDocumentLabel(documentClass);
   const routeSteps: string[] = [
     `${doc} execution-readiness review`,
     "Applicable notarization / certification review",
@@ -132,9 +138,7 @@ function buildRoute(
   return routeSteps;
 }
 
-export function buildAttorneyJourney(
-  input: AttorneyJourneyInput,
-): AttorneyJourneyResult {
+export function buildAttorneyJourney(input: AttorneyJourneyInput): AttorneyJourneyResult {
   const destination = getProfessionalDestination(input.destinationSlug);
   const completed = [
     Boolean(destination),
@@ -156,10 +160,10 @@ export function buildAttorneyJourney(
     );
   }
   if (input.documentClass) {
-    confirmed.push(`Document class identified: ${documentLabel(input.documentClass)}`);
+    confirmed.push(`Document class identified: ${getProfessionalDocumentLabel(input.documentClass)}`);
   }
   if (input.origin && input.origin !== "unknown") {
-    confirmed.push(`Origin posture identified: ${originLabel(input.origin)}`);
+    confirmed.push(`Origin posture identified: ${getProfessionalOriginLabel(input.origin)}`);
   }
   if (input.signer && input.signer !== "unknown") {
     confirmed.push("Signer posture identified");
@@ -167,8 +171,12 @@ export function buildAttorneyJourney(
 
   if (!destination) reviewRequired.push("Destination country");
   if (!input.documentClass) reviewRequired.push("Document class");
-  if (!input.origin || input.origin === "unknown") reviewRequired.push("Document origin / issuing authority");
-  if (!input.signer || input.signer === "unknown") reviewRequired.push("Signer location / posture");
+  if (!input.origin || input.origin === "unknown") {
+    reviewRequired.push("Document origin / issuing authority");
+  }
+  if (!input.signer || input.signer === "unknown") {
+    reviewRequired.push("Signer location / posture");
+  }
 
   if (destination && completed === total) {
     reviewRequired.push("Document-specific execution requirements");
@@ -208,7 +216,7 @@ export function buildAttorneyJourney(
     completed,
     total,
     routeLabel: destination
-      ? `${originLabel(input.origin)} → ${destination.name}`
+      ? `${getProfessionalOriginLabel(input.origin)} → ${destination.name}`
       : "Select a destination to structure the route",
     routeSteps,
     confirmed,
