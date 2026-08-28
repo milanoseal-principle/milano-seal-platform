@@ -31,7 +31,7 @@ export const ACCESS_PRODUCTS: AccessProduct[] = [
     priceCents: 14900,
     accessLevel: "client_matter",
     ctaLabel: "Request Route Intelligence",
-    ctaHref: "/access?interest=route-report",
+    ctaHref: "/lawyer-access#execution-intelligence-report",
   },
   {
     code: "LAWYER_CLIENT_PACK_SINGLE",
@@ -42,7 +42,7 @@ export const ACCESS_PRODUCTS: AccessProduct[] = [
     priceCents: 14900,
     accessLevel: "lawyer_pack",
     ctaLabel: "Request Counsel Report",
-    ctaHref: "/lawyer-access#report",
+    ctaHref: "/lawyer-access#execution-intelligence-report",
   },
   {
     code: "LAWYER_MONTHLY_ACCESS",
@@ -75,7 +75,7 @@ export const ACCESS_PRODUCTS: AccessProduct[] = [
     priceCents: null,
     accessLevel: "client_matter",
     ctaLabel: "Request Concierge Review",
-    ctaHref: "/access?interest=concierge",
+    ctaHref: "/intake?service=concierge",
   },
   {
     code: "ALLIANCE_APPLICATION",
