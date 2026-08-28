@@ -31,8 +31,11 @@ test("country route classes are interactive filters backed by the canonical dest
   assert.match(directory, /setFilter\("non_hague"\)/);
   assert.match(directory, /destination\.hague/);
   assert.match(directory, /!destination\.hague/);
-  assert.match(directory, /Hague Convention member — apostille accepted/);
-  assert.match(directory, /Non-member — consular legalization required/);
+  assert.match(directory, /Hague \/ apostille-route review/);
+  assert.match(directory, /Non-Hague \/ authentication review/);
+  assert.match(directory, /Apostille review/);
+  assert.doesNotMatch(directory, /Hague Convention member — apostille accepted/);
+  assert.doesNotMatch(directory, /Non-member — consular legalization required/);
 });
 
 test("country directory cards are differentiated jurisdiction dossiers, not cloned generic cards", () => {
