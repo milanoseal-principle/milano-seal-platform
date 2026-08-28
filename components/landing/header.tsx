@@ -10,11 +10,10 @@ import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 const navLinks = [
   { label: "Services", href: "/#services" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Process", href: "/#process" },
-  { label: "Countries", href: "/countries" },
-  { label: "Map", href: "/map" },
+  { label: "Process", href: "/process" },
+  { label: "Global Intelligence", href: "/global-document-intelligence" },
+  { label: "Professional", href: "/professional" },
   { label: "About", href: "/about" },
-  { label: "Founder", href: "/founder" },
   { label: "Secure Portal", href: "/secure-portal" },
 ];
 
@@ -24,7 +23,8 @@ export function Header() {
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -56,13 +56,13 @@ export function Header() {
                   <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[var(--ms-gold)] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)]">
                     {MILANO_BRAND.name}
                   </span>
-                  <span className="hidden sm:block mt-1.5 text-[7px] md:text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60">
+                  <span className="hidden sm:block mt-1.5 text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60">
                     Global Document Execution
                   </span>
                 </span>
               </Link>
 
-              <nav className="hidden md:flex items-center gap-8">
+              <nav className="hidden md:flex items-center gap-6 xl:gap-8" aria-label="Primary navigation">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -91,9 +91,12 @@ export function Header() {
               </div>
 
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 text-white"
+                type="button"
+                onClick={() => setIsMobileMenuOpen((open) => !open)}
+                className="md:hidden min-h-11 min-w-11 p-2 text-white"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="milano-mobile-navigation"
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -106,6 +109,7 @@ export function Header() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
+            id="milano-mobile-navigation"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -113,13 +117,13 @@ export function Header() {
             className="fixed inset-x-0 z-40 md:hidden bg-[var(--ms-black)] border-b border-[#2A2A2A]"
             style={{ top: "calc(var(--header-total-height) + var(--sa-top))" }}
           >
-            <nav className="flex flex-col p-6 space-y-4">
+            <nav className="flex flex-col p-6 space-y-4" aria-label="Mobile navigation">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-lg text-[#B0B0B0] hover:text-white transition-colors"
+                  className="min-h-11 flex items-center text-lg text-[#B0B0B0] hover:text-white transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -127,14 +131,14 @@ export function Header() {
               <Link
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center px-5 py-3 mt-4 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] font-medium rounded-lg"
+                className="inline-flex min-h-12 items-center justify-center px-5 py-3 mt-4 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] font-medium rounded-lg"
               >
                 Login
               </Link>
               <Link
                 href="/intake"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[var(--ms-black)] font-medium rounded-lg"
+                className="inline-flex min-h-12 items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[var(--ms-black)] font-medium rounded-lg"
               >
                 <span>Begin Secure Intake</span>
                 <ArrowRight className="w-4 h-4" />
