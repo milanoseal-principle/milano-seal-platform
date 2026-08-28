@@ -25,7 +25,7 @@ export function CommandCard({
   return (
     <section
       data-critical-card=""
-      className={`relative overflow-hidden rounded-2xl border p-5 transition-colors sm:p-6 ${className}`}
+      className={`relative overflow-visible rounded-2xl border p-5 transition-colors sm:p-6 ${className}`}
       style={{ background: "rgba(11,11,11,0.9)", borderColor: "rgba(255,255,255,0.08)" }}
     >
       <div

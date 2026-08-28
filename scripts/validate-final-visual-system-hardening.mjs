@@ -33,8 +33,11 @@ if (shell.includes("key={pathname}")) {
 }
 
 const loading = readFileSync("app/loading.tsx", "utf8");
-for (const token of ["Preparing secure workspace", "aria-busy", "The Milano Seal™"]) {
+for (const token of ["Preparing the next view", "Preserving your current context", "aria-busy", "The Milano Seal™"]) {
   if (!loading.includes(token)) throw new Error(`Global loading state missing: ${token}`);
+}
+for (const staleToken of ["Preparing secure workspace", "authoritative matter state"]) {
+  if (loading.includes(staleToken)) throw new Error(`Global loading state must remain route-neutral: ${staleToken}`);
 }
 
 const recovery = readFileSync("app/error.tsx", "utf8");
