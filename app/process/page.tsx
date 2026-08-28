@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/landing/header";
-import { Footer } from "@/components/landing/footer";
+import { PublicShell } from "@/components/layout/PublicShell";
 import { ProcessExperience } from "@/components/process/ProcessExperience";
 
 export const metadata: Metadata = {
@@ -11,12 +10,10 @@ export const metadata: Metadata = {
 
 export default function ProcessPage() {
   return (
-    <>
-      <Header />
+    <PublicShell>
       <main className="min-h-screen bg-[#050507]">
         <ProcessExperience />
       </main>
-      <Footer />
-    </>
+    </PublicShell>
   );
 }

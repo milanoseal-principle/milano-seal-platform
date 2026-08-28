@@ -48,12 +48,12 @@ const FILTER_COPY: Record<
       "High-demand jurisdictions with structured document-routing intelligence.",
   },
   hague: {
-    title: "Hague Convention destinations",
+    title: "Hague / apostille-route review",
     description:
-      "Current Hague-member destinations in the canonical routing registry. Matter-specific receiving-authority review still applies.",
+      "Current Hague-route destinations in the canonical routing registry. Document origin and matter-specific receiving-authority review still control the applicable path.",
   },
   non_hague: {
-    title: "Non-member / consular-review destinations",
+    title: "Non-Hague / authentication review",
     description:
       "Destinations where apostille is not the controlling route and authentication, embassy, consular, or receiving-authority review may apply.",
   },
@@ -77,7 +77,7 @@ function routeSignals(destination: Destination) {
       active: /witness/.test(path),
     },
     {
-      label: destination.hague ? "Apostille" : "Consular",
+      label: destination.hague ? "Apostille review" : "Authentication",
       Icon: Landmark,
       active: true,
     },
@@ -148,7 +148,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
               : "border-amber-500/25 bg-amber-500/[0.07] text-amber-300/90"
           }`}
         >
-          {country.hague ? "Hague" : "Consular review"}
+          {country.hague ? "Hague route" : "Auth review"}
         </span>
       </div>
 
@@ -300,7 +300,7 @@ export function CountriesDirectoryInteractive() {
               }`}
             >
               <CheckCircle className="h-4 w-4" />
-              Hague Convention member — apostille accepted
+              Hague / apostille-route review
             </button>
 
             <button
@@ -314,7 +314,7 @@ export function CountriesDirectoryInteractive() {
               }`}
             >
               <span className="h-4 w-4 rounded-full border border-current" />
-              Non-member — consular legalization required
+              Non-Hague / authentication review
             </button>
           </div>
 
