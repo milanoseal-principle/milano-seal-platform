@@ -33,7 +33,7 @@ Code can validate routing rules and fail-closed behavior, but production readine
 - carrier tracking and delivery evidence
 - final operator truth review
 
-The HCCH 1961 Apostille Convention currently has **129 Contracting Parties**. Country coverage must never be treated as proof that an individual document is apostille-ready.
+The HCCH 1961 Apostille Convention currently has **130 Contracting Parties**. Country coverage must never be treated as proof that an individual document is apostille-ready.
 
 ## Current Platform Roadmap Structure
 
@@ -52,6 +52,8 @@ Expand Alliance/partner capacity only through explicit certification, compliance
 ### Intelligence & Control
 
 New intelligence must be a derived projection over canonical evidence, read-only by default, and placed inside the existing Operator workspace unless another user genuinely requires the surface. Intelligence may identify stale authority evidence but cannot select a notarial act or authorize release.
+
+Matter Truth archives, output envelopes, evidence reconciliation and provenance matrices remain derived governance capabilities until wired to canonical evidence, migration-deployed, production-gated and live-proven.
 
 ### Governance & Platform
 

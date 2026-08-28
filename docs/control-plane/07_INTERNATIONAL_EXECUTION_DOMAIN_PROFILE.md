@@ -10,7 +10,7 @@ The operating domain is:
 
 ## Hague Apostille Convention Coverage
 
-The HCCH 1961 Apostille Convention currently has **129 Contracting Parties** as of 2026-08-27.
+The HCCH 1961 Apostille Convention currently has **130 Contracting Parties** as of 2026-08-27.
 
 Canonical external authority: HCCH status table for Convention No. 12 / Apostille Convention.
 

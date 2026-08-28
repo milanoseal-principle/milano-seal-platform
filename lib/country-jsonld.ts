@@ -34,13 +34,13 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
     },
     {
       q: "Can Remote Online Notarization (RON) be used for documents going to Italy?",
-      a: "Yes. Florida-commissioned notaries performing RON produce valid notarizations that the Florida DOS will apostille for recognition in Italy and across the European Union.",
+      a: "Florida RON may be available for an eligible notarial act, but the receiving Italian authority controls whether the resulting document format is acceptable. The Milano Seal™ verifies receiving-authority, wet-ink, witness, translation, and apostille requirements before release.",
     },
   ],
   spain: [
     {
       q: "Do I need an apostille for Spanish property transactions?",
-      a: "Yes. Spain processes over 2.1 million apostilles annually — more than any other Hague member. A Florida-issued apostille is directly recognized across all 17 Spanish autonomous communities and Spanish territories.",
+      a: "Spain is a Contracting Party to the Hague Apostille Convention. Whether a specific property document follows the apostille route depends on the document origin, document type, competent authority, and the Spanish receiving authority.",
     },
     {
       q: "How long does apostille processing take for Spain?",
@@ -48,7 +48,7 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
     },
     {
       q: "What documents need apostille for Spain?",
-      a: "Real estate contracts, birth and marriage certificates, corporate documents, affidavits, educational credentials, and immigration-related records.",
+      a: "Real estate contracts, birth and marriage certificates, corporate documents, affidavits, educational credentials, and immigration-related records may require authentication depending on their origin and receiving authority.",
     },
     {
       q: "Is a Spanish translation required with the apostille?",
@@ -62,7 +62,7 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
     },
     {
       q: "How long does UAE document authentication take?",
-      a: "5–7 business days. Documents destined for DIFC or ADGM financial zones may require additional review steps coordinated by The Milano Seal™.",
+      a: "Timing depends on the document route and receiving authority. Documents destined for DIFC or ADGM financial zones may require additional review steps coordinated by The Milano Seal™.",
     },
     {
       q: "What documents are commonly authenticated for the UAE?",
@@ -76,15 +76,15 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
   brazil: [
     {
       q: "Does Brazil accept Florida apostille documents?",
-      a: "Yes. Brazil joined the Hague Convention in August 2016. Documents previously requiring full consular legalization now move directly into Brazil's CNJ federal registry via Florida apostille — cutting processing from weeks to days.",
+      a: "Brazil is a Contracting Party to the Hague Apostille Convention. A Florida apostille can be part of the route for eligible Florida-origin documents, subject to document-specific and receiving-authority requirements.",
     },
     {
       q: "How long does apostille processing take for Brazil?",
-      a: "5–7 business days through The Milano Seal™. Portuguese translation review may be required by the receiving authority.",
+      a: "Timing depends on the document route and receiving authority. Portuguese translation review may be required by the receiving authority.",
     },
     {
       q: "What documents are commonly apostilled for Brazil?",
-      a: "Property deeds, CPF registration documents, corporate filings, inheritance records, powers of attorney, and Cartório-bound notarial acts.",
+      a: "Property deeds, CPF-related records, corporate filings, inheritance records, powers of attorney, and Cartório-bound notarial acts may require authentication depending on their origin and use.",
     },
     {
       q: "May Portuguese translation be required for apostilled documents going to Brazil?",
@@ -94,25 +94,25 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
   mexico: [
     {
       q: "Does Mexico accept apostille documents?",
-      a: "Mexico has been a Hague Convention member since 1995. However, documents must align with Mexico's Notario Público system — Florida's RON certification is formally recognized as its functional equivalent for cross-border execution.",
+      a: "Mexico is a Contracting Party to the Hague Apostille Convention, which entered into force for Mexico on August 14, 1995. Whether a specific document follows the apostille route depends on its origin, document type, competent authority, territorial scope, and the actual Mexican receiving authority.",
     },
     {
-      q: "How long does apostille processing take for Mexico?",
-      a: "3–5 business days for Hague-eligible documents. Non-Hague pathways through the Mexican Consulate add 5–10 additional business days.",
+      q: "Can Florida Remote Online Notarization be used for documents going to Mexico?",
+      a: "Florida RON is not treated as a universal substitute for Mexican notarial formalities. RON eligibility and foreign usability must be reviewed against the required notarial act, wet-ink or witness requirements, document format, and the receiving authority before execution and release.",
     },
     {
-      q: "What documents need apostille for Mexico?",
-      a: "Property escrituras, business powers of attorney, corporate resolutions, vital records, and immigration-related affidavits.",
+      q: "What documents may require apostille for Mexico?",
+      a: "Powers of attorney, corporate records, vital records, property-related documents, and affidavits may require authentication depending on the document origin and the institution that will receive them.",
     },
     {
-      q: "Do I need Mexican Consulate legalization for documents going to Mexico?",
-      a: "For most standard documents, the Hague apostille route through Florida DOS is sufficient since Mexico acceded in 1995. Consular legalization is only required for specific document categories outside the Hague framework.",
+      q: "Do I automatically need Mexican Consulate legalization for documents going to Mexico?",
+      a: "No. Mexico has an operative Hague Apostille Convention route, so consular legalization is not the default for eligible public documents within the Convention framework. Any exception or additional legalization requirement must be verified for the specific document and receiving authority.",
     },
   ],
   portugal: [
     {
       q: "Does Portugal accept Florida apostille documents?",
-      a: "Yes. Portugal has been a member of the Hague Apostille Convention since 1968 — one of the original signatories. Portugal also serves as the apostille gateway for Lusophone jurisdictions including Brazil, Angola, and Mozambique.",
+      a: "Portugal is a Contracting Party to the Hague Apostille Convention. Eligible Florida-origin documents may follow the Florida apostille route, subject to the document type and receiving authority.",
     },
     {
       q: "How long does apostille processing take for Portugal?",
@@ -120,29 +120,29 @@ const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> = {
     },
     {
       q: "What documents need apostille for Portugal?",
-      a: "Residence permit documentation, powers of attorney, property deeds, vital records, and documents for NHR (Non-Habitual Resident) tax status applications.",
+      a: "Residence permit documentation, powers of attorney, property deeds, vital records, and other official-use documents may require authentication depending on origin and receiving authority.",
     },
     {
       q: "Can an apostilled document from Florida be used across other Lusophone countries?",
-      a: "Portugal-bound apostilles are specifically authenticated for Portuguese jurisdiction. Brazil, being a separate Hague member since 2016, has its own direct Florida apostille pathway. The Milano Seal™ can coordinate authentication for any Lusophone destination.",
+      a: "No cross-country assumption should be made. Each destination has its own treaty status, competent authority, document requirements, and receiving-authority rules. The Milano Seal™ verifies the route separately for each destination.",
     },
   ],
   greece: [
     {
       q: "Does Greece accept apostille for citizenship restoration documents?",
-      a: "Yes. Greece has been a Hague Convention member since 1985. The Hellenic Ministry of Interior requires apostilled documents from Florida for Greek citizenship restoration (citizenship by descent), property inheritance, and registry filings.",
+      a: "Greece is a Contracting Party to the Hague Apostille Convention. Citizenship, property, succession, and registry matters may require apostilled source documents depending on document origin and the receiving Greek authority.",
     },
     {
       q: "How long does apostille processing take for Greece?",
-      a: "5–7 business days through The Milano Seal™. Translation into Greek is required by most Hellenic registry and court authorities.",
+      a: "Timing depends on the document route and receiving authority. Greek translation may also be required by the receiving authority.",
     },
     {
       q: "What documents are commonly apostilled for Greece?",
-      a: "Greek citizenship restoration documents, birth and marriage certificates, inheritance and estate records, powers of attorney, maritime corporate filings, and property deeds.",
+      a: "Citizenship documents, birth and marriage certificates, inheritance and estate records, powers of attorney, maritime corporate filings, and property records may require authentication depending on use.",
     },
     {
       q: "Is a Greek translation required with the apostille?",
-      a: "Yes, for most official proceedings. The Hellenic Ministry of Interior and Greek courts require certified translations of apostilled documents. The Milano Seal™ coordinates certified translation referrals as part of the execution sequence.",
+      a: "Translation requirements depend on the receiving authority and document use. The Milano Seal™ coordinates certified translation referrals when required as part of the execution sequence.",
     },
   ],
 };
@@ -171,7 +171,7 @@ export function buildCountryJsonLd(
     provider: ORGANIZATION,
     areaServed: [
       { "@type": "Country", name: compliance.name },
-      { "@type": "State",   name: "Florida", containedInPlace: { "@type": "Country", name: "United States" } },
+      { "@type": "State", name: "Florida", containedInPlace: { "@type": "Country", name: "United States" } },
     ],
     serviceType: destination.hague
       ? "Hague Convention Apostille · Florida Notarization · International Document Authentication"
@@ -210,8 +210,8 @@ export function buildCountryJsonLd(
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home",         item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Countries",    item: `${SITE_URL}/countries` },
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Countries", item: `${SITE_URL}/countries` },
       { "@type": "ListItem", position: 3, name: compliance.name, item: pageUrl },
     ],
   };

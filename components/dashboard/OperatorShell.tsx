@@ -10,6 +10,7 @@ const NAV: MilanoOSNavItem[] = [
   { href: "/dashboard/dispatch", label: "Dispatch", icon: "boxes", group: "Execution", hint: "Execution handoff" },
   { href: "/dashboard/packaging-delivery", label: "Packaging / Delivery", icon: "package", group: "Execution", hint: "Release and delivery" },
   { href: "/dashboard/compliance-atlas", label: "Compliance", icon: "clipboard", group: "Intelligence", hint: "Authority and pathway review" },
+  { href: "/dashboard/reconciliation", label: "Reconciliation", icon: "activity", group: "Intelligence", hint: "Cross-domain Matter truth failures" },
   { href: "/dashboard/acquisition", label: "Acquisition", icon: "building", group: "Intelligence", hint: "Commercial pipeline" },
   { href: "/dashboard/operator-spine", label: "Intelligence", icon: "activity", group: "Intelligence", hint: "Read-only operator context" },
   { href: "/dashboard/expansion", label: "Expansion", icon: "compass", group: "Intelligence", hint: "Institutional reconciliation, trust and network engines" },

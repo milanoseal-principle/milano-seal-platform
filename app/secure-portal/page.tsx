@@ -1,179 +1,106 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, Check, Circle, FileCheck2, LockKeyhole, PackageCheck, ReceiptText, Route, ShieldCheck, Truck } from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: "Secure Matter Portal | The Milano Seal™",
+  title: "Secure Matter Command Center | The Milano Seal™",
   description:
-    "Track your matter from intake to international release. Your secure portal provides visibility into matter status, payment status, execution lane, apostille stage, document review, courier activity, and final release confirmation.",
+    "Preview the Milano Seal client Matter command center: execution state, payment gate, Matter truth, document vault, chain of custody, courier release, and next required action.",
   alternates: { canonical: "https://themilanoseal.com/secure-portal" },
 };
 
-const PORTAL_VIEWS = [
-  "Matter status",
-  "Payment status",
-  "Execution lane",
-  "Pre-flight review",
-  "Document vault",
-  "Apostille stage",
-  "Shipping and delivery updates",
-  "Coordinator messages",
-  "Final release confirmation",
-] as const;
+const EXECUTION_RAIL = ["Intake", "Review", "Paid", "Execution", "Apostille", "Release", "Courier", "Delivered"] as const;
 
-const STAGES = [
-  "Intake Received",
-  "Under Review",
-  "Quoted / Awaiting Payment",
-  "Scheduled",
-  "In Execution",
-  "Apostille Processing",
-  "In Transit",
-  "Delivered",
-  "Completed",
-  "Paid & Released",
-] as const;
-
-const VAULT_STATES = [
-  "Not Uploaded",
-  "Uploaded",
-  "Under Review",
-  "Approved",
-  "Ready for Execution",
-  "Ready for Release",
-  "Released",
+const PANELS = [
+  { title: "Matter Truth", icon: ShieldCheck, rows: [["Document", "One and the Same Affidavit"], ["Origin", "Florida"], ["Destination", "Italy"], ["Execution", "RON / authority review"]] },
+  { title: "Transaction", icon: ReceiptText, rows: [["Quote", "Matter-specific"], ["Payment", "Wise verified"], ["Scheduling", "Unlocked after gate"], ["Reference", "Matter-linked"]] },
+  { title: "Document Vault", icon: FileCheck2, rows: [["Uploaded", "Visible"], ["Review", "Governed"], ["Executed", "Evidence-linked"], ["Release", "Controlled"]] },
+  { title: "Chain of Custody", icon: Truck, rows: [["Current location", "Operator controlled"], ["Last event", "Time-stamped"], ["Next event", "Authority dependent"], ["Tracking", "Available after release"]] },
 ] as const;
 
 export default function SecurePortalPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#0A0A0A] overflow-x-hidden">
-        {/* Hero */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 pt-32 pb-10">
-          <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.3em] text-[#C6A55A]/70">
-            Secure Matter Portal
-          </p>
-          <h1 className="font-serif text-3xl leading-tight text-white sm:text-5xl">
-            Track your matter from intake to{" "}
-            <span className="italic text-[#C6A55A]">international release</span>.
-          </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-[#8A8A8A]">
-            Your secure portal provides visibility into matter status, payment status, execution lane,
-            apostille stage, document review, courier activity, and final release confirmation.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/login?next=/portal"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#C6A55A]/40 px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]"
-            >
-              Login
-            </Link>
-            <Link
-              href="/intake"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#1a1206]"
-              style={{ background: "linear-gradient(180deg,#ECD79A,#C6A55A)" }}
-            >
-              Begin Secure Intake
-            </Link>
-          </div>
-        </section>
-
-        {/* Inside your portal */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 border-t border-[#1A1A1A]">
-          <h2 className="font-serif text-2xl text-white">Inside your portal, you can view</h2>
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {PORTAL_VIEWS.map((v) => (
-              <div
-                key={v}
-                className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#1A1A1A] bg-[#0E0E0E] p-4"
-              >
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6A55A]/70" />
-                <span className="text-sm text-white/85">{v}</span>
+      <main className="min-h-screen overflow-x-hidden bg-[#050507] text-white">
+        <section className="relative px-4 pb-20 sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 3rem)" }}>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(198,165,90,0.11),transparent_32%)]" />
+          <div className="relative mx-auto max-w-6xl">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">Secure Matter Command Center</p>
+                <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl lg:text-6xl">One Matter. <span className="italic text-[var(--ms-gold)]">One execution truth.</span></h1>
+                <p className="mt-6 max-w-2xl text-base leading-7 text-white/50">The portal is the client projection of the governed Matter record: status, transaction gate, document state, execution route, custody, release, and delivery evidence.</p>
               </div>
-            ))}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/login?next=/portal" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/35 px-6 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]">Open Client Portal<ArrowRight className="h-3.5 w-3.5" /></Link>
+                <Link href="/intake" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-6 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#050507]">Begin Secure Intake<ArrowRight className="h-3.5 w-3.5" /></Link>
+              </div>
+            </div>
+
+            <section className="mt-12 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#09090B]/95 shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
+              <div className="border-b border-white/[0.07] p-5 sm:p-7">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--ms-gold)]/55">Live Matter shell preview</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <h2 className="font-serif text-2xl sm:text-3xl">MS-2026-08-###</h2>
+                      <span className="rounded-full border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.06] px-3 py-1 font-mono text-[8px] uppercase tracking-[0.14em] text-[var(--ms-gold)]">Apostille Processing</span>
+                    </div>
+                    <p className="mt-2 text-sm text-white/42">Florida → Italy · One and the Same Affidavit</p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-emerald-200/80"><LockKeyhole className="mr-2 inline h-4 w-4" />Payment gate satisfied</div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border-b border-white/[0.07] px-5 py-6 sm:px-7">
+                <ol className="flex min-w-[820px] items-center">
+                  {EXECUTION_RAIL.map((stage, index) => {
+                    const complete = index < 4;
+                    const active = index === 4;
+                    return (
+                      <li key={stage} className="flex flex-1 items-center last:flex-none">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${complete ? "border-emerald-500/35 bg-emerald-500/[0.08] text-emerald-300" : active ? "border-[var(--ms-gold)]/55 bg-[var(--ms-gold)]/[0.10] text-[var(--ms-gold)] shadow-[0_0_25px_rgba(198,165,90,0.18)]" : "border-white/[0.08] text-white/20"}`}>{complete ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-2.5 w-2.5" />}</div>
+                          <span className={`font-mono text-[8px] uppercase tracking-[0.11em] ${active ? "text-[var(--ms-gold)]" : complete ? "text-white/55" : "text-white/24"}`}>{stage}</span>
+                        </div>
+                        {index < EXECUTION_RAIL.length - 1 && <div className={`mx-3 h-px flex-1 ${index < 4 ? "bg-gradient-to-r from-emerald-500/35 to-[var(--ms-gold)]/30" : "bg-white/[0.07]"}`} />}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+
+              <div className="grid gap-px bg-white/[0.06] md:grid-cols-2">
+                {PANELS.map(({ title, icon: Icon, rows }) => (
+                  <article key={title} className="bg-[#09090B] p-5 sm:p-7">
+                    <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--ms-gold)]/18 bg-[var(--ms-gold)]/[0.04]"><Icon className="h-4 w-4 text-[var(--ms-gold)]/80" /></div><h3 className="font-serif text-xl">{title}</h3></div>
+                    <dl className="mt-5 space-y-3">
+                      {rows.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 border-b border-white/[0.05] pb-3 last:border-0"><dt className="text-xs text-white/32">{label}</dt><dd className="text-right text-xs text-white/68">{value}</dd></div>)}
+                    </dl>
+                  </article>
+                ))}
+              </div>
+
+              <div className="p-5 sm:p-7">
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--ms-gold)]/30 bg-[var(--ms-gold)]/[0.055] p-5 sm:p-6">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[var(--ms-gold)]" />
+                  <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
+                    <div><p className="font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--ms-gold)]/65">Next required action</p><h3 className="mt-2 font-serif text-xl">Await competent-authority apostille return</h3><p className="mt-2 text-sm text-white/45">Owner: Milano Seal Operations · Client action required: None</p></div>
+                    <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/25 px-4 py-3 text-xs text-white/45"><Route className="h-4 w-4 text-[var(--ms-gold)]" />Authority route active</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {[{ icon: LockKeyhole, title: "Payment-Gated", body: "Scheduling and execution remain governed by verified transaction state." }, { icon: PackageCheck, title: "Evidence-Linked", body: "Documents and release events are projected from governed Matter evidence." }, { icon: Truck, title: "Custody-Aware", body: "Release and courier visibility appears only when real custody events exist." }].map(({ icon: Icon, title, body }) => <div key={title} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5"><Icon className="h-4 w-4 text-[var(--ms-gold)]/70" /><h3 className="mt-4 font-serif text-lg">{title}</h3><p className="mt-2 text-sm leading-6 text-white/38">{body}</p></div>)}
+            </div>
+
+            <p className="mt-10 text-xs leading-5 text-white/28">Preview data above is illustrative only. The authenticated portal displays only client-safe projections from the user’s actual Matter. Final acceptance remains subject to the receiving authority.</p>
           </div>
-        </section>
-
-        {/* Payment-Gated Execution trust block */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 border-t border-[#1A1A1A]">
-          <div className="rounded-2xl border border-[#C6A55A]/20 bg-[#0E0E0E] p-6 sm:p-8">
-            <h2 className="font-serif text-2xl text-white">Payment-Gated Execution</h2>
-            <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-[#B8B8B8]">
-              No matter is scheduled, executed, apostilled, couriered, or released until scope is confirmed
-              and the required payment status is complete. This protects document integrity, scheduling
-              accuracy, and chain-of-custody control.
-            </p>
-          </div>
-        </section>
-
-        {/* Portal stage preview */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 border-t border-[#1A1A1A]">
-          <h2 className="font-serif text-2xl text-white">Matter journey</h2>
-          <p className="mt-1.5 text-sm text-[#8A8A8A]">
-            Preview only — your live matter status appears after secure access.
-          </p>
-          <ol className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {STAGES.map((s, i) => (
-              <li
-                key={s}
-                className="flex min-w-0 items-center gap-3 rounded-xl border border-[#1A1A1A] bg-[#0E0E0E] p-4"
-              >
-                <span className="shrink-0 font-mono text-[11px] text-[#C6A55A]/60">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="text-sm text-white/80">{s}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* Document vault preview */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 border-t border-[#1A1A1A]">
-          <h2 className="font-serif text-2xl text-white">Document vault</h2>
-          <p className="mt-1.5 text-sm text-[#8A8A8A]">
-            Preview only — your live matter status appears after secure access.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            {VAULT_STATES.map((v) => (
-              <span
-                key={v}
-                className="rounded-full border border-[#1A1A1A] bg-[#0E0E0E] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em] text-white/70"
-              >
-                {v}
-              </span>
-            ))}
-          </div>
-          <p className="mt-6 text-[12.5px] leading-relaxed text-[#8A8A8A]">
-            Tracking details will appear once release or courier activity is created.
-          </p>
-        </section>
-
-        {/* CTA repeat */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 border-t border-[#1A1A1A]">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/login?next=/portal"
-              className="inline-flex min-h-12 flex-1 items-center justify-center rounded-lg border border-[#C6A55A]/40 px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]"
-            >
-              Login
-            </Link>
-            <Link
-              href="/intake"
-              className="inline-flex min-h-12 flex-1 items-center justify-center rounded-lg px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#1a1206]"
-              style={{ background: "linear-gradient(180deg,#ECD79A,#C6A55A)" }}
-            >
-              Begin Secure Intake
-            </Link>
-          </div>
-        </section>
-
-        {/* Disclaimer */}
-        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-12 border-t border-[#1A1A1A]">
-          <p className="text-[11px] leading-relaxed text-[#8A8A8A]/80">
-            Final acceptance remains subject to the receiving authority.
-          </p>
         </section>
       </main>
       <Footer />

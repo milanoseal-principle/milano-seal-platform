@@ -24,7 +24,7 @@ export function MetricCard({
   return (
     <div
       data-critical-card=""
-      className="relative overflow-hidden rounded-xl border p-4"
+      className="relative overflow-visible rounded-xl border p-4"
       style={{ background: "rgba(11,11,11,0.9)", borderColor: "rgba(255,255,255,0.07)" }}
     >
       <div

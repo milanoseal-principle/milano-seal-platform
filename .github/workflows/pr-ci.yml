@@ -57,6 +57,24 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Production governance
+        run: npm run validate:production-governance
+
+      - name: Full system hardening
+        run: node scripts/validate-full-system-hardening.mjs
+
+      - name: Migration chain
+        run: npm run validate:migration-chain
+
+      - name: Wise-only active operations
+        run: node scripts/validate-wise-only-active-ops-docs.mjs
+
+      - name: TIFF real 15-step certification contract
+        run: npm run validate:tiff-15-step-production-certification
+
+      - name: Damiani production wiring
+        run: npm run validate:damiani-production-wiring
+
       - name: Production build
         env:
           NODE_OPTIONS: --max-old-space-size=6144

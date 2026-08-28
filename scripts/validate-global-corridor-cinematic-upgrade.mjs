@@ -19,6 +19,8 @@ const paths = {
   globe: "components/globe/GlobalRouteGlobe.tsx",
   mini: "components/home/MiniAtlasPreview.tsx",
   routeData: "src/features/corridors/globalRouteData.ts",
+  credentialTicker: "components/landing/credential-ticker.tsx",
+  routingSection: "components/landing/routing-intelligence-section.tsx",
 };
 
 for (const path of Object.values(paths)) {
@@ -91,6 +93,19 @@ check(
   /min-h-\[320px\]/.test(source.globe),
   "authority coverage remains readable on responsive layouts",
   "authority coverage must preserve a readable responsive visual field",
+);
+
+const mexicoPublicCorridors = `${source.credentialTicker}\n${source.routingSection}`;
+check(
+  /FLORIDA → MEXICO[\s\S]{0,100}Hague Apostille Review Path/.test(source.credentialTicker) &&
+    /destination:\s*"Mexico"[\s\S]{0,160}label:\s*"Hague Apostille Review Path"/.test(source.routingSection),
+  "Mexico public corridor copy matches canonical Hague apostille posture",
+  "Mexico corridor surfaces must use Hague apostille review language",
+);
+check(
+  !/Cross-Border Legalization Path/.test(mexicoPublicCorridors),
+  "stale Mexico legalization corridor copy is absent",
+  "Mexico must not regress to the stale Cross-Border Legalization Path label",
 );
 
 const combined = Object.values(source).join("\n");

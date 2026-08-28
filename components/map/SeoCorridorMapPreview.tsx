@@ -73,7 +73,7 @@ export function SeoCorridorMapPreview({ slug, className }: Props) {
   return (
     <div
       data-critical-card=""
-      className={`relative w-full overflow-hidden rounded-2xl border border-[#C6A55A]/25 bg-[#060608] ${className ?? ""}`}
+      className={`relative w-full overflow-visible rounded-2xl border border-[#C6A55A]/25 bg-[#060608] ${className ?? ""}`}
       style={{ fontFamily: "monospace" }}
     >
       <style>{`

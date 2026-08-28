@@ -50,7 +50,7 @@ Unknown release-critical values remain review-required.
 
 ## Hague Apostille Convention Contract
 
-The HCCH 1961 Apostille Convention currently has **129 Contracting Parties**. The system stores this as current external coverage metadata, not as a blanket apostille conclusion.
+The HCCH 1961 Apostille Convention currently has **130 Contracting Parties**. The system stores this as current external coverage metadata, not as a blanket apostille conclusion.
 
 A Matter-specific Hague route still requires verification of applicable entry into force, territorial scope, document origin/category, competent authority and receiving-authority requirements.
 
@@ -107,3 +107,5 @@ A Matter must not be represented as fully complete when required delivery, relea
 ## Intelligence Boundary
 
 Reconciliation, Trust Engine, knowledge graph, return intelligence, Alliance intelligence, financial intelligence and operator exceptions are interpretations of canonical evidence. They cannot silently overwrite canonical Matter truth.
+
+Accepted Matter Truth snapshots, Matter output envelopes, evidence reconciliation, and source/version/provenance matrices are also derived governance layers. They may preserve history and explain changes but may not replace canonical Matter, Wise, execution, authority, custody, delivery or release truth.
