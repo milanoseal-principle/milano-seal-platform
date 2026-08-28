@@ -33,8 +33,11 @@ if (shell.includes("key={pathname}")) {
 }
 
 const loading = readFileSync("app/loading.tsx", "utf8");
-for (const token of ["Preparing secure workspace", "aria-busy", "The Milano Seal™"]) {
+for (const token of ["Preparing the next view", "Preserving your current context", "aria-busy", "The Milano Seal™"]) {
   if (!loading.includes(token)) throw new Error(`Global loading state missing: ${token}`);
+}
+if (loading.includes("Preparing secure workspace") || loading.includes("authoritative matter state")) {
+  throw new Error("Global loading state must remain route-neutral and must not imply authenticated Matter context on public routes");
 }
 
 const recovery = readFileSync("app/error.tsx", "utf8");
