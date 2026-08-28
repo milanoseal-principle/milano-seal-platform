@@ -14,10 +14,12 @@ const counsel = readFileSync("data/counsel-intelligence.ts", "utf8");
 
 test("access experience separates execution, intelligence, counsel, concierge, and network lanes", () => {
   assert.match(access, /I need a document executed/);
-  assert.match(access, /Milano Cross-Border Execution Intelligence Report/);
-  assert.match(access, /Milano Counsel Desk/);
+  assert.match(access, /COUNSEL_INTELLIGENCE_REPORT\.name/);
+  assert.match(access, /COUNSEL_DESK\.name/);
   assert.match(access, /Concierge International Execution/);
   assert.match(access, /Work with The Milano Seal/);
+  assert.match(counsel, /Milano Cross-Border Execution Intelligence Report/);
+  assert.match(counsel, /Milano Counsel Desk/);
   assert.doesNotMatch(access, /ACCESS_PRODUCTS\.map/);
 });
 
