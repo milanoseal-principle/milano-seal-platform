@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.themilanoseal.com"),
   title: {
     default: "The Milano Seal™ | U.S. Document Execution for International Use",
-    template: "%s | The Milano Seal™",
+    template: "%s",
   },
   description:
     "Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.",

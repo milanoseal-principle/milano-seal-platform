@@ -10,15 +10,19 @@ const routeLayouts = [
   "app/global-document-intelligence/layout.tsx",
 ] as const;
 
-test("root metadata retains the canonical Milano brand suffix", () => {
-  assert.match(rootLayout, /template:\s*"%s \| The Milano Seal™"/);
+test("root metadata preserves authored page titles without re-appending the brand", () => {
+  assert.match(rootLayout, /template:\s*"%s"/);
+  assert.doesNotMatch(rootLayout, /template:\s*"%s \| The Milano Seal™"/);
+  assert.match(
+    rootLayout,
+    /default:\s*"The Milano Seal™ \| U\.S\. Document Execution for International Use"/,
+  );
 });
 
-test("new public route families neutralize duplicate title suffixing", () => {
+test("public route title templates remain neutral", () => {
   for (const path of routeLayouts) {
     const source = readFileSync(path, "utf8");
     assert.match(source, /template:\s*"%s"/);
-    assert.match(source, /default:\s*"The Milano Seal™"/);
     assert.doesNotMatch(source, /template:\s*"%s \| The Milano Seal™"/);
   }
 });
