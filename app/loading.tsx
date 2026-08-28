@@ -10,11 +10,6 @@ export default function Loading() {
         <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D8C188]/70">
           The Milano Seal™
         </div>
-        <h1 className="mt-3 font-serif text-2xl font-normal sm:text-3xl">
-          Preparing the next view
-        </h1>
-        <p className="mt-2 max-w-xl text-sm leading-6 text-white/45">
-          Preserving your current context.
         <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">
           Preparing the next view
         </h1>
