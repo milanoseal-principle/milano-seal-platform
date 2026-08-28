@@ -14,8 +14,8 @@ export interface AccessProduct {
   code: string;
   label: string;
   description: string;
-  priceLabel: string; // display only
-  priceCents: number | null; // null = dynamic/custom/free
+  priceLabel: string;
+  priceCents: number | null;
   accessLevel: AccessLevel;
   ctaLabel: string;
   ctaHref: string;
@@ -24,63 +24,64 @@ export interface AccessProduct {
 export const ACCESS_PRODUCTS: AccessProduct[] = [
   {
     code: "CLIENT_ROUTE_REPORT",
-    label: "Client Route Report",
+    label: "Cross-Border Execution Intelligence Report",
     description:
-      "A controlled route report for your country, document type, notarization path, apostille/authentication route, and release steps.",
-    priceLabel: "$149",
+      "Optional pre-Matter execution intelligence for clients who need clarity on document route, notarization posture, apostille/authentication path, receiving-authority dependencies, and release steps before opening a full execution Matter.",
+    priceLabel: "$149 / Matter",
     priceCents: 14900,
     accessLevel: "client_matter",
-    ctaLabel: "Unlock Route Report",
-    ctaHref: "/access?interest=route-report",
+    ctaLabel: "Request Route Intelligence",
+    ctaHref: "/lawyer-access#execution-intelligence-report",
   },
   {
     code: "LAWYER_CLIENT_PACK_SINGLE",
-    label: "Lawyer Client Pack",
+    label: "Milano Cross-Border Execution Intelligence Report™",
     description:
-      "Attorney-facing client explanation and readiness pack for international document execution.",
-    priceLabel: "$149",
+      "Attorney-facing Matter intelligence covering route decision, authority matrix, execution requirements, rejection risk, client instructions, notary brief, custody plan, and evidence appendix.",
+    priceLabel: "$149 / Matter",
     priceCents: 14900,
     accessLevel: "lawyer_pack",
-    ctaLabel: "Request Lawyer Client Pack",
-    ctaHref: "/lawyer-access",
+    ctaLabel: "Request Counsel Report",
+    ctaHref: "/lawyer-access#execution-intelligence-report",
   },
   {
     code: "LAWYER_MONTHLY_ACCESS",
-    label: "Lawyer Monthly Access",
-    description: "Recurring access for firms sending international document matters.",
-    priceLabel: "$299/month",
+    label: "Milano Counsel Desk™",
+    description:
+      "Recurring professional access for firms sending international document matters through a controlled U.S. execution workflow.",
+    priceLabel: "$299 / month",
     priceCents: 29900,
     accessLevel: "lawyer_pack",
-    ctaLabel: "Request Monthly Lawyer Access",
-    ctaHref: "/lawyer-access?plan=monthly",
+    ctaLabel: "Open Counsel Desk",
+    ctaHref: "/lawyer-access#counsel-desk",
   },
   {
     code: "CONTROLLED_MATTER_DEPOSIT",
-    label: "Controlled Matter Deposit",
+    label: "International Execution Matter",
     description:
-      "Deposit unlocks scheduling and execution coordination for an active matter.",
-    priceLabel: "Dynamic",
+      "The core client transaction. Intake produces a Matter-specific quote; verified payment unlocks scheduling and execution coordination.",
+    priceLabel: "Dynamic Matter quote",
     priceCents: null,
     accessLevel: "client_matter",
-    ctaLabel: "Make Deposit / Unlock Scheduling",
-    ctaHref: "/portal/invoice",
+    ctaLabel: "Begin Secure Intake",
+    ctaHref: "/intake",
   },
   {
     code: "CONCIERGE_EXECUTION_REVIEW",
-    label: "Concierge Execution Review",
+    label: "Private Client & Complex Execution",
     description:
-      "For urgent, complex, attorney-led, private-client, or multi-document international matters.",
+      "High-touch review for urgent, complex, counsel-led, private-client, family-office, or multi-document international matters.",
     priceLabel: "Custom",
     priceCents: null,
     accessLevel: "client_matter",
     ctaLabel: "Request Concierge Review",
-    ctaHref: "/access?interest=concierge",
+    ctaHref: "/intake?service=concierge",
   },
   {
     code: "ALLIANCE_APPLICATION",
-    label: "Alliance Notary Application",
+    label: "Alliance Notary Network",
     description: "Apply to join the Milano Seal execution network.",
-    priceLabel: "Free / Approved",
+    priceLabel: "Application",
     priceCents: 0,
     accessLevel: "alliance_member",
     ctaLabel: "Apply for Alliance Access",
@@ -88,13 +89,13 @@ export const ACCESS_PRODUCTS: AccessProduct[] = [
   },
   {
     code: "VA_APPLICATION",
-    label: "VA Support Application",
+    label: "Operations / VA Network",
     description:
       "Apply to support intake review, upload organization, route preparation, and operator escalation.",
     priceLabel: "Internal",
     priceCents: 0,
     accessLevel: "va_internal",
-    ctaLabel: "Apply for VA Support Role",
+    ctaLabel: "Apply for Operations Role",
     ctaHref: "/va/apply",
   },
 ];
