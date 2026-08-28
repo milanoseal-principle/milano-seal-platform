@@ -9,13 +9,13 @@ import { HAGUE_PROFESSIONAL_DESTINATIONS } from "@/lib/professional/universal-at
 const canonical = "https://www.themilanoseal.com/professional";
 
 export const metadata: Metadata = {
-  title: "U.S. Document Execution for International Counsel | The Milano Seal™",
+  title: "U.S. Apostille & Document Execution for International Counsel | The Milano Seal™",
   description:
     "A universal professional workflow for international attorneys and advisors coordinating U.S. document execution, apostille or authentication routing, custody, and international release.",
   alternates: { canonical },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "U.S. Document Execution for International Counsel | The Milano Seal™",
+    title: "U.S. Apostille & Document Execution for International Counsel | The Milano Seal™",
     description:
       "One accountable U.S. execution point for international counsel coordinating cross-border documents for use abroad.",
     url: canonical,
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
         url: "https://www.themilanoseal.com/og-image.png",
         width: 1200,
         height: 630,
-        alt: "The Milano Seal™ — U.S. document execution for international counsel",
+        alt: "The Milano Seal™ — U.S. apostille and document execution for international counsel",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "U.S. Document Execution for International Counsel | The Milano Seal™",
+    title: "U.S. Apostille & Document Execution for International Counsel | The Milano Seal™",
     description:
       "Professional U.S. execution and apostille/authentication coordination for international matters.",
     images: ["https://www.themilanoseal.com/og-image.png"],
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 const schema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "U.S. Document Execution for International Counsel",
+  name: "U.S. Apostille & Document Execution for International Counsel",
   description:
     "A universal professional workflow for international attorneys and advisors coordinating U.S. document execution, apostille or authentication routing, custody, and international release.",
   url: canonical,
@@ -106,6 +106,9 @@ export default function ProfessionalHubPage() {
                 </h1>
                 <p className="mt-7 max-w-3xl text-lg leading-8 text-white/52">
                   The Milano Seal coordinates the U.S. document-execution side of cross-border matters while counsel retains legal strategy, document substance, and receiving-authority judgment.
+                </p>
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-white/36">
+                  Final scope and pricing are confirmed only after the Matter is reviewed.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <Link
