@@ -1,4 +1,8 @@
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import {
+  PENDING_APOSTILLE_CONVENTION_DESTINATION_SLUGS,
+  PROFESSIONAL_DESTINATION_EXTENSIONS,
+} from "@/data/professional-destination-extensions";
 
 export type ProfessionalRole =
   | "international_attorney"
@@ -76,17 +80,38 @@ export const PROFESSIONAL_DOCUMENT_OPTIONS: Array<{
  * must resolve exactly one authority record per slug. Later rows intentionally
  * win so a newer, more specific jurisdiction record supersedes an older row
  * without creating a second professional workflow.
+ *
+ * The additive extension registry closes the foreign Convention-party coverage
+ * gap without mutating the legacy destination dataset used by other modules.
  */
 export const CANONICAL_PROFESSIONAL_DESTINATIONS = Array.from(
-  DESTINATIONS.reduce((bySlug, destination) => {
+  [...DESTINATIONS, ...PROFESSIONAL_DESTINATION_EXTENSIONS].reduce((bySlug, destination) => {
     bySlug.set(destination.slug, destination);
     return bySlug;
   }, new Map<string, Destination>()).values(),
 );
 
+export function isPendingApostilleConventionDestination(destination?: Destination | null) {
+  return Boolean(
+    destination &&
+      PENDING_APOSTILLE_CONVENTION_DESTINATION_SLUGS.has(destination.slug),
+  );
+}
+
+/**
+ * Backward-compatible export name used throughout the existing professional UX.
+ * It now means every governed foreign Apostille Convention destination exposed to
+ * professionals, including Thailand and Viet Nam while their Convention entry into
+ * force is pending. Pending destinations fail closed to interim route review and do
+ * not receive an operative apostille instruction.
+ */
 export const HAGUE_PROFESSIONAL_DESTINATIONS = CANONICAL_PROFESSIONAL_DESTINATIONS.filter(
-  (destination) => destination.hague,
+  (destination) =>
+    destination.hague ||
+    PENDING_APOSTILLE_CONVENTION_DESTINATION_SLUGS.has(destination.slug),
 ).sort((a, b) => b.demand - a.demand || a.name.localeCompare(b.name));
+
+export const PROFESSIONAL_CONVENTION_DESTINATIONS = HAGUE_PROFESSIONAL_DESTINATIONS;
 
 export function getProfessionalDestination(slug?: string) {
   if (!slug) return null;
@@ -121,7 +146,9 @@ function buildRoute(
     "Applicable notarization / certification review",
   ];
 
-  if (origin === "federal") {
+  if (isPendingApostilleConventionDestination(destination)) {
+    routeSteps.push("Convention entry-into-force / interim authentication route review");
+  } else if (origin === "federal") {
     routeSteps.push("Competent federal authentication / apostille authority review");
   } else if (destination.hague) {
     routeSteps.push(
@@ -153,11 +180,16 @@ export function buildAttorneyJourney(input: AttorneyJourneyInput): AttorneyJourn
 
   if (destination) {
     confirmed.push(`Destination selected: ${destination.name}`);
-    confirmed.push(
-      destination.hague
-        ? "Hague Convention route identified"
-        : "Destination requires non-Hague route review",
-    );
+    if (isPendingApostilleConventionDestination(destination)) {
+      confirmed.push("Apostille Convention party identified; entry into force is still pending");
+      reviewRequired.push("Current Convention entry-into-force / interim authentication posture");
+    } else {
+      confirmed.push(
+        destination.hague
+          ? "Hague Convention route identified"
+          : "Destination requires non-Hague route review",
+      );
+    }
   }
   if (input.documentClass) {
     confirmed.push(`Document class identified: ${getProfessionalDocumentLabel(input.documentClass)}`);
