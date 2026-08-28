@@ -354,10 +354,10 @@ export function UniversalAttorneyJourney() {
                 </Link>
                 {journey.destination && (
                   <Link
-                    href={`/countries/${journey.destination.slug}`}
+                    href={`/professional/${journey.destination.slug}`}
                     className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/[0.08] px-5 text-sm font-medium text-white/55 transition-colors hover:border-[#C6A65B]/30 hover:text-[#C6A65B]"
                   >
-                    Country Intelligence
+                    Destination Intelligence
                   </Link>
                 )}
               </div>
