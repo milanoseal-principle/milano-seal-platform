@@ -185,7 +185,7 @@ export function buildAttorneyJourney(input: AttorneyJourneyInput): AttorneyJourn
   }
 
   let status: ReadinessStatus = "MISSING_INFORMATION";
-  if (destination && completed >= 2) status = "ROUTE_IDENTIFIED";
+  if (destination) status = "ROUTE_IDENTIFIED";
   if (destination && completed === total) status = "REVIEW_REQUIRED";
   if (destination && completed === total && input.receivingAuthority?.trim()) {
     status = "READY_FOR_INTAKE";
