@@ -14,6 +14,7 @@ import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { HomepageRoutingPreview } from "@/components/landing/homepage-routing-preview";
 import { PersonaRouting } from "@/components/landing/persona-routing";
+import { GlobeCountryNodePopover } from "@/components/landing/GlobeCountryNodePopover";
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
@@ -46,6 +47,7 @@ export default function HomePage() {
       <Header />
       <IntelligenceRail />
       <CorridorTimeStrip />
+      <GlobeCountryNodePopover />
       <CinematicStage>
         {/* 1. Hero — globe replaces founder card */}
         <Hero />
