@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+const homepage = readFileSync("app/page.tsx", "utf8");
 const access = readFileSync("app/access/page.tsx", "utf8");
 const lawyerAccess = readFileSync("app/lawyer-access/page.tsx", "utf8");
 const securePortal = readFileSync("app/secure-portal/page.tsx", "utf8");
@@ -48,11 +49,17 @@ test("process route uses one cinematic execution experience instead of duplicate
   assert.match(processExperience, /Structured International Release/);
 });
 
-test("Atlas Corridor Intelligence is one synchronized jurisdiction module", () => {
+test("homepage exposes one document plus corridor intelligence workspace instead of separate islands", () => {
+  assert.match(homepage, /HomepageRoutingPreview/);
+  assert.doesNotMatch(homepage, /<DocumentIntelligence\s*\/>/);
+  assert.match(routingPreview, /DOCUMENTS/);
   assert.match(routingPreview, /data-atlas-corridor-module="unified"/);
   assert.match(routingPreview, /data-active-country=\{selected\.slug\}/);
-  assert.match(routingPreview, /AnimatePresence/);
+  assert.match(routingPreview, /data-active-document=\{document\.id\}/);
+  assert.match(routingPreview, /selectDocument/);
+  assert.match(routingPreview, /relevantDestinations/);
   assert.match(routingPreview, /MiniAtlasPreview selected=\{selected\}/);
+  assert.match(routingPreview, /autoCycle=\{false\}/);
   assert.match(routingPreview, /DestinationIntelligenceCard destination=\{selected\}/);
   assert.match(routingPreview, /HomeShippingCorridorPanel corridor=\{corridor\}/);
   assert.match(routingPreview, /Begin \{selected\.name\} Matter/);
