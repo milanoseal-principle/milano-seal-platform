@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Circle, MessageCircle, ShieldCheck, X } from "lucide-react";
 
@@ -13,9 +14,43 @@ interface PageContext {
   label: string;
   chips: string[];
   progress: string[];
+  activeProgressIndex: number;
 }
 
-function contextForLocation(pathname: string, search: string): PageContext {
+interface PortalSafeDeal {
+  matter_id?: string;
+  display_id?: string;
+  matter_status?: string;
+  client_facing_status?: string;
+  destination_country?: string;
+  document_type?: string;
+  payment_status?: string;
+}
+
+const PORTAL_STAGE_INDEX: Record<string, number> = {
+  new: 0,
+  intake_received: 0,
+  under_review: 0,
+  compliance_review: 0,
+  needs_info: 0,
+  quoted: 1,
+  awaiting_payment: 1,
+  payment_confirmed: 2,
+  scheduled: 2,
+  in_execution: 2,
+  apostille_processing: 3,
+  courier_ready: 4,
+  shipped: 4,
+  delivered: 4,
+  completed: 4,
+  closed: 4,
+};
+
+function contextForLocation(
+  pathname: string,
+  search: string,
+  portalDeal: PortalSafeDeal | null,
+): PageContext {
   const params = new URLSearchParams(search);
   const country = params.get("country") || params.get("destination") || "";
   const documentType = params.get("document_type") || params.get("document") || "";
@@ -25,6 +60,7 @@ function contextForLocation(pathname: string, search: string): PageContext {
       label: "Execution Quote",
       chips: ["How is my quote built?", "Which execution lane fits?", "Explain the payment gate", "Start a Matter"],
       progress: ["Scope", "Route", "Quote", "Payment", "Execution"],
+      activeProgressIndex: 0,
     };
   }
 
@@ -33,6 +69,7 @@ function contextForLocation(pathname: string, search: string): PageContext {
       label: "Execution Process",
       chips: ["Show my next step", "Explain the payment gate", "What happens at apostille?", "Start a Matter"],
       progress: ["Intake", "Review", "Payment", "Execution", "Release"],
+      activeProgressIndex: 0,
     };
   }
 
@@ -41,14 +78,18 @@ function contextForLocation(pathname: string, search: string): PageContext {
       label: country ? `Country Intelligence · ${country}` : "Global Document Intelligence",
       chips: [country ? `Review the ${country} route` : "Check a country", "Pre-flight my Matter", "Common rejection risks", "Start secure intake"],
       progress: ["Destination", "Document", "Origin", "Signer", "Operator review"],
+      activeProgressIndex: country ? (documentType ? 1 : 0) : 0,
     };
   }
 
   if (pathname.startsWith("/portal")) {
+    const matterLabel = portalDeal?.display_id || portalDeal?.matter_id;
+    const detail = [portalDeal?.destination_country, portalDeal?.document_type].filter(Boolean).join(" · ");
     return {
-      label: "Secure Matter Portal",
+      label: matterLabel ? `${matterLabel}${detail ? ` · ${detail}` : ""}` : "Secure Matter Portal",
       chips: ["What is my Matter status?", "What happens next?", "Explain my current stage", "Request Milano review"],
       progress: ["Matter", "Payment", "Execution", "Authentication", "Release"],
+      activeProgressIndex: Math.max(0, Math.min(4, PORTAL_STAGE_INDEX[portalDeal?.matter_status || ""] ?? 0)),
     };
   }
 
@@ -56,46 +97,118 @@ function contextForLocation(pathname: string, search: string): PageContext {
     label: documentType || country ? [country, documentType].filter(Boolean).join(" · ") : "Global Document Intelligence",
     chips: ["Review my document route", "Check a country", "Pre-flight my Matter", "Start secure intake"],
     progress: ["Destination", "Document", "Origin", "Signer", "Operator review"],
+    activeProgressIndex: country ? (documentType ? 1 : 0) : 0,
   };
 }
 
-function ProgressStrip({ items }: { items: string[] }) {
+function ProgressStrip({ items, activeIndex }: { items: string[]; activeIndex: number }) {
   return (
     <div className="grid grid-cols-5 gap-1.5">
-      {items.map((item, index) => (
-        <div key={item} className="min-w-0">
-          <div className={`h-1 rounded-full ${index === 0 ? "bg-[var(--ms-gold)]" : "bg-white/[0.07]"}`} />
-          <p className={`mt-1.5 truncate text-[8px] ${index === 0 ? "text-[var(--ms-gold)]/80" : "text-white/25"}`}>{item}</p>
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const complete = index < activeIndex;
+        const active = index === activeIndex;
+        return (
+          <div key={item} className="min-w-0">
+            <div
+              className={`h-1 rounded-full transition-colors ${
+                complete
+                  ? "bg-emerald-400/70"
+                  : active
+                    ? "bg-[var(--ms-gold)]"
+                    : "bg-white/[0.07]"
+              }`}
+            />
+            <p
+              className={`mt-1.5 truncate text-[8px] ${
+                complete
+                  ? "text-emerald-300/55"
+                  : active
+                    ? "text-[var(--ms-gold)]/80"
+                    : "text-white/25"
+              }`}
+            >
+              {item}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export function MilanoExecutionCopilot() {
+  const pathname = usePathname() || "/";
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [locationState, setLocationState] = useState({ pathname: "/", search: "" });
+  const [portalDeal, setPortalDeal] = useState<PortalSafeDeal | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const sync = () => setLocationState({ pathname: window.location.pathname, search: window.location.search });
-    sync();
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, []);
+    if (!pathname.startsWith("/portal")) {
+      setPortalDeal(null);
+      return;
+    }
+
+    let cancelled = false;
+    void fetch("/api/portal/me", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const body = (await response.json()) as { deal?: PortalSafeDeal | null };
+        return body.deal ?? null;
+      })
+      .then((deal) => {
+        if (!cancelled) setPortalDeal(deal);
+      })
+      .catch(() => {
+        if (!cancelled) setPortalDeal(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
   const context = useMemo(
-    () => contextForLocation(locationState.pathname, locationState.search),
-    [locationState.pathname, locationState.search],
+    () => contextForLocation(pathname, search, portalDeal),
+    [pathname, portalDeal, search],
   );
+
+  const role = pathname.startsWith("/portal") ? "PORTAL" : "PUBLIC";
+
+  const safeAssistantContext = useMemo(() => {
+    if (role === "PORTAL") {
+      return {
+        matter_id: portalDeal?.display_id || portalDeal?.matter_id,
+        status: portalDeal?.client_facing_status || portalDeal?.matter_status,
+        current_step: portalDeal?.matter_status,
+        next_action: undefined,
+        estimated_timeline: undefined,
+        pathname,
+        label: context.label,
+      };
+    }
+
+    const params = new URLSearchParams(search);
+    return {
+      pathname,
+      search,
+      label: context.label,
+      country: params.get("country") || undefined,
+      destination_country: params.get("destination") || undefined,
+      document_type: params.get("document_type") || params.get("document") || undefined,
+      origin_state: params.get("origin_state") || undefined,
+      signer_location: params.get("signer_location") || undefined,
+    };
+  }, [context.label, pathname, portalDeal, role, search]);
 
   const send = useCallback(async (text: string) => {
     const prompt = text.trim();
@@ -107,15 +220,7 @@ export function MilanoExecutionCopilot() {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
-          role: locationState.pathname.startsWith("/portal") ? "PORTAL" : "PUBLIC",
-          context: {
-            pathname: locationState.pathname,
-            search: locationState.search,
-            label: context.label,
-          },
-        }),
+        body: JSON.stringify({ message: prompt, role, context: safeAssistantContext }),
       });
       const data = (await res.json()) as { reply?: string };
       setMessages((prev) => [...prev, { role: "assistant", text: data.reply || "I can help structure the next operational step for this Matter." }]);
@@ -124,7 +229,7 @@ export function MilanoExecutionCopilot() {
     } finally {
       setLoading(false);
     }
-  }, [context.label, loading, locationState.pathname, locationState.search]);
+  }, [loading, role, safeAssistantContext]);
 
   const empty = messages.length === 0;
 
@@ -183,7 +288,7 @@ export function MilanoExecutionCopilot() {
               <div className="mt-4 rounded-xl border border-[var(--ms-gold)]/12 bg-[var(--ms-gold)]/[0.025] p-3.5">
                 <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/50">Current context</p>
                 <p className="mt-1.5 text-sm text-white/72">{context.label}</p>
-                <div className="mt-3"><ProgressStrip items={context.progress} /></div>
+                <div className="mt-3"><ProgressStrip items={context.progress} activeIndex={context.activeProgressIndex} /></div>
               </div>
             </header>
 
@@ -213,8 +318,8 @@ export function MilanoExecutionCopilot() {
                     <div className="mt-3 space-y-2.5">
                       {["Destination", "Document", "Origin", "Signer posture", "Operator review"].map((item, index) => (
                         <div key={item} className="flex items-center gap-2.5">
-                          {index === 0 ? <Check className="h-3.5 w-3.5 text-[var(--ms-gold)]" /> : <Circle className="h-3.5 w-3.5 text-white/18" />}
-                          <span className={index === 0 ? "text-xs text-white/62" : "text-xs text-white/30"}>{item}</span>
+                          {index < context.activeProgressIndex ? <Check className="h-3.5 w-3.5 text-emerald-300/70" /> : index === context.activeProgressIndex ? <Check className="h-3.5 w-3.5 text-[var(--ms-gold)]" /> : <Circle className="h-3.5 w-3.5 text-white/18" />}
+                          <span className={index <= context.activeProgressIndex ? "text-xs text-white/62" : "text-xs text-white/30"}>{item}</span>
                         </div>
                       ))}
                     </div>
