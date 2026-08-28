@@ -22,11 +22,12 @@ export const PROFESSIONAL_SESSION_EVENT = "milano:professional-session";
 const DOCUMENT_CLASSES = new Set<ProfessionalDocumentClass>([
   "power_of_attorney",
   "affidavit",
-  "corporate",
+  "corporate_document",
   "vital_record",
   "estate_inheritance",
-  "court_legal_filing",
-  "citizenship_immigration",
+  "citizenship_record",
+  "real_estate_authorization",
+  "federal_document",
   "other",
 ]);
 
@@ -132,7 +133,9 @@ export function clearProfessionalSession(): void {
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
     window.dispatchEvent(
-      new CustomEvent(PROFESSIONAL_SESSION_EVENT, { detail: { version: 1 } satisfies ProfessionalSessionState }),
+      new CustomEvent(PROFESSIONAL_SESSION_EVENT, {
+        detail: { version: 1 } satisfies ProfessionalSessionState,
+      }),
     );
   } catch {
     // Non-critical client storage cleanup.
