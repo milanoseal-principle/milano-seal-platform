@@ -14,6 +14,65 @@ export const metadata: Metadata = {
     "A universal professional workflow for international attorneys and advisors coordinating U.S. document execution, apostille or authentication routing, custody, and international release.",
   alternates: { canonical },
   robots: { index: true, follow: true },
+  openGraph: {
+    title: "U.S. Document Execution for International Counsel | The Milano Seal™",
+    description:
+      "One accountable U.S. execution point for international counsel coordinating cross-border documents for use abroad.",
+    url: canonical,
+    siteName: "The Milano Seal™",
+    type: "website",
+    images: [
+      {
+        url: "https://www.themilanoseal.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "The Milano Seal™ — U.S. document execution for international counsel",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "U.S. Document Execution for International Counsel | The Milano Seal™",
+    description:
+      "Professional U.S. execution and apostille/authentication coordination for international matters.",
+    images: ["https://www.themilanoseal.com/og-image.png"],
+  },
+};
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "U.S. Document Execution for International Counsel",
+  description:
+    "A universal professional workflow for international attorneys and advisors coordinating U.S. document execution, apostille or authentication routing, custody, and international release.",
+  url: canonical,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: HAGUE_PROFESSIONAL_DESTINATIONS.length,
+    itemListElement: HAGUE_PROFESSIONAL_DESTINATIONS.map((destination, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: `U.S. Document Execution for ${destination.name}`,
+      url: `${canonical}/${destination.slug}`,
+    })),
+  },
+  breadcrumb: {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://www.themilanoseal.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Professional",
+        item: canonical,
+      },
+    ],
+  },
 };
 
 const questions = [
@@ -30,6 +89,11 @@ export default function ProfessionalHubPage() {
     <>
       <Header />
       <main className="min-h-screen bg-[#060606] pt-[var(--header-total-height)] text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+
         <section className="px-4 pb-16 pt-14 sm:px-6 md:pb-20 md:pt-20">
           <div className="mx-auto max-w-7xl">
             <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_0.9fr]">
@@ -98,7 +162,7 @@ export default function ProfessionalHubPage() {
           </div>
         </section>
 
-        <div id="professional-journey">
+        <div id="professional-journey" className="scroll-mt-32">
           <UniversalAttorneyJourney />
         </div>
 
