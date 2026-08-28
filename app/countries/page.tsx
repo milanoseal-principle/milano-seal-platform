@@ -5,11 +5,12 @@ import { Footer } from "@/components/landing/footer";
 import { Globe, ArrowRight } from "lucide-react";
 import { MilanoPublicCtaModule } from "@/components/conversion/MilanoPublicCtaModule";
 import { CountriesDirectoryInteractive } from "@/components/countries/CountriesDirectoryInteractive";
+import { ProgressiveCertaintyExplorer } from "@/components/progressive-certainty/ProgressiveCertaintyExplorer";
 
 export const metadata: Metadata = {
-  title: "Participating Countries — Hague Convention Directory | The Milano Seal™",
+  title: "Global Document Intelligence — Country & Apostille Routes | The Milano Seal™",
   description:
-    "Destination country directory for apostille and international document authentication. Hague Convention members, consular legalization routes, and jurisdiction-specific requirements.",
+    "Global document intelligence for apostille, authentication, consular review, and U.S. document execution routes by destination country.",
   alternates: { canonical: "https://themilanoseal.com/countries" },
 };
 
@@ -29,20 +30,19 @@ export default function CountriesPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#C6A55A]/10 border border-[#C6A55A]/30 rounded-full mb-4">
             <Globe className="w-4 h-4 text-[#C6A55A]" />
             <span className="text-sm text-[#C6A55A] font-medium">
-              Participating Countries
+              Global Document Intelligence
             </span>
           </div>
           <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">
-            Hague Convention Country Directory
+            Understand the corridor before execution begins.
           </h1>
           <p className="text-base md:text-lg text-[#B0B0B0] mb-5 max-w-2xl mx-auto leading-relaxed">
-            Select a route class, then choose a destination to review its current
-            apostille, authentication, consular, receiving-authority, document,
-            and compliance posture.
+            Structure the destination, document class, U.S. origin, and signer posture first. Then review the current apostille, authentication, consular, receiving-authority, document, and compliance posture.
           </p>
         </div>
       </section>
 
+      <ProgressiveCertaintyExplorer />
       <CountriesDirectoryInteractive />
 
       <section className="px-4 pb-10 sm:px-6">
@@ -57,9 +57,9 @@ export default function CountriesPage() {
           <p className="text-sm text-[#6A6A6A]">
             Don&apos;t see your country?{" "}
             <Link href="/intake" className="text-[#C6A55A] hover:underline">
-              Contact us
+              Start secure intake
             </Link>{" "}
-            — we coordinate authentication for additional jurisdictions.
+            for operator review.
           </p>
         </div>
       </section>
@@ -67,16 +67,16 @@ export default function CountriesPage() {
       <section className="py-12 px-4 sm:px-6 bg-[#111111]">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white mb-4">
-            Ready to Begin?
+            Ready to Structure the Matter?
           </h2>
           <p className="text-[#B0B0B0] mb-8">
-            Submit your document type and destination country. We will confirm the authentication path and processing timeline.
+            Submit the document, destination, origin, signer, and receiving-authority context. Milano will review the operational execution path before scheduling.
           </p>
           <Link
             href="/intake"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
-            <span>Start Matter Intake</span>
+            <span>Structure a Matter</span>
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
