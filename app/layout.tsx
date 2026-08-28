@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
@@ -147,7 +148,9 @@ export default function RootLayout({
           }}
         />
         <NavigationLoader />
-        <MilanoExecutionCopilot />
+        <Suspense fallback={null}>
+          <MilanoExecutionCopilot />
+        </Suspense>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
