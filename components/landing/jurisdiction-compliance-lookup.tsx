@@ -308,8 +308,8 @@ export function JurisdictionComplianceLookup() {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {[
             { title: "RON Authorization by State", desc: "Florida offers broad Remote Online Notarization (RON) authorization. Colorado and Virginia have active RON programs. Most other states permit traditional notarization for cross-border execution. International matters require in-person execution for apostille eligibility." },
-            { title: "Hague Convention Members", desc: "Italy, Spain, Portugal, France, Germany, Greece, Brazil, Argentina, and more are Hague members. U.S. documents for use in these countries require apostille authentication via the Florida Department of State." },
-            { title: "Non-Hague Countries", desc: "Mexico, UAE, and others require the full consular legalization chain rather than apostille. These matters require premium coordination and additional authentication steps." },
+            { title: "Hague Convention Members", desc: "Italy, Spain, Portugal, France, Germany, Greece, Brazil, Argentina, Mexico, and more are Hague members. U.S. documents for use in these countries require apostille authentication via the Florida Department of State." },
+            { title: "Non-Hague Countries", desc: "The UAE and certain other jurisdictions require the full consular legalization chain rather than apostille. These matters require premium coordination and additional authentication steps. Final acceptance always remains subject to the receiving authority." },
           ].map((s) => (
             <div key={s.title} className="bg-[#111111] border border-[#1A1A1A] rounded-xl overflow-hidden">
               <div style={{ height: 1, background: "linear-gradient(90deg, rgba(198,165,90,0.5), rgba(198,165,90,0.1))" }} />
