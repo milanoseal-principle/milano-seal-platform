@@ -38,5 +38,5 @@ test("operator notification recipients include both production inboxes", () => {
 test("notification reconciler is near-real-time and cron-secret protected", () => {
   assert.match(cron, /Bearer \$\{expected\}/);
   assert.match(vercel, /\/api\/cron\/notification-reconcile/);
-  assert.match(vercel, /"schedule": "\* \* \* \* \*"/);
+  assert.match(vercel, /"schedule"\s*:\s*"\* \* \* \* \*"/);
 });
