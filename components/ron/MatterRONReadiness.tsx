@@ -86,7 +86,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[8px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/70">BlueNotary · Existing RON Module</p>
-          <h3 className="font-serif text-xl text-white">RON Scheduling Readiness</h3>
+          <h3 className="font-serif text-xl text-white">BlueNotary Operator Actions</h3>
           <p className="mt-1 text-xs text-white/45">Matter {matter.deal_id ?? matter.id} · same-Matter provider handoff</p>
         </div>
         <span className={`w-fit rounded-full border px-3 py-1 font-mono text-[8px] uppercase tracking-[0.14em] ${badge(paymentConfirmed && ronTruthComplete && signerComplete && documentReady)}`}>
