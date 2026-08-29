@@ -45,6 +45,25 @@ export async function POST(req: NextRequest) {
 
   try {
     const admin = createAdminClient();
+    const { data: paymentGuard, error: paymentGuardError } = await admin
+      .from("deals")
+      .select("payment_status,payment_confirmed,payment_observed_at")
+      .eq("id", clientCtx.deal.id)
+      .single();
+    if (paymentGuardError || !paymentGuard) {
+      throw paymentGuardError ?? new Error("Matter payment state is unavailable.");
+    }
+    if (
+      paymentGuard.payment_observed_at ||
+      paymentGuard.payment_confirmed ||
+      ["paid", "deposit_paid", "payment_confirmed"].includes(String(paymentGuard.payment_status ?? ""))
+    ) {
+      return NextResponse.json(
+        { error: "Discount cannot change after Wise payment has been submitted." },
+        { status: 409 },
+      );
+    }
+
     let updated: Record<string, unknown> | null = null;
 
     if (existingCode === code) {
