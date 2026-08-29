@@ -23,13 +23,13 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const { data, error } = await admin
     .from("deals")
     .select("id,deal_id,client_name,email,document_type,destination_country,final_total,amount_due,amount_paid,currency,payment_status,payment_confirmed,payment_observed_at,payment_confirmed_at,created_at")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
-    .limit(250);
+    .limit(100);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
