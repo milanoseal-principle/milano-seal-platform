@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+// Production contract: existing BlueNotary RON module, one Matter, canonical Wise gate.
 const guards = readFileSync('lib/bluenotary/guards.ts', 'utf8');
 const sessions = readFileSync('app/api/dashboard/ron/sessions/route.ts', 'utf8');
 const documents = readFileSync('app/api/dashboard/ron/sessions/[id]/documents/route.ts', 'utf8');
