@@ -3,6 +3,7 @@ import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 
 export type SchedulingPaymentRequirementMethod =
   | "verified_payment"
+  | "wise_submission_observed"
   | "complimentary_authorization"
   | "not_satisfied";
 
@@ -15,6 +16,8 @@ export interface SchedulingGateResult {
 
 export interface ComplimentaryGateMatter extends PaymentGateMatter {
   payment_disposition?: string | null;
+  payment_settlement_status?: string | null;
+  payment_observed_at?: string | null;
   comp_authorized?: boolean | null;
   comp_authorization_id?: string | null;
   comp_authorized_at?: string | null;
@@ -22,6 +25,11 @@ export interface ComplimentaryGateMatter extends PaymentGateMatter {
   amount_due?: number | null;
   amount_paid?: number | null;
   verified_revenue?: number | null;
+}
+
+function hasObservedWiseSubmission(matter: ComplimentaryGateMatter): boolean {
+  const settlement = String(matter.payment_settlement_status ?? "").trim().toLowerCase();
+  return Boolean(matter.payment_observed_at) && settlement === "observed_pending";
 }
 
 export function evaluateSchedulingGate(params: {
@@ -34,7 +42,14 @@ export function evaluateSchedulingGate(params: {
   }
 
   if (evaluatePaymentGate(params.matter) === "PAYMENT_CONFIRMED") {
-    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified payment satisfies scheduling gate." };
+    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified Wise settlement satisfies scheduling gate." };
+  }
+
+  // Execution authorization is intentionally separate from financial settlement truth.
+  // Once the canonical portal records the Wise submission on this Matter, operators may
+  // schedule RON while payment remains processing. This MUST NOT mark the Matter paid.
+  if (hasObservedWiseSubmission(params.matter)) {
+    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Observed Wise submission authorizes scheduling while settlement remains pending." };
   }
 
   const compActive = params.matter.payment_disposition === "complimentary" &&
@@ -50,5 +65,5 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "complimentary_authorization", reason: "Satisfied by Complimentary Authorization." };
   }
 
-  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified payment or active complimentary authorization required." };
+  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Wise submission, verified settlement, or active complimentary authorization required." };
 }
