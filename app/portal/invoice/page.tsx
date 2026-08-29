@@ -5,7 +5,6 @@ import { usePortal } from "@/components/portal/portal-context";
 
 const GOLD = "#C6A55A";
 const GREEN = "#4a9e6b";
-const BORDER = "rgba(198,165,90,0.18)";
 
 interface InvoiceLineItem {
   key: string;
@@ -34,6 +33,19 @@ interface InvoiceSnapshot {
   wiseReference: string;
   wisePaymentUrl: string | null;
   courtesyApplied: boolean;
+}
+
+interface PaymentObservation {
+  matterId: string;
+  displayId: string;
+  paymentStatus: string;
+  settlementStatus: string;
+  paymentConfirmed: boolean;
+  paymentObservedAt: string | null;
+  paymentConfirmedAt: string | null;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
 }
 
 function money(value: number | null | undefined, currency = "USD") {
@@ -66,11 +78,14 @@ function SummaryRow({ label, value, accent, strong }: { label: string; value: st
 export default function ClientInvoicePage() {
   const { deal, isLoading, refresh } = usePortal();
   const [invoice, setInvoice] = useState<InvoiceSnapshot | null>(null);
+  const [paymentFlow, setPaymentFlow] = useState<PaymentObservation | null>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [discountBusy, setDiscountBusy] = useState(false);
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [discountSuccess, setDiscountSuccess] = useState<string | null>(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
   const loadInvoice = async () => {
     if (!deal?.id) return;
@@ -87,8 +102,35 @@ export default function ClientInvoicePage() {
     }
   };
 
+  const loadPaymentFlow = async () => {
+    if (!deal?.id) return;
+    try {
+      const response = await fetch(`/api/portal/me/payment-observation?deal_id=${encodeURIComponent(deal.id)}`, { cache: "no-store" });
+      const body = (await response.json()) as { payment?: PaymentObservation; error?: string };
+      if (!response.ok || !body.payment) return;
+      setPaymentFlow((previous) => {
+        if (!previous?.paymentConfirmed && body.payment?.paymentConfirmed) {
+          void loadInvoice();
+          void refresh();
+        }
+        return body.payment ?? previous;
+      });
+    } catch {
+      // Polling is best-effort. The payment gate itself remains server authoritative.
+    }
+  };
+
   useEffect(() => {
     void loadInvoice();
+    void loadPaymentFlow();
+    if (!deal?.id) return;
+    const timer = window.setInterval(() => void loadPaymentFlow(), 10_000);
+    const onFocus = () => void loadPaymentFlow();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deal?.id]);
 
@@ -121,6 +163,28 @@ export default function ClientInvoicePage() {
     }
   }
 
+  async function markWiseSubmitted() {
+    if (!deal?.id || paymentBusy) return;
+    setPaymentBusy(true);
+    setPaymentMessage(null);
+    try {
+      const response = await fetch("/api/portal/me/payment-observation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: deal.id }),
+      });
+      const body = (await response.json()) as { payment?: PaymentObservation; message?: string; error?: string };
+      if (!response.ok || !body.payment) throw new Error(body.error || "Payment submission could not be recorded.");
+      setPaymentFlow(body.payment);
+      setPaymentMessage(body.message || "Wise payment submission recorded. Settlement verification is in progress.");
+      await refresh();
+    } catch (err) {
+      setPaymentMessage(err instanceof Error ? err.message : "Payment submission could not be recorded.");
+    } finally {
+      setPaymentBusy(false);
+    }
+  }
+
   if (isLoading || loadingInvoice) {
     return <div className="text-sm text-white/40">Verifying invoice state…</div>;
   }
@@ -130,6 +194,8 @@ export default function ClientInvoicePage() {
   }
 
   const currency = invoice.currency || "USD";
+  const paymentConfirmed = invoice.paymentConfirmed || Boolean(paymentFlow?.paymentConfirmed);
+  const paymentProcessing = !paymentConfirmed && Boolean(paymentFlow?.paymentObservedAt);
 
   if (complimentaryAuthorized) {
     return (
@@ -194,7 +260,7 @@ export default function ClientInvoicePage() {
             <SummaryRow label="Remaining balance" value={money(invoice.balance, currency)} />
           </div>
 
-          {!invoice.paymentConfirmed && (
+          {!paymentConfirmed && !paymentProcessing && (
             <div className="mt-5 rounded-lg border border-white/[0.075] bg-black/20 p-4">
               <div className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/35">Discount / Courtesy Code</div>
               {invoice.courtesyApplied ? (
@@ -223,16 +289,23 @@ export default function ClientInvoicePage() {
             </div>
           )}
 
-          <div className="mt-5 rounded-lg border border-[#C6A55A]/25 bg-[#C6A55A]/[0.055] p-4">
-            <div className="font-mono text-[8px] uppercase tracking-[0.17em] text-[#C6A55A]/70">
-              {invoice.paymentConfirmed ? "Verified payment" : "Amount due before scheduling"}
+          <div className={`mt-5 rounded-lg border p-4 ${paymentConfirmed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : paymentProcessing ? "border-amber-300/25 bg-amber-300/[0.04]" : "border-[#C6A55A]/25 bg-[#C6A55A]/[0.055]"}`}>
+            <div className={`font-mono text-[8px] uppercase tracking-[0.17em] ${paymentConfirmed ? "text-emerald-300/75" : "text-[#C6A55A]/70"}`}>
+              {paymentConfirmed ? "Verified Wise payment" : paymentProcessing ? "Wise payment processing" : "Amount due before scheduling"}
             </div>
-            <div className="mt-1 font-serif text-3xl text-white">{money(invoice.amountDueNow, currency)}</div>
+            <div className="mt-1 font-serif text-3xl text-white">
+              {paymentConfirmed ? money(paymentFlow?.amountPaid || invoice.retainer, currency) : money(invoice.amountDueNow, currency)}
+            </div>
             <div className="mt-2 text-[11px] leading-5 text-white/38">Wise reference: <span className="font-mono text-[#C6A55A]/75">{invoice.wiseReference}</span></div>
+            {paymentProcessing && (
+              <div className="mt-3 text-xs leading-5 text-amber-100/60">
+                Wise has the payment in process. The portal checks automatically every 10 seconds. Scheduling stays locked until Wise settlement is verified.
+              </div>
+            )}
           </div>
 
-          {!invoice.paymentConfirmed && invoice.amountDueNow > 0 && (
-            <div className="mt-5">
+          {!paymentConfirmed && !paymentProcessing && invoice.amountDueNow > 0 && (
+            <div className="mt-5 space-y-3">
               {invoice.wisePaymentUrl ? (
                 <a
                   href={invoice.wisePaymentUrl}
@@ -245,17 +318,41 @@ export default function ClientInvoicePage() {
               ) : (
                 <div className="text-xs leading-5 text-white/40">The Matter-specific Wise payment link is being prepared. Scheduling remains locked until verified settlement.</div>
               )}
+              <button
+                type="button"
+                onClick={() => void markWiseSubmitted()}
+                disabled={paymentBusy}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[#C6A55A]/25 bg-transparent px-4 text-center font-mono text-[9px] uppercase tracking-[0.14em] text-[#E6D39B] transition hover:border-[#C6A55A]/50 disabled:opacity-40"
+              >
+                {paymentBusy ? "Recording…" : "I completed payment in Wise"}
+              </button>
+              <div className="text-[10px] leading-4 text-white/28">This records payment as processing only. It does not mark the Matter paid or unlock scheduling.</div>
             </div>
           )}
 
-          {invoice.paymentConfirmed && (
+          {paymentProcessing && (
+            <div className="mt-5 space-y-3">
+              <button
+                type="button"
+                onClick={() => void loadPaymentFlow()}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[#C6A55A]/25 px-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[#E6D39B] transition hover:border-[#C6A55A]/50"
+              >
+                Check Wise settlement now
+              </button>
+              <div className="text-[10px] leading-4 text-white/28">Wise may deduct its own receiving fee. Milano payment authority remains the verified sender payment amount, currency, and Matter reference.</div>
+            </div>
+          )}
+
+          {paymentConfirmed && (
             <div className="mt-5 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-4 text-sm text-emerald-300/85">Payment verified. Scheduling is eligible to proceed through the canonical Matter workflow.</div>
           )}
+
+          {paymentMessage && <div className="mt-4 text-xs leading-5 text-white/45">{paymentMessage}</div>}
         </section>
       </div>
 
       <p className="mt-5 text-[11px] leading-5 text-white/30">
-        Discounts do not mark a Matter paid. Only verified Wise settlement can satisfy the payment gate and unlock scheduling.
+        Discounts do not mark a Matter paid. A submitted Wise payment displays as processing; only verified Wise settlement can satisfy the payment gate and unlock scheduling.
       </p>
     </div>
   );
