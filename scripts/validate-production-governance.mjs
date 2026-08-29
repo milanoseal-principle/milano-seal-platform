@@ -284,15 +284,18 @@ check(
 );
 
 check(
-  "portal invoice preserves verified Wise authority and complimentary separation",
+  "portal invoice separates Wise processing scheduling authority from verified paid truth",
   containsAll(portalInvoice, [
     "Complimentary Service Authorization",
     "No payment is due for this Matter",
     "Complimentary authorization remains separate from Wise paid-state authority",
-    "Discounts do not mark a Matter paid",
     "Wise reference:",
+    "Refresh Wise payment status",
+    "A recorded submission may satisfy scheduling authority",
+    "verified Wise settlement remains the authority for paid state",
+    "signer-link release",
   ]) &&
-    /only verified Wise settlement can satisfy the payment gate and unlock scheduling/i.test(portalInvoice) &&
+    portalInvoice.includes("window.setInterval(() => void loadPaymentFlow(), 10_000)") &&
     !/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portalInvoice),
 );
 
