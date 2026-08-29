@@ -88,15 +88,6 @@
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
     "validate:production-governance": "node scripts/validate-production-governance.mjs",
     "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs",
-    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs",
-    "validate:seo-authority": "node --import tsx scripts/validate-seo-authority-graph.mjs",
-    "validate:seo-intent": "node --import tsx scripts/validate-seo-intent-governance.mjs",
-    "validate:seo-indexability": "node --import tsx scripts/validate-seo-indexability.mjs",
-    "validate:seo-evidence": "node --import tsx scripts/validate-seo-evidence.mjs",
-    "validate:seo-links": "node --import tsx scripts/validate-seo-link-graph.mjs",
-    "validate:seo-localization": "node --import tsx scripts/validate-seo-localization.mjs",
-    "validate:seo-sitemaps": "node --import tsx scripts/validate-seo-sitemaps.mjs",
-    "validate:seo-public-claims": "node --import tsx scripts/validate-seo-public-claims.mjs"
     "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs"
     ,"validate:seo-authority": "node scripts/validate-seo-authority-graph.mjs"
     ,"validate:seo-intent": "node scripts/validate-seo-intent-governance.mjs"
