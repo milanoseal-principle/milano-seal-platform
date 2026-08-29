@@ -11,7 +11,7 @@ interface Props {
   currentStatus?: MilanoRONStatus | null;
   documentIds?: string[];
   gates: {
-    paymentConfirmed: GateCondition;
+    schedulingAuthorized: GateCondition;
     sessionExists: GateCondition;
     sessionNotExpired: GateCondition;
     signerComplete: GateCondition;
@@ -62,14 +62,14 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
 
   const canCreateSession =
     !gates.sessionExists.met &&
-    gates.paymentConfirmed.met &&
+    gates.schedulingAuthorized.met &&
     gates.signerComplete.met &&
     gates.ronTruthComplete.met &&
     gates.documentReady.met;
   const canReschedule = gates.sessionExists.met && gates.sessionNotExpired.met;
   const canExpire = gates.sessionExists.met && currentStatus !== 'RON_EXPIRED';
   const canRetrieveDocs = gates.sessionCompleted.met && gates.sessionExists.met;
-  const canUploadPackage = gates.sessionExists.met && gates.paymentConfirmed.met && documentIds.length > 0;
+  const canUploadPackage = gates.sessionExists.met && gates.schedulingAuthorized.met && documentIds.length > 0;
 
   async function handleAction(action: string, endpoint: string, method = 'POST', body?: Record<string, unknown>) {
     setLoading(action);
@@ -119,8 +119,8 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
   }
 
   const base = sessionId ? `/api/dashboard/ron/sessions/${sessionId}` : null;
-  const createReason = !gates.paymentConfirmed.met
-    ? gates.paymentConfirmed.reason ?? 'Verified payment required'
+  const createReason = !gates.schedulingAuthorized.met
+    ? gates.schedulingAuthorized.reason ?? 'Scheduling authority required'
     : !gates.ronTruthComplete.met
       ? gates.ronTruthComplete.reason ?? 'RON execution truth incomplete'
       : !gates.signerComplete.met
@@ -134,7 +134,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
       <h3 className="text-sm font-semibold text-zinc-300 mb-1">BlueNotary Operator Actions</h3>
-      <p className="mb-3 text-[11px] text-zinc-500">Same Matter · verified-payment gated · every provider action audited.</p>
+      <p className="mb-3 text-[11px] text-zinc-500">Same Matter · canonical scheduling gate · verified settlement still controls signer release.</p>
       <div className="flex flex-wrap gap-2">
         {!gates.sessionExists.met && (
           <ActionButton
@@ -149,7 +149,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
           <ActionButton
             label={loading === 'upload-package' ? 'Uploading...' : 'Upload Matter Package'}
             disabled={!canUploadPackage || loading !== null}
-            disabledReason={!gates.paymentConfirmed.met ? 'Verified payment required' : documentIds.length === 0 ? 'No pending Matter documents' : undefined}
+            disabledReason={!gates.schedulingAuthorized.met ? gates.schedulingAuthorized.reason ?? 'Scheduling authority required' : documentIds.length === 0 ? 'No pending Matter documents' : undefined}
             variant="primary"
             onClick={uploadPackage}
           />

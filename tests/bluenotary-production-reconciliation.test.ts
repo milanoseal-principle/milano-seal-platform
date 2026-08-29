@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-// Production contract: existing BlueNotary RON module, one Matter, canonical Wise gate.
+// Production contract: existing BlueNotary RON module, one Matter, canonical Wise scheduling gate.
+// Tiffany continuity lock: observed Wise submission authorizes scheduling without fabricating paid state.
 const guards = readFileSync('lib/bluenotary/guards.ts', 'utf8');
 const sessions = readFileSync('app/api/dashboard/ron/sessions/route.ts', 'utf8');
 const documents = readFileSync('app/api/dashboard/ron/sessions/[id]/documents/route.ts', 'utf8');
@@ -10,22 +11,36 @@ const controls = readFileSync('components/ron/RONSessionControlPanel.tsx', 'utf8
 const readiness = readFileSync('components/ron/MatterRONReadiness.tsx', 'utf8');
 const queue = readFileSync('app/dashboard/ron/page.tsx', 'utf8');
 const detail = readFileSync('app/dashboard/ron/[session_id]/page.tsx', 'utf8');
+const invoice = readFileSync('app/portal/invoice/page.tsx', 'utf8');
 const migration = readFileSync('supabase/migrations/062_bluenotary_ron_production_reconciliation.sql', 'utf8');
 const storageMigration = readFileSync('supabase/migrations/063_ron_document_storage_bucket.sql', 'utf8');
 
-test('BlueNotary uses the canonical payment confirmation authority', () => {
+test('BlueNotary session creation uses the canonical scheduling authority while release remains settlement verified', () => {
+  assert.match(guards, /evaluateSchedulingGate/);
+  assert.match(guards, /verifySchedulingAuthorized/);
+  assert.match(guards, /payment_observed_at/);
   assert.match(guards, /evaluatePaymentIntegrity/);
-  assert.match(guards, /payment_confirmed/);
-  assert.match(guards, /schedulingAllowed/);
+  assert.match(guards, /verifyPaymentConfirmed/);
   assert.match(guards, /PAYMENT_NOT_CONFIRMED/);
   assert.doesNotMatch(guards, /payment_status !== 'paid'/);
 });
 
-test('Wise processing never unlocks RON scheduling', () => {
-  assert.match(readiness, /Retainer submitted · Wise processing/);
-  assert.match(readiness, /payment_confirmed === true/);
-  assert.match(queue, /Retainer submitted · Wise processing/);
-  assert.match(queue, /payment_confirmed=true/);
+test('recorded Wise processing may authorize RON scheduling without fabricating paid state', () => {
+  assert.match(readiness, /Wise processing · scheduling authorized/);
+  assert.match(readiness, /evaluateSchedulingGate/);
+  assert.match(queue, /Wise processing · scheduling authorized/);
+  assert.match(queue, /evaluateSchedulingGate/);
+  assert.match(detail, /Paid truth:/);
+  assert.match(detail, /schedulingAuthorized/);
+  assert.match(invoice, /A recorded submission may satisfy scheduling authority/);
+  assert.match(invoice, /verified Wise settlement remains the authority for paid state/);
+});
+
+test('client Wise status refresh is interactive and visibly reports the result', () => {
+  assert.match(invoice, /checkWiseSettlement/);
+  assert.match(invoice, /settlementCheckBusy/);
+  assert.match(invoice, /Refresh Wise payment status/);
+  assert.match(invoice, /Wise payment is still processing/);
 });
 
 test('BlueNotary session creation fails closed on incomplete RON truth', () => {
@@ -58,6 +73,7 @@ test('operator surfaces expose pre-session readiness and real handoff controls',
   assert.match(readiness, /Destination Jurisdiction/);
   assert.match(readiness, /BlueNotary Operator Actions/);
   assert.match(controls, /Create BlueNotary RON Session/);
+  assert.match(controls, /schedulingAuthorized/);
   assert.match(controls, /JSON\.stringify\(body\)/);
   assert.match(controls, /Upload Matter Package/);
   assert.match(detail, /signer\.phone/);

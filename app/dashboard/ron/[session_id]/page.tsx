@@ -7,6 +7,7 @@ import { getClientStatusLabel } from '@/lib/bluenotary/status';
 import { resolvePresetForDocumentType } from '@/lib/bluenotary/tags';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel';
+import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
 export const metadata: Metadata = { title: 'RON Session — The Milano Seal™', robots: { index: false, follow: false } };
 
@@ -19,13 +20,13 @@ async function getSessionDetail(sessionId: string) {
     supabase.from('ron_signers').select('id, signer_index, first_name, middle_name, last_name, email, phone, state, authentication_type, signing_url_released, identity_status, kba_status, biometric_status, joined_at, left_at, completed_at').eq('ron_session_id', sessionId).order('signer_index'),
     supabase.from('ron_documents').select('id, document_name, document_type, storage_bucket, blue_notary_document_name, template_id, smart_tags_applied, uploaded_to_bluenotary, signed_document_received, document_status, created_at').eq('ron_session_id', sessionId),
     supabase.from('ron_audit_events').select('id, event_type, description, actor_role, source, created_at, metadata').eq('ron_session_id', sessionId).order('created_at', { ascending: false }).limit(50),
-    supabase.from('deals').select('deal_id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_paid, amount_due').eq('id', session.matter_id).single(),
+    supabase.from('deals').select('id, deal_id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue').eq('id', session.matter_id).single(),
   ]);
   return { session, signers: signers ?? [], documents: documents ?? [], auditEvents: auditEvents ?? [], deal: deal ?? null };
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const good = ['PASSED', 'UNLOCKED', 'AVAILABLE', 'UPLOADED', 'SIGNED'].includes(status);
+  const good = ['PASSED', 'UNLOCKED', 'AVAILABLE', 'UPLOADED', 'SIGNED', 'AUTHORIZED'].includes(status);
   const bad = ['FAILED', 'LOCKED', 'BLOCKED'].includes(status);
   return <span className={`rounded-full border px-2 py-0.5 font-mono text-xs ${good ? 'border-green-700/40 bg-green-950 text-green-400' : bad ? 'border-red-700/40 bg-red-950 text-red-400' : 'border-zinc-700 bg-zinc-800 text-zinc-400'}`}>{status}</span>;
 }
@@ -42,6 +43,8 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
   const isExpired = ronStatus === 'RON_EXPIRED';
   const paymentConfirmed = deal?.payment_confirmed === true;
   const paymentObserved = deal?.payment_settlement_status === 'observed_pending' || Boolean(deal?.payment_observed_at);
+  const schedulingGate = deal ? evaluateSchedulingGate({ matter: deal }) : null;
+  const schedulingAuthorized = schedulingGate?.schedulingEligible === true;
   const truth = (deal?.execution_truth ?? {}) as Record<string, unknown>;
   const notarialAct = String(truth.notarial_act ?? 'review_required');
   const signerComplete = signers.length > 0 && signers.every((signer) => Boolean(signer.first_name && signer.last_name && signer.email && signer.phone && signer.state));
@@ -78,11 +81,13 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
       </section>
 
       <section className="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-300">Canonical Payment Gate</h2>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-300">Payment + Scheduling Authority</h2>
         <div className="flex flex-wrap items-center gap-3 text-xs">
-          <StatusBadge status={paymentConfirmed ? 'UNLOCKED' : 'LOCKED'} />
-          <span className={paymentConfirmed ? 'text-green-400' : paymentObserved ? 'text-amber-400' : 'text-red-400'}>{paymentConfirmed ? 'Payment verified' : paymentObserved ? 'Retainer submitted · Wise processing' : 'Payment not verified'}</span>
-          <span className="text-zinc-500">Paid: ${deal?.amount_paid ?? 0} / Due: ${deal?.amount_due ?? '—'}</span>
+          <StatusBadge status={schedulingAuthorized ? 'AUTHORIZED' : 'LOCKED'} />
+          <span className={paymentConfirmed ? 'text-green-400' : paymentObserved && schedulingAuthorized ? 'text-amber-300' : paymentObserved ? 'text-amber-400' : 'text-red-400'}>
+            {paymentConfirmed ? 'Payment verified · scheduling authorized' : paymentObserved && schedulingAuthorized ? 'Retainer submitted · Wise processing · scheduling authorized' : paymentObserved ? 'Retainer submitted · Wise processing' : 'Payment requirement not satisfied'}
+          </span>
+          <span className="text-zinc-500">Paid truth: {paymentConfirmed ? 'verified' : 'not verified'} · ${deal?.amount_paid ?? 0} / Due: ${deal?.amount_due ?? '—'}</span>
         </div>
       </section>
 
@@ -110,7 +115,7 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
         currentStatus={ronStatus}
         documentIds={pendingDocumentIds}
         gates={{
-          paymentConfirmed: { met: paymentConfirmed, reason: paymentObserved ? 'Retainer submitted; Wise settlement is still processing.' : 'Verified payment required.' },
+          schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate?.reason ?? 'Scheduling authority unavailable.' },
           sessionExists: { met: true },
           sessionNotExpired: { met: !isExpired },
           signerComplete: { met: signerComplete, reason: 'Signer phone/state or identity fields are incomplete.' },

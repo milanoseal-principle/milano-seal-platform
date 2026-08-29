@@ -3,6 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { evaluatePaymentIntegrity } from '@/lib/safety/payment-integrity';
+import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
 export class RONGuardError extends Error {
   constructor(
@@ -14,7 +15,7 @@ export class RONGuardError extends Error {
   }
 }
 
-/** Verify matter exists and the canonical payment gate authorizes scheduling. */
+/** Verify matter exists and the canonical settlement gate is fully verified. */
 async function verifyPaymentConfirmed(
   supabase: SupabaseClient,
   matterId: string
@@ -53,15 +54,43 @@ async function verifyPaymentConfirmed(
 }
 
 /**
+ * Session creation follows the same canonical scheduling authority as the Matter workflow.
+ * A recorded Wise submission may authorize scheduling while settlement remains processing;
+ * this never authors paid state and never weakens signing-link release controls.
+ */
+async function verifySchedulingAuthorized(
+  supabase: SupabaseClient,
+  matterId: string
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .eq('id', matterId)
+    .single();
+
+  if (error || !data) {
+    throw new RONGuardError('MATTER_NOT_FOUND', `Matter ${matterId} not found`);
+  }
+
+  const schedulingGate = evaluateSchedulingGate({ matter: data });
+  if (!schedulingGate.schedulingEligible) {
+    throw new RONGuardError(
+      'PAYMENT_REQUIRED',
+      schedulingGate.reason
+    );
+  }
+}
+
+/**
  * Verify that a RON session can be created for a matter.
- * Checks: canonical payment gate, RON truth, notarial act, no active session, signer data.
+ * Checks: canonical scheduling authority, RON truth, notarial act, no active session, signer data.
  */
 export async function assertCanCreateRONSession(
   supabase: SupabaseClient,
   matterId: string,
   _userId: string
 ): Promise<void> {
-  await verifyPaymentConfirmed(supabase, matterId);
+  await verifySchedulingAuthorized(supabase, matterId);
 
   const { data: matter, error: matterError } = await supabase
     .from('deals')

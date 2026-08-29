@@ -9,11 +9,13 @@ const cron = fs.readFileSync("app/api/cron/notification-reconcile/route.ts", "ut
 const vercel = fs.readFileSync("vercel.json", "utf8");
 const discount = fs.readFileSync("app/api/portal/me/discount/route.ts", "utf8");
 
-test("portal distinguishes Wise processing from verified settlement", () => {
+test("portal distinguishes Wise processing, scheduling authority, and verified settlement", () => {
   assert.match(invoice, /Wise payment processing/);
   assert.match(invoice, /I completed payment in Wise/);
-  assert.match(invoice, /checks automatically every 10 seconds/i);
-  assert.match(invoice, /only verified Wise settlement can satisfy the payment gate/i);
+  assert.match(invoice, /window\.setInterval\(\(\) => void loadPaymentFlow\(\), 10_000\)/);
+  assert.match(invoice, /Refresh Wise payment status/);
+  assert.match(invoice, /A recorded submission may satisfy scheduling authority/i);
+  assert.match(invoice, /verified Wise settlement remains the authority for paid state/i);
 });
 
 test("client observation never authors paid state", () => {

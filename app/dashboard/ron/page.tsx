@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { getClientStatusLabel } from '@/lib/bluenotary/status';
+import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
 export const metadata: Metadata = {
   title: 'Signing Room — The Milano Seal™',
@@ -55,6 +56,15 @@ interface PreSessionMatter {
   payment_confirmed: boolean | null;
   payment_settlement_status: string | null;
   payment_observed_at: string | null;
+  amount_due: number | null;
+  amount_paid: number | null;
+  is_platform_fee_only: boolean | null;
+  payment_disposition: string | null;
+  comp_authorized: boolean | null;
+  comp_authorization_id: string | null;
+  comp_authorized_at: string | null;
+  comp_revoked_at: string | null;
+  verified_revenue: number | null;
   execution_truth: Record<string, unknown> | null;
 }
 
@@ -72,7 +82,7 @@ async function getRONData() {
       .limit(200),
     supabase
       .from('deals')
-      .select('id, deal_id, client_name, email, phone, document_type, destination_country, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, execution_truth')
+      .select('id, deal_id, client_name, email, phone, document_type, destination_country, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_due, amount_paid, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue, execution_truth')
       .order('created_at', { ascending: false })
       .limit(200),
   ]);
@@ -90,16 +100,22 @@ async function getRONData() {
   return { sessions: safeSessions, preSessionMatters };
 }
 
-function paymentLabel(matter: Pick<PreSessionMatter, 'payment_confirmed' | 'payment_settlement_status' | 'payment_observed_at'>) {
-  if (matter.payment_confirmed) return 'Verified · scheduling unlocked';
-  if (matter.payment_settlement_status === 'observed_pending' || matter.payment_observed_at) return 'Retainer submitted · Wise processing';
-  return 'Awaiting verified payment';
+function paymentLabel(matter: PreSessionMatter) {
+  const gate = evaluateSchedulingGate({ matter });
+  if (matter.payment_confirmed) return 'Verified · scheduling authorized';
+  if (matter.payment_settlement_status === 'observed_pending' || matter.payment_observed_at) {
+    return gate.schedulingEligible
+      ? 'Retainer submitted · Wise processing · scheduling authorized'
+      : 'Retainer submitted · Wise processing';
+  }
+  return gate.schedulingEligible ? 'Scheduling authorized' : 'Payment requirement not satisfied';
 }
 
 function PreSessionMatterCard({ matter }: { matter: PreSessionMatter }) {
   const truth = matter.execution_truth ?? {};
   const notarialAct = String(truth.notarial_act ?? 'review_required');
-  const paymentReady = matter.payment_confirmed === true;
+  const schedulingGate = evaluateSchedulingGate({ matter });
+  const paymentReady = schedulingGate.schedulingEligible;
   const executionReady = Boolean(truth.signer_location && truth.notary_jurisdiction && notarialAct !== 'review_required' && notarialAct !== 'unknown');
 
   return (
@@ -117,7 +133,7 @@ function PreSessionMatterCard({ matter }: { matter: PreSessionMatter }) {
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-zinc-400">
         <p><span className="text-zinc-600">Document </span>{matter.document_type ?? '—'}</p>
         <p><span className="text-zinc-600">Destination </span>{matter.destination_country ?? '—'}</p>
-        <p className="col-span-2"><span className="text-zinc-600">Payment </span>{paymentLabel(matter)}</p>
+        <p className="col-span-2"><span className="text-zinc-600">Payment / scheduling </span>{paymentLabel(matter)}</p>
         <p className="col-span-2"><span className="text-zinc-600">Notarial act </span>{notarialAct === 'review_required' ? 'Operator review required' : notarialAct.replace(/_/g, ' ')}</p>
       </div>
       <Link
@@ -147,7 +163,7 @@ function MatterCard({ session }: { session: SessionRow }) {
       <div className="mb-3 grid grid-cols-2 gap-1 text-xs text-zinc-400">
         <p><span className="text-zinc-600">Doc </span>{deal?.document_type ?? '—'}</p>
         <p><span className="text-zinc-600">Destination </span>{deal?.destination_country ?? '—'}</p>
-        <p className="col-span-2"><span className="text-zinc-600">Payment </span>{deal?.payment_confirmed ? 'Verified' : deal?.payment_settlement_status === 'observed_pending' ? 'Wise processing' : 'Not verified'}</p>
+        <p className="col-span-2"><span className="text-zinc-600">Payment </span>{deal?.payment_confirmed ? 'Verified' : deal?.payment_settlement_status === 'observed_pending' ? 'Wise processing · not yet settled' : 'Not verified'}</p>
         <p><span className="text-zinc-600">Identity </span>{session.identity_status}</p>
         <p><span className="text-zinc-600">KBA </span>{session.kba_status}</p>
       </div>
@@ -194,8 +210,8 @@ export default async function RONSigningRoomPage() {
       </div>
 
       <div className="mt-8 rounded-lg border border-amber-900/40 bg-zinc-900 p-3 text-xs text-zinc-500">
-        <span className="font-semibold text-amber-600">Payment Gate: </span>
-        RON session creation and provider document transfer require canonical <code>payment_confirmed=true</code>. Wise processing is displayed as submitted/processing and never unlocks scheduling.
+        <span className="font-semibold text-amber-600">Scheduling Gate: </span>
+        RON session creation uses the same canonical Matter scheduling authority. A recorded Wise submission may authorize scheduling while settlement remains processing; this never marks the Matter paid. Signing-link release remains settlement-verified only.
       </div>
     </div>
   );
