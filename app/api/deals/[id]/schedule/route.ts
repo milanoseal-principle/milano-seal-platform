@@ -88,7 +88,7 @@ export async function POST(
             schedulingGate.paymentRequirementSatisfied,
           paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
           message:
-            "A recorded Wise submission, verified Wise settlement, or active Complimentary Authorization is required before scheduling can begin.",
+            "Verified payment or an active Complimentary Authorization is required before scheduling can begin.",
         },
         { status: 402 },
       );
