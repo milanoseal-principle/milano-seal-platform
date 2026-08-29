@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
+import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
 function badge(ok: boolean) {
   return ok
@@ -13,7 +14,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const supabase = createAdminClient();
   const { data: matter } = await supabase
     .from('deals')
-    .select('id, deal_id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_due, amount_paid')
+    .select('id, deal_id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_due, amount_paid, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
@@ -52,6 +53,8 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const notarialAct = String(truth.notarial_act ?? 'review_required');
   const paymentConfirmed = matter.payment_confirmed === true;
   const paymentObserved = matter.payment_settlement_status === 'observed_pending' || Boolean(matter.payment_observed_at);
+  const schedulingGate = evaluateSchedulingGate({ matter });
+  const schedulingAuthorized = schedulingGate.schedulingEligible;
   const signerComplete = Boolean(matter.client_name && matter.email && matter.phone && signerState);
   const ronTruthComplete =
     truth.notarization_requirement === 'required' &&
@@ -69,17 +72,21 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
 
   const paymentLabel = paymentConfirmed
     ? 'Payment verified · scheduling authorized'
-    : paymentObserved
-      ? 'Retainer submitted · Wise processing'
-      : 'Payment not verified · scheduling locked';
+    : paymentObserved && schedulingAuthorized
+      ? 'Retainer submitted · Wise processing · scheduling authorized'
+      : paymentObserved
+        ? 'Retainer submitted · Wise processing'
+        : 'Payment requirement not satisfied';
 
   const blockers = [
-    !paymentConfirmed ? paymentLabel : null,
+    !schedulingAuthorized ? schedulingGate.reason : null,
     !signerComplete ? 'Signer name, email, phone, and Florida signer location must be present.' : null,
     !documentReady ? 'At least one Matter document is required.' : null,
     notarialAct === 'review_required' || notarialAct === 'unknown' ? 'Operator must confirm the notarial act before BlueNotary session creation.' : null,
     !notaryJurisdiction ? 'Notary jurisdiction must be confirmed.' : null,
   ].filter(Boolean) as string[];
+
+  const readyToCreate = schedulingAuthorized && ronTruthComplete && signerComplete && documentReady;
 
   return (
     <section className="rounded-2xl border border-[var(--ms-gold)]/20 bg-[#08080A]/90 p-4 sm:p-5">
@@ -89,8 +96,8 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           <h3 className="font-serif text-xl text-white">BlueNotary Operator Actions</h3>
           <p className="mt-1 text-xs text-white/45">Matter {matter.deal_id ?? matter.id} · same-Matter provider handoff</p>
         </div>
-        <span className={`w-fit rounded-full border px-3 py-1 font-mono text-[8px] uppercase tracking-[0.14em] ${badge(paymentConfirmed && ronTruthComplete && signerComplete && documentReady)}`}>
-          {paymentConfirmed && ronTruthComplete && signerComplete && documentReady ? 'Ready to create session' : 'Scheduling locked'}
+        <span className={`w-fit rounded-full border px-3 py-1 font-mono text-[8px] uppercase tracking-[0.14em] ${badge(readyToCreate)}`}>
+          {readyToCreate ? 'Ready to create session' : 'Preflight required'}
         </span>
       </div>
 
@@ -104,7 +111,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           ['Notarization Type', notarialAct === 'review_required' ? 'Operator review required' : notarialAct.replace(/_/g, ' ')],
           ['Destination Jurisdiction', matter.destination_country || 'Missing'],
           ['Notary Jurisdiction', notaryJurisdiction || 'Missing'],
-          ['Payment State', paymentLabel],
+          ['Payment / Scheduling', paymentLabel],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-white/[0.055] bg-white/[0.015] p-3">
             <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/35">{label}</p>
@@ -141,7 +148,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           currentStatus={(activeSession?.milano_ron_status as MilanoRONStatus | undefined) ?? null}
           documentIds={pendingRONDocumentIds}
           gates={{
-            paymentConfirmed: { met: paymentConfirmed, reason: paymentObserved ? 'Retainer submitted; Wise settlement is still processing.' : 'Verified payment required.' },
+            schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate.reason },
             sessionExists: { met: sessionExists },
             sessionNotExpired: { met: sessionNotExpired },
             signerComplete: { met: signerComplete, reason: 'Signer name, email, phone, and location are required.' },
@@ -153,7 +160,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       </div>
 
       <p className="mt-4 font-mono text-[8px] leading-relaxed text-white/25">
-        BlueNotary session creation and document transfer are blocked until the canonical Milano payment gate is verified. Wise processing is visible but never treated as paid.
+        Scheduling authority follows the canonical Matter gate. Wise processing may authorize session scheduling after a recorded submission, but it never marks the Matter paid. Signing-link release remains blocked until verified settlement.
       </p>
     </section>
   );
