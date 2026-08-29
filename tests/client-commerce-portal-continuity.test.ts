@@ -45,7 +45,7 @@ test("client invoice routes discount mutations through the one canonical discoun
   assert.match(invoicePage, /\/api\/portal\/me\/discount/);
   assert.match(discountRoute, /applyDiscountToMatter/);
   assert.doesNotMatch(discountRoute, /\.from\("discount_codes"\)/);
-  assert.doesNotMatch(discountRoute, /\.update\(\{[^}]*discount_amount/s);
+  assert.doesNotMatch(discountRoute, /\.update\(\{[\s\S]*?discount_amount/);
 
   assert.match(discountService, /discount\.applies_to === "matter_total"/);
   assert.match(discountService, /discountBase/);
