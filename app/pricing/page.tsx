@@ -291,7 +291,7 @@ export default function PricingPage() {
           <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2">
             <div className="rounded-[1.75rem] border border-white/[0.07] bg-[#0A0A0A] p-6 sm:p-8">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/32">After Intake</p>
-              <h2 className="mt-4 font-serif text-3xl text-white">A controlled path, not an instant checkout.</h2>
+              <h2 className="mt-4 font-serif text-3xl text-white">A controlled path, not an instant purchase flow.</h2>
               <div className="mt-6 space-y-3">
                 {pathCopy.map((line) => (
                   <div key={line} className="flex gap-3 text-sm leading-6 text-white/46">
