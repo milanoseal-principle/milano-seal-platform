@@ -43,10 +43,6 @@ function cents(value: number): number {
   return Math.round(value * 100);
 }
 
-function moneyFromCents(value: number): number {
-  return Math.round(value) / 100;
-}
-
 function parseInternalNotes(raw: unknown): Record<string, unknown> {
   if (!raw) return {};
   if (typeof raw === "object") return raw as Record<string, unknown>;
@@ -84,11 +80,7 @@ function push(lines: ClientInvoiceLineItem[], item: ClientInvoiceLineItem) {
   if (item.amount > 0) lines.push({ ...item, amount: n(item.amount) });
 }
 
-/**
- * Client-safe itemization derived only from persisted Matter pricing truth.
- * It never exposes internal margin/cost fields. Any residual authorized amount
- * is surfaced explicitly instead of silently disappearing from the invoice.
- */
+/** Client-safe display projection only. It never computes or authorizes a discount. */
 export function buildClientInvoiceLineItems(row: PortalInvoiceMatterRow): ClientInvoiceLineItem[] {
   const originalTotal = n(row.original_total ?? row.total_price ?? row.final_total);
   const metadata = parseInternalNotes(row.internal_notes);
@@ -96,60 +88,33 @@ export function buildClientInvoiceLineItems(row: PortalInvoiceMatterRow): Client
 
   const lane = String(row.lane ?? row.execution_lane ?? "Execution").trim();
   const base = n(row.base_price);
-  push(lines, {
-    key: "execution_lane",
-    label: `${lane || "Execution"} Execution Lane`,
-    amount: base,
-    kind: "execution",
-    discountable: true,
-  });
+  push(lines, { key: "execution_lane", label: `${lane || "Execution"} Execution Lane`, amount: base, kind: "execution", discountable: true });
 
   const docs = Math.max(1, Number(row.docs_count ?? 1) || 1);
-  const additionalDocs = Math.max(0, docs - 1) * COMPLEXITY.additional_document;
   push(lines, {
     key: "additional_documents",
     label: `Additional document handling (${Math.max(0, docs - 1)})`,
-    amount: additionalDocs,
+    amount: Math.max(0, docs - 1) * COMPLEXITY.additional_document,
     kind: "execution",
     discountable: true,
   });
 
   const signers = Math.max(1, Number(row.signers ?? 1) || 1);
-  const additionalSigners = Math.max(0, signers - 1) * COMPLEXITY.additional_signer;
   push(lines, {
     key: "additional_signers",
     label: `Additional signer coordination (${Math.max(0, signers - 1)})`,
-    amount: additionalSigners,
+    amount: Math.max(0, signers - 1) * COMPLEXITY.additional_signer,
     kind: "execution",
     discountable: true,
   });
 
-  const witnessTotal = n(row.witness_total);
-  push(lines, {
-    key: "witnesses",
-    label: "Witness coordination",
-    amount: witnessTotal,
-    kind: "execution",
-    discountable: true,
-  });
+  push(lines, { key: "witnesses", label: "Witness coordination", amount: n(row.witness_total), kind: "execution", discountable: true });
 
   const timeline = timelineAmount(row, metadata);
-  push(lines, {
-    key: "timeline",
-    label: timelineLabel(row, metadata),
-    amount: timeline,
-    kind: "timeline",
-    discountable: true,
-  });
+  push(lines, { key: "timeline", label: timelineLabel(row, metadata), amount: timeline, kind: "timeline", discountable: true });
 
   const nonDiscountable = n(row.non_discountable_total);
-  push(lines, {
-    key: "delivery",
-    label: deliveryLabel(metadata, nonDiscountable),
-    amount: nonDiscountable,
-    kind: "delivery",
-    discountable: false,
-  });
+  push(lines, { key: "delivery", label: deliveryLabel(metadata, nonDiscountable), amount: nonDiscountable, kind: "delivery", discountable: false });
 
   let accounted = lines.reduce((sum, item) => sum + item.amount, 0);
   let remaining = Math.max(0, n(originalTotal - accounted));
@@ -169,37 +134,13 @@ export function buildClientInvoiceLineItems(row: PortalInvoiceMatterRow): Client
   }
 
   if (remaining > 0 && cents(remaining) % cents(COMPLEXITY.notarized_signature) === 0) {
-    push(lines, {
-      key: "notarial_tracking",
-      label: "Notarial execution tracking",
-      amount: remaining,
-      kind: "notarial",
-      discountable: true,
-    });
+    push(lines, { key: "notarial_tracking", label: "Notarial execution tracking", amount: remaining, kind: "notarial", discountable: true });
     accounted += remaining;
     remaining = 0;
   }
 
   if (remaining > 0) {
-    push(lines, {
-      key: "other_approved_service",
-      label: "Additional approved execution service",
-      amount: remaining,
-      kind: "other",
-      discountable: true,
-    });
-  }
-
-  const sum = lines.reduce((total, item) => total + item.amount, 0);
-  const delta = n(originalTotal - sum);
-  if (Math.abs(delta) >= 0.01) {
-    push(lines, {
-      key: "pricing_reconciliation",
-      label: "Approved Matter pricing reconciliation",
-      amount: delta,
-      kind: "other",
-      discountable: delta > 0,
-    });
+    push(lines, { key: "other_approved_service", label: "Additional approved execution service", amount: remaining, kind: "other", discountable: true });
   }
 
   return lines;
@@ -237,21 +178,4 @@ export function buildClientInvoiceSnapshot(row: PortalInvoiceMatterRow): ClientI
     wisePaymentUrl: typeof row.payment_link === "string" && row.payment_link ? row.payment_link : null,
     courtesyApplied: Boolean(row.discount_code) && discountAmount > 0,
   };
-}
-
-export function calculateCourtesyAdjustment(args: {
-  originalTotal: number;
-  eligibleSubtotal: number;
-  appliesTo: string;
-  discountType: string;
-  discountValue: number;
-}) {
-  const base = args.appliesTo === "matter_total" ? args.originalTotal : args.eligibleSubtotal;
-  const raw = args.discountType === "fixed_amount"
-    ? args.discountValue
-    : base * (args.discountValue / 100);
-  const discountAmount = Math.min(base, moneyFromCents(cents(raw)));
-  const finalTotal = moneyFromCents(cents(args.originalTotal) - cents(discountAmount));
-  const invoice = generateInvoice(finalTotal);
-  return { base: n(base), discountAmount: n(discountAmount), finalTotal: n(finalTotal), retainer: invoice.retainer, balance: invoice.balance };
 }
