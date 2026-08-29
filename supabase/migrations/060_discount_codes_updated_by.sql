@@ -1,4 +1,5 @@
 -- Restore the discount_codes audit contract expected by the canonical discount service.
+-- The portal discount lookup selects updated_by as governed audit metadata.
 -- Additive only: no existing discount, Matter, pricing, payment, or redemption data is rewritten.
 
 alter table public.discount_codes
