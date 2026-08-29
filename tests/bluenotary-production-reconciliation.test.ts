@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 // Production contract: existing BlueNotary RON module, one Matter, canonical Wise scheduling gate.
+// Tiffany continuity lock: observed Wise submission authorizes scheduling without fabricating paid state.
 const guards = readFileSync('lib/bluenotary/guards.ts', 'utf8');
 const sessions = readFileSync('app/api/dashboard/ron/sessions/route.ts', 'utf8');
 const documents = readFileSync('app/api/dashboard/ron/sessions/[id]/documents/route.ts', 'utf8');
