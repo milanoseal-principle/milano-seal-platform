@@ -1,4 +1,4 @@
-import { buildPaymentLink as fallbackPaymentLink } from "@/lib/dealId";
+import { buildPaymentLink } from "@/lib/dealId";
 
 export interface WisePaymentRequestInput {
   dealId: string;
@@ -22,102 +22,24 @@ export function getWiseBaseUrl(): string {
   return PRODUCTION_BASE;
 }
 
-function isConfigured(): boolean {
-  return Boolean(
-    process.env.WISE_API_TOKEN?.trim() && process.env.WISE_PROFILE_ID?.trim(),
-  );
-}
-
-function authHeaders(): HeadersInit {
-  const token = process.env.WISE_API_TOKEN!.trim();
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-}
-
+/**
+ * Wise payment collection uses the canonical public Wise business/handle link.
+ * The previous implementation attempted an undocumented
+ * /v3/profiles/:profile/payment-requests endpoint and produced a production
+ * 404 before falling back to the same link. Do not call an unsupported API.
+ *
+ * This creates no paid state. The Matter reference + amount travel to Wise;
+ * canonical settlement/reconciliation remains the only payment authority.
+ */
 export async function createWisePaymentRequest(
   input: WisePaymentRequestInput,
 ): Promise<WisePaymentRequestResult> {
-  const fallback = fallbackPaymentLink(
+  const url = buildPaymentLink(
     input.dealId,
     input.amount,
     input.currency ?? "USD",
   );
-
-  if (!isConfigured()) {
-    return { url: fallback, id: null, mode: "fallback" };
-  }
-
-  const profileId = process.env.WISE_PROFILE_ID!.trim();
-  const currency = input.currency ?? "USD";
-
-  const body = {
-    amount: input.amount,
-    currency,
-    description: input.description,
-    reference: input.dealId.slice(0, 20),
-    ...(input.clientEmail
-      ? {
-          payer: {
-            name: input.clientName ?? undefined,
-            email: input.clientEmail,
-          },
-        }
-      : {}),
-    ...(input.redirectUrl ? { redirectUrl: input.redirectUrl } : {}),
-  };
-
-  try {
-    const res = await fetch(
-      `${PRODUCTION_BASE}/v3/profiles/${profileId}/payment-requests`,
-      {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(body),
-      },
-    );
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error(
-        `[wise] payment-request failed ${res.status} — body sent: ${JSON.stringify(body)} — response: ${detail}`,
-      );
-      return { url: fallback, id: null, mode: "fallback" };
-    }
-
-    const data = (await res.json()) as {
-      id?: string;
-      shortUrl?: string;
-      shortLink?: string;
-      url?: string;
-      paymentLink?: string;
-      payUrl?: string;
-    };
-
-    const liveUrl =
-      data.shortUrl ??
-      data.shortLink ??
-      data.url ??
-      data.paymentLink ??
-      data.payUrl;
-    if (!liveUrl) {
-      console.error(
-        `[wise] response missing payment URL:`,
-        JSON.stringify(data),
-      );
-      return {
-        url: fallback,
-        id: data.id ?? null,
-        mode: "fallback",
-      };
-    }
-
-    return { url: liveUrl, id: data.id ?? null, mode: "production" };
-  } catch (err) {
-    console.error(`[wise] network error:`, err);
-    return { url: fallback, id: null, mode: "fallback" };
-  }
+  return { url, id: null, mode: "production" };
 }
 
 export interface WisePaymentRequestRecord {
@@ -134,64 +56,15 @@ export interface WisePaymentRequestRecord {
   raw: Record<string, unknown>;
 }
 
-function normalizePaymentRequest(
-  record: Record<string, unknown>,
-): WisePaymentRequestRecord {
-  const amount = record.amount as { value?: number } | number | undefined;
-  const numericAmount =
-    typeof amount === "number"
-      ? amount
-      : amount && typeof amount === "object" && typeof amount.value === "number"
-        ? amount.value
-        : null;
-  const currency =
-    typeof record.currency === "string"
-      ? record.currency
-      : amount && typeof amount === "object" && "currency" in amount
-        ? String((amount as Record<string, unknown>).currency ?? "")
-        : null;
-  const payer = (record.payer ?? {}) as Record<string, unknown>;
-  return {
-    id: String(record.id ?? ""),
-    amount: numericAmount,
-    currency,
-    reference: typeof record.reference === "string" ? record.reference : null,
-    description:
-      typeof record.description === "string" ? record.description : null,
-    status: typeof record.status === "string" ? record.status : null,
-    shortUrl:
-      (record.shortUrl as string | undefined) ??
-      (record.shortLink as string | undefined) ??
-      (record.url as string | undefined) ??
-      (record.paymentLink as string | undefined) ??
-      (record.payUrl as string | undefined) ??
-      null,
-    createdAt:
-      (record.createdAt as string | undefined) ??
-      (record.created as string | undefined) ??
-      null,
-    payerName: typeof payer.name === "string" ? payer.name : null,
-    payerEmail: typeof payer.email === "string" ? payer.email : null,
-    raw: record,
-  };
-}
-
+/**
+ * No Wise "payment request" object is created by the canonical collection
+ * path, so there is no request resource to fetch. Reconciliation is handled by
+ * the existing Wise settlement/webhook transaction path instead.
+ */
 export async function getWisePaymentRequest(
-  id: string,
+  _id: string,
 ): Promise<WisePaymentRequestRecord | null> {
-  if (!isConfigured() || !id) return null;
-  const profileId = process.env.WISE_PROFILE_ID!.trim();
-  try {
-    const res = await fetch(
-      `${PRODUCTION_BASE}/v3/profiles/${profileId}/payment-requests/${id}`,
-      { headers: authHeaders(), cache: "no-store" },
-    );
-    if (!res.ok) return null;
-    const data = (await res.json()) as Record<string, unknown>;
-    return normalizePaymentRequest(data);
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 const WISE_PRODUCTION_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----

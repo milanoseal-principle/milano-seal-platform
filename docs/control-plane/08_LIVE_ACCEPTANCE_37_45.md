@@ -4,19 +4,22 @@ These gates are intentionally **PENDING** until real production or human evidenc
 
 ## 37 — TIFF 15-Step Real Matter — PENDING
 
-Run the controlled certification in `docs/control-plane/09_TIFFANY_FINAL_15_STEP_PRODUCTION_TEST.md`.
+Run the controlled certification in `docs/control-plane/09_TIFFANY_FINAL_15_STEP_PRODUCTION_TEST.md` against Matter `MS-2026-4887`.
 
-For the locked Italy / One and the Same Affidavit / Florida RON / one apostille / Standard / International Courier test Matter, the expected pricing contract is:
+The current persisted client pricing contract is:
 
 ```text
-Original total:          $1,400.00
-TIFFTEST50 discount:       $625.00
-Final Matter total:        $775.00
-Wise retainer:             $387.50
-Remaining balance:         $387.50
+Priority Execution Lane:  $975.00
+Florida apostille:         $250.00
+International courier:     $150.00
+Original Matter total:   $1,375.00
+TIFFTEST99 discount:    -$1,361.25
+Final Matter total:         $13.75
+Wise retainer:               $6.88
+Remaining balance:           $6.87
 ```
 
-Capture the real Matter ID, quote, TIFFTEST50 computation, Wise reference/settlement, scheduling gate before/after, portal parity, notifications, governed execution/apostille/courier/delivery/close evidence and physical mobile findings. A mismatched amount is NO-GO; do not manually override the payment state.
+`TIFFTEST99` is a controlled 99% test discount on `matter_total`. The client must enter it on the authenticated Invoice & Payment screen. It may not be pre-applied, operator-faked, or treated as payment. Capture the itemized portal order before/after, real Wise reference/settlement, scheduling gate before/after, password recovery, portal parity, notifications, governed execution/apostille/courier/delivery/close evidence and physical mobile findings. A mismatched amount is NO-GO; do not manually override the payment state.
 
 ## 38 — Real Wise Settlement — PENDING
 

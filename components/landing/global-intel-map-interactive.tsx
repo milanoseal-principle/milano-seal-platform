@@ -43,6 +43,15 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
     if (externalFlyTarget) setFlyTarget({ ...externalFlyTarget });
   }, [externalFlyTarget]);
 
+  // A selected destination is authoritative UI state. This also handles the
+  // homepage → /map?country=portugal handoff: when GlobalMap resolves the query
+  // into selectedDest, the full Atlas flies to that same country instead of
+  // opening at a generic world view.
+  useEffect(() => {
+    if (!selectedDest?.lat || !selectedDest?.lng) return;
+    setFlyTarget({ lat: selectedDest.lat, lng: selectedDest.lng, zoom: 5 });
+  }, [selectedDest?.slug, selectedDest?.lat, selectedDest?.lng]);
+
   // When parent provides onSelect, use parent's state; otherwise manage internally
   const active = onSelect ? (selectedDest ?? null) : internalActive;
   const setActive = onSelect ?? setInternalActive;
@@ -61,7 +70,6 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
       className="relative w-full bg-[#0A0A0A] overflow-hidden"
       onMouseMove={handleMouseMove}
     >
-      {/* Mouse-tracked gold light leak */}
       <div className="map-vault-glow absolute inset-0 pointer-events-none" style={{ zIndex: 499 }} />
 
       <div className="absolute top-4 left-4 flex gap-2 z-[1000]">
@@ -82,7 +90,6 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
 
       <MapInner active={active} setActive={setActive} flyTarget={flyTarget} />
 
-      {/* Internal centered modal — only renders when NOT controlled by parent (standalone use) */}
       {!onSelect && active && (
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[92%] max-w-lg bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 shadow-[0_24px_60px_rgba(0,0,0,0.8)] z-[1001]">
           <div className="flex items-start justify-between mb-4">
@@ -90,9 +97,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
               <span className="text-3xl leading-none">{active.flag}</span>
               <div>
                 <h3 className="font-serif text-xl text-white leading-tight">{active.name}</h3>
-                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${
-                  active.hague ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"
-                }`}>
+                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${active.hague ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"}`}>
                   {active.hagueStatus}
                 </span>
               </div>
@@ -113,9 +118,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
             </div>
           </div>
 
-          {active.note && (
-            <p className="text-[#8A8A8A] text-xs mb-4 leading-relaxed">{active.note}</p>
-          )}
+          {active.note && <p className="text-[#8A8A8A] text-xs mb-4 leading-relaxed">{active.note}</p>}
 
           <div className="border-t border-[#1A1A1A] pt-4 mb-5">
             <p className="text-[#C6A55A] text-[9px] tracking-[0.08em] uppercase font-semibold mb-3">Execution Path</p>
@@ -130,17 +133,11 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
           </div>
 
           <div className="flex flex-col gap-2">
-            <Link
-              href={`/intake?country=${encodeURIComponent(active.name)}`}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200"
-            >
+            <Link href={`/intake?country=${encodeURIComponent(active.name)}`} className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#0A0A0A] font-semibold text-sm rounded-xl hover:bg-[#D4BB7A] transition-colors duration-200">
               Begin Secure Intake for {active.name}
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href={countryPath(active.slug)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#2A2A2A] text-[#8A8A8A] text-xs rounded-xl hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-all duration-300"
-            >
+            <Link href={countryPath(active.slug)} className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#2A2A2A] text-[#8A8A8A] text-xs rounded-xl hover:border-[#C6A55A]/40 hover:text-[#C6A55A] transition-all duration-300">
               View {active.name} Requirements
             </Link>
           </div>

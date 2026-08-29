@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildPaymentLink } from "@/lib/dealId";
 import {
   computeDiscountAmount,
   normalizeDiscountCode,
@@ -188,19 +189,30 @@ export async function applyDiscountToMatter(
     throw new Error("Discount code is not eligible for this service scope.");
   }
 
+  if (discount.applies_to === "specific_line_items") {
+    throw new Error("DISCOUNT_REVIEW_REQUIRED: specific line-item discounts require operator review.");
+  }
+
   const eligibleSubtotal = eligibleSubtotalForMatter(matter);
   const nonDiscountableTotal = money(Number(matter.non_discountable_total ?? 0));
-  const discountAmount = computeDiscountAmount(discount, eligibleSubtotal);
-  const originalTotal = money(eligibleSubtotal + nonDiscountableTotal);
-  const finalTotal = money(
-    eligibleSubtotal - Math.min(eligibleSubtotal, discountAmount) + nonDiscountableTotal,
+  const originalTotal = money(
+    Number(matter.original_total ?? eligibleSubtotal + nonDiscountableTotal),
   );
+  const discountBase = discount.applies_to === "matter_total"
+    ? originalTotal
+    : eligibleSubtotal;
+  const discountAmount = computeDiscountAmount(discount, discountBase);
+  const finalTotal = money(originalTotal - Math.min(discountBase, discountAmount));
+
   const priorTotal = money(Number(matter.total_price ?? originalTotal));
   const priorRetainer = money(Number(matter.invoice_retainer ?? priorTotal));
   const retainerRatio =
     priorTotal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorTotal)) : 1;
   const depositAmount = money(finalTotal * retainerRatio);
   const balanceDue = money(finalTotal - depositAmount);
+  const paymentReference = String(matter.deal_id ?? matter.id ?? matterId);
+  const currency = String(matter.currency ?? "USD");
+  const paymentLink = buildPaymentLink(paymentReference, depositAmount, currency);
 
   const updated = await updateMatter(matterId, {
     discount_code: discount.code,
@@ -210,13 +222,16 @@ export async function applyDiscountToMatter(
     original_total: originalTotal,
     final_total: finalTotal,
     total_price: finalTotal,
+    final_price: finalTotal,
+    invoice_subtotal: finalTotal,
     invoice_retainer: depositAmount,
     invoice_balance: balanceDue,
     amount_due: depositAmount,
 
-    payment_link: null,
+    payment_link: paymentLink,
     balance_payment_link: null,
-    wise_reference: null,
+    payment_reference: paymentReference,
+    wise_reference: paymentReference,
     wise_payment_id: null,
     wise_transfer_id: null,
     payment_status: "unpaid",
@@ -234,11 +249,15 @@ export async function applyDiscountToMatter(
     metadata: {
       code: discount.code,
       discountCodeId: discount.id,
+      appliesTo: discount.applies_to,
+      discountBase,
       eligibleSubtotal,
+      originalTotal,
       discountAmount,
       finalTotal,
       retainerDue: depositAmount,
       balanceDue,
+      paymentReference,
       redemptionStatus: "not_redeemed",
     },
   });
@@ -270,6 +289,8 @@ export async function removeDiscountFromMatter(
     priorFinal > 0 ? Math.min(1, Math.max(0, priorRetainer / priorFinal)) : 1;
   const depositAmount = money(originalTotal * retainerRatio);
   const balanceDue = money(originalTotal - depositAmount);
+  const paymentReference = String(matter.deal_id ?? matter.id ?? matterId);
+  const currency = String(matter.currency ?? "USD");
 
   const updated = await updateMatter(matterId, {
     discount_code: null,
@@ -278,13 +299,16 @@ export async function removeDiscountFromMatter(
     discount_amount: 0,
     final_total: originalTotal,
     total_price: originalTotal,
+    final_price: originalTotal,
+    invoice_subtotal: originalTotal,
     invoice_retainer: depositAmount,
     invoice_balance: balanceDue,
     amount_due: depositAmount,
 
-    payment_link: null,
+    payment_link: buildPaymentLink(paymentReference, depositAmount, currency),
     balance_payment_link: null,
-    wise_reference: null,
+    payment_reference: paymentReference,
+    wise_reference: paymentReference,
     wise_payment_id: null,
     wise_transfer_id: null,
     payment_status: "unpaid",
@@ -303,6 +327,7 @@ export async function removeDiscountFromMatter(
       originalTotal,
       retainerDue: depositAmount,
       balanceDue,
+      paymentReference,
     },
   });
   return updated.data;
