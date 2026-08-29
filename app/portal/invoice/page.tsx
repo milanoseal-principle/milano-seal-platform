@@ -1,15 +1,43 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { usePortal } from "@/components/portal/portal-context";
 
 const GOLD = "#C6A55A";
 const GREEN = "#4a9e6b";
 const BORDER = "rgba(198,165,90,0.18)";
 
+interface InvoiceLineItem {
+  key: string;
+  label: string;
+  amount: number;
+  kind: string;
+  discountable: boolean;
+}
+
+interface InvoiceSnapshot {
+  matterId: string;
+  displayId: string;
+  currency: string;
+  lineItems: InvoiceLineItem[];
+  originalTotal: number;
+  eligibleSubtotal: number;
+  nonDiscountableTotal: number;
+  discountAmount: number;
+  discountPercent: number | null;
+  finalTotal: number;
+  retainer: number;
+  balance: number;
+  amountDueNow: number;
+  paymentConfirmed: boolean;
+  paymentStatus: string;
+  wiseReference: string;
+  wisePaymentUrl: string | null;
+  courtesyApplied: boolean;
+}
+
 function money(value: number | null | undefined, currency = "USD") {
-  if (value === null || value === undefined || !Number.isFinite(Number(value))) {
-    return "—";
-  }
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
@@ -17,36 +45,16 @@ function money(value: number | null | undefined, currency = "USD") {
   }).format(Number(value));
 }
 
-function Line({
-  label,
-  value,
-  positive,
-  strong,
-}: {
-  label: string;
-  value: string;
-  positive?: boolean;
-  strong?: boolean;
-}) {
+function SummaryRow({ label, value, accent, strong }: { label: string; value: string; accent?: "green" | "gold"; strong?: boolean }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: 20,
-        padding: "12px 0",
-        borderBottom: `1px solid ${BORDER}`,
-      }}
-    >
-      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.46)" }}>
-        {label}
-      </span>
+    <div className="flex items-center justify-between gap-5 border-b border-white/[0.055] py-3 last:border-b-0">
+      <span className="text-xs text-white/45">{label}</span>
       <span
+        className="font-mono text-right"
         style={{
-          fontSize: strong ? 15 : 13,
+          fontSize: strong ? 16 : 13,
           fontWeight: strong ? 700 : 500,
-          color: positive ? GREEN : strong ? GOLD : "#E5E5E5",
-          textAlign: "right",
+          color: accent === "green" ? GREEN : accent === "gold" ? GOLD : "rgba(255,255,255,.78)",
         }}
       >
         {value}
@@ -56,286 +64,199 @@ function Line({
 }
 
 export default function ClientInvoicePage() {
-  const { deal, isLoading } = usePortal();
+  const { deal, isLoading, refresh } = usePortal();
+  const [invoice, setInvoice] = useState<InvoiceSnapshot | null>(null);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountBusy, setDiscountBusy] = useState(false);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [discountSuccess, setDiscountSuccess] = useState<string | null>(null);
 
-  if (isLoading) {
-    return (
-      <div style={{ color: "rgba(255,255,255,.4)" }}>
-        Verifying invoice state…
-      </div>
-    );
+  const loadInvoice = async () => {
+    if (!deal?.id) return;
+    setLoadingInvoice(true);
+    try {
+      const response = await fetch(`/api/portal/me/invoice?deal_id=${encodeURIComponent(deal.id)}`, { cache: "no-store" });
+      const body = (await response.json()) as { invoice?: InvoiceSnapshot; error?: string };
+      if (!response.ok || !body.invoice) throw new Error(body.error || "Invoice unavailable");
+      setInvoice(body.invoice);
+    } catch (err) {
+      setDiscountError(err instanceof Error ? err.message : "Invoice unavailable");
+    } finally {
+      setLoadingInvoice(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadInvoice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deal?.id]);
+
+  const complimentaryAuthorized = useMemo(
+    () => deal?.payment_disposition === "complimentary" && deal?.comp_authorized === true,
+    [deal?.payment_disposition, deal?.comp_authorized],
+  );
+
+  async function applyDiscount() {
+    if (!deal?.id || !discountCode.trim() || discountBusy) return;
+    setDiscountBusy(true);
+    setDiscountError(null);
+    setDiscountSuccess(null);
+    try {
+      const response = await fetch("/api/portal/me/discount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: deal.id, code: discountCode.trim().toUpperCase() }),
+      });
+      const body = (await response.json()) as { invoice?: InvoiceSnapshot; error?: string };
+      if (!response.ok || !body.invoice) throw new Error(body.error || "Discount could not be applied");
+      setInvoice(body.invoice);
+      setDiscountSuccess("Discount applied. Your final total and 50% retainer have been recalculated before payment.");
+      setDiscountCode("");
+      await refresh();
+    } catch (err) {
+      setDiscountError(err instanceof Error ? err.message : "Discount could not be applied");
+    } finally {
+      setDiscountBusy(false);
+    }
   }
 
-  if (!deal) {
-    return (
-      <div style={{ color: "rgba(255,255,255,.5)" }}>
-        No matter linked to this account.
-      </div>
-    );
+  if (isLoading || loadingInvoice) {
+    return <div className="text-sm text-white/40">Verifying invoice state…</div>;
   }
 
-  const complimentaryAuthorized =
-    deal.payment_disposition === "complimentary" && deal.comp_authorized === true;
-  const paymentConfirmed =
-    deal.payment_confirmed ||
-    deal.payment_status === "paid" ||
-    deal.payment_status === "confirmed" ||
-    deal.payment_status === "payment_confirmed";
+  if (!deal || !invoice) {
+    return <div className="text-sm text-white/50">No invoice is available for this account.</div>;
+  }
 
-  const currency = deal.currency ?? "USD";
-  const amountDue = deal.amount_due ?? deal.payment_amount_due ?? null;
-  const courtesyApplied = deal.courtesy_applied && deal.discount_amount > 0;
-  const wiseRef =
-    deal.wise_reference ??
-    `MS-${(deal.display_id ?? deal.id).slice(0, 8).toUpperCase()}`;
+  const currency = invoice.currency || "USD";
 
   if (complimentaryAuthorized) {
     return (
-      <div>
-        <div
-          style={{
-            fontSize: 9,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            color: "rgba(198,165,90,0.58)",
-            fontFamily: "monospace",
-            marginBottom: 8,
-          }}
-        >
-          Invoice &amp; Authorization
-        </div>
-        <h1
-          style={{
-            fontFamily: "var(--font-playfair, Georgia, serif)",
-            fontSize: 24,
-            color: "#E5E5E5",
-            marginBottom: 8,
-          }}
-        >
-          Complimentary Service Authorization
-        </h1>
-        <p
-          style={{
-            marginBottom: 24,
-            maxWidth: 680,
-            fontSize: 12,
-            lineHeight: 1.65,
-            color: "rgba(255,255,255,0.48)",
-          }}
-        >
-          No payment is due for this Matter. This authorization is a separate
-          zero-revenue disposition and is not a paid status or Wise Payment Confirmed status.
-        </p>
-        <div
-          data-critical-card=""
-          style={{
-            background: "rgba(74,158,107,0.06)",
-            border: "1px solid rgba(74,158,107,0.28)",
-            borderRadius: 8,
-            padding: "22px 26px",
-          }}
-        >
-          {deal.original_total !== null && (
-            <Line
-              label="Original service value"
-              value={money(deal.original_total, currency)}
-            />
-          )}
-          <Line label="Authorized amount due" value={money(0, currency)} strong positive />
-          <div
-            style={{
-              paddingTop: 16,
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 12,
-              lineHeight: 1.65,
-            }}
-          >
-            Scheduling eligibility is evaluated through the canonical
-            Complimentary Authorization gate. No Wise payment or payment
-            confirmation is fabricated for this Matter.
-          </div>
+      <div className="max-w-4xl">
+        <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/60">Invoice & Authorization</div>
+        <h1 className="mt-2 font-serif text-3xl text-white">Complimentary Service Authorization</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45">No payment is due for this Matter. Complimentary authorization remains separate from Wise paid-state authority.</p>
+        <div className="mt-7 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.04] p-6">
+          <SummaryRow label="Original service value" value={money(invoice.originalTotal, currency)} />
+          <SummaryRow label="Authorized amount due" value={money(0, currency)} strong accent="green" />
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div
-        style={{
-          fontSize: 9,
-          letterSpacing: "0.28em",
-          textTransform: "uppercase",
-          color: "rgba(198,165,90,0.58)",
-          fontFamily: "monospace",
-          marginBottom: 8,
-        }}
-      >
-        Invoice &amp; Payment Authorization
-      </div>
-
-      <h1
-        style={{
-          fontFamily: "var(--font-playfair, Georgia, serif)",
-          fontSize: 24,
-          color: "#E5E5E5",
-          marginBottom: 8,
-        }}
-      >
-        Your Matter Invoice
-      </h1>
-
-      <p
-        style={{
-          marginBottom: 24,
-          maxWidth: 680,
-          fontSize: 12,
-          lineHeight: 1.65,
-          color: "rgba(255,255,255,0.45)",
-        }}
-      >
-        This invoice reflects the server-authoritative Matter amount. Any approved Partner or Courtesy Code is validated before payment and reflected in the totals below.
+    <div className="max-w-5xl">
+      <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/60">Invoice & Payment Authorization</div>
+      <h1 className="mt-2 font-serif text-3xl text-white">Your Matter Invoice</h1>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
+        Review every client-facing charge before payment. An authorized discount recalculates the final Matter total, 50% retainer, remaining balance, and Wise payment amount before you leave this screen.
       </p>
 
-      <div
-        data-critical-card=""
-        style={{
-          background: "rgba(255,255,255,0.01)",
-          border: `1px solid ${BORDER}`,
-          borderRadius: 8,
-          padding: "24px 28px",
-          marginBottom: 16,
-        }}
-      >
-        <Line label="Matter reference" value={wiseRef} />
-        {deal.original_total !== null && (
-          <Line
-            label="Original service total"
-            value={money(deal.original_total, currency)}
-          />
-        )}
+      <div className="mt-7 grid gap-5 xl:grid-cols-[1fr_360px]">
+        <section className="overflow-hidden rounded-xl border border-[#C6A55A]/20 bg-white/[0.012]">
+          <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
+            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/65">Itemized Order</div>
+            <div className="mt-1 text-xs text-white/35">Matter {invoice.displayId}</div>
+          </div>
+          <div className="px-5 py-2 sm:px-6">
+            {invoice.lineItems.map((item) => (
+              <div key={item.key} className="flex items-start justify-between gap-6 border-b border-white/[0.055] py-4 last:border-b-0">
+                <div>
+                  <div className="text-sm text-white/78">{item.label}</div>
+                  <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-white/27">
+                    {item.discountable ? "Execution / service" : "Pass-through / delivery"}
+                  </div>
+                </div>
+                <div className="shrink-0 font-mono text-sm text-[#E6D39B]">{money(item.amount, currency)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        {courtesyApplied && (
-          <>
-            <Line
-              label={
-                deal.discount_value
-                  ? `${deal.courtesy_label ?? "Professional courtesy"} · ${Number(deal.discount_value)}%`
-                  : deal.courtesy_label ?? "Professional courtesy"
-              }
-              value={`−${money(deal.discount_amount, currency)}`}
-              positive
-            />
-            {deal.final_total !== null && (
-              <Line
-                label="Final service total"
-                value={money(deal.final_total, currency)}
+        <section className="rounded-xl border border-[#C6A55A]/20 bg-[linear-gradient(180deg,rgba(198,165,90,.055),rgba(0,0,0,.18))] p-5 sm:p-6">
+          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A55A]/65">Payment Summary</div>
+          <div className="mt-3">
+            <SummaryRow label="Original Matter total" value={money(invoice.originalTotal, currency)} />
+            <SummaryRow label="Discount-eligible service subtotal" value={money(invoice.eligibleSubtotal, currency)} />
+            {invoice.nonDiscountableTotal > 0 && (
+              <SummaryRow label="Pass-through / delivery total" value={money(invoice.nonDiscountableTotal, currency)} />
+            )}
+            {invoice.discountAmount > 0 && (
+              <SummaryRow
+                label={`Authorized discount${invoice.discountPercent ? ` · ${invoice.discountPercent}%` : ""}`}
+                value={`−${money(invoice.discountAmount, currency)}`}
+                accent="green"
               />
             )}
-          </>
-        )}
-
-        <Line
-          label={paymentConfirmed ? "Payment status" : "Amount due now"}
-          value={
-            paymentConfirmed
-              ? "Verified"
-              : amountDue !== null
-                ? money(amountDue, currency)
-                : "Pending final quote"
-          }
-          strong
-          positive={paymentConfirmed}
-        />
-      </div>
-
-      {!paymentConfirmed && amountDue !== null && amountDue > 0 && (
-        <div
-          style={{
-            background: "rgba(198,165,90,0.04)",
-            border: `1px solid ${BORDER}`,
-            borderRadius: 8,
-            padding: "20px 24px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: GOLD,
-              marginBottom: 10,
-              fontFamily: "monospace",
-            }}
-          >
-            Wise Business
+            <SummaryRow label="Final Matter total" value={money(invoice.finalTotal, currency)} accent="gold" strong />
+            <SummaryRow label="50% retainer due now" value={money(invoice.retainer, currency)} />
+            <SummaryRow label="Remaining balance" value={money(invoice.balance, currency)} />
           </div>
-          <p
-            style={{
-              fontSize: 12,
-              color: "rgba(255,255,255,0.5)",
-              lineHeight: 1.65,
-              marginBottom: 14,
-            }}
-          >
-            Use reference <strong style={{ color: GOLD }}>{wiseRef}</strong>.
-            Scheduling remains locked until Wise confirms the exact amount and
-            currency.
-          </p>
 
-          {deal.wise_payment_url ? (
-            <a
-              href={deal.wise_payment_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                minHeight: 46,
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0 20px",
-                borderRadius: 5,
-                background: GOLD,
-                color: "#0A0A0A",
-                textDecoration: "none",
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-              }}
-            >
-              Continue to Secure Wise Payment
-            </a>
-          ) : (
-            <div
-              style={{
-                fontSize: 12,
-                color: "rgba(255,255,255,0.45)",
-                lineHeight: 1.6,
-              }}
-            >
-              Your secure Wise payment link is being finalized. No payment or
-              courtesy redemption is recorded until reconciliation succeeds.
+          {!invoice.paymentConfirmed && (
+            <div className="mt-5 rounded-lg border border-white/[0.075] bg-black/20 p-4">
+              <div className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/35">Discount / Courtesy Code</div>
+              {invoice.courtesyApplied ? (
+                <div className="mt-2 text-sm text-emerald-300/80">An authorized discount is already applied to this Matter.</div>
+              ) : (
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={discountCode}
+                    onChange={(event) => { setDiscountCode(event.target.value.toUpperCase()); setDiscountError(null); setDiscountSuccess(null); }}
+                    placeholder="Enter code"
+                    autoCapitalize="characters"
+                    className="min-h-11 min-w-0 flex-1 rounded-md border border-[#C6A55A]/20 bg-[#070707] px-3 font-mono text-sm uppercase tracking-[0.08em] text-white outline-none placeholder:text-white/20 focus:border-[#C6A55A]/55"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void applyDiscount()}
+                    disabled={discountBusy || !discountCode.trim()}
+                    className="min-h-11 rounded-md bg-[#C6A55A] px-4 font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-[#090806] transition hover:bg-[#D7B96E] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {discountBusy ? "Applying…" : "Apply"}
+                  </button>
+                </div>
+              )}
+              {discountError && <div className="mt-3 text-xs leading-5 text-red-300">{discountError}</div>}
+              {discountSuccess && <div className="mt-3 text-xs leading-5 text-emerald-300/80">{discountSuccess}</div>}
             </div>
           )}
-        </div>
-      )}
 
-      {paymentConfirmed && (
-        <div
-          style={{
-            background: "rgba(74,158,107,0.06)",
-            border: "1px solid rgba(74,158,107,0.28)",
-            borderRadius: 8,
-            padding: "18px 22px",
-            color: GREEN,
-            fontSize: 13,
-          }}
-        >
-          Payment verified. Scheduling is now eligible to proceed through the
-          canonical Matter workflow.
-        </div>
-      )}
+          <div className="mt-5 rounded-lg border border-[#C6A55A]/25 bg-[#C6A55A]/[0.055] p-4">
+            <div className="font-mono text-[8px] uppercase tracking-[0.17em] text-[#C6A55A]/70">
+              {invoice.paymentConfirmed ? "Verified payment" : "Amount due before scheduling"}
+            </div>
+            <div className="mt-1 font-serif text-3xl text-white">{money(invoice.amountDueNow, currency)}</div>
+            <div className="mt-2 text-[11px] leading-5 text-white/38">Wise reference: <span className="font-mono text-[#C6A55A]/75">{invoice.wiseReference}</span></div>
+          </div>
+
+          {!invoice.paymentConfirmed && invoice.amountDueNow > 0 && (
+            <div className="mt-5">
+              {invoice.wisePaymentUrl ? (
+                <a
+                  href={invoice.wisePaymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#C6A55A] px-5 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#090806] transition hover:bg-[#D7B96E]"
+                >
+                  Pay {money(invoice.amountDueNow, currency)} with Wise →
+                </a>
+              ) : (
+                <div className="text-xs leading-5 text-white/40">The Matter-specific Wise payment link is being prepared. Scheduling remains locked until verified settlement.</div>
+              )}
+            </div>
+          )}
+
+          {invoice.paymentConfirmed && (
+            <div className="mt-5 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-4 text-sm text-emerald-300/85">Payment verified. Scheduling is eligible to proceed through the canonical Matter workflow.</div>
+          )}
+        </section>
+      </div>
+
+      <p className="mt-5 text-[11px] leading-5 text-white/30">
+        Discounts do not mark a Matter paid. Only verified Wise settlement can satisfy the payment gate and unlock scheduling.
+      </p>
     </div>
   );
 }
