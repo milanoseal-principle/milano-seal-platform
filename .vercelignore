@@ -2,6 +2,3 @@
 .env.local
 .env.development
 .env.production
-app/opengraph-image.tsx
-app/twitter-image.tsx
-components/dashboard/milano-shell.tsx
