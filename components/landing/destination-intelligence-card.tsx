@@ -177,7 +177,7 @@ export function DestinationIntelligenceCard({
     variant === "countryDirectory"
       ? `/countries/${data.slug}`
       : variant === "globePreview"
-        ? "/map"
+        ? `/map?country=${encodeURIComponent(data.slug)}`
         : `/countries/${data.slug}`;
   const secondaryLabel =
     variant === "globePreview"
