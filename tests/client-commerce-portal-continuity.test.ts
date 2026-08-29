@@ -9,6 +9,7 @@ const resetPage = readFileSync("app/reset-password/page.tsx", "utf8");
 const invoicePage = readFileSync("app/portal/invoice/page.tsx", "utf8");
 const invoiceRoute = readFileSync("app/api/portal/me/invoice/route.ts", "utf8");
 const discountRoute = readFileSync("app/api/portal/me/discount/route.ts", "utf8");
+const discountService = readFileSync("src/features/discounts/discountService.ts", "utf8");
 const portalFrame = readFileSync("components/portal/portal-frame.tsx", "utf8");
 const portalLedger = readFileSync("components/portal/PortalOrderLedger.tsx", "utf8");
 const globe = readFileSync("components/globe/GlobalRouteGlobe.tsx", "utf8");
@@ -39,14 +40,21 @@ test("portal home and invoice share one client-safe itemized pricing projection"
   assert.match(invoiceRoute, /buildClientInvoiceSnapshot/);
 });
 
-test("client discount is applied before Wise payment and never fabricates paid state", () => {
+test("client invoice routes discount mutations through the one canonical discount service", () => {
   assert.match(invoicePage, /Discount \/ Courtesy Code/);
   assert.match(invoicePage, /\/api\/portal\/me\/discount/);
-  assert.match(discountRoute, /matter_total/);
-  assert.match(discountRoute, /buildPaymentLink/);
-  assert.match(discountRoute, /Discounts cannot be changed after payment has been verified/);
-  assert.doesNotMatch(discountRoute, /payment_status:\s*["']paid["']/);
-  assert.doesNotMatch(discountRoute, /payment_confirmed:\s*true/);
+  assert.match(discountRoute, /applyDiscountToMatter/);
+  assert.doesNotMatch(discountRoute, /\.from\("discount_codes"\)/);
+  assert.doesNotMatch(discountRoute, /\.update\(\{[^}]*discount_amount/s);
+
+  assert.match(discountService, /discount\.applies_to === "matter_total"/);
+  assert.match(discountService, /discountBase/);
+  assert.match(discountService, /assertNoPaymentInMotion/);
+  assert.match(discountService, /invalidateAwaitingWiseInstructions/);
+  assert.match(discountService, /buildPaymentLink/);
+  assert.match(discountService, /redemptionStatus: "not_redeemed"/);
+  assert.doesNotMatch(discountService, /payment_status:\s*["']paid["']/);
+  assert.doesNotMatch(discountService, /payment_confirmed:\s*true/);
 });
 
 test("homepage country selection survives into the full Atlas and forces country focus", () => {
