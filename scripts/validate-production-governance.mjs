@@ -290,9 +290,10 @@ check(
     "No payment is due for this Matter",
     "Complimentary authorization remains separate from Wise paid-state authority",
     "Discounts do not mark a Matter paid",
-    "Only verified Wise settlement can satisfy the payment gate and unlock scheduling",
     "Wise reference:",
-  ]) && !/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portalInvoice),
+  ]) &&
+    /only verified Wise settlement can satisfy the payment gate and unlock scheduling/i.test(portalInvoice) &&
+    !/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portalInvoice),
 );
 
 check(
