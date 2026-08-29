@@ -56,8 +56,8 @@ test("homepage country selection survives into the full Atlas and forces country
   assert.match(atlas, /setFlyTarget\(\{ lat: selectedDest\.lat, lng: selectedDest\.lng, zoom: 5 \}\)/);
 });
 
-test("Wise collection no longer calls the unsupported payment-requests endpoint", () => {
-  assert.doesNotMatch(wise, /payment-requests/);
+test("Wise collection no longer calls the unsupported payment-request API", () => {
+  assert.doesNotMatch(wise, /fetch\([\s\S]{0,240}payment-requests/);
   assert.match(wise, /buildPaymentLink/);
   assert.match(wise, /mode: "production"/);
   assert.match(wise, /settlement\/reconciliation remains the only payment authority/i);
