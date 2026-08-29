@@ -57,7 +57,8 @@ const migration = read("supabase/migrations/043_complimentary_matter_authorizati
 for (const token of ["complimentary_authorizations", "final_amount_due = 0", "discount_amount = original_total", "uniq_active_complimentary_authorization_per_matter", "enable row level security", "service_role_manages_complimentary_authorizations", "check_payment_gate()", "verified_revenue"]) if (!migration.includes(token)) failures.push(`Migration/RLS missing ${token}`);
 
 const portal = read("app/portal/invoice/page.tsx");
-for (const token of ["Complimentary Service Authorization", "No payment is due for this Matter", "not a paid status or Wise Payment Confirmed status"]) if (!portal.includes(token)) failures.push(`Client-safe portal state missing ${token}`);
+for (const token of ["Complimentary Service Authorization", "No payment is due for this Matter", "Complimentary authorization remains separate from Wise paid-state authority"]) if (!portal.includes(token)) failures.push(`Client-safe portal state missing ${token}`);
+if (/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portal)) failures.push("Client-safe complimentary portal state must not fabricate paid status.");
 
 const founderReport = read("lib/revenue/complimentaryReporting.ts") + read("app/api/complimentary/report/route.ts");
 for (const token of ["non_revenue_complimentary", "verifiedRevenue: 0", "totalValueComped", "activeComplimentaryMatters"]) if (!founderReport.includes(token)) failures.push(`Founder report/revenue classification missing ${token}`);

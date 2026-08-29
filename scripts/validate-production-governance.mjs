@@ -21,9 +21,6 @@ const discountMigration = source("supabase/migrations/045_canonical_discount_sys
 const matterStateMigration = source("supabase/migrations/046_canonical_matter_state_machine.sql");
 const wiseDiscountMigration = source("supabase/migrations/047_discount_wise_deal_wiring.sql");
 const reconciliationMigration = source("supabase/migrations/048_production_discount_schema_reconciliation.sql");
-// Intake logic is split across the route wrapper and its canonical core module.
-// Per the Validator Doctrine, inspect both so extraction into core.ts does not
-// produce false failures (the assertions must prove the same production invariant).
 const intakeRoute = `${source("app/api/intake/route.ts")}\n${source(
   "app/api/intake/core.ts",
 )}`;
@@ -289,10 +286,13 @@ check(
 check(
   "portal invoice preserves verified Wise authority and complimentary separation",
   containsAll(portalInvoice, [
-    "server-authoritative Matter amount",
-    "Continue to Secure Wise Payment",
-    "not a paid status or Wise Payment Confirmed status",
-  ]),
+    "Complimentary Service Authorization",
+    "No payment is due for this Matter",
+    "Complimentary authorization remains separate from Wise paid-state authority",
+    "Discounts do not mark a Matter paid",
+    "Only verified Wise settlement can satisfy the payment gate and unlock scheduling",
+    "Wise reference:",
+  ]) && !/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portalInvoice),
 );
 
 check(
