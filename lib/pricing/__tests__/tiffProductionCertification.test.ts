@@ -2,28 +2,20 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calculatePrice } from "../../pricing";
 import { generateInvoice } from "../../invoice";
-import {
-  eligibleSubtotalFromTotal,
-  effectiveTotalAfterCourtesy,
-  nonDiscountableTotalFromBreakdown,
-} from "../courtesyEligibility";
+import { calculateCourtesyAdjustment } from "../../portalInvoice";
 
-test("Tiffany Italy RON + apostille + international courier certification prices to $387.50 Wise retainer", () => {
+test("Tiffany Gate 37 persisted Italy Matter prices to $1,375 before test discount", () => {
   const quote = calculatePrice({
     tier: "priority",
     document_count: 1,
     signer_count: 1,
-    notarized_signature_count: 1,
+    notarized_signature_count: 0,
     apostille_count: 1,
     urgency: "standard",
     shipping: "international",
   });
 
   assert.equal(quote.base, 975);
-  assert.equal(
-    quote.breakdown.find((item) => item.key === "notarized_signatures")?.amount,
-    25,
-  );
   assert.equal(
     quote.breakdown.find((item) => item.key === "apostille")?.amount,
     250,
@@ -32,20 +24,31 @@ test("Tiffany Italy RON + apostille + international courier certification prices
     quote.breakdown.find((item) => item.key === "shipping")?.amount,
     150,
   );
-  assert.equal(quote.total, 1400);
+  assert.equal(quote.total, 1375);
+});
 
-  const nonDiscountable = nonDiscountableTotalFromBreakdown(quote.breakdown);
-  const eligibleSubtotal = eligibleSubtotalFromTotal(quote.total, nonDiscountable);
-  assert.equal(nonDiscountable, 150);
-  assert.equal(eligibleSubtotal, 1250);
+test("TIFFTEST99 discounts 99% of the full $1,375 Matter and leaves a $6.88 Wise retainer", () => {
+  const adjustment = calculateCourtesyAdjustment({
+    originalTotal: 1375,
+    eligibleSubtotal: 1225,
+    appliesTo: "matter_total",
+    discountType: "percentage",
+    discountValue: 99,
+  });
 
-  const tiffTest50Discount = Math.round(eligibleSubtotal * 0.5 * 100) / 100;
-  assert.equal(tiffTest50Discount, 625);
+  assert.equal(adjustment.base, 1375);
+  assert.equal(adjustment.discountAmount, 1361.25);
+  assert.equal(adjustment.finalTotal, 13.75);
+  assert.equal(adjustment.retainer, 6.88);
+  assert.equal(adjustment.balance, 6.87);
 
-  const finalTotal = effectiveTotalAfterCourtesy(quote.total, tiffTest50Discount);
-  assert.equal(finalTotal, 775);
+  const invoice = generateInvoice(adjustment.finalTotal);
+  assert.equal(invoice.retainer, 6.88);
+  assert.equal(invoice.balance, 6.87);
+});
 
-  const invoice = generateInvoice(finalTotal);
-  assert.equal(invoice.retainer, 387.5);
-  assert.equal(invoice.balance, 387.5);
+test("99% test discount changes money math only; invoice remains awaiting payment", () => {
+  const invoice = generateInvoice(13.75);
+  assert.equal(invoice.status, "awaiting_payment");
+  assert.equal(invoice.payment_options.primary, "wise");
 });
