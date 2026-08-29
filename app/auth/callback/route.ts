@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const roleHint = searchParams.get("role"); // "client" | "operator" — UI hint only
   const nextOverride = searchParams.get("next");
+  const flow = searchParams.get("flow");
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=auth_failed`);
@@ -21,8 +22,17 @@ export async function GET(request: Request) {
   }
 
   const user = sessionData.user;
-  const actualRole =
-    ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
+  const actualRole = ((user.app_metadata?.role as string | undefined) ?? "").trim();
+
+  // Email verification and interactive sign-in are intentionally separate.
+  // A newly verified client must land on the login gateway on every device,
+  // enter the password they just created, and then enter /portal through the
+  // normal role-aware login route. This prevents desktop/mobile divergence and
+  // avoids leaving a confirmation-created session parked on the order page.
+  if (flow === "signup") {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/login?confirmed=1&next=/portal`);
+  }
 
   // Virtual assistants → VA portal
   if ([
@@ -35,9 +45,7 @@ export async function GET(request: Request) {
   }
 
   // Alliance roles → alliance portal
-  if ([
-    "alliance", "alliance_partner", "alliance_member",
-  ].includes(actualRole)) {
+  if (["alliance", "alliance_partner", "alliance_member"].includes(actualRole)) {
     return NextResponse.redirect(`${origin}/alliance/dashboard`);
   }
 

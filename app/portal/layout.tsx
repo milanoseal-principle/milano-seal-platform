@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { PortalFrame } from "@/components/portal/portal-frame";
+import { PortalClientErrorBoundary } from "@/components/portal/portal-client-error-boundary";
 import { createClient } from "@/lib/supabase/server";
 import {
   getHomeRouteForRole,
@@ -29,5 +30,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     redirect(getHomeRouteForRole(rawRole));
   }
 
-  return <PortalFrame>{children}</PortalFrame>;
+  return (
+    <PortalClientErrorBoundary>
+      <PortalFrame>{children}</PortalFrame>
+    </PortalClientErrorBoundary>
+  );
 }

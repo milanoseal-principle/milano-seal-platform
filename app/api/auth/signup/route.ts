@@ -36,7 +36,9 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.auth.signUp({
       email: check.email,
       password: String(body.password),
-      options: { emailRedirectTo: `${origin}/login?next=/portal` },
+      options: {
+        emailRedirectTo: `${origin}/auth/callback?flow=signup&next=/portal`,
+      },
     });
 
     if (error) {
