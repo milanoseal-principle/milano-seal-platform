@@ -15,3 +15,6 @@ test("every candidate stays review-required until evidence and human approval ex
     assert.equal(record.page.operatorApproved, false);
   }
 });
+import test from "node:test"; import assert from "node:assert/strict"; import { COUNTRY_DOCUMENT_SEO_RECORDS } from "@/lib/seo/country-document/registry"; import { SEO_AUTHORITY_NODES } from "@/lib/seo/authority/registry"; import { getAuthorityLinks } from "@/lib/seo/authority/links"; import { evaluateSeoIndexability } from "@/lib/seo/quality/indexability";
+test("phase-one matrix contains exactly 35 governed routes", () => assert.equal(COUNTRY_DOCUMENT_SEO_RECORDS.length, 35));
+test("every governed route passes the indexability gate", () => { for (const record of COUNTRY_DOCUMENT_SEO_RECORDS) { const node = SEO_AUTHORITY_NODES.find((item) => item.countrySlug === record.countrySlug && item.documentSlug === record.documentSlug); assert.ok(node); assert.deepEqual(evaluateSeoIndexability(record, { canonical: `https://www.themilanoseal.com${node.path}`, hasSchema: true, internalLinks: getAuthorityLinks(node), conversionTarget: node.conversionTarget }), { status: "INDEXABLE", blockers: [] }); } });

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { MilanoExecutionCopilot } from "@/components/assistant/MilanoExecutionCopilot";
 import { NavigationLoader } from "@/components/NavigationLoader";
 import { CinematicPageShell } from "@/components/motion/CinematicPageShell";
+import { SeoAttributionCapture } from "@/components/attribution/SeoAttributionCapture";
 import "./globals.css";
 import "./globe-core-fixes.css";
 
@@ -129,6 +130,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${fontVariables} antialiased`}>
+        <SeoAttributionCapture />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

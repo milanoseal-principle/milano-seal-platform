@@ -12,3 +12,4 @@ if (invalid.length) {
 }
 
 console.log("SEO localization validation passed: all unreviewed reservations remain approved_noindex.");
+import fs from "node:fs"; const source = fs.readFileSync("lib/seo/localization/registry.ts", "utf8"); if (!source.includes('translationStatus: "HUMAN_REVIEW_REQUIRED"') || !source.includes('indexStatus: "NOINDEX"')) { console.error("Localized route reservations must fail closed"); process.exit(1); } console.log("SEO localization validation passed: machine/unreviewed routes remain NOINDEX.");

@@ -6,6 +6,15 @@ import type {
 import type { TopicRecord } from "@/lib/topical-authority/types";
 
 export interface CountryDocumentEditorialContent {
+import type { SeoAudience, SeoIndexStatus, SeoPillar } from "../authority/types";
+export interface CountryDocumentSeoRecord {
+  countrySlug: string;
+  documentSlug: string;
+  documentName: string;
+  primaryQuery: string;
+  secondaryQueries: string[];
+  audience: SeoAudience[];
+  pillar: SeoPillar;
   title: string;
   description: string;
   h1: string;
@@ -34,4 +43,8 @@ export interface CountryDocumentSeoRecord {
   content: CountryDocumentEditorialContent;
   relatedDocumentSlugs: string[];
   sourceCandidates: string[];
+  relatedDocumentSlugs: string[];
+  relatedCountrySlugs: string[];
+  evidenceIds: string[];
+  indexStatus: SeoIndexStatus;
 }

@@ -1,0 +1,10 @@
+import { SEO_AUTHORITY_NODES } from "./registry";
+import type { SeoAuthorityNode, SeoPillar } from "./types";
+export const getSeoNode = (path: string) => SEO_AUTHORITY_NODES.find((node) => node.path === path);
+export const getSeoNodesByCountry = (slug: string) => SEO_AUTHORITY_NODES.filter((node) => node.countrySlug === slug);
+export const getSeoNodesByDocument = (slug: string) => SEO_AUTHORITY_NODES.filter((node) => node.documentSlug === slug);
+export const getSeoNodesByPillar = (pillar: SeoPillar) => SEO_AUTHORITY_NODES.filter((node) => node.pillar === pillar);
+export const getRelatedSeoNodes = (node: SeoAuthorityNode) => SEO_AUTHORITY_NODES.filter((candidate) => candidate.id !== node.id && (candidate.countrySlug === node.countrySlug || candidate.documentSlug === node.documentSlug)).slice(0, 8);
+export const getAuthorityParents = (node: SeoAuthorityNode) => node.canonicalParent ? [node.canonicalParent] : [];
+export const getAuthorityChildren = (node: SeoAuthorityNode) => SEO_AUTHORITY_NODES.filter((candidate) => candidate.canonicalParent === node.path);
+export const getConversionTarget = (node: SeoAuthorityNode) => node.conversionTarget;

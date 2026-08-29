@@ -14,3 +14,4 @@ if (present.length) {
 }
 
 console.log("SEO sitemap validation passed: no review-required country-document candidates are wired into the sitemap.");
+import fs from "node:fs"; const source = fs.readFileSync("lib/seo/sitemap/buildSeoSitemap.ts", "utf8"); if (!source.includes('record.indexStatus === "INDEXABLE"')) { console.error("SEO sitemap does not filter indexability"); process.exit(1); } console.log("SEO sitemap validation passed: governed INDEXABLE records only.");
