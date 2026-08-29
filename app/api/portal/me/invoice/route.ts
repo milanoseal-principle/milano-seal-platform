@@ -59,8 +59,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invoice unavailable" }, { status: 500 });
   }
 
+  const invoiceRow = data as unknown as Record<string, unknown>;
+
   return NextResponse.json({
     success: true,
-    invoice: buildClientInvoiceSnapshot(data as Record<string, unknown>),
+    invoice: buildClientInvoiceSnapshot(invoiceRow),
   });
 }
