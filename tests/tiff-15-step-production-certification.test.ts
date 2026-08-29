@@ -7,6 +7,7 @@ import { REQUIRED_CONTROLS, RUNBOOK_PATH, validateRunbook } from "../scripts/val
 const runbook = readFileSync(RUNBOOK_PATH, "utf8");
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 const discountRoute = readFileSync("app/api/portal/me/discount/route.ts", "utf8");
+const discountService = readFileSync("src/features/discounts/discountService.ts", "utf8");
 const invoicePage = readFileSync("app/portal/invoice/page.tsx", "utf8");
 const portalLedger = readFileSync("components/portal/PortalOrderLedger.tsx", "utf8");
 
@@ -25,12 +26,19 @@ test("TIFFTEST99 is entered on the client invoice and recalculates before Wise p
   assert.match(portalLedger, /Matter Order Ledger/);
 });
 
-test("discount endpoint is fail-closed after payment and never grants paid status", () => {
-  assert.match(discountRoute, /Discounts cannot be changed after payment has been verified/);
-  assert.match(discountRoute, /payment_confirmed/);
+test("discount mutation is fail-closed after Wise payment starts and never grants paid status", () => {
+  assert.match(discountRoute, /applyDiscountToMatter/);
+  assert.match(discountService, /assertNoPaymentInMotion/);
+  assert.match(discountService, /Discount cannot change while a Wise payment is pending or confirmed/);
+  assert.match(discountService, /Discount cannot be applied after payment has started/);
+  assert.match(discountService, /payment_status:\s*"unpaid"/);
+  assert.match(discountService, /payment_confirmed:\s*false/);
   assert.doesNotMatch(discountRoute, /payment_confirmed:\s*true/);
   assert.doesNotMatch(discountRoute, /payment_status:\s*["']paid["']/);
-  assert.match(discountRoute, /buildPaymentLink/);
+  assert.doesNotMatch(discountService, /payment_confirmed:\s*true/);
+  assert.doesNotMatch(discountService, /payment_status:\s*["']paid["']/);
+  assert.match(discountService, /buildPaymentLink/);
+  assert.match(discountService, /redeemDiscountAfterWiseReconciliation/);
 });
 
 test("certification locks one Matter, payment gate, password recovery, and governed closeout", () => {
