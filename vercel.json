@@ -4,6 +4,10 @@
   "buildCommand": "node scripts/run-vercel-merge-gate.mjs && next build",
   "crons": [
     {
+      "path": "/api/cron/notification-reconcile",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/sla-watch",
       "schedule": "0 * * * *"
     },
