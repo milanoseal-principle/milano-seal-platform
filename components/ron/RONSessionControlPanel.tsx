@@ -1,22 +1,22 @@
 "use client";
-import { useState } from 'react';
 
+import { useState } from 'react';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 
-interface GateCondition {
-  met: boolean;
-  reason?: string;
-}
+interface GateCondition { met: boolean; reason?: string }
 
 interface Props {
-  sessionId: string;
+  sessionId?: string | null;
   matterId: string;
-  currentStatus: MilanoRONStatus;
+  currentStatus?: MilanoRONStatus | null;
+  documentIds?: string[];
   gates: {
     paymentConfirmed: GateCondition;
     sessionExists: GateCondition;
     sessionNotExpired: GateCondition;
     signerComplete: GateCondition;
+    ronTruthComplete: GateCondition;
+    documentReady: GateCondition;
     sessionCompleted: GateCondition;
   };
   onAction?: (action: string) => void;
@@ -36,10 +36,10 @@ function ActionButton({ label, disabled, disabledReason, onClick, variant = 'def
     primary: 'bg-amber-900/40 hover:bg-amber-900/60 text-amber-400 border-amber-600/40',
     danger: 'bg-red-950/40 hover:bg-red-950/60 text-red-400 border-red-600/40',
   };
-
   return (
     <div className="relative group">
       <button
+        type="button"
         onClick={onClick}
         disabled={disabled}
         className={`text-xs px-3 py-1.5 rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]}`}
@@ -57,41 +57,35 @@ function ActionButton({ label, disabled, disabledReason, onClick, variant = 'def
   );
 }
 
-export function RONSessionControlPanel({
-  sessionId,
-  gates,
-  currentStatus,
-  onAction,
-}: Props) {
+export function RONSessionControlPanel({ sessionId, matterId, gates, currentStatus, documentIds = [], onAction }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const canCreateSession =
-    gates.paymentConfirmed.met && gates.signerComplete.met;
-
-  const canReleaseLink =
+    !gates.sessionExists.met &&
     gates.paymentConfirmed.met &&
-    gates.sessionExists.met &&
-    gates.sessionNotExpired.met;
+    gates.signerComplete.met &&
+    gates.ronTruthComplete.met &&
+    gates.documentReady.met;
+  const canReschedule = gates.sessionExists.met && gates.sessionNotExpired.met;
+  const canExpire = gates.sessionExists.met && currentStatus !== 'RON_EXPIRED';
+  const canRetrieveDocs = gates.sessionCompleted.met && gates.sessionExists.met;
+  const canUploadPackage = gates.sessionExists.met && gates.paymentConfirmed.met && documentIds.length > 0;
 
-  const canReschedule =
-    gates.sessionExists.met && gates.sessionNotExpired.met;
-
-  const canExpire =
-    gates.sessionExists.met && currentStatus !== 'RON_EXPIRED';
-
-  const canRetrieveDocs =
-    gates.sessionCompleted.met && gates.sessionExists.met;
-
-  async function handleAction(action: string, endpoint: string, method = 'POST') {
+  async function handleAction(action: string, endpoint: string, method = 'POST', body?: Record<string, unknown>) {
     setLoading(action);
     try {
-      const res = await fetch(endpoint, { method });
+      const res = await fetch(endpoint, {
+        method,
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         alert(`Error: ${data.error ?? 'Unknown error'}`);
         return;
       }
       onAction?.(action);
+      if (!onAction) window.location.reload();
     } catch {
       alert('Request failed');
     } finally {
@@ -99,62 +93,100 @@ export function RONSessionControlPanel({
     }
   }
 
-  const base = `/api/dashboard/ron/sessions/${sessionId}`;
+  async function uploadPackage() {
+    if (!sessionId) return;
+    setLoading('upload-package');
+    try {
+      for (const documentId of documentIds) {
+        const res = await fetch(`/api/dashboard/ron/sessions/${sessionId}/documents`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ document_id: documentId }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(`Error: ${data.error ?? 'Document upload failed'}`);
+          return;
+        }
+      }
+      onAction?.('upload-package');
+      if (!onAction) window.location.reload();
+    } catch {
+      alert('Request failed');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const base = sessionId ? `/api/dashboard/ron/sessions/${sessionId}` : null;
+  const createReason = !gates.paymentConfirmed.met
+    ? gates.paymentConfirmed.reason ?? 'Verified payment required'
+    : !gates.ronTruthComplete.met
+      ? gates.ronTruthComplete.reason ?? 'RON execution truth incomplete'
+      : !gates.signerComplete.met
+        ? gates.signerComplete.reason ?? 'Signer info incomplete'
+        : !gates.documentReady.met
+          ? gates.documentReady.reason ?? 'Matter document required'
+          : gates.sessionExists.met
+            ? 'An active RON session already exists'
+            : undefined;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-zinc-300 mb-3">Operator Actions</h3>
+      <h3 className="text-sm font-semibold text-zinc-300 mb-1">BlueNotary Operator Actions</h3>
+      <p className="mb-3 text-[11px] text-zinc-500">Same Matter · verified-payment gated · every provider action audited.</p>
       <div className="flex flex-wrap gap-2">
-        <ActionButton
-          label={loading === 'retrieve-docs' ? 'Retrieving...' : 'Retrieve Signed Docs'}
-          disabled={!canRetrieveDocs || loading !== null}
-          disabledReason={!canRetrieveDocs ? 'Session must be completed' : undefined}
-          variant="primary"
-          onClick={() => handleAction('retrieve-docs', `${base}/signed-documents`)}
-        />
-        <ActionButton
-          label={loading === 'reschedule' ? 'Processing...' : 'Reschedule'}
-          disabled={!canReschedule || loading !== null}
-          disabledReason={
-            !gates.sessionExists.met
-              ? 'No active session'
-              : !gates.sessionNotExpired.met
-              ? 'Session has expired'
-              : undefined
-          }
-          onClick={() => {
-            const timing = prompt('Enter new session timing (ISO 8601):');
-            const reason = prompt('Enter reason for rescheduling:');
-            if (timing && reason) {
-              handleAction('reschedule', `${base}/reschedule`, 'PUT');
-            }
-          }}
-        />
-        <ActionButton
-          label={loading === 'expire' ? 'Expiring...' : 'Expire Session'}
-          disabled={!canExpire || loading !== null}
-          disabledReason={!canExpire ? 'Cannot expire this session' : undefined}
-          variant="danger"
-          onClick={() => {
-            const reason = prompt('Enter reason for expiring this session:');
-            if (reason) {
-              handleAction('expire', `${base}/expire`, 'PUT');
-            }
-          }}
-        />
-        <ActionButton
-          label={loading === 'create' ? 'Creating...' : 'Create RON Session'}
-          disabled={!canCreateSession || loading !== null}
-          disabledReason={
-            !gates.paymentConfirmed.met
-              ? 'Payment not confirmed'
-              : !gates.signerComplete.met
-              ? 'Signer info incomplete'
-              : undefined
-          }
-          variant="primary"
-          onClick={() => handleAction('create', '/api/dashboard/ron/sessions')}
-        />
+        {!gates.sessionExists.met && (
+          <ActionButton
+            label={loading === 'create' ? 'Creating...' : 'Create BlueNotary RON Session'}
+            disabled={!canCreateSession || loading !== null}
+            disabledReason={createReason}
+            variant="primary"
+            onClick={() => handleAction('create', '/api/dashboard/ron/sessions', 'POST', { matter_id: matterId })}
+          />
+        )}
+        {gates.sessionExists.met && (
+          <ActionButton
+            label={loading === 'upload-package' ? 'Uploading...' : 'Upload Matter Package'}
+            disabled={!canUploadPackage || loading !== null}
+            disabledReason={!gates.paymentConfirmed.met ? 'Verified payment required' : documentIds.length === 0 ? 'No pending Matter documents' : undefined}
+            variant="primary"
+            onClick={uploadPackage}
+          />
+        )}
+        {base && (
+          <ActionButton
+            label={loading === 'retrieve-docs' ? 'Retrieving...' : 'Retrieve Signed Docs'}
+            disabled={!canRetrieveDocs || loading !== null}
+            disabledReason={!canRetrieveDocs ? 'Session must be completed' : undefined}
+            variant="primary"
+            onClick={() => handleAction('retrieve-docs', `${base}/signed-documents`)}
+          />
+        )}
+        {base && (
+          <ActionButton
+            label={loading === 'reschedule' ? 'Processing...' : 'Reschedule'}
+            disabled={!canReschedule || loading !== null}
+            disabledReason={!gates.sessionExists.met ? 'No active session' : !gates.sessionNotExpired.met ? 'Session has expired' : undefined}
+            onClick={() => {
+              const timing = prompt('Enter new session timing (ISO 8601):');
+              const reason = prompt('Enter reason for rescheduling:');
+              if (timing && reason) handleAction('reschedule', `${base}/reschedule`, 'PUT', { session_timing: timing, reason });
+            }}
+          />
+        )}
+        {base && (
+          <ActionButton
+            label={loading === 'expire' ? 'Expiring...' : 'Expire Session'}
+            disabled={!canExpire || loading !== null}
+            disabledReason={!canExpire ? 'Cannot expire this session' : undefined}
+            variant="danger"
+            onClick={() => {
+              const reason = prompt('Enter reason for expiring this session:');
+              if (reason) handleAction('expire', `${base}/expire`, 'PUT', { reason });
+            }}
+          />
+        )}
       </div>
     </div>
   );
