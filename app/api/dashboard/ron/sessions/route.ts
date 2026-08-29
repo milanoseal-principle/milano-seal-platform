@@ -6,6 +6,16 @@ import { assertCanCreateRONSession } from '@/lib/bluenotary/guards';
 import { buildSessionPayload, buildNotarizationId } from '@/lib/bluenotary/session';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 
+type SignerInput = {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  state?: string;
+  authentication_type?: string;
+};
+
 // POST /api/dashboard/ron/sessions — create a new RON session
 export async function POST(request: NextRequest) {
   try {
@@ -14,15 +24,7 @@ export async function POST(request: NextRequest) {
     const { matter_id, session_timing, signers } = body as {
       matter_id: string;
       session_timing?: string;
-      signers?: Array<{
-        first_name: string;
-        middle_name?: string;
-        last_name: string;
-        email: string;
-        phone?: string;
-        state?: string;
-        authentication_type?: string;
-      }>;
+      signers?: SignerInput[];
     };
 
     if (!matter_id) return NextResponse.json({ error: 'matter_id is required' }, { status: 400 });
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     const executionTruth = (matter.execution_truth ?? {}) as Record<string, unknown>;
     const signerState = String(executionTruth.signer_location ?? matter.origin_state ?? '').trim();
 
-    const signerList = signers ?? [
+    const signerList: SignerInput[] = signers ?? [
       {
         first_name: (matter.client_name ?? '').split(' ')[0] ?? '',
         last_name: (matter.client_name ?? '').split(' ').slice(1).join(' ') || 'Unknown',
