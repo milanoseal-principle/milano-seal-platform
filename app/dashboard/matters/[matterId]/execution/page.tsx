@@ -4,6 +4,7 @@ import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
 import { ExecutionReadiness } from "@/components/dashboard/execution/ExecutionReadiness";
 import { DynamicSessionPlaybook } from "@/components/dashboard/execution/DynamicSessionPlaybook";
+import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
 
 export const metadata = { title: "Execution Readiness — The Milano Seal™", robots: { index: false } };
 
@@ -24,6 +25,7 @@ export default async function MatterExecutionPage({
       />
       <ExecutionReadiness />
       <DynamicSessionPlaybook matterId={matterId} />
+      <MatterRONReadiness matterId={matterId} />
     </div>
   );
 }

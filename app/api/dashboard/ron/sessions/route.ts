@@ -6,6 +6,16 @@ import { assertCanCreateRONSession } from '@/lib/bluenotary/guards';
 import { buildSessionPayload, buildNotarizationId } from '@/lib/bluenotary/session';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 
+type SignerInput = {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  state?: string;
+  authentication_type?: string;
+};
+
 // POST /api/dashboard/ron/sessions — create a new RON session
 export async function POST(request: NextRequest) {
   try {
@@ -14,44 +24,32 @@ export async function POST(request: NextRequest) {
     const { matter_id, session_timing, signers } = body as {
       matter_id: string;
       session_timing?: string;
-      signers?: Array<{
-        first_name: string;
-        middle_name?: string;
-        last_name: string;
-        email: string;
-        phone?: string;
-        state?: string;
-        authentication_type?: string;
-      }>;
+      signers?: SignerInput[];
     };
 
-    if (!matter_id) {
-      return NextResponse.json({ error: 'matter_id is required' }, { status: 400 });
-    }
+    if (!matter_id) return NextResponse.json({ error: 'matter_id is required' }, { status: 400 });
 
     const supabase = createAdminClient();
-
-    // Payment gate + active session check
     await assertCanCreateRONSession(supabase, matter_id, userId);
 
-    // Load matter for payload building
     const { data: matter, error: matterErr } = await supabase
       .from('deals')
-      .select('id, client_name, email, phone, document_type, destination_country')
+      .select('id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth')
       .eq('id', matter_id)
       .single();
 
-    if (matterErr || !matter) {
-      return NextResponse.json({ error: 'Matter not found' }, { status: 404 });
-    }
+    if (matterErr || !matter) return NextResponse.json({ error: 'Matter not found' }, { status: 404 });
 
-    // Build signer list — use provided signers or derive from matter
-    const signerList = signers ?? [
+    const executionTruth = (matter.execution_truth ?? {}) as Record<string, unknown>;
+    const signerState = String(executionTruth.signer_location ?? matter.origin_state ?? '').trim();
+
+    const signerList: SignerInput[] = signers ?? [
       {
         first_name: (matter.client_name ?? '').split(' ')[0] ?? '',
         last_name: (matter.client_name ?? '').split(' ').slice(1).join(' ') || 'Unknown',
         email: matter.email ?? '',
         phone: matter.phone ?? undefined,
+        state: signerState || undefined,
         authentication_type: 'kba',
       },
     ];
@@ -66,10 +64,9 @@ export async function POST(request: NextRequest) {
       notarization_id: notarizationId,
     };
 
-    // Call BlueNotary
+    // External BlueNotary session creation occurs only after all guards pass.
     const bnSession = await createBlueNotarySession(bnPayload);
 
-    // Store ron_session
     const { data: ronSession, error: sessionInsertErr } = await supabase
       .from('ron_sessions')
       .insert({
@@ -84,7 +81,7 @@ export async function POST(request: NextRequest) {
         milano_ron_status: 'RON_SESSION_CREATED',
         payment_gate_status: 'UNLOCKED',
         created_by: userId,
-        raw_session: {}, // Never store raw BN response containing signing URLs
+        raw_session: {},
       })
       .select('id, matter_id, notarization_id, bn_session_id, milano_ron_status, created_at')
       .single();
@@ -93,22 +90,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to store RON session' }, { status: 500 });
     }
 
-    // Store ron_signers
     const signerInserts = signerList.map((s, i) => ({
       ron_session_id: ronSession.id,
       matter_id,
       signer_index: i,
       first_name: s.first_name,
+      middle_name: s.middle_name ?? null,
       last_name: s.last_name,
       email: s.email,
       phone: s.phone ?? null,
+      state: s.state ?? signerState ?? null,
       authentication_type: s.authentication_type ?? 'kba',
-      // signing_url_encrypted: stored separately when BN provides it
     }));
-
     await supabase.from('ron_signers').insert(signerInserts);
 
-    // Audit event
+    // Seed the existing Matter package into the canonical RON document queue.
+    // This does NOT send bytes to BlueNotary; operator upload remains a separate audited action.
+    const { data: matterFiles } = await supabase
+      .from('files')
+      .select('id, name, storage_path, mime_type, category')
+      .eq('deal_id', matter_id)
+      .eq('is_internal', false)
+      .order('created_at', { ascending: true });
+
+    if (matterFiles?.length) {
+      await supabase.from('ron_documents').insert(
+        matterFiles.map((file) => ({
+          ron_session_id: ronSession.id,
+          matter_id,
+          document_id: file.id,
+          document_name: file.name,
+          document_type: matter.document_type,
+          storage_bucket: 'deal-documents',
+          storage_path: file.storage_path,
+          document_status: 'PENDING',
+        }))
+      );
+    }
+
     await supabase.from('ron_audit_events').insert({
       matter_id,
       ron_session_id: ronSession.id,
@@ -117,10 +136,14 @@ export async function POST(request: NextRequest) {
       actor_id: userId,
       actor_role: role,
       source: 'milano_seal',
-      metadata: { notarization_id: notarizationId },
+      metadata: {
+        notarization_id: notarizationId,
+        signer_state: signerState || null,
+        document_count: matterFiles?.length ?? 0,
+        notarial_act: executionTruth.notarial_act ?? null,
+      },
     });
 
-    // Return sanitized response — no raw BN payload, no signing URLs
     return NextResponse.json({
       success: true,
       session: {
@@ -133,7 +156,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    if (message.includes('PAYMENT') || message.includes('SIGNER') || message.includes('ACTIVE_SESSION')) {
+    if (
+      message.includes('PAYMENT') ||
+      message.includes('SIGNER') ||
+      message.includes('ACTIVE_SESSION') ||
+      message.includes('RON_') ||
+      message.includes('NOTARIAL_ACT')
+    ) {
       return NextResponse.json({ error: message }, { status: 403 });
     }
     if (message.includes('access_denied') || message.includes('login')) {
@@ -174,10 +203,7 @@ export async function GET() {
       `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ sessions: data ?? [] });
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
