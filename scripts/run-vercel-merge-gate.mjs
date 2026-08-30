@@ -60,6 +60,7 @@ const gates = [
   ["npm", ["run", "validate:production-governance"]],
   ["npm", ["run", "validate:damiani-production-wiring"]],
   ["npm", ["run", "validate:tiff-15-step-production-certification"]],
+  ["node", ["scripts/validate-tiffany-post-test-final-audit.mjs"]],
 ];
 
 for (const [command, args] of gates) {
