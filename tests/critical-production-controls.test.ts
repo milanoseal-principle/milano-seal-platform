@@ -1,0 +1,3 @@
+import assert from "node:assert/strict"; import test from "node:test"; import { CRITICAL_PRODUCTION_SURFACES } from "@/lib/ux/critical-production-surfaces"; import { CRITICAL_QA_ACTIONS, qaAction } from "@/lib/ux/control-contract";
+test("critical production routes are unique and registered", () => assert.equal(new Set(CRITICAL_PRODUCTION_SURFACES.map((item) => item.route)).size, CRITICAL_PRODUCTION_SURFACES.length));
+test("critical QA actions map to stable interactive attributes", () => { assert.ok(CRITICAL_QA_ACTIONS.includes("wise-check-settlement")); assert.deepEqual(qaAction("tracking-open"), { "data-qa-action": "tracking-open" }); });

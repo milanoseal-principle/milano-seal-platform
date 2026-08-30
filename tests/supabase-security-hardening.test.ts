@@ -1,0 +1,3 @@
+import assert from "node:assert/strict"; import fs from "node:fs"; import test from "node:test";
+test("security migration discovers exact live signatures and preserves authenticated policy dependencies", () => { const sql = fs.readFileSync("supabase/migrations/070_security_advisor_hardening.sql", "utf8"); assert.ok(sql.includes("p.oid::regprocedure")); assert.ok(sql.includes("revoke execute on function")); assert.ok(!/revoke execute[\s\S]+from authenticated/i.test(sql)); });
+test("leaked-password protection remains an explicit operator action", () => { const doc = fs.readFileSync("docs/qa/REAL_DEVICE_ACCEPTANCE.md", "utf8"); assert.ok(doc.includes("Enable leaked-password protection")); });

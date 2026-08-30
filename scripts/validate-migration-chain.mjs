@@ -11,6 +11,11 @@ const required = [
   "050_live_intake_execution_truth_reconciliation.sql",
   "055_matter_evidence_ledger.sql",
   "056_matter_truth_snapshot_archive.sql",
+  "066_review_request_events.sql",
+  "067_search_console_sync_runs.sql",
+  "068_production_certification_runs.sql",
+  "069_seo_editorial_reviews.sql",
+  "070_security_advisor_hardening.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -109,5 +114,22 @@ for (const invariant of [
 if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(truthArchive)) {
   throw new Error("056 must never authorize snapshot access from user_metadata");
 }
+
+const reviewEvents = fs.readFileSync(path.join(dir, "066_review_request_events.sql"), "utf8");
+for (const invariant of ["review_request_events", "before update or delete", "REVIEW_REQUESTED", "REVIEW_RESOLVED", "enable row level security"]) {
+  if (!reviewEvents.includes(invariant)) throw new Error(`066 review event ledger missing invariant: ${invariant}`);
+}
+
+const searchSyncRuns = fs.readFileSync(path.join(dir, "067_search_console_sync_runs.sql"), "utf8");
+for (const invariant of ["seo_search_console_sync_runs", "fetched", "persisted", "trigger_type", "enable row level security"]) {
+  if (!searchSyncRuns.includes(invariant)) throw new Error(`067 Search Console sync ledger missing invariant: ${invariant}`);
+}
+
+const certificationRuns = fs.readFileSync(path.join(dir, "068_production_certification_runs.sql"), "utf8");
+for (const invariant of ["production_certification_runs", "production_certification_evidence", "default 'OPEN'", "default 'PENDING'", "enable row level security"]) if (!certificationRuns.includes(invariant)) throw new Error(`068 certification storage missing invariant: ${invariant}`);
+const editorialReviews = fs.readFileSync(path.join(dir, "069_seo_editorial_reviews.sql"), "utf8");
+for (const invariant of ["seo_editorial_reviews", "REVIEW_REQUIRED", "blocking_reasons", "evidence_snapshot", "enable row level security"]) if (!editorialReviews.includes(invariant)) throw new Error(`069 SEO editorial governance missing invariant: ${invariant}`);
+const securityHardening = fs.readFileSync(path.join(dir, "070_security_advisor_hardening.sql"), "utf8");
+if (!securityHardening.includes("p.oid::regprocedure") || !securityHardening.includes("set search_path = public, pg_temp")) throw new Error("070 must discover live signatures and harden search_path");
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);

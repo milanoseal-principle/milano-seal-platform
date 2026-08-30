@@ -1,0 +1,2 @@
+import { NextResponse } from "next/server"; import { requireDashboardAccess } from "@/lib/dashboardAuth"; import { getSearchConsoleHealth } from "@/lib/seo/search-console/health";
+export async function GET() { await requireDashboardAccess(); const health = await getSearchConsoleHealth(); const { serviceAccountEmailMasked: _masked, ...publicHealth } = health; return NextResponse.json(publicHealth); }

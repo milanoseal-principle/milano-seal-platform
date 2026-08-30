@@ -12,6 +12,7 @@ import {
   stateLabel,
   type OperationalMatterSourceRow,
 } from "@/lib/matter/canonicalOperationalRead";
+import { deriveAuthorityFreshness } from "@/lib/authorities/freshness";
 
 interface PageProps {
   searchParams: Promise<{
@@ -251,7 +252,7 @@ export default async function AuthorityVerifyPage({ searchParams }: PageProps) {
                   </div>
 
                   <span className="rounded border border-[#C6A55A]/15 bg-[#C6A55A]/[0.04] px-2 py-1 font-mono text-[8px] uppercase tracking-[0.13em] text-[#E4CA8C]/70">
-                    {authority.source_confidence ?? "VERIFICATION REQUIRED"}
+                    {deriveAuthorityFreshness({ sourceReference: null, verifiedAt: authority.last_verified_at, reviewDueAt: null, confidence: authority.source_confidence }).status}
                   </span>
                 </div>
 

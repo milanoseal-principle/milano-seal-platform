@@ -1,0 +1,2 @@
+import assert from "node:assert/strict"; import fs from "node:fs"; import test from "node:test";
+test("Search Console activation preserves readonly finalized data and secret isolation", () => { const client = fs.readFileSync("lib/seo/search-console/client.ts", "utf8"); const ui = fs.readFileSync("components/dashboard/SearchConsoleSyncControl.tsx", "utf8"); assert.ok(client.includes("webmasters.readonly")); assert.ok(client.includes('["date", "query", "page", "country"]')); assert.ok(!/private_key|access_token|credentialJson/.test(ui)); });
