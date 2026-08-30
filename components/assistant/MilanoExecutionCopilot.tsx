@@ -232,6 +232,7 @@ export function MilanoExecutionCopilot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [reviewRequestBusy, setReviewRequestBusy] = useState(false);
   const [portalDeal, setPortalDeal] = useState<PortalSafeDeal | null>(null);
   const [professionalSession, setProfessionalSession] = useState<ProfessionalSessionState>({ version: 1 });
   const [receivingAuthority, setReceivingAuthority] = useState("");
@@ -388,24 +389,62 @@ export function MilanoExecutionCopilot() {
     router.push(journey.intakeHref);
   }, [journey.intakeHref, router]);
 
-  const requestReview = useCallback(() => {
-    if (role === "PORTAL") {
+  const requestReview = useCallback(async () => {
+    if (reviewRequestBusy) return;
+    setReviewRequestBusy(true);
+    try {
+      const publicSessionReference = role === "PUBLIC"
+        ? `copilot-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
+        : undefined;
+      const response = await fetch("/api/review-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matter_id: role === "PORTAL" ? portalDeal?.matter_id : undefined,
+          session_reference: publicSessionReference,
+          country: role === "PORTAL" ? portalDeal?.destination_country : journey.destination?.name,
+          document_type: role === "PORTAL" ? portalDeal?.document_type : professionalSession.documentClass,
+          origin: professionalSession.origin,
+          signer_posture: professionalSession.signer,
+          question: role === "PORTAL"
+            ? "Human review requested from the secure Matter portal through Milano Execution Copilot."
+            : "Human review requested from Milano Execution Copilot before Matter creation.",
+          safe_context: {
+            pathname,
+            route_status: role === "PUBLIC" ? journey.status : undefined,
+            receiving_authority_supplied: Boolean(receivingAuthority.trim()),
+          },
+        }),
+      });
+      const body = (await response.json()) as { review?: { id?: string; client_label?: string }; error?: string };
+      if (!response.ok || !body.review?.id) throw new Error(body.error || "REVIEW_REQUEST_FAILED");
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
-          text: "Milano operator review can be requested for an active Matter, but this Copilot will not silently modify or submit your Matter. I can help you organize the issue for the execution desk using the authorized Matter context shown here.",
+          text: role === "PORTAL"
+            ? `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. You can track persisted human-review status in Portal → Milano Review.`
+            : `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. Continue secure intake to create the Matter; this request remains a separate governed review record until an authorized Matter link exists.`,
         },
       ]);
-      setInput("Please organize the issue I should send to the Milano Execution Desk for human review.");
       setMode("chat");
-      return;
+      if (role === "PUBLIC") {
+        const url = new URL(journey.intakeHref, window.location.origin);
+        url.searchParams.set("review_request", "1");
+        url.searchParams.set("review_request_id", body.review.id);
+        url.searchParams.set("source", "execution-copilot-review");
+        router.push(`${url.pathname}${url.search}`);
+      }
+    } catch {
+      setMessages((previous) => [
+        ...previous,
+        { role: "assistant", text: "Milano Review was not recorded. No human-review status has been claimed. Please retry." },
+      ]);
+      setMode("chat");
+    } finally {
+      setReviewRequestBusy(false);
     }
-    const url = new URL(journey.intakeHref, window.location.origin);
-    url.searchParams.set("review_request", "1");
-    url.searchParams.set("source", "execution-copilot-review");
-    router.push(`${url.pathname}${url.search}`);
-  }, [journey.intakeHref, role, router]);
+  }, [journey, pathname, portalDeal, professionalSession, receivingAuthority, reviewRequestBusy, role, router]);
 
   const handleAction = (chip: string) => {
     const normalized = chip.toLowerCase();
@@ -422,7 +461,7 @@ export function MilanoExecutionCopilot() {
       return;
     }
     if (normalized.includes("request milano review")) {
-      requestReview();
+      void requestReview();
       return;
     }
     void send(chip);
@@ -720,10 +759,11 @@ export function MilanoExecutionCopilot() {
                   </button>
                   <button
                     type="button"
-                    onClick={requestReview}
-                    className="inline-flex min-h-10 items-center gap-2 text-xs text-white/36 transition-colors hover:text-[var(--ms-gold)]"
+                    onClick={() => void requestReview()}
+                    disabled={reviewRequestBusy}
+                    className="inline-flex min-h-10 items-center gap-2 text-xs text-white/36 transition-colors hover:text-[var(--ms-gold)] disabled:opacity-40"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" /> Request Milano review
+                    <MessageCircle className="h-3.5 w-3.5" /> {reviewRequestBusy ? "Recording Milano review…" : "Request Milano review"}
                   </button>
                 </div>
               </form>
