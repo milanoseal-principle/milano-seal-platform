@@ -19,18 +19,21 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-interface SchedulingMatter extends OperationalMatterSourceRow {
+type SchedulingMatter = Omit<OperationalMatterSourceRow, "amount_due" | "amount_paid" | "verified_revenue"> & {
   id: string;
   email?: string | null;
   phone?: string | null;
   origin_state?: string | null;
   payment_observed_at?: string | null;
   payment_disposition?: string | null;
+  amount_due?: number | null;
+  amount_paid?: number | null;
+  verified_revenue?: number | null;
   comp_authorized?: boolean | null;
   comp_authorization_id?: string | null;
   comp_authorized_at?: string | null;
   comp_revoked_at?: string | null;
-}
+};
 
 interface PageProps {
   searchParams: Promise<{ matter?: string; deal?: string }>;
