@@ -1,0 +1,5 @@
+export const CRITICAL_PRODUCTION_SURFACES = Object.freeze([
+  { route: "/", name: "Public Home" }, { route: "/intake", name: "Secure Records Intake" }, { route: "/professional", name: "Professional" }, { route: "/professional/damiani", name: "Damiani" },
+  { route: "/portal", name: "Matter Control Portal" }, { route: "/portal/payment", name: "Portal Payment" }, { route: "/portal/documents", name: "Controlled Records" }, { route: "/portal/invoice", name: "Invoice" }, { route: "/portal/release", name: "Release" }, { route: "/portal/tracking", name: "Courier Release Tracking" },
+  { route: "/dashboard", name: "Dashboard" }, { route: "/dashboard/ron", name: "RON" }, { route: "/dashboard/apostille", name: "Apostille" }, { route: "/dashboard/courier", name: "Courier" }, { route: "/dashboard/ledger", name: "Operational Ledger" }, { route: "/dashboard/review-requests", name: "Review Requests" }, { route: "/dashboard/seo", name: "SEO" }, { route: "/dashboard/authorities/verify", name: "Authority Verification" }, { route: "/workspace/release", name: "Release Workspace" },
+]);
