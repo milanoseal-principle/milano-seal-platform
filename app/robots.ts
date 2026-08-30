@@ -8,6 +8,9 @@ const privatePaths = [
   "/api/",
   "/portal",
   "/portal/",
+  // Alliance is an authenticated/operator network surface. Keep the namespace
+  // consistently out of public search indexes, including the namespace root.
+  "/alliance",
   "/alliance/",
   "/admin/",
   "/operator/",
