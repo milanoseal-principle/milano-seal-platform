@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { canTransitionReview, REVIEW_STATUSES, type ReviewStatus } from '@/lib/review/reviewWorkflow';
+import { sendReviewResolvedNotification } from '@/lib/review/reviewNotifications';
 
 const EVENT_BY_STATUS: Record<Exclude<ReviewStatus, 'REQUESTED'>, string> = {
   ACKNOWLEDGED: 'REVIEW_ACKNOWLEDGED',
@@ -51,6 +52,13 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         metadata: body.operator_response ? { operator_response_recorded: true } : {},
       });
       if (eventError) return NextResponse.json({ error: 'REVIEW_EVENT_PERSIST_FAILED' }, { status: 500 });
+    }
+
+    if (to === 'RESOLVED' && current.matter_id) {
+      const { data: matter } = await admin.from('deals').select('id, email').eq('id', current.matter_id).single();
+      if (matter?.email) {
+        await sendReviewResolvedNotification({ reviewId: id, matterId: matter.id, clientEmail: matter.email });
+      }
     }
 
     return NextResponse.json({ success: true, review: data });
