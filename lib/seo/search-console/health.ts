@@ -1,9 +1,54 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-export interface SearchConsoleHealth { configured: boolean; siteConfigured: boolean; credentialsConfigured: boolean; credentialJsonValid: boolean; serviceAccountEmailMasked: string | null; siteUrl: string | null; lastSuccessfulSyncAt: string | null; lastSyncStatus: string | null; latestObservationDate: string | null }
-function maskedEmail(email: string) { const [local, domain] = email.split("@"); return domain ? `${local.slice(0, 2)}***@${domain}` : null; }
+
+export interface SearchConsoleHealth {
+  configured: boolean;
+  siteConfigured: boolean;
+  credentialsConfigured: boolean;
+  credentialJsonValid: boolean;
+  serviceAccountEmailMasked: string | null;
+  siteUrl: string | null;
+  lastSuccessfulSyncAt: string | null;
+  lastSyncStatus: string | null;
+  latestObservationDate: string | null;
+}
+
+function maskedEmail(email: string) {
+  const [local, domain] = email.split("@");
+  return domain ? `${local.slice(0, 2)}***@${domain}` : null;
+}
+
 export async function getSearchConsoleHealth(): Promise<SearchConsoleHealth> {
-  const raw = process.env.GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON?.trim(); const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL?.trim() ?? null; let valid = false; let masked: string | null = null;
-  if (raw) { try { const parsed = JSON.parse(raw) as { client_email?: unknown; private_key?: unknown }; valid = typeof parsed.client_email === "string" && typeof parsed.private_key === "string"; masked = valid ? maskedEmail(parsed.client_email as string) : null; } catch { valid = false; } }
-  const admin = createAdminClient(); const [{ data: lastRun }, { data: lastSuccess }, { data: latest }] = await Promise.all([admin.from("seo_search_console_sync_runs").select("status").order("started_at", { ascending: false }).limit(1).maybeSingle(), admin.from("seo_search_console_sync_runs").select("completed_at").eq("status", "SUCCEEDED").order("completed_at", { ascending: false }).limit(1).maybeSingle(), admin.from("seo_search_console_observations").select("end_date").order("end_date", { ascending: false }).limit(1).maybeSingle()]);
-  return { configured: Boolean(siteUrl && raw && valid), siteConfigured: Boolean(siteUrl), credentialsConfigured: Boolean(raw), credentialJsonValid: valid, serviceAccountEmailMasked: masked, siteUrl, lastSuccessfulSyncAt: lastSuccess?.completed_at ?? null, lastSyncStatus: lastRun?.status ?? null, latestObservationDate: latest?.end_date ?? null };
+  const raw = process.env.GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON?.trim();
+  const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL?.trim() ?? null;
+  let valid = false;
+  let masked: string | null = null;
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { client_email?: unknown; private_key?: unknown };
+      valid = typeof parsed.client_email === "string" && typeof parsed.private_key === "string";
+      masked = valid ? maskedEmail(parsed.client_email as string) : null;
+    } catch {
+      valid = false;
+    }
+  }
+
+  const admin = createAdminClient();
+  const [{ data: lastRun }, { data: lastSuccess }, { data: latest }] = await Promise.all([
+    admin.from("seo_search_console_sync_runs").select("status").order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("seo_search_console_sync_runs").select("completed_at").eq("status", "SUCCEEDED").order("completed_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("seo_search_console_observations").select("observed_date").order("observed_date", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+
+  return {
+    configured: Boolean(siteUrl && raw && valid),
+    siteConfigured: Boolean(siteUrl),
+    credentialsConfigured: Boolean(raw),
+    credentialJsonValid: valid,
+    serviceAccountEmailMasked: masked,
+    siteUrl,
+    lastSuccessfulSyncAt: lastSuccess?.completed_at ?? null,
+    lastSyncStatus: lastRun?.status ?? null,
+    latestObservationDate: latest?.observed_date ?? null,
+  };
 }
