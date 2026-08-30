@@ -42,8 +42,6 @@ export function resolvePortalLifecycleSummary(status: string | null | undefined,
   return { currentStage: step?.label ?? 'Matter Review', actionRequired, nextExpectedEvent: nextExpectedEvent[normalized] ?? 'Operator review' };
 }
 
-const GOLD = 'var(--ms-gold)';
-const GOLD_FAINT = 'rgba(198,165,90,0.18)';
 const GOLD_MID = 'rgba(198,165,90,0.45)';
 
 export function PortalStatusRail({ matterStatus, paymentStatus }: { matterStatus: string | null | undefined; paymentStatus?: string | null }) {
@@ -103,7 +101,7 @@ export function PortalStatusRail({ matterStatus, paymentStatus }: { matterStatus
             >
               <div className="relative flex justify-center">
                 {i < MATTER_STEPS.length - 1 ? (
-                  <div className="absolute left-1/2 top-8 h-[calc(100%-4px)] w-px -translate-x-1/2 overflow-hidden bg-white/[0.055]">
+                  <div className="absolute bottom-0 left-1/2 top-8 w-px -translate-x-1/2 overflow-hidden bg-white/[0.055]">
                     {done ? <motion.div initial={reduced ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={reduced ? { duration: 0 } : { duration: 0.5, ease: MILANO_EASE }} className="h-full origin-top bg-gradient-to-b from-[#C6A65B]/70 to-[#C6A65B]/25" /> : null}
                   </div>
                 ) : null}
