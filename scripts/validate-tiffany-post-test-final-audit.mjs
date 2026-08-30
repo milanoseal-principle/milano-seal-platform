@@ -53,7 +53,8 @@ check("operator navigation exposes RON / BlueNotary", operatorShell.includes('hr
 check("dashboard roles permit governed operator/admin/owner access", hasAll(dashboardAuth, ["operator", "admin", "owner", "requireDashboardAccess"]));
 check("RON dashboard consumes canonical scheduling gate and shows pre-session Matters", hasAll(ronDashboard, [
   "evaluateSchedulingGate",
-  "RON Matters · Before BlueNotary Session",
+  "BlueNotary Signing Room",
+  "Before BlueNotary Session",
   "Open RON Readiness",
   "Wise processing",
 ]));
