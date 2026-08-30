@@ -8,6 +8,9 @@ const privatePaths = [
   "/api/",
   "/portal",
   "/portal/",
+  // Alliance is an authenticated/operator network surface. Keep the namespace
+  // consistently out of public search indexes, including the namespace root.
+  "/alliance",
   "/alliance/",
   "/admin/",
   "/operator/",
@@ -71,6 +74,7 @@ export default function robots(): MetadataRoute.Robots {
     ],
     sitemap: [
       "https://www.themilanoseal.com/sitemap.xml",
+      "https://www.themilanoseal.com/authority/sitemap.xml",
       "https://www.themilanoseal.com/apostille/sitemap.xml",
       "https://www.themilanoseal.com/professional/sitemap.xml",
     ],
