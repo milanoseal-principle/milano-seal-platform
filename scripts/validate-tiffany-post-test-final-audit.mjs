@@ -1,3 +1,4 @@
+// Final source-level continuity gate for Tiffany's live production regression tranche.
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(path, "utf8");
