@@ -12,6 +12,7 @@ const scheduling = read("lib/scheduling/complimentarySchedulingGate.ts");
 const scheduleRoute = read("app/api/deals/[id]/schedule/route.ts");
 const ronDashboard = read("app/dashboard/ron/page.tsx");
 const ronCreate = read("app/api/dashboard/ron/sessions/route.ts");
+const ronGuards = read("lib/bluenotary/guards.ts");
 const ronDetail = read("app/dashboard/ron/[session_id]/page.tsx");
 const operatorShell = read("components/dashboard/OperatorShell.tsx");
 const dashboardAuth = read("lib/dashboardAuth.ts");
@@ -56,10 +57,15 @@ check("RON dashboard consumes canonical scheduling gate and shows pre-session Ma
   "Open RON Readiness",
   "Wise processing",
 ]));
-check("RON creation is Matter-scoped and consumes canonical scheduling authority", hasAll(ronCreate, [
-  "evaluateSchedulingGate",
+check("RON creation is Matter-scoped and delegates to canonical scheduling guard", hasAll(ronCreate, [
+  "assertCanCreateRONSession",
   "matter_id",
   "ron_sessions",
+]) && hasAll(ronGuards, [
+  "evaluateSchedulingGate",
+  "verifySchedulingAuthorized",
+  "schedulingEligible",
+  "PAYMENT_REQUIRED",
 ]));
 check("RON session detail exposes Matter, signer, document and scheduling truth", hasAll(ronDetail, [
   "Matter + Session Truth",
@@ -76,7 +82,7 @@ check("operator payment notifications retain canonical production recipients", h
   "operator_payment_confirmed",
 ]));
 check("notification reconciler remains bearer-secret protected", cron.includes("Bearer ${expected}"));
-check("no Tiffany-specific duplicate Matter/payment engine is introduced", ![invoice, observation, scheduling, ronDashboard, ronCreate, ronDetail].join("\n").includes("MS-2026-4887"));
+check("no Tiffany-specific duplicate Matter/payment engine is introduced", ![invoice, observation, scheduling, ronDashboard, ronCreate, ronGuards, ronDetail].join("\n").includes("MS-2026-4887"));
 
 const failed = checks.filter((item) => !item.ok);
 for (const item of checks) console.log(`${item.ok ? "PASS" : "FAIL"} ${item.label}`);
