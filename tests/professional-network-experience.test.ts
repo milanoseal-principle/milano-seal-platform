@@ -21,8 +21,10 @@ test("counsel experience keeps the legal and execution responsibilities separate
   assert.match(counsel, /Milano controls/);
   assert.match(counsel, /does not create an attorney-client relationship/);
   assert.match(counsel, /does not provide legal advice|COUNSEL_REPORT_BOUNDARY/);
+  assert.match(counsel, /does not create[\s\S]*legal representation by Milano/i);
   assert.doesNotMatch(counsel, /Milano attorney/i);
-  assert.doesNotMatch(counsel, /legal representation by Milano/i);
+  assert.doesNotMatch(counsel, /Milano provides legal representation/i);
+  assert.doesNotMatch(counsel, /Milano serves as legal counsel/i);
 });
 
 test("verified execution partner designation remains evidence-gated", () => {
