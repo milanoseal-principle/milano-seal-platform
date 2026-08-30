@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { MILANO_EASE, MILANO_MOTION } from '@/lib/motion/milanoMotionPresets';
 
 export interface StatusStep { keys: string[]; label: string; desc: string }
 
@@ -51,29 +52,103 @@ export function PortalStatusRail({ matterStatus, paymentStatus }: { matterStatus
   const summary = resolvePortalLifecycleSummary(matterStatus, paymentStatus);
   const isPaymentGate = matterStatus === 'awaiting_payment' && !['paid','confirmed'].includes(String(paymentStatus ?? '').toLowerCase());
 
-  return <div style={{ position: 'relative' }}>
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 8, marginBottom: 20 }}>
-      {[
-        ['CURRENT STAGE',summary.currentStage],
-        ['ACTION REQUIRED',summary.actionRequired],
-        ['NEXT EXPECTED EVENT',summary.nextExpectedEvent],
-      ].map(([label,value]) => <div key={label} style={{ border: '1px solid rgba(198,165,90,0.14)', background: 'rgba(198,165,90,0.025)', borderRadius: 6, padding: '10px 12px' }}><div style={{ fontFamily: 'monospace', fontSize: 8, letterSpacing: '0.14em', color: 'rgba(198,165,90,0.55)', marginBottom: 5 }}>{label}</div><div style={{ fontSize: 11.5, lineHeight: 1.45, color: 'rgba(255,255,255,0.68)' }}>{value}</div></div>)}
+  const summaryCards = [
+    ['CURRENT STAGE', summary.currentStage, 'stage'],
+    ['ACTION REQUIRED', summary.actionRequired, isPaymentGate ? 'action' : 'neutral'],
+    ['NEXT EXPECTED EVENT', summary.nextExpectedEvent, 'next'],
+  ] as const;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#C6A65B]/15 bg-[radial-gradient(circle_at_80%_0%,rgba(198,166,91,0.08),transparent_34%),linear-gradient(145deg,rgba(11,11,11,0.96),rgba(6,6,6,0.96))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C6A65B]/45 to-transparent" />
+
+      <motion.div
+        className="grid gap-2 sm:grid-cols-3"
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: reduced ? 0 : MILANO_MOTION.stagger } } }}
+      >
+        {summaryCards.map(([label,value,tone]) => (
+          <motion.div
+            key={label}
+            variants={{ hidden: reduced ? { opacity: 0 } : { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+            transition={{ duration: reduced ? 0.01 : MILANO_MOTION.standard, ease: MILANO_EASE }}
+            className={`min-h-[92px] rounded-xl border p-3.5 ${tone === 'action' ? 'border-amber-500/25 bg-amber-500/[0.045]' : tone === 'stage' ? 'border-[#C6A65B]/22 bg-[#C6A65B]/[0.045]' : 'border-white/[0.06] bg-white/[0.018]'}`}
+          >
+            <div className={`font-mono text-[8px] uppercase tracking-[0.16em] ${tone === 'action' ? 'text-amber-200/80' : 'text-[#C6A65B]/55'}`}>{label}</div>
+            <div className="mt-2 text-[12px] leading-5 text-white/68">{value}</div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      <div className="mt-5 flex items-center justify-between gap-3 border-b border-white/[0.055] pb-3">
+        <div>
+          <div className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/28">Matter Journey</div>
+          <div className="mt-1 text-[11px] text-white/35">Canonical lifecycle projection</div>
+        </div>
+        <div className="font-mono text-[9px] text-[#C6A65B]/65">{String(currentIdx + 1).padStart(2,'0')} / {String(MATTER_STEPS.length).padStart(2,'0')}</div>
+      </div>
+
+      <div className="relative mt-4">
+        {MATTER_STEPS.map((step,i) => {
+          const done = currentIdx > i;
+          const active = currentIdx === i;
+          return (
+            <motion.div
+              key={step.label}
+              initial={reduced ? false : { opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={reduced ? { duration: 0 } : { duration: MILANO_MOTION.standard, delay: i * MILANO_MOTION.stagger, ease: MILANO_EASE }}
+              className="relative grid grid-cols-[34px_minmax(0,1fr)] gap-3"
+            >
+              <div className="relative flex justify-center">
+                {i < MATTER_STEPS.length - 1 ? (
+                  <div className="absolute left-1/2 top-8 h-[calc(100%-4px)] w-px -translate-x-1/2 overflow-hidden bg-white/[0.055]">
+                    {done ? <motion.div initial={reduced ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={reduced ? { duration: 0 } : { duration: 0.5, ease: MILANO_EASE }} className="h-full origin-top bg-gradient-to-b from-[#C6A65B]/70 to-[#C6A65B]/25" /> : null}
+                  </div>
+                ) : null}
+
+                <div className="relative mt-0.5 h-8 w-8 shrink-0">
+                  {active && !reduced ? <motion.div aria-hidden="true" animate={{ scale:[1,1.6], opacity:[0.42,0] }} transition={{ duration:2.1, repeat:Infinity, ease:'easeOut' }} className="absolute inset-0 rounded-full border border-[#C6A65B]/70" /> : null}
+                  <motion.div
+                    animate={active && !reduced ? { boxShadow:[`0 0 0 0 ${GOLD_MID}`,`0 0 18px 3px ${GOLD_MID}`,`0 0 0 0 ${GOLD_MID}`] } : {}}
+                    transition={active && !reduced ? { duration:2.1, repeat:Infinity, ease:'easeInOut' } : {}}
+                    className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border font-mono text-[10px] font-semibold ${done ? 'border-[#C6A65B] bg-[#C6A65B] text-[#171007]' : active ? 'border-[#C6A65B]/80 bg-[#C6A65B]/[0.12] text-[#E8CF94]' : 'border-white/[0.08] bg-white/[0.025] text-white/25'}`}
+                  >
+                    {done ? '✓' : active ? '●' : i + 1}
+                  </motion.div>
+                </div>
+              </div>
+
+              <div className="min-w-0 pb-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className={`font-serif text-[14px] ${active ? 'text-[#E9D29C]' : done ? 'text-[#C6A65B]/75' : 'text-white/30'}`}>{step.label}</div>
+                  {active ? <span className="rounded-full border border-[#C6A65B]/25 bg-[#C6A65B]/[0.055] px-2 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-[#C6A65B]/75">Current</span> : null}
+                </div>
+                <AnimatePresence initial={false}>
+                  {(active||done) ? (
+                    <motion.div initial={reduced?false:{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={reduced?{}:{opacity:0,height:0}} transition={reduced ? { duration: 0 } : { duration: 0.3, ease: MILANO_EASE }}>
+                      <div className={`mt-1.5 max-w-xl text-[11.5px] leading-5 ${active ? 'text-white/55' : 'text-white/38'}`}>{step.desc}</div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+                <AnimatePresence initial={false}>
+                  {active && isPaymentGate && step.keys.includes('awaiting_payment') ? (
+                    <motion.div initial={reduced?false:{opacity:0,y:4}} animate={{opacity:1,y:0}} transition={reduced ? { duration: 0 } : { duration: 0.32, ease: MILANO_EASE }} className="mt-3 flex min-h-11 items-center rounded-lg border border-amber-500/25 bg-amber-500/[0.055] px-3 text-[11px] font-medium text-amber-200">
+                      Payment required to unlock scheduling
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <div className="mt-1 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-3">
+        <span className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/20">Truth-backed · no inferred success states</span>
+        <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-[#C6A65B]/15 to-transparent" />
+      </div>
     </div>
-    <div style={{ fontFamily: 'monospace', fontSize: 8, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.24)', marginBottom: 10 }}>MATTER JOURNEY</div>
-    {MATTER_STEPS.map((step,i) => {
-      const done = currentIdx > i; const active = currentIdx === i;
-      return <motion.div key={step.label} initial={reduced ? false : { opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={reduced ? {} : { duration: 0.3, delay: i * 0.055, ease: 'easeOut' }} style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:4, position:'relative' }}>
-        {i < MATTER_STEPS.length - 1 && <div style={{ position:'absolute', left:14, top:28, width:2, height:28, background:done ? GOLD : GOLD_FAINT, borderRadius:1 }} />}
-        <div style={{ position:'relative', flexShrink:0, width:28, height:28, marginTop:2 }}>
-          {active && !reduced && <motion.div animate={{ scale:[1,1.55,1], opacity:[0.55,0,0.55] }} transition={{ duration:2.2, repeat:Infinity, ease:'easeInOut' }} style={{ position:'absolute', inset:-4, borderRadius:'50%', border:`1.5px solid ${GOLD}` }} />}
-          <motion.div animate={active && !reduced ? { boxShadow:[`0 0 0 0 ${GOLD_MID}`,`0 0 8px 3px ${GOLD_MID}`,`0 0 0 0 ${GOLD_MID}`] } : {}} transition={active && !reduced ? { duration:2.2, repeat:Infinity, ease:'easeInOut' } : {}} style={{ width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:done?12:11,fontWeight:600,background:done?GOLD:active?'rgba(198,165,90,0.12)':'rgba(255,255,255,0.04)',border:`1.5px solid ${done||active?GOLD:GOLD_FAINT}`,color:done?'#1a1507':active?GOLD:'rgba(255,255,255,0.28)' }}>{done?'✓':active?'●':i+1}</motion.div>
-        </div>
-        <div style={{ paddingTop:4,paddingBottom:18,minWidth:0 }}>
-          <div style={{ fontSize:13,fontWeight:active?600:done?500:400,color:active?GOLD:done?'rgba(198,165,90,0.75)':'rgba(255,255,255,0.3)',fontFamily:'var(--font-serif, Georgia, serif)' }}>{step.label}</div>
-          <AnimatePresence>{(active||done) && <motion.div initial={reduced?false:{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={reduced?{}:{opacity:0,height:0}}><div style={{ marginTop:3,fontSize:11.5,color:active?'rgba(255,255,255,0.55)':'rgba(255,255,255,0.4)',lineHeight:1.5 }}>{step.desc}</div></motion.div>}</AnimatePresence>
-          <AnimatePresence>{active && isPaymentGate && step.keys.includes('awaiting_payment') && <motion.div initial={reduced?false:{opacity:0,y:4}} animate={{opacity:1,y:0}} style={{ marginTop:8,padding:'7px 10px',borderRadius:4,background:'rgba(198,165,90,0.06)',border:'1px solid rgba(198,165,90,0.2)',fontSize:11,color:GOLD }}>Payment required to unlock scheduling</motion.div>}</AnimatePresence>
-        </div>
-      </motion.div>;
-    })}
-  </div>;
+  );
 }
