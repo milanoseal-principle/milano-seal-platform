@@ -1,0 +1,25 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getCountryDocumentSeoRecord } from "@/lib/seo/country-document/registry";
+
+const transitions: Record<string, string[]> = { DRAFT: ["REVIEW_REQUIRED"], REVIEW_REQUIRED: ["APPROVED", "BLOCKED"], APPROVED: ["STALE"], BLOCKED: ["REVIEW_REQUIRED"], STALE: ["REVIEW_REQUIRED"] };
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ country: string; document: string }> }) {
+  const actor = await requireDashboardAccess();
+  const { country, document } = await params;
+  if (!getCountryDocumentSeoRecord(country, document)) return NextResponse.json({ code: "SEO_ROUTE_NOT_GOVERNED" }, { status: 404 });
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+  const from = String(body.from_status ?? "REVIEW_REQUIRED");
+  const to = String(body.status ?? "");
+  if (!transitions[from]?.includes(to)) return NextResponse.json({ code: "SEO_EDITORIAL_TRANSITION_INVALID" }, { status: 409 });
+  const blocking = Array.isArray(body.blocking_reasons) ? body.blocking_reasons.filter((item): item is string => typeof item === "string").slice(0, 20) : [];
+  const evidence = Array.isArray(body.evidence_snapshot) ? body.evidence_snapshot.slice(0, 50) : [];
+  if (to === "APPROVED" && (blocking.length || !evidence.length)) return NextResponse.json({ code: "SEO_EDITORIAL_EVIDENCE_REQUIRED" }, { status: 409 });
+  const admin = createAdminClient();
+  const { data: existing } = await admin.from("seo_editorial_reviews").select("status").eq("country_slug", country).eq("document_slug", document).maybeSingle();
+  const actualFrom = existing?.status ?? "REVIEW_REQUIRED";
+  if (actualFrom !== from) return NextResponse.json({ code: "SEO_EDITORIAL_STALE_STATE", current_status: actualFrom }, { status: 409 });
+  const { data, error } = await admin.from("seo_editorial_reviews").upsert({ country_slug: country, document_slug: document, status: to, reviewed_by: actor.userId, reviewed_at: new Date().toISOString(), review_due_at: typeof body.review_due_at === "string" ? body.review_due_at : null, notes: typeof body.notes === "string" ? body.notes.slice(0, 2000) : null, blocking_reasons: blocking, evidence_snapshot: evidence, updated_at: new Date().toISOString() }, { onConflict: "country_slug,document_slug" }).select("*").single();
+  return error ? NextResponse.json({ code: "SEO_EDITORIAL_WRITE_FAILED" }, { status: 500 }) : NextResponse.json({ review: data });
+}
