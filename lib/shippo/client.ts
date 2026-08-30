@@ -64,6 +64,15 @@ export async function createShippoShipment(
   return shippoRequest<ShippoShipmentResponse>("POST", "/shipments/", payload);
 }
 
+export async function getShippoShipment(
+  shipmentId: string
+): Promise<ShippoShipmentResponse> {
+  return shippoRequest<ShippoShipmentResponse>(
+    "GET",
+    `/shipments/${encodeURIComponent(shipmentId)}`
+  );
+}
+
 export async function purchaseShippoLabel(
   rateId: string
 ): Promise<ShippoTransaction> {
