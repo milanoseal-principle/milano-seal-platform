@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { useApi } from "@/hooks/useApi";
+import { MatterRateOptimizer } from "./MatterRateOptimizer";
 
 interface ActiveShipment {
   id: string;
@@ -38,6 +39,7 @@ const CARRIER_COLORS: Record<string, { bg: string; color: string }> = {
   ups: { bg: "rgba(90,60,12,0.18)", color: "#c8973a" },
   fedex: { bg: "rgba(68,0,153,0.12)", color: "#a07de8" },
   dhl: { bg: "rgba(212,175,55,0.12)", color: GOLD },
+  dhl_express: { bg: "rgba(212,175,55,0.12)", color: GOLD },
 };
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
@@ -103,7 +105,7 @@ function formatEta(eta: string | null): string {
 }
 
 function CarrierBadge({ carrier }: { carrier: string | null }) {
-  const key = (carrier || "").toLowerCase();
+  const key = (carrier || "").toLowerCase().replace(/\s+/g, "_");
   const style = CARRIER_COLORS[key] || { bg: GOLD_SOFT, color: GOLD_DIM };
   return (
     <span
@@ -130,7 +132,7 @@ function StatusBadge({ shipment }: { shipment: ActiveShipment }) {
 
 function SkeletonRow() {
   return (
-    <div className="flex animate-pulse items-center gap-4 rounded-sm px-4 py-3" style={{ background: GOLD_SOFT }}>
+    <div className="flex animate-pulse items-center gap-4 rounded-sm px-4 py-3 motion-reduce:animate-none" style={{ background: GOLD_SOFT }}>
       <div className="h-3 w-20 rounded-sm" style={{ background: GOLD_BORDER }} />
       <div className="h-3 w-32 rounded-sm" style={{ background: GOLD_BORDER }} />
       <div className="h-3 w-16 rounded-sm" style={{ background: GOLD_BORDER }} />
@@ -161,17 +163,20 @@ export function CourierOperationsPanel() {
   return (
     <div className="space-y-8">
       {focusMatter ? (
-        <div className="flex items-center justify-between gap-3 rounded-sm border px-4 py-3" style={{ background: GOLD_SOFT, borderColor: GOLD_BORDER }}>
-          <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: GOLD_DIM }}>
-              Focused Matter
-            </p>
-            <p className="mt-1 break-all font-mono text-[10px] text-white/50">{focusMatter}</p>
+        <>
+          <div className="flex items-center justify-between gap-3 rounded-sm border px-4 py-3" style={{ background: GOLD_SOFT, borderColor: GOLD_BORDER }}>
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: GOLD_DIM }}>
+                Focused Matter
+              </p>
+              <p className="mt-1 break-all font-mono text-[10px] text-white/50">{focusMatter}</p>
+            </div>
+            <Link href="/dashboard/courier" className="inline-flex min-h-11 items-center font-mono text-[9px] uppercase tracking-widest" style={{ color: GOLD }}>
+              Clear
+            </Link>
           </div>
-          <Link href="/dashboard/courier" className="font-mono text-[9px] uppercase tracking-widest" style={{ color: GOLD }}>
-            Clear
-          </Link>
-        </div>
+          <MatterRateOptimizer matterReference={focusMatter} />
+        </>
       ) : null}
 
       <section>
@@ -221,7 +226,7 @@ export function CourierOperationsPanel() {
                 return (
                   <Link
                     key={shipment.id}
-                    href={`/dashboard/deals/${encodeURIComponent(shipment.id)}`}
+                    href={`/dashboard/deals/${encodeURIComponent(shipment.deal_id || shipment.id)}`}
                     className="block border-b last:border-0"
                     style={{
                       borderColor: GOLD_BORDER,
@@ -229,7 +234,7 @@ export function CourierOperationsPanel() {
                     }}
                   >
                     <div
-                      className="grid items-center gap-4 px-4 py-3 transition-opacity hover:opacity-80"
+                      className="grid items-center gap-4 px-4 py-3 transition-opacity hover:opacity-80 motion-reduce:transition-none"
                       style={{ gridTemplateColumns: "120px 1fr 80px 130px 120px 100px" }}
                     >
                       <span className="truncate font-mono text-xs" style={{ color: GOLD }}>
