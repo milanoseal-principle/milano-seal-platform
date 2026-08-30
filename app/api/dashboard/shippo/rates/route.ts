@@ -1,15 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { roleFromEmail } from "@/lib/rbac";
-import { createShippoShipment } from "@/lib/shippo/client";
-import { buildReturnAddress, buildRecipientAddressFromMatter, validateMilanoShippingAddress } from "@/lib/shippo/address";
+import {
+  createShippoCustomsDeclaration,
+  createShippoCustomsItem,
+  createShippoShipment,
+} from "@/lib/shippo/client";
+import {
+  buildReturnAddress,
+  buildRecipientAddressFromMatter,
+  validateMilanoShippingAddress,
+} from "@/lib/shippo/address";
 import { buildDocumentParcel, selectPackageTemplate } from "@/lib/shippo/parcel";
-import { requiresCustoms, buildDocumentCustomsPayload, getCustomsAdvisory } from "@/lib/shippo/customs";
-import { createShippoCustomsItem, createShippoCustomsDeclaration } from "@/lib/shippo/client";
+import {
+  requiresCustoms,
+  buildDocumentCustomsPayload,
+  getCustomsAdvisory,
+} from "@/lib/shippo/customs";
 import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
+import { rankApprovedRates } from "@/lib/shippo/rateSelection";
 import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
 
 export const dynamic = "force-dynamic";
+
+async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, matterId: string) {
+  const fields = "id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, amount_due, amount_paid, tier, status";
+
+  const byId = await supabase.from("deals").select(fields).eq("id", matterId).maybeSingle();
+  if (byId.data) return byId;
+
+  return supabase.from("deals").select(fields).eq("deal_id", matterId).maybeSingle();
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,15 +52,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Shippo not configured" }, { status: 503 });
     }
 
-    const { data: matter, error: mErr } = await supabase
-      .from("deals")
-      .select("id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, amount_due, amount_paid, tier, status")
-      .eq("id", matter_id)
-      .single();
-
+    const { data: matter, error: mErr } = await loadMatter(supabase, matter_id);
     if (mErr || !matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
 
-    // Payment gate — must be confirmed before label or rate preview
     try {
       assertPaymentConfirmed(matter, "rate_preview");
     } catch (err) {
@@ -53,7 +68,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid shipping address", details: validationErrors }, { status: 422 });
     }
 
-    // Select package template based on lane and document count
     const packageTemplate = selectPackageTemplate({
       lane: matter.tier ?? undefined,
       documentCount: matter.document_count ?? 1,
@@ -80,25 +94,39 @@ export async function POST(req: NextRequest) {
       async: false,
     });
 
-    // Filter rates to approved carriers only
     const approvedRates = filterApprovedRates(shipment.rates);
+    const rankedRates = rankApprovedRates({
+      rates: approvedRates,
+      lane: matter.tier,
+      destinationCountry: destCountry,
+    });
 
-    const sanitizedRates = approvedRates.map((r) => ({
-      rate_id: r.object_id,
-      provider: r.provider,
-      servicelevel_name: r.servicelevel.name,
-      servicelevel_token: r.servicelevel.token,
-      estimated_days: r.estimated_days ?? null,
-      duration_terms: r.duration_terms ?? null,
-      arrives_by: r.arrives_by ?? null,
-      // operator_display_amount only for admin/founder
-      ...( ["founder_admin", "admin_operator"].includes(role) ? { amount: r.amount, currency: r.currency } : {}),
+    const sanitizedRates = rankedRates.map(({ rate, rank, recommended, selectionPolicy, selectionReason }) => ({
+      rate_id: rate.object_id,
+      provider: rate.provider,
+      servicelevel_name: rate.servicelevel.name,
+      servicelevel_token: rate.servicelevel.token,
+      estimated_days: rate.estimated_days ?? null,
+      duration_terms: rate.duration_terms ?? null,
+      arrives_by: rate.arrives_by ?? null,
+      rank,
+      recommended,
+      selection_policy: selectionPolicy,
+      selection_reason: selectionReason,
+      ...( ["founder_admin", "admin_operator"].includes(role) ? { amount: rate.amount, currency: rate.currency } : {}),
     }));
+
+    const recommendation = sanitizedRates[0] ?? null;
 
     return NextResponse.json({
       success: true,
+      matter_id: matter.id,
+      matter_reference: matter.deal_id ?? matter.id,
+      execution_lane: matter.tier ?? "signature",
       shipment_id: shipment.object_id,
       rates: sanitizedRates,
+      recommended_rate: recommendation,
+      auto_selection_available: Boolean(recommendation),
       package_template_used: packageTemplate.id,
       shipping_option_used: "milano_international_release",
       customs_required: needsCustoms,
