@@ -15,51 +15,39 @@ export default async function VADashboardPage() {
 
   return (
     <div className="ms-safe-bottom mx-auto max-w-7xl space-y-6">
-      {/* Role header */}
-      <div className="ms-os-panel rounded-lg p-5 sm:p-6">
-        <p
-          className="text-[11px] font-mono tracking-[0.22em]"
-          style={{ color: "rgba(212,175,55,0.5)" }}
-        >
-          {role.replace(/_/g, " ").toUpperCase()} · RESTRICTED ENVIRONMENT
-        </p>
-        <h1
-          className="text-xl font-light mt-1"
-          style={{
-            color: "rgba(255,255,255,0.75)",
-            fontFamily: "var(--font-playfair),Georgia,serif",
-          }}
-        >
-          VA Execution Workbench
-        </h1>
-        <p
-          className="text-[11px] font-mono mt-1"
-          style={{ color: "rgba(255,255,255,0.4)" }}
-        >
-          Assigned preparation, packet, upload, and follow-up tasks only.
-        </p>
+      <div className="ms-os-panel relative overflow-hidden rounded-lg p-5 sm:p-6">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[10px] font-mono tracking-[0.2em] text-[#D4AF37]/55">
+              THE MILANO SEAL™ · EXECUTION OPERATIONS
+            </p>
+            <h1 className="mt-2 font-serif text-2xl font-light text-[#F6F1E6] sm:text-3xl">
+              Milano Execution Coordinator™ Workbench
+            </h1>
+            <p className="mt-2 max-w-2xl text-[12px] leading-5 text-white/42">
+              Governed Matter preparation, packet control, follow-up, courier, RON support, and exception handling. Assigned operational work only; no legal or notarial authority is created by this designation.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#D4AF37]/16 bg-[#D4AF37]/[0.035] px-4 py-3">
+            <div className="font-mono text-[8px] uppercase tracking-[0.15em] text-[#D4AF37]/55">Network designation</div>
+            <div className="mt-1 text-[12px] font-medium text-[#E1CC96]">Milano Execution Coordinator™</div>
+            <div className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-white/22">{role.replace(/_/g, " ")} · restricted environment</div>
+          </div>
+        </div>
         <div className="sr-only">{vaDashboardModules.join(",")}</div>
       </div>
 
-      {/* Daily completion tracker */}
       <VADailyCompletionTracker />
-
-      {/* Pipeline overview */}
       <VAExecutionPipeline />
 
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <VATaskQueue />
         <VALiveEventStream />
       </div>
 
-      {/* Escalation queue */}
       <VAEscalationQueue />
-
-      {/* SOP Reference */}
       <VASOPReference />
-
-      {/* Assistant */}
       <VAAssistant />
     </div>
   );
