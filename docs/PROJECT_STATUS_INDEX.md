@@ -1,5 +1,7 @@
 # THE MILANO SEAL™ — PROJECT STATUS INDEX
 
+> **Canonical implementation lock:** See [`FINAL_CODED_INJECTION_LEDGER.md`](./FINAL_CODED_INJECTION_LEDGER.md) for the consolidated production-system preservation, rejection, deferral, and live-certification controls at control point `766257049af884def26f678c9523de73a598b631`.
+
 **Status:** P0 CODE COMPLETE  
 **Remote Infrastructure:** NOT CLEARED  
 **Production Launch:** NOT CLEARED  
