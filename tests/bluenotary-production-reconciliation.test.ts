@@ -67,7 +67,10 @@ test('RON document transfer reads the canonical private Matter bucket', () => {
 });
 
 test('operator surfaces expose pre-session readiness and real handoff controls', () => {
-  assert.match(queue, /RON Matters · Before BlueNotary Session/);
+  assert.match(queue, /BlueNotary Signing Room/);
+  assert.match(queue, /Before BlueNotary Session/);
+  assert.match(queue, /Resolve before session creation/);
+  assert.match(queue, /Open RON Readiness → (?:Create BlueNotary Session|Resolve Blockers)/);
   assert.match(readiness, /Signer Phone/);
   assert.match(readiness, /Notarization Type/);
   assert.match(readiness, /Destination Jurisdiction/);
