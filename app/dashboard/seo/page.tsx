@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { getSeoRevenueFeedback } from '@/lib/seo/search-console/reporting';
+import { SearchConsoleSyncControl } from '@/components/dashboard/SearchConsoleSyncControl';
 
 export const metadata = { title: 'SEO Revenue Feedback — Milano Seal', robots: { index: false, follow: false } };
 
@@ -16,6 +17,7 @@ export default async function SEOPage() {
         <p className="mt-2 max-w-4xl text-sm text-zinc-400">Google Search Console demand and canonical Wise-paid Matter revenue are shown from separate verified sources. The dashboard never invents query-to-revenue attribution.</p>
       </div>
       {!report.configured && <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-200">SEARCH CONSOLE UNCONFIGURED — set GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON and GOOGLE_SEARCH_CONSOLE_SITE_URL. Until then, traffic and ranking metrics remain empty.</div>}
+      <SearchConsoleSyncControl configured={report.configured} />
       <section className="grid gap-3 md:grid-cols-4">
         {[
           ['GSC observations', report.observations],

@@ -5,15 +5,19 @@ import { syncSearchConsole } from '@/lib/seo/search-console/sync';
 
 export async function POST(request: NextRequest) {
   try {
-    await requireDashboardAccess();
-    if (!searchConsoleConfigured()) return NextResponse.json({ status: 'UNCONFIGURED', persisted: 0 }, { status: 503 });
+    const { userId } = await requireDashboardAccess();
+    if (!searchConsoleConfigured()) {
+      return NextResponse.json({ error: 'SEARCH_CONSOLE_UNCONFIGURED', status: 'UNCONFIGURED', persisted: 0 }, { status: 503 });
+    }
+
     const body = await request.json().catch(() => ({})) as { startDate?: string; endDate?: string };
-    const endDate = body.endDate ?? new Date(Date.now() - 86400000).toISOString().slice(0,10);
-    const startDate = body.startDate ?? new Date(Date.now() - 29 * 86400000).toISOString().slice(0,10);
-    const result = await syncSearchConsole(startDate, endDate);
+    const endDate = body.endDate ?? new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+    const startDate = body.startDate ?? new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const result = await syncSearchConsole(startDate, endDate, { triggerType: 'MANUAL', actorUserId: userId });
     return NextResponse.json({ status: 'SYNCED', startDate, endDate, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'SEARCH_CONSOLE_SYNC_FAILED';
-    return NextResponse.json({ error: message }, { status: message.includes('access_denied') ? 401 : 500 });
+    const unauthorized = message.includes('access_denied') || message.includes('login');
+    return NextResponse.json({ error: unauthorized ? 'Unauthorized' : message }, { status: unauthorized ? 401 : 500 });
   }
 }

@@ -1,0 +1,62 @@
+// FINAL LIVE REVIEW + SEARCH CONSOLE HARDENING GATE
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = (path) => readFileSync(path, 'utf8');
+const guard = read('lib/review/reviewAbuseGuard.ts');
+const reviewRoute = read('app/api/review-requests/route.ts');
+const reviewTransition = read('app/api/review-requests/[id]/route.ts');
+const reviewLink = read('app/api/review-requests/[id]/link-matter/route.ts');
+const reviewNotifications = read('lib/review/reviewNotifications.ts');
+const reviewMigration = read('supabase/migrations/066_review_request_events.sql');
+const syncMigration = read('supabase/migrations/067_search_console_sync_runs.sql');
+const sync = read('lib/seo/search-console/sync.ts');
+const manual = read('app/api/admin/seo/search-console/sync/route.ts');
+const cron = read('app/api/cron/seo-search-console/route.ts');
+const control = read('components/dashboard/SearchConsoleSyncControl.tsx');
+const vercel = JSON.parse(read('vercel.json'));
+
+assert.ok(guard.includes('MAX_SESSION_REQUESTS = 3'));
+assert.ok(guard.includes('MAX_IP_REQUESTS = 10'));
+assert.ok(guard.includes('DUPLICATE_WINDOW_MINUTES = 10'));
+assert.ok(guard.includes('REVIEW_RATE_LIMITED'));
+assert.ok(guard.includes('createHmac'));
+assert.ok(guard.includes('SAFE_CONTEXT_KEYS'));
+assert.ok(reviewRoute.includes('MAX_BODY_BYTES = 16 * 1024'));
+assert.ok(reviewRoute.includes('guard.code'));
+assert.ok(reviewRoute.includes('MATTER_ATTACHMENT_NOT_AUTHORIZED'));
+assert.ok(reviewRoute.includes('duplicate: true'));
+assert.ok(reviewRoute.includes("event_type: 'REVIEW_REQUESTED'"));
+assert.ok(reviewRoute.includes('sendReviewRequestedNotification'));
+assert.ok(reviewTransition.includes('REVIEW_ACKNOWLEDGED'));
+assert.ok(reviewTransition.includes('REVIEW_STARTED'));
+assert.ok(reviewTransition.includes('REVIEW_RESOLVED'));
+assert.ok(reviewTransition.includes('REVIEW_CLOSED'));
+assert.ok(reviewTransition.includes('sendReviewResolvedNotification'));
+assert.ok(reviewLink.includes('REVIEW_MATTER_LINKED'));
+assert.ok(reviewLink.includes('matter_lifecycle_changed: false'));
+assert.ok(reviewMigration.includes('review_request_events'));
+assert.ok(reviewMigration.includes('REVIEW_MATTER_LINKED'));
+assert.ok(reviewMigration.includes('append-only'));
+assert.ok(reviewMigration.includes('revoke all'));
+assert.ok(reviewNotifications.includes('MILANO REVIEW REQUESTED'));
+assert.ok(reviewNotifications.includes('MILANO REVIEW COMPLETED'));
+assert.ok(reviewNotifications.includes('No execution or payment status has changed'));
+assert.ok(syncMigration.includes('seo_search_console_sync_runs'));
+assert.ok(syncMigration.includes("'MANUAL','CRON'"));
+assert.ok(sync.includes("status: 'SUCCEEDED'"));
+assert.ok(sync.includes("status: 'FAILED'"));
+assert.ok(manual.includes('SEARCH_CONSOLE_UNCONFIGURED'));
+assert.ok(manual.includes("triggerType: 'MANUAL'"));
+assert.ok(cron.includes("triggerType: 'CRON'"));
+assert.ok(cron.includes("request.headers.get('authorization')"));
+assert.ok(control.includes('SYNC SEARCH CONSOLE'));
+assert.ok(control.includes("'UNCONFIGURED' | 'READY' | 'SYNCING' | 'SYNCED' | 'FAILED'"));
+assert.ok(vercel.crons.some((entry) => entry.path === '/api/cron/seo-search-console' && entry.schedule === '0 6 * * *'));
+
+const all = [guard, reviewRoute, reviewTransition, reviewLink, reviewNotifications, reviewMigration, syncMigration, sync, manual, cron, control].join('\n');
+assert.ok(!/stripe/i.test(all), 'No Stripe dependency may enter review/search hardening');
+assert.ok(!/payment_confirmed\s*[:=]/.test(all), 'Review/search hardening may not author payment truth');
+assert.ok(!/MATTER_STATES|transitionMatter|scheduleMatter|executeMatter/.test(all), 'Review/search hardening may not become Matter state authority');
+
+console.log('PASS live review + Search Console hardening');
