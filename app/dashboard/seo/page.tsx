@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { SearchConsoleSyncControl } from "@/components/dashboard/SearchConsoleSyncControl";
 
 export const metadata = {
   title: "SEO Operations — Milano Seal",
@@ -75,6 +76,8 @@ export default async function SEOPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.92)", margin: "0 0 32px" }}>
           SEO Operations Center
         </h1>
+
+        <SearchConsoleSyncControl />
 
         {/* Counts */}
         <div style={{ display: "flex", gap: 16, marginBottom: 36, flexWrap: "wrap" }}>

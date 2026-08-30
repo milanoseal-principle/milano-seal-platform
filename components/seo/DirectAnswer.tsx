@@ -1,0 +1,24 @@
+export function DirectAnswer({
+  question,
+  answer,
+  route,
+}: {
+  question: string;
+  answer: string;
+  route: string[];
+}) {
+  return (
+    <section className="border border-[#C6A55A]/30 bg-[#0D0D0D] p-6 md:p-8">
+      <p className="text-xs uppercase tracking-[0.28em] text-[#C6A55A]">Direct answer</p>
+      <h2 className="mt-3 font-serif text-2xl text-white">{question}</h2>
+      <p className="mt-4 leading-7 text-zinc-300">{answer}</p>
+      <ol className="mt-6 flex flex-wrap gap-4">
+        {route.map((step, index) => (
+          <li key={step} className="text-xs text-zinc-300">
+            <span className="text-[#C6A55A]">{index + 1}.</span> {step}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}

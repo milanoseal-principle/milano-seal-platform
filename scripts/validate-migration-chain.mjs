@@ -11,6 +11,8 @@ const required = [
   "050_live_intake_execution_truth_reconciliation.sql",
   "055_matter_evidence_ledger.sql",
   "056_matter_truth_snapshot_archive.sql",
+  "066_review_request_events.sql",
+  "067_search_console_sync_runs.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -108,6 +110,16 @@ for (const invariant of [
 }
 if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(truthArchive)) {
   throw new Error("056 must never authorize snapshot access from user_metadata");
+}
+
+const reviewEvents = fs.readFileSync(path.join(dir, "066_review_request_events.sql"), "utf8");
+for (const invariant of ["review_request_events", "before update or delete", "REVIEW_REQUESTED", "REVIEW_RESOLVED", "enable row level security"]) {
+  if (!reviewEvents.includes(invariant)) throw new Error(`066 review event ledger missing invariant: ${invariant}`);
+}
+
+const searchSyncRuns = fs.readFileSync(path.join(dir, "067_search_console_sync_runs.sql"), "utf8");
+for (const invariant of ["seo_search_console_sync_runs", "fetched", "persisted", "trigger_type", "enable row level security"]) {
+  if (!searchSyncRuns.includes(invariant)) throw new Error(`067 Search Console sync ledger missing invariant: ${invariant}`);
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
