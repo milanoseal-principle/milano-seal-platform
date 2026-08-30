@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, FileSearch2, Landmark, ShieldAlert, Workflow } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, FileSearch2, Landmark, Network, ShieldAlert, ShieldCheck, Workflow } from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import {
@@ -12,9 +12,10 @@ import {
 } from "@/data/counsel-intelligence";
 
 export const metadata: Metadata = {
-  title: "Cross-Border Execution Intelligence for Counsel | The Milano Seal™",
+  title: "Cross-Border Execution Infrastructure for Counsel | The Milano Seal™",
   description:
-    "Matter-specific execution intelligence and recurring counsel access for U.S. and foreign attorneys managing U.S.-origin documents for international use.",
+    "A governed U.S.-side execution desk and professional network for U.S. and foreign counsel managing U.S.-origin documents for international use.",
+  robots: { index: true, follow: true },
 };
 
 const REPORT_VALUE = [
@@ -22,6 +23,20 @@ const REPORT_VALUE = [
   { title: "Authority Matrix", icon: Landmark, body: "Notarial authority, authentication authority, destination framework, receiving authority, and acceptance dependencies." },
   { title: "Failure / Rejection Risk", icon: ShieldAlert, body: "Surfaces execution defects that can cause delay or rejection without converting uncertainty into false certainty." },
   { title: "Evidence Appendix", icon: FileSearch2, body: "Material conclusions retain source, authority, checked date, confidence posture, and status so UNKNOWN remains UNKNOWN." },
+] as const;
+
+const COUNSEL_CONTROLS = [
+  "Legal substance and strategy",
+  "Foreign-law requirements",
+  "Receiving-authority requirements",
+  "Client representation and legal advice",
+] as const;
+
+const MILANO_CONTROLS = [
+  "U.S. execution coordination",
+  "Notarial execution where applicable",
+  "Authentication / apostille routing",
+  "Custody, courier, and international release",
 ] as const;
 
 export default function Page() {
@@ -33,9 +48,16 @@ export default function Page() {
         <div className="relative mx-auto max-w-6xl">
           <div className="grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">For U.S. & Foreign Counsel</p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.05] px-3 py-2 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/75">
+                <Network className="h-3.5 w-3.5" /> Milano Counsel Network™
+              </div>
+              <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">For U.S. & Foreign Counsel</p>
               <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl lg:text-6xl">U.S. execution infrastructure for documents that must <span className="italic text-[var(--ms-gold)]">work across borders.</span></h1>
               <p className="mt-6 max-w-3xl text-base leading-7 text-white/52">For international, immigration, real-estate, trusts and estates, private-wealth, corporate, family, maritime, and litigation counsel who need a controlled U.S.-origin execution route without building the operational workflow themselves.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/intake?audience=counsel&product=execution-intelligence-report" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Start Counsel Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
+                <Link href="/professional-network" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/28 bg-black/25 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]/82">View Professional Network<Network className="h-3.5 w-3.5" /></Link>
+              </div>
             </div>
             <div className="rounded-2xl border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.05] p-5">
               <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-[var(--ms-gold)]/65">Core use case</p>
@@ -44,7 +66,25 @@ export default function Page() {
             </div>
           </div>
 
-          <section id="execution-intelligence-report" className="mt-14 overflow-hidden rounded-3xl border border-[var(--ms-gold)]/30 bg-[#0A0A0C] shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
+          <section className="mt-10 overflow-hidden rounded-3xl border border-white/[0.07] bg-[linear-gradient(135deg,rgba(198,165,90,0.055),rgba(255,255,255,0.015)_42%,rgba(0,0,0,0.24))] p-5 sm:p-7">
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-white/[0.06] bg-black/25 p-5">
+                <div className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.16em] text-white/30"><BriefcaseBusiness className="h-3.5 w-3.5 text-[var(--ms-gold)]/70" /> Counsel controls</div>
+                <div className="mt-4 grid gap-2">
+                  {COUNSEL_CONTROLS.map((item) => <div key={item} className="flex min-h-10 items-center gap-2.5 rounded-lg border border-white/[0.045] bg-white/[0.012] px-3 text-[12px] text-white/48"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-white/25" />{item}</div>)}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[var(--ms-gold)]/14 bg-[var(--ms-gold)]/[0.025] p-5">
+                <div className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/65"><ShieldCheck className="h-3.5 w-3.5" /> Milano controls</div>
+                <div className="mt-4 grid gap-2">
+                  {MILANO_CONTROLS.map((item) => <div key={item} className="flex min-h-10 items-center gap-2.5 rounded-lg border border-[var(--ms-gold)]/10 bg-black/20 px-3 text-[12px] text-white/52"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[var(--ms-gold)]/70" />{item}</div>)}
+                </div>
+              </div>
+            </div>
+            <p className="mt-4 text-[10px] leading-5 text-white/25">The Milano Counsel Network™ is a professional network designation and execution-access program. It does not create an attorney-client relationship with The Milano Seal, legal representation by Milano, or any claim that Milano personnel are attorneys.</p>
+          </section>
+
+          <section id="execution-intelligence-report" className="mt-10 overflow-hidden rounded-3xl border border-[var(--ms-gold)]/30 bg-[#0A0A0C] shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
             <div className="grid gap-0 lg:grid-cols-[.8fr_1.2fr]">
               <div className="border-b border-white/[0.07] p-6 sm:p-8 lg:border-b-0 lg:border-r">
                 <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/65">Per Matter</p>
