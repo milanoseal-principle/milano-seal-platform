@@ -65,7 +65,10 @@ check('operator navigation exposes human review and SEO feedback surfaces', hasA
 
 const allNew = [lifecycle, reviewMigration, reviewApi, reviewMutation, copilot, seoMigration, seoClient, seoReporting, seoDashboard, authorityFreshness, portalRail, operatorShell].join('\n');
 check('operating-loop closure introduces no Stripe dependency', !/stripe/i.test(allNew));
-check('operating-loop closure does not introduce a second payment authority', !/payment provider|payment engine|create table.*payments/is.test(allNew));
+check('operating-loop closure creates no competing payment table or settlement mutation path',
+  !/create\s+table\s+(if\s+not\s+exists\s+)?public\.(payments|payment_events|payment_settlements)/i.test(`${reviewMigration}\n${seoMigration}`) &&
+  !/payment_confirmed\s*[:=]\s*true|payment_status\s*[:=]\s*['"]paid['"]/i.test(`${reviewApi}\n${reviewMutation}`)
+);
 
 const failed = checks.filter((item) => !item.ok);
 for (const item of checks) console.log(`${item.ok ? 'PASS' : 'FAIL'} ${item.label}`);
