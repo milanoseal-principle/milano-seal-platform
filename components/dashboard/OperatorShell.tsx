@@ -8,6 +8,7 @@ const NAV: MilanoOSNavItem[] = [
   { href: "/dashboard/deals", label: "Matters", icon: "briefcase", group: "Execution", hint: "Canonical Matter records" },
   { href: "/dashboard/intake", label: "Intake", icon: "filePlus", group: "Execution", hint: "Secure Matter capture" },
   { href: "/dashboard/dispatch", label: "Dispatch", icon: "boxes", group: "Execution", hint: "Execution handoff" },
+  { href: "/dashboard/ron", label: "RON / BlueNotary", icon: "clipboard", group: "Execution", hint: "Schedule and manage remote online notarization" },
   { href: "/dashboard/packaging-delivery", label: "Packaging / Delivery", icon: "package", group: "Execution", hint: "Release and delivery" },
   { href: "/dashboard/compliance-atlas", label: "Compliance", icon: "clipboard", group: "Intelligence", hint: "Authority and pathway review" },
   { href: "/dashboard/reconciliation", label: "Reconciliation", icon: "activity", group: "Intelligence", hint: "Cross-domain Matter truth failures" },
