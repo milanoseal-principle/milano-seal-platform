@@ -1,187 +1,36 @@
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { requireDashboardAccess } from '@/lib/dashboardAuth';
+import { getSeoRevenueFeedback } from '@/lib/seo/search-console/reporting';
 
-export const metadata = {
-  title: "SEO Operations — Milano Seal",
-};
-
-const COUNTRIES = [
-  "Italy", "Mexico", "Germany", "Spain", "France", "Brazil", "Portugal",
-  "China", "Japan", "UAE", "Colombia", "Peru", "Argentina", "Philippines",
-  "India", "South Korea", "Canada", "UK", "Australia", "Dominican Republic",
-];
-
-const DOCUMENT_TYPES = [
-  "Birth Certificate", "Marriage Certificate", "Diploma", "Power of Attorney",
-  "Death Certificate", "Divorce Decree", "Criminal Background Check",
-  "Articles of Incorporation", "Medical Records", "Notarized Affidavit",
-];
-
-const AUTHORITY_PAGES = [
-  { country: "Italy", authority: "Prefettura di Roma" },
-  { country: "Mexico", authority: "SRE (Secretaría de Relaciones Exteriores)" },
-  { country: "Germany", authority: "Kultusministerkonferenz" },
-];
-
-function slugify(s: string) {
-  return s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
+export const metadata = { title: 'SEO Revenue Feedback — Milano Seal', robots: { index: false, follow: false } };
 
 export default async function SEOPage() {
   await requireDashboardAccess();
-
-  const totalTarget = COUNTRIES.length + DOCUMENT_TYPES.length + AUTHORITY_PAGES.length;
-
-  const thStyle: React.CSSProperties = {
-    padding: "10px 16px",
-    textAlign: "left",
-    fontFamily: "monospace",
-    fontSize: 9,
-    letterSpacing: "0.28em",
-    textTransform: "uppercase",
-    color: "rgba(198,165,90,0.5)",
-    borderBottom: "1px solid rgba(212,175,55,0.06)",
-    fontWeight: 400,
-  };
-
-  const tdBase: React.CSSProperties = {
-    padding: "10px 16px",
-    fontSize: 12,
-    fontFamily: "monospace",
-    borderBottom: "1px solid rgba(212,175,55,0.04)",
-  };
-
-  const PlannedBadge = () => (
-    <span style={{
-      fontSize: 10,
-      fontFamily: "monospace",
-      color: "#f59e0b",
-      background: "rgba(245,158,11,0.08)",
-      border: "1px solid rgba(245,158,11,0.2)",
-      borderRadius: 4,
-      padding: "2px 8px",
-    }}>
-      Planned
-    </span>
-  );
-
+  const report = await getSeoRevenueFeedback();
   return (
-    <div style={{ padding: "32px 24px" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 4px" }}>
-          MILANO SEAL / SEO OPERATIONS CENTER
-        </p>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.92)", margin: "0 0 32px" }}>
-          SEO Operations Center
-        </h1>
-
-        {/* Counts */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 36, flexWrap: "wrap" }}>
-          {[
-            { label: "Total Target Pages", value: String(totalTarget) },
-            { label: "Planned", value: String(totalTarget) },
-            { label: "Built", value: "0" },
-            { label: "Indexed", value: "0" },
-          ].map((c) => (
-            <div
-              key={c.label}
-              style={{
-                flex: 1,
-                minWidth: 140,
-                background: "rgba(8,5,1,0.97)",
-                border: "1px solid rgba(212,175,55,0.08)",
-                borderRadius: 8,
-                padding: "16px 20px",
-              }}
-            >
-              <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 8px" }}>
-                {c.label}
-              </p>
-              <p style={{ fontSize: 24, fontWeight: 700, color: "#C6A55A", margin: 0, fontFamily: "monospace" }}>
-                {c.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Country Pages */}
-        <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 10px" }}>
-          COUNTRY PAGES ({COUNTRIES.length})
-        </p>
-        <div style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  {["Country", "Slug", "Status"].map((h) => <th key={h} style={thStyle}>{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {COUNTRIES.map((c) => (
-                  <tr key={c}>
-                    <td style={{ ...tdBase, color: "rgba(255,255,255,0.85)" }}>{c}</td>
-                    <td style={{ ...tdBase, color: "rgba(255,255,255,0.4)" }}>/apostille/{slugify(c)}</td>
-                    <td style={{ ...tdBase }}><PlannedBadge /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Document Pages */}
-        <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 10px" }}>
-          DOCUMENT TYPE PAGES ({DOCUMENT_TYPES.length})
-        </p>
-        <div style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  {["Document Type", "Slug", "Status"].map((h) => <th key={h} style={thStyle}>{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {DOCUMENT_TYPES.map((d) => (
-                  <tr key={d}>
-                    <td style={{ ...tdBase, color: "rgba(255,255,255,0.85)" }}>{d}</td>
-                    <td style={{ ...tdBase, color: "rgba(255,255,255,0.4)" }}>/apostille/documents/{slugify(d)}</td>
-                    <td style={{ ...tdBase }}><PlannedBadge /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Authority Pages */}
-        <p style={{ fontFamily: "monospace", fontSize: 9, letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(198,165,90,0.5)", margin: "0 0 10px" }}>
-          AUTHORITY PAGES ({AUTHORITY_PAGES.length})
-        </p>
-        <div style={{ background: "rgba(8,5,1,0.97)", border: "1px solid rgba(212,175,55,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                {["Country", "Authority", "Status"].map((h) => <th key={h} style={thStyle}>{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {AUTHORITY_PAGES.map((a) => (
-                <tr key={a.country}>
-                  <td style={{ ...tdBase, color: "rgba(255,255,255,0.85)" }}>{a.country}</td>
-                  <td style={{ ...tdBase, color: "rgba(255,255,255,0.6)" }}>{a.authority}</td>
-                  <td style={{ ...tdBase }}><PlannedBadge /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0 }}>
-          SEO pages are generated from the country and document intelligence registry. Build requires operator approval per page.
-        </p>
+    <main className="mx-auto max-w-7xl p-6 text-white">
+      <div className="mb-8">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-500">SEO Authority Engine</p>
+        <h1 className="mt-2 text-2xl font-semibold">International Organic Acquisition</h1>
+        <p className="mt-2 max-w-4xl text-sm text-zinc-400">Google Search Console demand and canonical Wise-paid Matter revenue are shown from separate verified sources. The dashboard never invents query-to-revenue attribution.</p>
       </div>
-    </div>
+      {!report.configured && <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-200">SEARCH CONSOLE UNCONFIGURED — set GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON and GOOGLE_SEARCH_CONSOLE_SITE_URL. Until then, traffic and ranking metrics remain empty.</div>}
+      <section className="grid gap-3 md:grid-cols-4">
+        {[
+          ['GSC observations', report.observations],
+          ['Paid Matters', report.paidMatters],
+          ['Verified revenue', `$${report.verifiedRevenue.toLocaleString(undefined,{ maximumFractionDigits: 2 })}`],
+          ['Window', `${report.windowDays} days`],
+        ].map(([label,value]) => <div key={String(label)} className="rounded-xl border border-white/10 bg-zinc-950 p-4"><p className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</p><p className="mt-2 text-xl font-semibold">{value}</p></div>)}
+      </section>
+      <section className="mt-8">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Top Opportunities</p>
+        <h2 className="mt-1 mb-3 text-lg font-semibold">Search demand requiring action</h2>
+        <div className="overflow-x-auto rounded-xl border border-white/10"><table className="min-w-full text-left text-xs"><thead className="bg-white/[0.03] text-zinc-500"><tr><th className="p-3">Query</th><th className="p-3">Page</th><th className="p-3">Impressions</th><th className="p-3">Clicks</th><th className="p-3">CTR</th><th className="p-3">Position</th><th className="p-3">Priority</th></tr></thead><tbody>{report.opportunities.map((row) => <tr key={`${row.query}-${row.page}`} className="border-t border-white/5"><td className="p-3 text-zinc-200">{row.query}</td><td className="max-w-xs truncate p-3 text-zinc-500">{row.page}</td><td className="p-3">{row.impressions.toLocaleString()}</td><td className="p-3">{row.clicks.toLocaleString()}</td><td className="p-3">{(row.ctr*100).toFixed(1)}%</td><td className="p-3">{row.position.toFixed(1)}</td><td className="p-3 text-amber-300">{row.priority}</td></tr>)}</tbody></table></div>
+        {report.opportunities.length === 0 && <p className="mt-3 text-sm text-zinc-500">No verified Search Console observations are available yet.</p>}
+      </section>
+      <p className="mt-6 text-xs text-zinc-600">{report.attributionBoundary}</p>
+    </main>
   );
 }
