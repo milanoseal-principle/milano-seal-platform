@@ -64,6 +64,7 @@ const gates = [
   ["node", ["scripts/validate-operating-loop-closure.mjs"]],
   ["node", ["scripts/validate-live-review-search-hardening.mjs"]],
   ["node", ["scripts/validate-sensitive-identity-helper-grants.mjs"]],
+  ["node", ["scripts/validate-ron-signing-room-ux.mjs"]],
 ];
 
 for (const [command, args] of gates) {
