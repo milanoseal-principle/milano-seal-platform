@@ -35,11 +35,11 @@ export function Header() {
         style={{ paddingTop: "var(--sa-top)" }}
       >
         <div className={isScrolled ? "border-b border-white/[0.06]" : ""}>
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-between h-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-20 gap-3">
               <Link
                 href="/"
-                className="group flex-shrink-0 select-none flex items-center gap-3"
+                className="group min-w-0 flex-shrink select-none flex items-center gap-2.5 sm:gap-3"
                 aria-label={`${MILANO_BRAND.name} home`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -50,10 +50,16 @@ export function Header() {
                   width={64}
                   height={64}
                   className="ms-logo-shimmer"
-                  style={{ display: "block", objectFit: "contain", flexShrink: 0, width: "clamp(56px, 6vw, 72px)", height: "clamp(56px, 6vw, 72px)" }}
+                  style={{
+                    display: "block",
+                    objectFit: "contain",
+                    flexShrink: 0,
+                    width: "clamp(48px, 6vw, 72px)",
+                    height: "clamp(48px, 6vw, 72px)",
+                  }}
                 />
-                <span className="flex flex-col leading-none">
-                  <span className="font-serif text-[17px] md:text-[20px] font-semibold uppercase text-[var(--ms-gold)] tracking-[0.22em] md:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)]">
+                <span className="min-w-0 flex flex-col leading-none">
+                  <span className="truncate font-serif text-[13px] sm:text-[17px] xl:text-[20px] font-semibold uppercase text-[var(--ms-gold)] tracking-[0.14em] sm:tracking-[0.22em] xl:tracking-[0.28em] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)]">
                     {MILANO_BRAND.name}
                   </span>
                   <span className="hidden sm:block mt-1.5 text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60">
@@ -62,28 +68,28 @@ export function Header() {
                 </span>
               </Link>
 
-              <nav className="hidden md:flex items-center gap-6 xl:gap-8" aria-label="Primary navigation">
+              <nav className="hidden xl:flex items-center gap-6 2xl:gap-8" aria-label="Primary navigation">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-sm text-[#B0B0B0] hover:text-white transition-colors duration-200"
+                    className="text-sm text-[#B0B0B0] hover:text-white transition-colors duration-200 whitespace-nowrap"
                   >
                     {link.label}
                   </Link>
                 ))}
               </nav>
 
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8"
+                  className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8"
                 >
                   Login
                 </Link>
                 <Link
                   href="/intake"
-                  className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--ms-gold)] text-[var(--ms-black)] text-sm font-medium rounded-lg transition-all duration-300 hover:brightness-110"
+                  className="group inline-flex min-h-11 items-center gap-2 px-5 py-2.5 bg-[var(--ms-gold)] text-[var(--ms-black)] text-sm font-medium rounded-lg transition-all duration-300 hover:brightness-110"
                 >
                   <span>Begin Secure Intake</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -93,7 +99,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen((open) => !open)}
-                className="md:hidden min-h-11 min-w-11 p-2 text-white"
+                className="xl:hidden flex-shrink-0 min-h-11 min-w-11 p-2 text-white"
                 aria-label="Toggle menu"
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="milano-mobile-navigation"
@@ -114,10 +120,10 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 z-40 md:hidden bg-[var(--ms-black)] border-b border-[#2A2A2A]"
+            className="fixed inset-x-0 z-40 xl:hidden bg-[var(--ms-black)] border-b border-[#2A2A2A] max-h-[calc(100dvh-var(--header-total-height)-var(--sa-top))] overflow-y-auto"
             style={{ top: "calc(var(--header-total-height) + var(--sa-top))" }}
           >
-            <nav className="flex flex-col p-6 space-y-4" aria-label="Mobile navigation">
+            <nav className="flex flex-col p-6 space-y-2" aria-label="Mobile navigation">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
