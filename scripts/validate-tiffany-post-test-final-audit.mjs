@@ -11,13 +11,13 @@ const observation = read("app/api/portal/me/payment-observation/route.ts");
 const scheduling = read("lib/scheduling/complimentarySchedulingGate.ts");
 const scheduleRoute = read("app/api/deals/[id]/schedule/route.ts");
 const ronDashboard = read("app/dashboard/ron/page.tsx");
-const ronCreate = read("app/api/ron/sessions/route.ts");
+const ronCreate = read("app/api/dashboard/ron/sessions/route.ts");
 const ronDetail = read("app/dashboard/ron/[session_id]/page.tsx");
 const operatorShell = read("components/dashboard/OperatorShell.tsx");
 const dashboardAuth = read("lib/dashboardAuth.ts");
 const alerts = read("lib/notifications/transactionalEmailAlerts.ts");
 const cron = read("app/api/cron/notification-reconcile/route.ts");
-const signerRoute = read("app/api/dashboard/ron/sessions/route.ts");
+const signerRoute = ronCreate;
 
 check("Wise processing remains distinct from verified paid truth", hasAll(invoice, [
   "Wise payment processing",
