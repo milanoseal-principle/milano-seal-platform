@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShieldCheck, Globe, FileText, Landmark } from "lucide-react";
+import { ShieldCheck, Globe, FileText, Landmark, ArrowRight } from "lucide-react";
 
 const CREDENTIALS = [
   { icon: ShieldCheck, text: "Florida Notary Public" },
@@ -55,7 +56,7 @@ export function PaymentFounder() {
       />
 
       <motion.div
-        className="relative z-10 max-w-5xl mx-auto px-6"
+        className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6"
         variants={section}
         initial="hidden"
         whileInView="visible"
@@ -112,7 +113,7 @@ export function PaymentFounder() {
             </motion.div>
 
             <motion.div
-              className="flex flex-col justify-center md:w-[58%] px-8 md:px-12 py-10 md:py-14"
+              className="flex flex-col justify-center md:w-[58%] px-6 sm:px-8 md:px-12 py-10 md:py-14"
               variants={section}
             >
               <motion.p variants={fadeUp} className="font-mono text-[9px] tracking-[0.32em] uppercase text-[#6A5520] mb-1">
@@ -147,7 +148,7 @@ export function PaymentFounder() {
                 ))}
               </ul>
 
-              <motion.div variants={fadeUp} className="mb-3">
+              <motion.div variants={fadeUp} className="mb-5">
                 <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
                   Founder-Led Execution // Personally Overseen
                 </span>
@@ -161,6 +162,23 @@ export function PaymentFounder() {
                 </p>
               </motion.div>
 
+              <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">
+                <Link
+                  href="/founder"
+                  className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-[#C6A55A]/45 bg-[#C6A55A]/[0.06] px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#D4AF37] transition-colors hover:border-[#C6A55A]/70 hover:bg-[#C6A55A]/[0.1]"
+                >
+                  <span>View Founder Profile</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/about"
+                  className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-white/12 bg-white/[0.025] px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70 transition-colors hover:border-[#C6A55A]/35 hover:text-[#D4AF37]"
+                >
+                  <span>About The Milano Seal</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </motion.div>
+
               <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-8">
                 {PRIMARY_SOCIALS.map((chip) => (
                   <motion.a
@@ -170,7 +188,7 @@ export function PaymentFounder() {
                     rel="noopener noreferrer"
                     whileHover={{ y: -2, borderColor: "rgba(212,175,55,0.45)" }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] transition-colors duration-300"
+                    className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] transition-colors duration-300"
                   >
                     <span className="h-1 w-1 rounded-full bg-[#C6A55A]/70 flex-shrink-0" />
                     {chip.label}
@@ -184,7 +202,7 @@ export function PaymentFounder() {
                     rel="noopener noreferrer"
                     whileHover={{ y: -1, borderColor: "rgba(255,255,255,0.15)" }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#4A4A4A] hover:text-[#7A7A7A] transition-colors duration-300"
+                    className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors duration-300"
                   >
                     {chip.label}
                   </motion.a>
