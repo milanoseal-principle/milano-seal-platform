@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+// Regression lock: shipping UX may evolve, but Shippo/custody/release authority stays singular.
 const courierPage = readFileSync("app/dashboard/courier/page.tsx", "utf8");
 const shippingCompatibility = readFileSync("app/dashboard/shipping/page.tsx", "utf8");
 const deck = readFileSync("components/dashboard/courier/ShippingControlDeck.tsx", "utf8");
