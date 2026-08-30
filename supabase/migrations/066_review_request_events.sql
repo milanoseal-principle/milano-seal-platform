@@ -13,7 +13,7 @@ create table if not exists public.review_request_events (
   id uuid primary key default gen_random_uuid(),
   review_request_id uuid not null references public.review_requests(id) on delete cascade,
   matter_id uuid null references public.deals(id) on delete set null,
-  event_type text not null check (event_type in ('REVIEW_REQUESTED','REVIEW_ACKNOWLEDGED','REVIEW_STARTED','REVIEW_RESOLVED','REVIEW_CLOSED')),
+  event_type text not null check (event_type in ('REVIEW_REQUESTED','REVIEW_ACKNOWLEDGED','REVIEW_STARTED','REVIEW_RESOLVED','REVIEW_CLOSED','REVIEW_MATTER_LINKED')),
   from_status text null,
   to_status text null,
   actor_user_id uuid null,
