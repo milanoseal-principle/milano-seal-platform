@@ -10,6 +10,8 @@ Base production SHA when branch was created:
 
 Do not work from PR #282. It is superseded and closed. Current canonical production code came through merged PR #283.
 
+Validation preview is intentionally enabled for this branch. Do not merge until every Vercel status check is green.
+
 ## ROLE
 
 Act as senior production engineer, Supabase operator, Next.js/Vercel release engineer, QA architect, and Milano Seal systems custodian.
