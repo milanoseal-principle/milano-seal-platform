@@ -7,6 +7,9 @@ const notifications = readFileSync("app/dashboard/notifications/page.tsx", "utf8
 const completion = readFileSync("app/dashboard/completion/page.tsx", "utf8");
 const apostille = readFileSync("app/dashboard/apostille/page.tsx", "utf8");
 const shell = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
+const portalRail = readFileSync("components/portal/portal-status-rail.tsx", "utf8");
+const motion = readFileSync("components/motion/MilanoMotion.tsx", "utf8");
+const motionPresets = readFileSync("lib/motion/milanoMotionPresets.ts", "utf8");
 
 test("scheduling readiness projects the canonical gate instead of creating a second authority", () => {
   assert.match(scheduling, /evaluateSchedulingGate/);
@@ -56,4 +59,39 @@ test("operator navigation exposes the continuous execution journey", () => {
   ]) {
     assert.match(shell, new RegExp(route.replaceAll("/", "\\/")));
   }
+});
+
+test("operator shell adds a cinematic navigation rail without claiming Matter state", () => {
+  assert.match(shell, /EXECUTION_RAIL/);
+  assert.match(shell, /Execution Path/);
+  assert.match(shell, /Navigation context only/);
+  assert.match(shell, /canonical Matter truth remains authoritative/);
+  assert.doesNotMatch(shell, /payment_confirmed\s*:/);
+  assert.doesNotMatch(shell, /\.update\(/);
+  assert.doesNotMatch(shell, /\.insert\(/);
+});
+
+test("portal journey motion remains derived from canonical status and payment inputs", () => {
+  assert.match(portalRail, /resolveStepIndex/);
+  assert.match(portalRail, /resolvePortalLifecycleSummary/);
+  assert.match(portalRail, /paymentStatus/);
+  assert.match(portalRail, /Truth-backed · no inferred success states/);
+  assert.match(portalRail, /useReducedMotion/);
+  assert.doesNotMatch(portalRail, /\.update\(/);
+  assert.doesNotMatch(portalRail, /\.insert\(/);
+  assert.doesNotMatch(portalRail, /fetch\(/);
+});
+
+test("shared Milano motion system is accessibility-aware and presentation-only", () => {
+  assert.match(motion, /useReducedMotion/);
+  assert.match(motion, /MilanoReveal/);
+  assert.match(motion, /MilanoStagger/);
+  assert.match(motion, /MilanoStatusPulse/);
+  assert.match(motion, /MilanoSealConfirm/);
+  assert.match(motionPresets, /MILANO_EASE/);
+  assert.match(motionPresets, /verified/);
+  assert.match(motionPresets, /exception/);
+  assert.doesNotMatch(motion, /supabase/i);
+  assert.doesNotMatch(motion, /wise/i);
+  assert.doesNotMatch(motion, /fetch\(/);
 });
