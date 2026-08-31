@@ -122,6 +122,51 @@ create trigger trg_critical_identifier_snapshots_updated_at
 before update on public.critical_identifier_snapshots
 for each row execute function public.set_updated_at();
 
+-- Replace the legacy authenticated=true policies with app_metadata role authority.
+alter table public.compliance_incidents enable row level security;
+alter table public.incident_audit_log enable row level security;
+alter table public.critical_identifier_snapshots enable row level security;
+
+drop policy if exists "operator_compliance_incidents" on public.compliance_incidents;
+drop policy if exists "operator_incident_audit_log" on public.incident_audit_log;
+drop policy if exists "operator_identifier_snapshots" on public.critical_identifier_snapshots;
+drop policy if exists "Founder and admin manage compliance incidents" on public.compliance_incidents;
+drop policy if exists "Founder and admin manage incident audit log" on public.incident_audit_log;
+drop policy if exists "Founder and admin manage critical identifier snapshots" on public.critical_identifier_snapshots;
+
+create policy "Founder and admin manage compliance incidents"
+on public.compliance_incidents for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+);
+
+create policy "Founder and admin manage incident audit log"
+on public.incident_audit_log for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+);
+
+create policy "Founder and admin manage critical identifier snapshots"
+on public.critical_identifier_snapshots for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager')
+);
+
 -- ---------------------------------------------------------------------------
 -- Notary network compatibility
 -- ---------------------------------------------------------------------------
@@ -237,6 +282,55 @@ drop trigger if exists trg_notary_assignments_updated_at on public.notary_assign
 create trigger trg_notary_assignments_updated_at
 before update on public.notary_assignments
 for each row execute function public.set_updated_at();
+
+-- Public applications are mediated by the server route using service_role.
+-- Remove direct public-table insertion and legacy authenticated=true operator policies.
+alter table public.notary_applications enable row level security;
+alter table public.notary_credentials enable row level security;
+alter table public.notary_assignments enable row level security;
+
+drop policy if exists "public_notary_apply" on public.notary_applications;
+drop policy if exists "Public can submit notary applications" on public.notary_applications;
+drop policy if exists "operator_notary_applications_read" on public.notary_applications;
+drop policy if exists "operator_notary_applications_update" on public.notary_applications;
+drop policy if exists "operator_notary_credentials" on public.notary_credentials;
+drop policy if exists "operator_notary_assignments" on public.notary_assignments;
+drop policy if exists "Founder admin alliance manage notary applications" on public.notary_applications;
+drop policy if exists "Founder admin alliance manage notary credentials" on public.notary_credentials;
+drop policy if exists "Founder admin alliance manage notary assignments" on public.notary_assignments;
+
+create policy "Founder admin alliance manage notary applications"
+on public.notary_applications for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+);
+
+create policy "Founder admin alliance manage notary credentials"
+on public.notary_credentials for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+);
+
+create policy "Founder admin alliance manage notary assignments"
+on public.notary_assignments for all to authenticated
+using (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+)
+with check (
+  (auth.jwt() -> 'app_metadata' ->> 'role') in
+  ('founder','founder_admin','admin','admin_operator','superadmin','ops_manager','alliance')
+);
 
 comment on table public.compliance_incidents is
   'Compliance incident system reconciled across historical schemas; canonical Matter authority remains deals and governed Matter state.';
