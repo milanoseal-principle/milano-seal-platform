@@ -24,6 +24,7 @@ const migration = fs.readFileSync(path.join(root, "supabase/migrations/072_seo_a
 const scoring = fs.readFileSync(path.join(root, "lib/seo/activation/scoring.ts"), "utf8");
 const dashboard = fs.readFileSync(path.join(root, "app/dashboard/seo/page.tsx"), "utf8");
 const localized = fs.readFileSync(path.join(root, "lib/seo/localization/runtime.ts"), "utf8");
+const cron = fs.readFileSync(path.join(root, "app/api/cron/seo-search-console/route.ts"), "utf8");
 
 const assertions = [
   [migration.includes("seo_authority_relationships"), "relationship ledger missing"],
@@ -38,6 +39,8 @@ const assertions = [
   [dashboard.includes("Wise-paid Matter revenue"), "revenue truth boundary missing from operator UI"],
   [dashboard.includes("never falsely attributed"), "query-to-revenue attribution boundary missing"],
   [localized.includes('record.translationStatus !== "HUMAN_REVIEWED" || record.indexStatus !== "INDEXABLE"'), "localized fail-closed publication gate drifted"],
+  [cron.includes("activation refresh degraded"), "Search Console downstream activation degradation boundary missing"],
+  [cron.includes('success: true'), "Search Console ingestion must remain successful if downstream activation degrades"],
 ];
 
 const failures = assertions.filter(([ok]) => !ok).map(([, message]) => message);
@@ -53,3 +56,4 @@ console.log("- paid Matter revenue remains a separate canonical signal");
 console.log("- localized indexing remains human-review gated");
 console.log("- professional relationships and external citations are private evidence ledgers");
 console.log("- no external authority claim can become VERIFIED without explicit evidence");
+console.log("- downstream activation failure cannot block verified Search Console ingestion");
