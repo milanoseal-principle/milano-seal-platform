@@ -59,8 +59,10 @@ test("payment page describes submission and settlement as separate authorities",
 test("canonical scheduler already accepts observed submission without fabricating paid state", () => {
   assert.match(schedulingGate, /hasObservedWiseSubmission/);
   assert.match(schedulingGate, /observed_pending/);
-  assert.match(schedulingGate, /paymentSatisfied:\s*true/);
-  assert.match(schedulingGate, /settlementVerified:\s*false/);
+  assert.match(schedulingGate, /schedulingEligible:\s*true/);
+  assert.match(schedulingGate, /paymentRequirementSatisfied:\s*true/);
+  assert.match(schedulingGate, /paymentRequirementMethod:\s*"wise_submission_observed"/);
+  assert.match(schedulingGate, /MUST NOT mark the Matter paid/);
 });
 
 test("RON continues to consume the canonical scheduling gate and keeps notarial readiness independent", () => {
