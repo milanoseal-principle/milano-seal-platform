@@ -77,9 +77,7 @@ Two `CLIENT_REGISTRY` formulas returned `#N/A` when no matching historical Matte
 
 ## Project isolation
 
-`Archive 9.zip` contains Liaison OS files (`LiaisonOSWorkspace.tsx`, `LiaisonOSDoctrine.tsx`, Liaison handoff/report files).
-
-It is excluded from Milano Seal production reconciliation and must not be used to alter Milano Matter, Wise, authority, RON, apostille, release, courier, SEO, or professional-network architecture.
+Any unrelated non-Milano product files found inside mixed archives are excluded from Milano Seal production reconciliation. They must not be used to alter Milano Matter, Wise, authority, RON, apostille, release, courier, SEO, or professional-network architecture.
 
 ## Runtime non-duplication rule
 

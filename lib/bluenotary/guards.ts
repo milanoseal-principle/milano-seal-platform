@@ -54,9 +54,9 @@ async function verifyPaymentConfirmed(
 }
 
 /**
- * Session creation follows the same canonical scheduling authority as the Matter workflow.
- * A recorded Wise submission may authorize scheduling while settlement remains processing;
- * this never authors paid state and never weakens signing-link release controls.
+ * Verify that payment authorizes scheduling. A client's recorded Wise submission
+ * is enough to reserve scheduling capacity, but it does not become provider
+ * evidence and it never authors paid state.
  */
 async function verifySchedulingAuthorized(
   supabase: SupabaseClient,
@@ -78,6 +78,54 @@ async function verifySchedulingAuthorized(
       'PAYMENT_REQUIRED',
       schedulingGate.reason
     );
+  }
+}
+
+/**
+ * Execution authority is intentionally stronger than a client's self-reported
+ * payment submission and intentionally weaker than final settlement clearance.
+ *
+ * - verified/cleared Wise payment: execution may proceed
+ * - authorized complimentary Matter: execution may proceed under its own gate
+ * - Wise acquiring payment located directly through the Wise API while still
+ *   processing: execution may proceed, but paid/cleared state remains false
+ * - client-only "I paid" observation with no Wise provider evidence: scheduling
+ *   may be reserved, but signer-link release remains blocked
+ *
+ * Final international release remains governed by the separate cleared-payment
+ * release controls and is never authorized by this helper.
+ */
+async function verifyExecutionPaymentAuthorized(
+  supabase: SupabaseClient,
+  matterId: string
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .eq('id', matterId)
+    .single();
+
+  if (error || !data) {
+    throw new RONGuardError('MATTER_NOT_FOUND', `Matter ${matterId} not found`);
+  }
+
+  const schedulingGate = evaluateSchedulingGate({ matter: data });
+  if (!schedulingGate.schedulingEligible) {
+    throw new RONGuardError('PAYMENT_REQUIRED', schedulingGate.reason);
+  }
+
+  if (schedulingGate.paymentRequirementMethod === 'wise_submission_observed') {
+    const providerEvidence =
+      typeof data.wise_transaction_reference === 'string' &&
+      data.wise_transaction_reference.trim().length > 0 &&
+      data.payment_funding_method === 'wise_acquiring_payment';
+
+    if (!providerEvidence) {
+      throw new RONGuardError(
+        'WISE_PROVIDER_EVIDENCE_REQUIRED',
+        'Wise must expose the submitted payment to Milano server-side reconciliation before the signing link can be released'
+      );
+    }
   }
 }
 
@@ -137,13 +185,17 @@ export async function assertCanCreateRONSession(
   }
 }
 
-/** Verify that a signing URL can be released only after verified payment. */
+/**
+ * A provider-evidenced acquiring payment may authorize execution while Wise
+ * settles the merchant-side credit. This does not mark the Matter paid and does
+ * not weaken final international-release clearance.
+ */
 export async function assertCanReleaseSigningURL(
   supabase: SupabaseClient,
   matterId: string,
   ronSessionId: string
 ): Promise<void> {
-  await verifyPaymentConfirmed(supabase, matterId);
+  await verifyExecutionPaymentAuthorized(supabase, matterId);
 
   const { data: session } = await supabase
     .from('ron_sessions')
@@ -189,7 +241,7 @@ export async function assertCanAdvanceToApostille(
   matterId: string,
   ronSessionId: string
 ): Promise<void> {
-  await verifyPaymentConfirmed(supabase, matterId);
+  await verifyExecutionPaymentAuthorized(supabase, matterId);
 
   const { data: session } = await supabase
     .from('ron_sessions')

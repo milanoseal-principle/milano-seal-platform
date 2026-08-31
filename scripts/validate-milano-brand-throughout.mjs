@@ -61,7 +61,10 @@ assert.ok(header.includes('CredentialTicker'), "Public header must retain trust 
 assert.ok(footer.includes('MILANO_BRAND.positioning'), "Footer must render canonical positioning from brand source");
 assert.ok(footer.includes('MILANO_BRAND.brandPromise'), "Footer must render canonical brand promise from brand source");
 assert.ok(!/Sealing trust with\s+every signature/i.test(footer), "Legacy footer tagline wording is prohibited");
-assert.ok(footer.includes('This service does not constitute legal'), "Footer must retain legal-advice boundary");
+assert.ok(
+  footer.includes('The Milano Seal is not a law firm and does not provide legal advice or legal representation.'),
+  "Footer must retain canonical non-law-firm and legal-advice boundary",
+);
 assert.ok(footer.includes('flex flex-col md:flex-row'), "Footer must retain responsive mobile/desktop layout");
 
 for (const mode of ["operator", "client", "va", "alliance"]) {

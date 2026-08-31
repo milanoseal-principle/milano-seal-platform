@@ -8,6 +8,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron/wise-payment-reconcile",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/sla-watch",
       "schedule": "0 * * * *"
     },
