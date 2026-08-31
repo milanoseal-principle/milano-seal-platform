@@ -4,24 +4,29 @@ import fs from "node:fs";
 
 // P0 regression: card/Apple Pay Wise payment-link receipts are acquiring payments,
 // not outbound transfer events. The client button must never be a DB-only illusion.
-// Wise Activity remains a v1 endpoint even while supported balance endpoints use 2026Q3.
+// Wise current API reference places Activity under the same versioned base path as profiles.
 const reconciliation = fs.readFileSync("lib/wise/reconciliation.ts", "utf8");
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
 const cron = fs.readFileSync("app/api/cron/wise-payment-reconcile/route.ts", "utf8");
 const guards = fs.readFileSync("lib/bluenotary/guards.ts", "utf8");
 const vercel = fs.readFileSync("vercel.json", "utf8");
 
-test("Wise reconciliation reads acquiring payment activity from Wise instead of pretending DB refresh is provider verification", () => {
+test("Wise reconciliation reads acquiring payment activity from the current Wise API", () => {
   assert.match(reconciliation, /monetaryResourceType:\s*"ACQUIRING_PAYMENT"/);
-  assert.match(reconciliation, /wiseActivityUrl\(`/);
-  assert.match(reconciliation, /return `\$\{WISE_API_BASE\}\/v1\$\{path\}`/);
-  assert.doesNotMatch(
+  assert.match(
     reconciliation,
     /wiseUrl\(`\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/activities/,
   );
   assert.match(reconciliation, /exactReferencePresent\(activity, reference\)/);
   assert.match(observation, /export async function PUT/);
   assert.match(observation, /reconcileWiseMatter\(ctx\.deal\.id\)/);
+});
+
+test("Wise profile configuration is validated against the token and safely self-heals only when one business profile exists", () => {
+  assert.match(reconciliation, /wiseGetJson<WiseProfile\[]>\(wiseUrl\("\/profiles"\), token\)/);
+  assert.match(reconciliation, /businessProfiles\.length === 1/);
+  assert.match(reconciliation, /WISE_PROFILE_ID does not belong to this Wise token/);
+  assert.doesNotMatch(reconciliation, /businessProfiles\[0\].*businessProfiles\.length > 1/);
 });
 
 test("provider observation never authors paid state before settled Wise evidence", () => {
