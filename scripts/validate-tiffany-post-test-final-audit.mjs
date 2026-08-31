@@ -21,16 +21,17 @@ const cron = read("app/api/cron/notification-reconcile/route.ts");
 const signerRoute = ronCreate;
 
 check("Wise processing remains distinct from verified paid truth", hasAll(invoice, [
-  "Wise payment processing",
+  "Payment submitted",
   "paymentConfirmed",
   "paymentProcessing",
-  "Wise payment is still processing",
+  "Payment submission remains recorded. Settlement continues in the background.",
 ]));
 check("Check Wise Settlement Now is a real interactive button", hasAll(invoice, [
   "checkWiseSettlement",
   "onClick={() => void checkWiseSettlement()}",
   "settlementCheckBusy",
-  "Refreshing Wise payment status",
+  "Check Wise settlement now",
+  "This performs a live server-side Wise reconciliation",
 ]));
 check("automatic Wise observation polls every 10 seconds with cleanup", hasAll(invoice, [
   "window.setInterval(() => void loadPaymentFlow(), 10_000)",
