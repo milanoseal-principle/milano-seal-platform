@@ -22,6 +22,8 @@ export interface SecurePaymentDeal {
   amount_due?: number | null;
   amount_paid?: number | null;
   payment_status: string;
+  payment_settlement_status?: string | null;
+  payment_observed_at?: string | null;
   payment_link?: string | null;
   payment_disposition?: string | null;
   balance_payment_link?: string | null;
@@ -51,12 +53,15 @@ export function SecurePaymentCard({
   const due = Number(deal.amount_due ?? deal.invoice_retainer ?? 0);
   const balance = Number(deal.invoice_balance ?? Math.max(0, adjusted - due));
   const isPaid = ["paid", "confirmed", "payment_confirmed"].includes(deal.payment_status);
+  const isSubmitted = !isPaid
+    && Boolean(deal.payment_observed_at)
+    && ["observed_pending", "observed_available"].includes(deal.payment_settlement_status ?? "");
   const isComplimentary = deal.payment_disposition === "complimentary";
   const balancePaid = deal.balance_payment_status === "paid";
 
   async function applyDiscount() {
     const normalized = code.trim();
-    if (!normalized || busy) return;
+    if (!normalized || busy || isSubmitted) return;
     setMutationPhase("validating");
     try {
       const res = await fetch(`/api/deals/${deal.id}/apply-discount`, {
@@ -70,9 +75,6 @@ export function SecurePaymentCard({
         return;
       }
 
-      // Applying a discount intentionally invalidates any stale awaiting-payment
-      // Wise instruction. Recreate the retainer instruction from current server
-      // pricing truth before refreshing the shared payment surface.
       setMutationPhase("refreshing");
       const payRes = await fetch(`/api/deals/${deal.id}/pay`, {
         method: "POST",
@@ -108,6 +110,8 @@ export function SecurePaymentCard({
         ? "Refreshing Wise instructions…"
         : "";
 
+  const statusLabel = isPaid ? "Paid" : isSubmitted ? "Payment Submitted" : "Payment Required";
+
   return (
     <section aria-busy={busy} className="overflow-hidden rounded-2xl border border-[#C6A55A]/25 bg-[linear-gradient(180deg,#11110f_0%,#090909_100%)] shadow-[0_22px_80px_rgba(0,0,0,.32)]">
       <div className="border-b border-[#C6A55A]/10 px-5 py-5 sm:px-6">
@@ -119,13 +123,13 @@ export function SecurePaymentCard({
             <h3 className="mt-2 font-serif text-2xl text-[#F6F1E6]">{deal.lane} Lane</h3>
           </div>
           <span className={`rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${isPaid ? "border-emerald-400/25 bg-emerald-400/8 text-emerald-300" : "border-[#C6A55A]/25 bg-[#C6A55A]/8 text-[#E8CF8B]"}`}>
-            {isPaid ? "Paid" : "Awaiting Payment"}
+            {statusLabel}
           </span>
         </div>
       </div>
 
       <div className="space-y-5 px-5 py-5 sm:px-6">
-        {allowDiscount && !isComplimentary && !isPaid && (
+        {allowDiscount && !isComplimentary && !isPaid && !isSubmitted && (
           <div className="rounded-xl border border-[#C6A55A]/12 bg-black/20 p-3.5">
             <label htmlFor={`discount-${deal.id}`} className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#A8A29A]">Partner or Courtesy Code</label>
             <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
@@ -165,20 +169,25 @@ export function SecurePaymentCard({
         </div>
 
         <div className="rounded-2xl border border-[#C6A55A]/25 bg-[#C6A55A]/[0.045] p-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.02)]">
-          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#A8A29A]">Due Now</div>
+          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#A8A29A]">{isSubmitted ? "Submitted Amount" : "Due Now"}</div>
           <div className="mt-2 font-serif text-4xl text-[#E8CF8B] sm:text-5xl">{money(due)}</div>
-          <div className="mt-1 text-xs text-[#8e897f]">50% retainer to begin execution</div>
-          {!isPaid && !isComplimentary && deal.payment_link && (
+          <div className="mt-1 text-xs text-[#8e897f]">{isSubmitted ? "Settlement verification continues in the background" : "50% retainer to begin execution"}</div>
+          {!isPaid && !isSubmitted && !isComplimentary && deal.payment_link && (
             <a href={deal.payment_link} target="_blank" rel="noreferrer" className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-[#C6A55A] px-5 text-xs font-bold uppercase tracking-[0.14em] text-[#090909] transition duration-200 hover:-translate-y-px hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-[#C6A55A]/50">
               Complete Secure Payment
             </a>
           )}
           {isPaid && <div className="mt-5 flex items-center justify-center gap-2 text-sm text-emerald-300"><BadgeCheck className="h-4 w-4" /> Payment verified</div>}
+          {isSubmitted && <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#E8CF8B]"><BadgeCheck className="h-4 w-4" /> Payment submission recorded</div>}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3"><div className="text-[10px] uppercase tracking-[0.14em] text-[#777169]">Remaining balance</div><div className="mt-1 text-lg text-[#F6F1E6]">{money(balance)}</div><div className="mt-1 text-[11px] text-[#777169]">Due before final release</div></div>
-          <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3"><div className="text-[10px] uppercase tracking-[0.14em] text-[#777169]">Amount paid</div><div className="mt-1 text-lg text-[#F6F1E6]">{money(Number(deal.amount_paid ?? 0))}</div><div className="mt-1 text-[11px] text-[#777169]">Wise verified only</div></div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.015] p-3">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-[#777169]">{isSubmitted ? "Settlement" : "Amount paid"}</div>
+            <div className="mt-1 text-lg text-[#F6F1E6]">{isSubmitted ? "Verifying" : money(Number(deal.amount_paid ?? 0))}</div>
+            <div className="mt-1 text-[11px] text-[#777169]">{isSubmitted ? "No action required from you" : "Wise verified only"}</div>
+          </div>
         </div>
 
         {deal.balance_payment_link && (
@@ -195,7 +204,14 @@ export function SecurePaymentCard({
           </div>
         )}
 
-        {!isPaid && !isComplimentary && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Scheduling unlocks automatically after verified payment.</div>}
+        {isSubmitted && (
+          <div aria-live="polite" className="rounded-xl border border-[#C6A55A]/18 bg-[#C6A55A]/[0.045] p-4">
+            <div className="flex gap-2 text-sm text-[#F1E3B5]"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A55A]" /><strong>Payment submitted successfully.</strong></div>
+            <p className="mt-2 text-xs leading-5 text-[#AAA296]">Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again.</p>
+            <p className="mt-2 text-xs leading-5 text-[#C9B77E]">Scheduling access is available when the remaining Matter requirements are ready.</p>
+          </div>
+        )}
+        {!isPaid && !isSubmitted && !isComplimentary && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Secure payment submission satisfies the payment portion of scheduling while final settlement verifies separately.</div>}
 
         <div className="border-t border-[#C6A55A]/10 pt-3">
           <button type="button" onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center justify-between text-xs text-[#7f796f] hover:text-[#B8B1A6]">
@@ -204,7 +220,8 @@ export function SecurePaymentCard({
           {advancedOpen && (
             <div className="mt-3 space-y-3 rounded-xl border border-white/5 bg-black/20 p-3 text-xs text-[#8e897f]">
               <div className="flex items-center justify-between gap-3"><span>Powered by Wise Business</span><span className="font-mono text-[#B7A97D]">{deal.deal_id}</span></div>
-              {deal.payment_link && <div className="flex items-center gap-2"><code className="min-w-0 flex-1 break-all rounded bg-black/30 p-2 text-[10px] text-[#777169]">{deal.payment_link}</code><button onClick={() => { navigator.clipboard.writeText(deal.payment_link!); toast.success("Copied"); }} aria-label="Copy Wise payment link"><Copy className="h-4 w-4" /></button><a href={deal.payment_link} target="_blank" rel="noreferrer" aria-label="Open Wise payment link"><ExternalLink className="h-4 w-4" /></a></div>}
+              {!isSubmitted && deal.payment_link && <div className="flex items-center gap-2"><code className="min-w-0 flex-1 break-all rounded bg-black/30 p-2 text-[10px] text-[#777169]">{deal.payment_link}</code><button onClick={() => { navigator.clipboard.writeText(deal.payment_link!); toast.success("Copied"); }} aria-label="Copy Wise payment link"><Copy className="h-4 w-4" /></button><a href={deal.payment_link} target="_blank" rel="noreferrer" aria-label="Open Wise payment link"><ExternalLink className="h-4 w-4" /></a></div>}
+              {isSubmitted && <div className="text-[11px] leading-5 text-[#938d83]">Payment link hidden after submission to prevent accidental duplicate payment.</div>}
             </div>
           )}
         </div>

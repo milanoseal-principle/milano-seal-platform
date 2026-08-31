@@ -21,6 +21,8 @@ const PORTAL_SAFE_FIELDS = new Set([
   "matter_status",
   "client_facing_status",
   "payment_status",
+  "payment_settlement_status",
+  "payment_observed_at",
   "payment_disposition",
   "comp_authorized",
   "payment_amount_due",
@@ -71,6 +73,15 @@ function pricingTruthForPortal(record: Record<string, unknown>) {
   return applySafeProjection(projected as unknown as Record<string, unknown>);
 }
 
+function addPaymentSubmissionProjection(
+  projected: Record<string, unknown>,
+  source: Record<string, unknown>,
+) {
+  projected.payment_settlement_status = source.payment_settlement_status ?? null;
+  projected.payment_observed_at = source.payment_observed_at ?? null;
+  return projected;
+}
+
 export async function GET(req: NextRequest) {
   const ctx = await getAllClientDeals();
   if (!ctx) {
@@ -115,6 +126,7 @@ export async function GET(req: NextRequest) {
   const activePricingTruth = pricingTruthForPortal(
     activeDeal as unknown as Record<string, unknown>,
   );
+  const activeRecord = activeDeal as unknown as Record<string, unknown>;
 
   let safeMatter: Record<string, unknown>;
   if (safeView) {
@@ -124,13 +136,12 @@ export async function GET(req: NextRequest) {
     };
   } else {
     safeMatter = applySafeProjection({
-      ...(activeDeal as unknown as Record<string, unknown>),
+      ...activeRecord,
       ...activePricingTruth,
     });
   }
-  safeMatter.is_platform_fee_only = isPlatformFeeOnly(
-    activeDeal as unknown as Record<string, unknown>,
-  );
+  addPaymentSubmissionProjection(safeMatter, activeRecord);
+  safeMatter.is_platform_fee_only = isPlatformFeeOnly(activeRecord);
 
   const { data: timelineRows } = await admin
     .from("client_safe_timeline_view")
@@ -173,12 +184,12 @@ export async function GET(req: NextRequest) {
   }
 
   const matters = ctx.deals.map((d) => {
+    const source = d as unknown as Record<string, unknown>;
     const projected = applySafeProjection(
       projectMatterForPortal(d) as unknown as Record<string, unknown>,
     );
-    projected.is_platform_fee_only = isPlatformFeeOnly(
-      d as unknown as Record<string, unknown>,
-    );
+    addPaymentSubmissionProjection(projected, source);
+    projected.is_platform_fee_only = isPlatformFeeOnly(source);
     return projected;
   });
 

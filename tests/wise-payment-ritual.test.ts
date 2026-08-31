@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-// Keeps the Wise P0 repair on the repository's explicit preview-validation path.
 const ritual = fs.readFileSync("components/payments/WisePaymentRitual.tsx", "utf8");
 const portalShell = fs.readFileSync("components/portal/portal-shell.tsx", "utf8");
 
 test("client portal uses one Milano-branded Wise payment transition ritual", () => {
   assert.match(portalShell, /WisePaymentRitual/);
+  assert.match(portalShell, /matterId=/);
   assert.match(portalShell, /matterReference=/);
   assert.match(portalShell, /amountDue=/);
 });
@@ -19,6 +19,15 @@ test("Wise ritual explicitly explains the external payment handoff without creat
   assert.match(ritual, /authorized payment rail for this Matter/);
   assert.match(ritual, /The Milano Seal™ remains the system of record/);
   assert.match(ritual, /Matter context remains preserved/);
+});
+
+test("Wise ritual secures the Matter handoff before enabling the external payment link", () => {
+  assert.match(ritual, /method:\s*"PATCH"/);
+  assert.match(ritual, /\/api\/portal\/me\/payment-observation/);
+  assert.match(ritual, /body:\s*JSON\.stringify\(\{ deal_id: matterId \}\)/);
+  assert.match(ritual, /handoffState === "ready"/);
+  assert.match(ritual, /Securing payment handoff/);
+  assert.match(ritual, /Retry secure handoff/);
 });
 
 test("Wise ritual intercepts Wise links and preserves explicit user control", () => {

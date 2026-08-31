@@ -179,7 +179,7 @@ export default function ClientInvoicePage() {
       const body = (await response.json()) as { payment?: PaymentObservation; message?: string; error?: string };
       if (!response.ok || !body.payment) throw new Error(body.error || "Payment submission could not be recorded.");
       setPaymentFlow(body.payment);
-      setPaymentMessage(body.message || "Wise payment submission recorded. Settlement verification is in progress.");
+      setPaymentMessage(body.message || "Payment submitted successfully. Settlement verification continues in the background.");
       await refresh();
     } catch (err) {
       setPaymentMessage(err instanceof Error ? err.message : "Payment submission could not be recorded.");
@@ -189,19 +189,26 @@ export default function ClientInvoicePage() {
   }
 
   async function checkWiseSettlement() {
-    if (settlementCheckBusy) return;
+    if (!deal?.id || settlementCheckBusy) return;
     setSettlementCheckBusy(true);
-    setPaymentMessage("Refreshing Wise payment status…");
+    setPaymentMessage("Checking Wise settlement…");
     try {
-      const latest = await loadPaymentFlow();
-      await refresh();
-      if (!latest) {
-        setPaymentMessage("Payment status could not be refreshed. Automatic checks will continue.");
-      } else if (latest.paymentConfirmed) {
-        setPaymentMessage("Wise settlement verified. Paid state is confirmed and the Matter has been refreshed.");
-      } else {
-        setPaymentMessage("Wise payment is still processing. Your submission remains recorded and scheduling authority can proceed when the remaining Matter requirements are ready.");
+      const response = await fetch("/api/portal/me/payment-observation", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: deal.id }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { payment?: PaymentObservation; message?: string; error?: string };
+      if (!response.ok || !body.payment) {
+        setPaymentMessage(body.error || "Settlement could not be checked right now. Automatic checks will continue.");
+        return;
       }
+      setPaymentFlow(body.payment);
+      setPaymentMessage(body.message || (body.payment.paymentConfirmed
+        ? "Wise settlement verified. Paid state is confirmed."
+        : "Payment submission remains recorded. Settlement continues in the background."));
+      await loadInvoice();
+      await refresh();
     } finally {
       setSettlementCheckBusy(false);
     }
@@ -313,7 +320,7 @@ export default function ClientInvoicePage() {
 
           <div className={`mt-5 rounded-lg border p-4 ${paymentConfirmed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : paymentProcessing ? "border-amber-300/25 bg-amber-300/[0.04]" : "border-[#C6A55A]/25 bg-[#C6A55A]/[0.055]"}`}>
             <div className={`font-mono text-[8px] uppercase tracking-[0.17em] ${paymentConfirmed ? "text-emerald-300/75" : "text-[#C6A55A]/70"}`}>
-              {paymentConfirmed ? "Verified Wise payment" : paymentProcessing ? "Wise payment processing" : "Amount due before scheduling"}
+              {paymentConfirmed ? "Verified Wise payment" : paymentProcessing ? "Payment submitted" : "Amount due before scheduling"}
             </div>
             <div className="mt-1 font-serif text-3xl text-white">
               {paymentConfirmed ? money(paymentFlow?.amountPaid || invoice.retainer, currency) : money(invoice.amountDueNow, currency)}
@@ -321,7 +328,7 @@ export default function ClientInvoicePage() {
             <div className="mt-2 text-[11px] leading-5 text-white/38">Wise reference: <span className="font-mono text-[#C6A55A]/75">{invoice.wiseReference}</span></div>
             {paymentProcessing && (
               <div className="mt-3 text-xs leading-5 text-amber-100/60">
-                Your Wise submission is recorded and settlement is still processing. This does not mark the Matter paid. Scheduling authority may proceed once the remaining Matter execution requirements are ready.
+                Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling may proceed when the remaining Matter requirements are ready.
               </div>
             )}
           </div>
@@ -348,7 +355,7 @@ export default function ClientInvoicePage() {
               >
                 {paymentBusy ? "Recording…" : "I completed payment in Wise"}
               </button>
-              <div className="text-[10px] leading-4 text-white/28">This records the Wise submission as processing only. It does not mark the Matter paid.</div>
+              <div className="text-[10px] leading-4 text-white/28">This records the Wise submission as processing only after a secure Milano-to-Wise handoff. It does not mark the Matter paid.</div>
             </div>
           )}
 
@@ -360,9 +367,9 @@ export default function ClientInvoicePage() {
                 disabled={settlementCheckBusy}
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[#C6A55A]/25 px-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[#E6D39B] transition hover:border-[#C6A55A]/50 disabled:cursor-wait disabled:opacity-50"
               >
-                {settlementCheckBusy ? "Checking…" : "Refresh Wise payment status"}
+                {settlementCheckBusy ? "Checking…" : "Check Wise settlement now"}
               </button>
-              <div className="text-[10px] leading-4 text-white/28">This refreshes the Matter's current server-authoritative payment state. Wise processing remains distinct from verified paid state.</div>
+              <div className="text-[10px] leading-4 text-white/28">This performs a live server-side Wise reconciliation. Settlement remains distinct from your recorded submission and verified paid state.</div>
             </div>
           )}
 
@@ -375,7 +382,7 @@ export default function ClientInvoicePage() {
       </div>
 
       <p className="mt-5 text-[11px] leading-5 text-white/30">
-        A submitted Wise payment remains processing and never marks a Matter paid. A recorded submission may satisfy scheduling authority; verified Wise settlement remains the authority for paid state and signer-link release.
+        A submitted Wise payment remains processing and never marks a Matter paid. A recorded submission may satisfy scheduling authority; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
       </p>
     </div>
   );

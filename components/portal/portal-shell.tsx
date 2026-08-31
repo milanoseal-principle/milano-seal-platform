@@ -50,14 +50,22 @@ function cleanStatus(value: string | null | undefined) {
   return MATTER_STATUS_LABELS[value] ?? value.replaceAll("_", " ");
 }
 
+function isSubmittedPayment(deal: ReturnType<typeof usePortal>["deal"]) {
+  if (!deal || deal.payment_confirmed || !deal.payment_observed_at) return false;
+  return ["observed_pending", "observed_available"].includes(deal.payment_settlement_status ?? "");
+}
+
 export function PortalShell({ children }: { children: ReactNode }) {
   const { deals, deal, activeDealId, setActiveDealId } = usePortal();
 
   const matterRef = deal?.display_id?.slice(0, 12).toUpperCase() ?? deal?.id.slice(0, 8).toUpperCase() ?? "—";
   const matterStatus = deal?.client_facing_status ?? cleanStatus(deal?.matter_status);
+  const paymentSubmitted = isSubmittedPayment(deal);
   const paymentStatus = deal?.payment_confirmed
     ? "Confirmed"
-    : PAYMENT_LABELS[deal?.payment_status ?? ""] ?? "Pending";
+    : paymentSubmitted
+      ? "Submitted"
+      : PAYMENT_LABELS[deal?.payment_status ?? ""] ?? "Pending";
 
   const sidebarContext = (
     <div className="ms-os-context-card">
@@ -116,13 +124,14 @@ export function PortalShell({ children }: { children: ReactNode }) {
         {
           label: "Payment",
           value: paymentStatus,
-          tone: deal?.payment_confirmed ? "green" : deal?.payment_status === "failed" ? "red" : "neutral",
+          tone: deal?.payment_confirmed ? "green" : deal?.payment_status === "failed" ? "red" : paymentSubmitted ? "gold" : "neutral",
         },
       ]}
       footerNote="Client-safe projection · private Matter data only"
       maxWidth={1360}
     >
       <WisePaymentRitual
+        matterId={deal?.id}
         matterReference={deal?.display_id ?? deal?.matter_id ?? matterRef}
         amountDue={deal?.amount_due ?? deal?.payment_amount_due ?? null}
         currency={deal?.currency ?? "USD"}

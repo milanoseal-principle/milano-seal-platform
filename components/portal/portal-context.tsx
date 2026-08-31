@@ -22,6 +22,8 @@ export interface PortalClientMatter {
   matter_status: string | null;
   client_facing_status: string | null;
   payment_status: string | null;
+  payment_settlement_status: string | null;
+  payment_observed_at: string | null;
   payment_disposition?: string | null;
   comp_authorized?: boolean | null;
   payment_amount_due: number | null;
@@ -97,6 +99,8 @@ function normalizeMatter(raw: RawMatter): PortalClientMatter {
     client_facing_status:
       (raw.client_facing_status as string | null) ?? null,
     payment_status: (raw.payment_status as string | null) ?? null,
+    payment_settlement_status: (raw.payment_settlement_status as string | null) ?? null,
+    payment_observed_at: (raw.payment_observed_at as string | null) ?? null,
     payment_disposition:
       (raw.payment_disposition as string | null) ?? null,
     comp_authorized: (raw.comp_authorized as boolean | null) ?? false,

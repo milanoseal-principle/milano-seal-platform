@@ -36,11 +36,13 @@ test('recorded Wise processing may authorize RON scheduling without fabricating 
   assert.match(invoice, /verified Wise settlement remains the authority for paid state/);
 });
 
-test('client Wise status refresh is interactive and visibly reports the result', () => {
+test('client Wise settlement refresh is interactive, live, and visibly reports the result', () => {
   assert.match(invoice, /checkWiseSettlement/);
   assert.match(invoice, /settlementCheckBusy/);
-  assert.match(invoice, /Refresh Wise payment status/);
-  assert.match(invoice, /Wise payment is still processing/);
+  assert.match(invoice, /Check Wise settlement now/);
+  assert.match(invoice, /method:\s*"PUT"/);
+  assert.match(invoice, /Settlement continues in the background/);
+  assert.doesNotMatch(invoice, /Refresh Wise payment status/);
 });
 
 test('BlueNotary session creation fails closed on incomplete RON truth', () => {
