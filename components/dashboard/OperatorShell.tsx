@@ -26,7 +26,7 @@ const NAV: MilanoOSNavItem[] = [
   { href: "/dashboard/payments/discounts", label: "Discount Codes", icon: "percent", group: "Finance", hint: "Governed courtesy controls" },
   { href: "/dashboard/payments/discounts/report", label: "Discount Report", icon: "chart", group: "Finance", hint: "Courtesy audit" },
   { href: "/alliance/dashboard", label: "Alliance", icon: "handshake", group: "Network", hint: "Partner execution workspace" },
-  { href: "/dashboard/alliance/ron-coverage", label: "RON Coverage", icon: "globe", group: "Network", hint: "State coverage and notary credential readiness" },
+  { href: "/dashboard/alliance/ron-coverage", label: "RON Coverage", icon: "compass", group: "Network", hint: "State coverage and notary credential readiness" },
   { href: "/dashboard/control-plane", label: "Control Plane", icon: "settings", group: "System", hint: "System registry, authorities, ownership and build placement" },
   { href: "/dashboard/settings", label: "Settings", icon: "settings", group: "System", hint: "Platform configuration" },
 ];
