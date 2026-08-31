@@ -22,6 +22,13 @@ export function isLocalizedSeoRecordPublishable(record: LocalizedSeoRecord | und
   return Object.values(record.bodySections).some((value) => value.trim().length > 0);
 }
 
+// Explicit boolean wrapper for operator queues. This intentionally does not act as
+// a TypeScript type predicate, so statically NOINDEX registry records remain usable
+// after the fail-closed check while public publication continues to use the guard above.
+export function localizedSeoRecordRequiresReview(record: LocalizedSeoRecord): boolean {
+  return !isLocalizedSeoRecordPublishable(record);
+}
+
 export function getPublishedLocalizedRecords(locale: SupportedSeoLocale) {
   return LOCALIZED_SEO_RECORDS.filter((record) => record.locale === locale && isLocalizedSeoRecordPublishable(record));
 }
