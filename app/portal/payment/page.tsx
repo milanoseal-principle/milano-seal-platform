@@ -32,7 +32,7 @@ export default function PaymentStatusPage() {
         <div className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#C6A55A]/60">Payment &amp; Authorization</div>
         <h1 className="font-serif text-3xl text-[#F6F1E6]">Secure Payment</h1>
         <p className="max-w-2xl text-sm leading-6 text-white/45">
-          Your payment and Matter progress are tracked separately. Once a governed Wise submission is recorded, the payment portion of scheduling is satisfied while final settlement verification continues in the background.
+          Partner or courtesy codes are validated by the server before Wise instructions are refreshed. Your payment and Matter progress are tracked separately. Once a governed Wise submission is recorded, the payment portion of scheduling is satisfied while final settlement verification continues in the background.
         </p>
       </header>
 
