@@ -36,7 +36,15 @@ create table if not exists public.identifier_locks (
   approval_cycle integer not null default 1
 );
 
+-- 032 creates the first identifier_locks projection using
+-- matter_id/identifier_type/source_value/final_value/match_status/locked_by.
+-- CREATE TABLE IF NOT EXISTS above therefore does not add the 037/038 fields on
+-- a fresh replay. Reconcile those columns before any trigger or index uses them.
 alter table public.identifier_locks
+  add column if not exists field_id text,
+  add column if not exists locked_value text,
+  add column if not exists confirmed_by text,
+  add column if not exists approval_cycle integer not null default 1,
   add column if not exists field_label text,
   add column if not exists field_category text not null default 'identity_critical',
   add column if not exists normalized_value text,
@@ -61,6 +69,48 @@ alter table public.identifier_locks
   add column if not exists metadata jsonb not null default '{}'::jsonb,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
+
+-- Preserve 032 values while projecting them into the governed 038 lock model.
+-- A migration marker is used only where the old record had no actor; it does
+-- not assert a real operator identity.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'identifier_locks' and column_name = 'identifier_type'
+  ) then
+    execute $sql$
+      update public.identifier_locks
+      set field_id = coalesce(field_id, identifier_type),
+          locked_value = coalesce(locked_value, final_value, source_value),
+          confirmed_by = coalesce(nullif(trim(confirmed_by), ''), nullif(trim(locked_by), ''), 'legacy-migration-record'),
+          status = case
+            when lower(coalesce(match_status, '')) = 'mismatch' then 'mismatch'
+            when lower(coalesce(match_status, '')) in ('matched','exact_match','confirmed') then 'confirmed'
+            when locked_at is not null then 'locked'
+            else coalesce(status, 'needs_review')
+          end,
+          mismatch_reason = coalesce(mismatch_reason, case when lower(coalesce(match_status, '')) = 'mismatch' then mismatch_reason else null end),
+          locked_at = coalesce(locked_at, created_at, now())
+    $sql$;
+  end if;
+end $$;
+
+update public.identifier_locks
+set field_id = coalesce(nullif(trim(field_id), ''), 'legacy_identifier'),
+    locked_value = coalesce(nullif(trim(locked_value), ''), 'REVIEW_REQUIRED'),
+    confirmed_by = coalesce(nullif(trim(confirmed_by), ''), 'legacy-migration-record'),
+    locked_at = coalesce(locked_at, created_at, now())
+where field_id is null or trim(field_id) = ''
+   or locked_value is null or trim(locked_value) = ''
+   or confirmed_by is null or trim(confirmed_by) = ''
+   or locked_at is null;
+
+alter table public.identifier_locks
+  alter column field_id set not null,
+  alter column locked_value set not null,
+  alter column confirmed_by set not null,
+  alter column locked_at set not null;
 
 do $$
 begin
@@ -360,161 +410,13 @@ create table if not exists public.document_approval_events (
   created_at timestamptz not null default now()
 );
 
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'document_approval_events_type_check'
-  ) then
-    alter table public.document_approval_events
-      add constraint document_approval_events_type_check
-      check (event_type in (
-        'DOCUMENT_VERSION_CREATED',
-        'DOCUMENT_IDENTIFIER_COMPARE_RUN',
-        'DOCUMENT_IDENTIFIER_COMPARE_PASSED',
-        'DOCUMENT_IDENTIFIER_COMPARE_FAILED',
-        'DOCUMENT_CLIENT_APPROVED',
-        'DOCUMENT_OPERATOR_APPROVED',
-        'DOCUMENT_REJECTED',
-        'DOCUMENT_SUPERSEDED',
-        'DOCUMENT_RELEASE_READY'
-      ));
-  end if;
-end $$;
-
 create index if not exists idx_document_approval_events_matter_id
 on public.document_approval_events (matter_id);
 
 create index if not exists idx_document_approval_events_document_version_id
 on public.document_approval_events (document_version_id);
 
-create table if not exists public.document_integrity_events (
-  id uuid primary key default gen_random_uuid(),
-  matter_id uuid not null,
-  document_version_id uuid references public.document_versions(id) on delete set null,
-  event_type text not null,
-  severity text not null default 'info',
-  actor text not null default 'system',
-  message text not null,
-  blocked_gate text,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'document_integrity_events_severity_check'
-  ) then
-    alter table public.document_integrity_events
-      add constraint document_integrity_events_severity_check
-      check (severity in ('info', 'warning', 'blocker', 'critical'));
-  end if;
-end $$;
-
-create index if not exists idx_document_integrity_events_matter_id
-on public.document_integrity_events (matter_id);
-
-create index if not exists idx_document_integrity_events_event_type
-on public.document_integrity_events (event_type);
-
-create index if not exists idx_document_integrity_events_severity
-on public.document_integrity_events (severity);
-
-create or replace function public.ms_touch_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at := now();
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_document_versions_touch_updated_at on public.document_versions;
-
-create trigger trg_document_versions_touch_updated_at
-before update on public.document_versions
-for each row
-execute function public.ms_touch_updated_at();
-
-create or replace view public.matter_identifier_lock_status as
-select
-  il.matter_id,
-  count(*)::integer as total_locked_identifiers,
-  count(*) filter (
-    where il.status in ('confirmed', 'client_confirmed', 'attorney_confirmed', 'operator_confirmed', 'locked')
-  )::integer as confirmed_or_locked_count,
-  count(*) filter (
-    where il.status in ('mismatch', 'needs_review')
-  )::integer as blocker_count,
-  bool_and(il.status not in ('mismatch', 'needs_review')) as identifiers_ready,
-  jsonb_agg(
-    jsonb_build_object(
-      'field_id', il.field_id,
-      'field_label', il.field_label,
-      'field_category', il.field_category,
-      'status', il.status,
-      'locked_at', il.locked_at,
-      'approval_cycle', il.approval_cycle
-    )
-    order by il.field_id
-  ) as identifiers
-from public.identifier_locks il
-where il.status <> 'superseded'
-group by il.matter_id;
-
-create or replace function public.ms_assert_matter_identifiers_ready(p_matter_id uuid)
-returns table (
-  ready boolean,
-  blocker_count integer,
-  blockers jsonb
-)
-language sql
-stable
-as $$
-  with blocker_rows as (
-    select
-      field_id,
-      field_label,
-      field_category,
-      status,
-      mismatch_reason
-    from public.identifier_locks
-    where matter_id = p_matter_id
-      and status in ('mismatch', 'needs_review')
-      and status <> 'superseded'
-  )
-  select
-    not exists (select 1 from blocker_rows) as ready,
-    (select count(*)::integer from blocker_rows) as blocker_count,
-    coalesce(
-      (
-        select jsonb_agg(to_jsonb(blocker_rows))
-        from blocker_rows
-      ),
-      '[]'::jsonb
-    ) as blockers;
-$$;
-
-alter table public.identifier_locks enable row level security;
-alter table public.identifier_confirmation_events enable row level security;
-alter table public.document_versions enable row level security;
-alter table public.document_identifier_checks enable row level security;
-alter table public.document_approval_events enable row level security;
-alter table public.document_integrity_events enable row level security;
-
-comment on table public.identifier_locks is
-'Milano Seal identifier lock table. Identity-critical values such as Codice Fiscale, passport, tax ID, property ID, company number, asset serial, and similar identifiers must not be mutated by AI, translation, formatting, RON prep, apostille packet prep, or final packet assembly.';
-
-comment on table public.document_versions is
-'Milano Seal document version ledger. Tracks each version across intake, draft, client approval, RON, execution, apostille, final packet, and release.';
-
-comment on table public.document_identifier_checks is
-'Compares locked identifiers against each document version. Mismatches must block RON, apostille, and release gates until corrected.';
-
-comment on function public.ms_assert_matter_identifiers_ready(uuid) is
-'Returns whether a matter has identifier blockers that must stop RON, apostille, or final release.';
+create index if not exists idx_document_approval_events_event_type
+on public.document_approval_events (event_type);
 
 commit;
