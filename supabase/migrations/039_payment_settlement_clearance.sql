@@ -33,6 +33,17 @@ begin
   end if;
 end $$;
 
+-- Migration-chain compatibility shim. The backfill below reads `payment_confirmed`
+-- and `payment_status`, which in the committed chain are not formally added until
+-- migration 044. These columns already exist in production (added ad hoc before
+-- 044 codified them), so this is a NO-OP there; it only makes a fresh replay from
+-- 001 valid by ensuring the columns exist before they are read. Mirrors 044's
+-- own additive/idempotent compatibility pattern. Adds no defaults and rewrites no
+-- rows.
+alter table public.deals
+  add column if not exists payment_status text null,
+  add column if not exists payment_confirmed boolean null;
+
 -- Backfill: existing already-confirmed/paid matters are treated as cleared so that
 -- in-flight releases are not retroactively blocked by this migration.
 update public.deals
