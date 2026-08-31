@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import test from "node:test";
+import assert from "node:assert/strict";
 import { LOCALIZED_SEO_RECORDS } from "@/lib/seo/localization/registry";
 import {
   getLocalizedSeoRecord,
@@ -29,34 +30,32 @@ function reviewedRecord(overrides: Partial<LocalizedSeoRecord> = {}): LocalizedS
   };
 }
 
-describe("localized acquisition runtime", () => {
-  it("keeps every reserved phase-one localized route fail-closed until human review", () => {
-    expect(LOCALIZED_SEO_RECORDS).toHaveLength(8);
-    for (const record of LOCALIZED_SEO_RECORDS) {
-      expect(record.translationStatus).toBe("HUMAN_REVIEW_REQUIRED");
-      expect(record.indexStatus).toBe("NOINDEX");
-      expect(isLocalizedSeoRecordPublishable(record)).toBe(false);
-    }
-    expect(getPublishedLocalizedRecords("it-IT")).toEqual([]);
-    expect(getPublishedLocalizedRecords("es-ES")).toEqual([]);
-    expect(getPublishedLocalizedRecords("pt-BR")).toEqual([]);
-  });
+test("localized routes stay fail-closed until complete human review", () => {
+  assert.equal(LOCALIZED_SEO_RECORDS.length, 8);
+  for (const record of LOCALIZED_SEO_RECORDS) {
+    assert.equal(record.translationStatus, "HUMAN_REVIEW_REQUIRED");
+    assert.equal(record.indexStatus, "NOINDEX");
+    assert.equal(isLocalizedSeoRecordPublishable(record), false);
+  }
+  assert.deepEqual(getPublishedLocalizedRecords("it-IT"), []);
+  assert.deepEqual(getPublishedLocalizedRecords("es-ES"), []);
+  assert.deepEqual(getPublishedLocalizedRecords("pt-BR"), []);
+});
 
-  it("requires complete reviewed copy and reviewer evidence before publication", () => {
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord())).toBe(true);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ reviewedBy: "" }))).toBe(false);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ reviewedAt: "" }))).toBe(false);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ ctaLabel: "" }))).toBe(false);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ legalBoundary: "" }))).toBe(false);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ bodySections: {} }))).toBe(false);
-    expect(isLocalizedSeoRecordPublishable(reviewedRecord({ indexStatus: "NOINDEX" }))).toBe(false);
-  });
+test("localized publication requires reviewed copy and reviewer evidence", () => {
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord()), true);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ reviewedBy: "" })), false);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ reviewedAt: "" })), false);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ ctaLabel: "" })), false);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ legalBoundary: "" })), false);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ bodySections: {} })), false);
+  assert.equal(isLocalizedSeoRecordPublishable(reviewedRecord({ indexStatus: "NOINDEX" })), false);
+});
 
-  it("resolves only exact governed locale/path pairs", () => {
-    const path = localizedPath("it", ["procura-apostille-stati-uniti"]);
-    const record = getLocalizedSeoRecord("it-IT", path);
-    expect(record?.englishEquivalent).toBe("/documents/power-of-attorney-apostille");
-    expect(slugForLocalizedRecord(record!)).toEqual(["procura-apostille-stati-uniti"]);
-    expect(getLocalizedSeoRecord("es-ES", path)).toBeUndefined();
-  });
+test("localized runtime resolves exact governed locale/path pairs only", () => {
+  const path = localizedPath("it", ["procura-apostille-stati-uniti"]);
+  const record = getLocalizedSeoRecord("it-IT", path);
+  assert.equal(record?.englishEquivalent, "/documents/power-of-attorney-apostille");
+  assert.deepEqual(slugForLocalizedRecord(record!), ["procura-apostille-stati-uniti"]);
+  assert.equal(getLocalizedSeoRecord("es-ES", path), undefined);
 });
