@@ -8,6 +8,7 @@ const required = [
   "lib/alliance/ron/ronPartnerVerification.ts",
   "lib/alliance/ron/ronDispatchRules.ts",
   "lib/alliance/ron/ronCoverageScoring.ts",
+  "lib/alliance/ron/ronPartnerSafety.ts",
   "app/partners/ron-notary-alliance/page.tsx",
   "app/partners/ron-notary-alliance/apply/page.tsx",
   "app/dashboard/alliance/ron-coverage/page.tsx",
@@ -19,6 +20,7 @@ const required = [
   "docs/alliance/RON_ALLIANCE_COVERAGE_NETWORK.md",
   "docs/alliance/RON_PARTNER_VERIFICATION_SOP.md",
   "docs/alliance/RON_PARTNER_OUTREACH_SCRIPT.md",
+  "tests/ron-alliance-network.test.ts",
 ];
 
 const forbidden = [
@@ -38,6 +40,7 @@ for (const file of required) {
 const publicFiles = [
   "app/partners/ron-notary-alliance/page.tsx",
   "app/partners/ron-notary-alliance/apply/page.tsx",
+  "app/notary/join/page.tsx",
 ].filter((file) => fs.existsSync(path.join(root, file)));
 
 for (const file of publicFiles) {
@@ -45,12 +48,37 @@ for (const file of publicFiles) {
   for (const pattern of forbidden) {
     if (pattern.test(text)) failures.push(`${file} contains prohibited claim: ${pattern}`);
   }
+  if (/RON certified/i.test(text)) failures.push(`${file} uses unsafe 'RON certified' wording`);
 }
 
-const joinPath = path.join(root, "app/notary/join/page.tsx");
-if (fs.existsSync(joinPath)) {
-  const text = fs.readFileSync(joinPath, "utf8");
-  if (/RON certified/i.test(text)) failures.push("Legacy /notary/join still uses unsafe 'RON certified' wording");
+const stateRegistry = path.join(root, "lib/alliance/ron/ronStateRegistry.ts");
+if (fs.existsSync(stateRegistry)) {
+  const text = fs.readFileSync(stateRegistry, "utf8");
+  if (!text.includes('coverageStatus: "REVIEW_REQUIRED"')) {
+    failures.push("State registry must fail closed until official authority review");
+  }
+}
+
+const dispatchRules = path.join(root, "lib/alliance/ron/ronDispatchRules.ts");
+if (fs.existsSync(dispatchRules)) {
+  const text = fs.readFileSync(dispatchRules, "utf8");
+  for (const requiredGate of ["VERIFIED_AVAILABLE", "receivingAuthorityRonAccepted", "wetInkRequired", "ronAuthorized"]) {
+    if (!text.includes(requiredGate)) failures.push(`Dispatch rules missing gate: ${requiredGate}`);
+  }
+}
+
+const intakeApi = path.join(root, "app/api/notary/apply/route.ts");
+if (fs.existsSync(intakeApi)) {
+  const text = fs.readFileSync(intakeApi, "utf8");
+  for (const requiredGuard of ["MAX_BODY_BYTES", "obviousSpam", "remote_online_notary_certification: false", "APPLICATION_RECEIVED"]) {
+    if (!text.includes(requiredGuard)) failures.push(`Notary application API missing guard: ${requiredGuard}`);
+  }
+}
+
+const operatorShell = path.join(root, "components/dashboard/OperatorShell.tsx");
+if (fs.existsSync(operatorShell)) {
+  const text = fs.readFileSync(operatorShell, "utf8");
+  if (!text.includes("/dashboard/alliance/ron-coverage")) failures.push("Operator navigation does not expose RON Coverage command");
 }
 
 if (failures.length) {
