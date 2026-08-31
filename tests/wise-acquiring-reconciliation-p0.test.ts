@@ -4,6 +4,7 @@ import fs from "node:fs";
 
 // P0 regression: card/Apple Pay Wise payment-link receipts are acquiring payments,
 // not outbound transfer events. The client button must never be a DB-only illusion.
+// Wise Activity remains a v1 endpoint even while supported balance endpoints use 2026Q3.
 const reconciliation = fs.readFileSync("lib/wise/reconciliation.ts", "utf8");
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
 const cron = fs.readFileSync("app/api/cron/wise-payment-reconcile/route.ts", "utf8");
