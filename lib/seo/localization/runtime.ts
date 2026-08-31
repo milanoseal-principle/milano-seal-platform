@@ -14,7 +14,9 @@ export function getLocalizedSeoRecord(locale: SupportedSeoLocale, path: string) 
 export function isLocalizedSeoRecordPublishable(record: LocalizedSeoRecord | undefined): record is LocalizedSeoRecord {
   if (!record) return false;
   if (record.translationStatus !== "HUMAN_REVIEWED" || record.indexStatus !== "INDEXABLE") return false;
+  if (!record.reviewedBy?.trim() || !record.reviewedAt?.trim()) return false;
   if (!record.title.trim() || !record.description.trim() || !record.h1.trim()) return false;
+  if (!record.ctaLabel.trim() || !record.englishVersionLabel.trim() || !record.legalBoundary.trim()) return false;
   return Object.values(record.bodySections).some((value) => value.trim().length > 0);
 }
 
