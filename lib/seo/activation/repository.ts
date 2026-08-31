@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SeoOpportunity as SearchConsoleOpportunity } from "@/lib/seo/search-console/reporting";
 import { LOCALIZED_SEO_RECORDS } from "@/lib/seo/localization/registry";
-import { isLocalizedSeoRecordPublishable } from "@/lib/seo/localization/runtime";
+import { localizedSeoRecordRequiresReview } from "@/lib/seo/localization/runtime";
 import { buildSeoActivationCandidates, isFreshVerifiedPlacement, isStaleVerifiedPlacement, summarizeAuthorityEvidence } from "./scoring";
 import type {
   AuthorityPlacementStatus,
@@ -21,14 +21,17 @@ function isMissingControlPlaneTable(error: { code?: string | null; message?: str
   return message.includes("seo_authority_relationships") || message.includes("seo_authority_placements") || message.includes("seo_activation_actions");
 }
 
-function provisioningSnapshot(searchOpportunities: SearchConsoleOpportunity[], message: string): SeoAuthorityActivationSnapshot {
-  const pendingLocalizedRoutes = LOCALIZED_SEO_RECORDS.filter((record) => !isLocalizedSeoRecordPublishable(record)).map((record) => ({
+function pendingLocalizedRoutes() {
+  return LOCALIZED_SEO_RECORDS.filter(localizedSeoRecordRequiresReview).map((record) => ({
     locale: record.locale,
     path: record.path,
     englishEquivalent: record.englishEquivalent,
     translationStatus: record.translationStatus,
     indexStatus: record.indexStatus,
   }));
+}
+
+function provisioningSnapshot(searchOpportunities: SearchConsoleOpportunity[], message: string): SeoAuthorityActivationSnapshot {
   const derivedCandidates = buildSeoActivationCandidates({ searchOpportunities, relationships: [], placements: [] });
   return {
     provisioned: false,
@@ -37,7 +40,7 @@ function provisioningSnapshot(searchOpportunities: SearchConsoleOpportunity[], m
     placements: [],
     actions: [],
     derivedCandidates,
-    pendingLocalizedRoutes,
+    pendingLocalizedRoutes: pendingLocalizedRoutes(),
     evidenceSummary: [],
     stalePlacementCount: 0,
     verifiedPlacementCount: 0,
@@ -78,13 +81,7 @@ export async function getSeoAuthorityActivationSnapshot(searchOpportunities: Sea
     placements: placementRows,
     actions: actionRows,
     derivedCandidates,
-    pendingLocalizedRoutes: LOCALIZED_SEO_RECORDS.filter((record) => !isLocalizedSeoRecordPublishable(record)).map((record) => ({
-      locale: record.locale,
-      path: record.path,
-      englishEquivalent: record.englishEquivalent,
-      translationStatus: record.translationStatus,
-      indexStatus: record.indexStatus,
-    })),
+    pendingLocalizedRoutes: pendingLocalizedRoutes(),
     evidenceSummary: summarizeAuthorityEvidence(placementRows, relationshipRows, now),
     stalePlacementCount: placementRows.filter((placement) => isStaleVerifiedPlacement(placement, now)).length,
     verifiedPlacementCount: placementRows.filter((placement) => isFreshVerifiedPlacement(placement, now)).length,
