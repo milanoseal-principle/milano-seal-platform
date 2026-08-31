@@ -38,6 +38,16 @@ ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
 -- No public policies. Service role only.
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- deals: Add portal/courier projection columns BEFORE creating views that read
+-- them. The ordering is intentional so a fresh Supabase preview can replay this
+-- migration from the 001 baseline without referencing columns that do not exist.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE public.deals
+  ADD COLUMN IF NOT EXISTS carrier           TEXT,
+  ADD COLUMN IF NOT EXISTS delivery_status   TEXT,
+  ADD COLUMN IF NOT EXISTS delivery_eta      TIMESTAMPTZ;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- client_safe_matter_view: Portal-safe projection of the deals table.
 -- Read by app/api/portal/me/route.ts → result is wrapped by applySafeProjection.
 -- Never exposes: internal_notes, operator_notes, wise_reference, label_url,
@@ -65,7 +75,6 @@ SELECT
     WHEN 'lost'              THEN 'Closed'
     ELSE                          'Under Review'
   END                                           AS client_facing_status,
-  -- payment_status: only canonical unpaid/paid/failed/refunded values
   CASE d.payment_status
     WHEN 'paid'     THEN 'paid'
     WHEN 'failed'   THEN 'failed'
@@ -73,20 +82,10 @@ SELECT
     ELSE                 'unpaid'
   END                                           AS payment_status,
   d.total_price                                 AS payment_amount_due,
-  -- courier: use tracking_number or courier_tracking_id, whichever column exists
-  COALESCE(d.tracking_number, d.courier_tracking_id)  AS courier_tracking_id,
-  -- carrier column: handle both naming conventions across deployments
+  COALESCE(d.tracking_number, d.courier_tracking_id) AS courier_tracking_id,
   COALESCE(
     NULLIF(d.courier_carrier, ''),
-    NULLIF(
-      CASE WHEN EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'deals'
-          AND column_name = 'carrier'
-      ) THEN NULL ELSE NULL END,
-      ''
-    )
+    NULLIF(d.carrier, '')
   )                                             AS courier_carrier,
   d.delivery_status,
   d.delivery_eta,
@@ -142,21 +141,10 @@ SELECT
   cl.created_at                                 AS timestamp_recorded
 FROM public.custody_ledger cl
 WHERE cl.event NOT IN (
-  -- Exclude internal-only events not shown to clients
   'DOC_LABEL_CREATED',
   'DOC_HANDOFF'
 )
 ORDER BY cl.created_at DESC;
-
--- ─────────────────────────────────────────────────────────────────────────────
--- deals: Add missing columns if not present (courier column alignment)
--- Courier active route queries: carrier, delivery_status, delivery_eta
--- If production DB uses 'carrier' instead of 'courier_carrier', add alias.
--- ─────────────────────────────────────────────────────────────────────────────
-ALTER TABLE public.deals
-  ADD COLUMN IF NOT EXISTS carrier           TEXT,
-  ADD COLUMN IF NOT EXISTS delivery_status   TEXT,
-  ADD COLUMN IF NOT EXISTS delivery_eta      TIMESTAMPTZ;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- NOTE: CRON_SECRET (failure 4) — External action required.

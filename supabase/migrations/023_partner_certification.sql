@@ -3,7 +3,9 @@
 
 CREATE TABLE IF NOT EXISTS partner_certifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  partner_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  -- Authenticated partner user UUID. The canonical migration chain does not
+  -- define public.profiles, and policy semantics already bind this to auth.uid().
+  partner_id UUID NOT NULL,
   step_1_identity BOOLEAN DEFAULT false,
   step_2_service_scope BOOLEAN DEFAULT false,
   step_3_document_handling BOOLEAN DEFAULT false,
@@ -13,7 +15,7 @@ CREATE TABLE IF NOT EXISTS partner_certifications (
   step_7_compliance_acknowledgement BOOLEAN DEFAULT false,
   routing_status TEXT NOT NULL DEFAULT 'ROUTING_LOCKED' CHECK (routing_status IN ('ROUTING_LOCKED','ROUTING_ELIGIBLE','ACTIVE_PARTNER')),
   operator_approved_at TIMESTAMPTZ,
-  operator_approved_by UUID REFERENCES profiles(id),
+  operator_approved_by UUID,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
@@ -22,27 +24,32 @@ CREATE TABLE IF NOT EXISTS partner_certifications (
 
 ALTER TABLE partner_certifications ENABLE ROW LEVEL SECURITY;
 
--- Partner can only read their own certification
+DROP POLICY IF EXISTS "partner_certification_own_read" ON partner_certifications;
 CREATE POLICY "partner_certification_own_read" ON partner_certifications
-  FOR SELECT
+  FOR SELECT TO authenticated
   USING (partner_id = auth.uid());
 
--- Partner can update only their own step completions (not routing_status — that requires operator)
+DROP POLICY IF EXISTS "partner_certification_own_update_steps" ON partner_certifications;
 CREATE POLICY "partner_certification_own_update_steps" ON partner_certifications
-  FOR UPDATE
+  FOR UPDATE TO authenticated
   USING (partner_id = auth.uid())
   WITH CHECK (
     partner_id = auth.uid()
     AND routing_status = 'ROUTING_LOCKED'
   );
 
--- Operators control routing_status promotion
+DROP POLICY IF EXISTS "partner_certification_operator_all" ON partner_certifications;
 CREATE POLICY "partner_certification_operator_all" ON partner_certifications
-  FOR ALL
+  FOR ALL TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin','operator','superadmin','founder_admin','admin_operator','ops_manager')
-    )
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager')
+  )
+  WITH CHECK (
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager')
   );
+
+DROP POLICY IF EXISTS "partner_certification_service_all" ON partner_certifications;
+CREATE POLICY "partner_certification_service_all" ON partner_certifications
+  FOR ALL TO service_role USING (true) WITH CHECK (true);

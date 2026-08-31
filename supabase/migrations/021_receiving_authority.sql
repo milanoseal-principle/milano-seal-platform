@@ -25,16 +25,24 @@ CREATE TABLE IF NOT EXISTS receiving_authorities (
 
 ALTER TABLE receiving_authorities ENABLE ROW LEVEL SECURITY;
 
--- Operators and admins can read and write
+-- Replay-safe role boundary. Do not depend on a separate public.profiles table:
+-- Milano role truth is carried in authenticated app_metadata and server-side
+-- service-role routes remain the mutation authority.
+DROP POLICY IF EXISTS "receiving_authorities_admin_all" ON receiving_authorities;
 CREATE POLICY "receiving_authorities_admin_all" ON receiving_authorities
-  FOR ALL
+  FOR ALL TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin','operator','superadmin','founder_admin','admin_operator','ops_manager')
-    )
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator')
+  )
+  WITH CHECK (
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator')
   );
+
+DROP POLICY IF EXISTS "receiving_authorities_service_all" ON receiving_authorities;
+CREATE POLICY "receiving_authorities_service_all" ON receiving_authorities
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Seed 4 example rows
 INSERT INTO receiving_authorities (name, authority_type, country, city, apostille_required, legalization_required, translation_required, ron_accepted, source_confidence)
