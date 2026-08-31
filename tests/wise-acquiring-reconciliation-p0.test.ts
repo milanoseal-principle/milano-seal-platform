@@ -12,7 +12,12 @@ const vercel = fs.readFileSync("vercel.json", "utf8");
 
 test("Wise reconciliation reads acquiring payment activity from Wise instead of pretending DB refresh is provider verification", () => {
   assert.match(reconciliation, /monetaryResourceType:\s*"ACQUIRING_PAYMENT"/);
-  assert.match(reconciliation, /\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/activities/);
+  assert.match(reconciliation, /wiseActivityUrl\(`/);
+  assert.match(reconciliation, /return `\$\{WISE_API_BASE\}\/v1\$\{path\}`/);
+  assert.doesNotMatch(
+    reconciliation,
+    /wiseUrl\(`\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/activities/,
+  );
   assert.match(reconciliation, /exactReferencePresent\(activity, reference\)/);
   assert.match(observation, /export async function PUT/);
   assert.match(observation, /reconcileWiseMatter\(ctx\.deal\.id\)/);
