@@ -52,13 +52,24 @@ CREATE POLICY "ron_sessions_client_read" ON ron_sessions
     )
   );
 
-CREATE POLICY "ron_sessions_va_read" ON ron_sessions
-  FOR SELECT USING (
-    (auth.jwt() ->> 'role') = 'va'
-    AND matter_id IN (
-      SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
-    )
-  );
+-- Historical VA read support was written against va_assignments, which is not
+-- part of every fresh replay baseline. Do not invent that table. Migration 062
+-- drops these legacy policies and installs the canonical RON policy set.
+DO $$
+BEGIN
+  IF to_regclass('public.va_assignments') IS NOT NULL THEN
+    EXECUTE $policy$
+      CREATE POLICY "ron_sessions_va_read" ON ron_sessions
+        FOR SELECT USING (
+          (auth.jwt() ->> 'role') = 'va'
+          AND matter_id IN (
+            SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
+          )
+        )
+    $policy$;
+  END IF;
+END
+$$;
 
 -- ── ron_signers ───────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS ron_signers (
@@ -76,7 +87,7 @@ CREATE TABLE IF NOT EXISTS ron_signers (
   signing_url_encrypted text,
   signing_url_released  boolean DEFAULT false,
   identity_status       text DEFAULT 'NOT_STARTED',
-  kba_status            text DEFAULT 'NOT_STARTED',
+  kba_status             text DEFAULT 'NOT_STARTED',
   biometric_status      text DEFAULT 'NOT_STARTED',
   joined_at             timestamptz,
   left_at               timestamptz,
@@ -104,13 +115,21 @@ CREATE POLICY "ron_signers_client_read" ON ron_signers
     AND signing_url_released = true
   );
 
-CREATE POLICY "ron_signers_va_read" ON ron_signers
-  FOR SELECT USING (
-    (auth.jwt() ->> 'role') = 'va'
-    AND matter_id IN (
-      SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF to_regclass('public.va_assignments') IS NOT NULL THEN
+    EXECUTE $policy$
+      CREATE POLICY "ron_signers_va_read" ON ron_signers
+        FOR SELECT USING (
+          (auth.jwt() ->> 'role') = 'va'
+          AND matter_id IN (
+            SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
+          )
+        )
+    $policy$;
+  END IF;
+END
+$$;
 
 -- ── ron_documents ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS ron_documents (
@@ -153,13 +172,21 @@ CREATE POLICY "ron_documents_client_read" ON ron_documents
     AND signed_document_received = true
   );
 
-CREATE POLICY "ron_documents_va_read" ON ron_documents
-  FOR SELECT USING (
-    (auth.jwt() ->> 'role') = 'va'
-    AND matter_id IN (
-      SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF to_regclass('public.va_assignments') IS NOT NULL THEN
+    EXECUTE $policy$
+      CREATE POLICY "ron_documents_va_read" ON ron_documents
+        FOR SELECT USING (
+          (auth.jwt() ->> 'role') = 'va'
+          AND matter_id IN (
+            SELECT deal_id FROM va_assignments WHERE va_user_id = auth.uid()
+          )
+        )
+    $policy$;
+  END IF;
+END
+$$;
 
 -- ── ron_webhook_events ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS ron_webhook_events (
