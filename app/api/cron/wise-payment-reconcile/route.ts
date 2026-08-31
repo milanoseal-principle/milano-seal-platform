@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     for (const reconciled of result.results.filter((item) => item.settlementConfirmed)) {
       const { data } = await paymentRow(reconciled.matterId);
       if (!data?.payment_confirmed) continue;
-      await notifyClient(reconciled.matterId, "payment_confirmed");
+      await notifyClient(reconciled.matterId, "payment_cleared");
       await sendPaymentClearedAlerts({
         matterId: reconciled.matterId,
         matterReference: data.deal_id ?? reconciled.reference,
