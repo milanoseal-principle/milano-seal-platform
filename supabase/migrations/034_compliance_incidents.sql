@@ -1,5 +1,6 @@
 -- Compliance Incident Response System
--- Tracks errors, E&O events, and remediation workflows
+-- Tracks errors, E&O events, and remediation workflows.
+-- Replay-safe because hosted Supabase preview may retry an applied short version.
 
 CREATE TABLE IF NOT EXISTS compliance_incidents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,7 +34,6 @@ CREATE TABLE IF NOT EXISTS compliance_incidents (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Audit log for all incident state changes
 CREATE TABLE IF NOT EXISTS incident_audit_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   incident_id uuid NOT NULL REFERENCES compliance_incidents(id) ON DELETE CASCADE,
@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS incident_audit_log (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Critical identifier snapshots — immutable record of identifiers at time of capture
 CREATE TABLE IF NOT EXISTS critical_identifier_snapshots (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   deal_id uuid REFERENCES deals(id) ON DELETE SET NULL,
@@ -63,21 +62,28 @@ CREATE TABLE IF NOT EXISTS critical_identifier_snapshots (
   incident_id uuid REFERENCES compliance_incidents(id) ON DELETE SET NULL
 );
 
--- RLS: operator-only access
 ALTER TABLE compliance_incidents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE incident_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE critical_identifier_snapshots ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "operator_compliance_incidents" ON compliance_incidents;
 CREATE POLICY "operator_compliance_incidents" ON compliance_incidents
-  FOR ALL TO authenticated USING (true);
+  FOR ALL TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'));
 
+DROP POLICY IF EXISTS "operator_incident_audit_log" ON incident_audit_log;
 CREATE POLICY "operator_incident_audit_log" ON incident_audit_log
-  FOR ALL TO authenticated USING (true);
+  FOR ALL TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'));
 
+DROP POLICY IF EXISTS "operator_identifier_snapshots" ON critical_identifier_snapshots;
 CREATE POLICY "operator_identifier_snapshots" ON critical_identifier_snapshots
-  FOR ALL TO authenticated USING (true);
+  FOR ALL TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator','client_support'));
 
--- Indexes
 CREATE INDEX IF NOT EXISTS idx_incidents_deal_id ON compliance_incidents(deal_id);
 CREATE INDEX IF NOT EXISTS idx_incidents_status ON compliance_incidents(status);
 CREATE INDEX IF NOT EXISTS idx_incidents_severity ON compliance_incidents(severity);
@@ -85,12 +91,12 @@ CREATE INDEX IF NOT EXISTS idx_incidents_type ON compliance_incidents(incident_t
 CREATE INDEX IF NOT EXISTS idx_incident_audit_incident_id ON incident_audit_log(incident_id);
 CREATE INDEX IF NOT EXISTS idx_identifier_snapshots_deal_id ON critical_identifier_snapshots(deal_id);
 
--- Auto-update updated_at
 CREATE OR REPLACE FUNCTION update_compliance_incidents_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$;
 
+DROP TRIGGER IF EXISTS compliance_incidents_updated_at ON compliance_incidents;
 CREATE TRIGGER compliance_incidents_updated_at
   BEFORE UPDATE ON compliance_incidents
   FOR EACH ROW EXECUTE FUNCTION update_compliance_incidents_updated_at();
