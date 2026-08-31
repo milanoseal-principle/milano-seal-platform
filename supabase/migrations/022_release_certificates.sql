@@ -12,25 +12,33 @@ CREATE TABLE IF NOT EXISTS release_certificates (
   document_type TEXT,
   release_date TIMESTAMPTZ,
   public_summary TEXT,
-  issued_by UUID REFERENCES profiles(id),
+  -- Actor identity is the auth.users UUID. Do not depend on a separate
+  -- public.profiles table that is not part of the canonical migration chain.
+  issued_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 ALTER TABLE release_certificates ENABLE ROW LEVEL SECURITY;
 
--- Operators can create and manage
+DROP POLICY IF EXISTS "release_certificates_operator_all" ON release_certificates;
 CREATE POLICY "release_certificates_operator_all" ON release_certificates
-  FOR ALL
+  FOR ALL TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin','operator','superadmin','founder_admin','admin_operator','ops_manager')
-    )
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator')
+  )
+  WITH CHECK (
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN
+      ('founder','founder_admin','admin','admin_operator','operator','superadmin','ops_manager','execution_coordinator','apostille_coordinator')
   );
 
--- Public read for verification — safe fields only enforced at API layer
+DROP POLICY IF EXISTS "release_certificates_service_all" ON release_certificates;
+CREATE POLICY "release_certificates_service_all" ON release_certificates
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Public read for verification — safe fields only enforced at API layer.
+DROP POLICY IF EXISTS "release_certificates_public_read" ON release_certificates;
 CREATE POLICY "release_certificates_public_read" ON release_certificates
   FOR SELECT
   USING (status = 'valid');
