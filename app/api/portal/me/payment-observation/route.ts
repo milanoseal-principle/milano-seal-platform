@@ -304,6 +304,12 @@ export async function POST(req: NextRequest) {
     .update({
       payment_settlement_status: "observed_pending",
       payment_observed_at: now,
+      // Immutable snapshot of the payable scope this submission was made against.
+      // The canonical scheduling authority fails closed if these later diverge
+      // from the live Matter. This never authors paid/settled state.
+      payment_observed_amount: snapshot.amountDue,
+      payment_observed_currency: snapshot.currency,
+      payment_observed_reference: snapshot.wiseReference,
       updated_at: now,
     })
     .eq("id", ctx.deal.id)

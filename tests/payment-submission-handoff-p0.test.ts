@@ -68,12 +68,25 @@ test("invoice settlement check performs live server-side Wise reconciliation", (
 });
 
 test("canonical scheduler already accepts observed submission without fabricating paid state", () => {
-  assert.match(schedulingGate, /hasObservedWiseSubmission/);
+  assert.match(schedulingGate, /classifyObservedSubmission/);
   assert.match(schedulingGate, /observed_pending/);
   assert.match(schedulingGate, /schedulingEligible:\s*true/);
   assert.match(schedulingGate, /paymentRequirementSatisfied:\s*true/);
   assert.match(schedulingGate, /paymentRequirementMethod:\s*"wise_submission_observed"/);
   assert.match(schedulingGate, /MUST NOT mark the Matter paid/);
+});
+
+test("scheduling authority fails closed when the payable scope is mutated after submission", () => {
+  assert.match(schedulingGate, /payment_observed_amount/);
+  assert.match(schedulingGate, /payment_observed_currency/);
+  assert.match(schedulingGate, /payment_observed_reference/);
+  assert.match(schedulingGate, /superseded/);
+  // A recorded submission observation must persist the immutable snapshot the
+  // gate compares against.
+  const post = observation.slice(observation.indexOf("export async function POST"));
+  assert.match(post, /payment_observed_amount:\s*snapshot\.amountDue/);
+  assert.match(post, /payment_observed_currency:\s*snapshot\.currency/);
+  assert.match(post, /payment_observed_reference:\s*snapshot\.wiseReference/);
 });
 
 test("RON continues to consume the canonical scheduling gate and keeps notarial readiness independent", () => {

@@ -72,6 +72,72 @@ test("partial payment (underpayment) does not unlock scheduling", () => {
   assert.equal(evaluateSchedulingGate({ matter: partial }).schedulingEligible, false);
 });
 
+// --- Governed Wise submission unlocks scheduling without authoring paid state ---
+
+const observedSubmission = {
+  id: "matter-tiffany",
+  deal_id: "MS-2026-4887",
+  payment_status: "unpaid",
+  payment_confirmed: false,
+  amount_due: 6.88,
+  amount_paid: 0,
+  currency: "USD",
+  wise_reference: "MS-2026-4887",
+  payment_settlement_status: "observed_pending",
+  payment_observed_at: "2026-08-31T12:00:00.000Z",
+  payment_observed_amount: 6.88,
+  payment_observed_currency: "USD",
+  payment_observed_reference: "MS-2026-4887",
+};
+
+test("governed Wise submission unlocks scheduling while unpaid (Tiffany MS-2026-4887)", () => {
+  const gate = evaluateSchedulingGate({ matter: observedSubmission });
+  assert.equal(gate.schedulingEligible, true);
+  assert.equal(gate.paymentRequirementSatisfied, true);
+  assert.equal(gate.paymentRequirementMethod, "wise_submission_observed");
+  // Never authors paid state.
+  assert.equal(evaluatePaymentGate(observedSubmission), "PAYMENT_REQUIRED");
+});
+
+test("legacy observation without a recorded snapshot is trusted (not failed closed)", () => {
+  const legacy = {
+    ...observedSubmission,
+    payment_observed_amount: null,
+    payment_observed_currency: null,
+    payment_observed_reference: null,
+  };
+  assert.equal(evaluateSchedulingGate({ matter: legacy }).schedulingEligible, true);
+});
+
+test("material amount mutation after submission fails scheduling closed", () => {
+  const mutated = { ...observedSubmission, amount_due: 7.88 };
+  const gate = evaluateSchedulingGate({ matter: mutated });
+  assert.equal(gate.schedulingEligible, false);
+  assert.equal(gate.paymentRequirementMethod, "not_satisfied");
+  assert.match(gate.reason, /changed after the recorded submission/);
+});
+
+test("currency mutation after submission fails scheduling closed", () => {
+  const mutated = { ...observedSubmission, currency: "EUR" };
+  assert.equal(evaluateSchedulingGate({ matter: mutated }).schedulingEligible, false);
+});
+
+test("Wise reference mutation after submission fails scheduling closed", () => {
+  const mutated = { ...observedSubmission, wise_reference: "MS-2026-9999" };
+  assert.equal(evaluateSchedulingGate({ matter: mutated }).schedulingEligible, false);
+});
+
+test("failed/mismatch settlement state removes submission scheduling authority", () => {
+  for (const settlement of ["failed", "mismatch_review", "refunded"]) {
+    const invalid = { ...observedSubmission, payment_settlement_status: settlement };
+    assert.equal(
+      evaluateSchedulingGate({ matter: invalid }).schedulingEligible,
+      false,
+      settlement,
+    );
+  }
+});
+
 test("open operational requirements block scheduling even when paid", () => {
   const paid = {
     ...unpaidDiscountedMatter,
