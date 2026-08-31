@@ -141,3 +141,10 @@ test("fresh Supabase replay adds delivery projection columns before client-safe 
   assert.ok(createView >= 0, "client-safe Matter view must be declared");
   assert.ok(addColumns < createView, "compatibility columns must exist before view replay");
 });
+
+test("legacy RON migration never requires a phantom va_assignments table during fresh replay", () => {
+  const sql = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/018_bluenotary_ron.sql"), "utf8");
+  const guardMatches = sql.match(/to_regclass\('public\.va_assignments'\) IS NOT NULL/g) ?? [];
+  assert.equal(guardMatches.length, 3, "every legacy VA RON policy must be conditional");
+  assert.doesNotMatch(sql, /CREATE POLICY "ron_(sessions|signers|documents)_va_read"[\s\S]{0,300}SELECT deal_id FROM va_assignments(?![\s\S]{0,120}\$policy\$)/);
+});
