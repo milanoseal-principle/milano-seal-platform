@@ -4,6 +4,7 @@ import type { LocalizedSeoRecord, SupportedSeoLocale } from "./types";
 const ORIGIN = "https://www.themilanoseal.com";
 
 // Public localized routes remain fail-closed until both editorial review and index approval are complete.
+// HUMAN_REVIEWED alone is insufficient; source-controlled INDEXABLE approval is also required.
 export function localizedPath(prefix: string, slug: string[]) {
   return `/${prefix}/${slug.map((part) => part.trim()).filter(Boolean).join("/")}`;
 }
