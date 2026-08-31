@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const record = getLocalizedSeoRecord(LOCALE, localizedPath(PREFIX, slug));
   if (!isLocalizedSeoRecordPublishable(record)) return { robots: { index: false, follow: false } };
   const languages = Object.fromEntries(
-    Object.entries(getHreflangAlternates(record.path) ?? {}).map(([locale, path]) => [locale, absoluteMilanoUrl(path)]),
+    Object.entries(getHreflangAlternates(record.path) ?? {}).map(([locale, path]) => [locale, absoluteMilanoUrl(String(path))]),
   );
   return {
     title: record.title,
