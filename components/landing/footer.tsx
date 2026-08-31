@@ -75,6 +75,7 @@ const serviceLinks = [
 
 const networkLinks = [
   { label: "Alliance Partner Network", href: "/alliance/apply" },
+  { label: "RON Notary Alliance", href: "/partners/ron-notary-alliance" },
   { label: "Execution Support Network", href: "/va/apply" },
 ];
 
@@ -162,7 +163,7 @@ export function Footer() {
             </div>
           </div>
           <p className="mt-6 text-xs text-[#B0B0B0]/50 text-center md:text-left">
-            Nicholas Milano is a Certified Florida Notary Public. Remote Online Notarization services are provided in compliance with Florida law. Apostille coordination is facilitated through the appropriate Secretary of State offices. This service does not constitute legal advice.
+            Nicholas Milano is a commissioned Florida Notary Public. Remote Online Notarization services are coordinated in accordance with applicable Florida law and Matter-specific execution requirements. Apostille coordination is facilitated through the appropriate competent authority. The Milano Seal is not a law firm and does not provide legal advice or legal representation.
           </p>
         </div>
       </div>
