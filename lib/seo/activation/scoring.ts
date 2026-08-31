@@ -1,6 +1,6 @@
 import { getSeoNode } from "@/lib/seo/authority/graph";
 import { LOCALIZED_SEO_RECORDS } from "@/lib/seo/localization/registry";
-import { isLocalizedSeoRecordPublishable } from "@/lib/seo/localization/runtime";
+import { localizedSeoRecordRequiresReview } from "@/lib/seo/localization/runtime";
 import type {
   AuthorityEvidenceSummary,
   SeoActivationBuildInput,
@@ -187,7 +187,7 @@ export function buildSeoActivationCandidates(input: SeoActivationBuildInput): Se
   }
 
   for (const record of LOCALIZED_SEO_RECORDS) {
-    if (isLocalizedSeoRecordPublishable(record)) continue;
+    if (!localizedSeoRecordRequiresReview(record)) continue;
     candidates.push(buildCandidate(
       `localize:${record.path}`,
       record.path,
