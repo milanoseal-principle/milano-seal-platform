@@ -183,6 +183,10 @@ function wiseUrl(path: string): string {
   return `${WISE_API_BASE}/${WISE_API_VERSION}${path}`;
 }
 
+function wiseActivityUrl(path: string): string {
+  return `${WISE_API_BASE}/v1${path}`;
+}
+
 async function wiseGetJson<T>(url: string, token: string): Promise<T> {
   const response = await fetch(url, {
     method: "GET",
@@ -234,7 +238,7 @@ export async function listWiseAcquiringActivities(params: {
     if (nextCursor) query.set("nextCursor", nextCursor);
 
     const payload = await wiseGetJson<{ cursor?: string | null; activities?: WiseActivity[] }>(
-      wiseUrl(`/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`),
+      wiseActivityUrl(`/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`),
       token,
     );
 

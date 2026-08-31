@@ -4,6 +4,7 @@ import fs from "node:fs";
 
 // P0 regression: card/Apple Pay Wise payment-link receipts are acquiring payments,
 // not outbound transfer events. The client button must never be a DB-only illusion.
+// Wise Activity remains a v1 endpoint even while supported balance endpoints use 2026Q3.
 const reconciliation = fs.readFileSync("lib/wise/reconciliation.ts", "utf8");
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
 const cron = fs.readFileSync("app/api/cron/wise-payment-reconcile/route.ts", "utf8");
@@ -12,7 +13,12 @@ const vercel = fs.readFileSync("vercel.json", "utf8");
 
 test("Wise reconciliation reads acquiring payment activity from Wise instead of pretending DB refresh is provider verification", () => {
   assert.match(reconciliation, /monetaryResourceType:\s*"ACQUIRING_PAYMENT"/);
-  assert.match(reconciliation, /\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/activities/);
+  assert.match(reconciliation, /wiseActivityUrl\(`/);
+  assert.match(reconciliation, /return `\$\{WISE_API_BASE\}\/v1\$\{path\}`/);
+  assert.doesNotMatch(
+    reconciliation,
+    /wiseUrl\(`\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/activities/,
+  );
   assert.match(reconciliation, /exactReferencePresent\(activity, reference\)/);
   assert.match(observation, /export async function PUT/);
   assert.match(observation, /reconcileWiseMatter\(ctx\.deal\.id\)/);
