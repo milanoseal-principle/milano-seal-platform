@@ -1,6 +1,6 @@
 -- 034_compliance_incidents_identifier_snapshots_FIXED.sql
--- Fixed: removes dependency on public.profiles.
--- Uses Supabase Auth JWT app_metadata/user_metadata role checks instead.
+-- Replay-safe reconciliation over the earlier 034 compliance schema.
+-- Removes dependency on public.profiles and preserves legacy incident data.
 
 create extension if not exists pgcrypto;
 
@@ -20,9 +20,9 @@ language sql
 stable
 as $$
   select coalesce(
-    (auth.jwt() -> 'app_metadata' ->> 'role') in ('founder', 'admin')
+    (auth.jwt() -> 'app_metadata' ->> 'role') in ('founder', 'founder_admin', 'admin', 'admin_operator', 'superadmin')
     or
-    (auth.jwt() -> 'user_metadata' ->> 'role') in ('founder', 'admin'),
+    (auth.jwt() -> 'user_metadata' ->> 'role') in ('founder', 'founder_admin', 'admin', 'admin_operator', 'superadmin'),
     false
   );
 $$;
@@ -143,6 +143,51 @@ create table if not exists public.critical_identifier_snapshots (
     )
   )
 );
+
+-- The first 034 migration may already have created these three tables with its
+-- legacy shape. Add the newer evidence fields without changing or coercing
+-- legacy columns such as deal_id, title, incident_type, severity, status,
+-- assigned_to, actor, field_value, or captured_by.
+alter table public.compliance_incidents
+  add column if not exists matter_id uuid null,
+  add column if not exists release_frozen boolean not null default true,
+  add column if not exists document_already_released boolean not null default false,
+  add column if not exists apostille_already_submitted boolean not null default false,
+  add column if not exists client_impact_level text null,
+  add column if not exists financial_exposure_estimate numeric(12,2) null,
+  add column if not exists foreign_authority_deadline timestamptz null,
+  add column if not exists summary text null,
+  add column if not exists internal_notes text null,
+  add column if not exists client_safe_message text null,
+  add column if not exists correction_plan text null,
+  add column if not exists founder_review_status text not null default 'PENDING',
+  add column if not exists counsel_review_status text not null default 'NOT_REQUESTED',
+  add column if not exists insurance_review_status text not null default 'NOT_REQUESTED',
+  add column if not exists opened_by uuid null references auth.users(id) on delete set null,
+  add column if not exists closed_by uuid null references auth.users(id) on delete set null,
+  add column if not exists closed_at timestamptz null;
+
+alter table public.incident_audit_log
+  add column if not exists matter_id uuid null,
+  add column if not exists from_status text null,
+  add column if not exists to_status text null,
+  add column if not exists actor_id uuid null references auth.users(id) on delete set null;
+
+alter table public.critical_identifier_snapshots
+  add column if not exists matter_id uuid null,
+  add column if not exists field_label text null,
+  add column if not exists source_value text null,
+  add column if not exists generated_document_value text null,
+  add column if not exists executed_document_value text null,
+  add column if not exists apostille_packet_value text null,
+  add column if not exists final_packet_value text null,
+  add column if not exists mismatch_detected boolean not null default false,
+  add column if not exists qa_required boolean not null default true,
+  add column if not exists confirmed_value text null,
+  add column if not exists confirmed_by uuid null references auth.users(id) on delete set null,
+  add column if not exists confirmed_at timestamptz null,
+  add column if not exists created_by uuid null references auth.users(id) on delete set null,
+  add column if not exists updated_at timestamptz not null default now();
 
 drop trigger if exists trg_compliance_incidents_updated_at on public.compliance_incidents;
 create trigger trg_compliance_incidents_updated_at
