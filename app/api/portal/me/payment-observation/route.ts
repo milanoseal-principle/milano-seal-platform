@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest) {
     const row = data as Record<string, unknown>;
     const state = payload(row);
     if (!wasConfirmed && state.paymentConfirmed) {
-      await notifyClient(state.matterId, "payment_confirmed");
+      await notifyClient(state.matterId, "payment_cleared");
       await maybeSendCleared(row);
     }
 
