@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
+const invoice = fs.readFileSync("app/portal/invoice/page.tsx", "utf8");
 const paymentCard = fs.readFileSync("components/payments/SecurePaymentCard.tsx", "utf8");
 const paymentPage = fs.readFileSync("app/portal/payment/page.tsx", "utf8");
 const portalContext = fs.readFileSync("components/portal/portal-context.tsx", "utf8");
@@ -54,6 +55,16 @@ test("payment page describes submission and settlement as separate authorities",
   assert.match(paymentPage, /governed Wise submission is recorded/);
   assert.match(paymentPage, /payment portion of scheduling is satisfied/);
   assert.doesNotMatch(paymentPage, /Scheduling remains locked until verified Wise reconciliation/);
+});
+
+test("invoice settlement check performs live server-side Wise reconciliation", () => {
+  const check = invoice.slice(invoice.indexOf("async function checkWiseSettlement"), invoice.indexOf("if (isLoading || loadingInvoice)"));
+  assert.match(check, /method:\s*"PUT"/);
+  assert.match(check, /\/api\/portal\/me\/payment-observation/);
+  assert.match(invoice, /Payment submitted/);
+  assert.match(invoice, /You do not need to submit payment again/);
+  assert.match(invoice, /Check Wise settlement now/);
+  assert.doesNotMatch(invoice, /Wise payment processing/);
 });
 
 test("canonical scheduler already accepts observed submission without fabricating paid state", () => {
