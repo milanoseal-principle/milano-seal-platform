@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
+// P0 regression: card/Apple Pay Wise payment-link receipts are acquiring payments,
+// not outbound transfer events. The client button must never be a DB-only illusion.
 const reconciliation = fs.readFileSync("lib/wise/reconciliation.ts", "utf8");
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
 const cron = fs.readFileSync("app/api/cron/wise-payment-reconcile/route.ts", "utf8");
