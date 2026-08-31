@@ -81,6 +81,15 @@ type WiseBalance = {
   [key: string]: unknown;
 };
 
+type WiseProfile = {
+  id?: number | string;
+  type?: string;
+  currentState?: string;
+  businessName?: string;
+  fullName?: string;
+  [key: string]: unknown;
+};
+
 class WiseApiError extends Error {
   constructor(
     message: string,
@@ -183,10 +192,6 @@ function wiseUrl(path: string): string {
   return `${WISE_API_BASE}/${WISE_API_VERSION}${path}`;
 }
 
-function wiseActivityUrl(path: string): string {
-  return `${WISE_API_BASE}/v1${path}`;
-}
-
 async function wiseGetJson<T>(url: string, token: string): Promise<T> {
   const response = await fetch(url, {
     method: "GET",
@@ -211,20 +216,53 @@ async function wiseGetJson<T>(url: string, token: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-function requireWiseConfig(): { token: string; profileId: string } {
+async function resolveWiseConfig(): Promise<{ token: string; profileId: string }> {
   const token = process.env.WISE_API_TOKEN?.trim();
-  const profileId = process.env.WISE_PROFILE_ID?.trim();
-  if (!token || !profileId) {
-    throw new WiseApiError("Wise API credentials are not configured", 503);
+  const configuredProfileId = process.env.WISE_PROFILE_ID?.trim();
+  if (!token) {
+    throw new WiseApiError("Wise API token is not configured", 503);
   }
-  return { token, profileId };
+
+  const profiles = await wiseGetJson<WiseProfile[]>(wiseUrl("/profiles"), token);
+  const usableProfiles = profiles.filter(
+    (profile) => profile.id !== null && profile.id !== undefined && String(profile.currentState ?? "VISIBLE").toUpperCase() !== "DEACTIVATED",
+  );
+
+  if (configuredProfileId) {
+    const configured = usableProfiles.find((profile) => String(profile.id) === configuredProfileId);
+    if (configured) return { token, profileId: configuredProfileId };
+  }
+
+  const businessProfiles = usableProfiles.filter(
+    (profile) => String(profile.type ?? "").toUpperCase() === "BUSINESS",
+  );
+
+  if (businessProfiles.length === 1 && businessProfiles[0]?.id !== undefined) {
+    return { token, profileId: String(businessProfiles[0].id) };
+  }
+
+  if (!configuredProfileId) {
+    throw new WiseApiError(
+      businessProfiles.length > 1
+        ? "WISE_PROFILE_ID is required because this Wise token can access multiple business profiles"
+        : "WISE_PROFILE_ID is not configured and no single active Wise business profile could be resolved",
+      503,
+    );
+  }
+
+  throw new WiseApiError(
+    businessProfiles.length > 1
+      ? "WISE_PROFILE_ID does not belong to this Wise token; multiple active business profiles are available"
+      : "WISE_PROFILE_ID does not belong to this Wise token and no single active business profile could be resolved",
+    503,
+  );
 }
 
 export async function listWiseAcquiringActivities(params: {
   since: string;
   until?: string;
 }): Promise<WiseActivity[]> {
-  const { token, profileId } = requireWiseConfig();
+  const { token, profileId } = await resolveWiseConfig();
   const activities: WiseActivity[] = [];
   let nextCursor: string | null = null;
 
@@ -238,7 +276,7 @@ export async function listWiseAcquiringActivities(params: {
     if (nextCursor) query.set("nextCursor", nextCursor);
 
     const payload = await wiseGetJson<{ cursor?: string | null; activities?: WiseActivity[] }>(
-      wiseActivityUrl(`/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`),
+      wiseUrl(`/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`),
       token,
     );
 
@@ -251,7 +289,7 @@ export async function listWiseAcquiringActivities(params: {
 }
 
 async function getStandardBalance(currency: string): Promise<WiseBalance | null> {
-  const { token, profileId } = requireWiseConfig();
+  const { token, profileId } = await resolveWiseConfig();
   const query = new URLSearchParams({ types: "STANDARD" });
   const balances = await wiseGetJson<WiseBalance[]>(
     wiseUrl(`/profiles/${encodeURIComponent(profileId)}/balances?${query.toString()}`),
@@ -272,7 +310,7 @@ async function getBalanceStatement(params: {
   since: string;
   until: string;
 }): Promise<WiseStatement> {
-  const { token, profileId } = requireWiseConfig();
+  const { token, profileId } = await resolveWiseConfig();
   const query = new URLSearchParams({
     currency: params.currency,
     intervalStart: params.since,
