@@ -224,7 +224,7 @@ export async function updateAuthorityPlacement(id: string, patch: Record<string,
   return data as SeoAuthorityPlacement;
 }
 
-export async function syncSeoActivationActions(searchOpportunities: SearchConsoleOpportunity[], actorUserId: string) {
+export async function syncSeoActivationActions(searchOpportunities: SearchConsoleOpportunity[], actorUserId: string | null) {
   const admin = createAdminClient();
   const snapshot = await getSeoAuthorityActivationSnapshot(searchOpportunities);
   if (!snapshot.provisioned) throw new Error(snapshot.provisioningMessage ?? "Authority Activation database is not provisioned.");
