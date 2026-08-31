@@ -290,10 +290,11 @@ check(
     "No payment is due for this Matter",
     "Complimentary authorization remains separate from Wise paid-state authority",
     "Wise reference:",
-    "Refresh Wise payment status",
+    "Check Wise settlement now",
+    "This performs a live server-side Wise reconciliation",
     "A recorded submission may satisfy scheduling authority",
     "verified Wise settlement remains the authority for paid state",
-    "signer-link release",
+    "final settlement-dependent release",
   ]) &&
     portalInvoice.includes("window.setInterval(() => void loadPaymentFlow(), 10_000)") &&
     !/complimentaryAuthorized[\s\S]{0,2000}(paymentConfirmed\s*=\s*true|paymentStatus\s*=\s*["']paid["'])/.test(portalInvoice),
