@@ -173,7 +173,9 @@ test("operator detail delegates Wise-only payment UX to SecurePaymentCard", () =
   assert.match(dealPage, /deal\.balance_payment_link/);
   assert.match(securePaymentCard, /Powered by Wise Business/);
   assert.match(securePaymentCard, /Wise verified only/);
-  assert.match(securePaymentCard, /Scheduling unlocks automatically after verified payment/);
+  assert.match(securePaymentCard, /Payment Submitted/);
+  assert.match(securePaymentCard, /Scheduling access is available when the remaining Matter requirements are ready/);
+  assert.doesNotMatch(securePaymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 
 test("Matter detail restoration preserves non-payment operator UX", () => {
