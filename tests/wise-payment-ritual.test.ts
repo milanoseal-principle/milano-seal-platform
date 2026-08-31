@@ -27,6 +27,7 @@ test("Wise ritual intercepts Wise links and preserves explicit user control", ()
   assert.match(ritual, /Continue securely to Wise/);
   assert.match(ritual, /Stay on The Milano Seal/);
   assert.match(ritual, /target="_blank"/);
+  assert.match(ritual, /rel="noopener noreferrer"/);
   assert.match(ritual, /data-wise-ritual-bypass="true"/);
 });
 
