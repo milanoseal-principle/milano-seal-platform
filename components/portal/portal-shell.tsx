@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 import { MilanoOSShell, type MilanoOSNavItem } from "@/components/os/MilanoOSShell";
+import { WisePaymentRitual } from "@/components/payments/WisePaymentRitual";
 import { usePortal } from "./portal-context";
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -121,7 +122,13 @@ export function PortalShell({ children }: { children: ReactNode }) {
       footerNote="Client-safe projection · private Matter data only"
       maxWidth={1360}
     >
-      {children}
+      <WisePaymentRitual
+        matterReference={deal?.display_id ?? deal?.matter_id ?? matterRef}
+        amountDue={deal?.amount_due ?? deal?.payment_amount_due ?? null}
+        currency={deal?.currency ?? "USD"}
+      >
+        {children}
+      </WisePaymentRitual>
     </MilanoOSShell>
   );
 }
