@@ -132,3 +132,12 @@ test("migration keeps authority control plane private and evidence-gated", () =>
   assert.match(sql, /status <> 'VERIFIED' or[\s\S]*last_verified_at is not null[\s\S]*verified_by is not null[\s\S]*verification_method is not null/i);
   assert.doesNotMatch(sql, /stripe/i);
 });
+
+test("fresh Supabase replay adds delivery projection columns before client-safe view creation", () => {
+  const sql = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/008_missing_views_and_tables.sql"), "utf8");
+  const addColumns = sql.indexOf("ADD COLUMN IF NOT EXISTS delivery_status");
+  const createView = sql.indexOf("CREATE OR REPLACE VIEW public.client_safe_matter_view");
+  assert.ok(addColumns >= 0, "delivery_status compatibility column must be declared");
+  assert.ok(createView >= 0, "client-safe Matter view must be declared");
+  assert.ok(addColumns < createView, "compatibility columns must exist before view replay");
+});
