@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel';
+import { NotarialActResolution } from '@/components/ron/NotarialActResolution';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
@@ -51,6 +52,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const signerState = String(truth.signer_location ?? matter.origin_state ?? '').trim();
   const notaryJurisdiction = String(truth.notary_jurisdiction ?? '').trim();
   const notarialAct = String(truth.notarial_act ?? 'review_required');
+  const notarialActNeedsReview = notarialAct === 'review_required' || notarialAct === 'unknown';
   const paymentConfirmed = matter.payment_confirmed === true;
   const paymentObserved = matter.payment_settlement_status === 'observed_pending' || Boolean(matter.payment_observed_at);
   const schedulingGate = evaluateSchedulingGate({ matter });
@@ -62,8 +64,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
     Boolean(signerState) &&
     Boolean(notaryJurisdiction) &&
     Boolean(notarialAct) &&
-    notarialAct !== 'review_required' &&
-    notarialAct !== 'unknown';
+    !notarialActNeedsReview;
   const documentReady = Boolean(files?.length);
   const sessionExists = Boolean(activeSession && !['RON_EXPIRED', 'RON_COMPLETED'].includes(activeSession.milano_ron_status));
   const sessionNotExpired = Boolean(activeSession && activeSession.milano_ron_status !== 'RON_EXPIRED' && (!activeSession.expired_at || new Date(activeSession.expired_at) > new Date()));
@@ -82,7 +83,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
     !schedulingAuthorized ? schedulingGate.reason : null,
     !signerComplete ? 'Signer name, email, phone, and Florida signer location must be present.' : null,
     !documentReady ? 'At least one Matter document is required.' : null,
-    notarialAct === 'review_required' || notarialAct === 'unknown' ? 'Operator must confirm the notarial act before BlueNotary session creation.' : null,
+    notarialActNeedsReview ? 'Operator must confirm the notarial act before BlueNotary session creation.' : null,
     !notaryJurisdiction ? 'Notary jurisdiction must be confirmed.' : null,
   ].filter(Boolean) as string[];
 
@@ -101,6 +102,34 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
         </span>
       </div>
 
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className={`rounded-2xl border p-4 ${schedulingAuthorized ? 'border-emerald-500/25 bg-emerald-500/[0.055]' : 'border-[#E0876E]/25 bg-[#C0563E]/[0.055]'}`}>
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/38">Payment → Scheduling</p>
+          <p className={`mt-1 text-base font-medium ${schedulingAuthorized ? 'text-emerald-200' : 'text-[#E0876E]'}`}>
+            {schedulingAuthorized ? 'Payment gate passed' : 'Payment gate blocked'}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-white/45">{paymentLabel}</p>
+        </div>
+        <div className={`rounded-2xl border p-4 ${notarialActNeedsReview ? 'border-[var(--ms-gold)]/30 bg-[var(--ms-gold)]/[0.055]' : 'border-emerald-500/20 bg-emerald-500/[0.04]'}`}>
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/38">Current execution decision</p>
+          <p className={`mt-1 text-base font-medium ${notarialActNeedsReview ? 'text-[#F6E8B8]' : 'text-emerald-200'}`}>
+            {notarialActNeedsReview ? 'Confirm notarial act' : 'Notarial act confirmed'}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-white/45">
+            {notarialActNeedsReview
+              ? 'This is the remaining legal/execution fact. Do not infer acknowledgment or jurat from document type.'
+              : `Confirmed as ${notarialAct.replace(/_/g, ' ')}.`}
+          </p>
+        </div>
+      </div>
+
+      {schedulingAuthorized && notarialActNeedsReview && !activeSession && (
+        <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.045] px-4 py-3 text-xs leading-5 text-white/58">
+          <strong className="text-emerald-200">Scheduling payment authority is already satisfied.</strong>{' '}
+          Wise settlement can continue in the background. BlueNotary is waiting on execution truth—not another payment.
+        </div>
+      )}
+
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[
           ['Signer', matter.client_name || 'Missing'],
@@ -108,7 +137,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           ['Signer Phone', matter.phone || 'Missing'],
           ['Signer Location', signerState || 'Missing'],
           ['Document / Package', files?.map((file) => file.name).join(', ') || 'Missing'],
-          ['Notarization Type', notarialAct === 'review_required' ? 'Operator review required' : notarialAct.replace(/_/g, ' ')],
+          ['Notarization Type', notarialActNeedsReview ? 'Operator review required' : notarialAct.replace(/_/g, ' ')],
           ['Destination Jurisdiction', matter.destination_country || 'Missing'],
           ['Notary Jurisdiction', notaryJurisdiction || 'Missing'],
           ['Payment / Scheduling', paymentLabel],
@@ -119,6 +148,13 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           </div>
         ))}
       </div>
+
+      {notarialActNeedsReview && !activeSession && (
+        <NotarialActResolution
+          matterId={matter.id}
+          schedulingAuthorized={schedulingAuthorized}
+        />
+      )}
 
       {activeSession && (
         <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4 text-xs text-white/65">
@@ -152,7 +188,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
             sessionExists: { met: sessionExists },
             sessionNotExpired: { met: sessionNotExpired },
             signerComplete: { met: signerComplete, reason: 'Signer name, email, phone, and location are required.' },
-            ronTruthComplete: { met: ronTruthComplete, reason: notarialAct === 'review_required' ? 'Confirm acknowledgment vs jurat before creating the provider session.' : 'RON execution truth is incomplete.' },
+            ronTruthComplete: { met: ronTruthComplete, reason: notarialActNeedsReview ? 'Confirm acknowledgment vs jurat before creating the provider session.' : 'RON execution truth is incomplete.' },
             documentReady: { met: documentReady, reason: 'Matter package is missing.' },
             sessionCompleted: { met: sessionCompleted },
           }}
