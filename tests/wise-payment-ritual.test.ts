@@ -30,8 +30,10 @@ test("Wise ritual intercepts Wise links and preserves explicit user control", ()
   assert.match(ritual, /data-wise-ritual-bypass="true"/);
 });
 
-test("Wise ritual is keyboard dismissible and modal-accessible", () => {
+test("Wise ritual is keyboard dismissible, modal-accessible, and rendered above portal stacking contexts", () => {
   assert.match(ritual, /aria-modal="true"/);
   assert.match(ritual, /event\.key === "Escape"/);
   assert.match(ritual, /continueRef\.current\?\.focus/);
+  assert.match(ritual, /createPortal/);
+  assert.match(ritual, /document\.body/);
 });
