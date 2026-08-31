@@ -64,7 +64,7 @@ async function verifySchedulingAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
@@ -101,7 +101,7 @@ async function verifyExecutionPaymentAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
