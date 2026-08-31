@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
+// Keeps the Wise P0 repair on the repository's explicit preview-validation path.
 const ritual = fs.readFileSync("components/payments/WisePaymentRitual.tsx", "utf8");
 const portalShell = fs.readFileSync("components/portal/portal-shell.tsx", "utf8");
 
