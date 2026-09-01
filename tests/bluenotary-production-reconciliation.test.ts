@@ -25,10 +25,10 @@ test('BlueNotary session creation uses the canonical scheduling authority while 
   assert.doesNotMatch(guards, /payment_status !== 'paid'/);
 });
 
-test('recorded Wise processing may authorize RON scheduling without fabricating paid state', () => {
-  assert.match(readiness, /Wise processing · scheduling authorized/);
+test('recorded Wise submission may authorize RON scheduling without fabricating paid state', () => {
+  assert.match(readiness, /Wise submitted · scheduling authorized/);
   assert.match(readiness, /evaluateSchedulingGate/);
-  assert.match(queue, /Wise processing · scheduling authorized/);
+  assert.match(queue, /Wise submitted · scheduling authorized/);
   assert.match(queue, /evaluateSchedulingGate/);
   assert.match(detail, /Paid truth:/);
   assert.match(detail, /schedulingAuthorized/);
@@ -68,10 +68,13 @@ test('RON document transfer reads the canonical private Matter bucket', () => {
   assert.match(storageMigration, /storage_bucket text not null default 'deal-documents'/);
 });
 
-test('operator surfaces expose pre-session readiness and real handoff controls', () => {
+test('operator surfaces expose hardened pre-session readiness and real handoff controls', () => {
   assert.match(queue, /BlueNotary Signing Room/);
-  assert.match(queue, /Before BlueNotary Session/);
+  assert.match(queue, /Pre-session command/);
+  assert.match(queue, /Matters awaiting RON action/);
   assert.match(queue, /Resolve before session creation/);
+  assert.match(queue, /Payment is not the blocker/);
+  assert.match(queue, /Never inferred from document title/);
   assert.match(queue, /Open RON Readiness → (?:Create BlueNotary Session|Resolve Blockers)/);
   assert.match(readiness, /Signer Phone/);
   assert.match(readiness, /Notarization Type/);
