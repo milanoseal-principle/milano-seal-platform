@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
-import { ExecutionReadiness } from "@/components/dashboard/execution/ExecutionReadiness";
 import { DynamicSessionPlaybook } from "@/components/dashboard/execution/DynamicSessionPlaybook";
 import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
 
@@ -21,9 +20,8 @@ export default async function MatterExecutionPage({
       <DashboardPageHeader
         eyebrow={`Matter · ${matterId}`}
         title="Execution Readiness"
-        description="Non-bypassable execution gates plus a Matter-backed operator session playbook. Unknown execution facts remain blocked until confirmed; payment, QA, custody, and release gates remain authoritative."
+        description="Matter-backed operator readiness only. Unknown execution facts remain blocked until confirmed; scheduling authority, RON readiness, custody, QA, and release truth remain independently governed."
       />
-      <ExecutionReadiness />
       <DynamicSessionPlaybook matterId={matterId} />
       <MatterRONReadiness matterId={matterId} />
     </div>
