@@ -1,8 +1,9 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deriveFreshnessState, type FreshnessState } from "@/lib/intelligence/freshness-policy";
 
-export type FreshnessState = "CURRENT" | "WATCH" | "STALE" | "CONFLICT" | "REVIEW_REQUIRED";
+export type { FreshnessState } from "@/lib/intelligence/freshness-policy";
 
 export interface FreshnessRecord {
   id: string;
@@ -38,28 +39,12 @@ type AuthorityRow = {
   confidence_level?: string | null;
   manual_review_required?: boolean | null;
   routing_status?: string | null;
-  notes?: string | null;
 };
 
 function clean(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const v = value.trim();
   return v || null;
-}
-
-export function deriveFreshnessState(row: AuthorityRow, nowMs = Date.now()): FreshnessState {
-  if (row.manual_review_required === true || row.routing_status === "REVIEW_REQUIRED") return "REVIEW_REQUIRED";
-  if (row.routing_status === "INACTIVE") return "WATCH";
-  const source = clean(row.source_url);
-  const verified = clean(row.last_verified_at);
-  if (!source || !verified) return "REVIEW_REQUIRED";
-  const verifiedMs = new Date(verified).getTime();
-  if (!Number.isFinite(verifiedMs)) return "REVIEW_REQUIRED";
-  const staleDays = typeof row.stale_after_days === "number" && row.stale_after_days > 0 ? row.stale_after_days : 180;
-  const ageDays = (nowMs - verifiedMs) / 86_400_000;
-  if (ageDays > staleDays) return "STALE";
-  if (ageDays > staleDays * 0.8) return "WATCH";
-  return "CURRENT";
 }
 
 export async function loadIntelligenceFreshness(): Promise<FreshnessSnapshot> {
