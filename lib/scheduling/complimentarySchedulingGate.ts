@@ -15,6 +15,7 @@ export interface SchedulingGateResult {
 }
 
 export interface ComplimentaryGateMatter extends PaymentGateMatter {
+  payment_confirmed?: boolean | null;
   payment_disposition?: string | null;
   payment_settlement_status?: string | null;
   payment_observed_at?: string | null;
@@ -53,18 +54,10 @@ function hasCompleteObservationProjection(matter: ComplimentaryGateMatter): bool
   );
 }
 
-/**
- * A governed submission authorizes scheduling ONLY while the Matter's payable
- * scope is unchanged. A real legacy database row has the snapshot columns present
- * with null values and remains trusted. A read-model that omitted the snapshot or
- * live payable-scope columns is NOT treated as legacy: it fails closed so no UI or
- * downstream consumer can accidentally bypass the mutation guard by under-selecting.
- */
 function classifyObservedSubmission(matter: ComplimentaryGateMatter): SubmissionState {
   const settlement = String(matter.payment_settlement_status ?? "").trim().toLowerCase();
   const observed = Boolean(matter.payment_observed_at) && settlement === "observed_pending";
   if (!observed) return "none";
-
   if (!hasCompleteObservationProjection(matter)) return "projection_incomplete";
 
   const snapshotAmount = matter.payment_observed_amount;
@@ -74,13 +67,9 @@ function classifyObservedSubmission(matter: ComplimentaryGateMatter): Submission
     snapshotAmount != null || (snapshotCurrency ?? "") !== "" || (snapshotReference ?? "") !== "";
   if (!hasSnapshot) return "observed";
 
-  const amountMatches =
-    snapshotAmount == null || Number(snapshotAmount) === Number(matter.amount_due ?? 0);
-  const currencyMatches =
-    !snapshotCurrency ||
-    snapshotCurrency.toUpperCase() === String(matter.currency ?? "USD").toUpperCase();
+  const amountMatches = snapshotAmount == null || Number(snapshotAmount) === Number(matter.amount_due ?? 0);
+  const currencyMatches = !snapshotCurrency || snapshotCurrency.toUpperCase() === String(matter.currency ?? "USD").toUpperCase();
   const referenceMatches = !snapshotReference || snapshotReference === currentReference(matter);
-
   return amountMatches && currencyMatches && referenceMatches ? "observed" : "superseded";
 }
 
@@ -102,12 +91,7 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Observed Wise submission authorizes scheduling while settlement remains pending." };
   }
   if (submission === "projection_incomplete") {
-    return {
-      schedulingEligible: false,
-      paymentRequirementSatisfied: false,
-      paymentRequirementMethod: "not_satisfied",
-      reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path.",
-    };
+    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path." };
   }
   if (submission === "superseded") {
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "The Matter's payable amount, currency or reference changed after the recorded submission. A new governed payment submission is required before scheduling." };
