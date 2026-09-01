@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
 import { normalizeExecutionTruth } from "@/lib/matter/executionTruth";
+import { appendMatterEvidence } from "@/lib/matter/evidenceLedger";
 import { logActivity } from "@/lib/activity";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -67,6 +68,9 @@ export async function PATCH(
     matter.execution_truth && typeof matter.execution_truth === "object"
       ? (matter.execution_truth as Record<string, unknown>)
       : {};
+  const priorNotarialAct = String(
+    currentTruth.notarial_act ?? "review_required",
+  );
 
   const nextTruth = normalizeExecutionTruth({
     ...currentTruth,
@@ -102,6 +106,27 @@ export async function PATCH(
     );
   }
 
+  void appendMatterEvidence({
+    matterId: updated.id,
+    eventType: "NOTARIAL_ACT_CONFIRMED",
+    domain: "execution",
+    actorType: "operator",
+    actorId: user.email ?? user.id,
+    occurredAt: now,
+    source: "operator_execution_readiness",
+    sourceReference: updated.deal_id ?? id,
+    priorValue: priorNotarialAct,
+    newValue: notarialAct,
+    reason:
+      "Operator confirmed the required notarial act from the Matter package or authoritative execution instructions.",
+    metadata: {
+      notarial_act: notarialAct,
+      previous_notarial_act: priorNotarialAct,
+    },
+  }).catch((error) =>
+    console.error("[matter-evidence] notarial act confirmation append failed:", error),
+  );
+
   void logActivity({
     deal_id: updated.deal_id ?? id,
     actor: user.email ?? user.id,
@@ -109,6 +134,7 @@ export async function PATCH(
     detail: `Notarial act confirmed: ${notarialAct}`,
     meta: {
       notarial_act: notarialAct,
+      previous_notarial_act: priorNotarialAct,
       source: "operator_execution_readiness",
     },
   }).catch((error) =>
