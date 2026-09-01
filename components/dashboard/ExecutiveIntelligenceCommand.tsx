@@ -29,7 +29,7 @@ export async function ExecutiveIntelligenceCommand() {
       <div className="grid gap-3 lg:grid-cols-4">
         <Card href="/today" label="Today" value={operator.actions.length} sub="derived operator actions" />
         <Card href="/dashboard/recovery" label="Execution Blockers" value={blockers} sub="payment / document / authority / courier" />
-        <Card href="/dashboard/professional360" label="Professional Accounts" value={professional.totals.accounts} sub={`${professional.totals.atRisk} at risk`} />
+        <Card href="/today/professional" label="Professional Day" value={professional.totals.atRisk} sub={`${professional.totals.accounts} governed accounts`} />
         <Card href="/dashboard/economics" label="Collected Revenue" value={money(economics.totals.collectedRevenue.value, economics.totals.collectedRevenue.currency)} sub={`${economics.totals.paidMatters} paid Matters`} />
       </div>
 
