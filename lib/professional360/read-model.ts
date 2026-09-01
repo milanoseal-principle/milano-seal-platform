@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchCanonicalDeals, DealsSchemaError, type NormalizedDealRow } from "@/lib/deals/canonicalDealReadModel";
-import { isOperationalTerminalState } from "@/lib/matter/canonicalOperationalRead";
+import { isOperationalTerminalState, resolveOperationalMatterState } from "@/lib/matter/canonicalOperationalRead";
 
 export type EvidenceClass = "OBSERVED" | "ATTRIBUTED" | "MODELED" | "UNKNOWN";
 export type ProfessionalRelationshipStatus = "ACTIVE" | "REPEAT" | "AT_RISK" | "PAUSED" | "LOST" | "DEVELOPING" | "UNKNOWN";
@@ -73,12 +73,16 @@ function unique(values: Array<string | null | undefined>): string[] {
   return [...new Set(values.filter((v): v is string => Boolean(v && v.trim())).map((v) => v.trim()))];
 }
 
-function state(row: NormalizedDealRow): string {
-  return text(row.status) ?? "unknown";
+function resolvedState(row: NormalizedDealRow) {
+  return resolveOperationalMatterState({ status: row.status }).state;
+}
+
+function stateLabel(row: NormalizedDealRow): string {
+  return resolvedState(row) ?? text(row.status) ?? "unknown";
 }
 
 function isCompleted(row: NormalizedDealRow): boolean {
-  return state(row) === "completed";
+  return resolvedState(row) === "completed";
 }
 
 function verifiedPaidAmount(row: NormalizedDealRow): number | null {
@@ -87,7 +91,7 @@ function verifiedPaidAmount(row: NormalizedDealRow): number | null {
 }
 
 function relationshipStatus(rows: ProfessionalRow[], completed: number, active: number): ProfessionalRelationshipStatus {
-  if (rows.some((r) => Boolean(r.extension?.lost_at) || state(r) === "lost")) return "LOST";
+  if (rows.some((r) => Boolean(r.extension?.lost_at) || stateLabel(r) === "lost")) return "LOST";
   if (rows.some((r) => text(r.extension?.lost_stage)?.toLowerCase() === "paused")) return "PAUSED";
   if (completed >= 2 || rows.some((r) => r.extension?.repeat_client === true)) return "REPEAT";
   const latestTouchMs = rows
@@ -115,7 +119,7 @@ function buildAccount(organization: string, rows: ProfessionalRow[], compCapabil
   const matters: Professional360MatterRef[] = rows.map((row) => ({
     id: row.id ?? row.deal_id ?? "unknown",
     displayId: row.deal_id ?? row.id ?? "Unknown Matter",
-    status: state(row),
+    status: stateLabel(row),
     destinationCountry: row.destination_country,
     documentType: row.document_type,
     amountPaid: verifiedPaidAmount(row),
@@ -123,7 +127,7 @@ function buildAccount(organization: string, rows: ProfessionalRow[], compCapabil
     completedAt: row.completed_at,
   }));
   const completed = rows.filter(isCompleted).length;
-  const active = rows.filter((r) => !isOperationalTerminalState(state(r))).length;
+  const active = rows.filter((r) => !isOperationalTerminalState(resolvedState(r))).length;
   const paidRows = rows.map((r) => ({ amount: verifiedPaidAmount(r), currency: text(r.currency) })).filter((r) => r.amount !== null);
   const currencies = unique(paidRows.map((r) => r.currency));
   const verifiedRevenue = paidRows.length && currencies.length <= 1 ? paidRows.reduce((sum, r) => sum + (r.amount ?? 0), 0) : null;
