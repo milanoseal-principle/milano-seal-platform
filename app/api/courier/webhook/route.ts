@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { CUSTODY_EVENTS } from "@/lib/custodyLedger";
+import { verifyShippoHmac } from "@/lib/shippo/webhookAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -49,32 +49,27 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
 
-    // Signature validation — required when SHIPPO_WEBHOOK_SECRET is set
-    const secret = process.env.SHIPPO_WEBHOOK_SECRET;
-    if (secret) {
-      const signature = req.headers.get("X-Shippo-Signature-HMAC-SHA256-V2");
-      if (!signature) {
-        return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+    const auth = verifyShippoHmac(
+      rawBody,
+      req.headers.get("X-Shippo-Signature-HMAC-SHA256-V2"),
+    );
+    if (!auth.ok) {
+      if (auth.status === 500) {
+        console.error(
+          "[courier-webhook] Shippo webhook secret is not configured",
+        );
       }
-      const expected = crypto
-        .createHmac("sha256", secret)
-        .update(rawBody)
-        .digest("hex");
-      if (
-        !crypto.timingSafeEqual(
-          Buffer.from(signature, "hex"),
-          Buffer.from(expected, "hex"),
-        )
-      ) {
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     let payload: ShippoWebhookEvent;
     try {
       payload = JSON.parse(rawBody) as ShippoWebhookEvent;
     } catch {
-      return NextResponse.json({ received: true });
+      return NextResponse.json(
+        { error: "Invalid JSON payload" },
+        { status: 400 },
+      );
     }
 
     if (payload.event === "track_updated" && payload.data?.tracking_number) {
@@ -85,11 +80,13 @@ export async function POST(req: NextRequest) {
 
       const admin = createAdminClient();
 
-      const { data: deal } = await admin
+      const { data: deal, error: dealError } = await admin
         .from("deals")
         .select("id, delivery_status, deal_status")
         .eq("tracking_number", trackingNumber)
         .maybeSingle();
+
+      if (dealError) throw new Error("Courier Matter lookup failed");
 
       if (deal) {
         const updates: Record<string, unknown> = {
@@ -103,34 +100,43 @@ export async function POST(req: NextRequest) {
 
         if (deliveryStatus === "delivered") {
           updates.delivery_timestamp = new Date().toISOString();
-          updates.deal_status = "completed";
         }
 
-        await admin.from("deals").update(updates).eq("id", deal.id);
-
-        await appendLedger({
-          deal_id: deal.id,
-          event: custodyEvent,
-          actor_type: "courier",
-          location: null,
-          method: "shipment",
-          status: deliveryStatus,
-          notes: isException
-            ? (payload.data.tracking_status?.status_details ?? "Courier exception reported.")
-            : (payload.data.tracking_status?.status_details ?? null),
-          metadata: {
-            tracking_number: trackingNumber,
-            carrier: payload.data.carrier ?? null,
-            raw_status: rawStatus,
-            status_date: payload.data.tracking_status?.status_date ?? null,
-            is_exception: isException,
+        const { error: transitionError } = await admin.rpc(
+          "record_courier_delivery_transition",
+          {
+            p_matter_id: deal.id,
+            p_updates: updates,
+            p_event: custodyEvent,
+            p_status: deliveryStatus,
+            p_notes: isException
+              ? (payload.data.tracking_status?.status_details ??
+                "Courier exception reported.")
+              : (payload.data.tracking_status?.status_details ?? null),
+            p_metadata: {
+              tracking_number: trackingNumber,
+              carrier: payload.data.carrier ?? null,
+              raw_status: rawStatus,
+              status_date: payload.data.tracking_status?.status_date ?? null,
+              is_exception: isException,
+            },
           },
-        });
+        );
+        if (transitionError) {
+          throw new Error("Courier transition persistence failed");
+        }
       }
     }
 
     return NextResponse.json({ received: true });
-  } catch {
-    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error(
+      "[courier-webhook] Processing failed:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }
