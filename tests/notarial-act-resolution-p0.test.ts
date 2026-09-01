@@ -13,6 +13,7 @@ const executionPage = read("app/dashboard/matters/[matterId]/execution/page.tsx"
 const signingRoom = read("app/dashboard/ron/page.tsx");
 const sessionDetail = read("app/dashboard/ron/[session_id]/page.tsx");
 const schedulingConsole = read("app/dashboard/scheduling-readiness/page.tsx");
+const operatorIntelligence = read("lib/operator-intelligence/read-model.ts");
 const schedulingGate = read("lib/scheduling/complimentarySchedulingGate.ts");
 
 const OBSERVATION_FIELDS = [
@@ -85,17 +86,21 @@ test("observed scheduling authority fails closed when a read model omits integri
   assert.match(schedulingGate, /integrity fields are missing/);
 });
 
-test("every RON and scheduling operator projection carries observation integrity fields", () => {
+test("every RON scheduling and command-center projection carries observation integrity fields", () => {
   for (const [name, source] of [
     ["Matter RON readiness", readiness],
     ["Signing Room", signingRoom],
     ["RON session detail", sessionDetail],
     ["Scheduling console", schedulingConsole],
+    ["Operator Intelligence", operatorIntelligence],
   ] as const) {
     for (const field of OBSERVATION_FIELDS) {
       assert.match(source, new RegExp(field), `${name} must project ${field}`);
     }
   }
+  assert.match(operatorIntelligence, /payment_observed_at/);
+  assert.match(operatorIntelligence, /payment_settlement_status/);
+  assert.match(operatorIntelligence, /evaluateSchedulingGate/);
 });
 
 test("global Signing Room uses Milano visual hierarchy and truthful next-action copy", () => {
