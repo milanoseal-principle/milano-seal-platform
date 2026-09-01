@@ -26,10 +26,13 @@ const PUBLIC_PAGES = [
   "app/map/page.tsx",
 ];
 
-const REQUIRED = [
-  "The Milano Seal helps",
-  "Start Controlled Intake",
-  "receiving-authority review",
+// Validate the meaning of the controlled-execution proposition without forcing
+// every audience page into identical copy. Counsel may say "Start Counsel Matter"
+// while client routes may say "Start Controlled Intake" or "Begin Secure Intake".
+const REQUIRED_SEMANTICS = [
+  { label: "Milano execution proposition", re: /The Milano Seal helps|execution infrastructure|route the execution/i },
+  { label: "controlled intake CTA", re: /Start Controlled Intake|Start Counsel Matter|Begin Secure Intake/i },
+  { label: "receiving-authority boundary", re: /receiving-authority review|receiving authority/i },
 ];
 
 const CTA_ANYWHERE = ["Request Lawyer Access", "Apply for Alliance Access"];
@@ -48,13 +51,18 @@ const FORBIDDEN = [
 const allText = PUBLIC_PAGES.map(effective).join("\n");
 
 for (const p of PUBLIC_PAGES) {
-  if (!existsSync(join(ROOT, p))) { fail(`missing public page: ${p}`); continue; }
+  if (!existsSync(join(ROOT, p))) {
+    fail(`missing public page: ${p}`);
+    continue;
+  }
   const c = effective(p);
-  for (const r of REQUIRED) {
-    if (!c.includes(r)) fail(`${p} missing required copy "${r}"`);
+  for (const requirement of REQUIRED_SEMANTICS) {
+    if (!requirement.re.test(c)) {
+      fail(`${p} missing required semantic: ${requirement.label}`);
+    }
   }
 }
-if (failures === 0) pass("public pages carry promise + intake + boundary copy");
+if (failures === 0) pass("public pages carry execution proposition + intake + receiving-authority boundary");
 
 for (const cta of CTA_ANYWHERE) {
   if (!allText.includes(cta)) fail(`no public page includes CTA "${cta}"`);
