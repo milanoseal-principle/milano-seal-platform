@@ -19,7 +19,6 @@ function effective(p) {
   return t;
 }
 
-// Public funnel pages that must carry the promise + intake + access CTAs + boundary.
 const PUBLIC_PAGES = [
   "app/access/page.tsx",
   "app/lawyer-access/page.tsx",
@@ -33,14 +32,15 @@ const REQUIRED = [
   "receiving-authority review",
 ];
 
-// At least one public page must carry each access CTA.
 const CTA_ANYWHERE = ["Request Lawyer Access", "Apply for Alliance Access"];
 
+// Reject affirmative claims. Safety boundaries such as
+// "does not provide legal advice" must remain allowed and visible.
 const FORBIDDEN = [
   /guaranteed acceptance/i,
   /instant approval/i,
-  /legal advice/i,
-  /legal clearance/i,
+  /(?:the\s+milano\s+seal|milano|we)\s+(?:provides?|offers?|gives?)\s+legal advice/i,
+  /(?:the\s+milano\s+seal|milano|we)\s+(?:provides?|offers?|gives?)\s+legal clearance/i,
   /government approved/i,
   /court approved/i,
 ];
@@ -60,12 +60,10 @@ for (const cta of CTA_ANYWHERE) {
   if (!allText.includes(cta)) fail(`no public page includes CTA "${cta}"`);
 }
 
-// Domain or internal route links present
 if (!/themilanoseal\.com|href=["'`]\/(intake|access|lawyer-access|alliance|va)/.test(allText)) {
   fail("public pages lack domain or internal route links");
 }
 
-// Forbidden claims (allow negated "not a law firm" style — these regexes match the bare claim only)
 for (const p of PUBLIC_PAGES) {
   const c = read(p);
   for (const re of FORBIDDEN) {
@@ -75,6 +73,9 @@ for (const p of PUBLIC_PAGES) {
 if (failures === 0) pass("no forbidden claims in public funnel copy");
 
 console.log(`\n${"─".repeat(48)}`);
-if (failures > 0) { console.error(`\n✗ Revenue copy validation FAILED — ${failures} issue(s).\n`); process.exit(1); }
+if (failures > 0) {
+  console.error(`\n✗ Revenue copy validation FAILED — ${failures} issue(s).\n`);
+  process.exit(1);
+}
 console.log("\n✓ Revenue copy validation passed.\n");
 process.exit(0);
