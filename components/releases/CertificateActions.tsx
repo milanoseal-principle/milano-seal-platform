@@ -16,18 +16,15 @@ export function CertificateActions({
   function handlePrint() {
     if (onPrint) {
       onPrint();
-    } else {
-      window.print();
+      return;
     }
+    window.print();
   }
 
-  function handleDownloadPdf() {
-    // PDF download — placeholder pending server-side PDF generation
-    console.log(
-      "[CertificateActions] PDF download requested for",
-      verificationId,
-      matterId
-    );
+  function handleSavePdf() {
+    // The browser print dialog provides a truthful Save as PDF path without
+    // pretending a server-generated artifact exists when it does not.
+    handlePrint();
   }
 
   return (
@@ -39,19 +36,16 @@ export function CertificateActions({
         marginTop: 16,
       }}
     >
-      <button
-        onClick={handlePrint}
-        style={btnStyle()}
-      >
+      <button onClick={handlePrint} style={btnStyle()}>
         Preview / Print
       </button>
 
       <button
-        onClick={handleDownloadPdf}
+        onClick={handleSavePdf}
         style={btnStyle()}
-        title="PDF generation pending server implementation"
+        title="Open the print dialog and choose Save as PDF"
       >
-        Download PDF
+        Save as PDF
       </button>
 
       <a
