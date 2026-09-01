@@ -46,7 +46,7 @@ test("BRTH Italy authority source remains source-specific and fail-safe", () => 
     VASTOGIRARDI_SOURCE_RULES.some((rule) => /not refundable/i.test(rule)),
   );
   assert.ok(
-    ITALY_RECORD_OPERATOR_GATES.some((gate) => /actual Comune/i.test(gate)),
+    ITALY_RECORD_OPERATOR_GATES.some((gate) => /Comune that actually holds the record/i.test(gate)),
   );
   assert.ok(
     ITALY_RECORD_OPERATOR_GATES.some((gate) => /do not infer entitlement/i.test(gate)),
