@@ -27,32 +27,45 @@ export interface ComplimentaryGateMatter extends PaymentGateMatter {
   verified_revenue?: number | null;
   currency?: string | null;
   wise_reference?: string | null;
-  // Immutable snapshot recorded at governed submission time. Null on legacy
-  // observations recorded before the snapshot was captured — those are trusted
-  // as-is and are never retroactively failed closed.
   payment_observed_amount?: number | null;
   payment_observed_currency?: string | null;
   payment_observed_reference?: string | null;
 }
 
-type SubmissionState = "none" | "observed" | "superseded";
+type SubmissionState = "none" | "observed" | "superseded" | "projection_incomplete";
+
+const OBSERVATION_INTEGRITY_FIELDS = [
+  "amount_due",
+  "currency",
+  "wise_reference",
+  "payment_observed_amount",
+  "payment_observed_currency",
+  "payment_observed_reference",
+] as const;
 
 function currentReference(matter: ComplimentaryGateMatter): string {
   return String(matter.wise_reference ?? matter.deal_id ?? "").trim();
 }
 
+function hasCompleteObservationProjection(matter: ComplimentaryGateMatter): boolean {
+  return OBSERVATION_INTEGRITY_FIELDS.every((field) =>
+    Object.prototype.hasOwnProperty.call(matter, field),
+  );
+}
+
 /**
  * A governed submission authorizes scheduling ONLY while the Matter's payable
- * scope is unchanged. If amount, currency or the Wise correlation reference has
- * been mutated after the client's submission was observed, the submission no
- * longer describes the current obligation and the gate fails closed until fresh
- * payment evidence is recorded. Legacy observations without a recorded snapshot
- * (null snapshot fields) are trusted and never superseded by this check.
+ * scope is unchanged. A real legacy database row has the snapshot columns present
+ * with null values and remains trusted. A read-model that omitted the snapshot or
+ * live payable-scope columns is NOT treated as legacy: it fails closed so no UI or
+ * downstream consumer can accidentally bypass the mutation guard by under-selecting.
  */
 function classifyObservedSubmission(matter: ComplimentaryGateMatter): SubmissionState {
   const settlement = String(matter.payment_settlement_status ?? "").trim().toLowerCase();
   const observed = Boolean(matter.payment_observed_at) && settlement === "observed_pending";
   if (!observed) return "none";
+
+  if (!hasCompleteObservationProjection(matter)) return "projection_incomplete";
 
   const snapshotAmount = matter.payment_observed_amount;
   const snapshotCurrency = matter.payment_observed_currency;
@@ -84,16 +97,19 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified Wise settlement satisfies scheduling gate." };
   }
 
-  // Execution authorization is intentionally separate from financial settlement truth.
-  // Once the canonical portal records the Wise submission on this Matter, operators may
-  // schedule RON while payment remains processing. This MUST NOT mark the Matter paid.
   const submission = classifyObservedSubmission(params.matter);
   if (submission === "observed") {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Observed Wise submission authorizes scheduling while settlement remains pending." };
   }
+  if (submission === "projection_incomplete") {
+    return {
+      schedulingEligible: false,
+      paymentRequirementSatisfied: false,
+      paymentRequirementMethod: "not_satisfied",
+      reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path.",
+    };
+  }
   if (submission === "superseded") {
-    // Fail closed: the payable scope changed after submission. Do NOT carry the
-    // stale submission forward as scheduling authority.
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "The Matter's payable amount, currency or reference changed after the recorded submission. A new governed payment submission is required before scheduling." };
   }
 

@@ -25,6 +25,11 @@ type SchedulingMatter = Omit<OperationalMatterSourceRow, "amount_due" | "amount_
   phone?: string | null;
   origin_state?: string | null;
   payment_observed_at?: string | null;
+  payment_observed_amount?: number | null;
+  payment_observed_currency?: string | null;
+  payment_observed_reference?: string | null;
+  currency?: string | null;
+  wise_reference?: string | null;
   payment_disposition?: string | null;
   amount_due?: number | null;
   amount_paid?: number | null;
@@ -93,7 +98,7 @@ export default async function SchedulingReadinessPage({ searchParams }: PageProp
 
   const { data, error } = await supabase
     .from("deals")
-    .select("id, deal_id, client_name, full_name, email, phone, destination_country, country, document_type, document, service_type, status, deal_status, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_disposition, amount_due, amount_paid, verified_revenue, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, origin_state, execution_truth, scheduled_at, updated_at")
+    .select("id, deal_id, client_name, full_name, email, phone, destination_country, country, document_type, document, service_type, status, deal_status, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, payment_disposition, amount_due, amount_paid, verified_revenue, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, origin_state, execution_truth, scheduled_at, updated_at")
     .order("updated_at", { ascending: false })
     .limit(250);
 
