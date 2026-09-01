@@ -9,25 +9,10 @@
 #   BN_WEBHOOK_TOKEN=xxx \
 #   bash scripts/test-italy-matter-webhooks.sh [--wise-only|--bluenotary-only|--shippo-only]
 #
-# Env vars:
-#   BASE_URL                  — target deployment (default: https://www.themilanoseal.com)
-#   WISE_WEBHOOK_TEST_BYPASS  — must match WISE_WEBHOOK_TEST_BYPASS in Vercel env (non-production only)
-#   SHIPPO_WEBHOOK_SECRET     — Shippo webhook secret query param
-#   BN_WEBHOOK_TOKEN          — BlueNotary bearer token
-#
-# IMPORTANT — Wise signatures:
-#   Wise uses RSA-SHA256. Self-signed requests cannot pass Wise's real signature check.
-#   In production, use the Wise dashboard "Send test notification" to fire a properly signed event.
-#   For integration testing on non-production deployments, set WISE_WEBHOOK_TEST_BYPASS
-#   in Vercel env (WISE_ENV must NOT be "production") to enable the bypass header path.
-#
-# Matter constants (match 007_italy_test_matter.sql):
-#   Matter ID       : f6000000-0000-0000-0000-000000000099
-#   wise_reference  : MS-ITALY-TEST-001
-#   notarization_id : BN-ITALY-TEST-001
-#   bn_session_id   : BN-SID-ITALY-001
-#   tracking_number : MS-IT-DHL-000099
-#   carrier         : dhl_express
+# IMPORTANT:
+# - Wise self-signing is not supported. The bypass is non-production only.
+# - Shippo uses the canonical /api/courier/webhook HMAC-SHA256 route.
+# - Courier delivery never auto-authors final release or Matter completion.
 
 set -euo pipefail
 
@@ -36,17 +21,14 @@ WISE_BYPASS="${WISE_WEBHOOK_TEST_BYPASS:-}"
 SHIPPO_SECRET="${SHIPPO_WEBHOOK_SECRET:-}"
 BN_TOKEN="${BN_WEBHOOK_TOKEN:-}"
 
-# Parse flag
 STEP="all"
 for arg in "$@"; do
   case "$arg" in
-    --wise-only)        STEP="wise" ;;
-    --bluenotary-only)  STEP="bluenotary" ;;
-    --shippo-only)      STEP="shippo" ;;
+    --wise-only) STEP="wise" ;;
+    --bluenotary-only) STEP="bluenotary" ;;
+    --shippo-only) STEP="shippo" ;;
   esac
 done
-# Also support STEP env var
-STEP="${STEP:-all}"
 
 MATTER_ID="f6000000-0000-0000-0000-000000000099"
 WISE_REF="MS-ITALY-TEST-001"
@@ -83,6 +65,16 @@ check_code() {
   fi
 }
 
+shippo_post() {
+  local body="$1"
+  local sig
+  sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$SHIPPO_SECRET" | awk '{print $2}')
+  curl -s -X POST "$BASE_URL/api/courier/webhook" \
+    -H "Content-Type: application/json" \
+    -H "X-Shippo-Signature-HMAC-SHA256-V2: $sig" \
+    --data-raw "$body"
+}
+
 echo ""
 echo "══════════════════════════════════════════════════════════"
 echo "  Milano Seal — Italy Test Matter Webhook Simulation"
@@ -92,25 +84,12 @@ echo "  Step   : $STEP"
 echo "══════════════════════════════════════════════════════════"
 echo ""
 
-# ── STEP 1: Wise payment confirmed ───────────────────────────────────────────
-
 if [[ "$STEP" == "all" || "$STEP" == "wise" ]]; then
   echo "── Step 1: Wise transfers#state-change → outgoing_payment_sent ──────────"
 
   if [ -z "$WISE_BYPASS" ]; then
-    echo ""
     echo "  ⚠  WISE_WEBHOOK_TEST_BYPASS is not set."
-    echo ""
-    echo "  Wise webhooks use RSA-SHA256 — they cannot be self-signed."
-    echo "  To test via this script, add WISE_WEBHOOK_TEST_BYPASS=<secret>"
-    echo "  to your Vercel environment (non-production only) and re-run."
-    echo ""
-    echo "  Alternative: use the Wise dashboard to send a test notification:"
-    echo "    1. Log in to Wise → Settings → Webhook subscriptions"
-    echo "    2. Select your subscription → Send test notification"
-    echo "    3. Wise will sign and deliver the event to $BASE_URL/api/webhooks/wise"
-    echo "    4. Set the reference in the test payload to: $WISE_REF"
-    echo ""
+    echo "  Use Wise dashboard test delivery for production-signed evidence."
     FAIL=$((FAIL+1))
   else
     WISE_BODY='{
@@ -136,20 +115,17 @@ if [[ "$STEP" == "all" || "$STEP" == "wise" ]]; then
       -H "X-Delivery-Id: italy-test-wise-$(date +%s)" \
       -H "X-Test-Bypass: $WISE_BYPASS" \
       -d "$WISE_BODY")
-    check "Wise payment_confirmed — received:true" '"received":true' "$R"
-    echo "  →  Full response: $R"
-    echo "  →  Expected deal status after: scheduled"
+    check "Wise event received" '"received":true' "$R"
+    echo "  →  Financial truth must still be read from canonical Wise reconciliation."
   fi
   echo ""
 fi
-
-# ── STEP 2: BlueNotary session_completed ─────────────────────────────────────
 
 if [[ "$STEP" == "all" || "$STEP" == "bluenotary" ]]; then
   echo "── Step 2: BlueNotary session_completed ─────────────────────────────────"
 
   if [ -z "$BN_TOKEN" ]; then
-    echo "  SKIP  BN_WEBHOOK_TOKEN not set — provide it to test BlueNotary webhook"
+    echo "  SKIP  BN_WEBHOOK_TOKEN not set"
     FAIL=$((FAIL+1))
   else
     BN_BODY='{
@@ -158,127 +134,95 @@ if [[ "$STEP" == "all" || "$STEP" == "bluenotary" ]]; then
   "bn_session_id": "'"$BN_SESSION_ID"'",
   "status": "COMPLETED",
   "completed_at": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'",
-  "signers": [
-    {
-      "email": "test+italy@test.milanoseal.local",
-      "status": "COMPLETED",
-      "identity_status": "PASSED",
-      "kba_status": "PASSED"
-    }
-  ]
+  "signers": [{
+    "email": "test+italy@test.milanoseal.local",
+    "status": "COMPLETED",
+    "identity_status": "PASSED",
+    "kba_status": "PASSED"
+  }]
 }'
     R=$(curl -s -X POST "$BASE_URL/api/webhooks/bluenotary" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $BN_TOKEN" \
       -d "$BN_BODY")
-    check "BlueNotary session_completed — received:true" '"received":true' "$R"
-    echo "  →  Full response: $R"
-    echo "  →  Expected deal status after: execution_complete"
+    check "BlueNotary session_completed received" '"received":true' "$R"
   fi
   echo ""
 fi
 
-# ── STEP 3: Shippo TRANSIT ────────────────────────────────────────────────────
-
 if [[ "$STEP" == "all" || "$STEP" == "shippo" ]]; then
-  echo "── Step 3a: Shippo tracking_update — TRANSIT ────────────────────────────"
-
   if [ -z "$SHIPPO_SECRET" ]; then
-    echo "  SKIP  SHIPPO_WEBHOOK_SECRET not set"
+    echo "── Shippo steps skipped: SHIPPO_WEBHOOK_SECRET not set ─────────────────"
     FAIL=$((FAIL+1))
   else
+    echo "── Step 3a: Shippo track_updated — TRANSIT ──────────────────────────────"
     SHIPPO_TRANSIT='{
-  "event": "tracking_updated",
+  "event": "track_updated",
   "data": {
     "carrier": "'"$CARRIER"'",
     "tracking_number": "'"$TRACKING"'",
     "tracking_status": {
       "status": "TRANSIT",
-      "sub_status": "package_in_transit",
       "status_date": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'",
-      "status_details": "Package in transit — Frankfurt Gateway",
-      "location": { "city": "Frankfurt", "country": "DE" }
+      "status_details": "Package in transit — Frankfurt Gateway"
     }
   }
 }'
-    R=$(curl -s -X POST "$BASE_URL/api/webhooks/shippo?secret=$SHIPPO_SECRET" \
-      -H "Content-Type: application/json" \
-      -d "$SHIPPO_TRANSIT")
-    check "Shippo TRANSIT — received:true" '"received":true' "$R"
-    echo "  →  Full response: $R"
-  fi
-  echo ""
+    R=$(shippo_post "$SHIPPO_TRANSIT")
+    check "Shippo TRANSIT received" '"received":true' "$R"
 
-  echo "── Step 3b: Shippo tracking_update — DELIVERED ──────────────────────────"
-
-  if [ -z "$SHIPPO_SECRET" ]; then
-    echo "  SKIP  SHIPPO_WEBHOOK_SECRET not set"
-  else
-    ETA_DATE=$(date -u -d '+3 days' +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v+3d +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "2026-06-13T12:00:00Z")
+    echo "── Step 3b: Shippo track_updated — DELIVERED ────────────────────────────"
     SHIPPO_DELIVERED='{
-  "event": "tracking_updated",
+  "event": "track_updated",
   "data": {
     "carrier": "'"$CARRIER"'",
     "tracking_number": "'"$TRACKING"'",
     "tracking_status": {
       "status": "DELIVERED",
-      "sub_status": "delivered",
       "status_date": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'",
-      "status_details": "Delivered — Milan, Italy. Signed by: STUDIO LEGALE TEST.",
-      "location": { "city": "Milan", "country": "IT" }
+      "status_details": "Delivered — Milan, Italy."
     }
   }
 }'
-    R=$(curl -s -X POST "$BASE_URL/api/webhooks/shippo?secret=$SHIPPO_SECRET" \
-      -H "Content-Type: application/json" \
-      -d "$SHIPPO_DELIVERED")
-    check "Shippo DELIVERED — received:true" '"received":true' "$R"
-    echo "  →  Full response: $R"
-    echo "  →  Expected deal status after: delivered / completed"
+    R=$(shippo_post "$SHIPPO_DELIVERED")
+    check "Shippo DELIVERED received" '"received":true' "$R"
+    echo "  →  Expected delivery_status: delivered"
+    echo "  →  Matter release/completion must remain governed separately."
   fi
   echo ""
 fi
 
-# ── Auth guard checks ─────────────────────────────────────────────────────────
-
-echo "── Auth guard checks ────────────────────────────────────────────────────"
+echo "── Auth / retired-route guards ──────────────────────────────────────────"
 
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks/wise" \
   -H "Content-Type: application/json" \
   -d '{"event_type":"transfers#state-change"}')
-check_code "Wise POST — no signature → 401" "401" "$CODE"
+check_code "Wise POST — no signature" "401" "$CODE"
 
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks/shippo?secret=WRONG" \
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/courier/webhook" \
   -H "Content-Type: application/json" \
-  -d '{"event":"tracking_updated"}')
-check_code "Shippo POST — wrong secret → 401" "401" "$CODE"
+  -d '{}')
+check_code "Canonical Shippo POST — no HMAC" "401" "$CODE"
+
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks/shippo" \
+  -H "Content-Type: application/json" \
+  -d '{}')
+check_code "Retired duplicate Shippo route" "404" "$CODE"
 
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks/bluenotary" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer WRONG_TOKEN" \
   -d '{"event":"session_completed","notarization_id":"smoke-guard"}')
-check_code "BlueNotary POST — wrong token → 401" "401" "$CODE"
+check_code "BlueNotary POST — wrong token" "401" "$CODE"
 
 echo ""
-
-# ── Summary ───────────────────────────────────────────────────────────────────
-
 echo "══════════════════════════════════════════════════════════"
 printf "  Results: %d passed · %d failed\n" "$PASS" "$FAIL"
-if [ "$FAIL" -gt 0 ]; then
-  echo "  Status : FAIL"
-else
-  echo "  Status : PASS"
-fi
+if [ "$FAIL" -gt 0 ]; then echo "  Status : FAIL"; else echo "  Status : PASS"; fi
 echo "══════════════════════════════════════════════════════════"
 echo ""
-echo "  After running Wise step — verify in Supabase:"
-echo "    SELECT id, status, payment_status, wise_reference"
-echo "    FROM deals WHERE id = '$MATTER_ID';"
-echo ""
-echo "  After running all steps — verify custody ledger:"
-echo "    SELECT event, notes, created_at FROM custody_ledger"
-echo "    WHERE deal_id = '$MATTER_ID' ORDER BY created_at DESC LIMIT 20;"
+echo "  Verify current Matter truth in Supabase after the run."
+echo "  Courier delivery is evidence only; final international release remains settlement-gated."
 echo ""
 
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
