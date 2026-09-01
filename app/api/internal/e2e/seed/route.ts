@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity";
+import { isE2EDemoModeEnabled } from "@/lib/testing/e2eDemoMode";
 
 export const runtime = "nodejs";
 
@@ -13,9 +14,9 @@ function demoMatterRef() {
 }
 
 function requireDemoMode() {
-  if (process.env.MILANO_E2E_DEMO_MODE !== "true") {
+  if (!isE2EDemoModeEnabled()) {
     return NextResponse.json(
-      { error: "E2E demo mode is not enabled." },
+      { error: "E2E demo mode is not available." },
       { status: 403 },
     );
   }
@@ -37,12 +38,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => ({})) as { reset?: boolean };
+  const body = (await req.json().catch(() => ({}))) as { reset?: boolean };
   const admin = createAdminClient();
   const DEMO_REF = demoMatterRef();
   const DEMO_EMAIL = "tiffany-demo@themilanoseal.test";
 
-  // --- Discount code ---
   const { data: existingCode } = await admin
     .from("discount_codes")
     .select("id, status")
@@ -72,12 +72,14 @@ export async function POST(req: NextRequest) {
       .select("id")
       .single();
     if (codeErr || !newCode) {
-      return NextResponse.json({ error: "Failed to create discount code: " + codeErr?.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to create discount code: " + codeErr?.message },
+        { status: 500 },
+      );
     }
     discountCodeId = newCode.id as string;
   }
 
-  // --- Demo matter ---
   const { data: existing } = await admin
     .from("deals")
     .select("id, deal_id, status, payment_status, discount_code_id, access_token")
@@ -88,8 +90,6 @@ export async function POST(req: NextRequest) {
   let accessToken: string;
 
   if (existing && body.reset) {
-    // Hard reset: restore to awaiting_payment with original amount
-    // Preserve or regenerate access_token so portal link stays valid
     accessToken = (existing.access_token as string) || generateAccessToken();
     await admin
       .from("deals")
@@ -128,7 +128,6 @@ export async function POST(req: NextRequest) {
     });
   } else if (existing) {
     dealId = existing.id as string;
-    // Ensure access_token exists
     if (!existing.access_token) {
       accessToken = generateAccessToken();
       await admin.from("deals").update({ access_token: accessToken }).eq("id", dealId);
@@ -180,7 +179,13 @@ export async function POST(req: NextRequest) {
       { action: "PAYMENT_INSTRUCTIONS_SENT", detail: "Wise payment instructions sent · Amount due: $1,250" },
     ];
     for (const evt of seedEvents) {
-      await logActivity({ deal_id: DEMO_REF, actor: "system", action: evt.action, detail: evt.detail, meta: { source: "e2e-seed" } });
+      await logActivity({
+        deal_id: DEMO_REF,
+        actor: "system",
+        action: evt.action,
+        detail: evt.detail,
+        meta: { source: "e2e-seed" },
+      });
     }
   }
 

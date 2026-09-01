@@ -47,3 +47,19 @@ test("orphan placeholder data modules stay removed", () => {
   assert.equal(fs.existsSync("lib/portal2/documentVault.ts"), false);
   assert.equal(fs.existsSync("lib/dispatch/partnerApplication.ts"), false);
 });
+
+test("E2E demo mutations can never activate on Vercel Production", () => {
+  const guard = read("lib/testing/e2eDemoMode.ts");
+  assert.match(guard, /process\.env\.VERCEL_ENV === "production"/);
+  assert.match(guard, /return false/);
+  assert.match(guard, /MILANO_E2E_DEMO_MODE === "true"/);
+
+  for (const path of [
+    "app/api/internal/e2e/seed/route.ts",
+    "app/api/internal/e2e/status/route.ts",
+    "app/api/internal/e2e/log-event/route.ts",
+    "app/dashboard/testing/tiffany-e2e/page.tsx",
+  ]) {
+    assert.match(read(path), /isE2EDemoModeEnabled/);
+  }
+});
