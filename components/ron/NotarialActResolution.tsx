@@ -44,12 +44,27 @@ const OPTIONS: Array<{
   },
 ];
 
+function authorityMessage(method: string | null | undefined) {
+  if (method === "wise_submission_observed") {
+    return "A governed Wise submission already satisfies the payment portion of scheduling. Wise settlement continues separately in the background.";
+  }
+  if (method === "verified_payment") {
+    return "Wise payment is verified and the payment portion of scheduling is satisfied.";
+  }
+  if (method === "complimentary_authorization") {
+    return "An active Complimentary Authorization satisfies the payment portion of scheduling without fabricating paid revenue.";
+  }
+  return "The canonical scheduling authority is satisfied. No additional payment action is required to resolve this execution fact.";
+}
+
 export function NotarialActResolution({
   matterId,
   schedulingAuthorized,
+  paymentRequirementMethod,
 }: {
   matterId: string;
   schedulingAuthorized: boolean;
+  paymentRequirementMethod?: string | null;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState<ResolvedNotarialAct | null>(null);
@@ -111,7 +126,7 @@ export function NotarialActResolution({
             }`}
           >
             {schedulingAuthorized
-              ? "Payment gate passed"
+              ? "Scheduling authority satisfied"
               : "Scheduling gate still blocked"}
           </div>
         </div>
@@ -126,7 +141,7 @@ export function NotarialActResolution({
                 Payment is not the blocker.
               </p>
               <p className="mt-1 text-xs leading-5 text-white/48">
-                A governed Wise submission already satisfies the payment portion of scheduling. Confirming the remaining execution fact will immediately recalculate BlueNotary readiness.
+                {authorityMessage(paymentRequirementMethod)} Confirming the remaining execution fact will immediately recalculate BlueNotary readiness.
               </p>
             </div>
           </div>
