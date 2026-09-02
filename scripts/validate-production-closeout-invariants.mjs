@@ -90,7 +90,7 @@ const executionGates = read("lib/pre-execution/executionGates.ts");
 const executionReadiness = read("components/dashboard/execution/ExecutionReadiness.tsx");
 assert.match(executionGates, /payment:\s*["']Payment \/ Scheduling Authority["']/);
 assert.doesNotMatch(executionGates, /payment:\s*["']Payment Confirmed["']/);
-for (const label of ["WHY", "WHAT MUST HAPPEN", "WHO CAN RESOLVE", "NEXT ACTION"]) {
+for (const label of ["Why", "What must happen", "Who can resolve it", "Next action"]) {
   assert.ok(executionReadiness.includes(label), `Execution blocker guidance missing ${label}`);
 }
 
