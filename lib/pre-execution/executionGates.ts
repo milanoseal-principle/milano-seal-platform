@@ -3,8 +3,8 @@
  *
  * Deterministic gate ladder that BLOCKS matter progression until each required
  * gate passes. No role may bypass a gate. This reuses the canonical
- * payment-before-scheduling and QA-before-release doctrine; it does not modify
- * the protected payment/release systems — it reads their normalized outcomes.
+ * scheduling/payment and QA-before-release doctrine; it does not modify the
+ * protected payment/release systems — it reads their normalized outcomes.
  *
  * Milano Seal only. No provider/medical/Liaison-OS concepts.
  */
@@ -36,7 +36,7 @@ export const EXECUTION_GATE_ORDER: ExecutionGateId[] = [
 ];
 
 export const GATE_LABEL: Record<ExecutionGateId, string> = {
-  payment: "Payment Confirmed",
+  payment: "Payment / Scheduling Authority",
   identity: "Identity Verification",
   document_integrity: "Document Integrity",
   compliance_decision: "Compliance Decision",
