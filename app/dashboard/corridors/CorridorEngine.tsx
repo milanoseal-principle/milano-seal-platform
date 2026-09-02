@@ -8,6 +8,7 @@ const STATUS_STYLE: Record<CorridorScaleStatus, string> = {
   WATCH: "border-amber-400/25 bg-amber-400/[0.06] text-amber-200",
   CONSTRAINED: "border-orange-400/25 bg-orange-400/[0.06] text-orange-200",
   DO_NOT_SCALE: "border-red-400/25 bg-red-400/[0.06] text-red-300",
+  INSUFFICIENT_EVIDENCE: "border-white/15 bg-white/[0.025] text-white/55",
 };
 
 const FACTOR_STYLE: Record<FactorState, string> = {
@@ -42,7 +43,7 @@ export function CorridorEngine({
       acc[corridor.status] += 1;
       return acc;
     },
-    { SCALE: 0, WATCH: 0, CONSTRAINED: 0, DO_NOT_SCALE: 0 },
+    { SCALE: 0, WATCH: 0, CONSTRAINED: 0, DO_NOT_SCALE: 0, INSUFFICIENT_EVIDENCE: 0 },
   );
 
   return (
@@ -50,7 +51,7 @@ export function CorridorEngine({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-auto max-w-7xl space-y-7"
+      className="mx-auto max-w-7xl space-y-7 motion-reduce:transform-none"
     >
       <header className="rounded-xl border border-[#C6A55A]/15 bg-[#080808] p-5 sm:p-7">
         <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/60">Intelligence · Corridor Command</p>
@@ -62,17 +63,18 @@ export function CorridorEngine({
       </header>
 
       {degraded ? (
-        <div className="rounded-xl border border-red-400/20 bg-red-400/[0.05] p-4 text-sm text-red-100/70">
+        <div className="rounded-xl border border-red-400/20 bg-red-400/[0.05] p-4 text-sm text-red-100/70" role="alert">
           {warning ?? "Canonical corridor source unavailable."}
         </div>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="Corridor scale posture summary">
         {([
           ["Scale", counts.SCALE],
           ["Watch", counts.WATCH],
           ["Constrained", counts.CONSTRAINED],
           ["Do Not Scale", counts.DO_NOT_SCALE],
+          ["Insufficient Evidence", counts.INSUFFICIENT_EVIDENCE],
         ] as const).map(([label, value]) => (
           <div key={label} className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-4">
             <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-white/30">{label}</p>
@@ -82,7 +84,7 @@ export function CorridorEngine({
       </section>
 
       {corridors.length === 0 ? (
-        <section className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-8 text-center">
+        <section className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-8 text-center" role="status">
           <p className="text-sm text-white/40">No canonical corridor Matter evidence is available yet.</p>
         </section>
       ) : (
@@ -93,7 +95,7 @@ export function CorridorEngine({
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(index * 0.025, 0.2), duration: 0.18 }}
-              className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-4 sm:p-5"
+              className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-4 sm:p-5 motion-reduce:transform-none"
             >
               <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
                 <div>
@@ -129,7 +131,7 @@ export function CorridorEngine({
 
       <footer className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
         <p className="text-[11px] leading-5 text-white/30">
-          Scale status is a deterministic read model, not a certification. Authority verification, execution capacity, partner capacity, and direct-cost evidence remain independently governed.
+          Scale status is a deterministic read model, not a certification. Missing critical evidence resolves to INSUFFICIENT EVIDENCE rather than being converted into a positive or negative scale recommendation. Authority verification, execution capacity, partner capacity, and direct-cost evidence remain independently governed.
         </p>
       </footer>
     </motion.div>
