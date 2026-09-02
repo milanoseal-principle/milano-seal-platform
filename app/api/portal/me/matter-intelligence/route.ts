@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllClientDeals } from "@/lib/portalAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  evaluateSchedulingGate,
+  type ComplimentaryGateMatter,
+} from "@/lib/scheduling/complimentarySchedulingGate";
 
 export const runtime = "nodejs";
 
-// Custody events that map to execution milestones (client-safe labels only)
 const MILESTONE_EVENTS = new Set([
   "DOC_RECEIVED",
   "DOC_SIGNED",
@@ -32,32 +35,84 @@ const CLIENT_SAFE_EVENT_LABELS: Record<string, string> = {
   DOC_OUT_FOR_DELIVERY: "Out for delivery",
   DOC_DELIVERED: "Delivered",
   DOC_RELEASE_CONFIRMED: "Delivery confirmed",
-  PAYMENT_CONFIRMED: "Payment confirmed",
+  PAYMENT_CONFIRMED: "Payment evidence recorded",
 };
 
-// Next-action copy derived from matter status — never leaks internal fields
-function deriveNextAction(
-  status: string | null,
-  paymentStatus: string | null,
-  isPaidAndReleased: boolean,
-): string {
-  if (isPaidAndReleased) return "Your matter is complete. All documents have been released.";
-  const s = status ?? "";
-  const p = paymentStatus ?? "";
-  const paid = p === "paid" || p === "payment_confirmed" || s === "payment_confirmed";
-  if (s === "new" || s === "intake_received") return "Your matter has been received and is under review.";
-  if (s === "under_review" || s === "compliance_review") return "Procedural review is in progress.";
-  if (s === "quoted" || (s === "awaiting_payment" && !paid)) return "Review your invoice and complete payment to unlock scheduling.";
-  if (s === "awaiting_payment" && paid) return "Payment confirmed — scheduling is now unlocked.";
-  if (s === "payment_confirmed") return "Payment confirmed — your coordinator will schedule the execution session.";
-  if (s === "scheduled") return "Your execution session has been scheduled. Please prepare your documents and review the pre-flight checklist.";
-  if (s === "in_execution") return "Execution is in progress. No action required.";
-  if (s === "apostille_processing") return "Your document is in apostille processing. We will notify you when it ships.";
-  if (s === "courier_ready") return "Your document is packaged and awaiting courier release.";
-  if (s === "shipped") return "Your document has been released to courier. Track delivery on the Tracking page.";
-  if (s === "delivered") return "Delivery confirmed. Your matter is closing.";
-  if (s === "completed" || s === "closed") return "Your matter is complete.";
-  return "Your coordinator will be in touch with the next steps.";
+function deriveNextAction(params: {
+  matterStatus: string | null;
+  settlementVerified: boolean;
+  schedulingEligible: boolean;
+  schedulingMethod: string;
+  isPaidAndReleased: boolean;
+}): string {
+  if (params.isPaidAndReleased) {
+    return "Your matter is complete. All settlement-dependent release requirements were satisfied and the documents were released.";
+  }
+
+  const status = params.matterStatus ?? "";
+
+  if (status === "new" || status === "intake_received") {
+    return "Your matter has been received and is under review.";
+  }
+  if (status === "under_review" || status === "compliance_review") {
+    return "Procedural review is in progress.";
+  }
+  if (status === "quoted" || status === "awaiting_payment") {
+    if (params.schedulingEligible && !params.settlementVerified) {
+      return "Payment submission is recorded and scheduling authority is available. Verified Wise settlement is still pending.";
+    }
+    if (params.settlementVerified) {
+      return "Verified Wise settlement is recorded and scheduling authority is available.";
+    }
+    return "Review your invoice and complete the governed Wise payment step before scheduling can proceed.";
+  }
+  if (status === "payment_confirmed") {
+    if (params.settlementVerified) {
+      return "Verified Wise settlement is recorded. Your coordinator can proceed with scheduling when execution requirements are ready.";
+    }
+    if (params.schedulingEligible) {
+      return "Payment authority is recorded for scheduling. Verified Wise settlement remains separate and may still be pending.";
+    }
+    return "Payment evidence is recorded, but scheduling authority still requires review.";
+  }
+  if (status === "scheduled") {
+    return "Your execution session has been scheduled. Please prepare your documents and review the pre-flight checklist.";
+  }
+  if (status === "in_execution") return "Execution is in progress. No action is required unless your coordinator contacts you.";
+  if (status === "apostille_processing") return "Apostille processing is underway. We will update the Matter when verified downstream evidence is recorded.";
+  if (status === "courier_ready") return "Your documents are prepared for the governed release and courier step.";
+  if (status === "shipped") return "Your documents have been released to courier. Track delivery on the Tracking page.";
+  if (status === "delivered") return "Delivery is recorded. Final Matter closeout is in progress.";
+  if (status === "completed" || status === "closed") return "Your matter is complete.";
+  return "Your coordinator will be in touch with the next governed step.";
+}
+
+function paymentGateMatter(d: Record<string, unknown>, dealId: string): ComplimentaryGateMatter {
+  return {
+    deal_id: dealId,
+    payment_status: (d.payment_status as string | null) ?? null,
+    payment_confirmed: (d.payment_confirmed as boolean | null) ?? null,
+    payment_disposition: (d.payment_disposition as string | null) ?? null,
+    payment_settlement_status:
+      (d.payment_settlement_status as string | null) ??
+      (d.settlement_status as string | null) ??
+      null,
+    payment_observed_at: (d.payment_observed_at as string | null) ?? null,
+    comp_authorized: (d.comp_authorized as boolean | null) ?? null,
+    comp_authorization_id: (d.comp_authorization_id as string | null) ?? null,
+    comp_authorized_at: (d.comp_authorized_at as string | null) ?? null,
+    comp_revoked_at: (d.comp_revoked_at as string | null) ?? null,
+    amount_due: typeof d.amount_due === "number" ? d.amount_due : Number(d.amount_due ?? 0),
+    amount_paid: typeof d.amount_paid === "number" ? d.amount_paid : Number(d.amount_paid ?? 0),
+    verified_revenue:
+      typeof d.verified_revenue === "number" ? d.verified_revenue : Number(d.verified_revenue ?? 0),
+    currency: (d.currency as string | null) ?? null,
+    wise_reference: (d.wise_reference as string | null) ?? null,
+    payment_observed_amount:
+      d.payment_observed_amount == null ? null : Number(d.payment_observed_amount),
+    payment_observed_currency: (d.payment_observed_currency as string | null) ?? null,
+    payment_observed_reference: (d.payment_observed_reference as string | null) ?? null,
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -66,42 +121,43 @@ export async function GET(req: NextRequest) {
   if (!ctx.deals.length) return NextResponse.json({ intelligence: null });
 
   const dealId = req.nextUrl.searchParams.get("deal_id");
-  const deal = (dealId ? ctx.deals.find((d) => d.id === dealId) : null) ?? ctx.deals[0];
+  const deal = (dealId ? ctx.deals.find((item) => item.id === dealId) : null) ?? ctx.deals[0];
   if (!deal) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
 
   const admin = createAdminClient();
-
-  // Fetch client-safe custody milestones only
   const { data: ledgerRows } = await admin
     .from("custody_ledger")
     .select("id, event, actor_type, created_at")
     .eq("deal_id", deal.id)
     .order("created_at", { ascending: true });
 
-  // Filter to milestone events only; never expose actor_id, label_url, storage_path
   const milestones = (ledgerRows ?? [])
-    .filter((r) => MILESTONE_EVENTS.has(r.event as string))
-    .map((r) => ({
-      event: r.event as string,
-      label: CLIENT_SAFE_EVENT_LABELS[r.event as string] ?? null,
-      actor_type: r.actor_type as string,
-      occurred_at: r.created_at as string,
+    .filter((row) => MILESTONE_EVENTS.has(row.event as string))
+    .map((row) => ({
+      event: row.event as string,
+      label: CLIENT_SAFE_EVENT_LABELS[row.event as string] ?? null,
+      actor_type: row.actor_type as string,
+      occurred_at: row.created_at as string,
     }));
 
   const d = deal as unknown as Record<string, unknown>;
   const paymentStatus = (d.payment_status as string | null) ?? null;
   const matterStatus = (d.matter_status as string | null) ?? (d.status as string | null) ?? null;
-  const isPaidAndReleased = !!(d.is_paid_and_released);
-  const paid =
-    paymentStatus === "paid" ||
-    paymentStatus === "payment_confirmed" ||
-    matterStatus === "payment_confirmed";
+  const isPaidAndReleased = d.is_paid_and_released === true;
+  const scheduling = evaluateSchedulingGate({ matter: paymentGateMatter(d, deal.id) });
+  const settlementVerified = scheduling.paymentRequirementMethod === "verified_payment";
+  const paymentSubmitted =
+    scheduling.paymentRequirementMethod === "wise_submission_observed" ||
+    Boolean(d.payment_observed_at);
 
-  // Determine gate states from real data
   const paymentGate = {
-    confirmed: paid,
+    confirmed: settlementVerified,
+    settlementVerified,
+    submissionObserved: paymentSubmitted,
     paidAndReleased: isPaidAndReleased,
-    schedulingUnlocked: paid,
+    schedulingUnlocked: scheduling.schedulingEligible,
+    schedulingMethod: scheduling.paymentRequirementMethod,
+    schedulingReason: scheduling.reason,
     courierUnlocked: ["shipped", "delivered", "completed", "closed"].includes(matterStatus ?? ""),
     apostilleActive: ["apostille_processing", "courier_ready", "shipped", "delivered", "completed"].includes(matterStatus ?? ""),
   };
@@ -111,13 +167,7 @@ export async function GET(req: NextRequest) {
   const deliveryStatus = (d.delivery_status as string | null) ?? null;
   const deliveredAt = (d.delivery_timestamp as string | null) ?? null;
   const updatedAt = (d.updated_at as string | null) ?? null;
-
-  // Client-safe tracking display: show last 6 chars only — no full tracking number in client view
-  const trackingDisplay = rawTracking
-    ? `···${rawTracking.slice(-6)}`
-    : null;
-
-  // courier_status structured object — never includes label_url, shipping_cost, storage_path
+  const trackingDisplay = rawTracking ? `···${rawTracking.slice(-6)}` : null;
   const courierStatus = rawCarrier || rawTracking || deliveryStatus
     ? {
         carrier: rawCarrier,
@@ -144,7 +194,13 @@ export async function GET(req: NextRequest) {
       courier_tracking_id: rawTracking,
       courier_status: courierStatus,
       payment_gate: paymentGate,
-      next_action: deriveNextAction(matterStatus, paymentStatus, isPaidAndReleased),
+      next_action: deriveNextAction({
+        matterStatus,
+        settlementVerified,
+        schedulingEligible: scheduling.schedulingEligible,
+        schedulingMethod: scheduling.paymentRequirementMethod,
+        isPaidAndReleased,
+      }),
       milestones,
       coordinator: {
         name: "Nicholas Milano",
