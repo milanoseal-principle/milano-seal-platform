@@ -42,7 +42,6 @@ function deriveNextAction(params: {
   matterStatus: string | null;
   settlementVerified: boolean;
   schedulingEligible: boolean;
-  schedulingMethod: string;
   isPaidAndReleased: boolean;
 }): string {
   if (params.isPaidAndReleased) {
@@ -89,6 +88,7 @@ function deriveNextAction(params: {
 
 function paymentGateMatter(d: Record<string, unknown>, dealId: string): ComplimentaryGateMatter {
   return {
+    id: dealId,
     deal_id: dealId,
     payment_status: (d.payment_status as string | null) ?? null,
     payment_confirmed: (d.payment_confirmed as boolean | null) ?? null,
@@ -198,7 +198,6 @@ export async function GET(req: NextRequest) {
         matterStatus,
         settlementVerified,
         schedulingEligible: scheduling.schedulingEligible,
-        schedulingMethod: scheduling.paymentRequirementMethod,
         isPaidAndReleased,
       }),
       milestones,
