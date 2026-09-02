@@ -1,15 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { recordAllianceWebhookEvent } from "@/lib/alliance/webhookEvidence";
 
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: "ALLIANCE_WEBHOOK_NOT_CONFIGURED",
-      message: "Alliance job webhook processing is not configured in production.",
-    },
-    { status: 503 },
-  );
+export async function POST(req: NextRequest) {
+  return recordAllianceWebhookEvent(req, "job");
 }
 
 export async function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  return NextResponse.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }
