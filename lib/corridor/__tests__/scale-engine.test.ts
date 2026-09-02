@@ -21,17 +21,17 @@ function matter(id: string, overrides: Partial<MatterEconomicsRow> = {}): Matter
   };
 }
 
-test("high demand never becomes SCALE while critical evidence is unknown", () => {
+test("high demand remains INSUFFICIENT_EVIDENCE while critical evidence is unknown", () => {
   const result = buildCorridorScaleDecisions([matter("1"), matter("2"), matter("3"), matter("4"), matter("5")]);
   assert.equal(result.length, 1);
-  assert.equal(result[0].status, "WATCH");
+  assert.equal(result[0].status, "INSUFFICIENT_EVIDENCE");
   assert.ok(result[0].factors.some((f) => f.label === "Margin" && f.state === "UNKNOWN"));
   assert.ok(result[0].factors.some((f) => f.label === "Authority-rule freshness" && f.state === "UNKNOWN"));
 });
 
-test("low demand plus critical unknowns fails closed to DO_NOT_SCALE", () => {
+test("low demand plus critical unknowns remains INSUFFICIENT_EVIDENCE rather than a negative decision", () => {
   const result = buildCorridorScaleDecisions([matter("1")]);
-  assert.equal(result[0].status, "DO_NOT_SCALE");
+  assert.equal(result[0].status, "INSUFFICIENT_EVIDENCE");
 });
 
 test("mixed currency observed revenue is not fabricated into one aggregate", () => {

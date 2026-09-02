@@ -1,6 +1,11 @@
 import type { MatterEconomicsRow } from "@/lib/economics/matterEconomics";
 
-export type CorridorScaleStatus = "SCALE" | "WATCH" | "CONSTRAINED" | "DO_NOT_SCALE";
+export type CorridorScaleStatus =
+  | "SCALE"
+  | "WATCH"
+  | "CONSTRAINED"
+  | "DO_NOT_SCALE"
+  | "INSUFFICIENT_EVIDENCE";
 export type FactorState = "HIGH" | "MODERATE" | "LOW" | "HEALTHY" | "LIMITED" | "CURRENT" | "STALE" | "UNKNOWN";
 
 export interface CorridorScaleFactor {
@@ -52,21 +57,27 @@ export function buildCorridorScaleDecisions(matters: MatterEconomicsRow[]): Corr
       { label: "Professional demand", state: "UNKNOWN", evidence: "Professional360 evidence is not yet corridor-attributed strongly enough to infer demand." },
     ];
 
-    const blockingUnknown = factors.some((f) => ["Margin", "Execution capacity", "Authority-rule freshness"].includes(f.label) && f.state === "UNKNOWN");
+    const blockingUnknown = factors.some((factor) =>
+      ["Margin", "Execution capacity", "Authority-rule freshness"].includes(factor.label) && factor.state === "UNKNOWN",
+    );
     let status: CorridorScaleStatus;
     const reasons: string[] = [];
+
     if (blockingUnknown) {
-      status = demand === "LOW" ? "DO_NOT_SCALE" : "WATCH";
-      reasons.push("Critical scale factors remain UNKNOWN; the engine fails closed rather than fabricating readiness.");
+      status = "INSUFFICIENT_EVIDENCE";
+      reasons.push("Critical scale factors remain UNKNOWN; no positive or negative scale decision is authorized yet.");
     } else if (exceptionState === "HIGH") {
       status = "CONSTRAINED";
       reasons.push("Observed exception burden is high.");
     } else if (demand === "HIGH") {
       status = "SCALE";
       reasons.push("Demand is high and all critical factors are evidence-backed.");
+    } else if (demand === "LOW") {
+      status = "DO_NOT_SCALE";
+      reasons.push("Critical evidence is complete, but observed demand remains below the scale threshold.");
     } else {
       status = "WATCH";
-      reasons.push("Evidence does not yet justify a SCALE decision.");
+      reasons.push("Evidence is complete but does not yet justify a SCALE decision.");
     }
 
     return {
