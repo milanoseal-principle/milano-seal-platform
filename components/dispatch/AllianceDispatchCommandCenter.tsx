@@ -1,44 +1,80 @@
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, FilePlus2, Handshake, ShieldCheck } from "lucide-react";
-import { DISPATCH_QUEUE } from "@/lib/dispatch/dispatchQueue";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PARTNER_VERIFICATION_RULES } from "@/lib/dispatch/partnerVerification";
 
 const DISPATCH_ACTIONS = [
   {
     href: "/dashboard/deals",
     label: "Open Matters",
-    description: "Review live Matters and route work into dispatch.",
+    description: "Review live Matters and route governed work into dispatch.",
     icon: BriefcaseBusiness,
   },
   {
     href: "/dashboard/intake",
     label: "Create Matter",
-    description: "Start a new Matter before assignment.",
+    description: "Start a canonical Matter before assignment.",
     icon: FilePlus2,
   },
   {
     href: "/dashboard/alliance",
     label: "Alliance Network",
-    description: "Review partner coverage and network intelligence.",
+    description: "Review partner coverage and evidence-backed network intelligence.",
     icon: Handshake,
   },
   {
     href: "/dashboard/compliance-atlas",
     label: "Compliance Gate",
-    description: "Confirm jurisdiction and execution requirements.",
+    description: "Confirm jurisdiction and execution requirements before routing.",
     icon: ShieldCheck,
   },
 ] as const;
 
-export function AllianceDispatchCommandCenter() {
+type DispatchRow = {
+  id: string;
+  status: string;
+  priority: string;
+  requested_service: string;
+  created_at: string;
+  assigned_operator_id: string | null;
+  deals: {
+    deal_id?: string | null;
+    client_name?: string | null;
+    destination_country?: string | null;
+    document_type?: string | null;
+  } | null;
+};
+
+const STATUS_COPY: Record<string, string> = {
+  requested: "Awaiting assignment",
+  offered: "Assignment offered",
+  accepted: "Accepted",
+  declined: "Declined — reroute required",
+  reassigned: "Reassigned",
+  escalated: "Escalated",
+  cancelled: "Cancelled",
+  completed: "Completed",
+};
+
+export async function AllianceDispatchCommandCenter() {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("dispatch_requests")
+    .select(
+      "id,status,priority,requested_service,created_at,assigned_operator_id,deals!inner(deal_id,client_name,destination_country,document_type)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  const dispatches = (data ?? []) as unknown as DispatchRow[];
+
   return (
     <section className="space-y-6">
       <div className="rounded-3xl border border-[#c9a24a]/25 bg-[#0b1118] p-6">
         <p className="text-xs uppercase tracking-[0.3em] text-[#c9a24a]">Alliance Dispatch Network</p>
         <h1 className="mt-3 text-3xl font-semibold text-white">Dispatch Command Center</h1>
-        <p className="mt-3 text-sm text-white/65">
-          Partner applications, verification, Partner Passport, trust score, coverage, availability,
-          assignments, completion, QA, partner payment queue, and founder approval.
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/65">
+          Canonical Matter-linked dispatch, operator eligibility, availability, assignment and completion evidence. No synthetic trust score or staged queue state is shown.
         </p>
       </div>
 
@@ -59,36 +95,64 @@ export function AllianceDispatchCommandCenter() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {DISPATCH_QUEUE.map((item) => (
-          <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl text-white">{item.name}</h2>
-                <p className="mt-2 text-sm text-white/60">
-                  {item.status} · trust {item.trustScore} · {item.nextAction}
-                </p>
-              </div>
-              <span className="rounded-full border border-[#c9a24a]/20 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#f1d58b]">
-                {item.coverage.join(", ")}
-              </span>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/deals"
-                className="rounded-lg border border-[#c9a24a]/25 bg-[#c9a24a]/10 px-3 py-2 text-xs font-semibold text-[#f1d58b] transition hover:bg-[#c9a24a]/15"
-              >
-                Review Matters
-              </Link>
-              <Link
-                href="/dashboard/alliance"
-                className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70 transition hover:border-[#c9a24a]/25 hover:text-white"
-              >
-                Open Partner Network
-              </Link>
-            </div>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-[#c9a24a]">Live Dispatch Truth</p>
+            <h2 className="mt-1 text-xl text-white">Matter-linked queue</h2>
           </div>
-        ))}
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">
+            {error ? "Read unavailable" : `${dispatches.length} visible`}
+          </span>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-xl border border-[#E0876E]/20 bg-[#C0563E]/[0.06] p-4" role="status">
+            <p className="text-sm font-medium text-[#E9A08C]">Dispatch evidence could not be loaded.</p>
+            <p className="mt-1 text-xs leading-5 text-white/45">No queue state has been inferred. Refresh after database connectivity is restored.</p>
+          </div>
+        ) : dispatches.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-white/[0.07] bg-black/20 p-5">
+            <p className="text-sm font-medium text-white/75">No governed dispatch requests.</p>
+            <p className="mt-1 text-xs leading-5 text-white/45">Open a Matter and create a dispatch request when external or Alliance execution support is actually required.</p>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {dispatches.map((item) => {
+              const matter = item.deals;
+              return (
+                <article key={item.id} className="rounded-xl border border-white/[0.07] bg-black/20 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#c9a24a]/80">
+                        {matter?.deal_id ?? "Matter reference unavailable"}
+                      </p>
+                      <h3 className="mt-1 truncate text-sm font-semibold text-white">
+                        {matter?.client_name ?? "Client name unavailable"}
+                      </h3>
+                      <p className="mt-1 text-xs text-white/45">
+                        {[matter?.document_type, matter?.destination_country].filter(Boolean).join(" · ") || "Scope pending"}
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-[#c9a24a]/20 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[#f1d58b]">
+                      {item.priority}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-lg border border-white/[0.05] bg-white/[0.02] p-3">
+                      <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/30">Dispatch state</p>
+                      <p className="mt-1 text-xs text-white/65">{STATUS_COPY[item.status] ?? item.status}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/[0.05] bg-white/[0.02] p-3">
+                      <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/30">Assignment</p>
+                      <p className="mt-1 text-xs text-white/65">{item.assigned_operator_id ? "Operator linked" : "Unassigned"}</p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
