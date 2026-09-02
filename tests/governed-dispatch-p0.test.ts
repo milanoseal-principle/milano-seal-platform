@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+// Production-regression contract for PR #327 transaction + dispatch readiness.
 const read = (path: string) => readFileSync(path, "utf8");
 
 const migration = read("supabase/migrations/075_governed_dispatch_and_alliance_webhooks.sql");
