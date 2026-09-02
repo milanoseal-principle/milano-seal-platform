@@ -29,27 +29,64 @@ absent(
   "unverified Alliance status webhook must not return",
 );
 
-// Unconfigured dispatch / Alliance integration surfaces must fail closed.
-const failClosedRoutes = [
-  "app/api/dispatch/jobs/route.ts",
-  "app/api/dispatch/jobs/[id]/route.ts",
-  "app/api/dispatch/request/route.ts",
-  "app/api/dispatch/reassign/route.ts",
-  "app/api/dispatch/escalate/route.ts",
+// Dispatch is now a governed persistence layer over the canonical Matter; it
+// may not create a second Matter lifecycle or fabricate queued/escalated state.
+const dispatchMigration = read("supabase/migrations/075_governed_dispatch_and_alliance_webhooks.sql");
+assert.match(dispatchMigration, /create table if not exists public\.dispatch_requests/);
+assert.match(dispatchMigration, /matter_id uuid not null references public\.deals\(id\)/);
+assert.match(dispatchMigration, /create_dispatch_request/);
+assert.match(dispatchMigration, /assign_dispatch_request/);
+assert.match(dispatchMigration, /escalate_dispatch_request/);
+assert.match(dispatchMigration, /transition_dispatch_assignment/);
+assert.match(dispatchMigration, /matter_events/);
+assert.match(dispatchMigration, /revoke all on public\.dispatch_requests from anon, authenticated/);
+
+const dispatchSources = [
+  read("app/api/dispatch/jobs/route.ts"),
+  read("app/api/dispatch/jobs/[id]/route.ts"),
+  read("app/api/dispatch/request/route.ts"),
+  read("app/api/dispatch/assign/route.ts"),
+  read("app/api/dispatch/reassign/route.ts"),
+  read("app/api/dispatch/escalate/route.ts"),
+];
+for (const source of dispatchSources) {
+  assert.doesNotMatch(source, /disp_stub_/);
+  assert.doesNotMatch(source, /reassignment_queued/);
+  assert.doesNotMatch(source, /UNASSIGNED_STAGED/);
+  assert.doesNotMatch(source, /DISPATCH_NOT_CONFIGURED/);
+}
+assert.match(dispatchSources[0], /requireDispatchOperator/);
+assert.match(dispatchSources[2], /create_dispatch_request/);
+assert.match(dispatchSources[3], /assign_dispatch_request/);
+assert.match(dispatchSources[4], /assign_dispatch_request/);
+assert.match(dispatchSources[5], /escalate_dispatch_request/);
+
+// Alliance webhooks are authenticated evidence-only observations. They must not
+// author Matter/payment/execution/RON/apostille/custody/release lifecycle state.
+const allianceWebhookHelper = read("lib/alliance/webhookEvidence.ts");
+assert.match(allianceWebhookHelper, /ALLIANCE_WEBHOOK_SECRET/);
+assert.match(allianceWebhookHelper, /createHmac\(["']sha256["']/);
+assert.match(allianceWebhookHelper, /timingSafeEqual/);
+assert.match(allianceWebhookHelper, /alliance_webhook_events/);
+assert.match(allianceWebhookHelper, /evidence_only:\s*true/);
+for (const forbidden of [
+  /\.from\(["']deals["']\)\.update/,
+  /payment_confirmed\s*:/,
+  /deal_status\s*:/,
+  /is_paid_and_released\s*:/,
+  /notarial_act\s*:/,
+]) {
+  assert.doesNotMatch(allianceWebhookHelper, forbidden);
+}
+for (const path of [
   "app/api/webhooks/alliance/job/route.ts",
   "app/api/webhooks/alliance/toolbelt/route.ts",
   "app/api/webhooks/alliance/credential/route.ts",
-];
-
-for (const path of failClosedRoutes) {
+]) {
   const source = read(path);
-  assert.match(source, /NOT_CONFIGURED/, `${path} must declare NOT_CONFIGURED`);
-  assert.match(source, /status:\s*503/, `${path} must fail closed with HTTP 503`);
-  assert.doesNotMatch(source, /disp_stub_/);
-  assert.doesNotMatch(source, /reassignment_queued/);
-  assert.doesNotMatch(source, /status:\s*["']escalated["']/);
-  assert.doesNotMatch(source, /current_assignment_state:\s*["']UNASSIGNED_STAGED["']/);
-  assert.doesNotMatch(source, /console\.log\([^\n]*webhook\/alliance/);
+  assert.match(source, /recordAllianceWebhookEvent/);
+  assert.doesNotMatch(source, /console\.log/);
+  assert.doesNotMatch(source, /status:\s*["']queued["']/);
 }
 
 // Release evidence may never be fabricated from local/demo form values.
