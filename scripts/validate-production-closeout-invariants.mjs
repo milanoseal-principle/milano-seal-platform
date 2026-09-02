@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
+// Release-closeout regression guard. Source-only by design: no provider calls,
+// no secrets, and no mutation authority. The Vercel merge gate executes it.
 function read(path) {
   assert.ok(existsSync(path), `Required production source missing: ${path}`);
   return readFileSync(path, "utf8");
