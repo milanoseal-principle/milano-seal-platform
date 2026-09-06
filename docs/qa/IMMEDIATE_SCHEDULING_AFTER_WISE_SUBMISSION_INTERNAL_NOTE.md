@@ -11,3 +11,5 @@ Use this state when a governed client Wise submission is recorded and settlement
 **Paid truth:** Not yet verified unless canonical Wise reconciliation confirms settlement.
 
 **Release:** Any settlement-dependent final release remains locked until canonical Wise verification.
+
+Validation lock: this note must remain aligned to the canonical scheduling gate and BlueNotary readiness behavior.
