@@ -21,18 +21,18 @@ type PendingMatter = {
   payment_status: string | null;
   payment_settlement_status: string | null;
   payment_observed_at: string | null;
-  payment_observed_amount: number | string | null;
+  payment_observed_amount: number | null;
   payment_observed_currency: string | null;
   payment_observed_reference: string | null;
-  amount_due: number | string | null;
-  amount_paid: number | string | null;
+  amount_due: number | null;
+  amount_paid: number | null;
   currency: string | null;
   payment_disposition: string | null;
   comp_authorized: boolean | null;
   comp_authorization_id: string | null;
   comp_authorized_at: string | null;
   comp_revoked_at: string | null;
-  verified_revenue: number | string | null;
+  verified_revenue: number | null;
   is_platform_fee_only: boolean | null;
 };
 
