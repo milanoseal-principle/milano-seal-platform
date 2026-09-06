@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 const migration = readFileSync("supabase/migrations/077_wise_reconciliation_exception_orchestrator.sql", "utf8");
 const orchestrator = readFileSync("lib/wise/reconciliation-exceptions.ts", "utf8");
 const recoveryApi = readFileSync("app/api/admin/wise/reconciliation-exceptions/route.ts", "utf8");
+const recoveryPage = readFileSync("app/dashboard/payments/reconciliation/page.tsx", "utf8");
+const operatorShell = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
 const cron = readFileSync("app/api/cron/wise-payment-reconcile/route.ts", "utf8");
 
 const checks = [
@@ -20,7 +22,10 @@ const checks = [
   ["exact provider evidence delegated to governed recovery RPC", /confirm_wise_payment_from_provider_notification/.test(recoveryApi)],
   ["recovery route never directly writes paid fields", !/payment_confirmed\s*:/.test(recoveryApi) && !/payment_status\s*:/.test(recoveryApi)],
   ["minute reconciliation cron runs exception scanner", /scanWiseReconciliationExceptions/.test(cron)],
-  ["Wise only", !/stripe/i.test(migration + orchestrator + recoveryApi + cron)],
+  ["operator has Wise recovery command surface", /Settlement Recovery Command/.test(recoveryPage) && /\/api\/admin\/wise\/reconciliation-exceptions/.test(recoveryPage)],
+  ["operator UI states scheduling separate from settlement", /Scheduling authority stays separate from settlement truth/.test(recoveryPage) && /Final settlement-dependent release remains locked/.test(recoveryPage)],
+  ["Finance navigation exposes Wise Recovery", /\/dashboard\/payments\/reconciliation/.test(operatorShell) && /Wise Recovery/.test(operatorShell)],
+  ["Wise only", !/stripe/i.test(migration + orchestrator + recoveryApi + recoveryPage + cron)],
 ];
 
 let failed = 0;
