@@ -37,6 +37,7 @@ const NAV: MilanoOSNavItem[] = [
   { href: "/dashboard/executive", label: "Executive", icon: "chart", group: "Intelligence", hint: "Matter Execution Corridor executive view" },
 
   { href: "/dashboard/payments", label: "Payments", icon: "dollar", group: "Finance", hint: "Wise settlement truth" },
+  { href: "/dashboard/payments/reconciliation", label: "Wise Recovery", icon: "activity", group: "Finance", hint: "Automated settlement exceptions and governed recovery" },
   { href: "/dashboard/payments/discounts", label: "Discount Codes", icon: "percent", group: "Finance", hint: "Governed courtesy controls" },
   { href: "/dashboard/payments/discounts/report", label: "Discount Report", icon: "chart", group: "Finance", hint: "Courtesy audit" },
 
