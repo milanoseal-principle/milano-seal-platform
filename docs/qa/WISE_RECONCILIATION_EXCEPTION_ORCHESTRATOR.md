@@ -36,3 +36,7 @@ Exact official Wise provider evidence can be submitted through the authenticated
 The system never auto-confirms a payment from amount, currency, timing, client assertion, or a unique-looking transaction alone. Ambiguous or missing provider correlation remains an exception requiring exact official Wise evidence.
 
 Final settlement-dependent release remains locked until canonical paid truth exists.
+
+## Build gate
+
+The orchestration projection is type-aligned with the canonical scheduling gate and must pass the full Vercel merge gate before merge.
