@@ -45,6 +45,7 @@ const gates = [
   ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
   ["node", ["scripts/validate-matter-execution-corridor-spine.mjs"]],
   ["node", ["scripts/validate-production-closeout-invariants.mjs"]],
+  ["node", ["scripts/validate-immediate-scheduling-after-wise-submission.mjs"]],
   ["npm", ["run", "validate:migration-chain"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
   ["npm", ["run", "validate:cinematic-route-coverage"]],
