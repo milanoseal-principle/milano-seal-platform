@@ -166,23 +166,35 @@ export async function sendPaymentObservedAlerts(input: {
 }) {
   const currency = input.currency || "USD";
   const subject = `Wise Payment Processing — ${input.matterReference}`;
-  const html = shell(
+  const clientHtml = shell(
     "Wise payment submitted",
-    `<p>A payment of <strong>${money(input.amountDue, currency)}</strong> has been reported/submitted for Matter <strong>${input.matterReference}</strong>.</p><p>The Matter remains payment-gated while Wise settlement is verified. Scheduling will unlock only after verified settlement.</p>`,
+    `<p>Your payment of <strong>${money(input.amountDue, currency)}</strong> has been recorded for Matter <strong>${input.matterReference}</strong>.</p><p>Scheduling authority is now available while Wise settlement continues separately in the background. Milano may continue scheduling and BlueNotary readiness immediately, subject to the Matter's remaining execution requirements.</p><p>This submission is not yet a verified paid/settled state, and any settlement-dependent final release remains protected until Wise settlement is verified.</p>`,
+  );
+  const operatorHtml = shell(
+    "Internal · Wise processing / scheduling authorized",
+    `<p>Client payment submission of <strong>${money(input.amountDue, currency)}</strong> is recorded for Matter <strong>${input.matterReference}</strong>.</p><p><strong>Scheduling payment authority is satisfied now.</strong> Continue scheduling and BlueNotary readiness without waiting for Wise settlement, subject to the remaining execution gates.</p><p>Internal payment state remains <strong>Wise processing / settlement pending</strong>. Do not represent the Matter as paid or settled until canonical Wise verification completes. Settlement-dependent final release remains locked.</p>`,
   );
 
-  const recipients = Array.from(new Set([
-    ...(input.clientEmail ? [input.clientEmail.toLowerCase()] : []),
-    ...operatorEmails(),
-  ]));
-  await Promise.all(recipients.map((recipient) => sendOne({
-    matterId: input.matterId,
-    matterReference: input.matterReference,
-    recipient,
-    type: recipient === input.clientEmail?.toLowerCase() ? "client_payment_observed" : "operator_payment_observed",
-    subject,
-    html,
-  })));
+  const clientRecipient = input.clientEmail?.trim().toLowerCase() || null;
+  const operatorRecipients = operatorEmails();
+  await Promise.all([
+    ...(clientRecipient ? [sendOne({
+      matterId: input.matterId,
+      matterReference: input.matterReference,
+      recipient: clientRecipient,
+      type: "client_payment_observed",
+      subject,
+      html: clientHtml,
+    })] : []),
+    ...operatorRecipients.map((recipient) => sendOne({
+      matterId: input.matterId,
+      matterReference: input.matterReference,
+      recipient,
+      type: "operator_payment_observed",
+      subject,
+      html: operatorHtml,
+    })),
+  ]);
 }
 
 export async function sendPaymentClearedAlerts(input: {
@@ -196,7 +208,7 @@ export async function sendPaymentClearedAlerts(input: {
   const subject = `Wise Payment Confirmed — ${input.matterReference}`;
   const html = shell(
     "Wise payment confirmed",
-    `<p>Wise settlement has been verified for Matter <strong>${input.matterReference}</strong>.</p><p>Verified amount: <strong>${money(input.amountPaid, currency)}</strong>.</p><p>The canonical scheduling gate may now evaluate the remaining operational requirements.</p>`,
+    `<p>Wise settlement has been verified for Matter <strong>${input.matterReference}</strong>.</p><p>Verified amount: <strong>${money(input.amountPaid, currency)}</strong>.</p><p>Any scheduling authority already granted from the governed payment submission remains in effect. Verified settlement now establishes paid truth and may satisfy settlement-dependent downstream controls.</p>`,
   );
 
   const recipients = Array.from(new Set([
