@@ -10,6 +10,7 @@ import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
 import { selectRecommendedRate } from "@/lib/shippo/rateSelection";
 import { assertCanCreateLabel, ShippoGateError } from "@/lib/shippo/gates";
 import { audit } from "@/lib/audit";
+import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,11 @@ export async function POST(req: NextRequest) {
 
     const parsedCost = Number.parseFloat(selected.amount);
     const actualShippoCost = Number.isFinite(parsedCost) ? parsedCost : null;
+    const courierPricing = calculateCourierCharge({
+      providerRateAmount: selected.amount,
+      currency: selected.currency,
+      tier: matter.tier,
+    });
 
     const { error: insertErr } = await supabase.from("shippo_shipments").insert({
       matter_id: matter.id,
@@ -143,6 +149,9 @@ export async function POST(req: NextRequest) {
         execution_lane: matter.tier ?? "signature",
         shippo_shipment_id: shipment_id,
         shippo_rate_id: selected.object_id,
+        provider_rate_amount: courierPricing.providerRateAmount,
+        tier_courier_credit: courierPricing.tierCourierCredit,
+        client_courier_charge: courierPricing.clientCourierCharge,
         carrier,
         servicelevel: selected.servicelevel.token,
         selected_by_policy: wasAutoSelected,
@@ -177,6 +186,7 @@ export async function POST(req: NextRequest) {
       tracking_number_display: trackingNumber,
       tracking_url: trackingUrl,
       courier_status: "LABEL_CREATED",
+      courier_pricing: courierPricing,
       label_created_at: new Date().toISOString(),
       package_template_used: packageTemplateId,
       shipping_option_used: shippingOptionId,
