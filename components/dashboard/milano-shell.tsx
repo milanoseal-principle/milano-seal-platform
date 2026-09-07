@@ -116,6 +116,7 @@ const NAV_GROUPS: {
       { href: "/dashboard/matter-intelligence", label: "Matter Intelligence", icon: Layers },
       { href: "/dashboard/execution-jobs", label: "Execution Jobs", icon: PlayCircle },
       { href: "/dashboard/needs-review", label: "Needs Review", icon: AlertOctagon },
+      { href: "/dashboard/stagnation", label: "Stagnation Alerts", icon: AlertOctagon },
       { href: "/dashboard/ledger", label: "Operational Ledger", icon: ScrollText },
       { href: "/dashboard/monitoring", label: "Monitoring", icon: Activity },
       { href: "/dashboard/founder", label: "Founder OS", icon: Activity },
