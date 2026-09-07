@@ -39,6 +39,16 @@ The Vercel external merge gate now requires the existing production validators f
 - pricing / courier continuity
 - production transaction invariants
 
+## Safe branch salvage performed
+
+The expanded gate exposed three concrete files that were required by the existing `validate-next-five-production-builds` contract but absent from current `main`. They were recovered as isolated pure/read-only helpers from the historical `milano-next-five-production-builds` branch rather than merging that stale branch wholesale:
+
+- `lib/portal2/documentVault.ts`
+- `lib/dispatch/partnerApplication.ts`
+- `lib/dispatch/dispatchQueue.ts`
+
+These helpers do not mutate Matter state, payments, Wise, release authority, custody, RLS, Shippo, or BlueNotary. They restore the already-declared module contract only.
+
 ## Canonical authority lock
 
 No module validator may weaken or replace:
