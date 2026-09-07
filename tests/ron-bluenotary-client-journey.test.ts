@@ -21,8 +21,8 @@ test("portal RON consumes canonical scheduling and keeps Wise settlement separat
 });
 
 test("client never chooses or guesses the notarial act", () => {
+  assert.match(portal, /normalizeExecutionTruth/);
   assert.match(portal, /truth\.notarial_act === "review_required"/);
-  assert.match(portal, /truth\.notarial_act === "unknown"/);
   assert.match(portal, /Awaiting Milano Review/);
   assert.doesNotMatch(portal + card, /Choose Jurat|Choose Acknowledgment/);
 });
