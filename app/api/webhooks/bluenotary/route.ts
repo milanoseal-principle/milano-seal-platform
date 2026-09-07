@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { verifyBNWebhookAuth, computeEventHash } from '@/lib/bluenotary/webhook';
+import { computeEventHash } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
@@ -11,8 +11,116 @@ export async function GET() {
   return NextResponse.json({ ok: true }, { status: 200 });
 }
 
+async function writeTransitionReview(
+  supabase: ReturnType<typeof createAdminClient>,
+  matterId: string,
+  ronSessionId: string,
+  providerEvent: string,
+  currentStatus: string,
+  reason: string
+) {
+  await supabase.from('ron_audit_events').insert({
+    matter_id: matterId,
+    ron_session_id: ronSessionId,
+    event_type: 'MATTER_EXECUTION_TRANSITION_REVIEW_REQUIRED',
+    description: `BlueNotary execution evidence could not advance the Matter automatically: ${reason}`,
+    actor_role: 'system',
+    source: 'bluenotary_webhook',
+    metadata: {
+      provider_event: providerEvent,
+      current_matter_status: currentStatus || null,
+      requested_matter_status: 'in_execution',
+      reason,
+    },
+  });
+}
+
+async function advanceMatterIntoExecution(
+  supabase: ReturnType<typeof createAdminClient>,
+  matterId: string,
+  ronSessionId: string,
+  providerEvent: string
+) {
+  const { data: matter, error: matterError } = await supabase
+    .from('deals')
+    .select('id, deal_id, status, deal_status')
+    .eq('id', matterId)
+    .maybeSingle();
+
+  if (matterError || !matter) {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      '',
+      'Matter record could not be loaded'
+    );
+    return;
+  }
+
+  const current = String(matter.deal_status ?? matter.status ?? '');
+  if (current === 'in_execution') return;
+
+  if (current !== 'scheduled') {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      current,
+      'Matter is not in the canonical scheduled state'
+    );
+    return;
+  }
+
+  const now = new Date().toISOString();
+  let update = supabase
+    .from('deals')
+    .update({
+      status: 'in_execution',
+      deal_status: 'in_execution',
+      execution_at: now,
+      executed_at: now,
+      last_activity: now,
+    })
+    .eq('id', matter.id)
+    .eq('status', matter.status);
+
+  update = matter.deal_status == null
+    ? update.is('deal_status', null)
+    : update.eq('deal_status', matter.deal_status);
+
+  const { data: advanced, error } = await update.select('id').maybeSingle();
+  if (error || !advanced) {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      current,
+      'Matter state changed before the provider transition completed'
+    );
+    return;
+  }
+
+  await supabase.from('ron_audit_events').insert({
+    matter_id: matterId,
+    ron_session_id: ronSessionId,
+    event_type: 'MATTER_EXECUTION_STARTED_FROM_RON',
+    description: 'Canonical Matter advanced from scheduled to in_execution from BlueNotary provider evidence.',
+    actor_role: 'system',
+    source: 'bluenotary_webhook',
+    metadata: {
+      provider_event: providerEvent,
+      previous_matter_status: 'scheduled',
+      matter_status: 'in_execution',
+      execution_at: now,
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
-  // 1. Verify auth — missing env var is a server config error, not a client error
   if (!process.env.BLUENOTARY_WEBHOOK_SECRET) {
     console.error('[BN webhook] BLUENOTARY_WEBHOOK_SECRET is not configured');
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
@@ -31,22 +139,8 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-
-  // 2. Compute idempotency hash and check for duplicate
   const eventHash = computeEventHash(payload);
 
-  const { data: existing } = await supabase
-    .from('ron_webhook_events')
-    .select('id')
-    .eq('event_hash', eventHash)
-    .maybeSingle();
-
-  if (existing) {
-    // Duplicate — return 200 (already processed)
-    return NextResponse.json({ ok: true, duplicate: true });
-  }
-
-  // 3. Find ron_session
   let ronSessionId: string | null = null;
   let matterId: string | null = null;
 
@@ -76,8 +170,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 4. Store webhook event (before processing to ensure we don't lose it)
-  await supabase.from('ron_webhook_events').insert({
+  const { error: eventInsertError } = await supabase.from('ron_webhook_events').insert({
     event_hash: eventHash,
     notarization_id: payload.notarization_id ?? null,
     bn_session_id: payload.bn_session_id ?? null,
@@ -92,8 +185,19 @@ export async function POST(request: NextRequest) {
     received_at: new Date().toISOString(),
   });
 
+  if (eventInsertError) {
+    if (eventInsertError.code === '23505') {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+
+    console.error(
+      '[BN webhook] Failed to persist event',
+      redactBNPayload({ error: eventInsertError.message, code: eventInsertError.code })
+    );
+    return NextResponse.json({ error: 'Webhook persistence failed' }, { status: 500 });
+  }
+
   if (!ronSessionId) {
-    // Unknown session — store as review required, return 200
     console.warn('[BN webhook] Unknown session for event', {
       event_type: payload.event_type,
       notarization_id: payload.notarization_id,
@@ -101,16 +205,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, status: 'review_required' });
   }
 
-  // 5. Map event to MilanoRONStatus
   const newStatus = mapBNEventToMilanoStatus(payload.event_type);
-
-  // 6. Build session update
   const sessionUpdate: Record<string, unknown> = {
     milano_ron_status: newStatus,
     updated_at: new Date().toISOString(),
   };
 
-  // Map specific event types to field updates
   switch (payload.event_type) {
     case 'photo_id_passed':
       sessionUpdate.identity_status = 'PASSED';
@@ -144,12 +244,19 @@ export async function POST(request: NextRequest) {
       break;
   }
 
-  await supabase
+  const { error: sessionUpdateError } = await supabase
     .from('ron_sessions')
     .update(sessionUpdate)
     .eq('id', ronSessionId);
 
-  // 7. Update signer record if signer event
+  if (sessionUpdateError) {
+    return NextResponse.json({ error: 'RON session update failed' }, { status: 500 });
+  }
+
+  if (matterId && payload.event_type === 'session_started') {
+    await advanceMatterIntoExecution(supabase, matterId, ronSessionId, payload.event_type);
+  }
+
   if (payload.signer_email || payload.event_by_email) {
     const signerEmail = (payload.signer_email ?? payload.event_by_email ?? '').toLowerCase();
     if (signerEmail) {
@@ -191,7 +298,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 8. On session_completed: retrieve and store signed documents
   if (payload.event_type === 'session_completed') {
     try {
       const { data: session } = await supabase
@@ -223,6 +329,7 @@ export async function POST(request: NextRequest) {
                 matter_id: session.matter_id,
                 document_name: safeName,
                 blue_notary_document_name: doc.document_name,
+                storage_bucket: 'documents',
                 signed_storage_path: storagePath,
                 signed_document_received: true,
                 document_status: 'SIGNED',
@@ -231,11 +338,9 @@ export async function POST(request: NextRequest) {
               { onConflict: 'ron_session_id,document_name' }
             );
 
-          // Clear base64
           (doc as { base64_content?: string }).base64_content = '';
         }
 
-        // Update to SIGNED_DOCS_RETRIEVED — DO NOT auto-release or auto-advance
         await supabase
           .from('ron_sessions')
           .update({
@@ -249,7 +354,7 @@ export async function POST(request: NextRequest) {
           matter_id: matterId,
           ron_session_id: ronSessionId,
           event_type: 'RON_SIGNED_DOCUMENTS_RETRIEVED',
-          description: `Signed documents auto-retrieved via webhook. Next action: Apostille QA Review`,
+          description: 'Signed documents auto-retrieved via webhook. Next action: Apostille QA Review',
           actor_role: 'system',
           source: 'bluenotary_webhook',
           metadata: { document_count: signedDocs?.length ?? 0 },
@@ -263,7 +368,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 9. Write audit event
   await supabase.from('ron_audit_events').insert({
     matter_id: matterId,
     ron_session_id: ronSessionId,
@@ -277,7 +381,6 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // 10. Mark webhook event as processed
   await supabase
     .from('ron_webhook_events')
     .update({ processed: true, processed_at: new Date().toISOString() })

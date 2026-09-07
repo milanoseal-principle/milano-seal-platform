@@ -40,7 +40,7 @@ REMAINING BALANCE                             $6.87
 
 Production precondition: `TIFFTEST99` must be active as a 99% percentage discount applied to `matter_total`. The code must be entered by the client on the portal Invoice & Payment screen. It must not be auto-applied by intake, the database, an operator override, or any payment bypass.
 
-The test discount changes pricing only. It never marks a Matter paid and never unlocks scheduling. Only verified Wise settlement may satisfy the payment gate.
+The test discount changes pricing only. It never marks a Matter paid and never unlocks scheduling. A valid observed Wise submission may unlock scheduling while settlement remains pending. That observation does not mark the Matter paid, does not clear settlement, and does not authorize final release. Verified Wise/provider evidence remains required for execution actions that require provider payment authority, and final release remains separately settlement-gated.
 
 ## 15-Step Certification
 
@@ -83,28 +83,35 @@ Remaining balance:           $6.87
 
 Save a screenshot. STOP if the code cannot be entered, the itemized order changes incorrectly, the discount is not exactly 99% of the full Matter total, or the retainer does not become `$6.88`.
 
-9. Before paying, attempt scheduling. PASS only if scheduling remains blocked despite the discount being applied.
+9. Before submitting payment, attempt scheduling. PASS only if scheduling remains blocked despite the discount being applied.
 
-10. Complete the real Wise test payment for exactly `$6.88 USD` using only the Matter-specific Wise payment link/reference generated after the discount is applied. Do not use a fake card, Stripe test card, generic Wise link, manual paid override, or test bypass. Save the Wise confirmation/reference and screenshot.
+10. Complete the real Wise test payment submission for exactly `$6.88 USD` using only the Matter-specific Wise payment link/reference generated after the discount is applied. Do not use a fake card, generic Wise link, manual paid override, or test bypass. Save the Wise confirmation/reference and screenshot.
 
-11. Confirm the same Matter updates to paid exactly once. Verify correct Matter ID, `$6.88` payment amount, Wise reference, no duplicate Matter, and no duplicate payment event.
+11. Confirm the same Matter records the Wise submission exactly once. Verify correct Matter ID, `$6.88` observed amount, Wise reference, `payment_observed_at`, settlement state, no duplicate Matter, and no duplicate payment event. If settlement is still pending, the Matter must remain not-paid/uncleared.
 
-12. Attempt scheduling again. PASS only if scheduling is now unlocked. Complete one test appointment.
+12. Attempt scheduling again. PASS only if the valid observed Wise submission unlocks scheduling for the same Matter. Complete one test appointment. Scheduling must not wait for final settlement reconciliation.
 
 13. Verify the client portal remains accessible using the same confirmed client account. Test Forgot Password separately: request a reset, open the email, set a new password, return to login, and verify the same client Matter remains attached. Password recovery must not create a second account or Matter.
 
 14. Test the operator/admin account separately at `https://themilanoseal.com/login`. Verify authorized operator/admin routing. Do not use the operator account as the client identity.
 
-15. Advance the same Matter through:
+15. Advance the same Matter through the governed post-payment corridor:
 
 ```text
 Scheduled
-→ Execution / RON
-→ Apostille
-→ Release / Courier
-→ Delivery
-→ Complete
+→ BlueNotary session starts
+→ in_execution
+→ BlueNotary session completes
+→ signed documents retrieved
+→ explicit Apostille QA approval
+→ apostille_processing
+→ release / courier only when its separate release gates are satisfied
+→ in_transit
+→ delivered
+→ completed
 ```
+
+If the notarial act is `review_required`, stop before BlueNotary session creation. The client must never guess acknowledgment vs jurat. Milano/operator review must resolve the actual document requirement first.
 
 After each material transition, verify client/operator/Supabase parity for the same Matter.
 
@@ -116,6 +123,11 @@ Capture and return:
 - itemized portal order screenshot
 - `TIFFTEST99` before/after screenshot
 - Wise `$6.88` reference and payment screenshot
+- scheduling confirmation after observed Wise submission
+- BlueNotary session evidence
+- `in_execution` Matter state after provider session start
+- signed-document retrieval evidence
+- Apostille QA approval and `apostille_processing` Matter state
 - password-reset PASS / FAIL
 - any error screenshots
 - PASS / FAIL for Steps 1–15
@@ -129,15 +141,16 @@ Verified client account
 → itemized $1,375.00 Matter order
 → TIFFTEST99 entered on Invoice & Payment
 → $13.75 final Matter total
-→ $6.88 Wise retainer
-→ verified payment exactly once
-→ scheduling unlock
-→ portal parity
-→ execution
-→ apostille
-→ release/courier
+→ $6.88 Wise submission observed exactly once
+→ scheduling unlock while settlement may remain pending
+→ BlueNotary provider execution
+→ canonical in_execution state
+→ signed documents retrieved
+→ explicit Apostille QA approval
+→ apostille_processing
+→ settlement-governed release/courier
 → delivery
 → complete
 ```
 
-Any duplicate Matter, duplicate payment, false-success state, mismatched data, unauthorized lifecycle mutation, payment-gate bypass, discount applied without client action, or password-reset account split is NO-GO.
+Any duplicate Matter, duplicate payment, false-success state, mismatched data, unauthorized lifecycle mutation, payment-gate bypass, observed submission falsely marked paid, automatic apostille advancement without QA, discount applied without client action, or password-reset account split is NO-GO.
