@@ -155,7 +155,7 @@ if (!/NEW\.status\s*=\s*'scheduled'[\s\S]*observed_submission_valid/i.test(obser
 if (!/NEW\.status\s*<>\s*'scheduled'[\s\S]*provider_payment_valid/i.test(observedWiseGate)) {
   throw new Error("079 later execution progression must require stronger Wise provider evidence");
 }
-if (/payment_status\s*=\s*'paid'[\s\S]*payment_observed_at/i.test(observedWiseGate)) {
+if (/(?:set\s+payment_status|payment_status\s*:=)\s*'paid'/i.test(observedWiseGate)) {
   throw new Error("079 must never author paid state from observed or provider-processing Wise evidence");
 }
 
