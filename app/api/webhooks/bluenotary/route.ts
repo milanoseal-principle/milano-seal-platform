@@ -11,23 +11,68 @@ export async function GET() {
   return NextResponse.json({ ok: true }, { status: 200 });
 }
 
+async function writeTransitionReview(
+  supabase: ReturnType<typeof createAdminClient>,
+  matterId: string,
+  ronSessionId: string,
+  providerEvent: string,
+  currentStatus: string,
+  reason: string
+) {
+  await supabase.from('ron_audit_events').insert({
+    matter_id: matterId,
+    ron_session_id: ronSessionId,
+    event_type: 'MATTER_EXECUTION_TRANSITION_REVIEW_REQUIRED',
+    description: `BlueNotary execution evidence could not advance the Matter automatically: ${reason}`,
+    actor_role: 'system',
+    source: 'bluenotary_webhook',
+    metadata: {
+      provider_event: providerEvent,
+      current_matter_status: currentStatus || null,
+      requested_matter_status: 'in_execution',
+      reason,
+    },
+  });
+}
+
 async function advanceMatterIntoExecution(
   supabase: ReturnType<typeof createAdminClient>,
   matterId: string,
   ronSessionId: string,
   providerEvent: string
 ) {
-  const { data: matter } = await supabase
+  const { data: matter, error: matterError } = await supabase
     .from('deals')
     .select('id, deal_id, status, deal_status')
     .eq('id', matterId)
     .maybeSingle();
 
-  if (!matter) return;
+  if (matterError || !matter) {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      '',
+      'Matter record could not be loaded'
+    );
+    return;
+  }
 
   const current = String(matter.deal_status ?? matter.status ?? '');
   if (current === 'in_execution') return;
-  if (current !== 'scheduled') return;
+
+  if (current !== 'scheduled') {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      current,
+      'Matter is not in the canonical scheduled state'
+    );
+    return;
+  }
 
   const now = new Date().toISOString();
   let update = supabase
@@ -47,7 +92,17 @@ async function advanceMatterIntoExecution(
     : update.eq('deal_status', matter.deal_status);
 
   const { data: advanced, error } = await update.select('id').maybeSingle();
-  if (error || !advanced) return;
+  if (error || !advanced) {
+    await writeTransitionReview(
+      supabase,
+      matterId,
+      ronSessionId,
+      providerEvent,
+      current,
+      'Matter state changed before the provider transition completed'
+    );
+    return;
+  }
 
   await supabase.from('ron_audit_events').insert({
     matter_id: matterId,
@@ -60,6 +115,7 @@ async function advanceMatterIntoExecution(
       provider_event: providerEvent,
       previous_matter_status: 'scheduled',
       matter_status: 'in_execution',
+      execution_at: now,
     },
   });
 }
@@ -84,16 +140,6 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
   const eventHash = computeEventHash(payload);
-
-  const { data: existing } = await supabase
-    .from('ron_webhook_events')
-    .select('id')
-    .eq('event_hash', eventHash)
-    .maybeSingle();
-
-  if (existing) {
-    return NextResponse.json({ ok: true, duplicate: true });
-  }
 
   let ronSessionId: string | null = null;
   let matterId: string | null = null;
@@ -124,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  await supabase.from('ron_webhook_events').insert({
+  const { error: eventInsertError } = await supabase.from('ron_webhook_events').insert({
     event_hash: eventHash,
     notarization_id: payload.notarization_id ?? null,
     bn_session_id: payload.bn_session_id ?? null,
@@ -138,6 +184,18 @@ export async function POST(request: NextRequest) {
     raw_payload: redactBNPayload(payload) as object,
     received_at: new Date().toISOString(),
   });
+
+  if (eventInsertError) {
+    if (eventInsertError.code === '23505') {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+
+    console.error(
+      '[BN webhook] Failed to persist event',
+      redactBNPayload({ error: eventInsertError.message, code: eventInsertError.code })
+    );
+    return NextResponse.json({ error: 'Webhook persistence failed' }, { status: 500 });
+  }
 
   if (!ronSessionId) {
     console.warn('[BN webhook] Unknown session for event', {
@@ -186,15 +244,16 @@ export async function POST(request: NextRequest) {
       break;
   }
 
-  await supabase
+  const { error: sessionUpdateError } = await supabase
     .from('ron_sessions')
     .update(sessionUpdate)
     .eq('id', ronSessionId);
 
-  if (
-    matterId &&
-    (payload.event_type === 'session_started' || payload.event_type === 'session_completed')
-  ) {
+  if (sessionUpdateError) {
+    return NextResponse.json({ error: 'RON session update failed' }, { status: 500 });
+  }
+
+  if (matterId && payload.event_type === 'session_started') {
     await advanceMatterIntoExecution(supabase, matterId, ronSessionId, payload.event_type);
   }
 
@@ -270,6 +329,7 @@ export async function POST(request: NextRequest) {
                 matter_id: session.matter_id,
                 document_name: safeName,
                 blue_notary_document_name: doc.document_name,
+                storage_bucket: 'documents',
                 signed_storage_path: storagePath,
                 signed_document_received: true,
                 document_status: 'SIGNED',
@@ -281,8 +341,6 @@ export async function POST(request: NextRequest) {
           (doc as { base64_content?: string }).base64_content = '';
         }
 
-        // Signed-document retrieval is provider evidence only. Apostille advancement
-        // remains an explicit operator QA action through advance-to-apostille.
         await supabase
           .from('ron_sessions')
           .update({
