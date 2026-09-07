@@ -38,7 +38,16 @@ alter table public.deals
       and (courier_provider_rate is null or courier_provider_rate >= 0)
     );
 
+-- Reconcile the checked-in Shippo custody contract with production before the
+-- new quote-to-label path depends on it. These are additive compatibility fields.
 alter table public.shippo_shipments
+  add column if not exists label_file_type text default 'PDF',
+  add column if not exists shippo_status text,
+  add column if not exists address_from jsonb not null default '{}'::jsonb,
+  add column if not exists address_to jsonb not null default '{}'::jsonb,
+  add column if not exists parcel jsonb not null default '{}'::jsonb,
+  add column if not exists customs_declaration_id text,
+  add column if not exists customs_required boolean not null default false,
   add column if not exists provider_rate_amount numeric(12,2),
   add column if not exists tier_courier_credit numeric(12,2) not null default 0,
   add column if not exists client_courier_charge numeric(12,2) not null default 0,
