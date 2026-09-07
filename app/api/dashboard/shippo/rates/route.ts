@@ -5,6 +5,7 @@ import {
   createShippoCustomsDeclaration,
   createShippoCustomsItem,
   createShippoShipment,
+  getShippoShipment,
 } from "@/lib/shippo/client";
 import {
   buildReturnAddress,
@@ -19,13 +20,16 @@ import {
 } from "@/lib/shippo/customs";
 import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
 import { rankApprovedRates } from "@/lib/shippo/rateSelection";
+import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createHash } from "node:crypto";
 import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
 import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 
 export const dynamic = "force-dynamic";
 
 async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, matterId: string) {
-  const fields = "id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, amount_due, amount_paid, tier, status";
+  const fields = "id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, payment_observed_at, amount_due, amount_paid, tier, status";
 
   const byId = await supabase.from("deals").select(fields).eq("id", matterId).maybeSingle();
   if (byId.data) return byId;
@@ -55,13 +59,6 @@ export async function POST(req: NextRequest) {
 
     const { data: matter, error: mErr } = await loadMatter(supabase, matter_id);
     if (mErr || !matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
-
-    try {
-      assertPaymentConfirmed(matter, "rate_preview");
-    } catch (err) {
-      const code = err instanceof PaymentGateError ? err.code : "PAYMENT_REQUIRED";
-      return NextResponse.json({ error: code, message: "Payment must be confirmed before rate preview." }, { status: 402 });
-    }
 
     const recipient = buildRecipientAddressFromMatter(matter);
     const validationErrors = validateMilanoShippingAddress(recipient);
@@ -141,5 +138,129 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const role = roleFromEmail(user.email);
+    if (!["founder_admin", "admin_operator"].includes(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { matter_id, shipment_id, selected_rate_id } = await req.json();
+    if (!matter_id || !shipment_id || !selected_rate_id) {
+      return NextResponse.json({ error: "matter_id, shipment_id, and selected_rate_id required" }, { status: 400 });
+    }
+    if (!process.env.SHIPPO_API_KEY) return NextResponse.json({ error: "Shippo not configured" }, { status: 503 });
+
+    const { data: matter, error: matterError } = await loadMatter(supabase, matter_id);
+    if (matterError || !matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
+
+    const admin = createAdminClient();
+    const { data: exactExisting, error: existingError } = await admin
+      .from("shippo_shipments")
+      .select("*")
+      .eq("matter_id", matter.id)
+      .eq("shippo_shipment_id", shipment_id)
+      .maybeSingle();
+    if (existingError) return NextResponse.json({ error: "RATE_SNAPSHOT_LOOKUP_FAILED" }, { status: 500 });
+    let existing = exactExisting;
+    if (!existing) {
+      const { data: priorSelection, error: priorError } = await admin
+        .from("shippo_shipments")
+        .select("*")
+        .eq("matter_id", matter.id)
+        .in("rate_status", ["SHIPPING_RATE_SELECTED", "SHIPPING_ADJUSTMENT_REQUIRED"])
+        .order("rate_selected_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (priorError) return NextResponse.json({ error: "RATE_SNAPSHOT_LOOKUP_FAILED" }, { status: 500 });
+      existing = priorSelection;
+    }
+
+    const paymentObserved = Boolean((matter as { payment_observed_at?: string | null }).payment_observed_at);
+    if (paymentObserved) {
+      if (existing?.shippo_rate_id === selected_rate_id) {
+        return NextResponse.json({
+          success: true,
+          existing: true,
+          matter_id: matter.id,
+          shipment: {
+            id: existing.id,
+            shippo_shipment_id: existing.shippo_shipment_id,
+            shippo_rate_id: existing.shippo_rate_id,
+            carrier: existing.carrier,
+            service_level: existing.service_level,
+            provider_rate_amount: existing.provider_rate_amount,
+            tier_courier_credit: existing.tier_courier_credit,
+            client_courier_charge: existing.client_courier_charge,
+            rate_currency: existing.rate_currency,
+            rate_status: existing.rate_status,
+          },
+        });
+      }
+      if (existing?.id) {
+        await admin.from("shippo_shipments").update({ rate_status: "SHIPPING_ADJUSTMENT_REQUIRED" }).eq("id", existing.id);
+      }
+      return NextResponse.json({ error: "SHIPPING_ADJUSTMENT_REQUIRED" }, { status: 409 });
+    }
+
+    const shipment = await getShippoShipment(shipment_id);
+    const approved = filterApprovedRates(shipment.rates);
+    const selected = approved.find((rate) => rate.object_id === selected_rate_id);
+    if (!selected) return NextResponse.json({ error: "SHIPPO_RATE_UNAVAILABLE" }, { status: 422 });
+
+    const destinationCountry = matter.destination_country ?? matter.country ?? "US";
+    const ranked = rankApprovedRates({ rates: approved, lane: matter.tier, destinationCountry });
+    const rankedSelection = ranked.find(({ rate }) => rate.object_id === selected_rate_id);
+    const pricing = calculateCourierCharge({ providerRateAmount: selected.amount, currency: selected.currency, tier: matter.tier });
+    const selectedAt = new Date().toISOString();
+    const snapshot = {
+      matter_id: matter.id,
+      shippo_shipment_id: shipment_id,
+      shippo_rate_id: selected.object_id,
+      provider_rate_amount: pricing.providerRateAmount,
+      tier_courier_credit: pricing.tierCourierCredit,
+      client_courier_charge: pricing.clientCourierCharge,
+      rate_currency: pricing.currency,
+      carrier: selected.provider,
+      service_level: selected.servicelevel.name,
+      selected_service_level: selected.servicelevel.token,
+      selection_policy: rankedSelection?.selectionPolicy ?? "OPERATOR_CONFIRMED",
+      selection_reason: rankedSelection?.selectionReason ?? "Operator selected an approved carrier rate.",
+      rate_selected_at: selectedAt,
+      rate_status: "SHIPPING_RATE_SELECTED",
+      selected_by: user.id,
+      updated_at: selectedAt,
+    };
+    const pricingSnapshotHash = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+    const write = existing?.id
+      ? await admin.from("shippo_shipments").update({ ...snapshot, pricing_snapshot_hash: pricingSnapshotHash }).eq("id", existing.id).select().single()
+      : await admin.from("shippo_shipments").insert({ ...snapshot, pricing_snapshot_hash: pricingSnapshotHash, created_by: user.id }).select().single();
+    if (write.error) return NextResponse.json({ error: "RATE_SNAPSHOT_PERSIST_FAILED" }, { status: 500 });
+
+    return NextResponse.json({
+      success: true,
+      existing: Boolean(existing),
+      matter_id: matter.id,
+      shipment: {
+        id: write.data.id,
+        shippo_shipment_id: write.data.shippo_shipment_id,
+        shippo_rate_id: write.data.shippo_rate_id,
+        carrier: write.data.carrier,
+        service_level: write.data.service_level,
+        provider_rate_amount: write.data.provider_rate_amount,
+        tier_courier_credit: write.data.tier_courier_credit,
+        client_courier_charge: write.data.client_courier_charge,
+        rate_currency: write.data.rate_currency,
+        rate_status: write.data.rate_status,
+      },
+    });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
   }
 }

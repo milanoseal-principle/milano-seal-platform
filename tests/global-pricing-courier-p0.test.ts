@@ -3,6 +3,7 @@ import test from "node:test";
 import { TIERS } from "../lib/pricing";
 import { calculateCourierCharge } from "../lib/shippo/courierCredit";
 import { calculateMatterPricing, normalizeAuthenticationRoute } from "../lib/pricing/canonicalMatterPricing";
+import { readFileSync } from "node:fs";
 
 test("three execution tiers remain canonical and separate from courier economics", () => {
   assert.deepEqual(
@@ -30,6 +31,21 @@ test("Executive applies no more than one hundred dollars", () => {
   const result = calculateCourierCharge({ providerRateAmount: "192.40", currency: "USD", tier: "Executive" });
   assert.equal(result.tierCourierCredit, "100.00");
   assert.equal(result.clientCourierCharge, "92.40");
+});
+
+test("locked courier examples use exact integer-cent economics", () => {
+  const fixtures = [
+    ["signature", "71.85", 0, 7185],
+    ["priority", "71.85", 5000, 2185],
+    ["priority", "32.00", 3200, 0],
+    ["executive", "92.40", 9240, 0],
+    ["executive", "140.00", 10000, 4000],
+  ] as const;
+  for (const [tier, amount, credit, charge] of fixtures) {
+    const result = calculateCourierCharge({ providerRateAmount: amount, currency: "USD", tier });
+    assert.equal(result.tierCourierCreditCents, credit);
+    assert.equal(result.clientCourierChargeCents, charge);
+  }
 });
 
 test("provider rates fail closed instead of using floating point or currency conversion", () => {
@@ -72,4 +88,23 @@ test("pending authority fees do not become confirmed zero-value pricing", () => 
   assert.equal(pricing.authentication[0].amountCents, null);
   assert.equal(pricing.courier?.clientChargeCents, 0);
   assert.equal(pricing.finalPriceConfirmed, false);
+});
+
+test("prepayment rate preview remains operator-governed without authoring payment or custody truth", () => {
+  const route = readFileSync("app/api/dashboard/shippo/rates/route.ts", "utf8");
+  assert.match(route, /if \(!user\?\.email\).*401/);
+  assert.match(route, /founder_admin.*admin_operator/);
+  assert.doesNotMatch(route, /assertPaymentConfirmed/);
+  assert.doesNotMatch(route, /paid_and_released\s*:/);
+  assert.doesNotMatch(route, /purchaseShippoLabel/);
+  assert.doesNotMatch(route, /tracking_number\s*:/);
+  assert.doesNotMatch(route, /custody_events/);
+});
+
+test("label creation continues the persisted shipment row and rejects rate substitution", () => {
+  const route = readFileSync("app/api/dashboard/shippo/labels/route.ts", "utf8");
+  assert.match(route, /persistedShipment\?\.shippo_rate_id/);
+  assert.match(route, /SHIPPO_RATE_SELECTION_MISMATCH/);
+  assert.match(route, /\.update\(shipmentRecord\)\.eq\("id", persistedShipment\.id\)/);
+  assert.match(route, /SHIPPO_RATE_UNAVAILABLE/);
 });
