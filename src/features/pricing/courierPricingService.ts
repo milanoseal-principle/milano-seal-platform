@@ -12,7 +12,7 @@ export interface ApplyShippoRateParams {
   actorEmail?: string | null;
   addressFrom: ShippoAddress;
   addressTo: ShippoAddress;
-  parcel: ShippoParcel;
+  parcel?: ShippoParcel | null;
   customsDeclarationId?: string | null;
   customsRequired?: boolean;
 }
@@ -28,16 +28,19 @@ interface PricingRpcRow {
 
 function money(value: number | string | null | undefined): number {
   const parsed = Number(value ?? 0);
-  if (!Number.isFinite(parsed)) throw new Error("COURIER_PRICING_INVALID_TOTAL");
+  if (!Number.isFinite(parsed)) {
+    throw new Error("COURIER_PRICING_INVALID_TOTAL");
+  }
   return Math.round(parsed * 100) / 100;
 }
 
 export async function applySelectedShippoRate(params: ApplyShippoRateParams) {
   const admin = createAdminClient();
+  const lane = await resolveMatterLane(params.matterId);
   const courier = calculateCourierCharge({
     providerRateAmount: params.rate.amount,
     currency: params.rate.currency,
-    tier: await resolveMatterLane(params.matterId),
+    tier: lane,
   });
 
   const { data, error } = await admin.rpc("apply_shippo_rate_to_matter", {
@@ -54,7 +57,7 @@ export async function applySelectedShippoRate(params: ApplyShippoRateParams) {
     p_actor_id: params.actorId,
     p_address_from: params.addressFrom,
     p_address_to: params.addressTo,
-    p_parcel: params.parcel,
+    p_parcel: params.parcel ?? {},
     p_customs_declaration_id: params.customsDeclarationId ?? null,
     p_customs_required: Boolean(params.customsRequired),
   });
@@ -69,7 +72,9 @@ export async function applySelectedShippoRate(params: ApplyShippoRateParams) {
     .select("id,deal_id,currency")
     .eq("id", params.matterId)
     .single();
-  if (matterError || !matter) throw matterError ?? new Error("MATTER_NOT_FOUND");
+  if (matterError || !matter) {
+    throw matterError ?? new Error("MATTER_NOT_FOUND");
+  }
 
   const currency = String(matter.currency ?? courier.currency ?? "USD").toUpperCase();
   const paymentReference = String(matter.deal_id ?? matter.id);
@@ -90,10 +95,12 @@ export async function applySelectedShippoRate(params: ApplyShippoRateParams) {
     matterId: params.matterId,
     actorEmail: params.actorEmail,
     eventType: "SHIPPO_RATE_SELECTED",
-    message: "Provider-backed courier rate selected and canonical Matter pricing recalculated before Wise submission.",
+    message:
+      "Provider-backed courier rate selected and canonical Matter pricing recalculated before Wise submission.",
     metadata: {
       shippoShipmentId: params.shipmentId,
       shippoRateId: params.rate.object_id,
+      lane,
       carrier: params.rate.provider,
       serviceLevel: params.rate.servicelevel.name,
       estimatedDays: params.rate.estimated_days ?? null,
