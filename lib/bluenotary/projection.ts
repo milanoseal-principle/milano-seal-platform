@@ -35,7 +35,7 @@ export function portalRONProjection(
   signerEmail: string
 ): PortalRONView {
   const status = ronSession.milano_ron_status;
-  const paymentConfirmed = ronSession.payment_gate_status === 'UNLOCKED';
+  const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
   const sessionActive = ACTIVE_RON_STATUSES.includes(status);
 
   // Find the signer matching the requesting portal user
@@ -48,7 +48,7 @@ export function portalRONProjection(
   if (
     matchingSigner &&
     matchingSigner.signing_url_released === true &&
-    paymentConfirmed &&
+    schedulingAuthorized &&
     sessionActive &&
     matchingSigner.signing_url_encrypted
   ) {
@@ -61,6 +61,7 @@ export function portalRONProjection(
     session_id: ronSession.id,
     milano_ron_status: status,
     client_label: getClientStatusLabel(status),
+    scheduling_authorized: schedulingAuthorized,
     payment_confirmed: paymentConfirmed,
     scheduling_authorized: paymentConfirmed,
     session_active: sessionActive,

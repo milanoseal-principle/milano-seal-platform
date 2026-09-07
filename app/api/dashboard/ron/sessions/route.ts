@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
       .from('ron_sessions')
       .select('id, matter_id, notarization_id, milano_ron_status, created_at')
       .eq('matter_id', matter_id)
+      .not(
+        'milano_ron_status',
+        'in',
+        '("RON_EXPIRED","RON_COMPLETED","SIGNED_DOCS_RETRIEVED","READY_FOR_APOSTILLE")'
+      )
       .not('milano_ron_status', 'in', '("RON_EXPIRED")')
       .order('created_at', { ascending: false })
       .limit(1)

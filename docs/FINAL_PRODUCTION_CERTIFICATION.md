@@ -1,5 +1,23 @@
 # The Milano Seal™ — Final Production Certification
 
+## Current classification
+
+**NOT YET 10/10**
+
+The repository gates can establish source-level invariants, but they cannot
+substitute for one provider-backed production transaction. Until the controlled
+Matter, production deployment, provider evidence, mailbox delivery, runtime
+logs, and exact deployed SHA are recorded below, the controlling result is:
+
+```text
+LIVE TRANSACTION TEST: FAIL
+PRODUCTION: BLOCKED
+```
+
+This is a fail-closed certification state, not a statement that a production
+transaction failed. Blank live evidence remains unverified and cannot be
+promoted to PASS by a build or source validator.
+
 **Document Reference:** MS-OPS-FINALCERT-2026-V1
 **CERTIFIED PRODUCTION SHA:** `________________________`
 **Run from:** An environment with **live** Vercel, Wise, and Supabase production access

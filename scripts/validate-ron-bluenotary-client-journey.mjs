@@ -10,6 +10,7 @@ const guard = read("lib/bluenotary/guards.ts");
 const sessions = read("app/api/dashboard/ron/sessions/route.ts");
 const webhook = read("app/api/webhooks/bluenotary/route.ts");
 const progress = read("components/portal/ClientProgressSpine.tsx");
+const operatorReadiness = read("components/ron/MatterRONReadiness.tsx");
 
 assert.match(portal, /evaluateSchedulingGate/, "portal must consume canonical scheduling authority");
 assert.match(portal, /Milano review required/);
@@ -17,6 +18,15 @@ assert.doesNotMatch(portal + card, /Choose Jurat|Choose Acknowledgment|Pay Again
 assert.match(card, /Wise settlement verification continues automatically/);
 assert.match(card, /Enter Secure Signing Room/);
 assert.match(projection, /signing_url_released === true/);
+assert.match(projection, /const schedulingAuthorized = ronSession\.payment_gate_status === 'UNLOCKED'/);
+assert.doesNotMatch(projection, /payment_confirmed:/);
+assert.match(guard, /verifySchedulingAuthorized/);
+assert.doesNotMatch(guard, /is_platform_fee_only'/, "RON reads must not query the removed schema column");
+assert.doesNotMatch(operatorReadiness, /is_platform_fee_only/, "operator readiness must not query the removed schema column");
+assert.match(sessions, /duplicate: true/);
+for (const terminalStatus of ["RON_EXPIRED", "RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"]) {
+  assert.match(sessions, new RegExp(terminalStatus));
+}
 assert.match(guard, /verifySchedulingAuthorized/);
 assert.doesNotMatch(guard, /is_platform_fee_only'/, "RON reads must not query the removed schema column");
 assert.match(sessions, /duplicate: true/);

@@ -8,6 +8,7 @@ const returned = read("app/portal/ron/complete/page.tsx");
 const card = read("components/ron/PortalRONStatusCard.tsx");
 const sessions = read("app/api/dashboard/ron/sessions/route.ts");
 const guards = read("lib/bluenotary/guards.ts");
+const projection = read("lib/bluenotary/projection.ts");
 
 test("portal RON consumes canonical scheduling and keeps Wise settlement separate", () => {
   assert.match(portal, /evaluateSchedulingGate/);
@@ -15,6 +16,8 @@ test("portal RON consumes canonical scheduling and keeps Wise settlement separat
   assert.match(card, /Wise settlement verification continues automatically/);
   assert.match(card, /No additional payment is required/);
   assert.doesNotMatch(portal + card, /Pay Again|Payment Required/i);
+  assert.match(projection, /const schedulingAuthorized/);
+  assert.doesNotMatch(projection, /payment_confirmed:/);
 });
 
 test("client never chooses or guesses the notarial act", () => {
@@ -26,6 +29,12 @@ test("client never chooses or guesses the notarial act", () => {
 test("BlueNotary creation stays canonical and idempotent", () => {
   assert.match(sessions, /assertCanCreateRONSession/);
   assert.match(sessions, /duplicate: true/);
+  for (const terminalStatus of ["RON_EXPIRED", "RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"]) {
+    assert.match(sessions, new RegExp(terminalStatus));
+  }
+  assert.match(guards, /verifySchedulingAuthorized/);
+  assert.doesNotMatch(guards, /\.select\([^)]*is_platform_fee_only/);
+  assert.doesNotMatch(read("components/ron/MatterRONReadiness.tsx"), /is_platform_fee_only/);
   assert.match(guards, /verifySchedulingAuthorized/);
   assert.doesNotMatch(guards, /\.select\([^)]*is_platform_fee_only/);
 });

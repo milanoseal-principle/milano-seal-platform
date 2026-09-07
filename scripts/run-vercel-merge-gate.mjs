@@ -70,6 +70,7 @@ const gates = [
   ["node", ["scripts/validate-sensitive-identity-helper-grants.mjs"]],
   ["node", ["scripts/validate-ron-signing-room-ux.mjs"]],
   ["node", ["scripts/validate-ron-bluenotary-client-journey.mjs"]],
+  ["node", ["scripts/validate-production-transaction-10of10.mjs"]],
 ];
 
 for (const [command, args] of gates) {
