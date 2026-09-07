@@ -42,6 +42,26 @@ No generated legal document, invoice, payment instruction, or release package
 may use an AI-reproduced critical identifier when an authoritative structured
 value exists.
 
+**Wise authority separation (non-negotiable):**
+
+```text
+DISCOUNT / QUOTE
+→ pricing only
+
+INTEGRITY-MATCHED WISE SUBMISSION OBSERVED
+→ scheduling authority only
+
+WISE PROVIDER EVIDENCE
+→ execution / signer-link authority where governed
+
+WISE VERIFIED / SETTLED PAYMENT + RELEASE CONTROLS
+→ final payment truth / release authority
+```
+
+An observed Wise submission may unlock scheduling while settlement is still
+pending. It must not set `payment_confirmed`, must not set `payment_status=paid`,
+and must not authorize final release.
+
 **Entry status:**
 
 ```
@@ -61,7 +81,7 @@ evidence field = **NO-GO**.
 
 This document is the current release authority. Gates are certified in order:
 
-```
+```text
 A. Existing infrastructure / security prerequisites   (MS-OPS-GOLIVE-2026-V1, legacy)
 B. Current production code + external merge gate       (exact CERTIFIED PRODUCTION SHA — PASS required)
 C. Live Vercel certification                           (Phase 1)
@@ -84,8 +104,8 @@ infrastructure clearance only (order item A).
 The repository does **not** depend on GitHub-hosted Actions for launch certification.
 Every Vercel preview/production deployment executes `node scripts/run-vercel-merge-gate.mjs` before `next build`.
 That command runs the canonical validators, typecheck, lint, test suite, production-governance,
-Damiani wiring, and TIFF certification checks. A failed gate prevents the Vercel deployment
-from reaching a successful status.
+Damiani wiring, TIFF certification checks, and explicit module/motion/data-intelligence
+validators. A failed gate prevents the Vercel deployment from reaching a successful status.
 
 For protected `main`, require the external status check:
 
@@ -141,23 +161,23 @@ Wise — execute a controlled, minimal payment only.
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
-| 2.5 | Controlled Wise payment made | ☐ / ☐ | wise txn id: __________ |
-| 2.6 | Server reconciles **amount** | ☐ / ☐ | — |
-| 2.7 | Server reconciles **currency** | ☐ / ☐ | — |
-| 2.8 | Server reconciles **reference** | ☐ / ☐ | — |
-| 2.9 | Server reconciles **transaction ID** | ☐ / ☐ | — |
-| 2.10 | `payment_confirmed` set | ☐ / ☐ | — |
-| 2.11 | TIFFTEST50 redeemed exactly **once** | ☐ / ☐ | usage_count: __________ |
-| 2.12 | Matter scheduled **only after** confirmation | ☐ / ☐ | status ts: __________ |
-| 2.13 | Portal paid / discount state correct | ☐ / ☐ | screenshot: __________ |
+| 2.5 | Controlled Wise payment submitted | ☐ / ☐ | wise txn/reference: __________ |
+| 2.6 | Server validates observed **amount** for scheduling authority | ☐ / ☐ | — |
+| 2.7 | Server validates observed **currency** for scheduling authority | ☐ / ☐ | — |
+| 2.8 | Server validates observed **reference** for scheduling authority | ☐ / ☐ | — |
+| 2.9 | Provider reconciliation binds the **transaction ID** to the same Matter | ☐ / ☐ | — |
+| 2.10 | Final verified/settled Wise truth eventually sets `payment_confirmed` as applicable | ☐ / ☐ | — |
+| 2.11 | TIFFTEST50 redeemed exactly **once** through its governed redemption event | ☐ / ☐ | usage_count: __________ |
+| 2.12 | Matter scheduling unlocks after a valid integrity-matched Wise submission observation; final settlement may still be pending | ☐ / ☐ | observation + scheduling ts: __________ |
+| 2.13 | Portal distinguishes Submitted / Processing / Confirmed / Settled truth correctly | ☐ / ☐ | screenshot: __________ |
 
 **Negative test — deliberate mismatch is rejected**
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
-| 2.14 | A deliberately wrong amount / reference / currency is **rejected** and does **NOT** produce `payment_confirmed` or `scheduled` | ☐ / ☐ | rejection evidence: __________ |
+| 2.14 | A deliberately wrong amount / reference / currency is **rejected** and does **NOT** produce scheduling authority, `payment_confirmed`, or paid/settled truth | ☐ / ☐ | rejection evidence: __________ |
 
-**Idempotency — replay the same settlement / webhook**
+**Idempotency — replay the same observation / provider event / settlement**
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
@@ -172,7 +192,7 @@ Wise — execute a controlled, minimal payment only.
 ## PHASE 3 — DAMIANI DRY RUN
 
 Runs against **production** but **STOPS BEFORE PAYMENT**. No money moves. No
-redemption, no confirmation, no scheduling may occur.
+redemption, no payment observation, no confirmation, and no scheduling may occur.
 
 | # | Check | PASS / FAIL | Evidence ID |
 |---|-------|:-----------:|-------------|
@@ -192,7 +212,7 @@ redemption, no confirmation, no scheduling may occur.
 |---|-------|:-----------:|-------------|
 | 3.10 | DAMIANI50 `usage_count` = 0 | ☐ / ☐ | value: __________ |
 | 3.11 | No redemption row | ☐ / ☐ | — |
-| 3.12 | No `payment_confirmed` | ☐ / ☐ | — |
+| 3.12 | No `payment_observed_at` and no `payment_confirmed` | ☐ / ☐ | — |
 | 3.13 | No `scheduled` status | ☐ / ☐ | — |
 
 **Phase 3 result:** PASS / FAIL — recorded by: _______________
@@ -226,7 +246,7 @@ any AI-reproduced value. Enter the source used for each.
 
 Fields compared character-for-character:
 
-```
+```text
 legal name
 codice fiscale
 document identity
@@ -248,7 +268,7 @@ relationship-damaging failure class.
 
 **Exit status (fill in):**
 
-```
+```text
 LIVE VERCEL CERTIFICATION   PASS / FAIL
 WISE PRODUCTION E2E         PASS / FAIL
 DAMIANI DRY RUN             PASS / FAIL
@@ -294,13 +314,13 @@ Compare the server record and UI: `original_total`, `eligible_subtotal`, `non_di
 Apply TIFFTEST50 and capture `usage_count` before payment. Verify 50% applies only to canonical `eligible_subtotal`, non-discountable value is untouched, totals and the 50/50 invoice regenerate, payment remains unpaid, `payment_confirmed` remains false, and scheduling/execution remain locked. TIFFTEST50 is not a public reusable client discount.
 
 ### STEP 8 — WISE PAYMENT
-Use only approved production Wise configuration. Verify the Matter reference, amount, and currency exactly; never invent beneficiary/account details.
+Use only approved production Wise configuration. Verify the Matter reference, amount, and currency exactly; never invent beneficiary/account details. A successful client submission may create scheduling authority only after the server records an integrity-matched Wise observation.
 
 ### STEP 9 — WISE RECONCILIATION / IDEMPOTENCY
-Verify the same UUID/`deal_id` updates once, `payment_confirmed` is true, `amount_paid` is exact, the Wise transaction ID is preserved, there is no duplicate payment, and **TIFFTEST50 redeemed exactly once**. Replay the settlement/webhook and prove replay does not create a second redemption, payment, or state transition.
+Verify the same UUID/`deal_id` updates once. Preserve distinct truth for observed submission, provider-side Wise evidence, and final settlement. When final settlement is verified, `payment_confirmed`/paid truth and `amount_paid` must be exact. Preserve the Wise transaction ID, no duplicate payment, and **TIFFTEST50 redeemed exactly once** under its governed redemption rule. Replay the observation/provider event/settlement and prove replay does not create a second redemption, payment, or state transition.
 
 ### STEP 10 — PAYMENT → SCHEDULING GATE
-**Before verified payment: scheduling is blocked**. After verified payment it becomes eligible. Prove there is no client unlock, manual bypass, or generic-admin bypass.
+**Before a valid integrity-matched Wise submission observation: scheduling is blocked.** After the observation is recorded, scheduling becomes eligible even while final settlement is pending. Prove discount-only cannot unlock scheduling. Prove client observation alone cannot release the BlueNotary signer link when stronger provider evidence is required. Prove final international release remains separately settlement/release gated.
 
 ### STEP 11 — CLIENT PORTAL ENTRY
 Enter the **Matter Control Portal through the actual client path**, not an operator route. Verify client authentication, the correct Matter/payment state, and rejection of cross-client Matter access.
@@ -309,10 +329,10 @@ Enter the **Matter Control Portal through the actual client path**, not an opera
 For each applicable intake, payment, scheduling/update, execution, and release/delivery communication, distinguish notification generated from **notification actually delivered**. Record channel, provider delivery state where available, timestamp, and Matter ID/reference. An application function returning success is not delivery evidence.
 
 ### STEP 13 — PORTAL ↔ SUPABASE PARITY
-Perform a read-only comparison of canonical Matter truth and client projection for `deal_id`, `deal_status`, `payment_status`, `payment_confirmed`, `original_total`, `eligible_subtotal`, `discount_amount`, `final_total`, `invoice_retainer`, `invoice_balance`, `amount_due`, `amount_paid`, `currency`, documents, and timeline milestones. Also compare scheduling and execution state. No stale projection is permitted; the portal cannot report paid before canonical backend truth.
+Perform a read-only comparison of canonical Matter truth and client projection for `deal_id`, `deal_status`, `payment_status`, `payment_confirmed`, `payment_observed_at`, `payment_settlement_status`, `original_total`, `eligible_subtotal`, `discount_amount`, `final_total`, `invoice_retainer`, `invoice_balance`, `amount_due`, `amount_paid`, `currency`, documents, and timeline milestones. Also compare scheduling and execution state. No stale projection is permitted; the portal cannot report paid before canonical backend truth.
 
 ### STEP 14 — GOVERNED EXECUTION → CLOSE
-Use canonical controls and dedicated governed endpoints, never the generic founder status route when a dedicated endpoint exists. Follow the complete canonical chain without skipping: verified payment → `scheduled → in_execution` → execution QA → `apostille_processing` → apostille received/final payment/release controls → label/courier release → `in_transit → delivered → completed`. At every transition verify the predecessor, execution/payment truth, timestamp, activity/audit event, and portal update. The regression locks are explicit: apostille cannot skip execution; delivery cannot skip canonical release and transit stages.
+Use canonical controls and dedicated governed endpoints, never the generic founder status route when a dedicated endpoint exists. Follow the complete canonical chain without skipping: valid Wise scheduling authority → `scheduled`; stronger provider-side execution authority + BlueNotary provider evidence → `in_execution`; execution QA → `apostille_processing`; apostille/authentication completion + required settlement/release controls → label/courier release → `in_transit → delivered → completed`. At every transition verify the predecessor, execution/payment truth, timestamp, activity/audit event, and portal update. The regression locks are explicit: observed submission is not paid truth; signer-link release cannot rely on client observation alone; apostille cannot skip execution; delivery cannot skip canonical release and transit stages.
 
 ### STEP 15 — MOBILE UX / DEAD-ACTION SWEEP
 Repeat intake, payment, portal, documents, timeline, status, navigation, buttons, forms, modals, and download/open actions on mobile. Fail for clipping, overflow, dead/invisible controls, unclear next step, wrong status, stale amount, false-success UI/toast, inert active-looking controls, or operator controls leaking to a client.
@@ -347,7 +367,7 @@ Audit Secure Records Intake, Matter cockpit, SecurePaymentCard, Matter Control P
 
 ### QA code governance lock
 
-TIFFTEST50 remains governed: eligibility uses canonical subtotal, application changes the Matter obligation but not payment truth, redemption occurs only through verified Wise settlement, and single redemption survives replay. Do not remove usage controls for convenience. For future testing, use an approved reset/reissue lifecycle.
+TIFFTEST50 remains governed: eligibility uses canonical subtotal, application changes the Matter obligation but not payment truth, scheduling authority comes only from a valid integrity-matched Wise submission observation (or other canonical governed authority), execution authority remains stronger where required, redemption occurs only through its governed verified Wise event, and single redemption survives replay. Do not remove usage controls for convenience. For future testing, use an approved reset/reissue lifecycle.
 
 `NICKTEST50`: **DO NOT CREATE**, alter, activate, or migrate it unless a canonical production record or explicit founder-approved specification is first verified.
 
