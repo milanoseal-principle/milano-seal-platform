@@ -7,6 +7,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 const intake = read("app/dashboard/intake/page.tsx");
 const intakeCore = read("app/api/intake/core.ts");
 const route = read("app/api/dashboard/matters/[id]/execution-truth/route.ts");
+const atomicMigration = read("supabase/migrations/074_atomic_execution_courier_alliance.sql");
 const readiness = read("components/ron/MatterRONReadiness.tsx");
 const resolution = read("components/ron/NotarialActResolution.tsx");
 const executionPage = read("app/dashboard/matters/[matterId]/execution/page.tsx");
@@ -40,17 +41,18 @@ test("operator notarial act resolution is authenticated role governed and concur
   assert.match(route, /canPerformProtectedMatterTransition/);
   assert.match(route, /INVALID_NOTARIAL_ACT/);
   assert.match(route, /STALE_MATTER_STATE/);
-  assert.match(route, /\.eq\("updated_at", matter\.updated_at\)/);
+  assert.match(route, /p_expected_updated_at: matter\.updated_at/);
+  assert.match(atomicMigration, /where id = p_matter_id for update/);
+  assert.match(atomicMigration, /STALE_MATTER_STATE/);
 });
 
 test("notarial confirmation writes canonical execution truth plus governed Matter evidence", () => {
-  assert.match(route, /execution_truth:\s*nextTruth/);
-  assert.match(route, /notarial_act:\s*notarialAct/);
-  assert.match(route, /appendMatterEvidence/);
-  assert.match(route, /NOTARIAL_ACT_CONFIRMED/);
-  assert.match(route, /domain:\s*"execution"/);
-  assert.match(route, /priorValue:\s*priorNotarialAct/);
-  assert.match(route, /newValue:\s*notarialAct/);
+  assert.match(route, /confirm_matter_notarial_act/);
+  assert.match(route, /p_notarial_act:\s*notarialAct/);
+  assert.doesNotMatch(route, /appendMatterEvidence/);
+  assert.match(atomicMigration, /NOTARIAL_ACT_CONFIRMED/);
+  assert.match(atomicMigration, /'execution', 'operator'/);
+  assert.match(atomicMigration, /to_jsonb\(v_prior_act\), to_jsonb\(p_notarial_act\)/);
 });
 
 test("notarial resolution never authors payment truth", () => {

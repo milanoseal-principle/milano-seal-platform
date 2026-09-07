@@ -22,7 +22,7 @@ async function verifyPaymentConfirmed(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, amount_paid, amount_due, is_platform_fee_only')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, amount_paid, amount_due')
     .eq('id', matterId)
     .single();
 
@@ -32,7 +32,7 @@ async function verifyPaymentConfirmed(
 
   const integrity = evaluatePaymentIntegrity({
     payment_confirmed: data.payment_confirmed === true,
-    is_platform_fee_only: data.is_platform_fee_only === true,
+    is_platform_fee_only: Number(data.amount_due ?? 0) === 0,
     payment_status: data.payment_status,
   });
 
@@ -45,7 +45,7 @@ async function verifyPaymentConfirmed(
 
   const amountPaid = Number(data.amount_paid ?? 0);
   const amountDue = Number(data.amount_due ?? 0);
-  if (!data.is_platform_fee_only && amountDue > 0 && amountPaid + 0.005 < amountDue) {
+  if (amountDue > 0 && amountPaid + 0.005 < amountDue) {
     throw new RONGuardError(
       'PAYMENT_INSUFFICIENT',
       `Verified payment amount (${amountPaid}) is less than amount due (${amountDue})`
@@ -64,7 +64,7 @@ async function verifySchedulingAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
@@ -101,7 +101,7 @@ async function verifyExecutionPaymentAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, is_platform_fee_only, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
