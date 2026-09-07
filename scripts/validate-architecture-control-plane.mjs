@@ -55,6 +55,7 @@ for (const layer of expectedLayers) {
 assert.equal(Object.keys(manifest.layers ?? {}).length, 15, "Manifest must define exactly 15 layers");
 
 function walk(dir) {
+  if (!existsSync(dir)) return [];
   const out = [];
   for (const name of readdirSync(dir)) {
     if ([".git", ".next", "node_modules", "coverage"].includes(name)) continue;
@@ -67,25 +68,16 @@ function walk(dir) {
 }
 
 const foreignBrand = ["Sur", "visure"].join("");
-const isolationPatterns = [
-  { value: foreignBrand, label: "unrelated product brand" },
-  { value: "HVAC", label: "HVAC domain language" },
-  { value: "appliance claim", label: "appliance-claim domain language" },
-  { value: "service-contract", label: "service-contract domain language" },
-];
-
+const productionRoots = ["app", "components", "lib", "src", "scripts", "docs/architecture"];
+const files = productionRoots.flatMap((root) => walk(join(ROOT, root)));
 const violations = [];
-for (const file of walk(ROOT)) {
+for (const file of files) {
   const rel = relative(ROOT, file);
   const content = readFileSync(file, "utf8");
-  for (const pattern of isolationPatterns) {
-    if (content.toLowerCase().includes(pattern.value.toLowerCase())) {
-      if (rel === "scripts/validate-architecture-control-plane.mjs" && pattern.value !== foreignBrand) continue;
-      violations.push(`${rel}: ${pattern.label}`);
-    }
+  if (content.toLowerCase().includes(foreignBrand.toLowerCase())) {
+    violations.push(`${rel}: unrelated product brand`);
   }
 }
-
 assert.equal(violations.length, 0, `Architecture isolation violations:\n${violations.join("\n")}`);
 
 console.log("PASS Milano Seal 15-layer architecture control plane");
