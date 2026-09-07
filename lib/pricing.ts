@@ -1,6 +1,8 @@
 // INTERNAL PRICING ENGINE — DO NOT EXPOSE TO FRONTEND
-// Shared pricing constants consumed by dashboard, portal invoice, and payment gate.
+// Compatibility projection over the canonical pricing authority in src/features/pricing.
 // Never expose margin, base_cost, or internal notes to client surfaces.
+import { MILANO_PRICING } from "@/src/features/pricing/pricingEngine";
+
 export type ExecutionLane =
   | "RON_SIMPLE"
   | "MOBILE_STANDARD"
@@ -8,38 +10,35 @@ export type ExecutionLane =
   | "Priority"
   | "Executive";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Canonical tier constants — single source of truth
-// ─────────────────────────────────────────────────────────────────────────────
 export const TIERS = {
   signature: {
-    base: 750,
+    base: MILANO_PRICING.lanes.signature,
     clean_draft_override: 600,
     label: "Signature Lane",
-    description: "Standard execution for straightforward matters",
+    description: "Standard execution for straightforward Matters",
   },
   priority: {
-    base: 975,
+    base: MILANO_PRICING.lanes.priority,
     label: "Priority Lane",
-    description: "Expedited coordination and structured handling",
+    description: "Priority coordination and structured handling",
   },
   executive: {
-    base: 1850,
+    base: MILANO_PRICING.lanes.executive,
     label: "Executive Lane",
-    description: "High-touch coordination, time-sensitive or complex",
+    description: "High-touch coordination for time-sensitive or complex Matters",
   },
 } as const;
 
 export const COMPLEXITY = {
   additional_document: 75,
-  additional_signer: 150,
+  additional_signer: MILANO_PRICING.addOns.additionalSigner,
   notarized_signature: 25,
   international_signer: 200,
   multi_jurisdiction: 300,
 } as const;
 
 export const APOSTILLE_FEES = {
-  first: 250,
+  first: MILANO_PRICING.addOns.apostilleCoordination,
   additional: 150,
   executive_in_person_state_handling: 500,
   fbi_apostille: 750,
@@ -48,17 +47,19 @@ export const APOSTILLE_FEES = {
 export const URGENCY_FEES = {
   standard: 0,
   expedited: 200,
-  rush: 400,
-  same_day: 400,
+  rush: MILANO_PRICING.addOns.rushSameDayHandling,
+  same_day: MILANO_PRICING.addOns.rushSameDayHandling,
   weekend: 250,
   holiday: 350,
 } as const;
 
+// Domestic legacy dispatch remains a compatibility path. International courier
+// price is provider-backed through Shippo and must never be fabricated here.
 export const SHIPPING_FEES = {
   none: 0,
   standard_domestic: 45,
   expedited_domestic: 85,
-  international: 150,
+  international: 0,
 } as const;
 
 type Tier = keyof typeof TIERS;
@@ -101,9 +102,7 @@ function normalizeUrgency(urgency: unknown): UrgencyKey {
     holiday: "holiday",
     standard: "standard",
   };
-  return (
-    aliases[String(urgency ?? "standard").toLowerCase().trim()] ?? "standard"
-  );
+  return aliases[String(urgency ?? "standard").toLowerCase().trim()] ?? "standard";
 }
 
 function normalizeShipping(shipping: unknown): ShippingKey {
@@ -196,29 +195,18 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     toBool(params.cleanDraft) ||
     toBool(params.client_doc_ready);
 
-  const documentCount = Math.max(
-    1,
-    toInt(params.document_count ?? params.documentCount, 1),
-  );
-  const signerCount = Math.max(
-    1,
-    toInt(params.signer_count ?? params.signerCount, 1),
-  );
+  const documentCount = Math.max(1, toInt(params.document_count ?? params.documentCount, 1));
+  const signerCount = Math.max(1, toInt(params.signer_count ?? params.signerCount, 1));
   const notarizedSigCount = Math.max(
     0,
     toNonNegativeInt(
-      params.notarized_signature_count ??
-        params.signature_count ??
-        params.signatureCount,
+      params.notarized_signature_count ?? params.signature_count ?? params.signatureCount,
       0,
     ),
   );
   const intlSignerCount = Math.max(
     0,
-    toNonNegativeInt(
-      params.international_signer_count ?? params.internationalSignerCount,
-      0,
-    ),
+    toNonNegativeInt(params.international_signer_count ?? params.internationalSignerCount, 0),
   );
   const jurisdictionCount = Math.max(
     1,
@@ -237,10 +225,8 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     toBool(params.executive_state_handling) ||
     toBool(params.in_person_state_handling) ||
     toBool(params.direct_state_handling);
-  const fbiApostille =
-    toBool(params.fbi_apostille) || toBool(params.fbiApostille);
-  const manualAdj =
-    Number(params.manual_adjustment ?? params.manualAdjustment ?? 0) || 0;
+  const fbiApostille = toBool(params.fbi_apostille) || toBool(params.fbiApostille);
+  const manualAdj = Number(params.manual_adjustment ?? params.manualAdjustment ?? 0) || 0;
 
   const breakdown: PriceBreakdownItem[] = [];
   let base: number;
@@ -436,40 +422,23 @@ export function suggestTier(
     destinationCountry?: unknown;
   } = {},
 ): Tier {
-  const docCount = Math.max(
-    1,
-    toInt(params.document_count ?? params.documentCount, 1),
-  );
-  const signerCount = Math.max(
-    1,
-    toInt(params.signer_count ?? params.signerCount, 1),
-  );
-  const apostilleCount = Math.max(
-    0,
-    toInt(params.apostille_count ?? params.apostilleCount, 0),
-  );
+  const docCount = Math.max(1, toInt(params.document_count ?? params.documentCount, 1));
+  const signerCount = Math.max(1, toInt(params.signer_count ?? params.signerCount, 1));
+  const apostilleCount = Math.max(0, toInt(params.apostille_count ?? params.apostilleCount, 0));
   const intlSignerCount = Math.max(
     0,
-    toInt(
-      params.international_signer_count ?? params.internationalSignerCount,
-      0,
-    ),
+    toInt(params.international_signer_count ?? params.internationalSignerCount, 0),
   );
   const jurisdictionCount = Math.max(
     1,
     toInt(params.jurisdiction_count ?? params.jurisdictionCount, 1),
   );
   const urgency = normalizeUrgency(params.urgency ?? params.timeline);
-  const country = String(
-    params.destination_country ?? params.destinationCountry ?? "",
-  )
+  const country = String(params.destination_country ?? params.destinationCountry ?? "")
     .toLowerCase()
     .trim();
   const isInternational =
-    country &&
-    country !== "united states" &&
-    country !== "us" &&
-    country !== "usa";
+    country && country !== "united states" && country !== "us" && country !== "usa";
   const isExecutiveUrgency =
     urgency === "rush" || urgency === "same_day" || urgency === "holiday";
   const isComplex =
@@ -486,8 +455,9 @@ export function suggestTier(
     urgency === "weekend" ||
     docCount >= 2 ||
     apostilleCount >= 1
-  )
+  ) {
     return "priority";
+  }
   return "signature";
 }
 
@@ -517,25 +487,16 @@ export interface PricingData {
   witnesses?: number;
   witness_type?: "ron" | "in_person";
   after_hours?: boolean;
-  /** Normalized origin authority type — supplied by routing-normalizer */
   origin_authority_type?: string;
-  /** Raw document type — used in pricing guards */
   document_type?: string;
 }
 
-/**
- * P0 Pricing guard: if document_type is an affidavit AND origin_authority_type
- * resolved to federal_document, do NOT auto-price as federal — flag for operator review.
- * Returns true if pricing should be blocked pending operator review.
- */
 export function shouldBlockFederalAffidaviitPricing(data: PricingData): boolean {
   const docType = (data.document_type || "").toLowerCase();
   const isAffidavit = docType.includes("affidavit");
   const isFederal = data.origin_authority_type === "federal_document";
   if (isAffidavit && isFederal) {
-    // Only allow if document explicitly indicates federal origin
-    const isExplicitlyFederal =
-      docType.includes("fbi") || docType.includes("federal");
+    const isExplicitlyFederal = docType.includes("fbi") || docType.includes("federal");
     return !isExplicitlyFederal;
   }
   return false;
@@ -556,7 +517,6 @@ function calcWitness(data: PricingData): number {
 }
 
 export function determineLaneAndPrice(data: PricingData): PricingResult {
-  // Colorado simple RON
   if (
     data.state === "Colorado" &&
     data.apostille === false &&
@@ -571,7 +531,7 @@ export function determineLaneAndPrice(data: PricingData): PricingResult {
       witness_total: wt,
     };
   }
-  // Florida mobile
+
   if (data.state === "Florida" && data.mobile === true) {
     const mileage = (data.miles || 0) * 2;
     const base = 135 + mileage;
@@ -584,22 +544,20 @@ export function determineLaneAndPrice(data: PricingData): PricingResult {
       witness_total: wt,
     };
   }
+
   let lane: ExecutionLane = "Signature";
-  let base = 750;
+  let base = TIERS.signature.base;
   if ((data.signers || 1) > 1 || data.translation) {
     lane = "Priority";
-    base = 975;
+    base = TIERS.priority.base;
   }
   if (data.urgency === "urgent" || data.multi_country) {
     lane = "Executive";
-    base = 1850;
+    base = TIERS.executive.base;
   }
   const wt = calcWitness(data);
   return { lane, base, total: base + wt, addons: [], witness_total: wt };
 }
-
-// ── Execution Intelligence Expansion — Structured Pricing Layer ───────────────
-// New canonical lane configs consumed by dashboard, portal invoice, payment gate.
 
 export type ExecutionLaneId = "signature" | "priority" | "executive";
 
@@ -615,46 +573,45 @@ export const EXECUTION_LANES: Record<ExecutionLaneId, ExecutionLaneConfig> = {
   signature: {
     id: "signature",
     label: "Signature Lane",
-    price: 750,
+    price: TIERS.signature.base,
     turnaround: "Standard",
     included: [
-      "Notarization / Document Execution",
-      "Florida Apostille Filing",
-      "Secure Document Handling",
-      "Shippo Courier Integration",
-      "Client Portal Access",
+      "Governed document execution coordination",
+      "Authentication routing when required",
+      "Secure document handling",
+      "Shippo courier orchestration",
+      "Client portal access",
     ],
   },
   priority: {
     id: "priority",
     label: "Priority Lane",
-    price: 975,
+    price: TIERS.priority.base,
     turnaround: "Priority",
     included: [
-      "Notarization / Document Execution",
-      "Florida Apostille Filing",
-      "Priority Processing Queue",
-      "Secure Document Handling",
-      "Shippo Courier Integration",
-      "Client Portal Access",
-      "Dedicated Coordinator Review",
+      "Governed document execution coordination",
+      "Priority authentication routing",
+      "Priority processing queue",
+      "Secure document handling",
+      "Up to $50 international courier credit",
+      "Client portal access",
+      "Coordinator review",
     ],
   },
   executive: {
     id: "executive",
     label: "Executive Lane",
-    price: 1850,
-    turnaround: "White Glove",
+    price: TIERS.executive.base,
+    turnaround: "High Touch",
     included: [
-      "Notarization / Document Execution",
-      "Florida Apostille Filing",
-      "White Glove Priority Processing",
-      "Secure Document Handling",
-      "Shippo Courier Integration",
-      "Client Portal Access",
-      "Dedicated Coordinator — Named Contact",
-      "Pre-Flight Document Review",
-      "Direct Coordinator Communication",
+      "Governed document execution coordination",
+      "Complex Hague / non-Hague route oversight",
+      "Priority exception management",
+      "Secure document handling",
+      "Up to $100 international courier credit",
+      "Client portal access",
+      "Senior execution oversight",
+      "Pre-flight document review",
     ],
   },
 };
@@ -678,20 +635,20 @@ export interface PricingAddon {
 export const PRICING_ADDONS: Record<PricingAddonId, PricingAddon> = {
   apostille: {
     id: "apostille",
-    label: "Apostille Processing",
-    price: 250,
-    included_in_lanes: ["signature", "priority", "executive"],
+    label: "Apostille Coordination",
+    price: APOSTILLE_FEES.first,
+    included_in_lanes: [],
   },
   rush: {
     id: "rush",
-    label: "Rush Processing",
-    price: 400,
+    label: "Rush / Same-Day Handling",
+    price: URGENCY_FEES.rush,
     included_in_lanes: [],
   },
   extraSigner: {
     id: "extraSigner",
     label: "Additional Signer",
-    price: 150,
+    price: COMPLEXITY.additional_signer,
     included_in_lanes: [],
   },
   witnessRemote: {
@@ -714,9 +671,9 @@ export const PRICING_ADDONS: Record<PricingAddonId, PricingAddon> = {
   },
   courier: {
     id: "courier",
-    label: "International Courier",
+    label: "International Courier — Provider Rate",
     price: 0,
-    included_in_lanes: ["signature", "priority", "executive"],
+    included_in_lanes: [],
   },
 };
 
@@ -751,7 +708,7 @@ export function computePricingBreakdown(
       return { id, label: addon.label, price: addon.price };
     });
 
-  const addOnsTotal = addOns.reduce((sum, a) => sum + a.price, 0);
+  const addOnsTotal = addOns.reduce((sum, addon) => sum + addon.price, 0);
   const total = basePrice + addOnsTotal;
   const balanceDue = Math.max(0, total - retainerPaid);
 
