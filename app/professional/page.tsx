@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, Globe2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, FileCheck2, Globe2, ShieldCheck } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { UniversalAttorneyJourney } from "@/components/professional/UniversalAttorneyJourney";
 import { PROFESSIONAL_CONVENTION_DESTINATIONS } from "@/lib/professional/universal-attorney-journey";
@@ -83,6 +83,13 @@ const questions = [
   ["How do I start?", "Carry the structured route directly into secure professional intake."],
 ] as const;
 
+const professionalFlow = [
+  ["01", "Send the Matter", "Counsel provides the destination, document, origin, signer posture, and known receiving-authority context."],
+  ["02", "Milano Structures Execution", "The U.S. execution path is organized without taking over legal strategy or document substance."],
+  ["03", "Uncertainty Stays Visible", "Anything requiring operator, authority, or receiving-party confirmation remains review-required."],
+  ["04", "Execution Proceeds", "Approved Matter scope moves through the canonical payment, scheduling, execution, custody, and release controls."],
+] as const;
+
 export default function ProfessionalHubPage() {
   return (
     <PublicShell>
@@ -105,7 +112,7 @@ export default function ProfessionalHubPage() {
             <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_0.9fr]">
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#C6A65B]/70">
-                  For International Counsel & Professional Advisors
+                  Professional Execution Access
                 </p>
                 <h1 className="mt-5 max-w-4xl font-serif text-5xl font-medium leading-[0.99] text-white sm:text-6xl md:text-7xl">
                   Your U.S. execution point for <em className="text-[#C6A65B]">international matters.</em>
@@ -114,7 +121,7 @@ export default function ProfessionalHubPage() {
                   The Milano Seal coordinates the U.S. document-execution side of cross-border matters while counsel retains legal strategy, document substance, and receiving-authority judgment.
                 </p>
                 <p className="mt-4 max-w-3xl text-base leading-7 text-white/38">
-                  Final scope and pricing are confirmed only after the Matter is reviewed.
+                  Matter review comes first. The route, unresolved requirements, execution scope, and next action stay visible before execution advances.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <Link
@@ -159,7 +166,36 @@ export default function ProfessionalHubPage() {
           </div>
         </section>
 
-        <section className="border-y border-white/[0.05] bg-[#080808] px-4 py-12 sm:px-6">
+        <section id="professional-scope" className="scroll-mt-32 border-y border-white/[0.05] bg-[#080808] px-4 py-12 sm:px-6">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/55">Professional Matter Flow</p>
+                <h2 className="mt-3 max-w-3xl font-serif text-3xl text-white sm:text-4xl">A controlled U.S. execution lane built around the Matter.</h2>
+              </div>
+              <Link
+                href="/intake?lane=professional&source=professional-flow"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#C6A65B]/35 px-5 text-sm font-medium text-[#C6A65B] transition-colors hover:bg-[#C6A65B]/[0.06]"
+              >
+                Open Professional Intake <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-3 lg:grid-cols-4">
+              {professionalFlow.map(([number, title, body]) => (
+                <article key={title} className="rounded-2xl border border-white/[0.065] bg-[#070708] p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#C6A65B]/55">{number}</span>
+                    <FileCheck2 className="h-4 w-4 text-[#C6A65B]/55" />
+                  </div>
+                  <h3 className="mt-4 font-serif text-2xl text-white">{title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/42">{body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-12 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/55">The six questions counsel needs answered</p>
             <div className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] md:grid-cols-2 xl:grid-cols-3">
@@ -178,11 +214,11 @@ export default function ProfessionalHubPage() {
           <UniversalAttorneyJourney />
         </div>
 
-        <section className="px-4 py-16 sm:px-6 md:py-20">
+        <section id="professional-boundary" className="scroll-mt-32 px-4 py-16 sm:px-6 md:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-8 lg:grid-cols-2">
               <div className="rounded-3xl border border-white/[0.07] bg-[#080809] p-7 md:p-9">
-                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/32">You retain</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/32">Counsel retains</p>
                 <h2 className="mt-3 font-serif text-3xl">Legal judgment stays with counsel.</h2>
                 <div className="mt-6 space-y-3 text-[15px] text-white/48">
                   {["Legal advice and strategy", "Document substance and legal sufficiency", "Choice of legal instrument", "Receiving-authority legal judgment"].map((item) => (

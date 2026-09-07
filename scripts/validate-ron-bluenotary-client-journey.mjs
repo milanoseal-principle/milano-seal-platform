@@ -27,6 +27,9 @@ assert.match(sessions, /duplicate: true/);
 for (const terminalStatus of ["RON_EXPIRED", "RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"]) {
   assert.match(sessions, new RegExp(terminalStatus));
 }
+assert.match(guard, /verifySchedulingAuthorized/);
+assert.doesNotMatch(guard, /is_platform_fee_only'/, "RON reads must not query the removed schema column");
+assert.match(sessions, /duplicate: true/);
 assert.match(sessions, /assertCanCreateRONSession/);
 assert.match(returned, /browser return does not establish completion/i);
 assert.match(returned, /VERIFIED\.has\(session\.milano_ron_status\)/);

@@ -54,10 +54,11 @@ check("operator navigation exposes RON / BlueNotary", operatorShell.includes('hr
 check("dashboard roles permit governed operator/admin/owner access", hasAll(dashboardAuth, ["operator", "admin", "owner", "requireDashboardAccess"]));
 check("RON dashboard consumes canonical scheduling gate and shows pre-session Matters", hasAll(ronDashboard, [
   "evaluateSchedulingGate",
-  "BlueNotary Signing Room",
-  "Before BlueNotary Session",
+  "preSessionMatters",
+  "getRONBlockers",
   "Open RON Readiness",
-  "Wise processing",
+  "Wise submitted · scheduling authorized",
+  "Ready for BlueNotary",
 ]));
 check("RON creation is Matter-scoped and delegates to canonical scheduling guard", hasAll(ronCreate, [
   "assertCanCreateRONSession",
@@ -71,10 +72,11 @@ check("RON creation is Matter-scoped and delegates to canonical scheduling guard
 ]));
 check("RON session detail exposes Matter, signer, document and scheduling truth", hasAll(ronDetail, [
   "Matter + Session Truth",
-  "Payment + Scheduling Authority",
+  "Scheduling authority",
   "Signer Readiness",
   "Document Package",
   "schedulingAuthorized",
+  "paymentAuthority",
 ]));
 check("signer fallback retains canonical optional middle_name field", signerRoute.includes("middle_name") && signerRoute.includes("SignerInput"));
 check("operator payment notifications retain canonical production recipients", hasAll(alerts, [

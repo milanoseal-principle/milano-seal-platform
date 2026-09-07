@@ -1,17 +1,6 @@
 #!/usr/bin/env node
 /**
  * Validator: Mini Atlas + Execution Intelligence flow unification.
- *
- * Enforces the locked homepage layout:
- *   - The top dotted Authority Coverage globe (GlobalRouteGlobe) is removed
- *     from the homepage routing preview (but the component is preserved for
- *     the country pages that still use it).
- *   - The bottom-left slot is a TRUE scaled-down reuse of the canonical Atlas
- *     (MiniAtlasPreview, which embeds GlobalIntelMapInteractive).
- *   - The bottom-right slot keeps the Execution Intelligence card.
- *   - The layout grid is grid-cols-1 lg:grid-cols-2 with the Mini Atlas first
- *     in DOM order (so mobile shows Mini Atlas first, Execution second).
- *   - The Mini Atlas deep-links to the full Atlas carrying the country slug.
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -57,7 +46,6 @@ if (existsSync(previewPath)) {
     "layout is grid-cols-1 lg:grid-cols-2",
     "layout grid must be grid-cols-1 lg:grid-cols-2");
 
-  // Mini Atlas must appear before the Execution Intelligence card in DOM order.
   const miniIdx = preview.indexOf("MiniAtlasPreview selected");
   const cardIdx = preview.indexOf("<DestinationIntelligenceCard");
   check(miniIdx > -1 && cardIdx > -1 && miniIdx < cardIdx,
@@ -68,7 +56,6 @@ if (existsSync(previewPath)) {
 if (existsSync(miniPath)) {
   const mini = readFileSync(miniPath, "utf8");
 
-  // The Mini Atlas must NOT embed the heavy full Atlas map — it teases it.
   check(!/GlobalIntelMapInteractive|react-leaflet|MapContainer/.test(mini),
     "Mini Atlas does not embed the full Leaflet Atlas (teases, not clones)",
     "Mini Atlas must not embed the full Leaflet Atlas — keep it a lightweight HUD");
@@ -93,9 +80,11 @@ if (existsSync(miniPath)) {
     "Mini Atlas auto-cycles with pause-on-interaction",
     "Mini Atlas must auto-cycle destinations and pause on interaction");
 
-  check(/Florida origin/i.test(mini),
-    "Mini Atlas surfaces Florida execution origin",
-    "Mini Atlas must surface the Florida execution origin");
+  // The current HUD visibly labels the origin as FLORIDA and exposes the same
+  // origin in the SVG accessibility label. Do not require obsolete prose.
+  check(/>\s*FLORIDA\s*</i.test(mini) && /Execution corridor from Florida/i.test(mini),
+    "Mini Atlas surfaces the Florida execution origin",
+    "Mini Atlas must visibly and accessibly surface the Florida execution origin");
 }
 
 console.log("\nMini Atlas Intelligence Flow validation\n");

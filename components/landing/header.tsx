@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
 import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 
-const navLinks = [
+const publicNavLinks = [
   { label: "Services", href: "/#services" },
   { label: "Pricing", href: "/pricing" },
   { label: "Process", href: "/process" },
@@ -17,9 +18,24 @@ const navLinks = [
   { label: "Secure Portal", href: "/secure-portal" },
 ];
 
+const professionalNavLinks = [
+  { label: "Professional Home", href: "/professional" },
+  { label: "Country Route", href: "/professional#professional-journey" },
+  { label: "Execution Scope", href: "/professional#professional-scope" },
+  { label: "Counsel Boundary", href: "/professional#professional-boundary" },
+  { label: "Secure Portal", href: "/secure-portal" },
+];
+
 export function Header() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isProfessionalAccess = pathname?.startsWith("/professional") ?? false;
+  const navLinks = isProfessionalAccess ? professionalNavLinks : publicNavLinks;
+  const intakeHref = isProfessionalAccess
+    ? "/intake?lane=professional&source=professional-navigation"
+    : "/intake";
+  const intakeLabel = isProfessionalAccess ? "Submit Client Matter" : "Begin Secure Intake";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -27,6 +43,10 @@ export function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <>
@@ -38,9 +58,9 @@ export function Header() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-20 gap-3">
               <Link
-                href="/"
+                href={isProfessionalAccess ? "/professional" : "/"}
                 className="group min-w-0 flex-shrink select-none flex items-center gap-2.5 sm:gap-3"
-                aria-label={`${MILANO_BRAND.name} home`}
+                aria-label={`${MILANO_BRAND.name} ${isProfessionalAccess ? "professional access" : "home"}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -63,12 +83,12 @@ export function Header() {
                     {MILANO_BRAND.name}
                   </span>
                   <span className="hidden sm:block mt-1.5 text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60">
-                    Global Document Execution
+                    {isProfessionalAccess ? "Professional Execution Access" : "Global Document Execution"}
                   </span>
                 </span>
               </Link>
 
-              <nav className="hidden xl:flex items-center gap-6 2xl:gap-8" aria-label="Primary navigation">
+              <nav className="hidden xl:flex items-center gap-6 2xl:gap-8" aria-label={isProfessionalAccess ? "Professional navigation" : "Primary navigation"}>
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -85,13 +105,13 @@ export function Header() {
                   href="/login"
                   className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] text-sm font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8"
                 >
-                  Login
+                  {isProfessionalAccess ? "Professional Login" : "Login"}
                 </Link>
                 <Link
-                  href="/intake"
+                  href={intakeHref}
                   className="group inline-flex min-h-11 items-center gap-2 px-5 py-2.5 bg-[var(--ms-gold)] text-[var(--ms-black)] text-sm font-medium rounded-lg transition-all duration-300 hover:brightness-110"
                 >
-                  <span>Begin Secure Intake</span>
+                  <span>{intakeLabel}</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </Link>
               </div>
@@ -123,7 +143,7 @@ export function Header() {
             className="fixed inset-x-0 z-40 xl:hidden bg-[var(--ms-black)] border-b border-[#2A2A2A] max-h-[calc(100dvh-var(--header-total-height)-var(--sa-top))] overflow-y-auto"
             style={{ top: "calc(var(--header-total-height) + var(--sa-top))" }}
           >
-            <nav className="flex flex-col p-6 space-y-2" aria-label="Mobile navigation">
+            <nav className="flex flex-col p-6 space-y-2" aria-label={isProfessionalAccess ? "Professional mobile navigation" : "Mobile navigation"}>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -139,14 +159,14 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="inline-flex min-h-12 items-center justify-center px-5 py-3 mt-4 border border-[var(--ms-gold)]/60 text-[var(--ms-gold)] font-medium rounded-lg"
               >
-                Login
+                {isProfessionalAccess ? "Professional Login" : "Login"}
               </Link>
               <Link
-                href="/intake"
+                href={intakeHref}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="inline-flex min-h-12 items-center justify-center gap-2 px-5 py-3 bg-[var(--ms-gold)] text-[var(--ms-black)] font-medium rounded-lg"
               >
-                <span>Begin Secure Intake</span>
+                <span>{intakeLabel}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </nav>

@@ -1,19 +1,25 @@
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { ExecutiveDashboard } from "@/components/dashboard/ExecutiveDashboard";
+import { ExecutiveIntelligenceCommand } from "@/components/dashboard/ExecutiveIntelligenceCommand";
+import { MatterExecutionCorridorSpine } from "@/components/dashboard/MatterExecutionCorridorSpine";
 import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Executive Dashboard — Milano Seal",
+  robots: { index: false },
 };
 
 export default async function ExecutivePage() {
   await requireDashboardAccess();
 
-  // Additional email check for EXECUTIVE_EMAIL env var
   const executiveEmail = process.env.EXECUTIVE_EMAIL;
   if (executiveEmail) {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user || user.email !== executiveEmail) {
       return (
         <div
@@ -36,7 +42,9 @@ export default async function ExecutivePage() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <MatterExecutionCorridorSpine />
       <ExecutiveDashboard />
+      <ExecutiveIntelligenceCommand />
     </div>
   );
 }

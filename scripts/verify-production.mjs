@@ -36,15 +36,40 @@ console.log("\n[wise webhook] GET health expect ok:true");
     : bad(`wise webhook -> ${status} ${text.slice(0, 80)}`);
 }
 
-console.log("\n[shippo webhook] POST without secret expect 401");
+console.log("\n[shippo webhook] canonical HMAC route without signature expect 401");
+{
+  const { status } = await code("/api/courier/webhook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  status === 401
+    ? ok("canonical Shippo HMAC guard active (401)")
+    : bad(`canonical Shippo guard -> ${status} (expected 401)`);
+}
+
+console.log("\n[retired shippo route] expect 404");
 {
   const { status } = await code("/api/webhooks/shippo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{}",
   });
-  // 401 = secret guard active; 200 skipped only valid if no secret configured.
-  status === 401 ? ok("shippo guard active (401)") : bad(`shippo guard -> ${status} (expected 401)`);
+  status === 404
+    ? ok("retired duplicate Shippo route absent (404)")
+    : bad(`retired Shippo route -> ${status} (expected 404)`);
+}
+
+console.log("\n[retired alliance status stub] expect 404");
+{
+  const { status } = await code("/api/webhooks/alliance/status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-alliance-signature": "not-a-real-signature" },
+    body: "{}",
+  });
+  status === 404
+    ? ok("fake-success Alliance webhook stub absent (404)")
+    : bad(`retired Alliance webhook -> ${status} (expected 404)`);
 }
 
 console.log("\n[db health] expect 200");

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
+import { isE2EDemoModeEnabled } from "@/lib/testing/e2eDemoMode";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  if (process.env.MILANO_E2E_DEMO_MODE !== "true") {
-    return NextResponse.json({ error: "E2E demo mode is not enabled." }, { status: 403 });
+  if (!isE2EDemoModeEnabled()) {
+    return NextResponse.json({ error: "E2E demo mode is not available." }, { status: 403 });
   }
 
   const supabase = await createClient();

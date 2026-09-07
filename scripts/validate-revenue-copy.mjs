@@ -19,7 +19,6 @@ function effective(p) {
   return t;
 }
 
-// Public funnel pages that must carry the promise + intake + access CTAs + boundary.
 const PUBLIC_PAGES = [
   "app/access/page.tsx",
   "app/lawyer-access/page.tsx",
@@ -27,20 +26,24 @@ const PUBLIC_PAGES = [
   "app/map/page.tsx",
 ];
 
-const REQUIRED = [
-  "The Milano Seal helps",
-  "Start Controlled Intake",
-  "receiving-authority review",
+// Validate the meaning of the controlled-execution proposition without forcing
+// every audience page into identical copy. Counsel may say "Start Counsel Matter"
+// while client routes may say "Start Controlled Intake" or "Begin Secure Intake".
+const REQUIRED_SEMANTICS = [
+  { label: "Milano execution proposition", re: /The Milano Seal helps|execution infrastructure|route the execution/i },
+  { label: "controlled intake CTA", re: /Start Controlled Intake|Start Counsel Matter|Begin Secure Intake/i },
+  { label: "receiving-authority boundary", re: /receiving-authority review|receiving authority/i },
 ];
 
-// At least one public page must carry each access CTA.
 const CTA_ANYWHERE = ["Request Lawyer Access", "Apply for Alliance Access"];
 
+// Reject affirmative claims. Safety boundaries such as
+// "does not provide legal advice" must remain allowed and visible.
 const FORBIDDEN = [
   /guaranteed acceptance/i,
   /instant approval/i,
-  /legal advice/i,
-  /legal clearance/i,
+  /(?:the\s+milano\s+seal|milano|we)\s+(?:provides?|offers?|gives?)\s+legal advice/i,
+  /(?:the\s+milano\s+seal|milano|we)\s+(?:provides?|offers?|gives?)\s+legal clearance/i,
   /government approved/i,
   /court approved/i,
 ];
@@ -48,24 +51,27 @@ const FORBIDDEN = [
 const allText = PUBLIC_PAGES.map(effective).join("\n");
 
 for (const p of PUBLIC_PAGES) {
-  if (!existsSync(join(ROOT, p))) { fail(`missing public page: ${p}`); continue; }
+  if (!existsSync(join(ROOT, p))) {
+    fail(`missing public page: ${p}`);
+    continue;
+  }
   const c = effective(p);
-  for (const r of REQUIRED) {
-    if (!c.includes(r)) fail(`${p} missing required copy "${r}"`);
+  for (const requirement of REQUIRED_SEMANTICS) {
+    if (!requirement.re.test(c)) {
+      fail(`${p} missing required semantic: ${requirement.label}`);
+    }
   }
 }
-if (failures === 0) pass("public pages carry promise + intake + boundary copy");
+if (failures === 0) pass("public pages carry execution proposition + intake + receiving-authority boundary");
 
 for (const cta of CTA_ANYWHERE) {
   if (!allText.includes(cta)) fail(`no public page includes CTA "${cta}"`);
 }
 
-// Domain or internal route links present
 if (!/themilanoseal\.com|href=["'`]\/(intake|access|lawyer-access|alliance|va)/.test(allText)) {
   fail("public pages lack domain or internal route links");
 }
 
-// Forbidden claims (allow negated "not a law firm" style — these regexes match the bare claim only)
 for (const p of PUBLIC_PAGES) {
   const c = read(p);
   for (const re of FORBIDDEN) {
@@ -75,6 +81,9 @@ for (const p of PUBLIC_PAGES) {
 if (failures === 0) pass("no forbidden claims in public funnel copy");
 
 console.log(`\n${"─".repeat(48)}`);
-if (failures > 0) { console.error(`\n✗ Revenue copy validation FAILED — ${failures} issue(s).\n`); process.exit(1); }
+if (failures > 0) {
+  console.error(`\n✗ Revenue copy validation FAILED — ${failures} issue(s).\n`);
+  process.exit(1);
+}
 console.log("\n✓ Revenue copy validation passed.\n");
 process.exit(0);
