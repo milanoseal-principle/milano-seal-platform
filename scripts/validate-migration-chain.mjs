@@ -11,6 +11,7 @@ const required = [
   "050_live_intake_execution_truth_reconciliation.sql",
   "055_matter_evidence_ledger.sql",
   "056_matter_truth_snapshot_archive.sql",
+  "079_wise_observed_scheduling_gate.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -108,6 +109,30 @@ for (const invariant of [
 }
 if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(truthArchive)) {
   throw new Error("056 must never authorize snapshot access from user_metadata");
+}
+
+const observedWiseGate = fs.readFileSync(path.join(dir, "079_wise_observed_scheduling_gate.sql"), "utf8");
+for (const invariant of [
+  "TG_OP = 'UPDATE'",
+  "NEW.status = 'scheduled'",
+  "NEW.payment_observed_at is not null",
+  "observed_pending",
+  "NEW.payment_observed_amount",
+  "NEW.payment_observed_currency",
+  "NEW.payment_observed_reference",
+  "NEW.amount_due",
+  "NEW.currency",
+  "NEW.wise_reference",
+]) {
+  if (!observedWiseGate.includes(invariant)) {
+    throw new Error(`079 observed Wise scheduling gate missing invariant: ${invariant}`);
+  }
+}
+if (/NEW\.status\s+in\s*\([^)]*in_execution[^)]*\)[\s\S]*observed_pending/i.test(observedWiseGate)) {
+  throw new Error("079 observed Wise submission must authorize scheduling only, never later Matter states");
+}
+if (/payment_status\s*=\s*'paid'[\s\S]*payment_observed_at/i.test(observedWiseGate)) {
+  throw new Error("079 must never author paid state from an observed Wise submission");
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
