@@ -15,7 +15,14 @@ export const REQUIRED_CONTROLS = [
   "itemized order ledger",
   "Discount / Courtesy Code",
   "scheduling remains blocked",
-  "verified Wise settlement",
+  "payment_observed_at",
+  "valid observed Wise submission unlocks scheduling",
+  "settlement remains pending",
+  "BlueNotary session starts",
+  "in_execution",
+  "signed documents retrieved",
+  "explicit Apostille QA approval",
+  "apostille_processing",
   "Forgot Password",
   "no duplicate Matter",
   "PASS / FAIL",
@@ -37,13 +44,18 @@ export function validateRunbook(source) {
   assert.doesNotMatch(source, /TIFFTEST50/);
   assert.match(source, /TIFFTEST99[\s\S]{0,220}99%/);
   assert.match(source, /discount[\s\S]{0,300}never marks a Matter paid/i);
-  assert.match(source, /Only verified Wise settlement[\s\S]{0,200}payment gate/i);
+  assert.match(source, /observed Wise submission[\s\S]{0,260}unlock scheduling/i);
+  assert.match(source, /does not mark the Matter paid/i);
+  assert.match(source, /final release remains separately settlement-gated/i);
+  assert.match(source, /Scheduled[\s\S]{0,400}BlueNotary session starts[\s\S]{0,240}in_execution/);
+  assert.match(source, /signed documents retrieved[\s\S]{0,240}explicit Apostille QA approval[\s\S]{0,240}apostille_processing/i);
+  assert.match(source, /client must never guess acknowledgment vs jurat/i);
   return true;
 }
 
 const invokedDirectly = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 if (invokedDirectly) {
   validateRunbook(readFileSync(RUNBOOK_PATH, "utf8"));
-  console.log("PASS Tiffany Gate 37 99% portal-discount certification runbook contract");
-  console.log("NOTE Live results are not executed or certified by this validator.");
+  console.log("PASS Tiffany Gate 37 post-payment RON production certification runbook contract");
+  console.log("NOTE Live BlueNotary identity/session execution is not performed or certified by this validator.");
 }
