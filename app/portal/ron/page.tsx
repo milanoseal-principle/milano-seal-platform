@@ -41,7 +41,7 @@ export default async function PortalRONPage() {
   const reference = String(deal.deal_id ?? deal.id);
   const truth = normalizeExecutionTruth((deal.execution_truth ?? {}) as Record<string, unknown>);
   const scheduling = evaluateSchedulingGate({ matter: deal });
-  const notarialReview = truth.notarial_act === "review_required" || truth.notarial_act === "unknown";
+  const notarialReview = truth.notarial_act === "review_required";
 
   const { data: session } = await admin
     .from("ron_sessions")
