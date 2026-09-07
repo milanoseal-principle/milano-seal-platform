@@ -24,8 +24,6 @@ export function normalizeCourierCreditTier(value: unknown): CourierCreditTier {
     return tier;
   }
   throw new Error("INVALID_EXECUTION_TIER");
-  const tier = String(value ?? "signature").trim().toLowerCase();
-  return tier === "priority" || tier === "executive" ? tier : "signature";
 }
 
 function parseMoneyToCents(value: string): number {

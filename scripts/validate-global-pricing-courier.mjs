@@ -8,7 +8,7 @@ const rates = read("app/api/dashboard/shippo/rates/route.ts");
 const labels = read("app/api/dashboard/shippo/labels/route.ts");
 const payment = read("components/payments/SecurePaymentCard.tsx");
 const matterPricing = read("lib/pricing/canonicalMatterPricing.ts");
-const migration = read("supabase/migrations/074_shippo_prepayment_rate_continuity.sql");
+const migration = read("supabase/migrations/078_shippo_prepayment_rate_continuity.sql");
 
 for (const amount of ["base: 750", "base: 975", "base: 1850"]) assert.match(pricing, new RegExp(amount));
 assert.match(credit, /signature: 0/);
