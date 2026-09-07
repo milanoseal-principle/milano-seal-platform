@@ -23,8 +23,6 @@ import { rankApprovedRates } from "@/lib/shippo/rateSelection";
 import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
-import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
-import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +114,7 @@ export async function POST(req: NextRequest) {
         currency: rate.currency,
         tier: matter.tier,
       }),
-      ...( ["founder_admin", "admin_operator"].includes(role) ? { amount: rate.amount, currency: rate.currency } : {}),
+      ...(["founder_admin", "admin_operator"].includes(role) ? { amount: rate.amount, currency: rate.currency } : {}),
     }));
 
     const recommendation = sanitizedRates[0] ?? null;
