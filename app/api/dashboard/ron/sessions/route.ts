@@ -30,6 +30,24 @@ export async function POST(request: NextRequest) {
     if (!matter_id) return NextResponse.json({ error: 'matter_id is required' }, { status: 400 });
 
     const supabase = createAdminClient();
+    const { data: existingSession, error: existingError } = await supabase
+      .from('ron_sessions')
+      .select('id, matter_id, notarization_id, milano_ron_status, created_at')
+      .eq('matter_id', matter_id)
+      .not(
+        'milano_ron_status',
+        'in',
+        '("RON_EXPIRED","RON_COMPLETED","SIGNED_DOCS_RETRIEVED","READY_FOR_APOSTILLE")'
+      )
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingError) {
+      return NextResponse.json({ error: 'Unable to verify existing RON session' }, { status: 500 });
+    }
+    if (existingSession) {
+      return NextResponse.json({ success: true, duplicate: true, session: existingSession });
+    }
     await assertCanCreateRONSession(supabase, matter_id, userId);
 
     const { data: matter, error: matterErr } = await supabase
