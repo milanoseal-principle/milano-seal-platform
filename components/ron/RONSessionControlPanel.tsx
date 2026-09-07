@@ -83,6 +83,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
   const canExpire = gates.sessionExists.met && currentStatus !== 'RON_EXPIRED';
   const canRetrieveDocs = gates.sessionCompleted.met && gates.sessionExists.met;
   const canUploadPackage = gates.sessionExists.met && gates.schedulingAuthorized.met && documentIds.length > 0;
+  const canAdvanceToApostille = gates.sessionExists.met && currentStatus === 'SIGNED_DOCS_RETRIEVED';
 
   async function handleAction(action: string, endpoint: string, method = 'POST', body?: Record<string, unknown>) {
     setLoading(action);
@@ -94,7 +95,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(`Error: ${data.error ?? 'Unknown error'}`);
+        alert(`Error: ${data.error ?? data.message ?? data.code ?? 'Unknown error'}`);
         return;
       }
       onAction?.(action);
@@ -152,7 +153,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
           <div>
             <p className="text-[10px] uppercase tracking-[0.18em] text-amber-500/80">BlueNotary · Operator Control</p>
             <h3 className="mt-1 text-base font-semibold text-white">RON Session Readiness</h3>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">Same Matter · canonical scheduling authority · verified settlement remains the signer-release truth.</p>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">Same Matter · Wise submission may reserve scheduling · provider evidence governs signing-link release · final release remains separately settlement-gated.</p>
           </div>
           <span className={`w-fit rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wide ${canCreateSession ? 'border-emerald-600/50 bg-emerald-950/40 text-emerald-300' : 'border-amber-600/40 bg-amber-950/30 text-amber-300'}`}>
             {gates.sessionExists.met ? 'SESSION EXISTS' : canCreateSession ? 'READY TO CREATE' : `${blockers.length} BLOCKER${blockers.length === 1 ? '' : 'S'}`}
@@ -210,6 +211,15 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
               disabledReason={!canRetrieveDocs ? 'Session must be completed before signed documents can be retrieved.' : undefined}
               variant="primary"
               onClick={() => handleAction('retrieve-docs', `${base}/signed-documents`)}
+            />
+          )}
+          {base && currentStatus === 'SIGNED_DOCS_RETRIEVED' && (
+            <ActionButton
+              label={loading === 'advance-apostille' ? 'Advancing Matter…' : 'Approve Apostille QA & Advance Matter'}
+              disabled={!canAdvanceToApostille || loading !== null}
+              disabledReason={!canAdvanceToApostille ? 'Signed documents must be secured before Apostille QA approval.' : undefined}
+              variant="primary"
+              onClick={() => handleAction('advance-apostille', `${base}/advance-to-apostille`)}
             />
           )}
           {base && (
