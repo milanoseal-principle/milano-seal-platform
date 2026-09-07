@@ -25,14 +25,12 @@ export type MilanoRONStatus =
   | 'SIGNED_DOCS_RETRIEVED'
   | 'READY_FOR_APOSTILLE';
 
-// ── BlueNotary API Payloads ───────────────────────────────────────────────────
-
 export interface BNCreateSessionPayload {
   notarization_id: string;
   signing_type?: string;
   session_type?: string;
   notarization_timing_type?: string;
-  session_timing?: string; // ISO 8601
+  session_timing?: string;
   signers: BNSignerPayload[];
   documents?: BNDocumentPayload[];
 }
@@ -50,16 +48,12 @@ export interface BNSignerPayload {
 
 export interface BNDocumentPayload {
   document_name: string;
-  base64_content: string; // NEVER log or persist after upload
+  base64_content: string;
   template_id?: string;
   smart_tags?: string[];
 }
 
-export interface BNReschedulePayload {
-  session_timing: string; // ISO 8601
-}
-
-// ── BlueNotary API Response Objects ──────────────────────────────────────────
+export interface BNReschedulePayload { session_timing: string; }
 
 export interface BNSession {
   id: string;
@@ -79,7 +73,7 @@ export interface BNSigner {
   first_name: string;
   last_name: string;
   email: string;
-  signing_url?: string; // NEVER log or expose unless gate conditions met
+  signing_url?: string;
   identity_status?: string;
   kba_status?: string;
   biometric_status?: string;
@@ -95,11 +89,9 @@ export interface BNDocument {
 
 export interface BNSignedDocumentResult {
   document_name: string;
-  base64_content: string; // NEVER persist — decode immediately
+  base64_content: string;
   content_type?: string;
 }
-
-// ── BlueNotary Webhook Event ──────────────────────────────────────────────────
 
 export interface BNWebhookPayload {
   notarization_id?: string;
@@ -112,8 +104,6 @@ export interface BNWebhookPayload {
   timestamp?: string;
   [key: string]: unknown;
 }
-
-// ── Internal RON DB Records ───────────────────────────────────────────────────
 
 export interface RONSession {
   id: string;
@@ -181,15 +171,16 @@ export interface RONDocument {
   document_status: string;
 }
 
-// ── Portal-safe projection ────────────────────────────────────────────────────
-
 export interface PortalRONView {
   session_id: string;
   milano_ron_status: MilanoRONStatus;
   client_label: string;
+  /** Legacy session gate flag. Do not present this as verified Wise settlement. */
   payment_confirmed: boolean;
+  /** Canonical RON session payment/scheduling gate status. */
+  scheduling_authorized: boolean;
   session_active: boolean;
-  signing_url?: string | null; // only set when all release conditions met
+  signing_url?: string | null;
   coordinator_message?: string;
   identity_status?: string;
   kba_status?: string;
