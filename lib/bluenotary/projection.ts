@@ -23,11 +23,15 @@ const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
 /**
  * Project a RON session + signer list to a client-safe portal view.
  *
+ * `payment_gate_status = UNLOCKED` is scheduling/execution authority recorded
+ * on the canonical RON session. It is NOT a claim that Wise settlement has
+ * completed. Verified settlement remains canonical Matter/payment truth.
+ *
  * Signing URL is ONLY included when ALL of:
  *   1. signing_url_released = true on the matching signer record
- *   2. Session is in an active status (not expired/completed)
- *   3. Signer email matches the requesting user's email
- *   4. payment_gate_status = 'UNLOCKED'
+ *   2. Session is active
+ *   3. Signer email matches the requesting portal user
+ *   4. canonical RON scheduling/execution gate is unlocked
  */
 export function portalRONProjection(
   ronSession: RONSession,
@@ -35,10 +39,9 @@ export function portalRONProjection(
   signerEmail: string
 ): PortalRONView {
   const status = ronSession.milano_ron_status;
-  const paymentConfirmed = ronSession.payment_gate_status === 'UNLOCKED';
+  const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
   const sessionActive = ACTIVE_RON_STATUSES.includes(status);
 
-  // Find the signer matching the requesting portal user
   const matchingSigner = signers.find(
     (s) => s.email?.toLowerCase() === signerEmail.toLowerCase()
   );
@@ -48,12 +51,10 @@ export function portalRONProjection(
   if (
     matchingSigner &&
     matchingSigner.signing_url_released === true &&
-    paymentConfirmed &&
+    schedulingAuthorized &&
     sessionActive &&
     matchingSigner.signing_url_encrypted
   ) {
-    // signing_url_encrypted is stored as the plaintext URL at this layer
-    // (encryption/decryption handled at the API route level if needed)
     signingUrl = matchingSigner.signing_url_encrypted;
   }
 
@@ -61,14 +62,14 @@ export function portalRONProjection(
     session_id: ronSession.id,
     milano_ron_status: status,
     client_label: getClientStatusLabel(status),
-    payment_confirmed: paymentConfirmed,
+    // Backward-compatible field only. Never render it as verified Wise settlement.
+    payment_confirmed: schedulingAuthorized,
+    scheduling_authorized: schedulingAuthorized,
     session_active: sessionActive,
     signing_url: signingUrl ?? null,
     coordinator_message:
-      'Your online notarization session is coordinated through a secure execution process. Your coordinator will release session access when your matter is ready.',
+      'Your online notarization session is coordinated through a secure execution process. Your coordinator will release session access when your Matter is ready.',
     identity_status: ronSession.identity_status,
     kba_status: ronSession.kba_status,
-    // NOTE: Never include raw_session, blue_notary_status, bn_session_id,
-    // notarization_id, storage_path, or internal notes in this projection.
   };
 }
