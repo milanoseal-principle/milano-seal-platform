@@ -112,6 +112,20 @@ export async function POST(
     return NextResponse.json({ ok: false, code: "MATTER_NOT_FOUND" }, { status: 404 });
   }
 
+  if (
+    status === "apostille_processing" &&
+    matter.execution_truth?.execution_method === "ron"
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "USE_GOVERNED_RON_APOSTILLE_QA",
+        message: "RON Matters must use the session Apostille QA endpoint.",
+      },
+      { status: 409 },
+    );
+  }
+
   const currentRaw = String(matter.deal_status ?? matter.status ?? "");
   const current = normalizeMatterStatus(currentRaw);
   if (!current || !canTransition(currentRaw, status) || current === status) {

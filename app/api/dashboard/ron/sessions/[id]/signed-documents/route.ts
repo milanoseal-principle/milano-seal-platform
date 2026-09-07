@@ -68,6 +68,7 @@ export async function POST(
             blue_notary_document_name: doc.document_name,
             storage_bucket: 'documents',
             signed_storage_path: storagePath,
+            storage_bucket: 'documents',
             signed_document_received: true,
             document_status: 'SIGNED',
             updated_at: new Date().toISOString(),
