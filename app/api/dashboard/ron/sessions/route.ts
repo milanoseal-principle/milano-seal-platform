@@ -16,6 +16,8 @@ type SignerInput = {
   authentication_type?: string;
 };
 
+const TERMINAL_SESSION_STATUSES = '("RON_EXPIRED","RON_COMPLETED","SIGNED_DOCS_RETRIEVED","READY_FOR_APOSTILLE")';
+
 // POST /api/dashboard/ron/sessions — create a new RON session
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +32,26 @@ export async function POST(request: NextRequest) {
     if (!matter_id) return NextResponse.json({ error: 'matter_id is required' }, { status: 400 });
 
     const supabase = createAdminClient();
+
+    // Idempotency: repeat requests return the existing active canonical session
+    // before any provider mutation. Completed/expired sessions are terminal and
+    // do not prevent a later governed re-execution if canonical Matter truth permits it.
+    const { data: existingSession, error: existingError } = await supabase
+      .from('ron_sessions')
+      .select('id, matter_id, notarization_id, milano_ron_status, created_at')
+      .eq('matter_id', matter_id)
+      .not('milano_ron_status', 'in', TERMINAL_SESSION_STATUSES)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      return NextResponse.json({ error: 'Unable to verify existing RON session' }, { status: 500 });
+    }
+    if (existingSession) {
+      return NextResponse.json({ success: true, duplicate: true, session: existingSession });
+    }
+
     await assertCanCreateRONSession(supabase, matter_id, userId);
 
     const { data: matter, error: matterErr } = await supabase
@@ -64,7 +86,6 @@ export async function POST(request: NextRequest) {
       notarization_id: notarizationId,
     };
 
-    // External BlueNotary session creation occurs only after all guards pass.
     const bnSession = await createBlueNotarySession(bnPayload);
 
     const { data: ronSession, error: sessionInsertErr } = await supabase
@@ -104,8 +125,6 @@ export async function POST(request: NextRequest) {
     }));
     await supabase.from('ron_signers').insert(signerInserts);
 
-    // Seed the existing Matter package into the canonical RON document queue.
-    // This does NOT send bytes to BlueNotary; operator upload remains a separate audited action.
     const { data: matterFiles } = await supabase
       .from('files')
       .select('id, name, storage_path, mime_type, category')
@@ -146,6 +165,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      duplicate: false,
       session: {
         id: ronSession.id,
         matter_id: ronSession.matter_id,
