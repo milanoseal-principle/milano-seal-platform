@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { assertPaymentConfirmed } from "@/lib/payments/paymentGate";
 import { requiresCodiceFiscaleLockForRelease } from "@/lib/security/release-integrity";
+import { loadCanonicalReleaseReadiness } from "@/lib/release/releaseReviewEvidence";
 import { recordSecurityEvent } from "@/lib/security/security-events";
 
 export interface ReleaseOutcome {
@@ -11,11 +12,8 @@ export interface ReleaseOutcome {
 
 const ROUTE = "/api/deals/[id]/release";
 
-// Shared final-release gate. Caller MUST have already authenticated the actor as
-// founder_admin. This runs the substantive gates (payment, settlement clearance +
-// founder override, Codice Fiscale lock) and writes the custody/audit/security
-// ledger. Used by the live release route and the authenticated production test so
-// both exercise identical logic.
+// Single final-release authority. Caller MUST already be authenticated as
+// founder_admin. Review tables are evidence only and cannot author release.
 export async function performFinalRelease(opts: {
   id: string;
   actorId: string;
@@ -39,12 +37,7 @@ export async function performFinalRelease(opts: {
     return { status: 404, body: { error: "Deal not found" } };
   }
 
-  // Treat a zero-charge matter as the no-payment (platform-fee / fee-waived) case.
-  // This avoids selecting optional discount columns that may be absent on the live
-  // DB (migration drift) — keeping the release gate robust and never crashing.
   const isPlatformFeeOnly = Number(deal.amount_due ?? 0) === 0;
-
-  // Payment gate — broadened source of truth (boolean OR timestamp OR status OR amount).
   const amountDueNum = Number(deal.amount_due ?? 0);
   const paymentOk =
     isPlatformFeeOnly ||
@@ -53,6 +46,7 @@ export async function performFinalRelease(opts: {
     deal.payment_status === "paid" ||
     deal.payment_status === "confirmed" ||
     (amountDueNum > 0 && Number(deal.amount_paid ?? 0) >= amountDueNum);
+
   if (!paymentOk) {
     try {
       assertPaymentConfirmed(deal, "release");
@@ -71,6 +65,7 @@ export async function performFinalRelease(opts: {
         body: {
           ok: false,
           blocked: true,
+          code: "FINAL_RELEASE_BLOCKED",
           message: "Final release is blocked until required safety checks are complete.",
           required_action: "Payment confirmation required before release.",
         },
@@ -78,77 +73,74 @@ export async function performFinalRelease(opts: {
     }
   }
 
-  // Settlement clearance gate — cleared funds OR a recorded founder override.
+  // Full server-side release integrity gate. This consumes canonical execution,
+  // apostille, settlement and identifier truth plus durable review evidence.
+  // Browser-local checkbox state can never satisfy this gate.
+  const readiness = await loadCanonicalReleaseReadiness(deal.id);
+  if (!readiness.gate.canRelease) {
+    await recordSecurityEvent({
+      event_name: "FINAL_RELEASE_BLOCKED",
+      severity: "high",
+      actor: actorId,
+      matter_id: deal.id,
+      route: ROUTE,
+      client_safe: false,
+      metadata: {
+        reason: "release_integrity_gate",
+        deal_id: deal.deal_id ?? id,
+        blocked_reasons: readiness.gate.blockedReasons,
+        facts: readiness.facts,
+      },
+    });
+    return {
+      status: 409,
+      body: {
+        ok: false,
+        blocked: true,
+        code: "FINAL_RELEASE_BLOCKED",
+        message: "Final release is blocked until required safety checks are complete.",
+        required_action: "Complete the governed Final Seal Review and required execution evidence.",
+      },
+    };
+  }
+
+  // Settlement is fail-closed. The legacy override input is retained only for
+  // compatibility/audit visibility; the full release-integrity gate above will
+  // not pass until cleared funds exist for a paid Matter.
   const fundsCleared =
     deal.payment_settlement_status === "cleared" ||
     isPlatformFeeOnly ||
     Number(deal.amount_due ?? 0) === 0;
 
   if (!fundsCleared) {
-    if (overrideReason.length > 0) {
-      await adminClient
-        .from("deals")
-        .update({
-          founder_payment_override_at: new Date().toISOString(),
-          founder_payment_override_by: actorId,
-          founder_payment_override_reason: overrideReason,
-        })
-        .eq("id", deal.id);
-
-      await appendLedger({
-        deal_id: deal.id,
-        event: CUSTODY_EVENTS.RELEASE_GATE_OVERRIDE,
-        actor_type: "operator",
-        actor_id: actorId,
-        status: "override_approved",
-        notes: `Founder override: release authorized on non-cleared funds | reason=${overrideReason} | settlement=${deal.payment_settlement_status ?? "unknown"}`,
-        metadata: {
-          override_by: actorId,
-          override_reason: overrideReason,
-          settlement_status: deal.payment_settlement_status ?? "unknown",
-          payment_reference: deal.deal_id ?? deal.id,
-        },
-      });
-
-      await recordSecurityEvent({
-        event_name: "PAYMENT_RELEASE_OVERRIDE_APPROVED",
-        severity: "warning",
-        actor: actorId,
-        matter_id: deal.id,
-        route: ROUTE,
-        client_safe: false,
-        metadata: {
-          deal_id: deal.deal_id ?? id,
-          settlement_status: deal.payment_settlement_status ?? "unknown",
-        },
-      });
-    } else {
-      await recordSecurityEvent({
-        event_name: "FINAL_RELEASE_BLOCKED",
-        severity: "high",
-        actor: actorId,
-        matter_id: deal.id,
-        route: ROUTE,
-        client_safe: false,
-        metadata: {
-          reason: "settlement_pending",
-          settlement_status: deal.payment_settlement_status ?? "unknown",
-          deal_id: deal.deal_id ?? id,
-        },
-      });
-      return {
-        status: 402,
-        body: {
-          ok: false,
-          blocked: true,
-          message: "Final release is blocked until required safety checks are complete.",
-          required_action: "Payment must clear before release, or a founder override is required.",
-        },
-      };
-    }
+    await recordSecurityEvent({
+      event_name: "FINAL_RELEASE_BLOCKED",
+      severity: "high",
+      actor: actorId,
+      matter_id: deal.id,
+      route: ROUTE,
+      client_safe: false,
+      metadata: {
+        reason: "settlement_pending",
+        settlement_status: deal.payment_settlement_status ?? "unknown",
+        override_requested: overrideReason.length > 0,
+        deal_id: deal.deal_id ?? id,
+      },
+    });
+    return {
+      status: 402,
+      body: {
+        ok: false,
+        blocked: true,
+        code: "FINAL_RELEASE_BLOCKED",
+        message: "Final release is blocked until required safety checks are complete.",
+        required_action: "Verified Wise settlement is required before final release.",
+      },
+    };
   }
 
-  // Italy hard rule — Codice Fiscale Lock required.
+  // Italy hard rule — Codice Fiscale Lock required. This is also represented in
+  // the release-integrity result, and is rechecked here immediately before write.
   if (requiresCodiceFiscaleLockForRelease(deal.destination_country)) {
     const { data: idLock } = await adminClient
       .from("identifier_locks")
@@ -178,6 +170,7 @@ export async function performFinalRelease(opts: {
         body: {
           ok: false,
           blocked: true,
+          code: "FINAL_RELEASE_BLOCKED",
           message: "Final release is blocked until required safety checks are complete.",
           required_action: "Codice Fiscale exact-match lock required before Italy apostille release.",
         },
@@ -194,6 +187,10 @@ export async function performFinalRelease(opts: {
     actor_type: "operator",
     actor_id: actorId,
     notes: `Document release confirmed by founder | previous_status=${previousStatus} | new_status=${newStatus} | release_action=DOC_RELEASE_CONFIRMED | operator=${actorId}`,
+    metadata: {
+      release_gate: "passed",
+      review_evidence_updated_at: readiness.evidence?.updated_at ?? null,
+    },
   });
 
   if (!result) {
@@ -216,7 +213,11 @@ export async function performFinalRelease(opts: {
       event: "DOC_RELEASE_CONFIRMED",
       actor: actorId,
       resource: deal.deal_id ?? deal.id,
-      payload: { previous_status: previousStatus, new_status: newStatus },
+      payload: {
+        previous_status: previousStatus,
+        new_status: newStatus,
+        release_gate: "passed",
+      },
       created_at: new Date().toISOString(),
     });
     if (auditErr) auditFailed = true;
