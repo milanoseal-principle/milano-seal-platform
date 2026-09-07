@@ -11,6 +11,7 @@ const required = [
   "050_live_intake_execution_truth_reconciliation.sql",
   "055_matter_evidence_ledger.sql",
   "056_matter_truth_snapshot_archive.sql",
+  "078_shippo_prepayment_rate_continuity.sql",
   "079_wise_observed_scheduling_gate.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
@@ -24,8 +25,10 @@ for (const file of files) {
 }
 const duplicatePrefixes = [...duplicates.entries()].filter(([, names]) => names.length > 1);
 if (duplicatePrefixes.length) {
-  console.warn("Migration chain contains duplicate numeric prefixes:");
-  for (const [prefix, names] of duplicatePrefixes) console.warn(`  ${prefix}: ${names.join(", ")}`);
+  const detail = duplicatePrefixes
+    .map(([prefix, names]) => `${prefix}: ${names.join(", ")}`)
+    .join(" | ");
+  throw new Error(`Migration chain contains duplicate numeric prefixes: ${detail}`);
 }
 
 const baseline = fs.readFileSync(path.join(dir, "001_initial_schema.sql"), "utf8");
@@ -111,6 +114,20 @@ if (/auth\.jwt\(\)\s*->\s*'user_metadata'/.test(truthArchive)) {
   throw new Error("056 must never authorize snapshot access from user_metadata");
 }
 
+const shippoContinuity = fs.readFileSync(path.join(dir, "078_shippo_prepayment_rate_continuity.sql"), "utf8");
+for (const invariant of [
+  "provider_rate_amount",
+  "tier_courier_credit",
+  "client_courier_charge",
+  "pricing_snapshot_hash",
+  "rate_status",
+  "idx_shippo_shipments_matter_provider_shipment",
+]) {
+  if (!shippoContinuity.includes(invariant)) {
+    throw new Error(`078 Shippo continuity migration missing invariant: ${invariant}`);
+  }
+}
+
 const observedWiseGate = fs.readFileSync(path.join(dir, "079_wise_observed_scheduling_gate.sql"), "utf8");
 for (const invariant of [
   "TG_OP = 'UPDATE'",
@@ -123,16 +140,23 @@ for (const invariant of [
   "NEW.amount_due",
   "NEW.currency",
   "NEW.wise_reference",
+  "wise_transaction_reference",
+  "payment_funding_method",
+  "wise_acquiring_payment",
+  "provider_payment_valid",
 ]) {
   if (!observedWiseGate.includes(invariant)) {
-    throw new Error(`079 observed Wise scheduling gate missing invariant: ${invariant}`);
+    throw new Error(`079 Wise authority gate missing invariant: ${invariant}`);
   }
 }
-if (/NEW\.status\s+in\s*\([^)]*in_execution[^)]*\)[\s\S]*observed_pending/i.test(observedWiseGate)) {
-  throw new Error("079 observed Wise submission must authorize scheduling only, never later Matter states");
+if (!/NEW\.status\s*=\s*'scheduled'[\s\S]*observed_submission_valid/i.test(observedWiseGate)) {
+  throw new Error("079 must authorize scheduling from integrity-matched observed Wise submission");
+}
+if (!/NEW\.status\s*<>\s*'scheduled'[\s\S]*provider_payment_valid/i.test(observedWiseGate)) {
+  throw new Error("079 later execution progression must require stronger Wise provider evidence");
 }
 if (/payment_status\s*=\s*'paid'[\s\S]*payment_observed_at/i.test(observedWiseGate)) {
-  throw new Error("079 must never author paid state from an observed Wise submission");
+  throw new Error("079 must never author paid state from observed or provider-processing Wise evidence");
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
