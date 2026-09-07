@@ -31,6 +31,7 @@ const gates = [
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
   ["node", ["scripts/validate-wise-only-active-ops-docs.mjs"]],
   ["node", ["scripts/validate-milano-os-isolation.mjs"]],
+  ["node", ["scripts/validate-architecture-control-plane.mjs"]],
   ["node", ["scripts/validate-milano-os-surface-unification.mjs"]],
   ["node", ["scripts/validate-milano-brand-throughout.mjs"]],
   ["node", ["scripts/validate-nonhuman-production-hardening.mjs"]],
