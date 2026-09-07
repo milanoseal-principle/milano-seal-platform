@@ -31,7 +31,6 @@ export async function POST(
       return NextResponse.json({ error: 'Session or BN session id not found' }, { status: 404 });
     }
 
-    // Retrieve signed docs from BlueNotary — base64 handled server-side only
     const signedDocs = await getBlueNotarySignedDocuments(session.bn_session_id);
 
     if (!signedDocs || signedDocs.length === 0) {
@@ -41,12 +40,10 @@ export async function POST(
     const storedPaths: string[] = [];
 
     for (const doc of signedDocs) {
-      // Decode base64 server-side
       const buffer = Buffer.from(doc.base64_content, 'base64');
       const safeName = sanitizeDocumentName(doc.document_name ?? `signed_${Date.now()}.pdf`);
       const storagePath = `ron/${session.matter_id}/${sessionId}/${safeName}`;
 
-      // Upload to private Supabase storage (documents bucket)
       const { error: uploadErr } = await supabase.storage
         .from('documents')
         .upload(storagePath, buffer, {
@@ -61,7 +58,6 @@ export async function POST(
 
       storedPaths.push(storagePath);
 
-      // Update or insert ron_document record
       await supabase
         .from('ron_documents')
         .upsert(
@@ -70,6 +66,7 @@ export async function POST(
             matter_id: session.matter_id,
             document_name: safeName,
             blue_notary_document_name: doc.document_name,
+            storage_bucket: 'documents',
             signed_storage_path: storagePath,
             storage_bucket: 'documents',
             signed_document_received: true,
@@ -79,11 +76,9 @@ export async function POST(
           { onConflict: 'ron_session_id,document_name' }
         );
 
-      // Immediately clear base64 from scope
       (doc as { base64_content?: string }).base64_content = '';
     }
 
-    // Update session status
     await supabase
       .from('ron_sessions')
       .update({
@@ -93,7 +88,6 @@ export async function POST(
       })
       .eq('id', sessionId);
 
-    // Audit event
     await supabase.from('ron_audit_events').insert({
       matter_id: session.matter_id,
       ron_session_id: sessionId,
@@ -105,7 +99,6 @@ export async function POST(
       metadata: { document_count: storedPaths.length },
     });
 
-    // Return only metadata — NEVER base64
     return NextResponse.json({
       success: true,
       documents_stored: storedPaths.length,

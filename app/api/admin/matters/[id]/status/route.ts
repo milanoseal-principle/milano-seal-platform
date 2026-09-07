@@ -24,7 +24,11 @@ const VALID_STATUSES = [
 
 type MatterStatus = (typeof VALID_STATUSES)[number];
 
-const DEDICATED_TRANSITIONS = new Set<MatterStatus>(["scheduled", "in_execution"]);
+const DEDICATED_TRANSITIONS = new Set<MatterStatus>([
+  "scheduled",
+  "in_execution",
+  "apostille_processing",
+]);
 const EXECUTION_GATED = new Set<MatterStatus>([
   "apostille_processing",
   "in_transit",
@@ -73,14 +77,25 @@ export async function POST(
   }
 
   if (DEDICATED_TRANSITIONS.has(status)) {
+    const messages: Record<MatterStatus, string> = {
+      intake_received: "",
+      under_review: "",
+      quoted: "",
+      awaiting_payment: "",
+      scheduled: "Use the canonical scheduling action for this transition.",
+      in_execution: "Use the canonical execution action for this transition.",
+      apostille_processing:
+        "Use the governed RON Apostille QA action for this transition.",
+      in_transit: "",
+      delivered: "",
+      completed: "",
+    };
+
     return NextResponse.json(
       {
         ok: false,
         code: "USE_GOVERNED_TRANSITION_ENDPOINT",
-        message:
-          status === "scheduled"
-            ? "Use the canonical scheduling action for this transition."
-            : "Use the canonical execution action for this transition.",
+        message: messages[status],
       },
       { status: 409 },
     );

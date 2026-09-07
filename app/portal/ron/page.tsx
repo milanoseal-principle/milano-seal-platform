@@ -18,7 +18,7 @@ export default async function PortalRONPage() {
 
   const email = user.email.toLowerCase();
   const admin = createAdminClient();
-  const { data: deal } = await admin.from("deals").select("id, deal_id, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").ilike("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: deal } = await admin.from("deals").select("id, deal_id, status, deal_status, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").ilike("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
 
   if (!deal) return <main className="mx-auto max-w-2xl px-4 py-16"><h1 className="text-3xl text-[#F6F1E6]">Your signing session</h1><p className="mt-4 text-sm text-white/55">No active Matter was found. Contact your Milano coordinator if you need assistance.</p></main>;
 
@@ -29,10 +29,18 @@ export default async function PortalRONPage() {
   const { data: session } = await admin.from("ron_sessions").select("*").eq("matter_id", deal.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const { data: signers } = session ? await admin.from("ron_signers").select("id, email, signing_url_encrypted, signing_url_released, identity_status, kba_status, biometric_status").eq("ron_session_id", session.id) : { data: [] };
   const projection = session ? portalRONProjection(session as RONSession, (signers ?? []) as RONSigner[], email) : null;
+  const ronStatus = session?.milano_ron_status ?? null;
+  const matterStatus = String(deal.deal_status ?? deal.status ?? "");
+  const progressStage =
+    ronStatus === "SIGNED_DOCS_RETRIEVED" ||
+    ronStatus === "READY_FOR_APOSTILLE" ||
+    matterStatus === "apostille_processing"
+      ? "apostille"
+      : "signing";
 
   return (
     <main className="mx-auto min-h-[calc(100svh-5rem)] max-w-4xl overflow-x-hidden px-4 py-10 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-14">
-      <ClientProgressSpine current="signing" />
+      <ClientProgressSpine current={progressStage} />
       <header className="mb-8 mt-10"><p className="text-[10px] uppercase tracking-[0.3em] text-[#C6A65B]">Remote Online Notarization</p><h1 className="mt-3 text-3xl font-medium tracking-tight text-[#F6F1E6] sm:text-5xl">Your signing session</h1><p className="mt-3 break-all text-sm tracking-[0.12em] text-white/45">Matter {reference}</p></header>
 
       {notarialReview && (
