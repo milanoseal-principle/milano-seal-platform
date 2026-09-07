@@ -153,4 +153,12 @@ Verified client account
 → complete
 ```
 
+### Corridor control labels (each must hold end-to-end)
+
+- Payment: observed Wise submission unlocks scheduling; **verified Wise settlement** remains required before final release and is never implied by observation alone.
+- Execution / RON: BlueNotary provider execution advances the same Matter to canonical `in_execution`; signed documents are retrieved to private Milano storage before Apostille QA.
+- Apostille: explicit operator Apostille QA is the sole authoritative `in_execution → apostille_processing` transition; no automatic advancement.
+- Release / Courier: release stays settlement-gated; the same governed Shippo shipment identity carries label, tracking, and delivery.
+- Delivery / Complete: `delivered` only on delivery evidence; `completed` only on governed closeout.
+
 Any duplicate Matter, duplicate payment, false-success state, mismatched data, unauthorized lifecycle mutation, payment-gate bypass, observed submission falsely marked paid, automatic apostille advancement without QA, discount applied without client action, or password-reset account split is NO-GO.
