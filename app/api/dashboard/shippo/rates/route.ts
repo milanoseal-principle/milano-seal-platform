@@ -20,6 +20,7 @@ import {
 import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
 import { rankApprovedRates } from "@/lib/shippo/rateSelection";
 import { assertPaymentConfirmed, PaymentGateError } from "@/lib/payments/paymentGate";
+import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,11 @@ export async function POST(req: NextRequest) {
       recommended,
       selection_policy: selectionPolicy,
       selection_reason: selectionReason,
+      courier_pricing: calculateCourierCharge({
+        providerRateAmount: rate.amount,
+        currency: rate.currency,
+        tier: matter.tier,
+      }),
       ...( ["founder_admin", "admin_operator"].includes(role) ? { amount: rate.amount, currency: rate.currency } : {}),
     }));
 
