@@ -1,5 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { evaluateReleaseGate, type ReleaseGateResult } from "@/lib/security/release-integrity";
+import {
+  evaluateReleaseGate,
+  requiresCodiceFiscaleLockForRelease,
+  type ReleaseGateResult,
+} from "@/lib/security/release-integrity";
 
 export interface FinalReleaseReviewEvidence {
   deal_id: string;
@@ -16,20 +20,23 @@ export interface FinalReleaseReviewEvidence {
   updated_at: string;
 }
 
+export interface CanonicalReleaseFacts {
+  fullPaymentReceived: boolean;
+  ronCompleted: boolean;
+  apostilleReturned: boolean;
+  translationCompleted: boolean;
+  identifierMatchPassed: boolean;
+  finalPdfLocked: boolean;
+  pathwayReviewed: boolean;
+  deliveryRecipientConfirmed: boolean;
+  founderApproved: boolean;
+  complianceHold: boolean;
+}
+
 export interface CanonicalReleaseReadiness {
   gate: ReleaseGateResult;
   evidence: FinalReleaseReviewEvidence | null;
-  facts: {
-    fullPaymentReceived: boolean;
-    ronCompleted: boolean;
-    apostilleReturned: boolean;
-    translationCompleted: boolean;
-    finalPdfLocked: boolean;
-    pathwayReviewed: boolean;
-    deliveryRecipientConfirmed: boolean;
-    founderApproved: boolean;
-    complianceHold: boolean;
-  };
+  facts: CanonicalReleaseFacts;
 }
 
 const RON_COMPLETE = new Set([
@@ -42,7 +49,7 @@ export async function loadCanonicalReleaseReadiness(dealId: string): Promise<Can
   const admin = createAdminClient();
   const { data: deal, error } = await admin
     .from("deals")
-    .select("id, amount_due, amount_paid, payment_confirmed, payment_confirmed_at, payment_status, payment_settlement_status, execution_truth, execution_at, executed_at, apostille_at, apostille_required, requires_apostille, translation, delivery_at, delivery_timestamp, delivery_status")
+    .select("id, destination_country, amount_due, amount_paid, payment_confirmed, payment_confirmed_at, payment_status, payment_settlement_status, execution_truth, execution_at, executed_at, apostille_at, apostille_required, requires_apostille, translation, delivery_at, delivery_timestamp, delivery_status")
     .eq("id", dealId)
     .single();
 
@@ -70,24 +77,41 @@ export async function loadCanonicalReleaseReadiness(dealId: string): Promise<Can
     ronCompleted = !!session && RON_COMPLETE.has(String(session.milano_ron_status));
   }
 
-  const apostilleRequired = deal.apostille_required === true || (deal.apostille_required == null && deal.requires_apostille === true);
+  const apostilleRequired =
+    deal.apostille_required === true ||
+    (deal.apostille_required == null && deal.requires_apostille === true);
   const apostilleReturned = !apostilleRequired || deal.apostille_at != null;
 
-  const translationRequired = deal.translation === true;
   const reviewEvidence = (review?.evidence ?? {}) as Record<string, unknown>;
+  const translationRequired = deal.translation === true;
   const translationCompleted = !translationRequired || reviewEvidence.translation_completed === true;
+
+  let identifierMatchPassed = true;
+  if (requiresCodiceFiscaleLockForRelease(deal.destination_country)) {
+    const { data: idLock } = await admin
+      .from("identifier_locks")
+      .select("match_status")
+      .eq("matter_id", dealId)
+      .eq("identifier_type", "codice_fiscale")
+      .maybeSingle();
+    identifierMatchPassed =
+      idLock?.match_status === "confirmed" || idLock?.match_status === "exact_match";
+  }
 
   const amountDue = Number(deal.amount_due ?? 0);
   const fullPaymentReceived =
     amountDue === 0 ||
     (deal.payment_settlement_status === "cleared" &&
-      (deal.payment_confirmed === true || deal.payment_confirmed_at != null || Number(deal.amount_paid ?? 0) >= amountDue));
+      (deal.payment_confirmed === true ||
+        deal.payment_confirmed_at != null ||
+        Number(deal.amount_paid ?? 0) >= amountDue));
 
-  const facts = {
+  const facts: CanonicalReleaseFacts = {
     fullPaymentReceived,
     ronCompleted,
     apostilleReturned,
     translationCompleted,
+    identifierMatchPassed,
     finalPdfLocked: review?.final_pdf_locked === true,
     pathwayReviewed: review?.pathway_reviewed === true,
     deliveryRecipientConfirmed: review?.delivery_recipient_confirmed === true,
@@ -95,8 +119,22 @@ export async function loadCanonicalReleaseReadiness(dealId: string): Promise<Can
     complianceHold: review?.compliance_hold !== false,
   };
 
+  const finalSealReviewPassed =
+    facts.ronCompleted &&
+    facts.apostilleReturned &&
+    facts.translationCompleted &&
+    facts.complianceHold === false;
+
   return {
-    gate: evaluateReleaseGate(facts),
+    gate: evaluateReleaseGate({
+      paymentConfirmed: facts.fullPaymentReceived,
+      finalSealReviewPassed,
+      identifierMatchPassed: facts.identifierMatchPassed,
+      pathwayReviewed: facts.pathwayReviewed,
+      deliveryRecipientConfirmed: facts.deliveryRecipientConfirmed,
+      finalPdfLocked: facts.finalPdfLocked,
+      founderApproved: facts.founderApproved,
+    }),
     evidence: (review as FinalReleaseReviewEvidence | null) ?? null,
     facts,
   };
