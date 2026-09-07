@@ -41,13 +41,15 @@ The Vercel external merge gate now requires the existing production validators f
 
 ## Safe branch salvage performed
 
-The expanded gate exposed three concrete files that were required by the existing `validate-next-five-production-builds` contract but absent from current `main`. They were recovered as isolated pure/read-only helpers from the historical `milano-next-five-production-builds` branch rather than merging that stale branch wholesale:
+The expanded gate exposed three concrete files that were required by the existing `validate-next-five-production-builds` contract but absent from current `main`:
 
 - `lib/portal2/documentVault.ts`
 - `lib/dispatch/partnerApplication.ts`
 - `lib/dispatch/dispatchQueue.ts`
 
-These helpers do not mutate Matter state, payments, Wise, release authority, custody, RLS, Shippo, or BlueNotary. They restore the already-declared module contract only.
+The historical versions were used only as intent evidence. They were then adapted to the current `Portal2Matter`, `DispatchPartner`, and `DispatchStatus` contracts instead of importing stale historical types. This preserves the current architecture and avoids reintroducing branch-era schema drift.
+
+All three helpers are pure/read-only. They do not mutate Matter state, payments, Wise, release authority, custody, RLS, Shippo, or BlueNotary.
 
 ## Canonical authority lock
 
