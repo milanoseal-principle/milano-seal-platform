@@ -40,10 +40,13 @@ test('client progress projects Apostille only after signed-document truth', () =
   assert.match(portal, /progressStage/);
 });
 
-test('legacy apostille route writes canonical state and no old paid helper', () => {
+test('legacy apostille route is fail-closed and defers to governed RON QA', () => {
   const route = read('app/api/deals/[id]/apostille/route.ts');
-  assert.match(route, /status:\s*"apostille_processing"/);
-  assert.match(route, /deal_status:\s*"apostille_processing"/);
+  // The legacy endpoint must not mutate Matter state; the only authoritative
+  // in_execution -> apostille_processing transition is the governed RON QA route.
+  assert.match(route, /USE_GOVERNED_RON_APOSTILLE_QA/);
+  assert.match(route, /status:\s*409/);
+  assert.doesNotMatch(route, /\.update\(/);
   assert.doesNotMatch(route, /requirePaid/);
   assert.doesNotMatch(route, /status:\s*"apostille"/);
 });

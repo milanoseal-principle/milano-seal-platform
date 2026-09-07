@@ -27,7 +27,6 @@ const duplicatePrefixes = [...duplicates.entries()].filter(([, names]) => names.
 if (duplicatePrefixes.length) {
   const detail = duplicatePrefixes
     .map(([prefix, names]) => `${prefix}: ${names.join(", ")}`)
-    .join("; ");
     .join(" | ");
   throw new Error(`Migration chain contains duplicate numeric prefixes: ${detail}`);
 }
