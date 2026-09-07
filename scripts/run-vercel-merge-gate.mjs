@@ -44,6 +44,31 @@ const gates = [
   ["node", ["scripts/validate-source-database-wiring.mjs"]],
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
   ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
+
+  // Explicit module / motion / data-intelligence coverage. These validators
+  // already define the production contracts; keeping them in the external merge
+  // gate prevents a visually attractive or analytics-heavy branch from silently
+  // drifting away from canonical Matter, payment, routing or evidence truth.
+  ["npm", ["run", "validate:motion-system"]],
+  ["npm", ["run", "validate:data-intel-compliance-ui"]],
+  ["npm", ["run", "validate:final-wiring-confirmation"]],
+  ["npm", ["run", "validate:final-branch-salvage-audit"]],
+  ["npm", ["run", "validate:mini-atlas-intelligence-flow"]],
+  ["npm", ["run", "validate:trust-core-intelligence-engine"]],
+  ["npm", ["run", "validate:operator-intelligence-spine"]],
+  ["npm", ["run", "validate:final-intelligence-operator-os"]],
+  ["npm", ["run", "validate:high-value-assets"]],
+  ["npm", ["run", "validate:vertical-intelligence-commercial-os"]],
+  ["npm", ["run", "validate:relationship-intelligence-layer"]],
+  ["npm", ["run", "validate:trusted-integration-command"]],
+  ["npm", ["run", "validate:unified-revenue-stack"]],
+  ["npm", ["run", "validate:universal-procurement-engine"]],
+  ["npm", ["run", "validate:maritime-logistics-execution"]],
+  ["npm", ["run", "validate:government-public-sector"]],
+  ["npm", ["run", "validate:next-five-production-builds"]],
+  ["npm", ["run", "validate:trust-network-intelligence"]],
+  ["npm", ["run", "validate:revenue-stream-engine"]],
+
   ["node", ["scripts/validate-matter-execution-corridor-spine.mjs"]],
   ["node", ["scripts/validate-production-closeout-invariants.mjs"]],
   ["node", ["scripts/validate-immediate-scheduling-after-wise-submission.mjs"]],
