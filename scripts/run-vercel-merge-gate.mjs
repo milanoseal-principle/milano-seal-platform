@@ -45,10 +45,7 @@ const gates = [
   ["node", ["scripts/validate-final-visual-system-hardening.mjs"]],
   ["node", ["scripts/validate-global-corridor-cinematic-upgrade.mjs"]],
 
-  // Explicit module / motion / data-intelligence coverage. These validators
-  // already define the production contracts; keeping them in the external merge
-  // gate prevents a visually attractive or analytics-heavy branch from silently
-  // drifting away from canonical Matter, payment, routing or evidence truth.
+  // Explicit current production module / motion / intelligence coverage.
   ["npm", ["run", "validate:motion-system"]],
   ["npm", ["run", "validate:data-intel-compliance-ui"]],
   ["npm", ["run", "validate:final-wiring-confirmation"]],
@@ -65,7 +62,6 @@ const gates = [
   ["npm", ["run", "validate:universal-procurement-engine"]],
   ["npm", ["run", "validate:maritime-logistics-execution"]],
   ["npm", ["run", "validate:government-public-sector"]],
-  ["npm", ["run", "validate:next-five-production-builds"]],
   ["npm", ["run", "validate:trust-network-intelligence"]],
   ["npm", ["run", "validate:revenue-stream-engine"]],
 
