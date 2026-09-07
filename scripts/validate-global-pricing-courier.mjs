@@ -7,6 +7,7 @@ const credit = read("lib/shippo/courierCredit.ts");
 const rates = read("app/api/dashboard/shippo/rates/route.ts");
 const labels = read("app/api/dashboard/shippo/labels/route.ts");
 const payment = read("components/payments/SecurePaymentCard.tsx");
+const matterPricing = read("lib/pricing/canonicalMatterPricing.ts");
 
 for (const amount of ["base: 750", "base: 975", "base: 1850"]) assert.match(pricing, new RegExp(amount));
 assert.match(credit, /signature: 0/);
@@ -23,5 +24,12 @@ assert.match(labels, /client_courier_charge/);
 assert.match(payment, /amount_due/);
 assert.match(payment, /payment_observed_at/);
 assert.doesNotMatch(credit + rates + labels + payment, /stripe/i);
+for (const route of ["hague_apostille", "state_authentication", "federal_authentication", "consular_legalization", "mixed_route", "review_required"]) {
+  assert.match(matterPricing, new RegExp(route));
+}
+assert.match(matterPricing, /finalPriceConfirmed/);
+assert.match(matterPricing, /pending_authority_confirmation/);
+assert.match(matterPricing, /TIERS\[tier\]\.base/);
+assert.doesNotMatch(matterPricing, /Europe|Middle East|Asia|Latin America/);
 
 console.log("PASS global pricing and courier continuity");

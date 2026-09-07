@@ -9,6 +9,9 @@ const CREDIT_CENTS: Record<CourierCreditTier, number> = {
 };
 
 export interface CourierCharge {
+  providerRateAmountCents: number;
+  tierCourierCreditCents: number;
+  clientCourierChargeCents: number;
   providerRateAmount: string;
   tierCourierCredit: string;
   clientCourierCharge: string;
@@ -16,6 +19,11 @@ export interface CourierCharge {
 }
 
 export function normalizeCourierCreditTier(value: unknown): CourierCreditTier {
+  const tier = String(value ?? "").trim().toLowerCase();
+  if (tier === "signature" || tier === "priority" || tier === "executive") {
+    return tier;
+  }
+  throw new Error("INVALID_EXECUTION_TIER");
   const tier = String(value ?? "signature").trim().toLowerCase();
   return tier === "priority" || tier === "executive" ? tier : "signature";
 }
@@ -42,6 +50,9 @@ export function calculateCourierCharge(params: {
   const rateCents = parseMoneyToCents(params.providerRateAmount);
   const creditCents = Math.min(rateCents, CREDIT_CENTS[normalizeCourierCreditTier(params.tier)]);
   return {
+    providerRateAmountCents: rateCents,
+    tierCourierCreditCents: creditCents,
+    clientCourierChargeCents: rateCents - creditCents,
     providerRateAmount: formatCents(rateCents),
     tierCourierCredit: formatCents(creditCents),
     clientCourierCharge: formatCents(rateCents - creditCents),
