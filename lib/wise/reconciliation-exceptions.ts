@@ -33,7 +33,6 @@ type PendingMatter = {
   comp_authorized_at: string | null;
   comp_revoked_at: string | null;
   verified_revenue: number | null;
-  is_platform_fee_only: boolean | null;
 };
 
 function exceptionThresholdMs(): number {
@@ -95,7 +94,7 @@ export async function scanWiseReconciliationExceptions(): Promise<WiseExceptionS
   const { data, error } = await admin
     .from("deals")
     .select(
-      "id,deal_id,wise_reference,wise_transaction_reference,payment_funding_method,payment_confirmed,payment_status,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,payment_disposition,comp_authorized,comp_authorization_id,comp_authorized_at,comp_revoked_at,verified_revenue,is_platform_fee_only",
+      "id,deal_id,wise_reference,wise_transaction_reference,payment_funding_method,payment_confirmed,payment_status,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,payment_disposition,comp_authorized,comp_authorization_id,comp_authorized_at,comp_revoked_at,verified_revenue",
     )
     .eq("payment_confirmed", false)
     .not("payment_observed_at", "is", null)
