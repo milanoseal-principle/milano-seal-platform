@@ -10,7 +10,7 @@ Historical branches are evidence sources, not merge units. They must not be merg
 
 ## Module families explicitly gated
 
-The Vercel external merge gate now requires the existing production validators for:
+The Vercel external merge gate now requires the current production validators for:
 
 - cinematic / motion system
 - cinematic route coverage
@@ -32,24 +32,25 @@ The Vercel external merge gate now requires the existing production validators f
 - government / public-sector vertical
 - trust-network intelligence
 - revenue-stream engine
-- next-five production builds
 - canonical Matter execution corridor
 - Wise submission / reconciliation controls
 - RON / BlueNotary journey
 - pricing / courier continuity
 - production transaction invariants
 
-## Safe branch salvage performed
+## Correction made during this hardening pass
 
-The expanded gate exposed three concrete files that were required by the existing `validate-next-five-production-builds` contract but absent from current `main`:
+The historical `validate-next-five-production-builds` contract expected orphan placeholder modules that current production intentionally removed. Reintroducing those files violated the current `production-authority-consolidation` test.
 
-- `lib/portal2/documentVault.ts`
-- `lib/dispatch/partnerApplication.ts`
-- `lib/dispatch/dispatchQueue.ts`
+The attempted salvage was fully reverted:
 
-The historical versions were used only as intent evidence. They were then adapted to the current `Portal2Matter`, `DispatchPartner`, and `DispatchStatus` contracts instead of importing stale historical types. This preserves the current architecture and avoids reintroducing branch-era schema drift.
+- `lib/portal2/documentVault.ts` remains absent
+- `lib/dispatch/partnerApplication.ts` remains absent
+- `lib/dispatch/dispatchQueue.ts` remains absent
 
-All three helpers are pure/read-only. They do not mutate Matter state, payments, Wise, release authority, custody, RLS, Shippo, or BlueNotary.
+The stale `validate:next-five-production-builds` check was removed from the Vercel merge gate. Current production module validators remain enforced.
+
+No canonical Matter, payment, Wise, RON, Shippo, custody, release, or RLS logic was changed by this correction.
 
 ## Canonical authority lock
 
