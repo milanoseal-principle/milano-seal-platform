@@ -12,15 +12,21 @@ const assertIncludes = (file, terms) => {
   }
 };
 
-assertIncludes("app/pricing/page.tsx", [
-  "Signature Execution",
-  "24-72 Hours",
-  "Priority Execution",
-  "Same Day-48 Hours",
-  "Executive Execution",
-  "Immediate Project Coordination",
-  "Coordination timelines describe Milano Seal review",
-]);
+const pricing = read("app/pricing/page.tsx");
+for (const [label, re] of [
+  ["Signature Execution", /Signature Execution/],
+  ["24–72 hour coordination target", /24[–-]72 hour coordination target/i],
+  ["Priority Execution", /Priority Execution/],
+  ["same day–48 hour coordination target", /Same day[–-]48 hour coordination target/i],
+  ["Executive Execution", /Executive Execution/],
+  ["immediate project coordination", /Immediate project coordination/i],
+  ["third-party timing boundary", /third parties control their own processing timelines/i],
+]) {
+  if (!re.test(pricing)) {
+    console.error(`app/pricing/page.tsx missing required semantic: ${label}`);
+    process.exit(1);
+  }
+}
 
 assertIncludes("components/home/MiniCorridorMapPreview.tsx", [
   "Atlas Corridor Preview",

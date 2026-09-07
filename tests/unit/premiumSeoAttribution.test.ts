@@ -70,13 +70,22 @@ test("referral capture stores attribution without changing operational state", (
   assert.equal(capture.landingSource, "professional-italy-seo");
 });
 
-test("professional hub and country pages preserve premium no-commodity-price positioning", () => {
+test("professional hub and country pages preserve premium Matter-first positioning", () => {
   const hub = fs.readFileSync(path.join(root, "app/professional/page.tsx"), "utf8");
   const country = fs.readFileSync(path.join(root, "app/professional/[country]/page.tsx"), "utf8");
+  const header = fs.readFileSync(path.join(root, "components/landing/header.tsx"), "utf8");
 
   assert.match(hub, /U\.S\. Apostille & Document Execution/);
-  assert.match(hub, /Final scope and pricing are confirmed only after the Matter is reviewed/);
+  assert.match(hub, /Matter review comes first/);
+  assert.match(hub, /Professional Execution Access/);
   assert.match(country, /answerEngineQuestions/);
+  assert.doesNotMatch(hub, /Final scope and pricing are confirmed only after the Matter is reviewed/);
   assert.doesNotMatch(hub, /\$750|\$975|\$1,850/);
   assert.doesNotMatch(country, /\$750|\$975|\$1,850/);
+  assert.match(header, /professionalNavLinks/);
+  assert.match(header, /Submit Client Matter/);
+  assert.doesNotMatch(
+    header.match(/const professionalNavLinks = \[([\s\S]*?)\];/)?.[1] ?? "",
+    /Pricing|\/pricing/,
+  );
 });

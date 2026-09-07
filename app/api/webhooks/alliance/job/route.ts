@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordAllianceWebhookEvent } from "@/lib/alliance/webhookEvidence";
 
-// Stub: alliance job webhook
-// Triggers when a job status changes (offered → accepted → completed etc.)
-export async function POST(request: NextRequest) {
-  const sig = request.headers.get("x-alliance-signature");
-  if (!sig) {
-    return NextResponse.json(
-      { error: "Missing webhook signature" },
-      { status: 401 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  // TODO: verify signature, route event to job state machine
-  console.log("[webhook/alliance/job] received", body);
-
-  return NextResponse.json({ received: true, status: "queued" });
+export async function POST(req: NextRequest) {
+  return recordAllianceWebhookEvent(req, "job");
 }
 
 export async function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  return NextResponse.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }

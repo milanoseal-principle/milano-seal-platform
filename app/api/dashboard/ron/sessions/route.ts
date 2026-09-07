@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
         'in',
         '("RON_EXPIRED","RON_COMPLETED","SIGNED_DOCS_RETRIEVED","READY_FOR_APOSTILLE")'
       )
+      .not('milano_ron_status', 'in', '("RON_EXPIRED")')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

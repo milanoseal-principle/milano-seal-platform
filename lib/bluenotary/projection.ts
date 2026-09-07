@@ -62,6 +62,8 @@ export function portalRONProjection(
     milano_ron_status: status,
     client_label: getClientStatusLabel(status),
     scheduling_authorized: schedulingAuthorized,
+    payment_confirmed: paymentConfirmed,
+    scheduling_authorized: paymentConfirmed,
     session_active: sessionActive,
     signing_url: signingUrl ?? null,
     coordinator_message:
