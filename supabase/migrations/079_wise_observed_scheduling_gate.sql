@@ -13,13 +13,18 @@ create or replace function public.check_payment_gate()
 returns trigger as $$
 declare
   protected_states text[] := array[
-    'scheduled', 'in_execution', 'apostille', 'apostille_processing',
-    'shipped', 'in_transit', 'delivered', 'completed'
+    'scheduled', 'in_execution', 'apostille_processing',
+    'in_transit', 'delivered', 'completed'
   ];
+  previous_status text := '';
   observed_submission_valid boolean := false;
 begin
+  if TG_OP = 'UPDATE' then
+    previous_status := coalesce(OLD.status, '');
+  end if;
+
   if NEW.status = any(protected_states)
-     and coalesce(OLD.status, '') <> all(protected_states) then
+     and previous_status <> all(protected_states) then
 
     -- Verified Wise settlement remains full payment authority.
     if NEW.payment_confirmed = true
@@ -73,8 +78,7 @@ begin
 end;
 $$ language plpgsql;
 
--- Rebind explicitly so a fresh database and production database use the same
--- canonical status trigger after this migration.
+-- Rebind explicitly so fresh and upgraded databases use the same function.
 drop trigger if exists enforce_payment_gate_on_status_insert on public.deals;
 create trigger enforce_payment_gate_on_status_insert
   before insert on public.deals
