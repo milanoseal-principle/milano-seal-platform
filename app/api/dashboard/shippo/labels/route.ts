@@ -10,6 +10,8 @@ import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
 import { selectRecommendedRate } from "@/lib/shippo/rateSelection";
 import { assertCanCreateLabel, ShippoGateError } from "@/lib/shippo/gates";
 import { audit } from "@/lib/audit";
+import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,29 @@ export async function POST(req: NextRequest) {
       throw gateErr;
     }
 
+    const admin = createAdminClient();
+    const { data: persistedShipment, error: persistedError } = await admin
+      .from("shippo_shipments")
+      .select("*")
+      .eq("matter_id", matter.id)
+      .eq("shippo_shipment_id", shipment_id)
+      .maybeSingle();
+    if (persistedError) return NextResponse.json({ error: "RATE_SNAPSHOT_LOOKUP_FAILED" }, { status: 500 });
+    if (persistedShipment?.shippo_transaction_id) {
+      return NextResponse.json({
+        success: true,
+        existing: true,
+        matter_id: matter.id,
+        shipment_id,
+        selected_rate_id: persistedShipment.shippo_rate_id,
+        carrier: persistedShipment.carrier,
+        tracking_number_display: persistedShipment.tracking_number,
+        tracking_url: persistedShipment.tracking_url,
+        courier_status: persistedShipment.courier_status,
+        label_created_at: persistedShipment.label_created_at,
+      });
+    }
+
     const shipment = await getShippoShipment(shipment_id);
     const approvedRates = filterApprovedRates(shipment.rates);
     if (approvedRates.length === 0) {
@@ -73,18 +98,45 @@ export async function POST(req: NextRequest) {
       destinationCountry,
     });
 
-    const selected = selected_rate_id
-      ? approvedRates.find((rate) => rate.object_id === selected_rate_id) ?? null
+    const governedRateId = persistedShipment?.shippo_rate_id ?? selected_rate_id;
+    if (persistedShipment?.shippo_rate_id && selected_rate_id && persistedShipment.shippo_rate_id !== selected_rate_id) {
+      return NextResponse.json({ error: "SHIPPO_RATE_SELECTION_MISMATCH" }, { status: 409 });
+    }
+    const selected = governedRateId
+      ? approvedRates.find((rate) => rate.object_id === governedRateId) ?? null
       : recommended?.rate ?? null;
 
     if (!selected) {
-      return NextResponse.json({ error: "SELECTED_RATE_NOT_APPROVED_FOR_SHIPMENT" }, { status: 422 });
+      return NextResponse.json({ error: persistedShipment ? "SHIPPO_RATE_UNAVAILABLE" : "SELECTED_RATE_NOT_APPROVED_FOR_SHIPMENT" }, { status: 422 });
     }
 
-    const wasAutoSelected = !selected_rate_id;
-    const transaction = await purchaseShippoLabel(selected.object_id);
+    if (persistedShipment?.id) {
+      const { data: claimed, error: claimError } = await admin
+        .from("shippo_shipments")
+        .update({ rate_status: "SHIPPING_READY_FOR_LABEL", updated_at: new Date().toISOString() })
+        .eq("id", persistedShipment.id)
+        .eq("rate_status", "SHIPPING_RATE_SELECTED")
+        .select("id")
+        .maybeSingle();
+      if (claimError) return NextResponse.json({ error: "SHIPMENT_LABEL_CLAIM_FAILED" }, { status: 500 });
+      if (!claimed) return NextResponse.json({ error: "SHIPMENT_LABEL_CREATION_IN_PROGRESS" }, { status: 409 });
+    }
+
+    const wasAutoSelected = !governedRateId;
+    let transaction;
+    try {
+      transaction = await purchaseShippoLabel(selected.object_id);
+    } catch (error) {
+      if (persistedShipment?.id) {
+        await admin.from("shippo_shipments").update({ rate_status: "SHIPPING_RATE_SELECTED" }).eq("id", persistedShipment.id);
+      }
+      throw error;
+    }
 
     if (transaction.status !== "SUCCESS") {
+      if (persistedShipment?.id) {
+        await admin.from("shippo_shipments").update({ rate_status: "SHIPPING_RATE_SELECTED" }).eq("id", persistedShipment.id);
+      }
       return NextResponse.json({ error: "Label purchase failed", messages: transaction.messages }, { status: 502 });
     }
 
@@ -104,8 +156,13 @@ export async function POST(req: NextRequest) {
 
     const parsedCost = Number.parseFloat(selected.amount);
     const actualShippoCost = Number.isFinite(parsedCost) ? parsedCost : null;
+    const courierPricing = calculateCourierCharge({
+      providerRateAmount: selected.amount,
+      currency: selected.currency,
+      tier: matter.tier,
+    });
 
-    const { error: insertErr } = await supabase.from("shippo_shipments").insert({
+    const shipmentRecord = {
       matter_id: matter.id,
       shippo_shipment_id: shipment_id,
       shippo_transaction_id: transaction.object_id,
@@ -127,10 +184,20 @@ export async function POST(req: NextRequest) {
       packaging_qa_status: "PENDING",
       actual_shippo_cost: actualShippoCost,
       shippo_currency: selected.currency || "USD",
-    });
-
-    if (insertErr) {
-      console.error("shippo_shipments insert error:", insertErr.message);
+      provider_rate_amount: courierPricing.providerRateAmount,
+      tier_courier_credit: courierPricing.tierCourierCredit,
+      client_courier_charge: courierPricing.clientCourierCharge,
+      rate_currency: courierPricing.currency,
+      selected_service_level: selected.servicelevel.token,
+      rate_status: "LABEL_CREATED",
+      updated_at: new Date().toISOString(),
+    };
+    const write = persistedShipment?.id
+      ? await admin.from("shippo_shipments").update(shipmentRecord).eq("id", persistedShipment.id).select("id").single()
+      : await admin.from("shippo_shipments").insert(shipmentRecord).select("id").single();
+    if (write.error) {
+      console.error("shippo_shipments continuity write error:", write.error.message);
+      return NextResponse.json({ error: "SHIPMENT_CONTINUITY_WRITE_FAILED" }, { status: 500 });
     }
 
     await audit({
@@ -143,6 +210,9 @@ export async function POST(req: NextRequest) {
         execution_lane: matter.tier ?? "signature",
         shippo_shipment_id: shipment_id,
         shippo_rate_id: selected.object_id,
+        provider_rate_amount: courierPricing.providerRateAmount,
+        tier_courier_credit: courierPricing.tierCourierCredit,
+        client_courier_charge: courierPricing.clientCourierCharge,
         carrier,
         servicelevel: selected.servicelevel.token,
         selected_by_policy: wasAutoSelected,
@@ -165,6 +235,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      shipping_record_id: write.data.id,
       matter_id: matter.id,
       matter_reference: matter.deal_id ?? matter.id,
       execution_lane: matter.tier ?? "signature",
@@ -177,6 +248,7 @@ export async function POST(req: NextRequest) {
       tracking_number_display: trackingNumber,
       tracking_url: trackingUrl,
       courier_status: "LABEL_CREATED",
+      courier_pricing: courierPricing,
       label_created_at: new Date().toISOString(),
       package_template_used: packageTemplateId,
       shipping_option_used: shippingOptionId,

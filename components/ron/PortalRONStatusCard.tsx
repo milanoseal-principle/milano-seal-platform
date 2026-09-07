@@ -1,129 +1,54 @@
-'use client';
+"use client";
 
-import type { PortalRONView } from '@/lib/bluenotary/types';
+import type { PortalRONView } from "@/lib/bluenotary/types";
 
 interface Props {
   projection: PortalRONView;
-  className?: string;
+  matterReference: string;
 }
 
-export function PortalRONStatusCard({ projection, className = '' }: Props) {
-  const {
-    client_label,
-    payment_confirmed,
-    session_active,
-    signing_url,
-    coordinator_message,
-    identity_status,
-    kba_status,
-  } = projection;
+function StatusRow({ label, detail, state }: { label: string; detail: string; state: "satisfied" | "processing" | "review" | "blocked" }) {
+  const mark = state === "satisfied" ? "✓" : state === "review" ? "!" : "●";
+  const color = state === "satisfied" ? "text-emerald-300" : state === "review" ? "text-amber-300" : state === "blocked" ? "text-red-300" : "text-[#C6A65B]";
+  return (
+    <li className="flex min-h-11 items-start gap-3 border-b border-white/10 py-3 last:border-0">
+      <span aria-hidden="true" className={`${color} mt-0.5 w-4 font-semibold`}>{mark}</span>
+      <span><span className="block text-sm text-[#F6F1E6]">{label}</span><span className="block text-xs leading-5 text-white/50">{detail}</span></span>
+    </li>
+  );
+}
 
-  const showSigningLink =
-    signing_url &&
-    payment_confirmed &&
-    session_active;
+export function PortalRONStatusCard({ projection, matterReference }: Props) {
+  const showSigningLink = Boolean(projection.signing_url && projection.scheduling_authorized && projection.session_active);
+  const completed = ["RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"].includes(projection.milano_ron_status);
 
   return (
-    <div
-      className={`bg-zinc-900 border border-zinc-800 rounded-xl p-6 ${className}`}
-      role="region"
-      aria-label="Notarization session status"
-    >
-      {/* Status header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Session Status</p>
-          <p className="text-lg font-semibold text-white">{client_label}</p>
-        </div>
-        <div
-          className={`w-3 h-3 rounded-full mt-1 ${
-            session_active
-              ? 'bg-amber-400 motion-safe:animate-pulse'
-              : 'bg-zinc-600'
-          }`}
-          aria-hidden="true"
-        />
+    <section className="rounded-2xl border border-[#C6A65B]/25 bg-black/50 p-5 shadow-2xl backdrop-blur-md sm:p-7" aria-labelledby="signing-readiness">
+      <div className="flex flex-col gap-2 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-[10px] uppercase tracking-[0.28em] text-[#C6A65B]">Signing readiness</p><h2 id="signing-readiness" className="mt-2 text-2xl font-medium text-[#F6F1E6]">{projection.client_label}</h2></div>
+        <p className="break-all text-xs tracking-[0.16em] text-white/45">{matterReference}</p>
       </div>
 
-      {/* Payment confirmed indicator */}
-      <div className="flex items-center gap-2 mb-4 text-xs">
-        <span
-          className={`w-4 h-4 rounded-full flex items-center justify-center ${
-            payment_confirmed ? 'bg-green-900 text-green-400' : 'bg-zinc-800 text-zinc-600'
-          }`}
-          aria-hidden="true"
-        >
-          {payment_confirmed ? (
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 block" />
-          )}
-        </span>
-        <span className={payment_confirmed ? 'text-zinc-400' : 'text-zinc-600'}>
-          Payment confirmed
-        </span>
-      </div>
+      <ul className="mt-3">
+        <StatusRow label="Payment submission recorded" detail="Wise settlement verification continues automatically." state={projection.scheduling_authorized ? "satisfied" : "blocked"} />
+        <StatusRow label="Scheduling authority" detail={projection.scheduling_authorized ? "Authorized. No additional payment is required." : "Awaiting canonical payment or complimentary authority."} state={projection.scheduling_authorized ? "satisfied" : "blocked"} />
+        <StatusRow label="Identity verification" detail={projection.identity_status === "PASSED" ? "Provider evidence received." : "Completed securely inside the signing room."} state={projection.identity_status === "PASSED" ? "satisfied" : "processing"} />
+        <StatusRow label="Knowledge-based authentication" detail={projection.kba_status === "PASSED" ? "Provider evidence received." : "Required during the provider session."} state={projection.kba_status === "FAILED" ? "review" : projection.kba_status === "PASSED" ? "satisfied" : "processing"} />
+        {completed && <StatusRow label="RON completion" detail="BlueNotary provider evidence has been received by Milano." state="satisfied" />}
+      </ul>
 
-      {/* Verification status — client-safe labels only */}
-      {(identity_status || kba_status) && (
-        <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
-          {identity_status && (
-            <div className="bg-zinc-800 rounded p-2">
-              <p className="text-zinc-600 mb-0.5">Identity Check</p>
-              <p className={
-                identity_status === 'PASSED' ? 'text-green-400' :
-                identity_status === 'FAILED' ? 'text-red-400' :
-                'text-zinc-400'
-              }>
-                {identity_status === 'PASSED' ? 'Verified' :
-                 identity_status === 'FAILED' ? 'Needs Attention' :
-                 'In Progress'}
-              </p>
-            </div>
-          )}
-          {kba_status && (
-            <div className="bg-zinc-800 rounded p-2">
-              <p className="text-zinc-600 mb-0.5">Security Questions</p>
-              <p className={
-                kba_status === 'PASSED' ? 'text-green-400' :
-                kba_status === 'FAILED' ? 'text-red-400' :
-                'text-zinc-400'
-              }>
-                {kba_status === 'PASSED' ? 'Passed' :
-                 kba_status === 'FAILED' ? 'Needs Attention' :
-                 'In Progress'}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Signing link — only when all gate conditions met */}
       {showSigningLink ? (
-        <a
-          href={signing_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full text-center py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-black font-semibold text-sm transition-colors mb-4"
-        >
-          Join Notarization Session
-        </a>
-      ) : (
-        <div className="w-full py-2.5 px-4 rounded-lg bg-zinc-800 text-zinc-500 font-medium text-sm text-center mb-4 cursor-not-allowed select-none">
-          Session link not yet available
+        <div className="mt-6 rounded-xl border border-[#C6A65B]/25 bg-[#C6A65B]/5 p-5">
+          <p className="text-xs uppercase tracking-[0.22em] text-[#C6A65B]">Preparing your secure signing room</p>
+          <p className="mt-3 text-sm leading-6 text-white/65">Your Milano Matter remains active while you complete identity verification, KBA, video, and signing through BlueNotary.</p>
+          <a href={projection.signing_url!} target="_blank" rel="noopener noreferrer" className="mt-5 flex min-h-11 w-full items-center justify-center rounded-lg bg-[#C6A65B] px-5 py-3 text-center text-sm font-semibold text-black transition-colors duration-150 hover:bg-[#d6b96f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F6F1E6] motion-reduce:transition-none">
+            Enter Secure Signing Room
+          </a>
+          <p className="mt-4 text-xs leading-5 text-white/40">Remote notarization technology is provided through BlueNotary. The Milano Seal coordinates the execution workflow.</p>
         </div>
+      ) : (
+        <div className="mt-6 min-h-11 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-center text-sm text-white/50">Milano will release secure session access when every execution requirement is satisfied.</div>
       )}
-
-      {/* Coordinator message */}
-      {coordinator_message && (
-        <p className="text-xs text-zinc-500 leading-relaxed border-t border-zinc-800 pt-3">
-          {coordinator_message}
-        </p>
-      )}
-
-      {/* NEVER shows: raw BN status, base64, credentials, internal notes */}
-    </div>
+    </section>
   );
 }

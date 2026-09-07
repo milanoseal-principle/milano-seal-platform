@@ -187,7 +187,7 @@ export interface PortalRONView {
   session_id: string;
   milano_ron_status: MilanoRONStatus;
   client_label: string;
-  payment_confirmed: boolean;
+  scheduling_authorized: boolean;
   session_active: boolean;
   signing_url?: string | null; // only set when all release conditions met
   coordinator_message?: string;
