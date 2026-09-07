@@ -8,76 +8,118 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
+
+      - name: Validate production target
+        env:
+          BASE_URL: ${{ inputs.production_url }}
+        run: |
+          set -euo pipefail
+          case "$BASE_URL" in
+            https://*) ;;
+            *)
+              echo "Production URL must use https://"
+              exit 1
+              ;;
+          esac
 
       - name: Typecheck
-        run: pnpm exec tsc --noEmit
+        run: npm run typecheck
 
       - name: Diff check
         run: git diff --check
 
-      - name: Build
-        run: pnpm build
-
-      - name: Verify canonical route files exist
+      - name: Canonical transaction validators
         run: |
-          set -e
+          set -euo pipefail
+          node scripts/validate-global-pricing-courier.mjs
+          node scripts/validate-wise-only-active-ops-docs.mjs
+          node scripts/validate-immediate-scheduling-after-wise-submission.mjs
+          node scripts/validate-wise-reconciliation-exception-orchestrator.mjs
+          node scripts/validate-matter-execution-corridor-spine.mjs
+          node scripts/validate-production-transaction-10of10.mjs
+          npm run validate:migration-chain
+
+      - name: Targeted transaction tests
+        run: |
+          set -euo pipefail
+          node --import tsx --test \
+            tests/global-pricing-courier-p0.test.ts \
+            tests/production-transaction-10of10.test.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify canonical production files exist
+        run: |
+          set -euo pipefail
           REQUIRED=(
-            app/login/page.tsx
-            app/intake/page.tsx
-            app/map/page.tsx
-            app/countries/page.tsx
-            app/notary/join/page.tsx
-            app/professional/damiani/page.tsx
-            app/professional/damiani/DamianiReentry.tsx
-            app/documents/[document]/[country]/page.tsx
-            app/today/page.tsx
-            app/workspace/release/page.tsx
-            app/dashboard/page.tsx
-            app/dashboard/deliveries/page.tsx
-            app/dashboard/discounts/page.tsx
-            app/dashboard/incidents/page.tsx
-            app/dashboard/notary-network/page.tsx
-            app/dashboard/truth/page.tsx
-            app/dashboard/workbook/page.tsx
-            app/dashboard/workbook/[sheet]/page.tsx
-            app/portal/page.tsx
-            app/portal/tracking/page.tsx
-            app/portal/trackingNow/page.tsx
-            app/portal/invoice/page.tsx
-            app/portal/documents/page.tsx
-            app/portal/payment/page.tsx
-            app/portal/release/page.tsx
-            app/alliance/dashboard/page.tsx
-            app/va/dashboard/page.tsx
-            app/va/portal/page.tsx
-            app/api/auth/login/route.ts
-            app/api/dashboard/discounts/route.ts
-            app/api/dashboard/incidents/route.ts
-            app/api/notary/apply/route.ts
-            app/api/notary/credentials/route.ts
-            app/api/health/route.ts
-            lib/auth/server-role.ts
-            lib/dashboardAuth.ts
-            lib/seo-document-routing.ts
+            "app/login/page.tsx"
+            "app/intake/page.tsx"
+            "app/map/page.tsx"
+            "app/countries/page.tsx"
+            "app/notary/join/page.tsx"
+            "app/professional/damiani/page.tsx"
+            "app/professional/damiani/DamianiReentry.tsx"
+            "app/documents/[document]/[country]/page.tsx"
+            "app/today/page.tsx"
+            "app/workspace/release/page.tsx"
+            "app/dashboard/page.tsx"
+            "app/dashboard/deliveries/page.tsx"
+            "app/dashboard/discounts/page.tsx"
+            "app/dashboard/incidents/page.tsx"
+            "app/dashboard/notary-network/page.tsx"
+            "app/dashboard/truth/page.tsx"
+            "app/dashboard/workbook/page.tsx"
+            "app/dashboard/workbook/[sheet]/page.tsx"
+            "app/portal/page.tsx"
+            "app/portal/tracking/page.tsx"
+            "app/portal/trackingNow/page.tsx"
+            "app/portal/invoice/page.tsx"
+            "app/portal/documents/page.tsx"
+            "app/portal/payment/page.tsx"
+            "app/portal/release/page.tsx"
+            "app/alliance/dashboard/page.tsx"
+            "app/va/dashboard/page.tsx"
+            "app/va/portal/page.tsx"
+            "app/api/auth/login/route.ts"
+            "app/api/dashboard/discounts/route.ts"
+            "app/api/dashboard/incidents/route.ts"
+            "app/api/notary/apply/route.ts"
+            "app/api/notary/credentials/route.ts"
+            "app/api/health/route.ts"
+            "app/api/dashboard/shippo/health/route.ts"
+            "app/api/dashboard/shippo/rates/route.ts"
+            "app/api/dashboard/shippo/labels/route.ts"
+            "app/api/courier/webhook/route.ts"
+            "app/api/deals/[id]/pay/route.ts"
+            "lib/release/performFinalRelease.ts"
+            "lib/auth/server-role.ts"
+            "lib/dashboardAuth.ts"
+            "lib/seo-document-routing.ts"
           )
           FAIL=0
           for f in "${REQUIRED[@]}"; do
@@ -89,15 +131,16 @@ jobs:
             fi
           done
           if [ "$FAIL" -eq 1 ]; then
-            echo "One or more required route files are missing."
+            echo "One or more required production files are missing."
             exit 1
           fi
 
-      - name: Route smoke test
+      - name: Route and runtime smoke test
         env:
           BASE_URL: ${{ inputs.production_url }}
         run: |
-          set -e
+          set -euo pipefail
+          BASE_URL="${BASE_URL%/}"
           PASS=0
           FAIL=0
 
@@ -105,9 +148,9 @@ jobs:
             local route="$1"
             local url="${BASE_URL}${route}"
             local status
-            status=$(curl -L -s -o /tmp/page.html -w "%{http_code}" "$url")
+            status=$(curl --retry 2 --retry-delay 2 -L -sS -o /tmp/page.html -w "%{http_code}" "$url")
             local final_url
-            final_url=$(curl -Ls -o /dev/null -w "%{url_effective}" "$url")
+            final_url=$(curl --retry 2 --retry-delay 2 -LsS -o /dev/null -w "%{url_effective}" "$url")
 
             if [ "$status" -ge 500 ]; then
               echo "❌ FAIL [public] $route → $status (final: $final_url)"
@@ -120,7 +163,7 @@ jobs:
               return
             fi
             if [ "$status" -ge 400 ]; then
-              echo "❌ FAIL [public] $route → $status (expected 200)"
+              echo "❌ FAIL [public] $route → $status (expected < 400)"
               FAIL=$((FAIL+1))
               return
             fi
@@ -132,9 +175,9 @@ jobs:
             local route="$1"
             local url="${BASE_URL}${route}"
             local status
-            status=$(curl -s -o /tmp/page.html -w "%{http_code}" "$url")
+            status=$(curl --retry 2 --retry-delay 2 -sS -o /tmp/page.html -w "%{http_code}" "$url")
             local final_url
-            final_url=$(curl -Ls -o /dev/null -w "%{url_effective}" "$url")
+            final_url=$(curl --retry 2 --retry-delay 2 -LsS -o /dev/null -w "%{url_effective}" "$url")
 
             if [ "$status" -ge 500 ]; then
               echo "❌ FAIL [protected] $route → $status"
@@ -154,7 +197,7 @@ jobs:
             local route="$1"
             local url="${BASE_URL}${route}"
             local status
-            status=$(curl -s -o /tmp/api.json -w "%{http_code}" "$url")
+            status=$(curl --retry 2 --retry-delay 2 -sS -o /tmp/api.json -w "%{http_code}" "$url")
 
             if [ "$status" -ge 500 ]; then
               echo "❌ FAIL [api:protected] $route → $status"
@@ -171,27 +214,37 @@ jobs:
               PASS=$((PASS+1))
               return
             fi
-            echo "⚠️ WARN [api:protected] $route → $status (unexpected, not failing)"
+            echo "⚠️ WARN [api:protected] $route → $status (route exists, unexpected method/status)"
             PASS=$((PASS+1))
           }
 
-          check_public_api() {
-            local route="$1"
-            local url="${BASE_URL}${route}"
+          check_health() {
+            local url="${BASE_URL}/api/health"
             local status
-            status=$(curl -s -o /tmp/api.json -w "%{http_code}" "$url")
+            status=$(curl --retry 2 --retry-delay 2 -sS -o /tmp/health.json -w "%{http_code}" "$url")
+            if [ "$status" -ne 200 ]; then
+              echo "❌ FAIL [health] /api/health → $status"
+              FAIL=$((FAIL+1))
+              return
+            fi
 
-            if [ "$status" -ge 500 ]; then
-              echo "❌ FAIL [api:public] $route → $status"
+            if ! node -e '
+              const fs = require("fs");
+              const h = JSON.parse(fs.readFileSync("/tmp/health.json", "utf8"));
+              if (h.status !== "ok") process.exit(1);
+              if (h.service !== "milano-seal-platform") process.exit(1);
+              if (h.environment !== "production") process.exit(1);
+              if (h?.env?.supabase_anon_key !== "SET") process.exit(1);
+              if (h?.env?.supabase_service_role_key !== "SET") process.exit(1);
+              if (h?.supabase?.reachable !== true) process.exit(1);
+            '; then
+              echo "❌ FAIL [health] invalid production/Supabase health payload"
+              cat /tmp/health.json
               FAIL=$((FAIL+1))
               return
             fi
-            if [ "$status" -eq 404 ]; then
-              echo "❌ FAIL [api:public] $route → 404"
-              FAIL=$((FAIL+1))
-              return
-            fi
-            echo "✅ PASS [api:public] $route → $status"
+
+            echo "✅ PASS [health] production runtime + Supabase reachable"
             PASS=$((PASS+1))
           }
 
@@ -212,13 +265,13 @@ jobs:
           check_public "/documents/fbi-background-check/france"
           check_public "/documents/birth-certificate/italy"
           check_public "/documents/power-of-attorney/spain"
-          check_protected "/today"
-          check_protected "/workspace/release"
 
           echo ""
           echo "══════════════════════════════════════════════"
-          echo " DASHBOARD ROUTES (protected — redirect or 200)"
+          echo " OPERATOR / RELEASE ROUTES"
           echo "══════════════════════════════════════════════"
+          check_protected "/today"
+          check_protected "/workspace/release"
           check_protected "/dashboard"
           check_protected "/dashboard/deliveries"
           check_protected "/dashboard/discounts"
@@ -230,7 +283,7 @@ jobs:
 
           echo ""
           echo "══════════════════════════════════════════════"
-          echo " CLIENT PORTAL ROUTES (protected)"
+          echo " CLIENT PORTAL ROUTES"
           echo "══════════════════════════════════════════════"
           check_protected "/portal"
           check_protected "/portal/tracking"
@@ -242,30 +295,26 @@ jobs:
 
           echo ""
           echo "══════════════════════════════════════════════"
-          echo " ALLIANCE ROUTES (protected)"
+          echo " ROLE-ISOLATED ROUTES"
           echo "══════════════════════════════════════════════"
           check_protected "/alliance/dashboard"
-
-          echo ""
-          echo "══════════════════════════════════════════════"
-          echo " VA ROUTES (protected)"
-          echo "══════════════════════════════════════════════"
           check_protected "/va/dashboard"
           check_protected "/va/portal"
 
           echo ""
           echo "══════════════════════════════════════════════"
-          echo " PROTECTED API ROUTES (expect 401/403)"
+          echo " PROTECTED API ROUTES"
           echo "══════════════════════════════════════════════"
           check_protected_api "/api/dashboard/discounts"
           check_protected_api "/api/dashboard/incidents"
           check_protected_api "/api/notary/credentials"
+          check_protected_api "/api/dashboard/shippo/health"
 
           echo ""
           echo "══════════════════════════════════════════════"
-          echo " PUBLIC API HEALTH"
+          echo " PRODUCTION HEALTH"
           echo "══════════════════════════════════════════════"
-          check_public_api "/api/health"
+          check_health
 
           echo ""
           echo "══════════════════════════════════════════════"
@@ -276,8 +325,9 @@ jobs:
           echo ""
 
           if [ "$FAIL" -gt 0 ]; then
-            echo "Smoke test FAILED — $FAIL route(s) need attention."
+            echo "Smoke test FAILED — $FAIL production check(s) need attention."
             exit 1
-          else
-            echo "All routes PASSED."
           fi
+
+          echo "All automated production smoke checks PASSED."
+          echo "This does not replace the manual 15-step Tiffany transaction acceptance test."
