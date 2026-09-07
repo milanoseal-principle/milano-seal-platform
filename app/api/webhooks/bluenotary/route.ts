@@ -36,6 +36,7 @@ async function advanceMatterIntoExecution(
       status: 'in_execution',
       deal_status: 'in_execution',
       execution_at: now,
+      executed_at: now,
       last_activity: now,
     })
     .eq('id', matter.id)
