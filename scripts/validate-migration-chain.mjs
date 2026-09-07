@@ -11,6 +11,8 @@ const required = [
   "050_live_intake_execution_truth_reconciliation.sql",
   "055_matter_evidence_ledger.sql",
   "056_matter_truth_snapshot_archive.sql",
+  "078_shippo_prepayment_rate_continuity.sql",
+  "079_wise_observed_scheduling_gate.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -23,8 +25,10 @@ for (const file of files) {
 }
 const duplicatePrefixes = [...duplicates.entries()].filter(([, names]) => names.length > 1);
 if (duplicatePrefixes.length) {
-  console.warn("Migration chain contains duplicate numeric prefixes:");
-  for (const [prefix, names] of duplicatePrefixes) console.warn(`  ${prefix}: ${names.join(", ")}`);
+  const detail = duplicatePrefixes
+    .map(([prefix, names]) => `${prefix}: ${names.join(", ")}`)
+    .join("; ");
+  throw new Error(`Migration chain contains duplicate numeric prefixes: ${detail}`);
 }
 
 const baseline = fs.readFileSync(path.join(dir, "001_initial_schema.sql"), "utf8");
