@@ -1,13 +1,30 @@
-// Client Portal 2.0 — client-safe document vault view.
+// Client Portal 2.0 — client-safe document vault projection.
+// Pure/read-only: this module never writes storage, Matter state, payment truth,
+// release authority, or document visibility policy outside this projection.
 
-import type { DocumentVaultItem, PortalMatter } from "./types";
+import type { Portal2Matter } from "./types";
 
-/**
- * Categories that are always safe to show a client.
- * Internal work product is never modeled as a DocumentVaultItem, but we filter
- * defensively regardless.
- */
-const CLIENT_VISIBLE_CATEGORIES: ReadonlySet<DocumentVaultItem["category"]> = new Set([
+export type DocumentVaultCategory =
+  | "client_upload"
+  | "executed_document"
+  | "apostille"
+  | "release_packet"
+  | "certificate"
+  | "internal_work_product";
+
+export interface DocumentVaultItem {
+  id: string;
+  name: string;
+  category: DocumentVaultCategory;
+  status: "pending" | "available" | "archived";
+  downloadable: boolean;
+}
+
+export type Portal2MatterWithVault = Portal2Matter & {
+  vault?: readonly DocumentVaultItem[];
+};
+
+const CLIENT_VISIBLE_CATEGORIES: ReadonlySet<DocumentVaultCategory> = new Set([
   "client_upload",
   "executed_document",
   "apostille",
@@ -15,12 +32,16 @@ const CLIENT_VISIBLE_CATEGORIES: ReadonlySet<DocumentVaultItem["category"]> = ne
   "certificate",
 ]);
 
-/** Return only the vault items a client is allowed to see. Pure/read-only. */
-export function buildClientVault(matter: PortalMatter): DocumentVaultItem[] {
+/** Return only client-visible vault items. Internal work product fails closed. */
+export function buildClientVault(matter: Portal2MatterWithVault): DocumentVaultItem[] {
   return (matter.vault ?? []).filter((item) => CLIENT_VISIBLE_CATEGORIES.has(item.category));
 }
 
-/** Items the client can download right now. */
-export function downloadableVaultItems(matter: PortalMatter): DocumentVaultItem[] {
-  return buildClientVault(matter).filter((item) => item.downloadable && item.status === "available");
+/** Return only currently downloadable, available client-visible items. */
+export function downloadableVaultItems(
+  matter: Portal2MatterWithVault,
+): DocumentVaultItem[] {
+  return buildClientVault(matter).filter(
+    (item) => item.downloadable === true && item.status === "available",
+  );
 }
