@@ -61,6 +61,7 @@ jobs:
           node scripts/validate-wise-reconciliation-exception-orchestrator.mjs
           node scripts/validate-matter-execution-corridor-spine.mjs
           node scripts/validate-production-transaction-10of10.mjs
+          node scripts/validate-postpayment-ron-matter-progression.mjs
           npm run validate:migration-chain
 
       - name: Targeted transaction tests
@@ -68,7 +69,8 @@ jobs:
           set -euo pipefail
           node --import tsx --test \
             tests/global-pricing-courier-p0.test.ts \
-            tests/production-transaction-10of10.test.ts
+            tests/production-transaction-10of10.test.ts \
+            tests/postpayment-ron-matter-progression-p0.test.ts
 
       - name: Build
         run: npm run build
@@ -102,6 +104,7 @@ jobs:
             "app/portal/documents/page.tsx"
             "app/portal/payment/page.tsx"
             "app/portal/release/page.tsx"
+            "app/portal/ron/page.tsx"
             "app/alliance/dashboard/page.tsx"
             "app/va/dashboard/page.tsx"
             "app/va/portal/page.tsx"
@@ -116,10 +119,19 @@ jobs:
             "app/api/dashboard/shippo/labels/route.ts"
             "app/api/courier/webhook/route.ts"
             "app/api/deals/[id]/pay/route.ts"
+            "app/api/deals/[id]/schedule/route.ts"
+            "app/api/deals/[id]/execute/route.ts"
+            "app/api/deals/[id]/apostille/route.ts"
+            "app/api/dashboard/ron/sessions/route.ts"
+            "app/api/dashboard/ron/sessions/[id]/advance-to-apostille/route.ts"
+            "app/api/webhooks/bluenotary/route.ts"
+            "components/ron/RONSessionControlPanel.tsx"
+            "lib/bluenotary/guards.ts"
             "lib/release/performFinalRelease.ts"
             "lib/auth/server-role.ts"
             "lib/dashboardAuth.ts"
             "lib/seo-document-routing.ts"
+            "supabase/migrations/079_wise_observed_scheduling_gate.sql"
           )
           FAIL=0
           for f in "${REQUIRED[@]}"; do
@@ -292,6 +304,7 @@ jobs:
           check_protected "/portal/documents"
           check_protected "/portal/payment"
           check_protected "/portal/release"
+          check_protected "/portal/ron"
 
           echo ""
           echo "══════════════════════════════════════════════"
@@ -309,6 +322,7 @@ jobs:
           check_protected_api "/api/dashboard/incidents"
           check_protected_api "/api/notary/credentials"
           check_protected_api "/api/dashboard/shippo/health"
+          check_protected_api "/api/webhooks/bluenotary"
 
           echo ""
           echo "══════════════════════════════════════════════"
@@ -330,4 +344,4 @@ jobs:
           fi
 
           echo "All automated production smoke checks PASSED."
-          echo "This does not replace the manual 15-step Tiffany transaction acceptance test."
+          echo "This proves the non-destructive code/runtime corridor only; live BlueNotary transaction certification still requires the controlled Tiffany Matter."
