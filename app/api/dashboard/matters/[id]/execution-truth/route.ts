@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
-import { normalizeExecutionTruth } from "@/lib/matter/executionTruth";
-import { appendMatterEvidence } from "@/lib/matter/evidenceLedger";
 import { logActivity } from "@/lib/activity";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -72,30 +70,25 @@ export async function PATCH(
     currentTruth.notarial_act ?? "review_required",
   );
 
-  const nextTruth = normalizeExecutionTruth({
-    ...currentTruth,
-    notarial_act: notarialAct,
-  });
   const now = new Date().toISOString();
 
-  let updateQuery = supabase
-    .from("deals")
-    .update({
-      execution_truth: nextTruth,
-      last_activity: now,
-      updated_at: now,
-    })
-    .eq("id", matter.id);
+  const { data: transition, error: updateError } = await supabase.rpc(
+    "confirm_matter_notarial_act",
+    {
+      p_matter_id: matter.id,
+      p_expected_updated_at: matter.updated_at,
+      p_notarial_act: notarialAct,
+      p_actor_id: user.id,
+      p_occurred_at: now,
+      p_source: "operator_execution_readiness",
+      p_reason:
+        "Operator confirmed the required notarial act from the Matter package or authoritative execution instructions.",
+    },
+  );
+  const result = Array.isArray(transition) ? transition[0] : transition;
+  const updated = result?.matter;
 
-  updateQuery = matter.updated_at
-    ? updateQuery.eq("updated_at", matter.updated_at)
-    : updateQuery.is("updated_at", null);
-
-  const { data: updated, error: updateError } = await updateQuery
-    .select("id, deal_id, execution_truth, updated_at")
-    .maybeSingle();
-
-  if (updateError || !updated) {
+  if (updateError?.code === "40001") {
     return NextResponse.json(
       {
         error: "STALE_MATTER_STATE",
@@ -105,27 +98,16 @@ export async function PATCH(
       { status: 409 },
     );
   }
-
-  void appendMatterEvidence({
-    matterId: updated.id,
-    eventType: "NOTARIAL_ACT_CONFIRMED",
-    domain: "execution",
-    actorType: "operator",
-    actorId: user.email ?? user.id,
-    occurredAt: now,
-    source: "operator_execution_readiness",
-    sourceReference: updated.deal_id ?? id,
-    priorValue: priorNotarialAct,
-    newValue: notarialAct,
-    reason:
-      "Operator confirmed the required notarial act from the Matter package or authoritative execution instructions.",
-    metadata: {
-      notarial_act: notarialAct,
-      previous_notarial_act: priorNotarialAct,
-    },
-  }).catch((error) =>
-    console.error("[matter-evidence] notarial act confirmation append failed:", error),
-  );
+  if (updateError || !updated) {
+    console.error(
+      "[execution-truth] Atomic notarial transition failed:",
+      updateError?.code ?? "missing_result",
+    );
+    return NextResponse.json(
+      { error: "NOTARIAL_ACT_PERSISTENCE_FAILED" },
+      { status: 500 },
+    );
+  }
 
   void logActivity({
     deal_id: updated.deal_id ?? id,

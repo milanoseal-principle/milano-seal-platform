@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { calculateMilanoPricing } from "@/src/features/pricing/pricingEngine";
 import { finalPacketChecklist } from "@/src/features/shipping/shippingService";
+import { isE2EDemoModeEnabled } from "@/lib/testing/e2eDemoMode";
 import { E2EDemoShell } from "./_components/e2e-demo-shell";
 
 export const metadata: Metadata = {
@@ -30,7 +31,8 @@ const steps = [
 ];
 
 export default function TiffanyE2ETestPage() {
-  const demoEnabled = process.env.MILANO_E2E_DEMO_MODE === "true";
+  const demoEnabled = isE2EDemoModeEnabled();
+  const isProduction = process.env.VERCEL_ENV === "production";
 
   const pricing = calculateMilanoPricing({
     lane: "priority",
@@ -46,8 +48,8 @@ export default function TiffanyE2ETestPage() {
         <p className="text-xs uppercase tracking-[0.28em] text-[#C6A65B]">THE MILANO SEAL™</p>
         <h1 className="mt-3 text-4xl font-semibold">Tiffany E2E Demo Flow</h1>
         <p className="mt-3 max-w-3xl text-sm text-[#d8cfbd]">
-          Controlled operator demo for the Milano Seal OS production spine. Enable with
-          MILANO_E2E_DEMO_MODE=true before using live workflow actions.
+          Controlled operator harness for preview and local environments only. Vercel Production
+          cannot activate demo mutations, even if the demo flag is accidentally enabled.
         </p>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -86,15 +88,23 @@ export default function TiffanyE2ETestPage() {
           </div>
         </div>
 
-        {/* Interactive operator harness — gated on MILANO_E2E_DEMO_MODE */}
         <div className="mt-8">
           {demoEnabled ? (
             <E2EDemoShell />
           ) : (
             <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-6 text-sm text-amber-200/80">
-              Interactive demo actions are disabled. Set{" "}
-              <code className="font-mono text-amber-100">MILANO_E2E_DEMO_MODE=true</code> in the
-              environment to enable the live seed / discount / payment / lifecycle controls.
+              {isProduction ? (
+                <>
+                  Interactive demo actions are permanently disabled on Vercel Production. Use a
+                  preview deployment or local environment for seeded lifecycle simulation.
+                </>
+              ) : (
+                <>
+                  Interactive demo actions are disabled. Set{" "}
+                  <code className="font-mono text-amber-100">MILANO_E2E_DEMO_MODE=true</code> in a
+                  non-production environment to enable the controlled harness.
+                </>
+              )}
             </div>
           )}
         </div>

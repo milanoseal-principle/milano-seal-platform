@@ -1,35 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireDispatchOperator } from "@/lib/dispatch/serverAuth";
 
-interface StubJobDetail {
-  dispatch_id: string;
-  current_assignment_state: string;
-  is_rush_priority: boolean;
-  sla_expiration_timestamp: string | null;
-  assigned_partner_id: string | null;
-  reassigned_count: number;
-}
-
-// Stub: get a single dispatch job by ID
 export async function GET(
-  _request: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
-): Promise<NextResponse<StubJobDetail | { error: string }>> {
+) {
+  const auth = await requireDispatchOperator();
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
-  if (!id) {
-    return NextResponse.json({ error: "id is required" }, { status: 400 });
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("dispatch_requests")
+    .select(
+      `id,matter_id,status,requested_by_role,requested_service,priority,requirements,assigned_operator_id,assignment_id,escalation_reason,reassignment_reason,created_at,updated_at,offered_at,accepted_at,completed_at,escalated_at,
+       deals!inner(id,deal_id,client_name,document_type,destination_country,status,deal_status,execution_lane,scheduled_at),
+       operator_assignments(id,operator_id,assignment_status,dispatch_confirmed,notes,created_at,updated_at)`
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "DISPATCH_NOT_FOUND" }, { status: 404 });
   }
 
-  // TODO: query alliance_live_execution_queue by job_dispatch_id with RLS
-  return NextResponse.json({
-    dispatch_id: id,
-    current_assignment_state: "UNASSIGNED_STAGED",
-    is_rush_priority: false,
-    sla_expiration_timestamp: null,
-    assigned_partner_id: null,
-    reassigned_count: 0,
-  });
+  return NextResponse.json({ dispatch: data });
 }
 
 export async function POST() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  return NextResponse.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }

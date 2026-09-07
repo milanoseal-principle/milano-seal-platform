@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 // Regression lock: shipping UX may evolve, but Shippo/custody/release authority stays singular.
@@ -7,7 +7,7 @@ const courierPage = readFileSync("app/dashboard/courier/page.tsx", "utf8");
 const shippingCompatibility = readFileSync("app/dashboard/shipping/page.tsx", "utf8");
 const deck = readFileSync("components/dashboard/courier/ShippingControlDeck.tsx", "utf8");
 const carrierPolicy = readFileSync("lib/shippo/carrierPolicy.ts", "utf8");
-const webhook = readFileSync("app/api/webhooks/shippo/route.ts", "utf8");
+const webhook = readFileSync("app/api/courier/webhook/route.ts", "utf8");
 
 test("shipping has one canonical operator surface", () => {
   assert.match(courierPage, /Shipping Control Room/);
@@ -25,10 +25,13 @@ test("carrier policy keeps the approved Milano stack and governed override", () 
   assert.match(deck, /Controlled override/);
 });
 
-test("delivery evidence cannot auto-author release or completion", () => {
-  assert.match(webhook, /DELIVERED never auto-completes or auto-releases/);
-  assert.match(deck, /Delivery never authors final release or Matter completion/);
+test("Shippo delivery evidence has one authenticated atomic authority", () => {
+  assert.equal(existsSync("app/api/webhooks/shippo/route.ts"), false);
+  assert.match(webhook, /verifyShippoHmac/);
+  assert.match(webhook, /record_courier_delivery_transition/);
   assert.doesNotMatch(webhook, /payment_confirmed\s*:/);
+  assert.doesNotMatch(webhook, /updates\.deal_status/);
+  assert.match(deck, /Delivery never authors final release or Matter completion/);
 });
 
 test("shipping control room does not introduce fake tracking telemetry", () => {

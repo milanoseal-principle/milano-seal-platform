@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reconcileObservedWisePayments } from "@/lib/wise/reconciliation";
+import { scanWiseReconciliationExceptions } from "@/lib/wise/reconciliation-exceptions";
 import { notifyClient } from "@/lib/notifications/orchestrator";
 import { sendPaymentClearedAlerts } from "@/lib/notifications/transactionalEmailAlerts";
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       status: "running",
       payments_checked: 0,
       mismatches_found: 0,
-      notes: "Automatic Wise acquiring-payment reconciliation",
+      notes: "Automatic Wise acquiring-payment reconciliation + exception orchestration",
     })
     .select("id")
     .maybeSingle();
@@ -58,6 +59,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const exceptions = await scanWiseReconciliationExceptions();
+
     if (run?.id) {
       await admin
         .from("wise_reconciliation_runs")
@@ -65,12 +68,16 @@ export async function GET(request: NextRequest) {
           finished_at: new Date().toISOString(),
           status: "completed",
           payments_checked: result.checked,
-          mismatches_found: result.results.filter(
-            (item) => item.providerStatus === "CANCELLED" || item.providerStatus === "REQUIRES_ATTENTION",
-          ).length,
+          mismatches_found:
+            result.results.filter(
+              (item) => item.providerStatus === "CANCELLED" || item.providerStatus === "REQUIRES_ATTENTION",
+            ).length + exceptions.openedOrUpdated,
           notes: JSON.stringify({
             providerMatched: result.providerMatched,
             settlementConfirmed: result.settlementConfirmed,
+            exceptionQueueChecked: exceptions.checked,
+            exceptionQueueOpenedOrUpdated: exceptions.openedOrUpdated,
+            exceptionQueueResolved: exceptions.resolved,
           }),
         })
         .eq("id", run.id);
@@ -81,6 +88,7 @@ export async function GET(request: NextRequest) {
       checked: result.checked,
       providerMatched: result.providerMatched,
       settlementConfirmed: result.settlementConfirmed,
+      exceptions,
     });
   } catch (error) {
     console.error("[wise-reconcile-cron] failed", error instanceof Error ? error.message : "unknown_error");
