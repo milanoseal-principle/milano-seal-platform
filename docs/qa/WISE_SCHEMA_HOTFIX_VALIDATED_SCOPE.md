@@ -1,0 +1,1 @@
+Wise schema hotfix scope remains limited to removing the stale exception-scanner projection field.

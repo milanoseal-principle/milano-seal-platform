@@ -1,0 +1,128 @@
+{
+  "version": "1.0.0",
+  "operating_spine": ["MATTER", "EXECUTION", "CORRIDOR"],
+  "canonical_lifecycle": ["intake", "validation_review", "quote", "wise_submission", "scheduling_authority", "execution_ron", "apostille_authentication", "custody", "courier_delivery", "final_settlement_gate", "release", "close", "review_learning"],
+  "hard_locks": ["supabase_system_of_record", "wise_only", "no_parallel_matter_engine", "no_parallel_payment_engine", "no_parallel_scheduler", "no_parallel_ron_authority", "no_parallel_apostille_authority", "no_parallel_custody_release_authority", "unknown_fail_closed", "no_legal_advice", "no_acceptance_guarantee"],
+  "layers": {
+    "layer-01-matter": {
+      "title": "Matter Data Model",
+      "owns_truth": "Supabase canonical Matter record and child evidence keyed to deals.id; deal_id is the public Matter reference.",
+      "may_change": "Matter lifecycle and canonical record fields only through approved Matter mutation paths.",
+      "evidence": "Canonical row IDs, timestamps, authenticated ownership, files/evidence records, audit lineage.",
+      "tests": "One Matter UUID from intake to release; no duplicate/orphan child authority; ownership isolation.",
+      "anchors": ["public.deals", "public.files", "lib/supabase/*", "custody/audit records"]
+    },
+    "layer-02-business-rules": {
+      "title": "Core Business Rules",
+      "owns_truth": "Server-side governed lifecycle, readiness and transition rules.",
+      "may_change": "Authorize or block lifecycle transitions; never fabricate provider truth.",
+      "evidence": "Canonical Matter facts plus explicit operator/provider evidence where required.",
+      "tests": "Invalid transitions fail; unknown != ready/rejected; payment authority != RON readiness.",
+      "anchors": ["lib/scheduling/*", "lib/bluenotary/guards.ts", "lib/security/release-integrity.ts"]
+    },
+    "layer-03-pricing": {
+      "title": "Pricing & Scope",
+      "owns_truth": "Canonical pricing and quote engine.",
+      "may_change": "Quote/scope/discount state only; cannot author payment or execution completion.",
+      "evidence": "Pricing inputs, rule version, scope and discount provenance.",
+      "tests": "Quote determinism, discount eligibility, public/professional boundary, no pricing authority drift.",
+      "anchors": ["src/features/pricing/*", "pricing/quote routes", "discount validation"]
+    },
+    "layer-04-intake": {
+      "title": "Client / Professional Intake",
+      "owns_truth": "Validated intake creates or updates the canonical Matter.",
+      "may_change": "Create intake Matter/evidence only; cannot mark payment, execution, apostille or release complete.",
+      "evidence": "Validated form payload, authenticated/professional context and uploaded documents.",
+      "tests": "Validation, retry idempotency, upload ownership, professional/client routing.",
+      "anchors": ["app/intake/*", "app/professional/*", "portal upload flows", "intake APIs"]
+    },
+    "layer-05-ron": {
+      "title": "RON / Execution",
+      "owns_truth": "Canonical scheduling/RON guards plus BlueNotary provider evidence.",
+      "may_change": "Scheduling and RON state only through canonical guards/provider events.",
+      "evidence": "Scheduling gate result, explicit notarial facts, signer data, provider resource/status evidence.",
+      "tests": "Wise submission scheduling, notarial review, idempotent session creation, provider-completion boundary.",
+      "anchors": ["lib/scheduling/complimentarySchedulingGate.ts", "lib/bluenotary/*", "app/portal/ron", "app/dashboard/ron"]
+    },
+    "layer-06-apostille": {
+      "title": "Apostille / Authentication",
+      "owns_truth": "Execution/apostille workflow state backed by document and authority-route evidence.",
+      "may_change": "Apostille/authentication state only from governed operator/provider evidence.",
+      "evidence": "Document version, issuing authority, route decision, submission/return references and returned document.",
+      "tests": "State/federal and Hague/non-Hague routing, evidence-required completion, translation dependencies.",
+      "anchors": ["lib/apostille-rules/*", "execution truth", "apostille operator workflow"]
+    },
+    "layer-07-operator": {
+      "title": "Operator Console",
+      "owns_truth": "No independent truth; operator surfaces project canonical Matter state and invoke governed authorities.",
+      "may_change": "Only through existing mutation authorities with actor/role/reason/evidence receipts.",
+      "evidence": "Actor role, decision receipt, previous/new state, reason and evidence.",
+      "tests": "Role checks, decision receipts, queue derivation, no browser-local authority.",
+      "anchors": ["app/dashboard/*", "components/dashboard/*", "MatterDetailDrawer"]
+    },
+    "layer-08-wise": {
+      "title": "Wise Payments",
+      "owns_truth": "Wise provider evidence plus canonical payment confirmation authority.",
+      "may_change": "Payment observation, reconciliation and paid truth through canonical Wise authority.",
+      "evidence": "Wise reference, amount, currency, provider resource, observed and settled timestamps.",
+      "tests": "Wise-only; submission != settlement; exact amount/currency/reference/resource; duplicate-safe reconciliation.",
+      "anchors": ["lib/payments/*", "lib/wise/*", "Wise reconciliation cron", "wise_reconciliation_exceptions"]
+    },
+    "layer-09-economics": {
+      "title": "Economics / Reporting",
+      "owns_truth": "Read models derived from canonical financial and operational records.",
+      "may_change": "No transactional state; read-only intelligence.",
+      "evidence": "Observed costs/revenue and source provenance; modeled/attributed values remain explicitly labeled.",
+      "tests": "Observed != modeled; Unknown stays Unknown; no fabricated revenue or margin.",
+      "anchors": ["economics read models", "corridor economics", "executive intelligence"]
+    },
+    "layer-10-notifications": {
+      "title": "Notifications",
+      "owns_truth": "Lifecycle events and delivery provider receipts; notifications never author Matter state.",
+      "may_change": "Notification delivery state only.",
+      "evidence": "Lifecycle event, recipient, template/version, provider message ID/status, retries.",
+      "tests": "Event-template mapping, dedupe, retries and client/internal separation.",
+      "anchors": ["lib/notifications/*", "transactional email alerts", "notification orchestration"]
+    },
+    "layer-11-corridor": {
+      "title": "Corridor Intelligence",
+      "owns_truth": "Read model derived from Matter, execution, authority and corridor evidence.",
+      "may_change": "No transactional state; corridor posture/readiness only.",
+      "evidence": "Origin/destination, document type, authority freshness, exception/rework history and provenance.",
+      "tests": "Corridor reasons, freshness, scale-posture semantics and insufficient-evidence state.",
+      "anchors": ["corridor intelligence/read models", "authority freshness", "Matter → Execution → Corridor projections"]
+    },
+    "layer-12-security": {
+      "title": "Security / Compliance",
+      "owns_truth": "Server roles, RLS, immutable audit/security evidence and canonical release authority.",
+      "may_change": "Security/audit/approval evidence and final release only through canonical server authority.",
+      "evidence": "Authenticated actor/role, RLS, decision/audit receipts, custody and release evidence.",
+      "tests": "RLS/role coverage, service-role-only evidence paths, no client release authority, audit durability.",
+      "anchors": ["lib/security/*", "RLS migrations", "audit/security events", "lib/release/*"]
+    },
+    "layer-13-config": {
+      "title": "Platform Configuration",
+      "owns_truth": "Versioned deployment/provider configuration.",
+      "may_change": "Configuration state only through deployment/admin controls.",
+      "evidence": "Versioned config, deployment metadata, validated environment/provider settings.",
+      "tests": "Environment validation, cron auth, provider configuration and no secret leakage.",
+      "anchors": ["vercel.json", "environment schema", "cron configuration", "provider configuration"]
+    },
+    "layer-14-finance": {
+      "title": "Finance / Settlement Operations",
+      "owns_truth": "Wise settlement evidence and finance exception workflows; paid truth remains Layer 8 authority.",
+      "may_change": "Settlement/accounting evidence and exception workflow only.",
+      "evidence": "Wise gross/fee/net, provider evidence, settlement timestamps and exception history.",
+      "tests": "Gross=net+fee evidence, exception handling, accounting/payment authority separation.",
+      "anchors": ["wise_provider_settlement_evidence", "wise_reconciliation_exceptions", "finance operator surfaces"]
+    },
+    "layer-15-validation": {
+      "title": "Production Validation",
+      "owns_truth": "Exact source SHA + production deployment + real evidence-backed certification.",
+      "may_change": "Certification artifacts only; tests cannot mutate production truth just to pass.",
+      "evidence": "Test output, provider evidence, production logs, exact SHA/deployment and same-Matter continuity.",
+      "tests": "Typecheck, lint, full tests, migration chain, responsive/mobile, runtime and E2E certification.",
+      "anchors": ["scripts/run-vercel-merge-gate.mjs", "scripts/validate-*.mjs", "tests/*", "docs/FINAL_PRODUCTION_CERTIFICATION.md"]
+    }
+  }
+}

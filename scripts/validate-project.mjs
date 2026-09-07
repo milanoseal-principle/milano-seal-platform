@@ -4,6 +4,7 @@ import { execSync } from "child_process";
 
 const root = process.cwd();
 const failures = [];
+const foreignBrand = ["Sur", "visure"].join("");
 
 function requireFile(path) {
   if (!existsSync(join(root, path))) failures.push(`Missing required file: ${path}`);
@@ -21,9 +22,10 @@ requireFile("docs/sop/MILANO_SEAL_OS_FULL_SYSTEM_FLOW_SOP.md");
 requireFile("src/features/pricing/pricingEngine.ts");
 requireFile("src/features/payments/paymentGateService.ts");
 requireFile("supabase/migrations/034_milano_os_operating_spine.sql");
+requireFile("docs/architecture/LAYER_MANIFEST.json");
 
 const productionRoots = ["app", "components", "lib", "src"].filter((path) => existsSync(join(root, path))).join(" ");
-const forbiddenStrings = ["Survisure", "HVAC", "appliance", "service-contract", "service contract"];
+const forbiddenStrings = [foreignBrand, "HVAC", "appliance", "service-contract", "service contract"];
 for (const forbidden of forbiddenStrings) {
   try {
     execSync(`rg -n --fixed-strings ${JSON.stringify(forbidden)} ${productionRoots}`, { stdio: "pipe" });
@@ -37,7 +39,7 @@ try {
   execSync("rg -n \"checkout\\.sessions|promotion_code|promotion_codes\" app components lib src", { stdio: "pipe" });
   failures.push("Stripe Checkout or promotion-code implementation found in production code.");
 } catch {
-  // Expected when no checkout/promotion code usage exists.
+  // Expected when absent.
 }
 
 try {

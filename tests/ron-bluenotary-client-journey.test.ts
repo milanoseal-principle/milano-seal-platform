@@ -35,6 +35,8 @@ test("BlueNotary creation stays canonical and idempotent", () => {
   assert.match(guards, /verifySchedulingAuthorized/);
   assert.doesNotMatch(guards, /\.select\([^)]*is_platform_fee_only/);
   assert.doesNotMatch(read("components/ron/MatterRONReadiness.tsx"), /is_platform_fee_only/);
+  assert.match(guards, /verifySchedulingAuthorized/);
+  assert.doesNotMatch(guards, /\.select\([^)]*is_platform_fee_only/);
 });
 
 test("browser return cannot fabricate provider completion or downstream authority", () => {

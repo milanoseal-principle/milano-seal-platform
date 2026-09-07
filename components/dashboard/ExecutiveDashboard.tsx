@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 
 interface MonthPoint { month: string; count: number; revenue: number; }
 interface CountryRevenue { country: string; revenue: number; }
@@ -18,30 +20,83 @@ interface ExecData {
   verified_authorities: number;
 }
 
+type LoadState = "loading" | "ready" | "error";
+
+const COMMAND_LINKS = [
+  {
+    label: "Now",
+    detail: "Open governed execution work and blockers.",
+    href: "/today",
+  },
+  {
+    label: "Next",
+    detail: "Review scheduling and downstream execution readiness.",
+    href: "/dashboard/scheduling-readiness",
+  },
+  {
+    label: "Intelligence",
+    detail: "Inspect corridor, economics and supporting evidence.",
+    href: "/dashboard/corridors",
+  },
+] as const;
+
+function normalizeData(value: unknown): ExecData | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Partial<ExecData>;
+
+  const numberOrZero = (candidate: unknown) =>
+    typeof candidate === "number" && Number.isFinite(candidate) ? candidate : 0;
+
+  return {
+    cash_collected: numberOrZero(row.cash_collected),
+    pipeline_value: numberOrZero(row.pipeline_value),
+    open_matters: numberOrZero(row.open_matters),
+    revenue_by_country: Array.isArray(row.revenue_by_country) ? row.revenue_by_country : [],
+    revenue_by_source: Array.isArray(row.revenue_by_source) ? row.revenue_by_source : [],
+    monthly_trend: Array.isArray(row.monthly_trend) ? row.monthly_trend : [],
+    authority_verification_pct: numberOrZero(row.authority_verification_pct),
+    total_authorities: numberOrZero(row.total_authorities),
+    verified_authorities: numberOrZero(row.verified_authorities),
+  };
+}
+
 function Sparkline({ data }: { data: MonthPoint[] }) {
-  if (!data.length) return null;
+  if (!data.length) {
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-xl border border-dashed border-white/[0.07] bg-white/[0.015] px-4 text-center font-mono text-[9px] uppercase tracking-[0.14em] text-white/28">
+        No verified monthly trend available
+      </div>
+    );
+  }
+
   const maxRev = Math.max(...data.map((d) => d.revenue), 1);
-  const W = 320, H = 60, PAD = 8;
-  const pts = data.map((d, i) => {
-    const x = PAD + (i / Math.max(data.length - 1, 1)) * (W - PAD * 2);
-    const y = H - PAD - ((d.revenue / maxRev) * (H - PAD * 2));
+  const width = 320;
+  const height = 72;
+  const padding = 8;
+  const points = data.map((d, index) => {
+    const x = padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2);
+    const y = height - padding - ((d.revenue / maxRev) * (height - padding * 2));
     return `${x},${y}`;
   });
+
   return (
-    <svg width={W} height={H} style={{ display: "block" }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto w-full overflow-visible"
+      role="img"
+      aria-label="Six month verified revenue trend"
+    >
       <polyline
-        points={pts.join(" ")}
+        points={points.join(" ")}
         fill="none"
         stroke="#C6A55A"
         strokeWidth={1.5}
         strokeLinejoin="round"
       />
-      {data.map((d, i) => {
-        const x = PAD + (i / Math.max(data.length - 1, 1)) * (W - PAD * 2);
-        const y = H - PAD - ((d.revenue / maxRev) * (H - PAD * 2));
-        return (
-          <circle key={i} cx={x} cy={y} r={2.5} fill="#C6A55A" />
-        );
+      {data.map((d, index) => {
+        const x = padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2);
+        const y = height - padding - ((d.revenue / maxRev) * (height - padding * 2));
+        return <circle key={`${d.month}-${index}`} cx={x} cy={y} r={2.5} fill="#C6A55A" />;
       })}
     </svg>
   );
@@ -49,293 +104,198 @@ function Sparkline({ data }: { data: MonthPoint[] }) {
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div
-      style={{
-        background: "rgba(3,3,5,0.9)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 2,
-        padding: "20px 24px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 9,
-          fontFamily: "monospace",
-          letterSpacing: "0.32em",
-          textTransform: "uppercase" as const,
-          color: "rgba(198,165,90,0.5)",
-          marginBottom: 10,
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ fontSize: 30, fontWeight: 700, fontFamily: "monospace", color: "#C6A55A" }}>
-        {value}
-      </div>
-      {sub && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4, fontFamily: "monospace" }}>{sub}</div>}
+    <article className="rounded-2xl border border-white/[0.07] bg-black/30 p-5 sm:p-6">
+      <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/55">{label}</p>
+      <p className="mt-3 break-words font-mono text-2xl font-semibold text-[#DCC47F] sm:text-3xl">{value}</p>
+      {sub ? <p className="mt-2 text-[11px] leading-5 text-white/32">{sub}</p> : null}
+    </article>
+  );
+}
+
+function EmptyPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-dashed border-white/[0.07] bg-white/[0.012] px-4 py-7 text-center text-[11px] leading-5 text-white/30">
+      {children}
     </div>
   );
 }
 
 export function ExecutiveDashboard() {
   const [data, setData] = useState<ExecData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<LoadState>("loading");
 
   useEffect(() => {
-    fetch("/api/dashboard/executive")
-      .then((r) => r.json())
-      .then((d) => { setData(d as ExecData); setLoading(false); })
-      .catch(() => setLoading(false));
+    const controller = new AbortController();
+
+    async function loadExecutiveData() {
+      try {
+        const response = await fetch("/api/dashboard/executive", {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) throw new Error(`Executive intelligence request failed: ${response.status}`);
+        const normalized = normalizeData(await response.json());
+        if (!normalized) throw new Error("Executive intelligence payload was not usable");
+        setData(normalized);
+        setState("ready");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("Executive dashboard load failed", error);
+        setState("error");
+      }
+    }
+
+    void loadExecutiveData();
+    return () => controller.abort();
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#050507", padding: "32px 40px", color: "rgba(255,255,255,0.75)" }}>
-      <div style={{ marginBottom: 32 }}>
-        <div
-          style={{
-            fontSize: 9,
-            fontFamily: "monospace",
-            letterSpacing: "0.32em",
-            textTransform: "uppercase" as const,
-            color: "rgba(198,165,90,0.5)",
-            marginBottom: 6,
-          }}
-        >
-          Milano Seal — Executive
-        </div>
-        <h1 style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.9)", margin: 0 }}>
-          Executive Dashboard
-        </h1>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "4px 0 0" }}>
-          Real-time financial and operational intelligence. Operator access only.
-        </p>
+    <section className="bg-[#050507] px-4 py-8 text-white/75 sm:px-6 lg:px-8" aria-labelledby="executive-command-heading">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-7 border-b border-white/[0.06] pb-6">
+          <p className="font-mono text-[9px] uppercase tracking-[0.32em] text-[#C6A55A]/55">The Milano Seal™</p>
+          <div className="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 id="executive-command-heading" className="font-serif text-3xl font-light text-white/92 sm:text-4xl">
+                Global Execution Command
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/36">
+                Verified financial and operational intelligence around the canonical Matter → Execution → Corridor spine.
+              </p>
+            </div>
+            <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-white/24">Operator access · production evidence only</p>
+          </div>
+        </header>
+
+        <nav className="mb-7 grid gap-3 md:grid-cols-3" aria-label="Executive command priorities">
+          {COMMAND_LINKS.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="group flex min-h-24 items-center justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.015] p-4 transition duration-150 hover:border-[#C6A55A]/25 hover:bg-[#C6A55A]/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A55A]/60"
+            >
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#C6A55A]/58">{item.label}</p>
+                <p className="mt-2 text-[12px] leading-5 text-white/38">{item.detail}</p>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-[#C6A55A]/48 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+            </Link>
+          ))}
+        </nav>
+
+        {state === "loading" ? (
+          <div className="flex min-h-48 items-center justify-center rounded-2xl border border-white/[0.06] bg-black/25" role="status" aria-live="polite">
+            <Loader2 className="mr-3 h-4 w-4 animate-spin text-[#C6A55A] motion-reduce:animate-none" aria-hidden="true" />
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/34">Loading verified executive intelligence</span>
+          </div>
+        ) : null}
+
+        {state === "error" ? (
+          <div className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.025] p-5 sm:p-6" role="alert">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-200/70" aria-hidden="true" />
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-100/65">Intelligence unavailable</p>
+                <p className="mt-2 max-w-2xl text-[12px] leading-5 text-white/40">
+                  Executive metrics could not be verified from the production read model. No fallback numbers are being shown. Matter and execution controls remain available through the operating spine above.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {state === "ready" && data ? (
+          <div aria-live="polite">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Stat label="Cash Collected" value={`$${data.cash_collected.toLocaleString()}`} sub="Verified paid revenue returned by the executive read model." />
+              <Stat label="Pipeline Value" value={`$${data.pipeline_value.toLocaleString()}`} sub="Open Matter value; not represented as collected revenue." />
+              <Stat label="Open Matters" value={String(data.open_matters)} sub="Canonical Matters not completed or closed." />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/[0.07] bg-black/30 p-5 sm:p-6">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/55">Revenue by destination · Top 5</p>
+                <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/22">Verified financial read model</span>
+              </div>
+              {data.revenue_by_country.length ? (
+                <div className="space-y-3">
+                  {data.revenue_by_country.map((row) => {
+                    const max = data.revenue_by_country[0]?.revenue || 0;
+                    const percent = max > 0 ? Math.max(0, Math.min(100, (row.revenue / max) * 100)) : 0;
+                    return (
+                      <div key={row.country} className="grid gap-2 sm:grid-cols-[minmax(100px,140px)_1fr_auto] sm:items-center sm:gap-4">
+                        <span className="truncate text-[12px] text-white/68">{row.country}</span>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]" aria-hidden="true">
+                          <div className="h-full rounded-full bg-[#C6A55A]" style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="font-mono text-[11px] font-semibold text-[#DCC47F]">${row.revenue.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyPanel>No verified destination revenue is available for this view.</EmptyPanel>
+              )}
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <article className="rounded-2xl border border-white/[0.07] bg-black/30 p-5 sm:p-6">
+                <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/55">Monthly trend · 6 months</p>
+                <div className="mt-5"><Sparkline data={data.monthly_trend} /></div>
+                {data.monthly_trend.length ? (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+                    {data.monthly_trend.map((month) => (
+                      <div key={month.month} className="text-center font-mono text-[8px] text-white/28">
+                        {month.month.slice(5)}<br /><span className="text-white/48">{month.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+
+              <article className="rounded-2xl border border-white/[0.07] bg-black/30 p-5 sm:p-6">
+                <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/55">Authority evidence coverage</p>
+                {data.total_authorities > 0 ? (
+                  <>
+                    <div className="mt-5 flex items-end gap-3">
+                      <span className="font-mono text-3xl font-semibold text-[#DCC47F]">{data.authority_verification_pct}%</span>
+                      <CheckCircle2 className="mb-1 h-4 w-4 text-[#C6A55A]/55" aria-hidden="true" />
+                    </div>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                      <div className="h-full rounded-full bg-[#C6A55A]" style={{ width: `${Math.max(0, Math.min(100, data.authority_verification_pct))}%` }} />
+                    </div>
+                    <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.12em] text-white/28">
+                      {data.verified_authorities} of {data.total_authorities} authority records verified
+                    </p>
+                  </>
+                ) : (
+                  <div className="mt-5"><EmptyPanel>No authority records are available for percentage reporting. A synthetic 0% score is not shown.</EmptyPanel></div>
+                )}
+              </article>
+            </div>
+
+            <article className="mt-4 rounded-2xl border border-white/[0.07] bg-black/30 p-5 sm:p-6">
+              <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/55">Referral attribution</p>
+              {data.revenue_by_source.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {data.revenue_by_source.map((source) => (
+                    <div key={source.source_type} className="min-w-28 rounded-xl border border-white/[0.06] bg-white/[0.018] px-4 py-3">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/30">{source.source_type}</p>
+                      <p className="mt-2 font-mono text-lg font-semibold text-white/78">{source.count}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4"><EmptyPanel>No verified referral attribution is available.</EmptyPanel></div>
+              )}
+            </article>
+
+            <p className="mt-5 border-t border-white/[0.05] pt-4 font-mono text-[8px] uppercase tracking-[0.12em] text-white/20">
+              Executive read model only. Supporting intelligence does not author Matter, payment, execution or corridor truth.
+            </p>
+          </div>
+        ) : null}
       </div>
-
-      {loading && (
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>Loading...</div>
-      )}
-
-      {data && (
-        <>
-          {/* KPI row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-            <Stat label="Cash Collected" value={`$${data.cash_collected.toLocaleString()}`} sub="paid & completed matters" />
-            <Stat label="Pipeline Value" value={`$${data.pipeline_value.toLocaleString()}`} sub="open matters" />
-            <Stat label="Open Matters" value={String(data.open_matters)} sub="not completed or closed" />
-          </div>
-
-          {/* Revenue by Country */}
-          <div
-            style={{
-              background: "rgba(3,3,5,0.9)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 2,
-              padding: "20px 24px",
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9,
-                fontFamily: "monospace",
-                letterSpacing: "0.32em",
-                textTransform: "uppercase" as const,
-                color: "rgba(198,165,90,0.5)",
-                marginBottom: 14,
-              }}
-            >
-              Revenue by Country — Top 5
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
-              {data.revenue_by_country.map((r) => {
-                const pct = data.revenue_by_country[0]?.revenue
-                  ? (r.revenue / data.revenue_by_country[0].revenue) * 100
-                  : 0;
-                return (
-                  <div key={r.country} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 120, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{r.country}</div>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        background: "rgba(255,255,255,0.05)",
-                        borderRadius: 2,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${pct}%`,
-                          height: "100%",
-                          background: "#C6A55A",
-                          borderRadius: 2,
-                        }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        width: 90,
-                        textAlign: "right" as const,
-                        fontFamily: "monospace",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#C6A55A",
-                      }}
-                    >
-                      ${r.revenue.toLocaleString()}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            {/* Monthly Trend */}
-            <div
-              style={{
-                background: "rgba(3,3,5,0.9)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 2,
-                padding: "20px 24px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 9,
-                  fontFamily: "monospace",
-                  letterSpacing: "0.32em",
-                  textTransform: "uppercase" as const,
-                  color: "rgba(198,165,90,0.5)",
-                  marginBottom: 14,
-                }}
-              >
-                Monthly Trend — 6 months
-              </div>
-              <Sparkline data={data.monthly_trend} />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-                {data.monthly_trend.map((m) => (
-                  <div
-                    key={m.month}
-                    style={{ textAlign: "center" as const, fontSize: 8, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}
-                  >
-                    {m.month.slice(5)}
-                    <br />
-                    <span style={{ color: "rgba(255,255,255,0.5)" }}>{m.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Authority Verification */}
-            <div
-              style={{
-                background: "rgba(3,3,5,0.9)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 2,
-                padding: "20px 24px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 9,
-                  fontFamily: "monospace",
-                  letterSpacing: "0.32em",
-                  textTransform: "uppercase" as const,
-                  color: "rgba(198,165,90,0.5)",
-                  marginBottom: 14,
-                }}
-              >
-                Authority Verification Progress
-              </div>
-              <div style={{ fontSize: 32, fontWeight: 700, fontFamily: "monospace", color: "#C6A55A", marginBottom: 8 }}>
-                {data.authority_verification_pct}%
-              </div>
-              <div
-                style={{
-                  height: 8,
-                  background: "rgba(255,255,255,0.05)",
-                  borderRadius: 4,
-                  overflow: "hidden",
-                  marginBottom: 8,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${data.authority_verification_pct}%`,
-                    height: "100%",
-                    background: data.authority_verification_pct >= 80 ? "#4a9e6b" : data.authority_verification_pct >= 50 ? "#f59e0b" : "#ef4444",
-                    borderRadius: 4,
-                    transition: "width 0.4s ease",
-                  }}
-                />
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
-                {data.verified_authorities} of {data.total_authorities} authorities verified
-              </div>
-            </div>
-          </div>
-
-          {/* Revenue by Source */}
-          {data.revenue_by_source.length > 0 && (
-            <div
-              style={{
-                background: "rgba(3,3,5,0.9)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 2,
-                padding: "20px 24px",
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 9,
-                  fontFamily: "monospace",
-                  letterSpacing: "0.32em",
-                  textTransform: "uppercase" as const,
-                  color: "rgba(198,165,90,0.5)",
-                  marginBottom: 12,
-                }}
-              >
-                Referrals by Source
-              </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" as const }}>
-                {data.revenue_by_source.map((s) => (
-                  <div
-                    key={s.source_type}
-                    style={{
-                      padding: "8px 14px",
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "monospace", marginBottom: 4 }}>
-                      {s.source_type}
-                    </div>
-                    <div style={{ fontSize: 16, fontFamily: "monospace", fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>
-                      {s.count}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.04)",
-              paddingTop: 12,
-              fontSize: 9,
-              color: "rgba(255,255,255,0.2)",
-              fontFamily: "monospace",
-              letterSpacing: "0.08em",
-            }}
-          >
-            Executive view — operator access only. Data is real-time from production.
-          </div>
-        </>
-      )}
-    </div>
+    </section>
   );
 }

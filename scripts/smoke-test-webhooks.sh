@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Webhook smoke tests — run against production
-# Usage: BASE_URL=https://themilanoseal.com SHIPPO_SECRET=xxx bash scripts/smoke-test-webhooks.sh
+# Usage: BASE_URL=https://themilanoseal.com SHIPPO_WEBHOOK_SECRET=xxx bash scripts/smoke-test-webhooks.sh
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-https://themilanoseal.com}"
@@ -42,35 +42,46 @@ R=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Content-Type: application/json" \
   -d '{"event_type":"transfers#state-change"}' \
   "$BASE_URL/api/webhooks/wise")
-check "401 on missing signature" "401" "$R"
+check "401 on missing Wise signature" "401" "$R"
 
-# ── 3. Shippo GET (no GET handler — should be 405 or 404) ────────────────────
-echo "3. Shippo POST — wrong secret → 401"
+# ── 3. Canonical Shippo POST — missing HMAC → 401 ─────────────────────────────
+echo "3. Canonical Shippo POST without HMAC → 401"
 R=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Content-Type: application/json" \
-  -d '{"carrier":"usps","tracking_number":"9400111899223397988525"}' \
-  "$BASE_URL/api/webhooks/shippo?secret=WRONG_SECRET")
-check "401 on wrong Shippo secret" "401" "$R"
+  -d '{}' \
+  "$BASE_URL/api/courier/webhook")
+check "401 on missing Shippo HMAC" "401" "$R"
 
-# ── 4. Shippo POST — no secret env set (empty body skipped) ──────────────────
+# ── 4. Canonical Shippo POST — valid HMAC smoke ───────────────────────────────
 if [ -n "$SHIPPO_SECRET" ]; then
-  echo "4. Shippo POST — valid secret, minimal payload → received"
+  echo "4. Canonical Shippo POST with valid HMAC → received"
+  BODY='{"event":"track_updated","data":{"tracking_number":"SMOKETEST000","carrier":"usps","tracking_status":{"status":"UNKNOWN","status_date":"2026-01-01T00:00:00Z"}}}'
+  SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SHIPPO_SECRET" | awk '{print $2}')
   R=$(curl -s -X POST \
     -H "Content-Type: application/json" \
-    -d '{"carrier":"usps","tracking_number":"SMOKETEST000","tracking_status":{"status":"UNKNOWN","status_date":"2026-01-01T00:00:00Z"}}' \
-    "$BASE_URL/api/webhooks/shippo?secret=$SHIPPO_SECRET")
-  check "received:true on valid Shippo payload" '"received":true' "$R"
+    -H "X-Shippo-Signature-HMAC-SHA256-V2: $SIG" \
+    --data-raw "$BODY" \
+    "$BASE_URL/api/courier/webhook")
+  check "received:true on canonical Shippo HMAC payload" '"received":true' "$R"
 else
-  echo "4. Shippo secret not set — skipping live test (set SHIPPO_WEBHOOK_SECRET)"
+  echo "4. Shippo secret not set — skipping signed live test (set SHIPPO_WEBHOOK_SECRET)"
 fi
 
-# ── 5. BlueNotary GET health ──────────────────────────────────────────────────
-echo "5. BlueNotary webhook health"
+# ── 5. Retired duplicate Shippo endpoint must stay gone ───────────────────────
+echo "5. Retired duplicate Shippo endpoint → 404"
+R=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  "$BASE_URL/api/webhooks/shippo")
+check "404 on retired Shippo route" "404" "$R"
+
+# ── 6. BlueNotary GET health ──────────────────────────────────────────────────
+echo "6. BlueNotary webhook health"
 R=$(curl -s "$BASE_URL/api/webhooks/bluenotary")
 check "GET /api/webhooks/bluenotary → {ok:true}" '"ok":true' "$R"
 
-# ── 6. BlueNotary POST — wrong token → 401 ───────────────────────────────────
-echo "6. BlueNotary POST — wrong Bearer → 401"
+# ── 7. BlueNotary POST — wrong token → 401 ───────────────────────────────────
+echo "7. BlueNotary POST — wrong Bearer → 401"
 R=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer WRONG_TOKEN" \
@@ -78,15 +89,15 @@ R=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   "$BASE_URL/api/webhooks/bluenotary")
 check "401 on wrong BlueNotary token" "401" "$R"
 
-# ── 7. Public route 200 check ─────────────────────────────────────────────────
-echo "7. Public routes"
+# ── 8. Public route 200 check ─────────────────────────────────────────────────
+echo "8. Public routes"
 for path in "/" "/intake" "/map" "/founder" "/apostille/italy/power-of-attorney"; do
   CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$path")
   check "GET $path → 200" "200" "$CODE"
 done
 
-# ── 8. Protected routes redirect (not 500) ────────────────────────────────────
-echo "8. Protected routes — expect redirect (3xx) not 500"
+# ── 9. Protected routes redirect (not 500) ────────────────────────────────────
+echo "9. Protected routes — expect redirect (3xx) not 500"
 for path in "/dashboard" "/va/dashboard"; do
   CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$path")
   if [[ "$CODE" == 3* ]] || [[ "$CODE" == "200" ]]; then

@@ -1,378 +1,139 @@
 "use client";
-import { useState } from 'react';
 
-import { motion, AnimatePresence } from "framer-motion";
-import type { CorridorRow } from "./page";
+import { motion } from "framer-motion";
+import type { CorridorScaleDecision, CorridorScaleStatus, FactorState } from "@/lib/corridor/scale-engine";
 
-const GOLD = "#C6A55A";
-const EMERALD = "#4a9e6b";
+const STATUS_STYLE: Record<CorridorScaleStatus, string> = {
+  SCALE: "border-emerald-400/25 bg-emerald-400/[0.06] text-emerald-300",
+  WATCH: "border-amber-400/25 bg-amber-400/[0.06] text-amber-200",
+  CONSTRAINED: "border-orange-400/25 bg-orange-400/[0.06] text-orange-200",
+  DO_NOT_SCALE: "border-red-400/25 bg-red-400/[0.06] text-red-300",
+  INSUFFICIENT_EVIDENCE: "border-white/15 bg-white/[0.025] text-white/55",
+};
 
-const PRIORITY_TARGETS = [
-  { country: "Italy", docType: "Birth Certificate", flag: "🇮🇹" },
-  { country: "Italy", docType: "Power of Attorney", flag: "🇮🇹" },
-  { country: "Portugal", docType: "Birth Certificate", flag: "🇵🇹" },
-  { country: "Mexico", docType: "Corporate Docs", flag: "🇲🇽" },
-  { country: "Mexico", docType: "Birth Certificate", flag: "🇲🇽" },
-  { country: "Germany", docType: "Diploma", flag: "🇩🇪" },
-];
+const FACTOR_STYLE: Record<FactorState, string> = {
+  HIGH: "text-emerald-300/80",
+  MODERATE: "text-amber-200/80",
+  LOW: "text-white/45",
+  HEALTHY: "text-emerald-300/80",
+  LIMITED: "text-orange-200/80",
+  CURRENT: "text-emerald-300/80",
+  STALE: "text-red-300/80",
+  UNKNOWN: "text-white/30",
+};
 
-const ITALY_NODES = [
-  "Comune di Roma",
-  "Prefettura di Roma",
-  "Apostille Stamp",
-  "Translation (if required)",
-  "Courier Release",
-];
-
-type CertifyState = "Derived" | "Observed" | "Verified" | "Certified";
-
-function StatusBadge({ status }: { status: CertifyState }) {
-  const map: Record<CertifyState, { bg: string; color: string }> = {
-    Derived: { bg: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" },
-    Observed: { bg: "rgba(245,158,11,0.1)", color: "#f59e0b" },
-    Verified: { bg: "rgba(74,158,107,0.12)", color: EMERALD },
-    Certified: { bg: "rgba(198,165,90,0.12)", color: GOLD },
-  };
-  const { bg, color } = map[status];
-  return (
-    <span
-      className="text-[10px] font-mono px-2 py-0.5 rounded"
-      style={{ background: bg, color }}
-    >
-      {status}
-    </span>
-  );
+function money(value: number | null, currency: string | null) {
+  if (value === null) return "UNKNOWN";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currency ?? "USD", maximumFractionDigits: 0 }).format(value);
 }
 
-export function CorridorEngine({ corridors }: { corridors: CorridorRow[] }) {
-  const [certifyStates, setCertifyStates] = useState<
-    Record<string, CertifyState>
-  >({});
-  const [certifyingKey, setCertifyingKey] = useState<string | null>(null);
-  const [activeNodeIdx, setActiveNodeIdx] = useState(-1);
-
-  const totalDerived = corridors.length;
-
-  function getState(key: string): CertifyState {
-    return certifyStates[key] ?? "Derived";
-  }
-
-  async function certify(key: string) {
-    setCertifyingKey(key);
-    setActiveNodeIdx(-1);
-    // Animate nodes sequentially
-    for (let i = 0; i < ITALY_NODES.length; i++) {
-      await new Promise((r) => setTimeout(r, i * 120));
-      setActiveNodeIdx(i);
-    }
-    await new Promise((r) => setTimeout(r, 300));
-    setCertifyStates((prev) => ({ ...prev, [key]: "Certified" }));
-    setCertifyingKey(null);
-    setActiveNodeIdx(-1);
-  }
-
-  const top5Keys = new Set(
-    corridors.slice(0, 5).map((c) => `${c.destination_country}||${c.document_type}`)
+export function CorridorEngine({
+  corridors,
+  generatedAt,
+  degraded,
+  warning,
+}: {
+  corridors: CorridorScaleDecision[];
+  generatedAt: string;
+  degraded: boolean;
+  warning: string | null;
+}) {
+  const counts = corridors.reduce<Record<CorridorScaleStatus, number>>(
+    (acc, corridor) => {
+      acc[corridor.status] += 1;
+      return acc;
+    },
+    { SCALE: 0, WATCH: 0, CONSTRAINED: 0, DO_NOT_SCALE: 0, INSUFFICIENT_EVIDENCE: 0 },
   );
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen p-6 space-y-8"
-      style={{ background: "#0A0A0A" }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      className="mx-auto max-w-7xl space-y-7 motion-reduce:transform-none"
     >
-      {/* Header */}
-      <div>
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-2"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Intelligence / Corridor Engine
+      <header className="rounded-xl border border-[#C6A55A]/15 bg-[#080808] p-5 sm:p-7">
+        <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/60">Intelligence · Corridor Command</p>
+        <h1 className="mt-2 font-serif text-3xl font-light text-[#F6F1E6]">Corridor Economics & Scale</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
+          Evidence-governed corridor decisions over canonical Matter and verified payment truth. No certification, margin, capacity, authority freshness, or scale readiness is inferred when evidence is missing.
         </p>
-        <h1 className="text-2xl font-semibold" style={{ color: GOLD }}>
-          Verified Corridor Engine
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
-          {totalDerived.toLocaleString()} derived corridors from matter data
-        </p>
-      </div>
+        <p className="mt-4 font-mono text-[8px] uppercase tracking-[0.14em] text-white/20">Generated {generatedAt}</p>
+      </header>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Corridors Derived", value: totalDerived },
-          { label: "Corridors Observed", value: 0 },
-          { label: "Corridors Verified", value: 0 },
-          { label: "Corridors Certified", value: 0 },
-        ].map((stat) => (
-          <motion.div
-            key={stat.label}
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-lg p-4"
-            style={{
-              background: "rgba(8,5,1,0.97)",
-              border: "1px solid rgba(212,175,55,0.08)",
-            }}
-          >
-            <p
-              className="font-mono text-[9px] tracking-[0.32em] uppercase mb-1"
-              style={{ color: "rgba(198,165,90,0.5)" }}
-            >
-              {stat.label}
-            </p>
-            <p
-              className="text-2xl font-semibold"
-              style={{ color: stat.value > 0 ? GOLD : "rgba(255,255,255,0.3)" }}
-            >
-              {stat.value.toLocaleString()}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Corridor Registry Table */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-4"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Corridor Registry
-        </p>
-        {corridors.length === 0 ? (
-          <p
-            className="text-sm font-mono"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
-            No corridor data available. Complete matters to derive corridors.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  {["Country", "Document Type", "Matters", "Status", ""].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="text-left py-2 pr-4 font-mono text-[9px] tracking-[0.2em] uppercase"
-                        style={{ color: "rgba(255,255,255,0.25)" }}
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {corridors.map((c, i) => {
-                  const key = `${c.destination_country}||${c.document_type}`;
-                  const state = getState(key);
-                  const isHighVolume = top5Keys.has(key);
-                  const isCertifying = certifyingKey === key;
-                  return (
-                    <motion.tr
-                      key={key}
-                      initial={{ opacity: 0, x: -4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        delay: Math.min(i * 0.02, 0.4),
-                        duration: 0.28,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}
-                    >
-                      <td className="py-2 pr-4" style={{ color: "rgba(255,255,255,0.75)" }}>
-                        {c.destination_country}
-                      </td>
-                      <td className="py-2 pr-4" style={{ color: "rgba(255,255,255,0.6)" }}>
-                        {c.document_type}
-                      </td>
-                      <td
-                        className="py-2 pr-4 font-mono text-sm"
-                        style={{ color: "rgba(255,255,255,0.75)" }}
-                      >
-                        {c.matter_count}
-                      </td>
-                      <td className="py-2 pr-4">
-                        <div className="flex items-center gap-2">
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={state}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              transition={{ duration: 0.28 }}
-                            >
-                              <StatusBadge status={state} />
-                            </motion.div>
-                          </AnimatePresence>
-                          {isHighVolume && (
-                            <span
-                              className="text-[9px] font-mono px-1.5 py-0.5 rounded"
-                              style={{
-                                background: "rgba(198,165,90,0.08)",
-                                border: "1px solid rgba(198,165,90,0.2)",
-                                color: GOLD,
-                              }}
-                            >
-                              High Volume
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2">
-                        {state !== "Certified" && (
-                          <button
-                            onClick={() => certify(key)}
-                            disabled={!!certifyingKey}
-                            className="text-[10px] font-mono px-2 py-1 rounded transition-opacity disabled:opacity-30"
-                            style={{
-                              background: `${GOLD}15`,
-                              border: `1px solid ${GOLD}25`,
-                              color: GOLD,
-                            }}
-                          >
-                            {isCertifying ? "Certifying..." : "Certify"}
-                          </button>
-                        )}
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Italy Node Visualizer */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-6"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Corridor Node Visualizer — Italy Example
-        </p>
-        <div className="flex flex-col items-start gap-0 max-w-xs">
-          {ITALY_NODES.map((node, i) => {
-            const isActive = activeNodeIdx >= i;
-            return (
-              <div key={node} className="flex flex-col items-start">
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: i * 0.08,
-                    duration: 0.28,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="px-4 py-2.5 rounded text-sm"
-                  style={{
-                    background: isActive ? `${GOLD}0f` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isActive ? GOLD + "40" : "rgba(255,255,255,0.08)"}`,
-                    color: isActive ? GOLD : "rgba(255,255,255,0.5)",
-                    transition: "all 300ms ease",
-                  }}
-                >
-                  {node}
-                </motion.div>
-                {i < ITALY_NODES.length - 1 && (
-                  <div
-                    className="w-[1px] h-5 ml-6"
-                    style={{
-                      background: isActive
-                        ? GOLD
-                        : "rgba(255,255,255,0.12)",
-                      transition: "background 300ms ease",
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
+      {degraded ? (
+        <div className="rounded-xl border border-red-400/20 bg-red-400/[0.05] p-4 text-sm text-red-100/70" role="alert">
+          {warning ?? "Canonical corridor source unavailable."}
         </div>
-      </div>
+      ) : null}
 
-      {/* Priority Certification Targets */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: "rgba(8,5,1,0.97)",
-          border: "1px solid rgba(212,175,55,0.08)",
-        }}
-      >
-        <p
-          className="font-mono text-[9px] tracking-[0.32em] uppercase mb-4"
-          style={{ color: "rgba(198,165,90,0.5)" }}
-        >
-          Priority Certification Targets
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {PRIORITY_TARGETS.map((t) => (
-            <motion.div
-              key={`${t.country}-${t.docType}`}
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              className="p-4 rounded"
-              style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="Corridor scale posture summary">
+        {([
+          ["Scale", counts.SCALE],
+          ["Watch", counts.WATCH],
+          ["Constrained", counts.CONSTRAINED],
+          ["Do Not Scale", counts.DO_NOT_SCALE],
+          ["Insufficient Evidence", counts.INSUFFICIENT_EVIDENCE],
+        ] as const).map(([label, value]) => (
+          <div key={label} className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-4">
+            <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-white/30">{label}</p>
+            <p className="mt-2 text-2xl font-light text-[#E4CA8C]">{value}</p>
+          </div>
+        ))}
+      </section>
+
+      {corridors.length === 0 ? (
+        <section className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-8 text-center" role="status">
+          <p className="text-sm text-white/40">No canonical corridor Matter evidence is available yet.</p>
+        </section>
+      ) : (
+        <section className="space-y-3">
+          {corridors.map((corridor, index) => (
+            <motion.article
+              key={corridor.key}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(index * 0.025, 0.2), duration: 0.18 }}
+              className="rounded-xl border border-white/[0.07] bg-[#0A0A0A] p-4 sm:p-5 motion-reduce:transform-none"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{t.flag}</span>
+              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
                 <div>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "rgba(255,255,255,0.85)" }}
-                  >
-                    {t.country}
-                  </p>
-                  <p
-                    className="text-[11px]"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
-                  >
-                    {t.docType}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-md border px-2 py-1 font-mono text-[8px] uppercase tracking-[0.16em] ${STATUS_STYLE[corridor.status]}`}>
+                      {corridor.status.replaceAll("_", " ")}
+                    </span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#C6A55A]/55">{corridor.matterCount} Matter{corridor.matterCount === 1 ? "" : "s"}</span>
+                  </div>
+                  <h2 className="mt-3 font-serif text-xl text-white/80">{corridor.destinationCountry} · {corridor.documentType}</h2>
+                  <p className="mt-2 text-xs text-white/35">Observed revenue: <span className="text-white/55">{money(corridor.observedRevenue, corridor.currency)}</span></p>
+                  <div className="mt-3 space-y-1">
+                    {corridor.reasons.map((reason) => <p key={reason} className="text-[11px] leading-5 text-white/35">{reason}</p>)}
+                  </div>
+                </div>
+
+                <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:w-[520px]">
+                  {corridor.factors.map((factor) => (
+                    <div key={factor.label} className="rounded-lg border border-white/[0.06] bg-white/[0.015] p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-mono text-[8px] uppercase tracking-[0.13em] text-white/30">{factor.label}</p>
+                        <p className={`font-mono text-[8px] uppercase tracking-[0.13em] ${FACTOR_STYLE[factor.state]}`}>{factor.state}</p>
+                      </div>
+                      <p className="mt-2 text-[10px] leading-4 text-white/25">{factor.evidence}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span
-                  className="text-[9px] font-mono"
-                  style={{ color: "rgba(255,255,255,0.3)" }}
-                >
-                  Research + partner verify
-                </span>
-                <span
-                  className="text-[9px] font-mono px-2 py-0.5 rounded"
-                  style={{
-                    background: "rgba(198,165,90,0.08)",
-                    border: "1px solid rgba(198,165,90,0.2)",
-                    color: GOLD,
-                  }}
-                >
-                  Prioritized
-                </span>
-              </div>
-            </motion.div>
+            </motion.article>
           ))}
-        </div>
-      </div>
+        </section>
+      )}
+
+      <footer className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+        <p className="text-[11px] leading-5 text-white/30">
+          Scale status is a deterministic read model, not a certification. Missing critical evidence resolves to INSUFFICIENT EVIDENCE rather than being converted into a positive or negative scale recommendation. Authority verification, execution capacity, partner capacity, and direct-cost evidence remain independently governed.
+        </p>
+      </footer>
     </motion.div>
   );
 }

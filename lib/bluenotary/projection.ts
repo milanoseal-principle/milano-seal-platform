@@ -27,7 +27,10 @@ const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
  *   1. signing_url_released = true on the matching signer record
  *   2. Session is in an active status (not expired/completed)
  *   3. Signer email matches the requesting user's email
- *   4. payment_gate_status = 'UNLOCKED'
+ *   4. payment_gate_status = 'UNLOCKED' (canonical scheduling authority)
+ *
+ * IMPORTANT: payment_gate_status is scheduling authority only. This projection
+ * never authors or infers verified Wise settlement truth.
  */
 export function portalRONProjection(
   ronSession: RONSession,
@@ -38,7 +41,6 @@ export function portalRONProjection(
   const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
   const sessionActive = ACTIVE_RON_STATUSES.includes(status);
 
-  // Find the signer matching the requesting portal user
   const matchingSigner = signers.find(
     (s) => s.email?.toLowerCase() === signerEmail.toLowerCase()
   );
@@ -69,6 +71,6 @@ export function portalRONProjection(
     identity_status: ronSession.identity_status,
     kba_status: ronSession.kba_status,
     // NOTE: Never include raw_session, blue_notary_status, bn_session_id,
-    // notarization_id, storage_path, or internal notes in this projection.
+    // notarization_id, storage_path, internal notes, or Wise settlement truth.
   };
 }
