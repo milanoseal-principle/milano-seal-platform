@@ -47,6 +47,7 @@ const gates = [
   ["node", ["scripts/validate-production-closeout-invariants.mjs"]],
   ["node", ["scripts/validate-immediate-scheduling-after-wise-submission.mjs"]],
   ["node", ["scripts/validate-wise-reconciliation-exception-orchestrator.mjs"]],
+  ["node", ["scripts/validate-final-release-governance.mjs"]],
   ["npm", ["run", "validate:migration-chain"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
   ["npm", ["run", "validate:cinematic-route-coverage"]],
