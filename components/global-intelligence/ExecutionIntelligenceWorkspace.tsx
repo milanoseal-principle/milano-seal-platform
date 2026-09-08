@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -25,6 +25,7 @@ import {
   Truck,
   UserRoundCheck,
 } from "lucide-react";
+import flagStyles from "./FlagTakeover.module.css";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { getCountryExecutionIntelligence } from "@/data/country-execution-intelligence";
 
@@ -115,6 +116,25 @@ export function ExecutionIntelligenceWorkspace({ initialCountry }: { initialCoun
   const selectedDestination = useMemo(() => destinationForSlug(countrySlug), [countrySlug]);
   const intel = useMemo(() => getCountryExecutionIntelligence(countrySlug), [countrySlug]);
   const intakeHref = `/intake?source=execution-intelligence&document=${encodeURIComponent(documentKey)}&country=${encodeURIComponent(countrySlug)}`;
+
+  // Cinematic destination flag-takeover atmosphere over the real Leaflet map.
+  // Presentational only — replays the v2 "country enters the room" wash when the
+  // destination changes; never affects map geometry, destination state, or data.
+  const flagWashRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = flagWashRef.current;
+    if (!el) return;
+    el.classList.remove(flagStyles.settled);
+    el.classList.remove(flagStyles.takeover);
+    // Force reflow so the animation restarts on each destination change.
+    void el.offsetWidth;
+    el.classList.add(flagStyles.takeover);
+    const timer = window.setTimeout(() => {
+      el.classList.remove(flagStyles.takeover);
+      el.classList.add(flagStyles.settled);
+    }, 4850);
+    return () => window.clearTimeout(timer);
+  }, [countrySlug]);
 
   const custodySteps = useMemo(() => {
     const authentication = intel.routeType === "hague_apostille" ? "Apostille" : "Authentication";
@@ -272,6 +292,15 @@ export function ExecutionIntelligenceWorkspace({ initialCountry }: { initialCoun
                 <GlobalIntelMapInteractive
                   selectedDest={selectedDestination}
                   onSelect={(destination) => destination && setCountrySlug(destination.slug)}
+                />
+
+                {/* Cinematic destination flag-takeover atmosphere (v2). Layered
+                    over the real Leaflet map; pointer-events:none keeps the map
+                    fully interactive. */}
+                <div
+                  ref={flagWashRef}
+                  aria-hidden="true"
+                  className={`${flagStyles.wash} ${flagStyles[countrySlug] ?? flagStyles.italy}`}
                 />
 
                 <div className="pointer-events-none absolute bottom-4 left-4 z-[1100] w-[250px] rounded-xl border border-white/[0.1] bg-[#050706]/88 p-4 backdrop-blur-md">
