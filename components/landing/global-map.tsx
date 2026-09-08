@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield, ChevronDown, ChevronRight, Clock, Languages, CheckCircle2 } from "lucide-react";
+import { MapPin, ArrowRight, Globe, X, Scale, Building2, Home, HeartPulse, Globe2, UserRound, Shield, ChevronDown, ChevronRight, Clock, Languages, CheckCircle2, Search } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
@@ -100,12 +100,23 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const [activeRegion, setActiveRegion] = useState<RegionTab>("All");
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
   const [complianceCountryId, setComplianceCountryId] = useState<string | null>(null);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [countryQuery, setCountryQuery] = useState("");
 
   const [activeMatter, setActiveMatter] = useState<MatterVector | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const { storedSlug, storedMatter, saveCountry, saveMatter } = useCorridorMemory();
   const [showMemoryBanner, setShowMemoryBanner] = useState(false);
+
+  useEffect(() => {
+    if (!directoryOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDirectoryOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [directoryOpen]);
 
   useEffect(() => {
     if (!storedSlug) return;
@@ -164,6 +175,9 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const teaser = activeRegion === "All"
     ? allSorted.slice(0, TEASER_LIMIT)
     : allSorted.filter(d => DESTINATION_REGIONS[d.slug] === activeRegion).slice(0, TEASER_LIMIT);
+  const directoryResults = allSorted.filter((destination) =>
+    destination.name.toLowerCase().includes(countryQuery.trim().toLowerCase()),
+  );
 
   return (
     <motion.section
@@ -631,8 +645,58 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
           </div>
         </motion.div>
 
+        <AnimatePresence>
+          {directoryOpen && (
+            <motion.div
+              id="global-country-directory"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-5 overflow-hidden rounded-xl border border-[#C6A55A]/20 bg-[#08080a]"
+            >
+              <div className="flex flex-col gap-3 border-b border-white/[0.05] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-mono text-[8px] uppercase tracking-[0.28em] text-[#C6A55A]/70">Complete Country Directory</p>
+                  <p className="mt-1 text-xs text-white/40">Select a governed destination without changing your document context.</p>
+                </div>
+                <label className="flex min-w-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 sm:w-80">
+                  <Search className="h-3.5 w-3.5 text-[#C6A55A]/60" aria-hidden="true" />
+                  <span className="sr-only">Search country or jurisdiction</span>
+                  <input
+                    value={countryQuery}
+                    onChange={(event) => setCountryQuery(event.target.value)}
+                    placeholder="SEARCH COUNTRY OR JURISDICTION"
+                    className="w-full bg-transparent font-mono text-[10px] tracking-[0.08em] text-white outline-none placeholder:text-white/25"
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => setDirectoryOpen(false)} aria-label="Close country directory"><X className="h-3.5 w-3.5 text-white/35" /></button>
+                </label>
+              </div>
+              <div className="grid max-h-80 grid-cols-1 overflow-y-auto sm:grid-cols-2 lg:grid-cols-4">
+                {directoryResults.map((destination) => (
+                  <button
+                    key={destination.slug}
+                    type="button"
+                    aria-label={`Select ${destination.name}`}
+                    aria-pressed={selectedDest?.slug === destination.slug}
+                    onClick={() => {
+                      handleSelectDest(destination);
+                      setDirectoryOpen(false);
+                    }}
+                    className={`flex items-center gap-3 border-b border-r border-white/[0.04] px-4 py-3 text-left transition-colors hover:bg-[#C6A55A]/[0.05] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#C6A55A] ${selectedDest?.slug === destination.slug ? "bg-[#C6A55A]/[0.07] text-[#C6A55A]" : "text-white/65"}`}
+                  >
+                    <span aria-hidden="true">{destination.flag}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.08em]">{destination.name}</span>
+                    <span className="ml-auto font-mono text-[7px] text-white/25">{destination.hague ? "HAGUE" : "REVIEW"}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/map" className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover">Explore Global Document Intelligence<ArrowRight className="w-4 h-4" /></Link>
+          <button type="button" onClick={() => setDirectoryOpen((open) => !open)} aria-expanded={directoryOpen} aria-controls="global-country-directory" className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover">Explore Global Map<ArrowRight className="w-4 h-4" /></button>
           <Link href="/intake" className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors">Begin Secure Intake</Link>
         </motion.div>
       </div>
