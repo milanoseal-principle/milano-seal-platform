@@ -1,13 +1,73 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MapContainer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 
 interface FlyToTarget { lat: number; lng: number; zoom: number; }
+
+interface DestinationAtmosphereVisual {
+  background: string;
+  peakOpacity: number;
+  entryX: string;
+}
+
+const destinationAtmospheres: Record<string, DestinationAtmosphereVisual> = {
+  italy: {
+    background: "radial-gradient(ellipse at 72% 48%, rgba(255,255,255,.08) 0%, rgba(255,255,255,.035) 30%, transparent 68%), linear-gradient(105deg, rgba(0,146,70,.10) 0%, rgba(0,146,70,.055) 30%, rgba(255,255,255,.045) 49%, rgba(206,43,55,.06) 68%, rgba(206,43,55,.11) 100%)",
+    peakOpacity: 0.14,
+    entryX: "8%",
+  },
+  spain: {
+    background: "radial-gradient(ellipse at 68% 46%, rgba(255,218,94,.075) 0%, rgba(255,218,94,.025) 34%, transparent 70%), linear-gradient(108deg, rgba(170,21,27,.09) 0%, rgba(241,191,0,.07) 48%, rgba(170,21,27,.10) 100%)",
+    peakOpacity: 0.13,
+    entryX: "7%",
+  },
+  greece: {
+    background: "radial-gradient(ellipse at 76% 46%, rgba(255,255,255,.075) 0%, rgba(255,255,255,.025) 32%, transparent 68%), linear-gradient(110deg, rgba(13,94,175,.10) 0%, rgba(255,255,255,.035) 52%, rgba(13,94,175,.10) 100%)",
+    peakOpacity: 0.13,
+    entryX: "9%",
+  },
+  argentina: {
+    background: "radial-gradient(ellipse at 48% 72%, rgba(255,255,255,.07) 0%, rgba(255,255,255,.02) 34%, transparent 70%), linear-gradient(98deg, rgba(116,172,223,.10) 0%, rgba(255,255,255,.035) 50%, rgba(116,172,223,.10) 100%)",
+    peakOpacity: 0.13,
+    entryX: "-5%",
+  },
+  colombia: {
+    background: "radial-gradient(ellipse at 42% 62%, rgba(252,209,22,.075) 0%, rgba(252,209,22,.02) 35%, transparent 70%), linear-gradient(102deg, rgba(252,209,22,.08) 0%, rgba(0,56,147,.065) 56%, rgba(206,17,38,.09) 100%)",
+    peakOpacity: 0.13,
+    entryX: "-4%",
+  },
+};
+
+function DestinationAtmosphere({ active }: { active: Destination | null }) {
+  const map = useMap();
+  const reduceMotion = useReducedMotion();
+  const visual = active ? destinationAtmospheres[active.slug] : undefined;
+
+  return createPortal(
+    <div className="ms-destination-atmosphere" aria-hidden="true">
+      <AnimatePresence initial={false}>
+        {active && visual && (
+          <motion.div
+            key={active.slug}
+            className="ms-destination-atmosphere-field"
+            style={{ background: visual.background }}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.92, x: visual.entryX, filter: "blur(52px) saturate(.7)" }}
+            animate={{ opacity: reduceMotion ? Math.min(visual.peakOpacity, 0.11) : visual.peakOpacity, scale: reduceMotion ? 1 : 1.16, x: "0%", filter: "blur(28px) saturate(.8)" }}
+            exit={{ opacity: 0, scale: 1.08, filter: "blur(42px) saturate(.7)" }}
+            transition={{ duration: reduceMotion ? 0 : 4.2, ease: [0.16, 1, 0.3, 1], opacity: { duration: reduceMotion ? 0 : 2.8, ease: "easeInOut" } }}
+          />
+        )}
+      </AnimatePresence>
+    </div>,
+    map.getContainer(),
+  );
+}
 
 function getDestination(name: string): Destination | undefined {
   return DESTINATIONS.find((d) => d.name.toLowerCase() === name.toLowerCase());
@@ -17,76 +77,10 @@ function countryStyle(name: string, isActive: boolean): L.PathOptions {
   const dest = getDestination(name);
   return {
     fillColor: isActive ? "#C6A55A" : dest ? "#1E1A14" : "#0D0D0D",
-    fillOpacity: isActive ? 0.24 : 1,
-    color: isActive ? "#D4AF37" : "#1A1A1A",
-    weight: isActive ? 1.6 : 0.5,
-    className: isActive ? "ms-selected-territory" : undefined,
+    fillOpacity: 1,
+    color: "#1A1A1A",
+    weight: 0.5,
   };
-}
-
-const FLAG_GRADIENTS: Record<string, string> = {
-  Italy: "linear-gradient(90deg,#009246 0 33%,#fff 33% 66%,#ce2b37 66%)",
-  Spain: "linear-gradient(#aa151b 0 25%,#f1bf00 25% 75%,#aa151b 75%)",
-  Greece: "repeating-linear-gradient(#0d5eaf 0 11%,#fff 11% 22%)",
-  Argentina: "linear-gradient(#74acdf 0 33%,#fff 33% 66%,#74acdf 66%)",
-  Colombia: "linear-gradient(#fcd116 0 50%,#003893 50% 75%,#ce1126 75%)",
-};
-
-const FLAG_BANDS: Record<string, { direction: "horizontal" | "vertical"; colors: string[]; sizes?: number[] }> = {
-  Italy: { direction: "vertical", colors: ["#009246", "#ffffff", "#ce2b37"] },
-  Spain: { direction: "horizontal", colors: ["#aa151b", "#f1bf00", "#aa151b"], sizes: [25, 50, 25] },
-  Greece: { direction: "horizontal", colors: ["#0d5eaf", "#ffffff", "#0d5eaf", "#ffffff", "#0d5eaf", "#ffffff", "#0d5eaf", "#ffffff", "#0d5eaf"] },
-  Argentina: { direction: "horizontal", colors: ["#74acdf", "#ffffff", "#74acdf"] },
-  Colombia: { direction: "horizontal", colors: ["#fcd116", "#003893", "#ce1126"], sizes: [50, 25, 25] },
-};
-
-function ensureFlagPattern(svg: SVGSVGElement, name: string) {
-  const config = FLAG_BANDS[name];
-  if (!config) return null;
-  const id = `ms-flag-${name.toLowerCase().replace(/\W/g, "-")}`;
-  if (svg.querySelector(`#${id}`)) return id;
-  const ns = "http://www.w3.org/2000/svg";
-  let defs = svg.querySelector("defs");
-  if (!defs) {
-    defs = document.createElementNS(ns, "defs");
-    svg.prepend(defs);
-  }
-  const pattern = document.createElementNS(ns, "pattern");
-  pattern.setAttribute("id", id);
-  pattern.setAttribute("width", "1");
-  pattern.setAttribute("height", "1");
-  pattern.setAttribute("patternContentUnits", "objectBoundingBox");
-  let offset = 0;
-  config.colors.forEach((color, index) => {
-    const size = config.sizes?.[index] ?? 100 / config.colors.length;
-    const rect = document.createElementNS(ns, "rect");
-    rect.setAttribute(config.direction === "vertical" ? "x" : "y", String(offset / 100));
-    rect.setAttribute(config.direction === "vertical" ? "width" : "height", String(size / 100));
-    rect.setAttribute(config.direction === "vertical" ? "height" : "width", "1");
-    rect.setAttribute("fill", color);
-    pattern.appendChild(rect);
-    offset += size;
-  });
-  defs.appendChild(pattern);
-  return id;
-}
-
-function applyTerritoryIdentity(layer: L.Path, name: string, active: boolean) {
-  const element = layer.getElement();
-  if (!element) return;
-  element.classList.toggle("ms-selected-territory", active);
-  element.style.removeProperty("background");
-  element.style.removeProperty("background-clip");
-  if (active && FLAG_GRADIENTS[name]) {
-    const patternId = element.ownerSVGElement && ensureFlagPattern(element.ownerSVGElement, name);
-    if (patternId) {
-      element.style.fill = `url(#${patternId})`;
-      element.style.fillOpacity = "0.14";
-    }
-  } else {
-    element.style.removeProperty("fill");
-    element.style.removeProperty("fill-opacity");
-  }
 }
 
 interface LayerControlProps {
@@ -99,14 +93,11 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
   const map = useMap();
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const activeRef = useRef<Destination | null>(active);
-  const countryBoundsRef = useRef(new Map<string, L.LatLngBounds>());
-  const transitionRef = useRef<number | null>(null);
 
   useEffect(() => { activeRef.current = active; }, [active]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("/world.geojson", { signal: controller.signal })
+    fetch("/world.geojson")
       .then((r) => r.json())
       .then((data: GeoJSON.FeatureCollection) => {
         if (geoLayerRef.current) map.removeLayer(geoLayerRef.current);
@@ -118,7 +109,6 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
           onEachFeature: (feature, featureLayer) => {
             const name = (feature?.properties?.name as string) ?? "";
             const dest = getDestination(name);
-            countryBoundsRef.current.set(name, featureLayer.getBounds());
             if (!dest) return;
             const path = featureLayer as L.Path;
             path.on("mouseover", () => {
@@ -132,14 +122,12 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
                 path.setStyle({ fillColor: "#1E1A14", fillOpacity: 1 });
             });
             path.on("click", () => setActive(dest));
-            path.getElement()?.setAttribute("aria-label", `Select ${dest.name}`);
           },
         });
         layer.addTo(map);
         geoLayerRef.current = layer;
       });
     return () => {
-      controller.abort();
       if (geoLayerRef.current) { map.removeLayer(geoLayerRef.current); geoLayerRef.current = null; }
     };
   }, [map]);
@@ -150,39 +138,22 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
       const l = fl as L.Path & { feature?: GeoJSON.Feature };
       const name = (l.feature?.properties?.name as string) ?? "";
       l.setStyle(countryStyle(name, active?.name === name));
-      applyTerritoryIdentity(l, name, active?.name === name);
     });
   }, [active]);
 
   useEffect(() => {
-    if (flyTarget) {
-      map.stop();
-      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
-    }
+    if (flyTarget) map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
   }, [flyTarget, map]);
 
   // Fly to selected destination (prefer ROUTE_DESTS coords, fall back to Destination coords)
   useEffect(() => {
     if (!active) return;
-    map.stop();
-    if (transitionRef.current !== null) window.clearTimeout(transitionRef.current);
-    const countryBounds = countryBoundsRef.current.get(active.name);
-    const destination: L.LatLngExpression = [active.lat ?? countryBounds?.getCenter().lat ?? 0, active.lng ?? countryBounds?.getCenter().lng ?? 0];
-    if (countryBounds) {
-      map.flyToBounds(countryBounds, { padding: [70, 70], maxZoom: 5.25, duration: 0.82, easeLinearity: 0.24 });
-    } else {
-      map.flyTo(destination, 4.75, { duration: 0.82, easeLinearity: 0.24 });
+    const dest = ROUTE_DESTS.find(d => d.name === active.name);
+    if (dest) {
+      map.flyTo([dest.lat, dest.lng], 5, { duration: 1.1, easeLinearity: 0.3 });
+    } else if (active.lat != null && active.lng != null) {
+      map.flyTo([active.lat, active.lng], 5, { duration: 1.1, easeLinearity: 0.3 });
     }
-    transitionRef.current = window.setTimeout(() => {
-      const corridor = L.latLngBounds([ORIGIN_LL, destination]);
-      map.flyToBounds(corridor, { paddingTopLeft: [54, 72], paddingBottomRight: [54, 72], maxZoom: 4.4, duration: 0.9, easeLinearity: 0.24 });
-      transitionRef.current = null;
-    }, 1250);
-    return () => {
-      if (transitionRef.current !== null) window.clearTimeout(transitionRef.current);
-      transitionRef.current = null;
-      map.stop();
-    };
   }, [active, map]);
 
   return null;
@@ -254,7 +225,6 @@ function arcD(ox: number, oy: number, dx: number, dy: number, spread: number): s
 
 function MapSVGRoutes({ active }: { active: Destination | null }) {
   const map = useMap();
-  const routeId = useId().replace(/:/g, "");
   const [, mapBump] = useState(0);
 
   useEffect(() => {
@@ -365,24 +335,6 @@ function MapSVGRoutes({ active }: { active: Destination | null }) {
         );
       })()}
 
-      {/* A single traveler is keyed to the canonical destination. Replacing the
-          group cancels rapid-switch animation rather than stacking loops. */}
-      {active && (() => {
-        const selected = routes.find((route) => route.name === active.name) ?? activeExtra;
-        if (!selected) return null;
-        const d = arcD(op.x, op.y, selected.pt.x, selected.pt.y, selected.spread);
-        return (
-          <g key={`traveler-${active.slug}-${routeId}`} className="ms-route-traveler" aria-hidden="true">
-            <circle r="7" fill="#F4E5B8" opacity="0.18" filter="url(#ms-dot-glow)">
-              <animateMotion dur="3.4s" repeatCount="indefinite" path={d} />
-            </circle>
-            <circle r="2.35" fill="#FFF8E3" filter="url(#ms-dot-glow)">
-              <animateMotion dur="3.4s" repeatCount="indefinite" path={d} />
-            </circle>
-          </g>
-        );
-      })()}
-
       {/* ── Primary destination nodes ─────────────────────────────────────── */}
       {routes.map((r) => {
         const isSelected = active?.name === r.name;
@@ -466,13 +418,33 @@ export default function MapInner({ active, setActive, flyTarget }: Props) {
   return (
     <div className="relative min-h-[440px]">
       <style>{`
-        .ms-selected-territory {
-          filter: drop-shadow(0 0 5px rgba(212,175,55,.52));
-          transition: fill .45s ease, stroke .45s ease, filter .45s ease;
+        .ms-destination-atmosphere {
+          position: absolute;
+          inset: 0;
+          z-index: 350;
+          overflow: hidden;
+          pointer-events: none;
+          transform: translateZ(0);
+        }
+        .ms-destination-atmosphere-field {
+          position: absolute;
+          inset: -18%;
+          transform-origin: center;
+          mix-blend-mode: screen;
+          will-change: opacity, transform, filter;
+        }
+        @media (max-width: 767px) {
+          .ms-destination-atmosphere-field {
+            inset: -10%;
+            filter: blur(22px) saturate(.76) !important;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
-          .ms-route-traveler { display: none; }
-          .leaflet-zoom-animated { transition-duration: .01ms !important; }
+          .ms-destination-atmosphere-field {
+            transform: none !important;
+            transition: none !important;
+            will-change: auto;
+          }
         }
       `}</style>
       <MapContainer
@@ -486,16 +458,10 @@ export default function MapInner({ active, setActive, flyTarget }: Props) {
       minZoom={1}
       maxZoom={8}
     >
+      <DestinationAtmosphere active={active} />
       <LayerControl active={active} setActive={setActive} flyTarget={flyTarget} />
       <MapSVGRoutes active={active} />
       </MapContainer>
-      {active && FLAG_GRADIENTS[active.name] && (
-        <div
-          className="pointer-events-none absolute bottom-4 right-4 z-[550] h-1.5 w-20 rounded-full opacity-[0.12] mix-blend-screen"
-          style={{ background: FLAG_GRADIENTS[active.name] }}
-          aria-hidden="true"
-        />
-      )}
     </div>
   );
 }
