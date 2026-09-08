@@ -1,53 +1,18 @@
-/* Cinematic destination flag-takeover atmosphere.
-   Ported from the approved v2 design. This is atmosphere ONLY — it layers a
-   low-opacity, pointer-events-none national-color wash over the real Leaflet
-   execution map when the destination changes. It never replaces the map,
-   changes destination state, or asserts any legal/compliance outcome. */
+/* Legacy workspace-level flag wash retained only for import compatibility.
+   The active cinematic destination atmosphere now lives in the canonical
+   interactive Leaflet map shell so it renders beneath route SVGs and above the
+   base map without duplicating visual state. */
 
 .wash {
-  position: absolute;
-  inset: -8%;
-  z-index: 500; /* above Leaflet tiles (z=400), below the route card (z=1100) */
-  opacity: 0.055;
-  transform: scale(1.02);
-  transform-origin: 75% 50%;
-  filter: saturate(0.92) blur(0.15px);
-  pointer-events: none;
-  mix-blend-mode: screen;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0.7) 66%, #000 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0.7) 66%, #000 100%);
-}
-.wash::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 72% 48%, rgba(255, 255, 255, 0.09), transparent 28%),
-    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0.07) 70%, transparent 100%);
-  opacity: 0.45;
-  pointer-events: none;
-}
-.takeover { animation: flagTakeover 4.8s cubic-bezier(0.18, 0.74, 0.18, 1) both; }
-.settled {
-  opacity: 0.16;
-  transform: scale(1.08);
-  -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%);
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%);
-}
-@keyframes flagTakeover {
-  0% { opacity: 0.045; transform: scale(1) translateX(8%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.18) 72%, #000 100%); mask-image: linear-gradient(90deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.18) 72%, #000 100%); }
-  28% { opacity: 0.09; transform: scale(1.035) translateX(4%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.05) 36%, rgba(0, 0, 0, 0.45) 68%, #000 100%); mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.05) 36%, rgba(0, 0, 0, 0.45) 68%, #000 100%); }
-  68% { opacity: 0.19; transform: scale(1.075) translateX(0); -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.68) 28%, #000 62%, #000 100%); mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.68) 28%, #000 62%, #000 100%); }
-  100% { opacity: 0.16; transform: scale(1.08) translateX(0); -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%); mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%); }
+  display: none;
 }
 
-.italy { background: linear-gradient(90deg, transparent 0%, transparent 46%, #009246 46%, #009246 64%, #fff 64%, #fff 82%, #ce2b37 82%, #ce2b37 100%); }
-.spain { background: linear-gradient(90deg, transparent 0%, transparent 48%, #aa151b 48%, #aa151b 62%, #f1bf00 62%, #f1bf00 86%, #aa151b 86%, #aa151b 100%); }
-.greece { background: linear-gradient(90deg, transparent 0%, transparent 48%, #0d5eaf 48%, #0d5eaf 68%, #fff 68%, #fff 77%, #0d5eaf 77%, #0d5eaf 100%); }
-.argentina { background: linear-gradient(90deg, transparent 0%, transparent 48%, #74acdf 48%, #74acdf 63%, #fff 63%, #fff 82%, #74acdf 82%, #74acdf 100%); }
-.colombia { background: linear-gradient(90deg, transparent 0%, transparent 48%, #fcd116 48%, #fcd116 70%, #003893 70%, #003893 84%, #ce1126 84%, #ce1126 100%); }
-
-@media (prefers-reduced-motion: reduce) {
-  .takeover { animation: none; }
-  .wash { opacity: 0.16; transform: scale(1.08); -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%); mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, #000 35%, #000 100%); }
+.takeover,
+.settled,
+.italy,
+.spain,
+.greece,
+.argentina,
+.colombia {
+  display: none;
 }

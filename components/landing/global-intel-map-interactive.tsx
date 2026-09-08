@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { type Destination } from "@/data/destinations";
 import Link from "next/link";
@@ -27,6 +27,124 @@ const REGION_PRESETS: Record<string, FlyToTarget> = {
   americas: { lat: 10, lng: -80, zoom: 3 },
   asia: { lat: 25, lng: 100, zoom: 4 },
 };
+
+type AtmospherePalette = readonly [string, string, string];
+
+const DESTINATION_ATMOSPHERES: Record<string, AtmospherePalette> = {
+  Italy: ["#009246", "#ffffff", "#ce2b37"],
+  Spain: ["#aa151b", "#f1bf00", "#aa151b"],
+  Greece: ["#0d5eaf", "#ffffff", "#0d5eaf"],
+  Argentina: ["#74acdf", "#ffffff", "#74acdf"],
+  Colombia: ["#fcd116", "#003893", "#ce1126"],
+  Mexico: ["#006847", "#ffffff", "#ce1126"],
+  Portugal: ["#046a38", "#ffcc00", "#da291c"],
+  France: ["#0055a4", "#ffffff", "#ef4135"],
+  Germany: ["#111111", "#dd0000", "#ffce00"],
+  Belgium: ["#111111", "#ffd90c", "#ef3340"],
+  Netherlands: ["#ae1c28", "#ffffff", "#21468b"],
+  Austria: ["#ed2939", "#ffffff", "#ed2939"],
+  Switzerland: ["#d52b1e", "#ffffff", "#d52b1e"],
+  Poland: ["#ffffff", "#dc143c", "#dc143c"],
+  Romania: ["#002b7f", "#fcd116", "#ce1126"],
+  Turkey: ["#e30a17", "#ffffff", "#e30a17"],
+  Sweden: ["#006aa7", "#fecc00", "#006aa7"],
+  Norway: ["#ba0c2f", "#ffffff", "#00205b"],
+  "United Kingdom": ["#012169", "#ffffff", "#c8102e"],
+  Brazil: ["#009c3b", "#ffdf00", "#002776"],
+  Chile: ["#0039a6", "#ffffff", "#d52b1e"],
+  Uruguay: ["#5bbad5", "#ffffff", "#fcd116"],
+  Peru: ["#d91023", "#ffffff", "#d91023"],
+  Ecuador: ["#ffdd00", "#034ea2", "#ed1c24"],
+  Venezuela: ["#ffcc00", "#00247d", "#cf142b"],
+  Panama: ["#005293", "#ffffff", "#d21034"],
+  "Dominican Republic": ["#002d62", "#ffffff", "#ce1126"],
+  Morocco: ["#c1272d", "#006233", "#c1272d"],
+  Israel: ["#0038b8", "#ffffff", "#0038b8"],
+  UAE: ["#00732f", "#ffffff", "#000000"],
+  "United Arab Emirates": ["#00732f", "#ffffff", "#000000"],
+  India: ["#ff9933", "#ffffff", "#138808"],
+  Japan: ["#ffffff", "#bc002d", "#ffffff"],
+  "South Korea": ["#ffffff", "#cd2e3a", "#0047a0"],
+  Philippines: ["#0038a8", "#fcd116", "#ce1126"],
+  Australia: ["#012169", "#ffffff", "#e4002b"],
+  "New Zealand": ["#00247d", "#ffffff", "#cc142b"],
+  Singapore: ["#ef3340", "#ffffff", "#ef3340"],
+  "South Africa": ["#007749", "#ffb81c", "#001489"],
+  Senegal: ["#00853f", "#fdef42", "#e31b23"],
+  Mauritius: ["#ea2839", "#1a206d", "#00a551"],
+  Canada: ["#d80621", "#ffffff", "#d80621"],
+};
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const value = normalized.length === 3
+    ? normalized.split("").map((part) => `${part}${part}`).join("")
+    : normalized;
+  const parsed = Number.parseInt(value, 16);
+  const red = (parsed >> 16) & 255;
+  const green = (parsed >> 8) & 255;
+  const blue = parsed & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function atmosphereBackground(name: string) {
+  const [primary, middle, secondary] = DESTINATION_ATMOSPHERES[name] ?? ["#c6a55a", "#ffffff", "#8c7441"];
+  return [
+    `radial-gradient(ellipse at 72% 48%, ${hexToRgba(middle, 0.085)} 0%, ${hexToRgba(middle, 0.035)} 31%, transparent 68%)`,
+    `radial-gradient(ellipse at 58% 56%, ${hexToRgba(primary, 0.105)} 0%, ${hexToRgba(primary, 0.045)} 34%, transparent 72%)`,
+    `radial-gradient(ellipse at 88% 44%, ${hexToRgba(secondary, 0.11)} 0%, ${hexToRgba(secondary, 0.045)} 36%, transparent 74%)`,
+    `linear-gradient(105deg, ${hexToRgba(primary, 0.075)} 0%, ${hexToRgba(primary, 0.035)} 29%, ${hexToRgba(middle, 0.03)} 49%, ${hexToRgba(secondary, 0.04)} 69%, ${hexToRgba(secondary, 0.08)} 100%)`,
+  ].join(", ");
+}
+
+interface AtmosphereLayer {
+  id: string;
+  country: string;
+  exiting: boolean;
+}
+
+function DestinationAtmosphere({ active }: { active: Destination | null }) {
+  const [layers, setLayers] = useState<AtmosphereLayer[]>([]);
+  const timersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const country = active?.name;
+    const id = active?.slug;
+
+    setLayers((current) => {
+      const outgoing = current.map((layer) => ({ ...layer, exiting: true }));
+      if (!country || !id) return outgoing;
+      return [
+        ...outgoing.filter((layer) => layer.id !== id),
+        { id, country, exiting: false },
+      ];
+    });
+
+    const timer = window.setTimeout(() => {
+      setLayers((current) => current.filter((layer) => !layer.exiting));
+    }, 1350);
+    timersRef.current.push(timer);
+
+    return () => {
+      timersRef.current.forEach((pending) => window.clearTimeout(pending));
+      timersRef.current = [];
+    };
+  }, [active?.name, active?.slug]);
+
+  if (layers.length === 0) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 350 }} aria-hidden="true">
+      {layers.map((layer) => (
+        <div
+          key={`${layer.id}-${layer.exiting ? "out" : "in"}`}
+          className={layer.exiting ? "ms-destination-atmosphere ms-destination-atmosphere-out" : "ms-destination-atmosphere ms-destination-atmosphere-in"}
+          style={{ background: atmosphereBackground(layer.country) }}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface Props {
   onSelect?: (dest: Destination | null) => void;
@@ -61,7 +179,7 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
     if (!el) return;
     const r = el.getBoundingClientRect();
     el.style.setProperty("--mouse-x", `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
-    el.style.setProperty("--mouse-y", `${(((e.clientY - r.top)  / r.height) * 100).toFixed(1)}%`);
+    el.style.setProperty("--mouse-y", `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`);
   }
 
   return (
@@ -70,6 +188,62 @@ export function GlobalIntelMapInteractive({ onSelect, selectedDest, externalFlyT
       className="relative w-full bg-[#0A0A0A] overflow-hidden"
       onMouseMove={handleMouseMove}
     >
+      <style>{`
+        .ms-destination-atmosphere {
+          position: absolute;
+          inset: -18%;
+          border-radius: 42%;
+          pointer-events: none;
+          mix-blend-mode: screen;
+          transform-origin: 72% 50%;
+          will-change: opacity, transform, filter;
+        }
+        .ms-destination-atmosphere-in {
+          animation: msDestinationAtmosphereIn 4.6s cubic-bezier(.18,.74,.18,1) both;
+        }
+        .ms-destination-atmosphere-out {
+          animation: msDestinationAtmosphereOut 1.25s ease-out both;
+        }
+        @keyframes msDestinationAtmosphereIn {
+          0% {
+            opacity: 0;
+            transform: scale(.92) translate3d(8%,0,0);
+            filter: blur(52px) saturate(.70);
+          }
+          45% { opacity: .09; }
+          100% {
+            opacity: .14;
+            transform: scale(1.16) translate3d(0,0,0);
+            filter: blur(28px) saturate(.80);
+          }
+        }
+        @keyframes msDestinationAtmosphereOut {
+          0% {
+            opacity: .14;
+            transform: scale(1.16) translate3d(0,0,0);
+            filter: blur(28px) saturate(.80);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.22) translate3d(-3%,0,0);
+            filter: blur(46px) saturate(.68);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ms-destination-atmosphere-in,
+          .ms-destination-atmosphere-out {
+            animation: none !important;
+          }
+          .ms-destination-atmosphere-in {
+            opacity: .12;
+            transform: scale(1.12);
+            filter: blur(30px) saturate(.78);
+          }
+          .ms-destination-atmosphere-out { display: none; }
+        }
+      `}</style>
+
+      <DestinationAtmosphere active={active} />
       <div className="map-vault-glow absolute inset-0 pointer-events-none" style={{ zIndex: 499 }} />
 
       <div className="absolute top-4 left-4 flex gap-2 z-[1000]">
