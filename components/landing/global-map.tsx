@@ -110,6 +110,15 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const [showMemoryBanner, setShowMemoryBanner] = useState(false);
 
   useEffect(() => {
+    if (!directoryOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDirectoryOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [directoryOpen]);
+
+  useEffect(() => {
     if (!storedSlug) return;
     const dest = DESTINATIONS.find(d => d.slug === storedSlug) ?? null;
     if (dest && !selectedDest) {
@@ -639,6 +648,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
         <AnimatePresence>
           {directoryOpen && (
             <motion.div
+              id="global-country-directory"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -686,7 +696,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
         </AnimatePresence>
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button type="button" onClick={() => setDirectoryOpen((open) => !open)} aria-expanded={directoryOpen} className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover">Explore Global Map<ArrowRight className="w-4 h-4" /></button>
+          <button type="button" onClick={() => setDirectoryOpen((open) => !open)} aria-expanded={directoryOpen} aria-controls="global-country-directory" className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A55A] text-[#0A0A0A] text-sm font-semibold rounded-lg hover:bg-[#D4B76A] transition-colors gold-glow-hover">Explore Global Map<ArrowRight className="w-4 h-4" /></button>
           <Link href="/intake" className="inline-flex items-center gap-2 px-6 py-3 border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium rounded-lg hover:border-[#C6A55A] hover:bg-[#C6A55A]/5 transition-colors">Begin Secure Intake</Link>
         </motion.div>
       </div>
