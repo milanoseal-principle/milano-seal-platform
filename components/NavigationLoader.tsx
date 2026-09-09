@@ -2,67 +2,66 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { MilanoPageLoader } from "@/components/animations/MilanoPageLoader";
 
 const NAV_INTENT_EVENT = "milano:navigation-intent";
-
-// Minimum time the transition screen stays visible so "Preparing the next view"
-// and its supporting sentence are readable, even when the destination resolves
-// instantly. Release happens only once BOTH are true: the route is ready AND the
-// minimum has elapsed. A soft fade then hands off to the destination.
-const MIN_VISIBLE_MS = 2200;
-const FADE_MS = 300;
-// Fallback cap if a route never resolves (kept from prior behavior).
-const SAFETY_MS = 8000;
+const MINIMUM_VISIBLE_MS = 2200;
+const SETTLE_FADE_MS = 300;
+const SAFETY_RELEASE_MS = 8000;
 
 export function NavigationLoader() {
   const pathname = usePathname();
-  const prevPathname = useRef(pathname);
-  const shownAt = useRef(0);
+  const previousPathname = useRef(pathname);
+  const startedAt = useRef<number | null>(null);
   const activeRef = useRef(false);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(false);
   const [complete, setComplete] = useState(false);
 
   const clearTimers = useCallback(() => {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
     if (safetyTimer.current) clearTimeout(safetyTimer.current);
-    holdTimer.current = settleTimer.current = safetyTimer.current = null;
+    releaseTimer.current = null;
+    settleTimer.current = null;
+    safetyTimer.current = null;
   }, []);
 
-  // Release the transition once the route is ready, but never before the
-  // minimum readable duration has elapsed. If the route is still loading past
-  // the minimum, we do NOT release early — we wait for readiness.
+  const finish = useCallback(() => {
+    if (!activeRef.current) return;
+    setComplete(true);
+    settleTimer.current = setTimeout(() => {
+      setLoading(false);
+      setComplete(false);
+      activeRef.current = false;
+      startedAt.current = null;
+    }, SETTLE_FADE_MS);
+  }, []);
+
   const releaseWhenReady = useCallback(() => {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
+    if (!activeRef.current || startedAt.current === null) return;
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
     if (safetyTimer.current) {
       clearTimeout(safetyTimer.current);
       safetyTimer.current = null;
     }
-    const elapsed = Date.now() - shownAt.current;
-    const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-    holdTimer.current = setTimeout(() => {
-      setComplete(true);
-      settleTimer.current = setTimeout(() => {
-        setLoading(false);
-        activeRef.current = false;
-      }, FADE_MS);
-    }, remaining);
-  }, []);
+
+    const elapsed = performance.now() - startedAt.current;
+    const remaining = Math.max(0, MINIMUM_VISIBLE_MS - elapsed);
+    releaseTimer.current = setTimeout(finish, remaining);
+  }, [finish]);
 
   const begin = useCallback(() => {
     clearTimers();
-    setComplete(false);
     if (!activeRef.current) {
       activeRef.current = true;
-      shownAt.current = Date.now();
+      startedAt.current = performance.now();
     }
+    setComplete(false);
     setLoading(true);
-    safetyTimer.current = setTimeout(releaseWhenReady, SAFETY_MS);
-  }, [clearTimers, releaseWhenReady]);
+    safetyTimer.current = setTimeout(finish, SAFETY_RELEASE_MS);
+  }, [clearTimers, finish]);
 
   useEffect(() => {
     window.addEventListener(NAV_INTENT_EVENT, begin);
@@ -73,14 +72,16 @@ export function NavigationLoader() {
   }, [begin, clearTimers]);
 
   useEffect(() => {
-    if (prevPathname.current === pathname) return;
-    prevPathname.current = pathname;
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
+
     if (!activeRef.current) {
       activeRef.current = true;
-      shownAt.current = Date.now();
+      startedAt.current = performance.now();
       setComplete(false);
       setLoading(true);
     }
+
     releaseWhenReady();
   }, [pathname, releaseWhenReady]);
 
@@ -119,5 +120,35 @@ export function NavigationLoader() {
   }, []);
 
   if (!loading) return null;
-  return <MilanoPageLoader complete={complete} />;
+
+  return (
+    <main
+      className={`fixed inset-0 z-[9200] min-h-[100dvh] bg-[#060608] px-5 py-12 text-[#F4F1EA] transition-opacity duration-300 sm:px-6 ${
+        complete ? "opacity-0" : "opacity-100"
+      }`}
+      role="status"
+      aria-live="polite"
+      aria-busy={!complete}
+      aria-label="Preparing the next view"
+    >
+      <div className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center">
+        <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D8C188]/70">
+          The Milano Seal™
+        </div>
+        <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">
+          Preparing the next view
+        </h1>
+        <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
+          Preserving your current context while the destination surface is prepared.
+        </p>
+        <div className="mt-8 h-px w-full overflow-hidden bg-[#D8C188]/10" aria-hidden="true">
+          <div className="h-full w-2/3 origin-left bg-gradient-to-r from-transparent via-[#D8C188]/80 to-transparent motion-safe:animate-pulse" />
+        </div>
+        <div className="mt-6 grid gap-3" aria-hidden="true">
+          <div className="h-16 rounded-xl border border-[#D8C188]/10 bg-white/[0.02] motion-safe:animate-pulse" />
+          <div className="h-28 rounded-xl border border-[#D8C188]/10 bg-white/[0.02] motion-safe:animate-pulse" />
+        </div>
+      </div>
+    </main>
+  );
 }
