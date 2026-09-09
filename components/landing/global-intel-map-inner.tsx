@@ -182,6 +182,7 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
     return () => {
       if (transitionRef.current !== null) window.clearTimeout(transitionRef.current);
       transitionRef.current = null;
+      if ((map as L.Map & { _mapPane?: HTMLElement })._mapPane) map.stop();
     };
   }, [active, map]);
 
