@@ -1,0 +1,75 @@
+name: Rendered Map Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: "Optional deployed URL. Leave blank to prove the built branch locally."
+        required: false
+        type: string
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/global-document-intelligence/**"
+      - "components/global-intelligence/**"
+      - "components/landing/global-intel-map-*.tsx"
+      - "data/destinations.ts"
+      - "scripts/run-rendered-map-proof.mjs"
+      - ".github/workflows/rendered-map-proof.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rendered-map-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rendered-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      MAP_PROOF_BASE_URL: ${{ inputs.production_url || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Build application
+        if: ${{ !inputs.production_url }}
+        run: npm run build
+
+      - name: Install Playwright without mutating lockfiles
+        run: npm install --no-save --no-package-lock playwright@1.43.0
+
+      - name: Cache Chromium payload
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: milano-playwright-${{ runner.os }}-1.43.0
+
+      - name: Provision Chromium deterministically
+        run: npx playwright install --with-deps chromium
+
+      - name: Execute exact rendered acceptance matrix
+        run: node scripts/run-rendered-map-proof.mjs
+
+      - name: Upload rendered proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-map-proof-${{ github.sha }}
+          path: artifacts/proof/rendered-map/
+          if-no-files-found: error
+          retention-days: 30
