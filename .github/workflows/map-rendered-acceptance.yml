@@ -1,0 +1,83 @@
+name: Milano Seal Rendered Map Acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/map-rendered-acceptance.yml'
+      - 'components/landing/global-intel-map-inner.tsx'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rendered-map-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Rendered production acceptance
+        env:
+          URL: https://www.themilanoseal.com/global-document-intelligence
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const profiles = [
+            ['Desktop 1440x900',1440,900,false],
+            ['Desktop 1920x1080',1920,1080,false],
+            ['Mobile 430x932',430,932,true],
+            ['Mobile 390x844',390,844,true],
+          ];
+          const countries=['Italy','Spain','Greece','Argentina','Colombia'];
+          const browser=await chromium.launch({headless:true});
+          fs.mkdirSync('map-qa',{recursive:true});
+          async function openProfile(name,width,height,mobile,reducedMotion='no-preference') {
+            const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,reducedMotion});
+            const page=await context.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(`pageerror: ${e.message}`));
+            page.on('console',m=>{if(m.type()==='error') errors.push(`console: ${m.text()}`)});
+            page.on('requestfailed',r=>{const u=r.url();if(u.includes('/world.geojson')||u.includes('/_next/')) errors.push(`requestfailed: ${u} ${r.failure()?.errorText||''}`)});
+            await page.goto(process.env.URL,{waitUntil:'networkidle',timeout:90000});
+            await page.locator('.leaflet-container').first().waitFor({state:'visible',timeout:30000});
+            return {context,page,errors};
+          }
+          async function selectCountry(page,country){
+            const b=page.getByRole('button',{name:country,exact:true});
+            if(await b.count()){await b.first().click();return;}
+            const t=page.getByText(country,{exact:true});
+            assert.ok(await t.count(),`country control missing: ${country}`);
+            await t.first().click();
+          }
+          async function accept(name,width,height,mobile,reducedMotion='no-preference'){
+            const {context,page,errors}=await openProfile(name,width,height,mobile,reducedMotion);
+            for(const c of countries){await selectCountry(page,c);await page.waitForTimeout(650)}
+            await page.waitForTimeout(reducedMotion==='reduce'?1000:1600);
+            assert.match(await page.locator('body').innerText(),/Colombia/i,`${name}: latest-country authority missing`);
+            assert.equal(await page.locator('.ms-route-traveler').count(),1,`${name}: traveler authority duplicated`);
+            assert.equal(await page.locator('.leaflet-container').first().isVisible(),true,`${name}: map hidden`);
+            assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1),false,`${name}: horizontal overflow`);
+            assert.deepEqual(errors,[],`${name}: client errors:\n${errors.join('\n')}`);
+            await page.screenshot({path:`map-qa/${name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.png`,fullPage:true});
+            console.log(`PASS ${name}`);
+            await context.close();
+          }
+          for(const p of profiles) await accept(...p);
+          await accept('Reduced motion',1440,900,false,'reduce');
+          await browser.close();
+          console.log('PRODUCTION MAP RENDERED ACCEPTANCE PASS');
+          NODE
+      - name: Upload proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-map-rendered-proof
+          path: map-qa
+          if-no-files-found: warn
