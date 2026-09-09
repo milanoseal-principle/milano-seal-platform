@@ -1,0 +1,18 @@
+/* Legacy workspace-level flag wash retained only for import compatibility.
+   The active cinematic destination atmosphere now lives in the canonical
+   interactive Leaflet map shell so it renders beneath route SVGs and above the
+   base map without duplicating visual state. */
+
+.wash {
+  display: none;
+}
+
+.takeover,
+.settled,
+.italy,
+.spain,
+.greece,
+.argentina,
+.colombia {
+  display: none;
+}
