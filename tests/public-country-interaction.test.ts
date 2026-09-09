@@ -13,11 +13,16 @@ const directory = readFileSync(
   "utf8",
 );
 
-test("globe country intelligence is anchored to the selected node instead of the opposite viewport quadrant", () => {
+test("globe country intelligence opens beside the globe instead of covering it", () => {
   assert.match(homepage, /GlobeCountryNodePopover/);
-  assert.match(globePopover, /event\.clientX/);
+  assert.match(globePopover, /anchorBesideGlobe/);
+  assert.match(globePopover, /\.leaflet-container/);
+  assert.match(globePopover, /getBoundingClientRect/);
+  assert.match(globePopover, /const gap = 28/);
+  assert.match(globePopover, /roomRight/);
+  assert.match(globePopover, /roomLeft/);
   assert.match(globePopover, /event\.clientY/);
-  assert.match(globePopover, /clampAnchor/);
+  assert.doesNotMatch(globePopover, /event\.clientX/);
   assert.match(globePopover, /\[data-target-vector\]/);
   assert.match(globePopover, /data-globe-country-popover/);
   assert.match(globePopover, /\.ms-destination-popover/);
