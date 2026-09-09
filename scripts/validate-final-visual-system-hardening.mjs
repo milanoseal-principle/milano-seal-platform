@@ -20,11 +20,22 @@ for (const file of required) {
 }
 
 const navigation = readFileSync("components/NavigationLoader.tsx", "utf8");
-for (const token of ["milano:navigation-intent", "complete={complete}", "8000", "240"]) {
+for (const token of [
+  "milano:navigation-intent",
+  "MINIMUM_VISIBLE_MS = 2200",
+  "SETTLE_FADE_MS = 300",
+  "SAFETY_RELEASE_MS = 8000",
+  "Preparing the next view",
+  "Preserving your current context",
+  "z-[9200]",
+]) {
   if (!navigation.includes(token)) throw new Error(`Navigation continuity missing: ${token}`);
 }
 if (navigation.includes("setTimeout(() => setLoading(false), 900)")) {
   throw new Error("Legacy fixed 900ms route loader must not return");
+}
+if (navigation.includes("<MilanoPageLoader")) {
+  throw new Error("Navigation loader must use the full Milano transition surface, not the legacy top rail only");
 }
 
 const shell = readFileSync("components/motion/CinematicPageShell.tsx", "utf8");
