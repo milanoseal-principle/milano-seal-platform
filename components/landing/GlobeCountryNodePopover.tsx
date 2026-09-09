@@ -23,23 +23,49 @@ function resolveDestination(label: string | null): Destination | null {
   );
 }
 
-function clampAnchor(clientX: number, clientY: number): AnchorPoint {
+// Anchor the intelligence card BESIDE the globe — never over it. Positioning is
+// driven by the globe's own bounding box (not the raw click point), so a click
+// anywhere inside the globe still opens the card in clear space to the side.
+function anchorBesideGlobe(
+  globeRect: DOMRect | null,
+  clientY: number,
+): AnchorPoint {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const edge = 12;
-  const gap = 18;
+  const gap = 28; // 24–32px minimum gap from the globe edge
   const cardWidth = Math.min(360, viewportWidth - edge * 2);
   const minimumTop = 92;
-
-  const opensRight = clientX + gap + cardWidth <= viewportWidth - edge;
-  const left = opensRight
-    ? clientX + gap
-    : Math.max(edge, clientX - cardWidth - gap);
 
   const top = Math.max(
     minimumTop,
     Math.min(clientY - 72, viewportHeight - 220),
   );
+
+  // Fallback: globe bounds unknown → dock to the right viewport edge.
+  if (!globeRect) {
+    return { left: Math.max(edge, viewportWidth - edge - cardWidth), top };
+  }
+
+  const roomRight = viewportWidth - edge - (globeRect.right + gap);
+  const roomLeft = globeRect.left - gap - edge;
+
+  let left: number;
+  if (roomRight >= cardWidth) {
+    // Prefer opening to the RIGHT of the globe.
+    left = globeRect.right + gap;
+  } else if (roomLeft >= cardWidth) {
+    // Otherwise open to the LEFT of the globe.
+    left = globeRect.left - gap - cardWidth;
+  } else {
+    // Neither side has room → dock against the nearest viewport edge while
+    // keeping the globe as visible as possible.
+    const globeCenter = (globeRect.left + globeRect.right) / 2;
+    left =
+      globeCenter <= viewportWidth / 2
+        ? Math.max(edge, viewportWidth - edge - cardWidth)
+        : edge;
+  }
 
   return { left, top };
 }
@@ -49,18 +75,19 @@ export function GlobeCountryNodePopover() {
   const [anchor, setAnchor] = useState<AnchorPoint | null>(null);
 
   useEffect(() => {
-    const openFromElement = (
-      element: Element,
-      clientX: number,
-      clientY: number,
-    ) => {
+    const openFromElement = (element: Element, clientY: number) => {
       const nextDestination = resolveDestination(
         element.getAttribute("aria-label"),
       );
       if (!nextDestination) return;
 
+      // Resolve the globe's visual bounds (the Leaflet map root) so the card
+      // opens beside it, never over it.
+      const globeEl = element.closest(".leaflet-container") as HTMLElement | null;
+      const globeRect = globeEl?.getBoundingClientRect() ?? null;
+
       setDestination(nextDestination);
-      setAnchor(clampAnchor(clientX, clientY));
+      setAnchor(anchorBesideGlobe(globeRect, clientY));
     };
 
     const onClick = (event: MouseEvent) => {
@@ -70,7 +97,7 @@ export function GlobeCountryNodePopover() {
       const countryNode = target.closest("[data-target-vector]");
       if (!countryNode) return;
 
-      openFromElement(countryNode, event.clientX, event.clientY);
+      openFromElement(countryNode, event.clientY);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -88,11 +115,7 @@ export function GlobeCountryNodePopover() {
       if (!countryNode) return;
 
       const rect = countryNode.getBoundingClientRect();
-      openFromElement(
-        countryNode,
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-      );
+      openFromElement(countryNode, rect.top + rect.height / 2);
     };
 
     const closeOnScroll = () => {
