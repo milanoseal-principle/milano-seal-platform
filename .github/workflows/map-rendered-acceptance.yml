@@ -1,0 +1,115 @@
+name: Milano Seal Rendered Map Acceptance
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/map-rendered-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rendered-map-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install isolated browser QA runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Rendered production acceptance
+        env:
+          URL: https://www.themilanoseal.com/global-document-intelligence
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+
+          const profiles = [
+            ['Desktop 1440x900', 1440, 900, false],
+            ['Desktop 1920x1080', 1920, 1080, false],
+            ['Mobile 430x932', 430, 932, true],
+            ['Mobile 390x844', 390, 844, true],
+          ];
+          const countries = ['Italy', 'Spain', 'Greece', 'Argentina', 'Colombia'];
+          const browser = await chromium.launch({ headless: true });
+          fs.mkdirSync('map-qa', { recursive: true });
+
+          async function openProfile(name, width, height, mobile, reducedMotion = 'no-preference') {
+            const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile, reducedMotion });
+            const page = await context.newPage();
+            const errors = [];
+            page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+            page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
+            page.on('requestfailed', req => {
+              const u = req.url();
+              if (u.includes('/world.geojson') || u.includes('/_next/')) errors.push(`requestfailed: ${u} ${req.failure()?.errorText || ''}`);
+            });
+            await page.goto(process.env.URL, { waitUntil: 'networkidle', timeout: 90000 });
+            await page.locator('text=Global Document Intelligence').first().waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
+            return { context, page, errors };
+          }
+
+          async function selectCountry(page, country) {
+            const exact = page.getByRole('button', { name: country, exact: true });
+            if (await exact.count()) { await exact.first().click(); return; }
+            const text = page.getByText(country, { exact: true });
+            assert.ok(await text.count(), `country control missing: ${country}`);
+            await text.first().click();
+          }
+
+          for (const [name, width, height, mobile] of profiles) {
+            const { context, page, errors } = await openProfile(name, width, height, mobile);
+            for (const country of countries) {
+              await selectCountry(page, country);
+              await page.waitForTimeout(650);
+            }
+            await page.waitForTimeout(1600);
+            const body = await page.locator('body').innerText();
+            assert.match(body, /Colombia/i, `${name}: Colombia not authoritative in rendered copy`);
+            const travelerCount = await page.locator('.ms-route-traveler').count();
+            assert.equal(travelerCount, 1, `${name}: expected exactly one traveler, got ${travelerCount}`);
+            const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+            assert.equal(overflow, false, `${name}: horizontal overflow detected`);
+            const mapVisible = await page.locator('.leaflet-container').first().isVisible().catch(() => false);
+            assert.equal(mapVisible, true, `${name}: Leaflet map not visible`);
+            await page.screenshot({ path: `map-qa/${name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.png`, fullPage: true });
+            assert.deepEqual(errors, [], `${name}: console/client errors:\n${errors.join('\n')}`);
+            console.log(`PASS ${name}`);
+            await context.close();
+          }
+
+          {
+            const { context, page, errors } = await openProfile('Reduced motion', 1440, 900, false, 'reduce');
+            for (const country of countries) {
+              await selectCountry(page, country);
+              await page.waitForTimeout(650);
+            }
+            await page.waitForTimeout(1000);
+            assert.equal(await page.locator('.ms-route-traveler').count(), 1, 'Reduced motion: traveler DOM authority duplicated');
+            assert.equal(await page.locator('.leaflet-container').first().isVisible(), true, 'Reduced motion: map hidden');
+            const body = await page.locator('body').innerText();
+            assert.match(body, /Colombia/i, 'Reduced motion: Colombia final authority missing');
+            assert.deepEqual(errors, [], `Reduced motion errors:\n${errors.join('\n')}`);
+            await page.screenshot({ path: 'map-qa/reduced-motion.png', fullPage: true });
+            console.log('PASS Reduced motion');
+            await context.close();
+          }
+
+          await browser.close();
+          console.log('PRODUCTION MAP RENDERED ACCEPTANCE PASS');
+          NODE
+      - name: Upload rendered proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-map-rendered-proof
+          path: map-qa
+          if-no-files-found: warn
