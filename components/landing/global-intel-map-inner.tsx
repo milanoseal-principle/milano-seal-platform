@@ -100,7 +100,6 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const activeRef = useRef<Destination | null>(active);
   const countryBoundsRef = useRef(new Map<string, L.LatLngBounds>());
-  const transitionRef = useRef<number | null>(null);
 
   useEffect(() => { activeRef.current = active; }, [active]);
 
@@ -156,32 +155,58 @@ function LayerControl({ active, setActive, flyTarget }: LayerControlProps) {
   }, [active]);
 
   useEffect(() => {
-    if (flyTarget) {
-      map.stop();
-      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
-    }
-  }, [flyTarget, map]);
+    if (!flyTarget) return;
 
-  // Fly to selected destination (prefer ROUTE_DESTS coords, fall back to Destination coords)
+    // Destination selection owns the corridor camera. Ignore duplicate destination
+    // fly targets emitted by parent hydration/session-resume state so one selection
+    // never starts two competing Leaflet animations.
+    const targetsActiveDestination =
+      active?.lat != null &&
+      active?.lng != null &&
+      Math.abs(flyTarget.lat - active.lat) < 0.0001 &&
+      Math.abs(flyTarget.lng - active.lng) < 0.0001;
+    if (targetsActiveDestination) return;
+
+    map.stop();
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      map.setView([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { animate: false });
+      return;
+    }
+    map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
+  }, [flyTarget, map, active?.slug, active?.lat, active?.lng]);
+
+  // A selected destination gets exactly one camera move: frame the execution
+  // corridor from Florida to the destination. Do not focus the country first and
+  // then pull back; that creates the visible double-zoom defect.
   useEffect(() => {
     if (!active) return;
     map.stop();
-    if (transitionRef.current !== null) window.clearTimeout(transitionRef.current);
+
     const countryBounds = countryBoundsRef.current.get(active.name);
-    const destination: L.LatLngExpression = [active.lat ?? countryBounds?.getCenter().lat ?? 0, active.lng ?? countryBounds?.getCenter().lng ?? 0];
-    if (countryBounds) {
-      map.flyToBounds(countryBounds, { padding: [70, 70], maxZoom: 5.25, duration: 0.82, easeLinearity: 0.24 });
+    const destination: L.LatLngExpression = [
+      active.lat ?? countryBounds?.getCenter().lat ?? 0,
+      active.lng ?? countryBounds?.getCenter().lng ?? 0,
+    ];
+    const corridor = L.latLngBounds([ORIGIN_LL, destination]);
+    const boundsOptions: L.FitBoundsOptions = {
+      paddingTopLeft: [54, 72],
+      paddingBottomRight: [54, 72],
+      maxZoom: 4.4,
+    };
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduceMotion) {
+      map.fitBounds(corridor, { ...boundsOptions, animate: false });
     } else {
-      map.flyTo(destination, 4.75, { duration: 0.82, easeLinearity: 0.24 });
+      map.flyToBounds(corridor, {
+        ...boundsOptions,
+        duration: 1.15,
+        easeLinearity: 0.22,
+      });
     }
-    transitionRef.current = window.setTimeout(() => {
-      const corridor = L.latLngBounds([ORIGIN_LL, destination]);
-      map.flyToBounds(corridor, { paddingTopLeft: [54, 72], paddingBottomRight: [54, 72], maxZoom: 4.4, duration: 0.9, easeLinearity: 0.24 });
-      transitionRef.current = null;
-    }, 1250);
+
     return () => {
-      if (transitionRef.current !== null) window.clearTimeout(transitionRef.current);
-      transitionRef.current = null;
       if ((map as L.Map & { _mapPane?: HTMLElement })._mapPane) map.stop();
     };
   }, [active, map]);
