@@ -97,7 +97,7 @@ export default function Page() {
               <div className="border-b border-white/[0.07] p-6 sm:p-8 lg:border-b-0 lg:border-r">
                 <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/65">Per Matter</p>
                 <h2 className="mt-3 font-serif text-3xl">{COUNSEL_INTELLIGENCE_REPORT.name}</h2>
-                <p className="mt-4 text-3xl font-semibold text-[var(--ms-gold)]">{COUNSEL_INTELLIGENCE_REPORT.priceLabel}</p>
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/72">Scope reviewed before engagement</p>
                 <p className="mt-5 text-sm leading-6 text-white/48">{COUNSEL_INTELLIGENCE_REPORT.promise}</p>
                 <Link href="/intake?audience=counsel&product=execution-intelligence-report" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Request Intelligence Report<ArrowRight className="h-3.5 w-3.5" /></Link>
               </div>
@@ -115,7 +115,7 @@ export default function Page() {
 
           <section id="counsel-desk" className="mt-8 rounded-3xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8">
             <div className="grid gap-8 lg:grid-cols-[.75fr_1.25fr] lg:items-start">
-              <div><p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/60">Recurring firm access</p><h2 className="mt-3 font-serif text-3xl">{COUNSEL_DESK.name}</h2><p className="mt-4 text-2xl font-semibold text-white">{COUNSEL_DESK.priceLabel}</p><p className="mt-4 text-sm leading-6 text-white/44">{COUNSEL_DESK.description}</p><Link href="/intake?audience=counsel&product=counsel-desk" className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/35 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]">Request Counsel Desk<ArrowRight className="h-3.5 w-3.5" /></Link></div>
+              <div><p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--ms-gold)]/60">Recurring firm access</p><h2 className="mt-3 font-serif text-3xl">{COUNSEL_DESK.name}</h2><p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-white/52">Professional access by review</p><p className="mt-4 text-sm leading-6 text-white/44">{COUNSEL_DESK.description}</p><Link href="/intake?audience=counsel&product=counsel-desk" className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/35 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]">Request Counsel Desk<ArrowRight className="h-3.5 w-3.5" /></Link></div>
               <div className="grid gap-3 sm:grid-cols-2">{COUNSEL_DESK.capabilities.map((item) => <div key={item} className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 text-sm text-white/52">{item}</div>)}</div>
             </div>
           </section>

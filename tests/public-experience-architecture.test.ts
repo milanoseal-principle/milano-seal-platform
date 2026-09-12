@@ -5,11 +5,11 @@ import test from "node:test";
 const homepage = readFileSync("app/page.tsx", "utf8");
 const access = readFileSync("app/access/page.tsx", "utf8");
 const lawyerAccess = readFileSync("app/lawyer-access/page.tsx", "utf8");
+const pricing = readFileSync("app/pricing/page.tsx", "utf8");
 const securePortal = readFileSync("app/secure-portal/page.tsx", "utf8");
 const processPage = readFileSync("app/process/page.tsx", "utf8");
 const processExperience = readFileSync("components/process/ProcessExperience.tsx", "utf8");
 const routingPreview = readFileSync("components/landing/homepage-routing-preview.tsx", "utf8");
-const products = readFileSync("data/access-products.ts", "utf8");
 const counsel = readFileSync("data/counsel-intelligence.ts", "utf8");
 
 test("access experience separates execution, intelligence, counsel, concierge, and network lanes", () => {
@@ -29,8 +29,16 @@ test("counsel products expose substantive deliverables rather than brochure acce
   assert.match(lawyerAccess, /Failure \/ Rejection Risk/);
   assert.match(lawyerAccess, /Evidence Appendix/);
   assert.match(counsel, /UNKNOWN/);
-  assert.match(products, /\$149 \/ Matter/);
-  assert.match(products, /\$299 \/ month/);
+});
+
+test("public commercial surfaces do not disclose numeric pricing", () => {
+  for (const [label, source] of [["access", access], ["lawyer-access", lawyerAccess], ["pricing", pricing]] as const) {
+    assert.doesNotMatch(source, /\$\s?\d[\d,]*(?:\.\d{2})?/i, `${label} exposes a public dollar amount`);
+    assert.doesNotMatch(source, /\.priceLabel\b/i, `${label} renders an internal price label`);
+  }
+  assert.match(access, /Matter-specific quote after review/);
+  assert.match(lawyerAccess, /Scope reviewed before engagement/);
+  assert.match(lawyerAccess, /Professional access by review/);
 });
 
 test("secure portal public preview is a Matter command center and does not replace authenticated portal truth", () => {
