@@ -1,38 +1,37 @@
 import Link from "next/link";
-import { Header } from "@/components/landing/header";
-import { Footer } from "@/components/landing/footer";
-import { ArrowLeft, FileQuestion } from "lucide-react";
+import { MilanoProductState, milanoStateActionClass } from "@/components/system/MilanoProductState";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
-      <Header />
-
-      <section className="pt-32 pb-24 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#111111] border border-[#2A2A2A] mb-8">
-            <FileQuestion className="w-10 h-10 text-[var(--ms-gold)]" />
-          </div>
-
-          <h1 className="font-serif text-4xl md:text-5xl font-medium text-white mb-4">
-            Page Not Found
-          </h1>
-
-          <p className="text-[#B0B0B0] text-lg mb-8">
-            The page you are looking for does not exist or has been moved.
-          </p>
-
-          <Link
-            href="/"
-            className="group inline-flex items-center gap-2 px-6 py-3 bg-[var(--ms-gold)] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
-          >
-            <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            <span>Return Home</span>
-          </Link>
-        </div>
-      </section>
-
-      <Footer />
+    <main className="min-h-[100dvh] bg-[#060608] text-[#F4F1EA]">
+      <MilanoProductState
+        eyebrow="The Milano Seal™ · Route unavailable"
+        title="This destination is not available"
+        description="The page may have moved, or the route may no longer belong to the current client journey. Continue from a canonical Milano Seal entry point."
+        tone="gold"
+        actions={
+          <>
+            <Link
+              href="/"
+              className={`${milanoStateActionClass} border-[#C6A65B]/40 bg-[#C6A65B]/[0.08] text-[#F4F1EA] hover:border-[#C6A65B]/65 hover:bg-[#C6A65B]/[0.12]`}
+            >
+              Return home
+            </Link>
+            <Link
+              href="/global-document-intelligence"
+              className={`${milanoStateActionClass} border-white/10 bg-white/[0.025] text-white/62 hover:border-white/20 hover:bg-white/[0.045] hover:text-white/88`}
+            >
+              Open Global Intelligence
+            </Link>
+            <Link
+              href="/intake"
+              className={`${milanoStateActionClass} border-white/10 bg-white/[0.025] text-white/62 hover:border-white/20 hover:bg-white/[0.045] hover:text-white/88`}
+            >
+              Begin secure intake
+            </Link>
+          </>
+        }
+      />
     </main>
   );
 }
