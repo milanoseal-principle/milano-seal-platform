@@ -26,11 +26,11 @@ const PATHWAYS = [
   {
     eyebrow: "Attorney / Professional",
     icon: Scale,
-    title: "Attorney & Professional Coordination Lane",
-    desc: "For attorneys, law firms, advisors, or professional coordinators submitting matters on behalf of clients.",
-    cta: "Enter Professional Lane",
-    href: "/lawyer-access",
-    primary: false,
+    title: "International Counsel Execution Lane",
+    desc: "For international attorneys, law firms, advisors, and professional coordinators structuring the U.S. execution side of a client Matter.",
+    cta: "Open Professional Execution",
+    href: "/professional",
+    primary: true,
   },
   {
     eyebrow: "RON / Notary / Alliance",
