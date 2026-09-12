@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  APOSTILLE_FEES,
-  COMPLEXITY,
-  SHIPPING_FEES,
-  TIERS,
-  URGENCY_FEES,
-  calculatePrice,
-} from "@/lib/pricing";
-import { INTERNAL_BASES } from "@/lib/pricing/pricingDoctrine";
+import { calculatePrice } from "@/lib/pricing";
 import { INTERNAL_PRICING } from "@/lib/command-center/pricingIntelligence";
+import {
+  DOCUMENT_FEES,
+  MATTER_BASES,
+  MOBILE_TRAVEL_FEES,
+  NOTARY_SIGNER_FEES,
+  SPECIAL_HANDLING_FEES,
+  TIMING_FEES,
+} from "@/lib/pricing/pricingCatalog";
 import { mergeAnalysis, emptyAnalysis } from "@/lib/intake/matterAnalysis";
 
 test("canonical screenshot matter prices 2 docs + 2 apostilles + international courier",()=>{
@@ -31,33 +31,30 @@ test("timeline preference does not reduce matter-structure confidence",()=>{
   assert.equal(a.missingFields.includes("Preferred execution timeline"),false);
 });
 
-test("all secondary pricing intelligence derives from canonical Milano pricing constants", () => {
-  assert.equal(INTERNAL_BASES.signature, TIERS.signature.base);
-  assert.equal(INTERNAL_BASES.priority, TIERS.priority.base);
-  assert.equal(INTERNAL_BASES.executive, TIERS.executive.base);
-  assert.equal(INTERNAL_BASES.apostille_first_min, APOSTILLE_FEES.first);
-  assert.equal(INTERNAL_BASES.apostille_first_max, APOSTILLE_FEES.first);
-
+test("command-center pricing intelligence derives from the canonical private catalog", () => {
   assert.deepEqual(INTERNAL_PRICING.laneBase, {
-    Signature: TIERS.signature.base,
-    Priority: TIERS.priority.base,
-    Executive: TIERS.executive.base,
+    Signature: MATTER_BASES.signature.amount,
+    Priority: MATTER_BASES.priority.amount,
+    Executive: MATTER_BASES.executive.amount,
   });
 
-  assert.equal(INTERNAL_PRICING.components.additionalDocument, COMPLEXITY.additional_document);
-  assert.equal(INTERNAL_PRICING.components.additionalSigner, COMPLEXITY.additional_signer);
-  assert.equal(INTERNAL_PRICING.components.notarizedSignature, COMPLEXITY.notarized_signature);
-  assert.equal(INTERNAL_PRICING.components.internationalSignerCoordination, COMPLEXITY.international_signer);
-  assert.equal(INTERNAL_PRICING.components.multiJurisdictionHandling, COMPLEXITY.multi_jurisdiction);
-  assert.equal(INTERNAL_PRICING.components.firstApostille, APOSTILLE_FEES.first);
-  assert.equal(INTERNAL_PRICING.components.additionalApostille, APOSTILLE_FEES.additional);
-  assert.equal(INTERNAL_PRICING.components.executiveInPersonStateHandling, APOSTILLE_FEES.executive_in_person_state_handling);
-  assert.equal(INTERNAL_PRICING.components.fbiApostilleCoordination, APOSTILLE_FEES.fbi_apostille);
-  assert.equal(INTERNAL_PRICING.components.expeditedTimelineSurcharge, URGENCY_FEES.expedited);
-  assert.equal(INTERNAL_PRICING.components.urgentSameDaySurcharge, URGENCY_FEES.same_day);
-  assert.equal(INTERNAL_PRICING.components.weekendExecutionPremium, URGENCY_FEES.weekend);
-  assert.equal(INTERNAL_PRICING.components.holidayExecutionPremium, URGENCY_FEES.holiday);
-  assert.equal(INTERNAL_PRICING.components.standardDomesticShipping, SHIPPING_FEES.standard_domestic);
-  assert.equal(INTERNAL_PRICING.components.expeditedDomesticShipping, SHIPPING_FEES.expedited_domestic);
-  assert.equal(INTERNAL_PRICING.components.internationalShipping, SHIPPING_FEES.international);
+  assert.equal(INTERNAL_PRICING.matterBase.Authentication, MATTER_BASES.authentication.amount);
+  assert.equal(INTERNAL_PRICING.matterBase.IrishPassportExecution, MATTER_BASES.irish_passport_execution.amount);
+  assert.equal(INTERNAL_PRICING.components.additionalDocument, DOCUMENT_FEES.additional_non_apostille_document);
+  assert.equal(INTERNAL_PRICING.components.additionalSigner, NOTARY_SIGNER_FEES.additional_signer);
+  assert.equal(INTERNAL_PRICING.components.notarizedSignature, NOTARY_SIGNER_FEES.additional_notarized_signature_tracking);
+  assert.equal(INTERNAL_PRICING.components.floridaNotarialAct, NOTARY_SIGNER_FEES.florida_notarial_act);
+  assert.equal(INTERNAL_PRICING.components.internationalSignerCoordination, NOTARY_SIGNER_FEES.international_signer_coordination);
+  assert.equal(INTERNAL_PRICING.components.multiJurisdictionHandling, DOCUMENT_FEES.multi_jurisdiction_handling);
+  assert.equal(INTERNAL_PRICING.components.additionalApostille, DOCUMENT_FEES.additional_apostilled_document);
+  assert.equal(INTERNAL_PRICING.components.executiveInPersonStateHandling, SPECIAL_HANDLING_FEES.executive_in_person_state_handling);
+  assert.equal(INTERNAL_PRICING.components.fbiApostilleCoordination, DOCUMENT_FEES.fbi_federal_apostille_coordination);
+  assert.equal(INTERNAL_PRICING.components.expeditedTimelineSurcharge, TIMING_FEES.expedited);
+  assert.equal(INTERNAL_PRICING.components.urgentSameDaySurcharge, TIMING_FEES.rush_same_day);
+  assert.equal(INTERNAL_PRICING.components.afterHoursEveningPremium, TIMING_FEES.after_hours_evening);
+  assert.equal(INTERNAL_PRICING.components.weekendExecutionPremium, TIMING_FEES.weekend);
+  assert.equal(INTERNAL_PRICING.components.holidayExecutionPremium, TIMING_FEES.holiday);
+  assert.equal(INTERNAL_PRICING.components.mobileTravelLocalRadiusMiles, MOBILE_TRAVEL_FEES.local_radius_miles);
+  assert.equal(INTERNAL_PRICING.components.mobileTravel11To25, MOBILE_TRAVEL_FEES.tier_11_25);
+  assert.equal(INTERNAL_PRICING.components.mobileTravel26To50, MOBILE_TRAVEL_FEES.tier_26_50);
 });
