@@ -8,9 +8,22 @@ import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
 export async function createMatterFromIntake(payload: IntakePayload) {
   const compliance = routeCompliance(payload.destination_country);
   const trust = runTrustEngine(payload);
+  const documentCount = Math.max(1, Math.floor(Number(payload.document_count ?? 1)) || 1);
+  const explicitApostilleCount = Math.max(
+    0,
+    Math.floor(Number(payload.apostille_count ?? 0)) || 0,
+  );
+  const apostilleCount = compliance.apostille_required
+    ? explicitApostilleCount > 0
+      ? Math.min(documentCount, explicitApostilleCount)
+      : documentCount
+    : 0;
+
   const pricing = calculateMilanoPricing({
     lane: compliance.recommended_lane,
     apostilleRequired: compliance.apostille_required,
+    apostilleCount,
+    documentCount,
     rush: payload.urgency === "rush" || payload.urgency === "same_day",
     signerCount: payload.signer_count,
     paymentMode: "split_50_50",
