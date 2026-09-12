@@ -1,41 +1,55 @@
 import type { LaneType } from "./status";
 import {
-  APOSTILLE_FEES,
-  COMPLEXITY,
-  SHIPPING_FEES,
-  TIERS,
-  URGENCY_FEES,
-} from "../pricing";
+  DOCUMENT_FEES,
+  LANGUAGE_PREP_FEES,
+  MATTER_BASES,
+  MOBILE_TRAVEL_FEES,
+  NOTARY_SIGNER_FEES,
+  SPECIAL_HANDLING_FEES,
+  TIMING_FEES,
+} from "../pricing/pricingCatalog";
+import { composeCanonicalPrivateQuote } from "../pricing/pricingComposer";
 
 // Command Center — INTERNAL pricing intelligence.
 // Exact dollar amounts must never render on public pages.
-// All monetary values derive from lib/pricing.ts so the command center cannot
-// drift from the canonical Milano Seal pricing engine.
+// All monetary values derive from the canonical private pricing catalog.
 
 export const INTERNAL_PRICING = {
   laneBase: {
-    Signature: TIERS.signature.base,
-    Priority: TIERS.priority.base,
-    Executive: TIERS.executive.base,
+    Signature: MATTER_BASES.signature.amount,
+    Priority: MATTER_BASES.priority.amount,
+    Executive: MATTER_BASES.executive.amount,
   } satisfies Record<LaneType, number>,
+  matterBase: {
+    Authentication: MATTER_BASES.authentication.amount,
+    Signature: MATTER_BASES.signature.amount,
+    Priority: MATTER_BASES.priority.amount,
+    Executive: MATTER_BASES.executive.amount,
+    IrishPassportExecution: MATTER_BASES.irish_passport_execution.amount,
+  },
   components: {
-    additionalDocument: COMPLEXITY.additional_document,
-    additionalSigner: COMPLEXITY.additional_signer,
-    notarizedSignature: COMPLEXITY.notarized_signature,
-    internationalSignerCoordination: COMPLEXITY.international_signer,
-    multiJurisdictionHandling: COMPLEXITY.multi_jurisdiction,
-    firstApostille: APOSTILLE_FEES.first,
-    additionalApostille: APOSTILLE_FEES.additional,
+    additionalDocument: DOCUMENT_FEES.additional_non_apostille_document,
+    additionalSigner: NOTARY_SIGNER_FEES.additional_signer,
+    notarizedSignature: NOTARY_SIGNER_FEES.additional_notarized_signature_tracking,
+    floridaNotarialAct: NOTARY_SIGNER_FEES.florida_notarial_act,
+    remoteWitness: NOTARY_SIGNER_FEES.remote_witness,
+    inPersonWitness: NOTARY_SIGNER_FEES.in_person_witness,
+    internationalSignerCoordination: NOTARY_SIGNER_FEES.international_signer_coordination,
+    multiJurisdictionHandling: DOCUMENT_FEES.multi_jurisdiction_handling,
+    firstApostille: 0,
+    additionalApostille: DOCUMENT_FEES.additional_apostilled_document,
     executiveInPersonStateHandling:
-      APOSTILLE_FEES.executive_in_person_state_handling,
-    fbiApostilleCoordination: APOSTILLE_FEES.fbi_apostille,
-    expeditedTimelineSurcharge: URGENCY_FEES.expedited,
-    urgentSameDaySurcharge: URGENCY_FEES.same_day,
-    weekendExecutionPremium: URGENCY_FEES.weekend,
-    holidayExecutionPremium: URGENCY_FEES.holiday,
-    standardDomesticShipping: SHIPPING_FEES.standard_domestic,
-    expeditedDomesticShipping: SHIPPING_FEES.expedited_domestic,
-    internationalShipping: SHIPPING_FEES.international,
+      SPECIAL_HANDLING_FEES.executive_in_person_state_handling,
+    fbiApostilleCoordination: DOCUMENT_FEES.fbi_federal_apostille_coordination,
+    expeditedTimelineSurcharge: TIMING_FEES.expedited,
+    urgentSameDaySurcharge: TIMING_FEES.rush_same_day,
+    afterHoursEveningPremium: TIMING_FEES.after_hours_evening,
+    weekendExecutionPremium: TIMING_FEES.weekend,
+    holidayExecutionPremium: TIMING_FEES.holiday,
+    mobileTravelLocalRadiusMiles: MOBILE_TRAVEL_FEES.local_radius_miles,
+    mobileTravel11To25: MOBILE_TRAVEL_FEES.tier_11_25,
+    mobileTravel26To50: MOBILE_TRAVEL_FEES.tier_26_50,
+    translationCoordination: LANGUAGE_PREP_FEES.translation_coordination,
   },
 } as const;
 
@@ -53,11 +67,6 @@ export interface InternalQuoteInput {
   urgentSameDay?: boolean;
   weekendExecution?: boolean;
   holidayExecution?: boolean;
-  shipping?:
-    | "none"
-    | "standardDomestic"
-    | "expeditedDomestic"
-    | "international";
 }
 
 export function getLaneBasePrice(lane: LaneType): number {
@@ -65,110 +74,48 @@ export function getLaneBasePrice(lane: LaneType): number {
 }
 
 export function calculateInternalQuote(input: InternalQuoteInput) {
-  const c = INTERNAL_PRICING.components;
-  const lineItems = [
-    {
-      code: "lane",
-      label: `${input.lane} lane`,
-      amount: getLaneBasePrice(input.lane),
-    },
-    {
-      code: "additional_documents",
-      label: "Additional documents",
-      amount: (input.additionalDocuments ?? 0) * c.additionalDocument,
-    },
-    {
-      code: "additional_signers",
-      label: "Additional signers",
-      amount: (input.additionalSigners ?? 0) * c.additionalSigner,
-    },
-    {
-      code: "notarized_signatures",
-      label: "Notarized signatures",
-      amount: (input.notarizedSignatures ?? 0) * c.notarizedSignature,
-    },
-    {
-      code: "international_signer",
-      label: "International signer coordination",
-      amount: input.needsInternationalSignerCoordination
-        ? c.internationalSignerCoordination
-        : 0,
-    },
-    {
-      code: "multi_jurisdiction",
-      label: "Multi-jurisdiction handling",
-      amount: input.multiJurisdiction ? c.multiJurisdictionHandling : 0,
-    },
-    {
-      code: "apostille",
-      label: "Apostille coordination",
-      amount: calculateApostilleAmount(input.apostilles ?? 0),
-    },
-    {
-      code: "executive_state",
-      label: "Executive in-person state handling",
-      amount: input.executiveInPersonStateHandling
-        ? c.executiveInPersonStateHandling
-        : 0,
-    },
-    {
-      code: "fbi_apostille",
-      label: "FBI apostille coordination",
-      amount: input.fbiApostille ? c.fbiApostilleCoordination : 0,
-    },
-    {
-      code: "expedited",
-      label: "Expedited timeline",
-      amount: input.expeditedTimeline ? c.expeditedTimelineSurcharge : 0,
-    },
-    {
-      code: "urgent",
-      label: "Urgent / same-day handling",
-      amount: input.urgentSameDay ? c.urgentSameDaySurcharge : 0,
-    },
-    {
-      code: "weekend",
-      label: "Weekend execution",
-      amount: input.weekendExecution ? c.weekendExecutionPremium : 0,
-    },
-    {
-      code: "holiday",
-      label: "Holiday execution",
-      amount: input.holidayExecution ? c.holidayExecutionPremium : 0,
-    },
-    {
-      code: "shipping",
-      label: "Shipping path",
-      amount: calculateShippingAmount(input.shipping ?? "none"),
-    },
-  ].filter((item) => item.amount > 0);
+  const matterBase =
+    input.lane === "Executive"
+      ? "executive"
+      : input.lane === "Priority"
+        ? "priority"
+        : "signature";
 
-  const total = lineItems.reduce((sum, item) => sum + item.amount, 0);
-  return { lineItems, total };
-}
+  const result = composeCanonicalPrivateQuote({
+    matterBase,
+    documentCount: 1 + Math.max(0, input.additionalDocuments ?? 0),
+    apostilleCount: Math.max(0, input.apostilles ?? 0),
+    signerCount: 1 + Math.max(0, input.additionalSigners ?? 0),
+    additionalNotarizedSignatureTrackingCount: Math.max(
+      0,
+      input.notarizedSignatures ?? 0,
+    ),
+    internationalSignerCount: input.needsInternationalSignerCoordination ? 1 : 0,
+    jurisdictionCount: input.multiJurisdiction ? 3 : 1,
+    executiveInPersonStateHandling: input.executiveInPersonStateHandling,
+    fbiFederalApostille: input.fbiApostille,
+    timing: [
+      ...(input.expeditedTimeline ? (["expedited"] as const) : []),
+      ...(input.urgentSameDay ? (["rush_same_day"] as const) : []),
+      ...(input.weekendExecution ? (["weekend"] as const) : []),
+      ...(input.holidayExecution ? (["holiday"] as const) : []),
+      ...(!input.expeditedTimeline &&
+      !input.urgentSameDay &&
+      !input.weekendExecution &&
+      !input.holidayExecution
+        ? (["standard"] as const)
+        : []),
+    ],
+  });
 
-function calculateApostilleAmount(apostilles: number): number {
-  if (apostilles <= 0) return 0;
-  return (
-    INTERNAL_PRICING.components.firstApostille +
-    Math.max(0, apostilles - 1) *
-      INTERNAL_PRICING.components.additionalApostille
-  );
-}
-
-function calculateShippingAmount(
-  shipping: NonNullable<InternalQuoteInput["shipping"]>,
-): number {
-  if (shipping === "standardDomestic") {
-    return INTERNAL_PRICING.components.standardDomesticShipping;
-  }
-  if (shipping === "expeditedDomestic") {
-    return INTERNAL_PRICING.components.expeditedDomesticShipping;
-  }
-  if (shipping === "international") {
-    return INTERNAL_PRICING.components.internationalShipping;
-  }
-  return 0;
+  return {
+    lineItems: result.lineItems.map((item) => ({
+      code: item.code,
+      label: item.label,
+      amount: item.amount,
+    })),
+    total: result.total,
+  };
 }
 
 export function getPublicQuoteFactors(): string[] {
@@ -177,28 +124,31 @@ export function getPublicQuoteFactors(): string[] {
     "origin jurisdiction",
     "signer location",
     "destination country",
+    "execution method",
     "urgency",
-    "apostille needs",
+    "apostille or authentication needs",
     "witness needs",
-    "final packet requirements",
+    "final packet and courier requirements",
   ];
 }
 
 export function getServiceComponents(): string[] {
   return [
     "secure records intake",
-    "document execution coordination",
-    "remote online notarization review for eligible documents",
-    "apostille coordination",
-    "witness coordination",
-    "international courier release planning",
+    "document route and readiness review",
+    "RON or in-person execution coordination when required",
+    "apostille or authentication coordination",
+    "witness coordination when required",
+    "controlled custody and international release planning",
+    "Matter status visibility",
   ];
 }
 
 export function getExecutionPathCopy(): string[] {
   return [
     "Every quote is reviewed through Smart Intake before execution is scheduled.",
-    "Payment authorization controls scheduling readiness; final release remains controlled by the payment and records gates.",
+    "For split-payment Matters, the verified 50% Wise deposit unlocks scheduling and execution.",
+    "The final 50% must be verified before international release or shipping.",
     "Receiving-authority expectations are reviewed as operational routing information, not legal advice or guaranteed acceptance.",
   ];
 }
