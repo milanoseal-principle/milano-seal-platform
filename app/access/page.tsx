@@ -17,7 +17,7 @@ const PRIMARY_PATHS = [
     eyebrow: "Client Execution",
     title: "I need a document executed",
     body: "Open one controlled Matter. Intake captures document type, origin, destination, signer requirements, and timeline before a quote or scheduling authorization is issued.",
-    price: "Dynamic Matter pricing",
+    commercial: "Matter-specific quote after review",
     href: "/intake",
     cta: "Begin Secure Intake",
     icon: ShieldCheck,
@@ -27,7 +27,7 @@ const PRIMARY_PATHS = [
     eyebrow: "Execution Intelligence",
     title: COUNSEL_INTELLIGENCE_REPORT.name,
     body: "Matter-specific route intelligence for clients or counsel who need the execution path, authority matrix, readiness requirements, rejection risks, custody plan, and evidence appendix before execution.",
-    price: COUNSEL_INTELLIGENCE_REPORT.priceLabel,
+    commercial: "Scope reviewed before engagement",
     href: "/lawyer-access#execution-intelligence-report",
     cta: "View Intelligence Report",
     icon: FileSearch2,
@@ -37,7 +37,7 @@ const PRIMARY_PATHS = [
     eyebrow: "For Counsel",
     title: COUNSEL_DESK.name,
     body: "Recurring professional access for U.S. and foreign counsel managing U.S.-origin documents for international use, with route intelligence, client-ready instructions, Matter visibility, and priority review.",
-    price: COUNSEL_DESK.priceLabel,
+    commercial: "Professional access by review",
     href: "/lawyer-access#counsel-desk",
     cta: "Open Counsel Desk",
     icon: BriefcaseBusiness,
@@ -47,7 +47,7 @@ const PRIMARY_PATHS = [
     eyebrow: "Private Client / Complex",
     title: "Concierge International Execution",
     body: "For urgent, attorney-led, private-client, family-office, multi-document, high-value, or non-standard matters requiring elevated review and controlled execution coordination.",
-    price: "Custom",
+    commercial: "Custom scope after review",
     href: "/intake?service=concierge",
     cta: "Request Concierge Review",
     icon: Sparkles,
@@ -95,7 +95,7 @@ export default function Page() {
                   </div>
                   <p className="mt-5 max-w-xl text-sm leading-6 text-white/52">{path.body}</p>
                   <div className="mt-7 flex flex-col gap-4 border-t border-white/[0.07] pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/72">{path.price}</span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/72">{path.commercial}</span>
                     <Link href={path.href} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] ${primary ? "bg-[var(--ms-gold)] text-[#050507]" : "border border-[var(--ms-gold)]/30 text-[var(--ms-gold)] hover:border-[var(--ms-gold)]/60"}`}>
                       {path.cta}<ArrowRight className="h-3.5 w-3.5" />
                     </Link>
