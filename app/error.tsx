@@ -1,21 +1,45 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
+import { useEffect } from "react";
+import Link from "next/link";
+import { MilanoProductState, milanoStateActionClass } from "@/components/system/MilanoProductState";
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error(error)
-  }, [error])
+    console.error("[The Milano Seal] Route error:", error.message, error.digest ?? "");
+  }, [error]);
 
   return (
-    <main className="min-h-[100dvh] bg-[#060608] px-5 py-12 text-[#F4F1EA] sm:px-6">
-      <div className="mx-auto flex min-h-[70dvh] w-full max-w-2xl flex-col justify-center">
-        <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#D8C188]/70">The Milano Seal™ · Recovery</div>
-        <h1 className="mt-3 font-serif text-2xl font-normal sm:text-3xl">This view could not be completed</h1>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-white/50">The current screen encountered an unexpected error. Retry the view to continue.</p>
-        {error.digest && <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.12em] text-white/30">Reference · {error.digest}</p>}
-        <button type="button" onClick={() => reset()} className="mt-7 min-h-11 w-fit rounded-md border border-[#D8C188]/35 bg-[#D8C188]/[0.06] px-5 text-sm font-medium text-[#F4F1EA] transition-colors hover:border-[#D8C188]/60 hover:bg-[#D8C188]/[0.1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D8C188]">Retry view</button>
-      </div>
+    <main className="min-h-[100dvh] bg-[#060608] text-[#F4F1EA]">
+      <MilanoProductState
+        eyebrow="The Milano Seal™ · Recovery"
+        title="This view could not be completed"
+        description="Your current matter context has not been intentionally advanced. Retry this view first, or return to a secure entry point and continue from there."
+        tone="danger"
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={reset}
+              className={`${milanoStateActionClass} border-[#C6A65B]/40 bg-[#C6A65B]/[0.08] text-[#F4F1EA] hover:border-[#C6A65B]/65 hover:bg-[#C6A65B]/[0.12]`}
+            >
+              Retry view
+            </button>
+            <Link
+              href="/secure-portal"
+              className={`${milanoStateActionClass} border-white/10 bg-white/[0.025] text-white/62 hover:border-white/20 hover:bg-white/[0.045] hover:text-white/88`}
+            >
+              Open secure portal
+            </Link>
+          </>
+        }
+      >
+        {error.digest ? (
+          <div className="rounded-lg border border-white/[0.055] bg-black/20 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-white/30">
+            Recovery reference · {error.digest}
+          </div>
+        ) : null}
+      </MilanoProductState>
     </main>
-  )
+  );
 }
