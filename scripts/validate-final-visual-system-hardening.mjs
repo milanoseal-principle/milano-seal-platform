@@ -3,8 +3,12 @@ import { existsSync, readFileSync } from "node:fs";
 const required = [
   "app/loading.tsx",
   "app/error.tsx",
+  "app/global-error.tsx",
+  "app/not-found.tsx",
+  "components/system/MilanoProductState.tsx",
   "components/NavigationLoader.tsx",
   "components/motion/CinematicPageShell.tsx",
+  "components/landing/header.tsx",
   "components/portal/MatterJourneyCard.tsx",
   "components/portal/CustodyTimeline.tsx",
   "components/portal/PortalCourierCustody.tsx",
@@ -39,21 +43,56 @@ if (navigation.includes("<MilanoPageLoader")) {
 }
 
 const shell = readFileSync("components/motion/CinematicPageShell.tsx", "utf8");
+for (const token of ["id=\"milano-main\"", "tabIndex={-1}", "useMilanoReducedMotion"]) {
+  if (!shell.includes(token)) throw new Error(`Global cinematic shell accessibility missing: ${token}`);
+}
 if (shell.includes("key={pathname}")) {
   throw new Error("Global cinematic shell must not remount the full application on pathname change");
 }
 
+const layout = readFileSync("app/layout.tsx", "utf8");
+for (const token of ["Skip to main content", "href=\"#milano-main\"", "viewportFit: \"cover\""]) {
+  if (!layout.includes(token)) throw new Error(`Root product shell hardening missing: ${token}`);
+}
+
 const loading = readFileSync("app/loading.tsx", "utf8");
-for (const token of ["Preparing the next view", "Preserving your current context", "aria-busy", "The Milano Seal™"]) {
-  if (!loading.includes(token)) throw new Error(`Global loading state missing: ${token}`);
+if (!loading.includes("MilanoRouteSkeleton")) {
+  throw new Error("Global loading state must use the canonical MilanoRouteSkeleton");
+}
+
+const states = readFileSync("components/system/MilanoProductState.tsx", "utf8");
+for (const token of ["Preparing the next view", "Preserving your current context", "aria-busy", "The Milano Seal™", "motion-reduce:animate-none", "min-h-11"]) {
+  if (!states.includes(token)) throw new Error(`Canonical Milano product state missing: ${token}`);
 }
 for (const staleToken of ["Preparing secure workspace", "authoritative matter state"]) {
-  if (loading.includes(staleToken)) throw new Error(`Global loading state must remain route-neutral: ${staleToken}`);
+  if (states.includes(staleToken)) throw new Error(`Global loading state must remain route-neutral: ${staleToken}`);
 }
 
 const recovery = readFileSync("app/error.tsx", "utf8");
-for (const token of ["Retry view", "error.digest", "The Milano Seal™ · Recovery"]) {
+for (const token of ["Retry view", "error.digest", "The Milano Seal™ · Recovery", "Open secure portal"]) {
   if (!recovery.includes(token)) throw new Error(`Global recovery state missing: ${token}`);
+}
+
+const globalRecovery = readFileSync("app/global-error.tsx", "utf8");
+for (const token of ["System recovery", "Reload workspace", "<html lang=\"en\">", "error.digest"]) {
+  if (!globalRecovery.includes(token)) throw new Error(`Root recovery boundary missing: ${token}`);
+}
+
+const notFound = readFileSync("app/not-found.tsx", "utf8");
+for (const token of ["Global Intelligence", "Begin secure intake", "MilanoProductState"]) {
+  if (!notFound.includes(token)) throw new Error(`Not-found recovery route missing: ${token}`);
+}
+
+const header = readFileSync("components/landing/header.tsx", "utf8");
+for (const token of [
+  "document.body.style.overflow = \"hidden\"",
+  "event.key !== \"Escape\"",
+  "aria-current",
+  "aria-modal=\"true\"",
+  "useMilanoReducedMotion",
+  "min-h-12",
+]) {
+  if (!header.includes(token)) throw new Error(`Header product-quality safeguard missing: ${token}`);
 }
 
 const portal = readFileSync("app/portal/page.tsx", "utf8");
