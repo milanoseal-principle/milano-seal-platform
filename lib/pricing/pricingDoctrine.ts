@@ -1,4 +1,4 @@
-import { APOSTILLE_FEES, TIERS } from "../pricing";
+import { DOCUMENT_FEES, MATTER_BASES } from "./pricingCatalog";
 
 export const PUBLIC_PRICING_LANGUAGE = `Pricing is issued after review.
 
@@ -19,27 +19,31 @@ The Milano Seal™ does not compete as a low-cost document checkout service.
 We provide structured international document execution, apostille/authentication coordination, secure matter tracking, and controlled final release.
 `;
 
-// Secondary pricing intelligence must derive from lib/pricing.ts.
-// Do not duplicate Milano Seal lane or apostille prices in this module.
+// Internal pricing references derive from the canonical private catalog.
+// Public surfaces must never render these numeric values.
 export const INTERNAL_BASES = {
-  signature: TIERS.signature.base,
-  priority: TIERS.priority.base,
-  executive: TIERS.executive.base,
-  route_review_min: 95,
-  route_review_max: 175,
-  apostille_first_min: APOSTILLE_FEES.first,
-  apostille_first_max: APOSTILLE_FEES.first,
+  authentication: MATTER_BASES.authentication.amount,
+  signature: MATTER_BASES.signature.amount,
+  priority: MATTER_BASES.priority.amount,
+  executive: MATTER_BASES.executive.amount,
+  irish_passport_execution: MATTER_BASES.irish_passport_execution.amount,
+  additional_apostilled_document: DOCUMENT_FEES.additional_apostilled_document,
 };
 
 export const PRICING_RULES = {
   publicLabels: {
-    signature: "Signature Execution",
-    priority: "Priority Execution",
-    executive: "Executive Execution",
-    route_review_only: "Document Route Review",
-    apostille_only: "Apostille Coordination",
+    authentication: "Authentication Matter",
+    signature: "Signature Matter",
+    priority: "Priority Matter",
+    executive: "Executive Matter",
+    irish_passport_execution: "Irish Passport Execution Matter",
   },
   visibility: "public_hidden",
+  firstDocumentIncluded: true,
+  firstApostilleCoordinationIncludedWhenRequired: true,
+  noMatterBaseStacking: true,
+  noApostilleDocumentDoubleCharge: true,
+  unknownConsularFederalNonHagueRequiresReview: true,
 };
 
 export default {
