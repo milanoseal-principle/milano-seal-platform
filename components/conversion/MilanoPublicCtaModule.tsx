@@ -8,7 +8,7 @@ import {
 export function MilanoPublicCtaModule({ className = "" }: { className?: string }) {
   const ctas = [
     { label: "Begin Secure Intake", href: "/intake", primary: true },
-    { label: "Request Lawyer Access", href: "/lawyer-access" },
+    { label: "For International Counsel", href: "/professional" },
     { label: "Apply for Alliance Access", href: "/alliance/apply" },
     { label: "Request Private Client Review", href: "/access?interest=private-client" },
   ];
