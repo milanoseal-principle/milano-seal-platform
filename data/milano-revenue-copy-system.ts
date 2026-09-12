@@ -46,12 +46,13 @@ export const MILANO_REVENUE_COPY_BLOCKS: MilanoRevenueCopyBlock[] = [
     path: "controlled_intake",
     headline: "Get your international document executed, apostilled, and released with control.",
     subheadline:
-      "The Milano Seal guides your U.S.-origin document from intake through notarization/RON, apostille or authentication routing, payment-gated scheduling, controlled release, and tracked delivery.",
+      "The Milano Seal guides your U.S.-origin document from intake through notarization/RON, apostille or authentication routing, deposit-gated scheduling, final-balance release control, and tracked international delivery.",
     benefitBullets: [
       "Know which route applies before execution begins",
       "Upload documents for controlled review",
-      "Make deposit to unlock scheduling",
+      "Verify the 50% deposit to unlock scheduling",
       "Schedule RON, mobile, or in-person execution when eligible",
+      "Verify the final 50% before international release and shipping",
       "Track apostille/authentication and release status",
     ],
     ctaLabel: "Start Controlled Intake",
@@ -63,16 +64,17 @@ export const MILANO_REVENUE_COPY_BLOCKS: MilanoRevenueCopyBlock[] = [
     path: "lawyer_client_pack",
     headline: "Cross-border document execution support for international counsel.",
     subheadline:
-      "The Milano Seal helps international lawyers, U.S. counsel, foreign counsel, and private-client advisors coordinate U.S.-origin document execution, notarization/RON, apostille/authentication routing, controlled release, and delivery tracking for documents used abroad.",
+      "The Milano Seal gives international counsel one U.S. execution point for Matter intake, route review, notarization/RON, apostille or authentication coordination, controlled custody, final payment clearance, and international release.",
     benefitBullets: [
-      "Reduce client confusion before execution",
-      "Prepare client-ready route expectations",
-      "Coordinate U.S. notarization or RON",
-      "Identify apostille, authentication, or consular review pathway",
+      "Structure the U.S. execution route before the client repeats information",
+      "Carry destination, document, origin, signer posture, and known authority into secure intake",
+      "Keep legal strategy and document substance with counsel",
+      "Verify the 50% deposit before scheduling or RON",
+      "Verify the final 50% before international release and shipping",
       "Track controlled release and final packet readiness",
     ],
-    ctaLabel: "Request Lawyer Access",
-    ctaHref: "/lawyer-access",
+    ctaLabel: "Open Professional Execution",
+    ctaHref: "/professional",
     complianceLine: BOUNDARY,
   },
   {
@@ -166,7 +168,7 @@ export const MILANO_REVENUE_COPY_BLOCKS: MilanoRevenueCopyBlock[] = [
     path: "alliance_application",
     headline: "Join the international document execution network.",
     subheadline:
-      "Approved alliance notaries support Milano Seal matters after payment, signer details, certificate readiness, route requirements, and scheduling readiness are confirmed.",
+      "Approved alliance notaries support Milano Seal matters after the deposit, signer details, certificate readiness, route requirements, and scheduling readiness are confirmed.",
     benefitBullets: [
       "Receive approved assignment opportunities",
       "Support RON, mobile, or in-person execution",
@@ -213,4 +215,4 @@ export const MILANO_PUBLIC_PROMISE =
   "The Milano Seal helps clients, international lawyers, private-client advisors, yacht brokers, luxury real estate professionals, equine professionals, gemstone, diamond, and fine jewelry teams prepare, notarize, route, apostille/authenticate, release, and track U.S.-origin documents for use abroad.";
 
 export const MILANO_PAYMENT_SCHEDULING_LINE =
-  "Payment unlocks scheduling. After route review and deposit/payment confirmation, eligible matters can be scheduled for BlueNotary/RON, mobile notary, or in-person execution. Final release remains subject to payment status, execution completion, and receiving-authority review.";
+  "For split-payment Matters, a verified 50% Wise deposit unlocks scheduling and eligible RON/execution. The final 50% must be verified before controlled international release and shipping. Full-payment Matters remain governed by the same verification gates.";

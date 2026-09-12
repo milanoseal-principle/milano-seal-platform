@@ -12,9 +12,9 @@ import {
 } from "@/data/counsel-intelligence";
 
 export const metadata: Metadata = {
-  title: "Cross-Border Execution Infrastructure for Counsel | The Milano Seal™",
+  title: "Counsel Intelligence Desk | The Milano Seal™",
   description:
-    "A governed U.S.-side execution desk and professional network for U.S. and foreign counsel managing U.S.-origin documents for international use.",
+    "Optional route-intelligence reports and recurring counsel-desk access supporting the canonical Milano professional execution lane.",
   robots: { index: true, follow: true },
 };
 
@@ -46,17 +46,25 @@ export default function Page() {
       <section className="relative px-4 pb-20 sm:px-6" style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top) + 3rem)" }}>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(198,165,90,0.12),transparent_35%)]" />
         <div className="relative mx-auto max-w-6xl">
+          <div className="mb-8 rounded-2xl border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.045] p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-[var(--ms-gold)]/65">Canonical attorney journey</p>
+              <p className="mt-2 text-sm leading-6 text-white/52">International counsel should start in Professional Execution. This page is the optional intelligence/reporting layer, not a second Matter-entry workflow.</p>
+            </div>
+            <Link href="/professional" className="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507] sm:mt-0">Open Professional Execution<ArrowRight className="h-3.5 w-3.5" /></Link>
+          </div>
+
           <div className="grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.05] px-3 py-2 font-mono text-[8px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/75">
-                <Network className="h-3.5 w-3.5" /> Milano Counsel Network™
+                <Network className="h-3.5 w-3.5" /> Milano Counsel Intelligence™
               </div>
-              <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">For U.S. & Foreign Counsel</p>
-              <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl lg:text-6xl">U.S. execution infrastructure for documents that must <span className="italic text-[var(--ms-gold)]">work across borders.</span></h1>
-              <p className="mt-6 max-w-3xl text-base leading-7 text-white/52">For international, immigration, real-estate, trusts and estates, private-wealth, corporate, family, maritime, and litigation counsel who need a controlled U.S.-origin execution route without building the operational workflow themselves.</p>
+              <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">Optional Intelligence Layer for U.S. & Foreign Counsel</p>
+              <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl lg:text-6xl">Route intelligence for counsel managing documents that must <span className="italic text-[var(--ms-gold)]">work across borders.</span></h1>
+              <p className="mt-6 max-w-3xl text-base leading-7 text-white/52">Use Professional Execution for the client Matter. Use this intelligence desk when counsel wants an additional route report, authority matrix, recurring desk access, or evidence-backed execution analysis.</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/intake?audience=counsel&product=execution-intelligence-report" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Start Counsel Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
-                <Link href="/professional-network" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/28 bg-black/25 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]/82">View Professional Network<Network className="h-3.5 w-3.5" /></Link>
+                <Link href="/professional" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Start Professional Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
+                <Link href="#execution-intelligence-report" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/28 bg-black/25 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]/82">View Counsel Intelligence<Network className="h-3.5 w-3.5" /></Link>
               </div>
             </div>
             <div className="rounded-2xl border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.05] p-5">
@@ -81,7 +89,7 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-[10px] leading-5 text-white/25">The Milano Counsel Network™ is a professional network designation and execution-access program. It does not create an attorney-client relationship with The Milano Seal, legal representation by Milano, or any claim that Milano personnel are attorneys.</p>
+            <p className="mt-4 text-[10px] leading-5 text-white/25">Milano Counsel Intelligence™ is a professional information and execution-access layer. It does not create an attorney-client relationship with The Milano Seal, legal representation by Milano, or any claim that Milano personnel are attorneys.</p>
           </section>
 
           <section id="execution-intelligence-report" className="mt-10 overflow-hidden rounded-3xl border border-[var(--ms-gold)]/30 bg-[#0A0A0C] shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
@@ -91,7 +99,7 @@ export default function Page() {
                 <h2 className="mt-3 font-serif text-3xl">{COUNSEL_INTELLIGENCE_REPORT.name}</h2>
                 <p className="mt-4 text-3xl font-semibold text-[var(--ms-gold)]">{COUNSEL_INTELLIGENCE_REPORT.priceLabel}</p>
                 <p className="mt-5 text-sm leading-6 text-white/48">{COUNSEL_INTELLIGENCE_REPORT.promise}</p>
-                <Link href="/intake?audience=counsel&product=execution-intelligence-report" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Start Counsel Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
+                <Link href="/intake?audience=counsel&product=execution-intelligence-report" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Request Intelligence Report<ArrowRight className="h-3.5 w-3.5" /></Link>
               </div>
               <div className="p-6 sm:p-8">
                 <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/32">What counsel receives</p>
