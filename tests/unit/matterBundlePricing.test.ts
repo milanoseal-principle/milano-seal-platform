@@ -8,6 +8,7 @@ test("Signature Matter includes first apostille coordination in $750 base", () =
     tier: "signature",
     document_count: 1,
     apostille_count: 1,
+    notarized_signature_count: 1,
   });
 
   assert.equal(quote.base, 750);
@@ -17,18 +18,20 @@ test("Signature Matter includes first apostille coordination in $750 base", () =
   assert.equal(quote.breakdown.some((item) => item.key === "additional_apostille_documents"), false);
 });
 
-test("six-document vital-record Matter prices at $2,000 when all six require apostilles", () => {
+test("six already-certified vital records use Authentication base plus five additional apostilled documents", () => {
   const quote = calculatePrice({
     tier: "signature",
     document_count: 6,
     apostille_count: 6,
+    notarized_signature_count: 0,
   });
 
-  assert.equal(quote.total, 2000);
-  assert.equal(quote.internal.additional_documents, 0);
+  assert.equal(quote.base, 599);
+  assert.equal(quote.total, 1849);
+  assert.equal(quote.internal.additional_documents, 5);
   assert.equal(quote.internal.apostille_total, 1250);
   assert.deepEqual(
-    quote.breakdown.find((item) => item.key === "additional_apostille_documents")?.amount,
+    quote.breakdown.find((item) => item.key === "additional_apostilled_documents")?.amount,
     1250,
   );
 });
@@ -38,14 +41,19 @@ test("additional apostille documents are not double charged as generic documents
     tier: "signature",
     document_count: 4,
     apostille_count: 3,
+    notarized_signature_count: 0,
   });
 
-  assert.equal(quote.total, 1325);
+  assert.equal(quote.total, 1174);
   assert.equal(quote.internal.apostille_total, 500);
-  assert.equal(quote.internal.additional_documents, 1);
+  assert.equal(quote.internal.additional_documents, 3);
+  assert.equal(
+    quote.breakdown.find((item) => item.key === "additional_non_apostille_documents")?.amount,
+    75,
+  );
 });
 
-test("50/50 Matter pricing preserves deposit and final-balance gates", () => {
+test("50/50 Signature Matter pricing preserves deposit and final-balance gates", () => {
   const quote = calculateMilanoPricing({
     lane: "signature",
     documentCount: 6,
