@@ -115,6 +115,7 @@ export interface IntakePayload {
   origin_state?: string;
   signer_location?: string;
   document_count?: number;
+  apostille_count?: number;
   signer_count?: number;
   notarized_signature_count?: number;
   execution_type?: string;
