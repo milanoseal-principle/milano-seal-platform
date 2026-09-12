@@ -25,7 +25,7 @@ export const INTERNAL_PRICING = {
     Signature: MATTER_BASES.signature.amount,
     Priority: MATTER_BASES.priority.amount,
     Executive: MATTER_BASES.executive.amount,
-    IrishPassportExecution: MATTER_BASES.irish_passport_execution.amount,
+    InternationalPassportExecution: MATTER_BASES.international_passport_execution.amount,
   },
   components: {
     additionalDocument: DOCUMENT_FEES.additional_non_apostille_document,
