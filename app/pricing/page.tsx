@@ -261,20 +261,21 @@ export default function PricingPage() {
               <div>
                 <div className="flex items-center gap-3">
                   <LockKeyhole className="h-5 w-5 text-[#C6A65B]" />
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/65">Payment Gate</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/65">Two Controlled Payment Gates</p>
                 </div>
                 <h2 className="mt-5 font-serif text-4xl leading-tight text-white sm:text-5xl">
-                  Payment verification is an <em className="text-[#C6A65B]">execution control.</em>
+                  Payment verification controls both <em className="text-[#C6A65B]">execution and release.</em>
                 </h2>
                 <p className="mt-5 text-base leading-7 text-white/45">
-                  Scheduling and execution remain locked until the approved Matter amount is verified through the canonical Wise payment path.
+                  For split-payment Matters, the first 50% Wise deposit unlocks scheduling and eligible RON/execution. The final 50% must be verified before the completed document packet is released for international shipping.
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  ["01", "Quote Approved", "Scope and amount are reviewed."],
-                  ["02", "Wise Payment Verified", "Payment reconciles to the same Matter."],
-                  ["03", "Execution Unlocked", "Applicable scheduling may proceed."],
+                  ["01", "Quote Approved", "Scope, route, and amount are reviewed."],
+                  ["02", "50% Deposit Verified", "Wise deposit reconciles to the same Matter and unlocks scheduling."],
+                  ["03", "RON / Execution", "Eligible execution proceeds through the governed Matter route."],
+                  ["04", "Final 50% → Release", "Final balance clears before international courier release and shipping."],
                 ].map(([number, title, body]) => (
                   <div key={title} className="rounded-2xl border border-white/[0.07] bg-[#0A0A0A] p-5">
                     <span className="font-mono text-[11px] text-[#C6A65B]/55">{number}</span>
@@ -323,7 +324,7 @@ export default function PricingPage() {
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/60">Start with the Matter</p>
             <h2 className="mt-4 font-serif text-4xl text-white sm:text-5xl">Structure the route before execution begins.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/42">
-              Receiving-authority acceptance is never guaranteed. Secure intake gives Milano the facts required to review the operational path before quote, payment, scheduling, or execution.
+              Receiving-authority acceptance is never guaranteed. Secure intake gives Milano the facts required to review the operational path before quote, deposit, scheduling, execution, final payment, or release.
             </p>
             <Link
               href="/intake?source=pricing-final"
