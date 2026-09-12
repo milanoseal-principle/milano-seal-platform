@@ -86,14 +86,18 @@ test("over-50-mile mobile work requires quote review instead of invented travel 
   assert.ok(q.reviewOnlyItems.includes("mobile_travel_over_50_miles"));
 });
 
-test("Irish passport execution specialty Matter remains 350", () => {
+test("international passport document review / execution coordination Matter remains 350", () => {
   const q = composeCanonicalPrivateQuote({
-    matterBase: "irish_passport_execution",
+    matterBase: "international_passport_execution",
     executionMethod: "in_person",
     floridaNotarialActCount: 0,
     apostilleCount: 0,
   });
   assert.equal(q.total, 350);
+  assert.equal(
+    MATTER_BASES.international_passport_execution.label,
+    "International Passport Document Review / Execution Coordination",
+  );
 });
 
 test("quote-review-only consular work never receives an invented fixed fee", () => {
