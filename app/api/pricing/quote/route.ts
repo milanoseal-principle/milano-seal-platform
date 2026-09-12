@@ -33,9 +33,9 @@ const LANE_RATIONALE: Record<string, string> = {
   Executive: "Urgent or multi-country handling requires Executive coordination.",
 };
 
-function canonicalLane(body: QuoteInput, apostille: boolean) {
-  if (body.urgency === "urgent") return "Executive" as const;
-  if (apostille || (body.signers ?? 1) > 1) return "Priority" as const;
+function canonicalLane(body: QuoteInput) {
+  if (body.urgency === "urgent" || body.multi_country) return "Executive" as const;
+  if ((body.signers ?? 1) > 1 || body.translation) return "Priority" as const;
   return "Signature" as const;
 }
 
@@ -54,7 +54,7 @@ function pricingTriggers(body: QuoteInput, lane: string, apostille: boolean) {
   if (body.translation) triggers.push("Translation coordination");
   if (body.multi_country) triggers.push("Multi-country routing");
   if (body.urgency === "urgent") triggers.push("Urgent handling");
-  if (apostille) triggers.push("Apostille coordination");
+  if (apostille) triggers.push("Apostille coordination included for first document");
   triggers.push(`Lane: ${lane}`);
   return triggers;
 }
@@ -80,21 +80,20 @@ export async function POST(req: NextRequest) {
     }
 
     const legacy = executionTruthToLegacy(truth);
-    const lane = canonicalLane(body, legacy.apostille_required);
+    const lane = canonicalLane(body);
+    const documentCount = Math.max(1, Number(body.docs_count ?? 1));
     const canonicalPricing = calculatePrice({
       tier: lane.toLowerCase(),
-      document_count: Math.max(1, Number(body.docs_count ?? 1)),
+      document_count: documentCount,
       signer_count: Math.max(1, Number(body.signers ?? 1)),
       notarized_signature_count: legacy.notarization_required
         ? Math.max(1, Number(body.signers ?? 1))
         : 0,
-      apostille_count: legacy.apostille_required ? 1 : 0,
+      apostille_count: legacy.apostille_required ? documentCount : 0,
       urgency: body.urgency === "urgent" ? "rush" : "standard",
       shipping: "none",
     });
 
-    // Witness calculation remains the legacy read-only projection used by intake.
-    // It is reported separately and does not replace the canonical total.
     const witnessInput: PricingData = {
       state: truth.execution_method === "ron" ? body.origin_state : undefined,
       apostille: legacy.apostille_required,
