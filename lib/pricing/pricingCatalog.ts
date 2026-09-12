@@ -25,11 +25,11 @@ export const MATTER_BASES = {
     description:
       "For complex, urgent, high-touch, multi-jurisdiction, consular, or unusual custody Matters.",
   },
-  irish_passport_execution: {
+  international_passport_execution: {
     amount: 350,
-    label: "Irish Passport Execution Matter",
+    label: "International Passport Document Review / Execution Coordination",
     description:
-      "Specialty reviewed execution Matter for Irish passport affidavit or declaration execution where no apostille is required by Milano.",
+      "Specialty reviewed execution Matter for international passport affidavits, declarations, witness forms, or related execution documents where Milano is coordinating document readiness and execution rather than an apostille Matter.",
   },
 } as const;
 
