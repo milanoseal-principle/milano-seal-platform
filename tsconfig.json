@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/lib/pricing": ["./lib/pricing/canonicalFacade.ts"],
       "@/*": ["./*"]
     }
   },

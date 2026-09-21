@@ -5,6 +5,12 @@ begin;
 -- reset, activate, deactivate, or otherwise mutate DAMIANI50 commercial state.
 -- Existing discount value, status, usage_limit, usage_count, start/end dates,
 -- and redemption history remain authoritative and untouched.
+--
+-- Fresh preview/shadow databases may intentionally contain no operational
+-- courtesy-code rows. Schema replay must therefore remain data-independent.
+-- Production launch validation owns the fail-closed requirement that an approved
+-- commercial code exists before the Damiani re-entry program is represented as
+-- available.
 
 update public.discount_codes
 set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
@@ -15,19 +21,5 @@ set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
 ),
 updated_at = now()
 where upper(code) = 'DAMIANI50';
-
--- Fail closed if the canonical production code is absent. A deployment must not
--- silently claim the governed Damiani re-entry program is wired when the record
--- itself is missing.
-do $$
-begin
-  if not exists (
-    select 1
-    from public.discount_codes
-    where upper(code) = 'DAMIANI50'
-  ) then
-    raise exception 'damiani50_discount_code_missing';
-  end if;
-end $$;
 
 commit;

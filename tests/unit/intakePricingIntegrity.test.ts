@@ -12,17 +12,17 @@ import {
 } from "@/lib/pricing/pricingCatalog";
 import { mergeAnalysis, emptyAnalysis } from "@/lib/intake/matterAnalysis";
 
-test("canonical screenshot matter prices 2 docs + 2 apostilles + international courier",()=>{
+test("already-certified 2-document apostille Matter uses Authentication base and governed courier pricing",()=>{
   const q=calculatePrice({tier:"priority",document_count:2,signer_count:1,notarized_signature_count:0,apostille_count:2,urgency:"standard",shipping:"international"});
-  assert.equal(q.total,1375);
-  assert.equal(q.breakdown.some(x=>x.key==="additional_documents"),false);
-  assert.equal(q.breakdown.find(x=>x.key==="additional_apostille_documents")?.amount,250);
-  assert.equal(q.breakdown.find(x=>x.key==="shipping")?.amount,150);
+  assert.equal(q.total,849);
+  assert.equal(q.base,599);
+  assert.equal(q.breakdown.find(x=>x.key==="additional_apostilled_documents")?.amount,250);
+  assert.equal(q.breakdown.some(x=>x.key==="shipping"),false);
 });
 
-test("explicit zero notarized signatures never fabricates $25",()=>{
+test("explicit zero notarized signatures never fabricates signature tracking fee",()=>{
   const q=calculatePrice({tier:"priority",notarized_signature_count:0,apostille_count:0});
-  assert.equal(q.breakdown.some(x=>x.key==="notarized_signatures"),false);
+  assert.equal(q.breakdown.some(x=>x.key==="additional_notarized_signature_tracking"),false);
 });
 
 test("timeline preference does not reduce matter-structure confidence",()=>{
@@ -39,7 +39,7 @@ test("command-center pricing intelligence derives from the canonical private cat
   });
 
   assert.equal(INTERNAL_PRICING.matterBase.Authentication, MATTER_BASES.authentication.amount);
-  assert.equal(INTERNAL_PRICING.matterBase.IrishPassportExecution, MATTER_BASES.irish_passport_execution.amount);
+  assert.equal(INTERNAL_PRICING.matterBase.InternationalPassportExecution, MATTER_BASES.international_passport_execution.amount);
   assert.equal(INTERNAL_PRICING.components.additionalDocument, DOCUMENT_FEES.additional_non_apostille_document);
   assert.equal(INTERNAL_PRICING.components.additionalSigner, NOTARY_SIGNER_FEES.additional_signer);
   assert.equal(INTERNAL_PRICING.components.notarizedSignature, NOTARY_SIGNER_FEES.additional_notarized_signature_tracking);
