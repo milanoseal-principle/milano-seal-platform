@@ -39,6 +39,7 @@ import { TrustModeGuide } from "@/components/dashboard/TrustModeGuide";
 import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
 import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
 import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
+import { OperatorQuoteBuilder } from "@/components/dashboard/OperatorQuoteBuilder";
 import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
 import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
@@ -461,7 +462,32 @@ export default function DealDetail() {
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <OperatorQuoteBuilder
+        matterId={deal.id}
+        paymentStatus={deal.payment_status}
+        amountPaid={deal.amount_paid}
+        initial={{
+          executionMethod:
+            deal.mobile
+              ? "in_person"
+              : deal.lane?.toLowerCase() === "authentication"
+                ? "none"
+                : "ron",
+          documentCount: deal.docs_count,
+          apostilleCount: deal.apostille_required ? deal.docs_count : 0,
+          signerCount: deal.signers,
+          witnesses: deal.witnesses,
+          witnessType: deal.witness_type,
+          miles: deal.miles,
+          urgency: deal.urgency,
+          translation: deal.translation,
+          multiCountry: deal.multi_country,
+          discountCode: deal.discount_code,
+        }}
+        onCommitted={refresh}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <Card className="bg-card border-gold">
             <CardHeader>
               <Skeleton className="h-6 w-48 rounded" />
