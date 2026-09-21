@@ -104,21 +104,24 @@ export async function POST(
         .eq("id", id);
       if (reviewError) throw reviewError;
 
-      await admin.from("matter_evidence_ledger").insert({
-        matter_id: id,
-        event_type: "quote_review_required",
-        domain: "pricing",
-        actor_type: "operator",
-        actor_id: operator.id,
-        source: "operator_quote_builder",
-        new_value: {
-          matter_pricing_type: projection.matterBase,
-          execution_method: projection.executionMethod,
-          review_reasons: projection.reviewReasons,
-        },
-        reason: "Governed exception blocked automatic final pricing.",
-        metadata: { pricing_version: PRICING_VERSION },
-      });
+      const { error: reviewEvidenceError } = await admin
+        .from("matter_evidence_ledger")
+        .insert({
+          matter_id: id,
+          event_type: "quote_review_required",
+          domain: "pricing",
+          actor_type: "operator",
+          actor_id: operator.id,
+          source: "operator_quote_builder",
+          new_value: {
+            matter_pricing_type: projection.matterBase,
+            execution_method: projection.executionMethod,
+            review_reasons: projection.reviewReasons,
+          },
+          reason: "Governed exception blocked automatic final pricing.",
+          metadata: { pricing_version: PRICING_VERSION },
+        });
+      if (reviewEvidenceError) throw reviewEvidenceError;
 
       return NextResponse.json(
         {
@@ -179,24 +182,27 @@ export async function POST(
       .single();
     if (quoteError) throw quoteError;
 
-    await admin.from("matter_evidence_ledger").insert({
-      matter_id: id,
-      event_type: "canonical_quote_approved",
-      domain: "pricing",
-      actor_type: "operator",
-      actor_id: operator.id,
-      source: "operator_quote_builder",
-      new_value: {
-        matter_pricing_type: projection.matterBase,
-        execution_method: projection.executionMethod,
-        subtotal: quote.subtotal,
-        deposit_amount: quote.depositAmount,
-        balance_due: quote.balanceDue,
-        line_items: quote.lineItems,
-      },
-      reason: "Reviewed canonical private quote approved for payment gating.",
-      metadata: { pricing_version: PRICING_VERSION },
-    });
+    const { error: quoteEvidenceError } = await admin
+      .from("matter_evidence_ledger")
+      .insert({
+        matter_id: id,
+        event_type: "canonical_quote_approved",
+        domain: "pricing",
+        actor_type: "operator",
+        actor_id: operator.id,
+        source: "operator_quote_builder",
+        new_value: {
+          matter_pricing_type: projection.matterBase,
+          execution_method: projection.executionMethod,
+          subtotal: quote.subtotal,
+          deposit_amount: quote.depositAmount,
+          balance_due: quote.balanceDue,
+          line_items: quote.lineItems,
+        },
+        reason: "Reviewed canonical private quote approved for payment gating.",
+        metadata: { pricing_version: PRICING_VERSION },
+      });
+    if (quoteEvidenceError) throw quoteEvidenceError;
 
     let finalMatter = quotedMatter;
     if (discountCode) {
