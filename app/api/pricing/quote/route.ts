@@ -4,6 +4,7 @@ import {
   normalizeExecutionTruth,
 } from "@/lib/matter/executionTruth";
 import { projectCanonicalQuote } from "@/lib/pricing/canonicalQuoteOrchestrator";
+import { projectQuoteRouteIntelligence } from "@/lib/pricing/destinationDocumentQuoteIntelligence";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => ({}))) as QuoteInput;
     const truth = normalizeExecutionTruth(body);
     const executionReviewReasons = executionQuoteReviewReasons(truth);
+    const routeIntelligence = projectQuoteRouteIntelligence(body);
 
     if (executionReviewReasons.length > 0) {
       return NextResponse.json({
@@ -44,6 +46,7 @@ export async function POST(req: NextRequest) {
         review_reasons: executionReviewReasons,
         rationale:
           "Execution facts require operator resolution before a payment amount can be approved.",
+        route_intelligence: routeIntelligence,
       });
     }
 
@@ -52,6 +55,7 @@ export async function POST(req: NextRequest) {
       execution_method: truth.execution_method,
       notarization_requirement: truth.notarization_requirement,
       authentication_requirement: truth.authentication_requirement,
+      ...routeIntelligence.pricingFacts,
     });
 
     const quote = projection.quote;
@@ -82,6 +86,7 @@ export async function POST(req: NextRequest) {
         ? "The Matter contains a governed exception that requires operator review before payment is requested."
         : "Canonical private pricing composed from the reviewed Matter scope.",
       pricing_guards: quote.pricingGuards,
+      route_intelligence: routeIntelligence,
     });
   } catch (error) {
     console.error("[pricing/quote] error:", error);
