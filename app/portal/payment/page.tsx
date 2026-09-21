@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
+import { ClientMatterQuoteSummary } from "@/components/portal/ClientMatterQuoteSummary";
 import { usePortal } from "@/components/portal/portal-context";
 
 export default function PaymentStatusPage() {
@@ -35,6 +36,8 @@ export default function PaymentStatusPage() {
           Partner or courtesy codes are validated by the server before Wise instructions are refreshed. Your payment and Matter progress are tracked separately. Once a governed Wise submission is recorded, the payment portion of scheduling is satisfied while final settlement verification continues in the background.
         </p>
       </header>
+
+      <ClientMatterQuoteSummary matterId={deal.id} />
 
       <SecurePaymentCard
         deal={{

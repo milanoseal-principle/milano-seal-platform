@@ -40,6 +40,12 @@ const INVOICE_SELECT = [
   "payment_link",
   "payment_reference",
   "wise_reference",
+  "matter_pricing_type",
+  "quote_execution_method",
+  "pricing_version",
+  "quote_breakdown",
+  "quote_review_required",
+  "quote_review_reasons",
 ].join(",");
 
 export async function GET(req: NextRequest) {

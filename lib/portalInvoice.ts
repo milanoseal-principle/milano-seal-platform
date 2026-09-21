@@ -15,6 +15,9 @@ export interface ClientInvoiceSnapshot {
   matterId: string;
   displayId: string;
   currency: string;
+  matterPricingType: string | null;
+  executionMethod: string | null;
+  pricingVersion: string | null;
   lineItems: ClientInvoiceLineItem[];
   originalTotal: number;
   eligibleSubtotal: number;
@@ -30,6 +33,7 @@ export interface ClientInvoiceSnapshot {
   wiseReference: string;
   wisePaymentUrl: string | null;
   courtesyApplied: boolean;
+  thirdPartyTimingNotice: string;
 }
 
 export type PortalInvoiceMatterRow = Record<string, unknown>;
@@ -80,8 +84,43 @@ function push(lines: ClientInvoiceLineItem[], item: ClientInvoiceLineItem) {
   if (item.amount > 0) lines.push({ ...item, amount: n(item.amount) });
 }
 
+function canonicalQuoteLines(raw: unknown): ClientInvoiceLineItem[] {
+  if (!Array.isArray(raw)) return [];
+  const safe: ClientInvoiceLineItem[] = [];
+  for (const candidate of raw) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const item = candidate as Record<string, unknown>;
+    const amount = n(item.amount);
+    if (amount <= 0) continue;
+    const category = String(item.category ?? "other");
+    const kind: ClientInvoiceLineKind =
+      category === "base" || category === "document" || category === "signer" || category === "witness" || category === "special"
+        ? "execution"
+        : category === "notary"
+          ? "notarial"
+          : category === "timing"
+            ? "timeline"
+            : category === "courier"
+              ? "delivery"
+              : category === "authority"
+                ? "apostille"
+                : "other";
+    safe.push({
+      key: String(item.code ?? `line_${safe.length + 1}`),
+      label: String(item.label ?? "Approved Matter service"),
+      amount,
+      kind,
+      discountable: !["courier", "authority"].includes(category),
+    });
+  }
+  return safe;
+}
+
 /** Client-safe display projection only. It never computes or authorizes a discount. */
 export function buildClientInvoiceLineItems(row: PortalInvoiceMatterRow): ClientInvoiceLineItem[] {
+  const canonicalLines = canonicalQuoteLines(row.quote_breakdown);
+  if (canonicalLines.length > 0) return canonicalLines;
+
   const originalTotal = n(row.original_total ?? row.total_price ?? row.final_total);
   const metadata = parseInternalNotes(row.internal_notes);
   const lines: ClientInvoiceLineItem[] = [];
@@ -162,6 +201,9 @@ export function buildClientInvoiceSnapshot(row: PortalInvoiceMatterRow): ClientI
     matterId: String(row.id ?? ""),
     displayId: String(row.deal_id ?? row.display_id ?? row.id ?? ""),
     currency: String(row.currency ?? "USD"),
+    matterPricingType: row.matter_pricing_type == null ? null : String(row.matter_pricing_type),
+    executionMethod: row.quote_execution_method == null ? null : String(row.quote_execution_method),
+    pricingVersion: row.pricing_version == null ? null : String(row.pricing_version),
     lineItems: buildClientInvoiceLineItems(row),
     originalTotal,
     eligibleSubtotal,
@@ -177,5 +219,7 @@ export function buildClientInvoiceSnapshot(row: PortalInvoiceMatterRow): ClientI
     wiseReference: String(row.wise_reference ?? row.payment_reference ?? row.deal_id ?? ""),
     wisePaymentUrl: typeof row.payment_link === "string" && row.payment_link ? row.payment_link : null,
     courtesyApplied: Boolean(row.discount_code) && discountAmount > 0,
+    thirdPartyTimingNotice:
+      "Milano Seal coordinates the governed execution route. Government offices, consulates, receiving authorities, carriers, and other third parties control their own processing and acceptance timelines.",
   };
 }
