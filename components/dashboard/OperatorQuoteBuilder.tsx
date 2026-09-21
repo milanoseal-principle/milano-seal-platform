@@ -57,6 +57,10 @@ type OperatorQuoteBuilderProps = {
     translation?: boolean | null;
     multiCountry?: boolean | null;
     discountCode?: string | null;
+    destinationCountry?: string | null;
+    originState?: string | null;
+    documentType?: string | null;
+    receivingAuthority?: string | null;
   };
   onCommitted?: () => void;
 };
@@ -85,6 +89,11 @@ type QuoteForm = {
   courier_cost: number;
   external_authority_fees: number;
   discount_code: string;
+  destination_country: string;
+  origin_state: string;
+  document_type: string;
+  issuing_authority: "unknown" | "state" | "federal" | "county" | "court" | "private";
+  receiving_authority: string;
 };
 
 const money = (value: number | null | undefined) =>
@@ -137,6 +146,11 @@ export function OperatorQuoteBuilder({
     courier_cost: 0,
     external_authority_fees: 0,
     discount_code: initial?.discountCode ?? "",
+    destination_country: initial?.destinationCountry ?? "",
+    origin_state: initial?.originState ?? "",
+    document_type: initial?.documentType ?? "",
+    issuing_authority: "unknown",
+    receiving_authority: initial?.receivingAuthority ?? "",
   });
   const [preview, setPreview] = useState<QuotePreview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -224,6 +238,14 @@ export function OperatorQuoteBuilder({
   }
 
   const reviewReasons = preview?.review_reasons ?? [];
+  const routeIntelligence = (preview as (QuotePreview & { route_intelligence?: {
+    routeLabel?: string;
+    authorityStatus?: string;
+    documentCategory?: string;
+    reviewRequired?: boolean;
+    reviewReasons?: string[];
+    safetyNotice?: string;
+  } }) | null)?.route_intelligence;
 
   return (
     <Card className="border-gold bg-card overflow-hidden">
@@ -251,6 +273,39 @@ export function OperatorQuoteBuilder({
 
       <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.8fr)]">
         <div className="space-y-5">
+          <section className="rounded-md border border-[#C6A65B]/20 bg-[#C6A65B]/[0.03] p-4">
+            <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#C6A65B]">Destination & document route</div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <Field label="Destination country">
+                <Input value={form.destination_country} disabled={locked} onChange={(e) => patch("destination_country", e.target.value)} />
+              </Field>
+              <Field label="Document origin">
+                <Input value={form.origin_state} disabled={locked} onChange={(e) => patch("origin_state", e.target.value)} />
+              </Field>
+              <Field label="Document type">
+                <Input value={form.document_type} disabled={locked} onChange={(e) => patch("document_type", e.target.value)} />
+              </Field>
+              <Field label="Issuing authority">
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.issuing_authority}
+                  disabled={locked}
+                  onChange={(e) => patch("issuing_authority", e.target.value as QuoteForm["issuing_authority"])}
+                >
+                  <option value="unknown">Review required</option>
+                  <option value="state">State</option>
+                  <option value="federal">Federal</option>
+                  <option value="county">County</option>
+                  <option value="court">Court</option>
+                  <option value="private">Private / executed document</option>
+                </select>
+              </Field>
+              <Field label="Receiving authority (if known)">
+                <Input value={form.receiving_authority} disabled={locked} onChange={(e) => patch("receiving_authority", e.target.value)} placeholder="Court, comune, bank, counsel…" />
+              </Field>
+            </div>
+          </section>
+
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Matter base">
               <select
@@ -344,6 +399,22 @@ export function OperatorQuoteBuilder({
               Recalculate
             </Button>
           </div>
+
+          {routeIntelligence && (
+            <div className="rounded-md border border-[#C6A65B]/20 bg-[#C6A65B]/[0.025] p-3">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-[#C6A65B]">Route intelligence</div>
+              <div className="mt-1 text-sm text-foreground">{routeIntelligence.routeLabel ?? "Authority review"}</div>
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                {routeIntelligence.documentCategory?.replaceAll("_", " ")} · {routeIntelligence.authorityStatus ?? "REVIEW_REQUIRED"}
+              </div>
+              {routeIntelligence.reviewReasons?.length ? (
+                <div className="mt-2 text-[10px] leading-4 text-amber-300/80">
+                  {routeIntelligence.reviewReasons.join(" · ")}
+                </div>
+              ) : null}
+              <div className="mt-2 text-[10px] leading-4 text-muted-foreground">{routeIntelligence.safetyNotice}</div>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-md border border-red-500/25 bg-red-500/5 p-3 text-xs text-red-300">{error}</div>
