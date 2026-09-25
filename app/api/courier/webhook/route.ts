@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { verifyShippoHmac } from "@/lib/shippo/webhookAuth";
+import { updateShipmentLegFromProvider } from "@/lib/intelligence/execution-brain/authorityLogistics";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ interface ShippoWebhookEvent {
     };
     eta?: string;
     carrier?: string;
+    transaction?: string;
+    metadata?: string;
+    tracking_status_substatus?: { code?: string };
   };
 }
 
@@ -126,6 +130,26 @@ export async function POST(req: NextRequest) {
           throw new Error("Courier transition persistence failed");
         }
       }
+
+      // Matter-linked shipment legs (authority / return / final legs). Same
+      // HMAC-verified event; idempotent, Matter-safe and leg-specific. Leg
+      // custody never completes or releases the Matter.
+      await updateShipmentLegFromProvider(admin, {
+        trackingNumber,
+        transactionId: payload.data.transaction ?? null,
+        metadataMatterId: payload.data.metadata ?? null,
+        status: rawStatus ?? "UNKNOWN",
+        substatus: payload.data.tracking_status_substatus?.code ?? null,
+        statusDetails: payload.data.tracking_status?.status_details ?? null,
+        statusDate: payload.data.tracking_status?.status_date ?? null,
+        carrier: payload.data.carrier ?? null,
+        raw: {
+          tracking_number: trackingNumber,
+          carrier: payload.data.carrier ?? null,
+          status: rawStatus ?? null,
+          status_date: payload.data.tracking_status?.status_date ?? null,
+        },
+      });
     }
 
     return NextResponse.json({ received: true });
