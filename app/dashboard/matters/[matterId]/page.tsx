@@ -12,6 +12,7 @@ import {
   type MatterTruthInput,
   type MatterTruthSection,
 } from "@/lib/matter/matterTruthGovernance";
+import { ExecutionIntelligenceStatusCard } from "@/components/dashboard/execution/ExecutionIntelligenceStatusCard";
 
 // Matter 360 — canonical object view.
 // This surface is a READ PROJECTION over the same canonical read model used by
@@ -277,6 +278,7 @@ export default function Matter360Page() {
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <NavCard href={`/dashboard/matters/${encodeURIComponent(matterId)}/truth`} title="Matter Truth" caption="Full canonical evidence, discrepancies and reconciliation." />
             <NavCard href={`/dashboard/matters/${encodeURIComponent(matterId)}/execution`} title="Execution Readiness" caption="Governed progression, gates and next action." />
+            <ExecutionIntelligenceStatusCard matterId={matterId} />
             <NavCard href={`/dashboard/deals/${encodeURIComponent(matterId)}`} title="Matter Record" caption="Canonical Matter record and activity." />
           </section>
 

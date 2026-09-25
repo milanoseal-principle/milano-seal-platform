@@ -30,6 +30,7 @@ export async function AuthorityPacketPanel({ matterId }: { matterId: string }) {
     ['Government Fee Payment Method', label(packet.paymentMethodStatus)],
     ['Outbound Shipment', packet.outboundShippingRequired === null ? 'Unresolved' : 'Required'],
     ['Return Shipment', label(packet.returnShipmentMode)],
+    ['Return Envelope', packet.returnShippingRequired === null ? 'Unresolved' : packet.returnShippingRequired ? 'Prepaid return envelope required' : 'Not required'],
     ['Operator QA', packet.operatorQa.complete ? `Complete ${packet.operatorQa.approved_at?.slice(0, 10) ?? ''}` : 'Not complete'],
   ];
 

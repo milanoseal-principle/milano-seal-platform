@@ -5,6 +5,8 @@ import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPage
 import { DynamicSessionPlaybook } from "@/components/dashboard/execution/DynamicSessionPlaybook";
 import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
 import { MatterExecutionIntelligencePanel } from "@/components/dashboard/execution/MatterExecutionIntelligencePanel";
+import { DocumentPreflightPanel } from "@/components/dashboard/execution/DocumentPreflightPanel";
+import { AuthorityRoutePanel } from "@/components/dashboard/execution/AuthorityRoutePanel";
 import { PaperOutChecklistPanel } from "@/components/ron/PaperOutChecklistPanel";
 import { AuthorityPacketPanel } from "@/components/dashboard/execution/AuthorityPacketPanel";
 import { AuthorityLogisticsPanel } from "@/components/dashboard/execution/AuthorityLogisticsPanel";
@@ -28,8 +30,10 @@ export default async function MatterExecutionPage({
         description="Matter-backed operator readiness only. Unknown execution facts remain blocked until confirmed; scheduling authority, RON readiness, custody, QA, and release truth remain independently governed."
       />
       <MatterExecutionIntelligencePanel matterId={matterId} />
+      <DocumentPreflightPanel matterId={matterId} />
       <DynamicSessionPlaybook matterId={matterId} />
       <MatterRONReadiness matterId={matterId} />
+      <AuthorityRoutePanel matterId={matterId} />
       <PaperOutChecklistPanel matterId={matterId} />
       <AuthorityPacketPanel matterId={matterId} />
       <AuthorityLogisticsPanel matterId={matterId} />

@@ -184,7 +184,7 @@ test("no guaranteed completion date emitted; timeline is durations only", () => 
     assert.doesNotMatch(code, /guaranteed completion|will be completed by|completion date/i, file);
   }
   const panel = read("components/dashboard/execution/AuthorityAdvisoryPanel.tsx");
-  for (const label of ["Processing estimate", "Official source", "Observed date", "Last verified", "Confidence", "Expiration", "Estimated Timeline", "Current Authority Advisory"]) {
+  for (const label of ["Current advisory", "Estimated days", "Official source", "Observed date", "Last verified", "Confidence", "Expiration", "Estimated Timeline", "Current Authority Advisory"]) {
     assert.ok(panel.includes(label), label);
   }
   assert.match(panel, /ESTIMATE_NOTICE/);

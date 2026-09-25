@@ -10,6 +10,8 @@ import {
   type CustodyEvidenceRow,
   type PacketFileRow,
 } from "./authorityPacket";
+import { loadMatterRoute } from "./matterRouteServer";
+import { readRonAuthorityPosture } from "./ronProviderCapabilities";
 import {
   AUTHORITY_ASSET_FIELDS,
   FLORIDA_DOS_APOSTILLE_FORM,
@@ -34,7 +36,7 @@ export async function loadAuthorityPacket(
   const supabase = createAdminClient();
   const base = supabase
     .from("deals")
-    .select("id, deal_id, status, deal_status, destination_country, document_type, execution_truth, updated_at");
+    .select("id, deal_id, status, deal_status, destination_country, origin_state, document_type, execution_truth, updated_at");
   const { data: matter } = UUID_RE.test(matterRef)
     ? await base.or(`id.eq.${matterRef},deal_id.eq.${matterRef}`).maybeSingle()
     : await base.eq("deal_id", matterRef).maybeSingle();
@@ -70,6 +72,8 @@ export async function loadAuthorityPacket(
     ? await supabase.from("authority_source_assets").select(AUTHORITY_ASSET_FIELDS).eq("authority_id", authorityRecord.id)
     : { data: [] };
 
+  const route = await loadMatterRoute(supabase, matter, readRonAuthorityPosture(matter.execution_truth).receivingAuthority);
+
   const compose = (executionTruth: unknown = matter.execution_truth) =>
     composeAuthorityPacket(
       {
@@ -83,6 +87,7 @@ export async function loadAuthorityPacket(
         authority: authorityRecord,
         assets: (assets ?? []) as AuthoritySourceAsset[],
         custodyEvents: (custody ?? []) as CustodyEvidenceRow[],
+        issuingLane: route.issuingLane,
       },
       now,
     );
