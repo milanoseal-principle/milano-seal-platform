@@ -41,7 +41,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const [{ data: files }, { data: sessions }] = await Promise.all([
     supabase
       .from('files')
-      .select('id, name, storage_path, mime_type, category')
+      .select('id, name, storage_path, mime_type, category, structural_status, structural_review_reason')
       .eq('deal_id', matter.id)
       .eq('is_internal', false)
       .order('created_at', { ascending: true }),
@@ -79,7 +79,21 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
     Boolean(notaryJurisdiction) &&
     Boolean(notarialAct) &&
     !notarialActNeedsReview;
-  const documentReady = Boolean(files?.length);
+  const executionCandidates = (files ?? []).filter((file) => {
+    const mime = String(file.mime_type ?? "").toLowerCase();
+    return (
+      mime === "application/pdf" ||
+      mime === "application/msword" ||
+      mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+  });
+  const documentPreflightReady =
+    executionCandidates.length > 0 &&
+    executionCandidates.every((file) => file.structural_status === "READY");
+  const unresolvedPreflight = executionCandidates.filter(
+    (file) => file.structural_status !== "READY",
+  );
+  const documentReady = documentPreflightReady;
   const sessionExists = Boolean(activeSession && !['RON_EXPIRED', 'RON_COMPLETED'].includes(activeSession.milano_ron_status));
   const sessionNotExpired = Boolean(activeSession && activeSession.milano_ron_status !== 'RON_EXPIRED' && (!activeSession.expired_at || new Date(activeSession.expired_at) > new Date()));
   const sessionCompleted = Boolean(activeSession && ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE'].includes(activeSession.milano_ron_status));
@@ -88,12 +102,19 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const blockers = [
     !schedulingAuthorized ? schedulingGate.reason : null,
     !signerComplete ? 'Signer name, email, phone, and signer location must be present.' : null,
-    !documentReady ? 'At least one Matter document is required.' : null,
+    executionCandidates.length === 0 ? 'At least one execution document is required.' : null,
+    executionCandidates.length > 0 && !documentPreflightReady
+      ? 'Document structural preflight must be READY before BlueNotary session creation.'
+      : null,
     notarialActNeedsReview ? 'Operator must confirm the notarial act before BlueNotary session creation.' : null,
     !notaryJurisdiction ? 'Notary jurisdiction must be confirmed.' : null,
   ].filter(Boolean) as string[];
 
-  const readyToCreate = schedulingAuthorized && ronTruthComplete && signerComplete && documentReady;
+  const readyToCreate =
+    schedulingAuthorized &&
+    ronTruthComplete &&
+    signerComplete &&
+    documentPreflightReady;
 
   return (
     <section className="rounded-2xl border border-[var(--ms-gold)]/20 bg-[#08080A]/90 p-4 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:p-5">
@@ -155,6 +176,20 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
         ))}
       </div>
 
+      {unresolvedPreflight.length > 0 && !activeSession && (
+        <div className="mt-4 rounded-xl border border-[#E0876E]/25 bg-[#C0563E]/[0.07] p-4">
+          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#E0876E]">Document Preflight</p>
+          <ul className="mt-2 space-y-1.5 text-xs text-white/65">
+            {unresolvedPreflight.map((file) => (
+              <li key={file.id}>
+                • {file.name ?? "Execution document"} — {file.structural_status ?? "NOT_RUN"}
+                {file.structural_review_reason ? `: ${file.structural_review_reason}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {notarialActNeedsReview && !activeSession && (
         <NotarialActResolution
           matterId={matter.id}
@@ -196,7 +231,13 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
             sessionNotExpired: { met: sessionNotExpired },
             signerComplete: { met: signerComplete, reason: 'Signer name, email, phone, and location are required.' },
             ronTruthComplete: { met: ronTruthComplete, reason: notarialActNeedsReview ? 'Confirm acknowledgment vs jurat before creating the provider session.' : 'RON execution truth is incomplete.' },
-            documentReady: { met: documentReady, reason: 'Matter package is missing.' },
+            documentReady: {
+              met: documentPreflightReady,
+              reason:
+                executionCandidates.length === 0
+                  ? 'Matter package is missing an execution document.'
+                  : 'Execution document structural preflight is not READY.',
+            },
             sessionCompleted: { met: sessionCompleted },
           }}
         />
