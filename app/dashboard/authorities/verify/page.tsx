@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { StateAuthorityProvenanceSection } from "@/components/dashboard/StateAuthorityProvenanceSection";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   operationalDestinationCountry,
@@ -303,6 +304,7 @@ export default async function AuthorityVerifyPage({ searchParams }: PageProps) {
           </div>
         </section>
       )}
+      <StateAuthorityProvenanceSection />
     </div>
   );
 }
