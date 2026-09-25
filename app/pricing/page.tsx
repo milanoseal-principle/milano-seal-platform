@@ -318,7 +318,7 @@ export default function PricingPage() {
                   Payment controls scheduling and <em className="text-[#C6A65B]">international release.</em>
                 </h2>
                 <p className="mt-5 text-base leading-7 text-white/45">
-                  The first 50% Wise deposit must be verified before scheduling is unlocked. The final 50% must be verified before the completed packet is released for international shipping.
+                  Once verified, the first 50% Wise deposit unlocks scheduling and eligible RON/execution. The final 50% must be verified before the completed document packet is released for international shipping.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

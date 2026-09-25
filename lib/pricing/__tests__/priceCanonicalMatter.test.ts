@@ -33,7 +33,7 @@ test("field-equal Matters priced by different surfaces match on lane/add-ons/tot
   assert.equal(intakeView.total, portalView.total);
   assert.equal(intakeView.manualReviewRequired, portalView.manualReviewRequired);
   assert.equal(intakeView.suggestedLane, "priority");
-  assert.equal(intakeView.total, 1250);
+  assert.equal(intakeView.total, 1000); // 975 Priority, first apostille included, + 25 tracking
 });
 
 test("executionTier selects the lane only when execution is independently established", () => {

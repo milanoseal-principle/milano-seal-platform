@@ -17,20 +17,20 @@ test("Matter B: two signers elevate to Priority with signer + signature tracking
   assert.equal(r.additionalSignerCount, 1);
 });
 
-test("Matter C: Priority + apostille + notarized-signature tracking = $1,250", () => {
+test("Matter C: Priority + first apostille included + notarized-signature tracking = $1,000", () => {
   const r = price("notarize and apostille for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
-  assert.equal(r.total, 1250); // 975 + 250 apostille + 25 internal signature tracking
+  assert.equal(r.total, 1000); // 975 Priority (first apostille included) + 25 internal signature tracking
 });
 
 test("Matter D: same-day apostille elevates to Executive and adds rush", () => {
   const r = price("notarize, apostille, same day for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
   assert.equal(r.authorizedAddOns.rush, 400);
-  assert.equal(r.total, 2525); // 1850 Executive + 250 apostille + 400 rush + 25 internal signature tracking
+  assert.equal(r.total, 2275); // 1850 Executive (first apostille included) + 400 rush + 25 internal signature tracking
 });
 
 test("Matter E: Executive + apostille + 2 signers includes signature tracking", () => {
   const r = price("notarize and apostille for Italy, 2 signers", { apostille: true, destinationCountry: "Italy", signerCount: 2 }, "executive");
-  assert.equal(r.total, 2300); // 1850 + 250 + 150 additional signer + 50 internal signature tracking
+  assert.equal(r.total, 2050); // 1850 (first apostille included) + 150 additional signer + 50 internal signature tracking
 });
 
 test("additional signer math: 3 signers => 2 additional => $300", () => {
@@ -85,7 +85,8 @@ test("no-fabrication: apostille never adds notarization; execution lane not forc
 test("apostille quantity uses first + additional apostille pricing", () => {
   const r = price("notarize and 3 apostilles for Italy", { apostille: true, destinationCountry: "Italy" }, "signature");
   assert.equal(r.apostilleQuantity, 3);
-  assert.equal(r.authorizedAddOns.apostille, 550); // first 250 + 2 additional at 150 each
+  assert.equal(r.authorizedAddOns.apostille, 500); // first apostille included + 2 additional apostilled documents at 250 each
+  assert.equal(r.total, 1500); // 975 Priority + 500 + 25 internal signature tracking
 });
 
 test("rush not applied from vague urgency (deadline exists but no same-day/rush word)", () => {

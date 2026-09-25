@@ -221,3 +221,16 @@ export function applyVerifiedCountryOverride(
     faqs: override.faqs ?? profile.faqs,
   };
 }
+
+/**
+ * True only when the destination carries a reviewed override whose Hague
+ * membership has been confirmed. Absence of an override is never verification.
+ */
+export function hasVerifiedHagueOverride(slug: string): boolean {
+  const override = VERIFIED_OVERRIDES[slug];
+  return Boolean(
+    override &&
+      override.hagueMember === "member" &&
+      override.verificationStatus !== "VERIFICATION_REQUIRED",
+  );
+}

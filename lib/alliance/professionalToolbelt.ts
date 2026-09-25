@@ -64,7 +64,7 @@ function normalizeSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function canonicalDestinationSlug(value: string): string {
+export function canonicalDestinationSlug(value: string): string {
   const normalized = normalizeSlug(value);
   const compact = value.trim().toLowerCase();
   const alias = COUNTRY_REGISTRY.find((country) => {

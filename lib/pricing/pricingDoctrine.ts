@@ -26,7 +26,7 @@ export const INTERNAL_BASES = {
   signature: MATTER_BASES.signature.amount,
   priority: MATTER_BASES.priority.amount,
   executive: MATTER_BASES.executive.amount,
-  irish_passport_execution: MATTER_BASES.irish_passport_execution.amount,
+  international_passport_execution: MATTER_BASES.international_passport_execution.amount,
   additional_apostilled_document: DOCUMENT_FEES.additional_apostilled_document,
 };
 
@@ -36,7 +36,9 @@ export const PRICING_RULES = {
     signature: "Signature Matter",
     priority: "Priority Matter",
     executive: "Executive Matter",
-    irish_passport_execution: "Irish Passport Execution Matter",
+    international_passport_execution: "International Passport Execution Matter",
+    route_review_only: "Document Route Review",
+    apostille_only: "Apostille Coordination",
   },
   visibility: "public_hidden",
   firstDocumentIncluded: true,

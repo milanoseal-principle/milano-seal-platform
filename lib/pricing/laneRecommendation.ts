@@ -46,7 +46,8 @@ export function laneBase(lane: ExecutionLane): number | null {
     case "executive":
       return INTERNAL_BASES.executive;
     case "route_review_only":
-      return INTERNAL_BASES.route_review_min;
+      // Route review has no canonical base; the quote is issued after review.
+      return null;
     default:
       return null;
   }
