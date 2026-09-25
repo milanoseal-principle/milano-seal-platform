@@ -89,6 +89,7 @@ try {
   // path here is itself a visible, reviewable governance change.
   const APPROVED_PROTECTED_CHANGES = new Set([
     "supabase/migrations/081_document_structural_preflight.sql",
+    "supabase/migrations/082_professional_referral_engine.sql",
   ]);
   const touched = diff
     .split("\n")
