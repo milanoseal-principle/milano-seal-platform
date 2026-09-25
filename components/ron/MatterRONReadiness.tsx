@@ -4,6 +4,7 @@ import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel'
 import { NotarialActResolution } from '@/components/ron/NotarialActResolution';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
+import { evaluateExecutionDocumentReadiness } from '@/lib/intelligence/execution-brain/documentReadiness';
 
 function badge(ok: boolean) {
   return ok
@@ -41,7 +42,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const [{ data: files }, { data: sessions }] = await Promise.all([
     supabase
       .from('files')
-      .select('id, name, storage_path, mime_type, category, structural_status, structural_review_reason')
+      .select('id, name, filename, storage_path, mime_type, file_type, category, structural_status, structural_review_reason')
       .eq('deal_id', matter.id)
       .eq('is_internal', false)
       .order('created_at', { ascending: true }),
@@ -79,21 +80,10 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
     Boolean(notaryJurisdiction) &&
     Boolean(notarialAct) &&
     !notarialActNeedsReview;
-  const executionCandidates = (files ?? []).filter((file) => {
-    const mime = String(file.mime_type ?? "").toLowerCase();
-    return (
-      mime === "application/pdf" ||
-      mime === "application/msword" ||
-      mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
-  });
-  const documentPreflightReady =
-    executionCandidates.length > 0 &&
-    executionCandidates.every((file) => file.structural_status === "READY");
-  const unresolvedPreflight = executionCandidates.filter(
-    (file) => file.structural_status !== "READY",
-  );
-  const documentReady = documentPreflightReady;
+  const preflightReadiness = evaluateExecutionDocumentReadiness(files);
+  const executionCandidates = preflightReadiness.candidates;
+  const documentPreflightReady = preflightReadiness.ready;
+  const unresolvedPreflight = preflightReadiness.unresolved;
   const sessionExists = Boolean(activeSession && !['RON_EXPIRED', 'RON_COMPLETED'].includes(activeSession.milano_ron_status));
   const sessionNotExpired = Boolean(activeSession && activeSession.milano_ron_status !== 'RON_EXPIRED' && (!activeSession.expired_at || new Date(activeSession.expired_at) > new Date()));
   const sessionCompleted = Boolean(activeSession && ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE'].includes(activeSession.milano_ron_status));
@@ -182,8 +172,8 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
           <ul className="mt-2 space-y-1.5 text-xs text-white/65">
             {unresolvedPreflight.map((file) => (
               <li key={file.id}>
-                • {file.name ?? "Execution document"} — {file.structural_status ?? "NOT_RUN"}
-                {file.structural_review_reason ? `: ${file.structural_review_reason}` : ""}
+                • {file.label} — {file.status}
+                {file.reason ? `: ${file.reason}` : ""}
               </li>
             ))}
           </ul>

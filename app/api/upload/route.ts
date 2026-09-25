@@ -4,6 +4,7 @@ import {
   DOCUMENT_PREFLIGHT_MAX_BYTES,
   DOCUMENT_PREFLIGHT_SUPPORTED_MIME_TYPES,
   inspectDocumentPreflight,
+  preflightColumns,
 } from "@/lib/intelligence/execution-brain/documentPreflight";
 
 export async function POST(req: NextRequest) {
@@ -79,14 +80,11 @@ export async function POST(req: NextRequest) {
         file_type: file.type,
         file_size: file.size,
         uploaded_by: uploaded_by || "client",
-        sha256: preflight.sha256,
-        signature_detected: preflight.signatureDetected,
-        certification_signature_detected: preflight.certificationSignatureDetected,
-        encryption_detected: preflight.encryptionDetected,
-        structural_status: preflight.status,
-        structural_review_reason: preflight.reviewReason,
-        preflight_scanner_version: preflight.scannerVersion,
-        preflight_checked_at: preflight.checkedAt,
+        // Canonical name/mime columns read by RON readiness (migration 081).
+        name: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+        ...preflightColumns(preflight),
       })
       .select(
         "id, deal_id, filename, file_type, file_size, uploaded_by, created_at, structural_status, structural_review_reason, signature_detected, certification_signature_detected, encryption_detected, preflight_checked_at",

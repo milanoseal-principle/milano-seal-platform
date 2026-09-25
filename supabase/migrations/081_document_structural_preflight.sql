@@ -2,6 +2,20 @@
 -- Extends the canonical files table used by /api/upload.
 -- The original storage object remains immutable; preflight stores derived evidence only.
 
+-- Reconcile the two column dialects already used against public.files:
+-- /api/upload writes filename/file_type/file_size, while /api/intake/upload,
+-- RON readiness and BlueNotary session seeding use name/mime_type/size_bytes/
+-- category/is_internal. Both sets must exist for preflight readiness to see
+-- every execution document.
+ALTER TABLE public.files
+  ADD COLUMN IF NOT EXISTS name TEXT,
+  ADD COLUMN IF NOT EXISTS mime_type TEXT,
+  ADD COLUMN IF NOT EXISTS size_bytes BIGINT,
+  ADD COLUMN IF NOT EXISTS category TEXT,
+  ADD COLUMN IF NOT EXISTS is_internal BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS file_type TEXT,
+  ADD COLUMN IF NOT EXISTS file_size BIGINT;
+
 ALTER TABLE public.files
   ADD COLUMN IF NOT EXISTS sha256 TEXT,
   ADD COLUMN IF NOT EXISTS signature_detected BOOLEAN NOT NULL DEFAULT FALSE,

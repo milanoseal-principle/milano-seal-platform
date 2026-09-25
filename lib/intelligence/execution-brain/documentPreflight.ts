@@ -1,5 +1,5 @@
-import "server-only";
-
+// Server-side structural preflight. Uses node:crypto and pdf-lib only; no
+// client bundle imports this module.
 import { createHash } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 
@@ -185,5 +185,19 @@ export async function inspectDocumentPreflight(input: {
     structuralIntegrity: encrypted ? "BLOCKED" : "READY",
     scannerVersion: DOCUMENT_PREFLIGHT_SCANNER_VERSION,
     checkedAt,
+  };
+}
+
+/** Columns written for every scanned upload (both upload paths). */
+export function preflightColumns(result: DocumentPreflightResult) {
+  return {
+    sha256: result.sha256,
+    signature_detected: result.signatureDetected,
+    certification_signature_detected: result.certificationSignatureDetected,
+    encryption_detected: result.encryptionDetected,
+    structural_status: result.status,
+    structural_review_reason: result.reviewReason,
+    preflight_scanner_version: result.scannerVersion,
+    preflight_checked_at: result.checkedAt,
   };
 }

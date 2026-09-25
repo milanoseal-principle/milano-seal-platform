@@ -5,6 +5,7 @@ import { createBlueNotarySession } from '@/lib/bluenotary/client';
 import { assertCanCreateRONSession } from '@/lib/bluenotary/guards';
 import { buildSessionPayload, buildNotarizationId } from '@/lib/bluenotary/session';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
+import { evaluateExecutionDocumentReadiness } from '@/lib/intelligence/execution-brain/documentReadiness';
 
 type SignerInput = {
   first_name: string;
@@ -50,6 +51,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, duplicate: true, session: existingSession });
     }
     await assertCanCreateRONSession(supabase, matter_id, userId);
+
+    // BlueNotary fails closed unless every execution document passed structural
+    // preflight. A document that was never scanned is NOT_RUN and blocks.
+    const { data: preflightFiles, error: preflightError } = await supabase
+      .from('files')
+      .select('id, name, filename, mime_type, file_type, structural_status, structural_review_reason')
+      .eq('deal_id', matter_id)
+      .eq('is_internal', false);
+    const preflight = evaluateExecutionDocumentReadiness(preflightError ? [] : preflightFiles ?? []);
+    if (!preflight.ready) {
+      return NextResponse.json(
+        {
+          error:
+            preflight.candidates.length === 0
+              ? 'At least one execution document is required before creating a RON session.'
+              : 'Every execution document must pass structural preflight (READY) before creating a RON session.',
+          code: 'DOCUMENT_PREFLIGHT_NOT_READY',
+          unresolved: preflight.unresolved.map(({ id, status }) => ({ id, status })),
+        },
+        { status: 409 }
+      );
+    }
 
     const { data: matter, error: matterErr } = await supabase
       .from('deals')
