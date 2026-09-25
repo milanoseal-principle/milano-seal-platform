@@ -92,6 +92,7 @@ try {
     "supabase/migrations/082_professional_referral_engine.sql",
     "supabase/migrations/083_ron_provider_capability_evidence.sql",
     "supabase/migrations/084_state_authority_provenance.sql",
+    "supabase/migrations/085_authority_packet_composer.sql",
   ]);
   const touched = diff
     .split("\n")
