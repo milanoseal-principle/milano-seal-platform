@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { isOperatorOrFounder } from "@/lib/security/access-control";
 import {
   createShipment,
   buyLabelWithFailover,
@@ -34,6 +36,17 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Operator-only: label purchase spends money, moves custody and returns the
+  // internal label URL. Role comes only from service-controlled app_metadata.
+  const ssr = await createClient();
+  const {
+    data: { user },
+  } = await ssr.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isOperatorOrFounder(user.app_metadata?.role as string | undefined)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id: deal_id } = await params;
   const supabase = createAdminClient();
 
