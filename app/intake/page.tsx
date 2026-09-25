@@ -29,7 +29,21 @@ type IntakeSearchParams = {
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
+  pro?: string;
+  ref?: string;
 };
+
+// Governed professional handoff link fields. These are routing hints only; the
+// canonical intake verifies the signed reference against the profile
+// server-side before any attribution is written.
+function professionalReferralFromParams(params: IntakeSearchParams) {
+  const profileId = params.pro?.trim();
+  const reference = params.ref?.trim();
+  if (!profileId || !reference) return undefined;
+  if (!/^[0-9a-f-]{36}$/i.test(profileId)) return undefined;
+  if (!/^MSR-[SH]-[A-Z2-7]{16}-[A-Za-z0-9_-]{16}$/.test(reference)) return undefined;
+  return { profileId, reference };
+}
 
 function normalizeCourtesyCode(value?: string): string | undefined {
   const normalized = value?.trim().toUpperCase();
@@ -125,6 +139,7 @@ async function IntakeWizardWrapper({
         initialTier={validTier}
         prefill={prefill}
         courtesyCode={courtesyCode}
+        professionalReferral={professionalReferralFromParams(params)}
       />
     </>
   );

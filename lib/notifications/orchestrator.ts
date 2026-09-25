@@ -12,6 +12,7 @@
 // module owns the canonical event→copy mapping and the durable in-portal log entry.
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { queueProfessionalNotification } from "@/lib/professional/notifications";
 
 export type NotificationEvent =
   | "intake_received"
@@ -135,6 +136,8 @@ export async function notifyClient(
       console.error(`[notify] log write failed (${event}): ${error.message}`);
       return { ok: false };
     }
+    // Referring professional (if any) receives the governed counsel copy.
+    await queueProfessionalNotification(admin, dealId, event);
     return { ok: true };
   } catch (err) {
     console.error(

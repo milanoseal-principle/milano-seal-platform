@@ -26,6 +26,7 @@ export type MilanRole =
   | "alliance"
   | "alliance_partner"
   | "alliance_member"
+  | "professional"
   | "public";
 
 const FOUNDER_ROLES = new Set<MilanRole>(["founder_admin"]);

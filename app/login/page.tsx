@@ -28,6 +28,7 @@ function destForRole(role: string): string {
     return "/dashboard";
   }
   if (role === "client") return "/portal";
+  if (role === "professional") return "/professional/matters";
   if (role === "alliance" || role === "alliance_partner" || role === "alliance_member") {
     return "/alliance/dashboard";
   }
@@ -55,6 +56,9 @@ function isNextAllowedForRole(next: string | null, role: string): next is string
   if (destination === "/portal") return next.startsWith("/portal");
   if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
   if (destination === "/va/dashboard") return next.startsWith("/va");
+  if (destination === "/professional/matters") {
+    return next.startsWith("/professional/matters") || next.startsWith("/professional/account");
+  }
   return false;
 }
 

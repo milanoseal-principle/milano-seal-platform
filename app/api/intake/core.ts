@@ -25,6 +25,7 @@ import {
   checkAffidavitFederalConflict,
 } from "@/lib/intake/routing-normalizer";
 import { safeText } from "@/lib/security/app-guards";
+import { resolveProfessionalReferral } from "@/lib/professional/referral";
 import {
   executionTruthToLegacy,
   normalizeExecutionTruth,
@@ -324,9 +325,30 @@ export async function POST(req: NextRequest) {
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
     const legacyExecution = executionTruthToLegacy(executionTruth);
 
+    // Operator-entered and professional-referred Matters never auto-issue a
+    // Wise request while execution facts are unresolved: they enter operator
+    // review and receive a Matter-specific quote afterwards.
     const executionReviewRequired =
-      sourceHint === "admin" &&
+      (sourceHint === "admin" || sourceHint === "professional") &&
       (!executionValidation.valid || executionValidation.reviewRequired);
+
+    // Professional attribution is accepted only for a server-signed referral
+    // reference bound to an existing, non-inactive profile. Anything else
+    // fails closed to an unattributed Matter; it never blocks intake.
+    let professionalReferral: Awaited<ReturnType<typeof resolveProfessionalReferral>> = null;
+    try {
+      professionalReferral = await resolveProfessionalReferral(raw, async (profileId) => {
+        const { data: profile } = await createAdminClient()
+          .from("professional_profiles")
+          .select("id,status")
+          .eq("id", profileId)
+          .maybeSingle();
+        return (profile as { id: string; status: string } | null) ?? null;
+      });
+    } catch {
+      professionalReferral = null;
+    }
+    const referralFields = professionalReferral ?? {};
 
     if (executionReviewRequired) {
       const reviewReasons = Array.from(
@@ -415,6 +437,7 @@ export async function POST(req: NextRequest) {
           .filter(Boolean)
           .join("\n"),
         internal_notes: JSON.stringify(reviewMetadata),
+        ...referralFields,
       };
 
       const { data: reviewDeal, error: reviewError } = await supabase
@@ -912,6 +935,7 @@ export async function POST(req: NextRequest) {
       priority_tier,
       notes: safeNotes,
       internal_notes: safeInternalNotes,
+      ...referralFields,
     };
 
     let deal: { id?: string; deal_id?: string; [key: string]: unknown } | null = null;

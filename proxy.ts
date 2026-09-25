@@ -18,6 +18,11 @@ const PROTECTED_PREFIXES = [
   "/api/compliance/list",
   "/api/portal/me",
   "/api/va",
+  "/professional/matters",
+  "/professional/account",
+  "/api/professional/matters",
+  "/api/professional/account",
+  "/api/professional/handoff",
 ];
 
 const PUBLIC_AUTH_PATHS = new Set([
@@ -133,6 +138,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/va") && !isRouteAllowedForRole("/va/dashboard", role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (
+    (pathname.startsWith("/api/professional/matters") ||
+      pathname.startsWith("/api/professional/account") ||
+      pathname.startsWith("/api/professional/handoff")) &&
+    !isRouteAllowedForRole("/professional/matters", role)
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
