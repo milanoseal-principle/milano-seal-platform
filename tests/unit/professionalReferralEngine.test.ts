@@ -86,7 +86,7 @@ test("professional creates a Matter through canonical intake review, never a par
   const core = read("app/api/intake/core.ts");
   assert.match(core, /sourceHint === "admin" \|\| sourceHint === "professional"/);
 
-  const migration = read("supabase/migrations/081_professional_referral_engine.sql");
+  const migration = read("supabase/migrations/082_professional_referral_engine.sql");
   assert.doesNotMatch(migration, /create table[^;]*(professional_matter|lawyer_matter|referral_matter)/i);
   assert.match(migration, /add column if not exists professional_profile_id uuid/);
 });
@@ -200,7 +200,7 @@ test("an unauthorized professional cannot view another firm's Matter or operator
   assert.equal(isOperatorOrFounder("professional"), false);
   assert.match(read("app/api/deals/[id]/quote/route.ts"), /isOperatorOrFounder\(role\)/);
 
-  const migration = read("supabase/migrations/081_professional_referral_engine.sql");
+  const migration = read("supabase/migrations/082_professional_referral_engine.sql");
   assert.match(migration, /using \(user_id = auth\.uid\(\)\)/);
 });
 
