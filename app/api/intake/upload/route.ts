@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  inspectDocumentPreflight,
+  preflightColumns,
+} from "@/lib/intelligence/execution-brain/documentPreflight";
 
 export const runtime = "nodejs";
 
@@ -66,6 +70,13 @@ export async function POST(req: NextRequest) {
     const storagePath = `${resolvedDealId}/${crypto.randomUUID()}.${ext}`;
 
     const bytes = await file.arrayBuffer();
+    // Structural preflight inspects the bytes read-only; the stored original is
+    // exactly what was uploaded.
+    const preflight = await inspectDocumentPreflight({
+      bytes: new Uint8Array(bytes),
+      mimeType: file.type,
+      fileName: file.name,
+    });
     const { error: uploadErr } = await admin.storage
       .from("deal-documents")
       .upload(storagePath, bytes, { contentType: file.type });
@@ -80,11 +91,15 @@ export async function POST(req: NextRequest) {
       .insert({
         deal_id: resolvedDealId,
         name: file.name,
+        filename: file.name,
         storage_path: storagePath,
         mime_type: file.type,
+        file_type: file.type,
         size_bytes: file.size,
+        file_size: file.size,
         category: "client-upload",
         uploaded_by: "client",
+        ...preflightColumns(preflight),
       })
       .select()
       .single();

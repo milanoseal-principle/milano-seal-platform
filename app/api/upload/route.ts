@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const MAX_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+import {
+  DOCUMENT_PREFLIGHT_MAX_BYTES,
+  DOCUMENT_PREFLIGHT_SUPPORTED_MIME_TYPES,
+  inspectDocumentPreflight,
+  preflightColumns,
+} from "@/lib/intelligence/execution-brain/documentPreflight";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,13 +20,13 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!DOCUMENT_PREFLIGHT_SUPPORTED_MIME_TYPES.has(file.type)) {
       return NextResponse.json(
         { error: `File type not allowed: ${file.type}` },
         { status: 415 }
       );
     }
-    if (file.size > MAX_SIZE) {
+    if (file.size > DOCUMENT_PREFLIGHT_MAX_BYTES) {
       return NextResponse.json(
         { error: "File exceeds 20MB limit" },
         { status: 413 }
@@ -51,6 +46,11 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const preflight = await inspectDocumentPreflight({
+      bytes: buffer,
+      mimeType: file.type,
+      fileName: file.name,
+    });
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${deal_id}/${Date.now()}-${safeName}`;
 
@@ -80,12 +80,31 @@ export async function POST(req: NextRequest) {
         file_type: file.type,
         file_size: file.size,
         uploaded_by: uploaded_by || "client",
+        // Canonical name/mime columns read by RON readiness (migration 081).
+        name: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+        ...preflightColumns(preflight),
       })
-      .select("id, deal_id, filename, file_type, file_size, uploaded_by, created_at")
+      .select(
+        "id, deal_id, filename, file_type, file_size, uploaded_by, created_at, structural_status, structural_review_reason, signature_detected, certification_signature_detected, encryption_detected, preflight_checked_at",
+      )
       .single();
 
-    // STORAGE-VAULT-01: return signed URL but never storage_path or file_path
-    return NextResponse.json({ success: true, file: { ...fileRecord, url: fileUrl } });
+    // STORAGE-VAULT-01: return signed URL but never storage_path, file_path or SHA-256.
+    return NextResponse.json({
+      success: true,
+      file: {
+        ...fileRecord,
+        url: fileUrl,
+        preflight: {
+          status: preflight.status,
+          review_required: preflight.status === "REVIEW_REQUIRED",
+          blocked: preflight.status === "BLOCKED",
+          reason: preflight.reviewReason,
+        },
+      },
+    });
   } catch (err: unknown) {
     const { logger } = await import("@/lib/logger");
     logger.error("api/upload", "Upload failed", {
