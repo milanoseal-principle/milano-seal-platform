@@ -1,5 +1,5 @@
 import type { ExecutionLane, SmartPricingInput, SmartPricingResult } from "./types";
-import { INTERNAL_BASES, PRICING_RULES } from "./pricingDoctrine";
+import { PRICING_RULES } from "./pricingDoctrine";
 import { recommendLane, laneBase } from "./laneRecommendation";
 import { deriveComplexityFlags, scoreComplexity } from "./complexityScoring";
 import { deriveAddOns } from "./addOnRules";
@@ -23,8 +23,9 @@ export function buildSmartIntakePricingResult(input: SmartPricingInput): SmartPr
       suggestedLane: "route_review_only",
       publicLabel: PRICING_RULES.publicLabels.route_review_only,
       clientSafeSummary: "Quote issued after review",
-      operatorInternalRange: [INTERNAL_BASES.route_review_min, INTERNAL_BASES.route_review_max],
-      internalBase: INTERNAL_BASES.route_review_min,
+      // No canonical price exists for unresolved route review; never invent one.
+      operatorInternalRange: null,
+      internalBase: null,
       addOns: {},
       complexityScore: 10,
       complexityFlags: ["manual_review"],

@@ -142,7 +142,9 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
   const shipping = input.delivery === "international_courier" ? "international" : input.delivery === "domestic_courier" ? "standard_domestic" : "none";
   const canonical = calculatePrice({
     tier: lane,
-    document_count: Math.max(1, c.documentCount || 1),
+    // Each apostille attaches to its own document, so the document count can
+    // never be lower than the apostille quantity.
+    document_count: Math.max(1, c.documentCount || 1, isRequired(c.apostille) ? c.apostilleQuantity || 1 : 0),
     signer_count: Math.max(1, c.signerCount || 1),
     notarized_signature_count: isRequired(c.notarization) || isRequired(c.ron) ? Math.max(1, c.signerCount || 1) : 0,
     apostille_count: isRequired(c.apostille) ? Math.max(1, c.apostilleQuantity || 1) : 0,
@@ -158,7 +160,7 @@ export function priceSmartIntake(input: PricingTruthInput): MilanoPricingResult 
     ? { key:x.key, label:`${laneName} Execution Lane`, amount:x.amount+hidden }
     : { key:x.key, label:x.label, amount:x.amount });
   const addOns: MilanoPricingResult["authorizedAddOns"] = {};
-  const apostilleItem=canonical.breakdown.find((x)=>x.key==="apostille");
+  const apostilleItem=canonical.breakdown.find((x)=>x.key==="apostille"||x.key==="additional_apostille_documents"||x.key==="additional_apostilled_documents");
   const urgencyItem=canonical.breakdown.find((x)=>x.key==="urgency");
   const signerItem=canonical.breakdown.find((x)=>x.key==="additional_signers");
   if (apostilleItem) addOns.apostille=apostilleItem.amount;

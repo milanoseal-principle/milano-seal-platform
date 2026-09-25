@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { isQuoteMutationLocked } from "@/lib/pricing/quoteMutationLock";
 
 type MatterBase =
   | "authentication"
@@ -23,6 +24,53 @@ type QuoteLine = {
   category: string;
 };
 
+type NotarizationRequirement = "required" | "not_required" | "review_required";
+type AuthenticationRequirement =
+  | "apostille"
+  | "authentication_legalization"
+  | "not_required"
+  | "review_required";
+type NotarialAct =
+  | "acknowledgment"
+  | "jurat"
+  | "oath_affirmation"
+  | "signature_witnessing"
+  | "other"
+  | "review_required";
+type IssuingAuthority = "unknown" | "state" | "federal" | "county" | "court" | "private";
+
+const DOCUMENT_CATEGORIES = [
+  "state_public_record",
+  "federal_document",
+  "private_document",
+  "court_document",
+  "corporate_document",
+  "educational_record",
+  "vital_record",
+  "notarized_affidavit",
+  "power_of_attorney",
+  "certified_copy",
+  "fbi_background_check",
+  "consular_document",
+  "other_review_required",
+] as const;
+
+type RouteIntelligence = {
+  destination: string;
+  documentCategory: string;
+  routeType: string;
+  routeLabel: string;
+  authorityStatus: string;
+  reviewRequired: boolean;
+  reviewReasons: string[];
+  safetyNotice: string;
+  acceptanceNotice?: string;
+  issuingLane?: "state" | "federal" | "unresolved";
+  federalAgency?: string | null;
+  authorityPath?: string[];
+  advisories?: string[];
+};
+
 type QuotePreview = {
   matter_base: MatterBase | null;
   execution_method: ExecutionMethod;
@@ -38,12 +86,14 @@ type QuotePreview = {
   review_required: boolean;
   review_reasons?: string[];
   rationale?: string;
+  route_intelligence?: RouteIntelligence;
 };
 
 type OperatorQuoteBuilderProps = {
   matterId: string;
   paymentStatus?: string | null;
   amountPaid?: number | null;
+  paymentObservedAt?: string | null;
   initial?: {
     matterBase?: MatterBase | null;
     executionMethod?: ExecutionMethod | null;
@@ -57,6 +107,11 @@ type OperatorQuoteBuilderProps = {
     translation?: boolean | null;
     multiCountry?: boolean | null;
     discountCode?: string | null;
+    destinationCountry?: string | null;
+    originState?: string | null;
+    documentType?: string | null;
+    receivingAuthority?: string | null;
+    executionTruth?: Record<string, unknown> | null;
   };
   onCommitted?: () => void;
 };
@@ -85,7 +140,50 @@ type QuoteForm = {
   courier_cost: number;
   external_authority_fees: number;
   discount_code: string;
+  destination_country: string;
+  origin_state: string;
+  document_type: string;
+  document_category: "" | (typeof DOCUMENT_CATEGORIES)[number];
+  issuing_authority: IssuingAuthority;
+  issuing_agency: string;
+  receiving_authority: string;
+  notarization_requirement: NotarizationRequirement;
+  notarial_act: NotarialAct;
+  authentication_requirement: AuthenticationRequirement;
+  signer_location: string;
+  execution_location: string;
 };
+
+const pickString = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
+  typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+
+// Builder execution method is a pricing view of canonical execution truth.
+// It is read only from recorded truth or an explicit fact — never inferred.
+function initialExecutionMethod(
+  truth: Record<string, unknown> | null | undefined,
+  explicit: ExecutionMethod | null | undefined,
+): ExecutionMethod {
+  const method = typeof truth?.execution_method === "string" ? truth.execution_method : "";
+  if (method === "ron") return "ron";
+  if (method === "in_person" || method === "mobile") return "in_person";
+  if (method === "already_notarized" || method === "third_party_notary") return "none";
+  return explicit ?? "none";
+}
+
+// Wire format for the governed composer: canonical execution truth fields plus
+// pricing scope. RON identity checks are stated as provider requirements only;
+// their completion is never asserted here.
+function quoteRequestBody(form: QuoteForm) {
+  return {
+    ...form,
+    document_category: form.document_category || undefined,
+    execution_method: form.execution_method,
+    ron_kba_status: form.execution_method === "ron" ? "required" : undefined,
+    ron_credential_analysis_status: form.execution_method === "ron" ? "required" : undefined,
+    signer_location: form.signer_location || undefined,
+    execution_location: form.execution_location || undefined,
+  };
+}
 
 const money = (value: number | null | undefined) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value ?? 0));
@@ -99,12 +197,14 @@ export function OperatorQuoteBuilder({
   matterId,
   paymentStatus,
   amountPaid,
+  paymentObservedAt,
   initial,
   onCommitted,
 }: OperatorQuoteBuilderProps) {
+  const truth = initial?.executionTruth ?? null;
   const [form, setForm] = useState<QuoteForm>({
     matter_base: initial?.matterBase ?? "authentication",
-    execution_method: initial?.executionMethod ?? "none",
+    execution_method: initialExecutionMethod(truth, initial?.executionMethod),
     document_count: Math.max(1, Number(initial?.documentCount ?? 1)),
     apostille_count: Math.max(0, Number(initial?.apostilleCount ?? 0)),
     signer_count: Math.max(1, Number(initial?.signerCount ?? 1)),
@@ -137,17 +237,45 @@ export function OperatorQuoteBuilder({
     courier_cost: 0,
     external_authority_fees: 0,
     discount_code: initial?.discountCode ?? "",
+    destination_country: initial?.destinationCountry ?? "",
+    origin_state: initial?.originState ?? "",
+    document_type: initial?.documentType ?? "",
+    document_category: "",
+    issuing_authority: "unknown",
+    issuing_agency: "",
+    receiving_authority: initial?.receivingAuthority ?? "",
+    notarization_requirement: pickString(
+      truth?.notarization_requirement,
+      ["required", "not_required", "review_required"] as const,
+      "review_required",
+    ),
+    notarial_act: pickString(
+      truth?.notarial_act,
+      ["acknowledgment", "jurat", "oath_affirmation", "signature_witnessing", "other", "review_required"] as const,
+      "review_required",
+    ),
+    authentication_requirement: pickString(
+      truth?.authentication_requirement,
+      ["apostille", "authentication_legalization", "not_required", "review_required"] as const,
+      Number(initial?.apostilleCount ?? 0) > 0 ? "apostille" : "review_required",
+    ),
+    signer_location: typeof truth?.signer_location === "string" ? truth.signer_location : "",
+    execution_location: typeof truth?.execution_location === "string" ? truth.execution_location : "",
   });
   const [preview, setPreview] = useState<QuotePreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const locked = useMemo(() => {
-    const status = String(paymentStatus ?? "unpaid").toLowerCase();
-    return Number(amountPaid ?? 0) > 0 ||
-      ["pending", "observed_pending", "processing", "paid", "refunded"].includes(status);
-  }, [paymentStatus, amountPaid]);
+  const locked = useMemo(
+    () =>
+      isQuoteMutationLocked({
+        payment_status: paymentStatus,
+        amount_paid: amountPaid,
+        payment_observed_at: paymentObservedAt,
+      }),
+    [paymentStatus, amountPaid, paymentObservedAt],
+  );
 
   function patch<K extends keyof QuoteForm>(key: K, value: QuoteForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -160,7 +288,7 @@ export function OperatorQuoteBuilder({
       const response = await fetch("/api/pricing/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(quoteRequestBody(form)),
         signal,
       });
       const body = (await response.json()) as QuotePreview & { error?: string };
@@ -192,7 +320,7 @@ export function OperatorQuoteBuilder({
       const response = await fetch(`/api/deals/${matterId}/quote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(quoteRequestBody(form)),
       });
       const body = (await response.json()) as {
         ok?: boolean;
@@ -224,6 +352,16 @@ export function OperatorQuoteBuilder({
   }
 
   const reviewReasons = preview?.review_reasons ?? [];
+  const routeIntelligence = preview?.route_intelligence;
+  const routeUnresolved = !routeIntelligence || routeIntelligence.reviewRequired;
+  const approveDisabled =
+    locked ||
+    committing ||
+    loading ||
+    !preview ||
+    preview.review_required ||
+    routeUnresolved ||
+    preview.total == null;
 
   return (
     <Card className="border-gold bg-card overflow-hidden">
@@ -251,6 +389,105 @@ export function OperatorQuoteBuilder({
 
       <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.8fr)]">
         <div className="space-y-5">
+          <section className="rounded-md border border-[#C6A65B]/20 bg-[#C6A65B]/[0.03] p-4">
+            <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#C6A65B]">Destination & document route</div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <Field label="Destination country">
+                <Input value={form.destination_country} disabled={locked} onChange={(e) => patch("destination_country", e.target.value)} />
+              </Field>
+              <Field label="Document origin">
+                <Input value={form.origin_state} disabled={locked} onChange={(e) => patch("origin_state", e.target.value)} placeholder="Issuing / execution state" />
+              </Field>
+              <Field label="Document type">
+                <Input value={form.document_type} disabled={locked} onChange={(e) => patch("document_type", e.target.value)} />
+              </Field>
+              <Field label="Document category">
+                <Select
+                  value={form.document_category}
+                  disabled={locked}
+                  onChange={(value) => patch("document_category", value as QuoteForm["document_category"])}
+                  options={[
+                    ["", "Auto-classify (review if unclear)"],
+                    ...DOCUMENT_CATEGORIES.map((category) => [category, category.replaceAll("_", " ")] as [string, string]),
+                  ]}
+                />
+              </Field>
+              <Field label="Issuing authority">
+                <Select
+                  value={form.issuing_authority}
+                  disabled={locked}
+                  onChange={(value) => patch("issuing_authority", value as IssuingAuthority)}
+                  options={[
+                    ["unknown", "Review required"],
+                    ["state", "State"],
+                    ["federal", "Federal"],
+                    ["county", "County"],
+                    ["court", "Court"],
+                    ["private", "Private / executed document"],
+                  ]}
+                />
+              </Field>
+              <Field label="Federal issuing agency">
+                <Input value={form.issuing_agency} disabled={locked} onChange={(e) => patch("issuing_agency", e.target.value)} placeholder="FBI, USCIS, IRS… (federal only)" />
+              </Field>
+              <Field label="Receiving authority (if known)">
+                <Input value={form.receiving_authority} disabled={locked} onChange={(e) => patch("receiving_authority", e.target.value)} placeholder="Court, comune, bank, counsel…" />
+              </Field>
+            </div>
+          </section>
+
+          <section className="rounded-md border border-border/60 p-4">
+            <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Canonical execution truth</div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <Field label="Notarization">
+                <Select
+                  value={form.notarization_requirement}
+                  disabled={locked}
+                  onChange={(value) => patch("notarization_requirement", value as NotarizationRequirement)}
+                  options={[
+                    ["review_required", "Review required"],
+                    ["required", "Required"],
+                    ["not_required", "Not required"],
+                  ]}
+                />
+              </Field>
+              <Field label="Notarial act">
+                <Select
+                  value={form.notarial_act}
+                  disabled={locked || form.notarization_requirement !== "required"}
+                  onChange={(value) => patch("notarial_act", value as NotarialAct)}
+                  options={[
+                    ["review_required", "Review required"],
+                    ["acknowledgment", "Acknowledgment"],
+                    ["jurat", "Jurat"],
+                    ["oath_affirmation", "Oath / affirmation"],
+                    ["signature_witnessing", "Signature witnessing"],
+                    ["other", "Other (documented instruction)"],
+                  ]}
+                />
+              </Field>
+              <Field label="Authentication">
+                <Select
+                  value={form.authentication_requirement}
+                  disabled={locked}
+                  onChange={(value) => patch("authentication_requirement", value as AuthenticationRequirement)}
+                  options={[
+                    ["review_required", "Review required"],
+                    ["apostille", "Apostille"],
+                    ["authentication_legalization", "Authentication / legalization"],
+                    ["not_required", "Not required"],
+                  ]}
+                />
+              </Field>
+              <Field label="Signer location (RON)">
+                <Input value={form.signer_location} disabled={locked || form.execution_method !== "ron"} onChange={(e) => patch("signer_location", e.target.value)} />
+              </Field>
+              <Field label="Execution location (in person)">
+                <Input value={form.execution_location} disabled={locked || form.execution_method !== "in_person"} onChange={(e) => patch("execution_location", e.target.value)} />
+              </Field>
+            </div>
+          </section>
+
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Matter base">
               <select
@@ -339,11 +576,63 @@ export function OperatorQuoteBuilder({
         <aside className="space-y-4 xl:border-l xl:border-border/60 xl:pl-5">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Live canonical quote</div>
-            <Button size="sm" variant="ghost" onClick={() => void loadPreview()} disabled={loading}>
+            <Button size="sm" variant="ghost" onClick={() => void loadPreview()} disabled={loading || locked}>
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               Recalculate
             </Button>
           </div>
+
+          {locked && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/8 p-3 text-xs text-amber-200">
+              Payment activity has begun on this Matter. The quote is locked and cannot be mutated.
+            </div>
+          )}
+
+          {routeIntelligence && (
+            <section
+              aria-label="Route intelligence"
+              className={`rounded-md border p-3 ${routeIntelligence.reviewRequired ? "border-amber-500/30 bg-amber-500/[0.04]" : "border-[#C6A65B]/25 bg-[#C6A65B]/[0.03]"}`}
+            >
+              <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#C6A65B]">Route intelligence</div>
+              <div className="mt-1 font-serif text-base text-foreground">{routeIntelligence.routeLabel}</div>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+                <dt className="text-muted-foreground">Document category</dt>
+                <dd className="text-foreground">{routeIntelligence.documentCategory.replaceAll("_", " ")}</dd>
+                <dt className="text-muted-foreground">Authority status</dt>
+                <dd className="text-foreground">{routeIntelligence.authorityStatus.replaceAll("_", " ")}</dd>
+                {routeIntelligence.issuingLane && (
+                  <>
+                    <dt className="text-muted-foreground">Issuing lane</dt>
+                    <dd className="text-foreground">
+                      {routeIntelligence.issuingLane === "federal"
+                        ? `Federal authentication${routeIntelligence.federalAgency ? ` · ${routeIntelligence.federalAgency}` : ""}`
+                        : routeIntelligence.issuingLane === "state"
+                          ? "State authentication / apostille"
+                          : "Unresolved"}
+                    </dd>
+                  </>
+                )}
+              </dl>
+              {routeIntelligence.reviewReasons.length > 0 && (
+                <ul className="mt-2 space-y-1 text-[11px] leading-4 text-amber-300/90">
+                  {routeIntelligence.reviewReasons.map((reason) => (
+                    <li key={reason}>• {reason}</li>
+                  ))}
+                </ul>
+              )}
+              {routeIntelligence.advisories?.length ? (
+                <ul className="mt-2 space-y-1 text-[10px] leading-4 text-muted-foreground">
+                  {routeIntelligence.advisories.map((advisory) => (
+                    <li key={advisory}>{advisory}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{routeIntelligence.safetyNotice}</p>
+              <p className="mt-1 text-[10px] leading-4 text-[#F6F1E6]/70">
+                {routeIntelligence.acceptanceNotice ?? "Final acceptance remains subject to the receiving authority."}
+              </p>
+            </section>
+          )}
 
           {error && (
             <div className="rounded-md border border-red-500/25 bg-red-500/5 p-3 text-xs text-red-300">{error}</div>
@@ -387,10 +676,14 @@ export function OperatorQuoteBuilder({
               <Button
                 className="w-full"
                 onClick={commitQuote}
-                disabled={locked || committing || loading || preview.review_required || preview.total == null}
+                disabled={approveDisabled}
               >
                 <Calculator className="mr-2 h-4 w-4" />
-                {committing ? "Approving quote…" : "Approve Quote & Set Payment Gate"}
+                {committing
+                  ? "Approving quote…"
+                  : routeUnresolved
+                    ? "Route review required"
+                    : "Approve Quote & Set Payment Gate"}
               </Button>
             </>
           ) : (
@@ -414,6 +707,33 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+function Select({
+  value,
+  disabled,
+  onChange,
+  options,
+}: {
+  value: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  options: Array<[string, string]>;
+}) {
+  return (
+    <select
+      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map(([optionValue, label]) => (
+        <option key={optionValue || "auto"} value={optionValue}>
+          {label}
+        </option>
+      ))}
+    </select>
   );
 }
 

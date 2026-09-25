@@ -134,6 +134,8 @@ interface MilanoDeal {
   notes: string | null;
   is_paid_and_released: boolean | null;
   matter_status: string | null;
+  payment_observed_at?: string | null;
+  execution_truth?: Record<string, unknown> | null;
 }
 
 interface ActivityRow {
@@ -462,31 +464,6 @@ export default function DealDetail() {
           </div>
         </div>
 
-        <OperatorQuoteBuilder
-        matterId={deal.id}
-        paymentStatus={deal.payment_status}
-        amountPaid={deal.amount_paid}
-        initial={{
-          executionMethod:
-            deal.mobile
-              ? "in_person"
-              : deal.lane?.toLowerCase() === "authentication"
-                ? "none"
-                : "ron",
-          documentCount: deal.docs_count,
-          apostilleCount: deal.apostille_required ? deal.docs_count : 0,
-          signerCount: deal.signers,
-          witnesses: deal.witnesses,
-          witnessType: deal.witness_type,
-          miles: deal.miles,
-          urgency: deal.urgency,
-          translation: deal.translation,
-          multiCountry: deal.multi_country,
-          discountCode: deal.discount_code,
-        }}
-        onCommitted={refresh}
-      />
-
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <Card className="bg-card border-gold">
             <CardHeader>
@@ -749,6 +726,33 @@ export default function DealDetail() {
           </div>
         </div>
       </div>
+
+      <OperatorQuoteBuilder
+        matterId={deal.id}
+        paymentStatus={deal.payment_status}
+        amountPaid={deal.amount_paid}
+        paymentObservedAt={deal.payment_observed_at ?? null}
+        initial={{
+          // Execution method comes only from canonical execution truth or an
+          // explicit mobile fact; it is never inferred from lane or document.
+          executionMethod: deal.mobile ? "in_person" : null,
+          documentCount: deal.docs_count,
+          apostilleCount: deal.apostille_required ? deal.docs_count : 0,
+          signerCount: deal.signers,
+          witnesses: deal.witnesses,
+          witnessType: deal.witness_type,
+          miles: deal.miles,
+          urgency: deal.urgency,
+          translation: deal.translation,
+          multiCountry: deal.multi_country,
+          discountCode: deal.discount_code,
+          destinationCountry: deal.destination_country ?? null,
+          originState: deal.origin_state ?? null,
+          documentType: deal.document_type ?? null,
+          executionTruth: deal.execution_truth ?? null,
+        }}
+        onCommitted={refresh}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">

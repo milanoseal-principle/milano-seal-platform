@@ -17,10 +17,14 @@ const intakeCore = fs.readFileSync(
   "utf8",
 );
 const intake = `${intakeRoute}\n${intakeCore}`;
-const quote = fs.readFileSync(
-  path.join(root, "app/api/pricing/quote/route.ts"),
-  "utf8",
-);
+// The live quote route delegates to the single governed composer shared with
+// the server-side Matter quote commit.
+const quote = [
+  "app/api/pricing/quote/route.ts",
+  "lib/pricing/governedQuotePreview.ts",
+]
+  .map((file) => fs.readFileSync(path.join(root, file), "utf8"))
+  .join("\n");
 const migration = fs.readFileSync(
   path.join(root, "supabase/migrations/050_live_intake_execution_truth_reconciliation.sql"),
   "utf8",

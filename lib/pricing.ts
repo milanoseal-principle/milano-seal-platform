@@ -518,7 +518,7 @@ export function determineLaneAndPrice(data: PricingData): PricingResult {
   }
 
   let lane: ExecutionLane = "Signature";
-  let base = TIERS.signature.base;
+  let base: number = TIERS.signature.base;
   if ((data.signers || 1) > 1 || data.translation) {
     lane = "Priority";
     base = TIERS.priority.base;

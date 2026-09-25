@@ -137,7 +137,7 @@ export function composeCanonicalPrivateQuote(
   const signatureTrackingCount = count(input.additionalNotarizedSignatureTrackingCount, 0);
   const jurisdictionCount = Math.max(1, count(input.jurisdictionCount, 1));
   const mobileMiles = Math.max(0, Number(input.mobileMiles ?? 0) || 0);
-  const timing = [...new Set(input.timing ?? ["standard"])];
+  const timing = [...new Set<TimingMode>(input.timing ?? ["standard"])];
   const reviewOnlyItems = [...new Set(input.reviewOnlyItems ?? [])].filter((code) =>
     QUOTE_REVIEW_ONLY.includes(code),
   );
