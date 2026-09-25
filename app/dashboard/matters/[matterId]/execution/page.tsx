@@ -4,6 +4,7 @@ import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { DashboardPageHeader } from "@/components/dashboard/system/DashboardPageHeader";
 import { DynamicSessionPlaybook } from "@/components/dashboard/execution/DynamicSessionPlaybook";
 import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
+import { MatterExecutionIntelligencePanel } from "@/components/dashboard/execution/MatterExecutionIntelligencePanel";
 import { PaperOutChecklistPanel } from "@/components/ron/PaperOutChecklistPanel";
 import { AuthorityPacketPanel } from "@/components/dashboard/execution/AuthorityPacketPanel";
 import { AuthorityLogisticsPanel } from "@/components/dashboard/execution/AuthorityLogisticsPanel";
@@ -26,6 +27,7 @@ export default async function MatterExecutionPage({
         title="Execution Readiness"
         description="Matter-backed operator readiness only. Unknown execution facts remain blocked until confirmed; scheduling authority, RON readiness, custody, QA, and release truth remain independently governed."
       />
+      <MatterExecutionIntelligencePanel matterId={matterId} />
       <DynamicSessionPlaybook matterId={matterId} />
       <MatterRONReadiness matterId={matterId} />
       <PaperOutChecklistPanel matterId={matterId} />
