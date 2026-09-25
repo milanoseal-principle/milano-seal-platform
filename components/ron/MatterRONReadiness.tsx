@@ -218,6 +218,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
             ['Authority accepts RON', ronPosture.receivingAuthorityRonAcceptance.replaceAll('_', ' ')],
             ['Wet-ink requirement', ronPosture.wetInkRequirement.replaceAll('_', ' ')],
             ['Original requirement', ronPosture.originalRequirement.replaceAll('_', ' ')],
+            ['RON status', capability.status.replaceAll('_', ' ').toLowerCase()],
           ] as const).map(([label, value]) => (
             <div key={label} className="flex justify-between gap-3 border-b border-white/[0.05] pb-1.5">
               <dt className="text-white/40">{label}</dt>

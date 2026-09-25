@@ -38,7 +38,8 @@ export async function AuthorityAdvisoryPanel({ matterId }: { matterId: string })
   });
 
   const rows: Array<[string, string]> = [
-    ['Processing estimate', advisory.estimatedDays === null ? 'Unavailable' : `${advisory.estimatedDays} days`],
+    ['Current advisory', advisory.status.replace('_', ' ').toLowerCase()],
+    ['Estimated days', advisory.estimatedDays === null ? 'Unavailable' : `${advisory.estimatedDays} days`],
     ['Official source', advisory.officialSource ?? 'None recorded'],
     ['Observed date', day(advisory.observedProcessingDate ?? advisory.observedAt)],
     ['Last verified', day(advisory.lastVerified)],
@@ -57,7 +58,7 @@ export async function AuthorityAdvisoryPanel({ matterId }: { matterId: string })
           {advisory.status.replace('_', ' ')}
         </span>
       </div>
-      <p className="mt-2 text-xs text-amber-200/80">{ESTIMATE_NOTICE}</p>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-amber-200/80">{ESTIMATE_NOTICE}</p>
       <dl className="mt-4 space-y-2 text-xs">
         {rows.map(([name, value]) => (
           <div key={name} className="flex flex-col gap-1 border-b border-white/[0.05] pb-2 sm:flex-row sm:justify-between sm:gap-4">

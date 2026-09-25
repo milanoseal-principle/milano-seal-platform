@@ -2,13 +2,19 @@
 // canonical records and recomputes every section; nothing is persisted.
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { projectQuoteRouteIntelligence } from "@/lib/pricing/destinationDocumentQuoteIntelligence";
+import type { QuoteRouteIntelligence } from "@/lib/pricing/destinationDocumentQuoteIntelligence";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { activeMatterExceptions, type CustodyEvidenceRow } from "./authorityPacket";
 import { loadLogisticsContext } from "./authorityLogisticsServer";
 import { evaluateProcessingAdvisory, type ProcessingObservation } from "./processingAdvisory";
 import { documentPreflightPosture, evaluateRonProviderCapability, readRonAuthorityPosture } from "./ronProviderCapabilities";
-import { STATE_AUTHORITY_FIELDS, evaluateStateAuthority, type StateAuthorityRecord } from "./stateAuthorityProvenance";
+import { loadMatterRoute } from "./matterRouteServer";
+import {
+  STATE_AUTHORITY_FIELDS,
+  evaluateStateAuthority,
+  type StateAuthorityEvaluation,
+  type StateAuthorityRecord,
+} from "./stateAuthorityProvenance";
 import { buildMatterExecutionBrief, composeMatterExecutionIntelligence, type MatterExecutionIntelligence } from "./executionBrain";
 
 const MATTER_FIELDS =
@@ -17,13 +23,18 @@ const MATTER_FIELDS =
 export async function loadMatterExecutionIntelligence(
   matterRef: string,
   now: Date = new Date(),
-): Promise<{ intelligence: MatterExecutionIntelligence; brief: string } | null> {
+): Promise<{
+  intelligence: MatterExecutionIntelligence;
+  brief: string;
+  route: QuoteRouteIntelligence;
+  authority: { record: StateAuthorityRecord; evaluation: StateAuthorityEvaluation } | null;
+} | null> {
   const logistics = await loadLogisticsContext(matterRef);
   if (!logistics) return null;
   const supabase = createAdminClient();
   const matterId = logistics.matter.id;
 
-  const [{ data: matter }, { data: files }, { data: sessions }, { data: custody }, { data: routeEvidence }] = await Promise.all([
+  const [{ data: matter }, { data: files }, { data: sessions }, { data: custody }] = await Promise.all([
     supabase.from("deals").select(MATTER_FIELDS).eq("id", matterId).single(),
     supabase
       .from("files")
@@ -37,29 +48,13 @@ export async function loadMatterExecutionIntelligence(
       .order("created_at", { ascending: false })
       .limit(1),
     supabase.from("custody_ledger").select("event, created_at").eq("deal_id", matterId),
-    supabase
-      .from("matter_evidence_ledger")
-      .select("new_value, occurred_at")
-      .eq("matter_id", matterId)
-      .eq("domain", "pricing")
-      .order("occurred_at", { ascending: false })
-      .limit(1),
   ]);
   if (!matter) return null;
 
   const truth = (matter.execution_truth ?? {}) as Record<string, unknown>;
   const posture = readRonAuthorityPosture(truth);
   const preflight = documentPreflightPosture(files ?? []);
-  const priorRoute = ((routeEvidence?.[0]?.new_value ?? {}) as Record<string, unknown>).route_intelligence as Record<string, unknown> | undefined;
-  const route = projectQuoteRouteIntelligence({
-    destination_country: matter.destination_country,
-    origin_state: matter.origin_state,
-    document_type: matter.document_type,
-    document_category: priorRoute?.document_category_source === "operator" ? priorRoute.document_category : undefined,
-    issuing_authority: priorRoute?.issuing_authority,
-    issuing_agency: priorRoute?.federal_agency,
-    receiving_authority: posture.receivingAuthority ?? priorRoute?.receiving_authority,
-  });
+  const route = await loadMatterRoute(supabase, matter, posture.receivingAuthority);
 
   const notarialAct = typeof truth.notarial_act === "string" && !["review_required", "unknown"].includes(truth.notarial_act) ? truth.notarial_act : null;
   const ronCapability =
@@ -82,7 +77,8 @@ export async function loadMatterExecutionIntelligence(
 
   const packet = logistics.packet;
   let authorityName: string | null = null;
-  let authorityEvaluation = null;
+  let authorityEvaluation: StateAuthorityEvaluation | null = null;
+  let authorityRecord: StateAuthorityRecord | null = null;
   let advisory = null;
   if (packet?.authorityId) {
     const [{ data: authority }, { data: observations }, { count }] = await Promise.all([
@@ -97,6 +93,7 @@ export async function loadMatterExecutionIntelligence(
     ]);
     if (authority) {
       const record = authority as unknown as StateAuthorityRecord;
+      authorityRecord = record;
       authorityName = record.authority_name;
       authorityEvaluation = evaluateStateAuthority(record, now);
     }
@@ -131,5 +128,10 @@ export async function loadMatterExecutionIntelligence(
     destinationCountry: matter.destination_country ?? null,
     documentOrigin: route.documentCategorySource === "operator" ? route.documentCategory : null,
   });
-  return { intelligence, brief };
+  return {
+    intelligence,
+    brief,
+    route,
+    authority: authorityRecord && authorityEvaluation ? { record: authorityRecord, evaluation: authorityEvaluation } : null,
+  };
 }

@@ -169,6 +169,8 @@ export interface AuthorityPacketInput {
   authority: StateAuthorityRecord | null;
   assets: readonly AuthoritySourceAsset[] | null | undefined;
   custodyEvents?: readonly CustodyEvidenceRow[] | null;
+  /** Issuing lane from route intelligence; a federal document never takes a state apostille route. */
+  issuingLane?: "state" | "federal" | "unresolved" | null;
 }
 
 export interface AuthorityPacketProjection {
@@ -432,7 +434,16 @@ export function composeAuthorityPacket(input: AuthorityPacketInput, now: Date = 
   // ── Authentication route consistency (Hague status never proves acceptance) ──
   const destination = str(input.destinationCountry);
   const hague = destination ? getHagueCountryProfile(destination)?.hagueStatus ?? "unknown" : "unknown";
-  if (!routeType || !destination) {
+  if (routeType?.startsWith("florida_dos") && input.issuingLane === "federal") {
+    add(
+      "authentication_route_consistent",
+      "Authentication route consistent",
+      "BLOCKED",
+      "Federal document: a state apostille route is not permitted (U.S. Department of State authentication).",
+    );
+  } else if (input.issuingLane === "unresolved") {
+    add("authentication_route_consistent", "Authentication route consistent", "REVIEW_REQUIRED", "Issuing authority lane (state / federal) is unresolved.");
+  } else if (!routeType || !destination) {
     add("authentication_route_consistent", "Authentication route consistent", "REVIEW_REQUIRED", "Route or destination is unresolved.");
   } else if (
     (routeType === "florida_dos_apostille" && hague === "hague_contracting_party") ||
