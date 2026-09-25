@@ -6,6 +6,7 @@ import { DynamicSessionPlaybook } from "@/components/dashboard/execution/Dynamic
 import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
 import { PaperOutChecklistPanel } from "@/components/ron/PaperOutChecklistPanel";
 import { AuthorityPacketPanel } from "@/components/dashboard/execution/AuthorityPacketPanel";
+import { AuthorityLogisticsPanel } from "@/components/dashboard/execution/AuthorityLogisticsPanel";
 
 export const metadata = { title: "Execution Readiness — The Milano Seal™", robots: { index: false } };
 
@@ -28,6 +29,7 @@ export default async function MatterExecutionPage({
       <MatterRONReadiness matterId={matterId} />
       <PaperOutChecklistPanel matterId={matterId} />
       <AuthorityPacketPanel matterId={matterId} />
+      <AuthorityLogisticsPanel matterId={matterId} />
     </div>
   );
 }

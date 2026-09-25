@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mapShippoTrackingStatus } from "@/lib/shippo/status";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getMatterShipmentLegs,
+  publicShipmentLegProjection,
+} from "@/lib/intelligence/execution-brain/authorityLogistics";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +33,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // Matter-linked shipment legs, client-safe projection only (after the
+    // portal access check above). Tracking numbers are shown for final legs.
+    const legs = (await getMatterShipmentLegs(createAdminClient(), matter.id).catch(() => [])).map((leg) =>
+      publicShipmentLegProjection(leg, {
+        trackingApproved: leg.leg_type === "final_to_client" || leg.leg_type === "final_international",
+      }),
+    );
+
     const { data: shipment } = await supabase
       .from("shippo_shipments")
       .select("carrier, tracking_number, tracking_url, courier_status, label_created_at")
@@ -44,6 +57,7 @@ export async function GET(req: NextRequest) {
         courier_status: null,
         last_update: null,
         events: [],
+        legs,
         empty_message: "Tracking details will appear once courier activity is created.",
       });
     }
@@ -72,6 +86,7 @@ export async function GET(req: NextRequest) {
       courier_status: shipment.courier_status,
       last_update: lastUpdate,
       events: sanitizedEvents,
+      legs,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
