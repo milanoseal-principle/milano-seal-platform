@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
-
-export default function FAQPage() {
-  redirect("/#faq");
-}
+import type { Metadata } from "next";
+import { PublicShell } from "@/components/layout/PublicShell";
+import { FAQHub } from "@/components/content/FAQHub";
+import { FAQ_ENTRIES } from "@/lib/content/faq";
+export const metadata: Metadata = { title: "FAQ | The Milano Seal™", description: "Governed answers about remote online notarization, apostille routing, international document execution, custody, and secure intake.", alternates: { canonical: "https://www.themilanoseal.com/faq" }, openGraph: { title: "FAQ | The Milano Seal™", description: "Governed answers about international document execution.", url: "https://www.themilanoseal.com/faq" } };
+export default function FAQPage() { const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ_ENTRIES.filter((entry) => entry.reviewStatus === "APPROVED").map((entry) => ({ "@type": "Question", name: entry.question, acceptedAnswer: { "@type": "Answer", text: entry.answer } })) }; return <PublicShell><main className="min-h-screen bg-[#0A0A0A] px-6 pb-20 pt-36 text-white"><div className="mx-auto max-w-5xl"><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#C6A65B]">The Milano Seal™ · Authority answers</p><h1 className="mt-5 max-w-3xl font-serif text-4xl md:text-6xl">Questions before an international Matter begins.</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-white/60">Clear education without turning public content into compliance truth. The receiving authority remains the final decision-maker.</p><div className="mt-12"><FAQHub /></div></div><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /></main></PublicShell>; }

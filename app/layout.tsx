@@ -1,8 +1,11 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { MilanoExecutionCopilot } from "@/components/assistant/MilanoExecutionCopilot";
+import { LanguageSuggestion } from "@/components/i18n/LanguageSuggestion";
+import { normalizeLocale } from "@/lib/i18n/config";
 import { NavigationLoader } from "@/components/NavigationLoader";
 import { CinematicPageShell } from "@/components/motion/CinematicPageShell";
 import { SeoAttributionCapture } from "@/components/attribution/SeoAttributionCapture";
@@ -122,13 +125,14 @@ const jsonLd = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = normalizeLocale((await cookies()).get("tms_locale")?.value) ?? "en";
   return (
-    <html lang="en">
+    <html lang={locale === "pt-BR" ? "pt-BR" : locale}>
       <body className={`${fontVariables} antialiased`}>
         <a
           href="#milano-main"
@@ -142,6 +146,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <CinematicPageShell>{children}</CinematicPageShell>
+        <LanguageSuggestion />
         <Toaster
           theme="dark"
           position="bottom-right"

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { CredentialTicker } from "@/components/landing/credential-ticker";
+import { GlobalLanguageSelector } from "@/components/i18n/GlobalLanguageSelector";
 import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
@@ -145,6 +146,7 @@ export function Header() {
               </nav>
 
               <div className="hidden flex-shrink-0 items-center gap-3 xl:flex">
+                <GlobalLanguageSelector />
                 <Link
                   href="/login"
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--ms-gold)]/60 px-5 py-2.5 text-sm font-medium text-[var(--ms-gold)] transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
@@ -207,6 +209,7 @@ export function Header() {
                   </Link>
                 );
               })}
+              <div className="mb-2 flex justify-end"><GlobalLanguageSelector /></div>
               <Link
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}

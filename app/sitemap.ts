@@ -28,6 +28,11 @@ const corePages: SitemapEntry[] = [
 const servicePages: SitemapEntry[] = [
   { path: "/services/apostille", priority: 0.9, changeFrequency: "monthly" },
   { path: "/services/remote-online-notary", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/remote-online-notarization", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/services/embassy-consular-legalization", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/international-affidavit-execution", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/services/international-passport-document-execution", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/services/power-of-attorney-for-use-abroad", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/mobile-notary", priority: 0.8, changeFrequency: "monthly" },
   { path: "/services/florida-apostille-courier", priority: 0.8, changeFrequency: "monthly" },
   { path: "/services/immigration-documents", priority: 0.8, changeFrequency: "monthly" },
@@ -45,6 +50,9 @@ const servicePages: SitemapEntry[] = [
   { path: "/services/affidavits", priority: 0.8, changeFrequency: "monthly" },
   { path: "/services/vital-records", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/corporate-documents", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/trust", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/faq", priority: 0.85, changeFrequency: "monthly" },
+  { path: "/apostille/us", priority: 0.85, changeFrequency: "monthly" },
   { path: "/services/courier-tracking", priority: 0.8, changeFrequency: "monthly" },
 ];
 
