@@ -7,6 +7,7 @@ import { MatterRONReadiness } from "@/components/ron/MatterRONReadiness";
 import { PaperOutChecklistPanel } from "@/components/ron/PaperOutChecklistPanel";
 import { AuthorityPacketPanel } from "@/components/dashboard/execution/AuthorityPacketPanel";
 import { AuthorityLogisticsPanel } from "@/components/dashboard/execution/AuthorityLogisticsPanel";
+import { AuthorityAdvisoryPanel } from "@/components/dashboard/execution/AuthorityAdvisoryPanel";
 
 export const metadata = { title: "Execution Readiness — The Milano Seal™", robots: { index: false } };
 
@@ -30,6 +31,7 @@ export default async function MatterExecutionPage({
       <PaperOutChecklistPanel matterId={matterId} />
       <AuthorityPacketPanel matterId={matterId} />
       <AuthorityLogisticsPanel matterId={matterId} />
+      <AuthorityAdvisoryPanel matterId={matterId} />
     </div>
   );
 }
