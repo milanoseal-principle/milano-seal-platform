@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { StateAuthorityProvenanceSection } from "@/components/dashboard/StateAuthorityProvenanceSection";
+import { AuthorityReviewQueue } from "@/components/dashboard/AuthorityReviewQueue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   operationalDestinationCountry,
@@ -305,6 +306,7 @@ export default async function AuthorityVerifyPage({ searchParams }: PageProps) {
         </section>
       )}
       <StateAuthorityProvenanceSection />
+      <AuthorityReviewQueue />
     </div>
   );
 }

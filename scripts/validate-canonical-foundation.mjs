@@ -94,6 +94,7 @@ try {
     "supabase/migrations/084_state_authority_provenance.sql",
     "supabase/migrations/085_authority_packet_composer.sql",
     "supabase/migrations/086_matter_shipment_legs.sql",
+    "supabase/migrations/087_authority_processing_intelligence.sql",
     // Step 6: additive shipment-leg reconciliation after the existing
     // HMAC-verified courier path (HMAC verification unchanged).
     "app/api/courier/webhook/route.ts",

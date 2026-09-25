@@ -24,6 +24,10 @@
       "schedule": "30 5 * * *"
     },
     {
+      "path": "/api/cron/authority-monitor",
+      "schedule": "45 5 * * *"
+    },
+    {
       "path": "/api/cron/seo-search-console",
       "schedule": "0 6 * * *"
     }
