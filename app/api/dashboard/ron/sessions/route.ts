@@ -5,7 +5,12 @@ import { createBlueNotarySession } from '@/lib/bluenotary/client';
 import { assertCanCreateRONSession } from '@/lib/bluenotary/guards';
 import { buildSessionPayload, buildNotarizationId } from '@/lib/bluenotary/session';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
-import { evaluateExecutionDocumentReadiness } from '@/lib/intelligence/execution-brain/documentReadiness';
+import {
+  documentPreflightPosture,
+  evaluateRonProviderCapability,
+  readRonAuthorityPosture,
+  ronCapabilityEvidenceColumns,
+} from '@/lib/intelligence/execution-brain/ronProviderCapabilities';
 
 type SignerInput = {
   first_name: string;
@@ -52,28 +57,6 @@ export async function POST(request: NextRequest) {
     }
     await assertCanCreateRONSession(supabase, matter_id, userId);
 
-    // BlueNotary fails closed unless every execution document passed structural
-    // preflight. A document that was never scanned is NOT_RUN and blocks.
-    const { data: preflightFiles, error: preflightError } = await supabase
-      .from('files')
-      .select('id, name, filename, mime_type, file_type, structural_status, structural_review_reason')
-      .eq('deal_id', matter_id)
-      .eq('is_internal', false);
-    const preflight = evaluateExecutionDocumentReadiness(preflightError ? [] : preflightFiles ?? []);
-    if (!preflight.ready) {
-      return NextResponse.json(
-        {
-          error:
-            preflight.candidates.length === 0
-              ? 'At least one execution document is required before creating a RON session.'
-              : 'Every execution document must pass structural preflight (READY) before creating a RON session.',
-          code: 'DOCUMENT_PREFLIGHT_NOT_READY',
-          unresolved: preflight.unresolved.map(({ id, status }) => ({ id, status })),
-        },
-        { status: 409 }
-      );
-    }
-
     const { data: matter, error: matterErr } = await supabase
       .from('deals')
       .select('id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth')
@@ -84,6 +67,49 @@ export async function POST(request: NextRequest) {
 
     const executionTruth = (matter.execution_truth ?? {}) as Record<string, unknown>;
     const signerState = String(executionTruth.signer_location ?? matter.origin_state ?? '').trim();
+
+    // Server-side RON capability gate, recomputed from canonical facts only
+    // (execution truth, persisted document preflight, provider configuration).
+    // Browser-supplied capability data is never read. The payment/scheduling
+    // gate was enforced by assertCanCreateRONSession above.
+    const { data: preflightFiles, error: preflightError } = await supabase
+      .from('files')
+      .select('id, name, filename, mime_type, file_type, structural_status, structural_review_reason')
+      .eq('deal_id', matter_id)
+      .eq('is_internal', false);
+    const posture = readRonAuthorityPosture(executionTruth);
+    const preflightPosture = documentPreflightPosture(preflightError ? [] : preflightFiles ?? []);
+    const requestedMethods = Array.from(
+      new Set((signers ?? []).map((signer) => signer.authentication_type).filter(Boolean) as string[])
+    );
+    const capabilities = (requestedMethods.length ? requestedMethods : [null]).map((method) =>
+      evaluateRonProviderCapability({
+        matterId: matter_id,
+        provider: 'bluenotary',
+        signerLocation: typeof executionTruth.signer_location === 'string' ? executionTruth.signer_location : null,
+        documentType: matter.document_type ?? null,
+        notarialAct: typeof executionTruth.notarial_act === 'string' ? executionTruth.notarial_act : null,
+        posture,
+        requestedIdentityMethod: method,
+        documentPreflight: preflightPosture,
+        schedulingAuthorized: true,
+      })
+    );
+    const capability = capabilities.find((result) => result.status !== 'RON_READY') ?? capabilities[0];
+    if (capability.status !== 'RON_READY') {
+      return NextResponse.json(
+        {
+          error:
+            capability.status === 'RON_BLOCKED'
+              ? 'RON is blocked for this Matter.'
+              : 'RON requires operator review before a provider session can be created.',
+          code: capability.status,
+          blockers: capability.blockers,
+          review_reasons: capability.reviewReasons,
+        },
+        { status: 409 }
+      );
+    }
 
     const signerList: SignerInput[] = signers ?? [
       {
@@ -124,6 +150,7 @@ export async function POST(request: NextRequest) {
         payment_gate_status: 'UNLOCKED',
         created_by: userId,
         raw_session: {},
+        ...ronCapabilityEvidenceColumns(capability),
       })
       .select('id, matter_id, notarization_id, bn_session_id, milano_ron_status, created_at')
       .single();

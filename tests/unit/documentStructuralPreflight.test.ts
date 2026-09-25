@@ -174,9 +174,12 @@ test("both upload paths persist preflight evidence and BlueNotary fails closed s
     assert.match(source, /\.\.\.preflightColumns\(preflight\)/, route);
     assert.match(source, /mime_type: file\.type/, route);
   }
+  // Preflight is enforced server-side through the RON capability gate, which
+  // derives its document posture from persisted preflight evidence.
   const guard = read("app/api/dashboard/ron/sessions/route.ts");
-  assert.match(guard, /evaluateExecutionDocumentReadiness\(/);
-  assert.match(guard, /DOCUMENT_PREFLIGHT_NOT_READY/);
+  assert.match(guard, /documentPreflight: preflightPosture/);
+  assert.match(guard, /documentPreflightPosture\(/);
+  assert.match(guard, /capability\.status !== 'RON_READY'/);
   const migration = read("supabase/migrations/081_document_structural_preflight.sql");
   for (const column of ["name", "mime_type", "size_bytes", "category", "is_internal", "file_type", "file_size", "sha256", "structural_status"]) {
     assert.match(migration, new RegExp(`ADD COLUMN IF NOT EXISTS ${column}\\b`), column);

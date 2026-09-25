@@ -5,6 +5,12 @@ import { NotarialActResolution } from '@/components/ron/NotarialActResolution';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 import { evaluateExecutionDocumentReadiness } from '@/lib/intelligence/execution-brain/documentReadiness';
+import {
+  documentPreflightPosture,
+  evaluateRonProviderCapability,
+  readRonAuthorityPosture,
+} from '@/lib/intelligence/execution-brain/ronProviderCapabilities';
+import { RonAuthorityPostureForm } from '@/components/ron/RonAuthorityPostureForm';
 
 function badge(ok: boolean) {
   return ok
@@ -48,7 +54,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       .order('created_at', { ascending: true }),
     supabase
       .from('ron_sessions')
-      .select('id, notarization_id, bn_session_id, milano_ron_status, payment_gate_status, session_timing, expired_at, completed_at, created_at')
+      .select('id, notarization_id, bn_session_id, milano_ron_status, payment_gate_status, session_timing, expired_at, completed_at, created_at, identity_status, kba_status, biometric_status')
       .eq('matter_id', matter.id)
       .order('created_at', { ascending: false })
       .limit(1),
@@ -100,11 +106,32 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
     !notaryJurisdiction ? 'Notary jurisdiction must be confirmed.' : null,
   ].filter(Boolean) as string[];
 
+  // Same deterministic capability evaluation the server runs before any
+  // BlueNotary call; the browser view is informational, never authoritative.
+  const ronPosture = readRonAuthorityPosture(truth);
+  const capability = evaluateRonProviderCapability({
+    matterId: matter.id,
+    provider: 'bluenotary',
+    providerSession: activeSession,
+    signerLocation: signerState || null,
+    documentType: matter.document_type ?? null,
+    notarialAct: notarialActNeedsReview ? null : notarialAct,
+    posture: ronPosture,
+    documentPreflight: documentPreflightPosture(files),
+    schedulingAuthorized,
+  });
+  if (capability.status !== 'RON_READY') {
+    for (const reason of [...capability.blockers, ...capability.reviewReasons]) {
+      if (!blockers.includes(reason)) blockers.push(reason);
+    }
+  }
+
   const readyToCreate =
     schedulingAuthorized &&
     ronTruthComplete &&
     signerComplete &&
-    documentPreflightReady;
+    documentPreflightReady &&
+    capability.status === 'RON_READY';
 
   return (
     <section className="rounded-2xl border border-[var(--ms-gold)]/20 bg-[#08080A]/90 p-4 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:p-5">
@@ -164,6 +191,64 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
             <p className="mt-1 break-words text-sm text-white/75">{value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-[#C6A65B]/20 bg-[#C6A65B]/[0.035] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C6A65B]">RON Provider Capability</p>
+          <span
+            className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] ${
+              capability.status === 'RON_READY'
+                ? 'border-[#C6A65B]/40 text-[#C6A65B]'
+                : capability.status === 'RON_BLOCKED'
+                  ? 'border-[#E0876E]/40 text-[#E0876E]'
+                  : 'border-amber-400/35 text-amber-200'
+            }`}
+          >
+            {capability.status.replaceAll('_', ' ')}
+          </span>
+        </div>
+        <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+          {([
+            ['Provider', 'BlueNotary'],
+            ['Provider capability', capability.availableIdentityMethods.map((m) => m.replaceAll('_', ' ')).join(', ') || 'Not configured'],
+            ['Selected identity method', capability.selectedIdentityMethod?.replaceAll('_', ' ') ?? 'Unresolved'],
+            ['Identity status', capability.identityStatus.replaceAll('_', ' ')],
+            ['Receiving authority', ronPosture.receivingAuthority ?? 'Not recorded'],
+            ['Authority accepts RON', ronPosture.receivingAuthorityRonAcceptance.replaceAll('_', ' ')],
+            ['Wet-ink requirement', ronPosture.wetInkRequirement.replaceAll('_', ' ')],
+            ['Original requirement', ronPosture.originalRequirement.replaceAll('_', ' ')],
+          ] as const).map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-3 border-b border-white/[0.05] pb-1.5">
+              <dt className="text-white/40">{label}</dt>
+              <dd className="text-right text-[#F6F1E6]/80">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {[...capability.blockers, ...capability.reviewReasons].length > 0 && (
+          <ul className="mt-3 space-y-1 text-xs text-white/60">
+            {capability.blockers.map((reason) => (
+              <li key={reason} className="text-[#E0876E]">• {reason}</li>
+            ))}
+            {capability.reviewReasons.map((reason) => (
+              <li key={reason}>• {reason}</li>
+            ))}
+          </ul>
+        )}
+        {!activeSession && (
+          <RonAuthorityPostureForm
+            matterId={matter.id}
+            initial={{
+              receiving_authority: ronPosture.receivingAuthority ?? '',
+              receiving_authority_ron_acceptance: ronPosture.receivingAuthorityRonAcceptance,
+              wet_ink_requirement: ronPosture.wetInkRequirement,
+              original_requirement: ronPosture.originalRequirement,
+            }}
+          />
+        )}
+        <p className="mt-3 text-[11px] leading-5 text-white/40">
+          RON eligibility has been reviewed for the U.S. execution step. Final acceptance remains subject to the receiving authority.
+        </p>
       </div>
 
       {unresolvedPreflight.length > 0 && !activeSession && (

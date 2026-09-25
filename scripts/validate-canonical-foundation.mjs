@@ -90,6 +90,7 @@ try {
   const APPROVED_PROTECTED_CHANGES = new Set([
     "supabase/migrations/081_document_structural_preflight.sql",
     "supabase/migrations/082_professional_referral_engine.sql",
+    "supabase/migrations/083_ron_provider_capability_evidence.sql",
   ]);
   const touched = diff
     .split("\n")
