@@ -31,6 +31,8 @@ interface Props {
   initialTier?: "signature" | "priority" | "executive";
   prefill?: IntakePrefill;
   courtesyCode?: string;
+  /** Governed professional handoff (verified server-side, never trusted here). */
+  professionalReferral?: { profileId: string; reference: string };
 }
 
 type Choice = "yes" | "no" | "unsure" | "";
@@ -110,7 +112,7 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode }: Props) {
+export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
@@ -372,6 +374,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       name_match: true,
       files_uploaded: files.length > 0,
       courtesy_code: courtesyCode || undefined,
+      professional_profile_id: professionalReferral?.profileId,
+      referral_reference: professionalReferral?.reference,
     };
 
     try {

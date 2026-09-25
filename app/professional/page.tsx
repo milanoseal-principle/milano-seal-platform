@@ -131,10 +131,10 @@ export default function ProfessionalHubPage() {
                     Review Your Country Route <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                   <Link
-                    href="/intake?lane=professional&source=professional-hero"
+                    href="/professional/start"
                     className="inline-flex min-h-13 items-center justify-center rounded-xl border border-white/[0.1] px-7 text-sm font-medium text-white/62 transition-colors hover:border-[#C6A65B]/35 hover:text-[#C6A65B]"
                   >
-                    Submit a Client Matter
+                    Start a Client Matter
                   </Link>
                 </div>
               </div>
@@ -162,6 +162,47 @@ export default function ProfessionalHubPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="professional-control" className="scroll-mt-32 border-t border-white/[0.05] px-4 py-14 sm:px-6">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/55">Counsel execution channel</p>
+              <h2 className="mt-3 font-serif text-3xl leading-tight text-white sm:text-4xl">
+                You retain legal control.
+                <br />
+                <em className="text-[#C6A65B]">The Milano Seal handles the U.S. execution side.</em>
+              </h2>
+              <p className="mt-5 max-w-xl text-[15px] leading-7 text-white/45">
+                Submit the Matter for your client, or send your client a secure intake link. Every referred Matter stays linked to your profile, and you follow its status through completion.
+              </p>
+              <p className="mt-3 text-sm leading-6 text-white/32">
+                Matter-specific execution quote issued after review.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/professional/start"
+                  className="group inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#C6A65B] px-7 text-sm font-semibold uppercase tracking-[0.08em] text-[#050507] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#D4B76A]"
+                >
+                  Start a Client Matter <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/professional/profile"
+                  className="inline-flex min-h-13 items-center justify-center rounded-xl border border-white/[0.1] px-7 text-sm font-medium uppercase tracking-[0.08em] text-white/62 transition-colors hover:border-[#C6A65B]/35 hover:text-[#C6A65B]"
+                >
+                  Create Professional Profile
+                </Link>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-[#C6A65B]/14 bg-[#C6A65B]/[0.025] p-7">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#C6A65B]/55">Included operational scope</p>
+              <ul className="mt-5 grid gap-3 text-[15px] text-white/55 sm:grid-cols-2">
+                {["Execution readiness", "Signer coordination", "RON / in-person execution when eligible", "Apostille / authentication coordination", "Custody", "International release", "Matter tracking"].map((item) => (
+                  <li key={item} className="flex items-center gap-3"><ShieldCheck className="h-4 w-4 shrink-0 text-[#C6A65B]/70" />{item}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
@@ -248,7 +289,7 @@ export default function ProfessionalHubPage() {
               Structure the destination and execution facts once, carry them into secure intake, and let Milano operator review confirm the U.S. path before payment or scheduling.
             </p>
             <Link
-              href="/intake?lane=professional&source=professional-bottom"
+              href="/professional/start"
               className="group mt-7 inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#C6A65B] px-7 text-sm font-semibold text-[#050507] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#D4B76A]"
             >
               Start a Professional Matter <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

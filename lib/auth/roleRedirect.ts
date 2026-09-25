@@ -4,7 +4,8 @@ export type UserRole =
   | "admin"
   | "owner"
   | "va"
-  | "alliance";
+  | "alliance"
+  | "professional";
 
 export const roleHomeRoute: Record<UserRole, string> = {
   client: "/portal",
@@ -13,7 +14,15 @@ export const roleHomeRoute: Record<UserRole, string> = {
   owner: "/dashboard",
   va: "/va/dashboard",
   alliance: "/alliance/dashboard",
+  professional: "/professional/matters",
 };
+
+// Authenticated counsel/professional workspace. The rest of /professional
+// (landing + country pages) stays public.
+export const PROFESSIONAL_WORKSPACE_PREFIXES = [
+  "/professional/matters",
+  "/professional/account",
+] as const;
 
 // Safe denied destination for authenticated users whose role is missing or
 // unrecognized. Missing role is BLOCKED, never defaulted into a protected area.
@@ -64,6 +73,7 @@ export function normalizeUserRole(role?: string | null): UserRole | null {
   if (ownerAliases.has(normalized)) return "owner";
   if (vaAliases.has(normalized)) return "va";
   if (allianceAliases.has(normalized)) return "alliance";
+  if (normalized === "professional") return "professional";
 
   return null;
 }
@@ -101,6 +111,11 @@ export function isRouteAllowedForRole(
   }
   if (normalized === "va") return pathname.startsWith("/va");
   if (normalized === "alliance") return pathname.startsWith("/alliance");
+  if (normalized === "professional") {
+    return PROFESSIONAL_WORKSPACE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
+    );
+  }
 
   return false;
 }
