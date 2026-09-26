@@ -9,6 +9,7 @@ import { CredentialTicker } from "@/components/landing/credential-ticker";
 import { GlobalLanguageSelector } from "@/components/i18n/GlobalLanguageSelector";
 import { MILANO_BRAND } from "@/app/theme/milanoBrand";
 import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 const publicNavLinks = [
   { label: "Services", href: "/#services" },
@@ -38,6 +39,7 @@ function isActivePath(pathname: string, href: string) {
 }
 
 export function Header() {
+  const { t } = usePublicTranslations();
   const pathname = usePathname();
   const reducedMotion = useMilanoReducedMotion();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -45,11 +47,11 @@ export function Header() {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isProfessionalAccess = pathname?.startsWith("/professional") ?? false;
-  const navLinks = isProfessionalAccess ? professionalNavLinks : publicNavLinks;
+  const navLinks = (isProfessionalAccess ? professionalNavLinks : publicNavLinks).map((link, index) => ({ ...link, label: isProfessionalAccess ? t.header.professionalNav[index] : t.header.nav[index] }));
   const intakeHref = isProfessionalAccess
     ? "/intake?lane=professional&source=professional-navigation"
     : "/intake";
-  const intakeLabel = isProfessionalAccess ? "Submit Client Matter" : "Begin Secure Intake";
+  const intakeLabel = isProfessionalAccess ? t.header.submitClientMatter : t.header.intake;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -122,7 +124,7 @@ export function Header() {
                     {MILANO_BRAND.name}
                   </span>
                   <span className="mt-1.5 hidden text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60 sm:block">
-                    {isProfessionalAccess ? "Professional Execution Access" : "Global Document Execution"}
+                    {isProfessionalAccess ? t.header.professionalAccess : t.header.globalExecution}
                   </span>
                 </span>
               </Link>
@@ -150,7 +152,7 @@ export function Header() {
                   href="/login"
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--ms-gold)]/45 px-4 py-2.5 text-sm font-medium text-[var(--ms-gold)] transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
                 >
-                  {isProfessionalAccess ? "Professional Login" : "Login"}
+                  {isProfessionalAccess ? t.header.professionalLogin : t.header.login}
                 </Link>
                 <Link
                   href={intakeHref}
@@ -166,7 +168,7 @@ export function Header() {
                 type="button"
                 onClick={() => setIsMobileMenuOpen((open) => !open)}
                 className="ml-auto flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-lg p-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] min-[1360px]:hidden"
-                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-label={isMobileMenuOpen ? t.header.closeMenu : t.header.openMenu}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="milano-mobile-navigation"
               >
@@ -214,7 +216,7 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="mt-4 inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--ms-gold)]/60 px-5 py-3 font-medium text-[var(--ms-gold)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)]"
               >
-                {isProfessionalAccess ? "Professional Login" : "Login"}
+                {isProfessionalAccess ? t.header.professionalLogin : t.header.login}
               </Link>
               <Link
                 href={intakeHref}
