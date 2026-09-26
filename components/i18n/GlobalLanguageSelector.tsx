@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, normalizeLocale, type SupportedLocale } from "@/lib/i18n/config";
 const COOKIE_NAME = "tms_locale"; const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 function readLocale(): SupportedLocale { const cookie = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(COOKIE_NAME + "=")); return normalizeLocale(cookie?.slice(COOKIE_NAME.length + 1)) ?? "en"; }
