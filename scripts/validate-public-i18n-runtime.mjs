@@ -23,6 +23,13 @@ const dictionary = readFileSync("lib/i18n/public-dictionary.ts", "utf8");
 for (const token of ['en: EN','it: IT','es: ES','de: DE','fr: FR','"pt-BR": PT']) {
   assert.ok(dictionary.includes(token), `Canonical public dictionary missing locale binding: ${token}`);
 }
+for (const forbiddenFallback of [
+  "ticker:EN.ticker",
+  "services:{...EN.services",
+  "process:{...EN.process",
+]) {
+  assert.ok(!dictionary.includes(forbiddenFallback), `Exposed locale must not fall back to English shared-surface arrays: ${forbiddenFallback}`);
+}
 for (const governed of [
   "autorità ricevente",
   "autoridade receptora",
