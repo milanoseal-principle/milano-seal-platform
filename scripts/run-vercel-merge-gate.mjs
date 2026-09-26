@@ -101,7 +101,7 @@ const gates = [
 ];
 
 const gatesToRun =
-  process.env.VERCEL === "1" ? gates.slice(0, 10) : gates;
+  process.env.VERCEL === "1" ? gates.slice(0, 21) : gates;
 
 for (const [command, args] of gatesToRun) {
   const label = `${command} ${args.join(" ")}`;
