@@ -13,6 +13,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { MILANO_BRAND } from "@/app/theme/milanoBrand";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 const socialLinks = [
   { label: "Instagram", href: "https://instagram.com/themilanoseal", icon: Instagram },
@@ -80,7 +81,12 @@ const networkLinks = [
 ];
 
 export function Footer() {
+  const { t } = usePublicTranslations();
   const currentYear = new Date().getFullYear();
+  const translatedNetworkLinks = networkLinks.map((link, index) => ({ ...link, label: t.footer.network[index] ?? link.label }));
+  const translatedServiceLinks = serviceLinks.map((link, index) => ({ ...link, label: t.footer.serviceLinks[index] ?? link.label }));
+  const translatedDocumentLinks = documentLinks.map((link, index) => ({ ...link, label: t.footer.documentLinks[index] ?? link.label }));
+  const translatedCountryLinks = countryLinks.map((link, index) => ({ ...link, label: t.footer.countryLinks[index] ?? link.label }));
 
   return (
     <footer className="bg-[var(--ms-black)] border-t border-[#2A2A2A]">
@@ -91,7 +97,7 @@ export function Footer() {
               <Image src="/brand/milano-seal-orb-v2.png" alt="" aria-hidden="true" width={96} height={96} style={{ width: 96, height: 96, objectFit: "contain", flexShrink: 0 }} />
               <span className="flex flex-col leading-none">
                 <span className="font-serif text-[15px] font-semibold uppercase text-[var(--ms-gold)] tracking-[0.22em]">{MILANO_BRAND.name}</span>
-                <span className="mt-1 text-[7px] uppercase tracking-[0.3em] text-[var(--ms-gold)]/60">Global Document Execution</span>
+                <span className="mt-1 text-[7px] uppercase tracking-[0.3em] text-[var(--ms-gold)]/60">{t.footer.globalExecution}</span>
               </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
@@ -100,7 +106,7 @@ export function Footer() {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <MapPin className="w-4 h-4 text-[var(--ms-gold)]" />
-                <span>Florida, United States</span>
+                <span>{t.footer.location}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <Mail className="w-4 h-4 text-[var(--ms-gold)]" />
@@ -108,38 +114,38 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <Phone className="w-4 h-4 text-[var(--ms-gold)]" />
-                <span>Available upon intake</span>
+                <span>{t.footer.availableUponIntake}</span>
               </div>
             </div>
             <div className="mt-6 space-y-2">
-              {networkLinks.map((link) => (
+              {translatedNetworkLinks.map((link) => (
                 <Link key={link.href} href={link.href} className="block text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link>
               ))}
             </div>
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-6">Services</h4>
+            <h4 className="text-white font-medium mb-6">{t.footer.services}</h4>
             <ul className="space-y-3">
-              {serviceLinks.map((link) => (
+              {translatedServiceLinks.map((link) => (
                 <li key={link.href}><Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link></li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-6">Documents</h4>
+            <h4 className="text-white font-medium mb-6">{t.footer.documents}</h4>
             <ul className="space-y-3">
-              {documentLinks.map((link) => (
+              {translatedDocumentLinks.map((link) => (
                 <li key={link.href}><Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link></li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-6">Apostille Services</h4>
+            <h4 className="text-white font-medium mb-6">{t.footer.apostilleServices}</h4>
             <ul className="space-y-3">
-              {countryLinks.map((link) => (
+              {translatedCountryLinks.map((link) => (
                 <li key={link.href}><Link href={link.href} className="text-sm text-[#B0B0B0] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link></li>
               ))}
             </ul>
@@ -156,14 +162,14 @@ export function Footer() {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-[#B0B0B0]">&copy; {currentYear} {MILANO_BRAND.name}. All rights reserved.</p>
+            <p className="text-sm text-[#B0B0B0]">&copy; {currentYear} {MILANO_BRAND.name}. {t.footer.allRights}</p>
             <div className="flex items-center gap-6">
-              <Link href="/privacy" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.privacy}</Link>
+              <Link href="/terms" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.terms}</Link>
             </div>
           </div>
           <p className="mt-6 text-xs text-[#B0B0B0]/50 text-center md:text-left">
-            Nicholas Milano is a commissioned Florida Notary Public. Remote Online Notarization services are coordinated in accordance with applicable Florida law and Matter-specific execution requirements. Apostille coordination is facilitated through the appropriate competent authority. The Milano Seal is not a law firm and does not provide legal advice or legal representation.
+            {t.footer.disclaimer}
           </p>
         </div>
       </div>
