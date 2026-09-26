@@ -1,0 +1,70 @@
+name: Milano Seal Rendered Production Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: "Production or preview URL to render"
+        required: false
+        default: "https://www.themilanoseal.com"
+        type: string
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/page.tsx"
+      - "app/intake/**"
+      - "app/global-document-intelligence/**"
+      - "app/professional/**"
+      - "app/secure-portal/**"
+      - "app/services/apostille/**"
+      - "components/landing/**"
+      - "components/conversion/**"
+      - "components/global-intelligence/**"
+      - "scripts/run-rendered-production-acceptance.mjs"
+      - ".github/workflows/rendered-production-acceptance.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rendered-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rendered-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      MILANO_RENDERED_BASE_URL: ${{ inputs.production_url || 'https://www.themilanoseal.com' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Install Playwright without mutating lockfiles
+        run: npm install --no-save --no-package-lock playwright@1.55.0
+
+      - name: Provision Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Execute rendered device matrix
+        run: node scripts/run-rendered-production-acceptance.mjs
+
+      - name: Upload rendered proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-production-${{ github.sha }}
+          path: artifacts/proof/rendered-production/
+          if-no-files-found: error
+          retention-days: 30
