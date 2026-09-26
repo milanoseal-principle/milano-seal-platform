@@ -95,7 +95,7 @@ export function PaymentFounder() {
                 alt="Nicholas Milano — Founder, The Milano Seal™"
                 fill
                 sizes="(max-width: 768px) 100vw, 42vw"
-                className="object-cover object-top"
+                className="object-cover object-top transition-transform duration-1000 ease-out group-hover:scale-[1.015] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 loading="lazy"
               />
               <div className="absolute inset-0 md:bg-gradient-to-r from-transparent via-transparent to-[#0D0D0D]" />
@@ -165,14 +165,14 @@ export function PaymentFounder() {
               <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">
                 <Link
                   href="/founder"
-                  className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-[#C6A55A]/45 bg-[#C6A55A]/[0.06] px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#D4AF37] transition-colors hover:border-[#C6A55A]/70 hover:bg-[#C6A55A]/[0.1]"
+                  className="group inline-flex min-h-11 items-center justify-between gap-3 border-b border-[#C6A55A]/35 px-1 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#D4AF37] transition-all duration-300 hover:border-[#C6A55A] hover:pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A55A]/55 motion-reduce:transition-none motion-reduce:hover:pl-1"
                 >
                   <span>View Founder Profile</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/about"
-                  className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-white/12 bg-white/[0.025] px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70 transition-colors hover:border-[#C6A55A]/35 hover:text-[#D4AF37]"
+                  className="group inline-flex min-h-11 items-center justify-between gap-3 border-b border-white/12 px-1 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70 transition-all duration-300 hover:border-[#C6A55A]/55 hover:pl-2 hover:text-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A55A]/55 motion-reduce:transition-none motion-reduce:hover:pl-1"
                 >
                   <span>About The Milano Seal</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -186,9 +186,9 @@ export function PaymentFounder() {
                     href={chip.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    whileHover={{ y: -2, borderColor: "rgba(212,175,55,0.45)" }}
+                    whileHover={{ y: -2, x: 2 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-[#0D0D0D] border border-[#2A2A2A] rounded text-[10px] font-mono tracking-wider uppercase text-[#B0B0B0] hover:text-[#D4AF37] transition-colors duration-300"
+                    className="flex min-h-10 items-center gap-1.5 border-b border-[#C6A55A]/15 px-1 py-2 text-[10px] font-mono tracking-wider uppercase text-[#8E8E8E] transition-colors duration-300 hover:border-[#C6A55A]/50 hover:text-[#D4AF37]"
                   >
                     <span className="h-1 w-1 rounded-full bg-[#C6A55A]/70 flex-shrink-0" />
                     {chip.label}
@@ -200,9 +200,9 @@ export function PaymentFounder() {
                     href={chip.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    whileHover={{ y: -1, borderColor: "rgba(255,255,255,0.15)" }}
+                    whileHover={{ y: -1, x: 2 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-[#0A0A0A] border border-[#1A1A1A] rounded text-[10px] font-mono tracking-wider uppercase text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors duration-300"
+                    className="flex min-h-10 items-center gap-1.5 border-b border-white/10 px-1 py-2 text-[10px] font-mono tracking-wider uppercase text-[#676767] transition-colors duration-300 hover:border-[#C6A55A]/35 hover:text-[#9A9A9A]"
                   >
                     {chip.label}
                   </motion.a>

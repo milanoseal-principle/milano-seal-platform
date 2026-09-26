@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const NAV_INTENT_EVENT = "milano:navigation-intent";
-const MINIMUM_VISIBLE_MS = 2200;
-const SETTLE_FADE_MS = 300;
+const MINIMUM_VISIBLE_MS = 700;
+const SETTLE_FADE_MS = 220;
 const SAFETY_RELEASE_MS = 8000;
 
 export function NavigationLoader() {
@@ -141,12 +141,14 @@ export function NavigationLoader() {
         <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
           Preserving your current context while the destination surface is prepared.
         </p>
-        <div className="mt-8 h-px w-full overflow-hidden bg-[#D8C188]/10" aria-hidden="true">
-          <div className="h-full w-2/3 origin-left bg-gradient-to-r from-transparent via-[#D8C188]/80 to-transparent motion-safe:animate-pulse" />
-        </div>
-        <div className="mt-6 grid gap-3" aria-hidden="true">
-          <div className="h-16 rounded-xl border border-[#D8C188]/10 bg-white/[0.02] motion-safe:animate-pulse" />
-          <div className="h-28 rounded-xl border border-[#D8C188]/10 bg-white/[0.02] motion-safe:animate-pulse" />
+        <div className="mt-10 flex items-center gap-4" aria-hidden="true">
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#D8C188]/40 motion-safe:animate-ping motion-reduce:animate-none" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[#D8C188]" />
+          </span>
+          <div className="relative h-px flex-1 overflow-hidden bg-[#D8C188]/10">
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-[#D8C188] to-transparent motion-safe:animate-[pulse_1.1s_ease-in-out_infinite] motion-reduce:animate-none" />
+          </div>
         </div>
       </div>
     </main>

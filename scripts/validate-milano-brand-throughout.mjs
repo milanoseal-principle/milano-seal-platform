@@ -51,7 +51,7 @@ for (const [label, source] of [["header", header], ["footer", footer]]) {
   assert.ok(source.includes('var(--ms-gold)'), `${label} must use canonical Milano gold CSS token`);
 }
 
-assert.ok(/(?:sm|md|lg|xl|2xl):hidden/.test(header), "Public header must retain responsive mobile navigation behavior");
+assert.ok(/(?:(?:sm|md|lg|xl|2xl):hidden|min-\[\d+px\]:hidden)/.test(header), "Public header must retain responsive mobile navigation behavior");
 assert.ok(header.includes('isMobileMenuOpen'), "Public header must retain mobile menu state");
 assert.ok(header.includes('aria-controls="milano-mobile-navigation"'), "Public header must retain accessible mobile menu control wiring");
 assert.ok(header.includes('id="milano-mobile-navigation"'), "Public header must retain the mobile navigation target");
