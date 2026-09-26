@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Children,
   type ReactNode,
   useCallback,
   useEffect,
@@ -162,7 +161,7 @@ export function TrustCoreCinematicField({ children }: { children: ReactNode }) {
 
   return (
     <div ref={rootRef} className="relative isolate">
-      {Children.only(children)}
+      {children}
 
       {!reduceMotion && core && (
         <div
