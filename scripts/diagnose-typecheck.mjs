@@ -12,30 +12,28 @@ const first = output
   .split(/\r?\n/)
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
-const exact = [
-  ["lib/pricing/canonicalFacade.ts", 81],
-  ["lib/pricing.ts", 82],
-  ["lib/pricing/pricingComposer.ts", 83],
-  ["lib/pricing/pricingCatalog.ts", 84],
-  ["lib/intake/operatorHandoff.ts", 85],
-  ["lib/format.ts", 86],
-  ["lib/security/access-control.ts", 87],
+const groupA = [
+  "lib/access-intent.ts","lib/activity.ts","lib/aiClassifier.ts","lib/allianceAuth.ts",
+  "lib/allianceEligibility.ts","lib/animations.ts","lib/audit.ts","lib/authorityChainCertification.ts",
+  "lib/authorityPack.ts","lib/automation.ts","lib/clientProjectionShield.ts","lib/commissionEngine.ts",
+  "lib/compliance.ts","lib/complianceValidator.ts","lib/country-jsonld.ts","lib/custodyLedger.ts",
+  "lib/dashboard-modules.ts","lib/dashboardAuth.ts","lib/dealBackup.ts","lib/dealId.ts",
+  "lib/discountCodes.ts","lib/email.ts","lib/evidencePacket.ts","lib/evidenceStorage.ts",
+  "lib/executionReadiness.ts","lib/followupEngine.ts","lib/format.ts","lib/gate.ts",
+  "lib/hague-countries.ts","lib/incidentTypes.ts","lib/invoice.ts","lib/jurisdictions.ts",
+  "lib/linking.ts","lib/logger.ts"
 ];
-for (const [file, code] of exact) if (first.startsWith(file)) process.exit(code);
-
-const dirs = [
-  "alliance","atlas","canonical","command-center","compliance","content","control-plane",
-  "core","country","custody","dashboard","dispatch","government","high-value-assets",
-  "i18n","intake","intelligence","jurisdictions","matter","notifications","payments",
-  "platform","portal","pre-execution","pricing","professional","procurement","revenue",
-  "revenue-stack","safety","security","seo","shippo","supabase","trust-network","wise"
+const groupB = [
+  "lib/matterCriticality.ts","lib/matterIntelligence.ts","lib/matterRisk.ts","lib/messageEngine.ts",
+  "lib/milanoSerialize.ts","lib/ocr.ts","lib/operatorActions.ts","lib/parseIntake.ts",
+  "lib/pipelineEngine.ts","lib/portalAuth.ts","lib/portalInvoice.ts","lib/portalProjection.ts",
+  "lib/pricing.ts","lib/protectedIdentifier.ts","lib/rbac.ts","lib/resource-guards.ts",
+  "lib/scoringEngine.ts","lib/seo-data.ts","lib/seo-document-routing.ts","lib/seo-premium-corridors.ts",
+  "lib/seo.ts","lib/shippo.ts","lib/signatureProof.ts","lib/slaEngine.ts","lib/slaMonitor.ts",
+  "lib/stateMachine.ts","lib/supabaseClient.ts","lib/supabaseServer.ts","lib/twilio.ts","lib/utils.ts",
+  "lib/vaAuth.ts","lib/vaTasks.ts","lib/validation.ts","lib/vault.ts","lib/webhookBus.ts",
+  "lib/whatsapp.ts","lib/wise.ts"
 ];
-if (first.startsWith("lib/")) {
-  const match = first.match(/^lib\/([^/]+)\//);
-  if (match) {
-    const index = dirs.indexOf(match[1]);
-    if (index >= 0) process.exit(90 + index);
-  }
-  process.exit(125);
-}
-process.exit(126);
+if (groupA.some((file) => first.startsWith(file))) process.exit(131);
+if (groupB.some((file) => first.startsWith(file))) process.exit(132);
+process.exit(133);
