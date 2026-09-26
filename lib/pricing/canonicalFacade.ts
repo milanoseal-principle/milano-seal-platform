@@ -123,6 +123,15 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     String(params.witness_type ?? "ron").trim().toLowerCase() === "in_person"
       ? "in_person"
       : "ron";
+  const afterHours = bool(params.after_hours);
+  const canonicalTiming = afterHours && !timing.includes("after_hours_evening")
+    ? [...timing, "after_hours_evening" as const]
+    : timing;
+  const witnessCount = count(params.witness_count ?? params.witnesses, 0);
+  const witnessType: "ron" | "in_person" =
+    String(params.witness_type ?? "ron").trim().toLowerCase() === "in_person"
+      ? "in_person"
+      : "ron";
   const timingWithAfterHours = [
     ...new Set<TimingMode>([
       ...timing,
@@ -139,6 +148,8 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     documentCount,
     apostilleCount,
     signerCount,
+    remoteWitnessCount: witnessType === "ron" ? witnessCount : 0,
+    inPersonWitnessCount: witnessType === "in_person" ? witnessCount : 0,
     internationalSignerCount,
     jurisdictionCount,
     additionalNotarizedSignatureTrackingCount: Math.max(
@@ -190,6 +201,10 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     amount: item.amount,
     internal_only: ["courier", "authority", "adjustment"].includes(item.category),
   }));
+
+  const witnessTotal = quote.lineItems
+    .filter((item) => item.category === "witness")
+    .reduce((sum, item) => sum + item.amount, 0);
 
   // Keep legacy diagnostic exports visible for callers that inspect requested
   // shipping, but do not bill the old fixed shipping amount.
