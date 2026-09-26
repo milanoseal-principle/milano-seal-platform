@@ -3,59 +3,20 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Lock, ArrowRight } from "lucide-react";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
-const steps = [
-  {
-    number: "01",
-    title: "Secure Intake",
-    description:
-      "Client, document, signer, destination, receiving authority, urgency, and execution method are captured through a structured intake flow.",
-    href: "/intake",
-    highlight: false,
-  },
-  {
-    number: "02",
-    title: "Operational Review",
-    description:
-      "The matter is reviewed for document type, origin jurisdiction, signer location, destination country, apostille/authentication route, and missing information.",
-    href: "/process#compliance-review",
-    highlight: false,
-  },
-  {
-    number: "03",
-    title: "Payment Gate",
-    description:
-      "Scheduling and execution remain locked until the matter scope and payment status are confirmed.",
-    href: "/process#payment-gate",
-    highlight: true,
-  },
-  {
-    number: "04",
-    title: "Document Execution",
-    description:
-      "Eligible documents move through in-person notarization, Remote Online Notarization coordination, or document packet preparation according to the approved matter path.",
-    href: "/process#execution",
-    highlight: false,
-  },
-  {
-    number: "05",
-    title: "Custody Rail",
-    description:
-      "Executed documents are reviewed, packaged, tracked, and monitored through courier custody or apostille/authentication routing.",
-    href: "/process#custody",
-    highlight: false,
-  },
-  {
-    number: "06",
-    title: "Release Desk",
-    description:
-      "Documents are released only after the required execution, payment, custody, and review conditions are satisfied.",
-    href: "/process#release",
-    highlight: false,
-  },
-];
+const STEP_META = [
+  { number: "01", href: "/intake", highlight: false },
+  { number: "02", href: "/process#compliance-review", highlight: false },
+  { number: "03", href: "/process#payment-gate", highlight: true },
+  { number: "04", href: "/process#execution", highlight: false },
+  { number: "05", href: "/process#custody", highlight: false },
+  { number: "06", href: "/process#release", highlight: false },
+] as const;
 
 export function HowItWorks() {
+  const { t } = usePublicTranslations();
+  const steps = STEP_META.map((meta, index) => ({ ...meta, ...t.process.steps[index] }));
   return (
     <section className="relative py-24 md:py-32 bg-[#050507]">
       <div className="max-w-7xl mx-auto px-6">
@@ -68,13 +29,13 @@ export function HowItWorks() {
           className="text-center mb-16"
         >
           <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Execution Path
+            {t.process.eyebrow}
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            International Document Execution Workflow
+            {t.process.title}
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            Structured intake to structured release. Every step reviewed before the next begins.
+            {t.process.summary}
           </p>
         </motion.div>
 
