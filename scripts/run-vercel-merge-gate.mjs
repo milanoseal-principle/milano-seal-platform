@@ -100,6 +100,7 @@ const gates = [
   ["node", ["scripts/validate-global-pricing-courier.mjs"]],
 ];
 
+// Final release validation: Vercel runs the complete deterministic gate set.
 const gatesToRun = gates;
 
 for (const [command, args] of gatesToRun) {
