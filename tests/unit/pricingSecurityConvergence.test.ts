@@ -16,11 +16,17 @@ test("canonical pricing owns witness support arithmetic", () => {
     witness_type: "ron",
     after_hours: true,
   });
-  const expected = 2 * WITNESS_FEES.ron + WITNESS_FEES.after_hours;
-  assert.equal(quote.internal.witness_total, expected);
+  const witnessExpected = 2 * WITNESS_FEES.ron;
+  assert.equal(quote.internal.witness_total, witnessExpected);
   assert.equal(
-    quote.breakdown.find((item) => item.key === "witness_support")?.amount,
-    expected,
+    quote.breakdown
+      .filter((item) => item.key === "remote_witnesses")
+      .reduce((sum, item) => sum + item.amount, 0),
+    witnessExpected,
+  );
+  assert.equal(
+    quote.breakdown.find((item) => item.key === "timing_after_hours_evening")?.amount,
+    WITNESS_FEES.after_hours,
   );
 });
 
