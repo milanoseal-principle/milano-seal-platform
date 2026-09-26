@@ -118,6 +118,17 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
   const requestedShipping = String(params.shipping ?? params.dispatch ?? "none")
     .trim()
     .toLowerCase();
+  const witnessCount = count(params.witness_count ?? params.witnesses, 0);
+  const witnessType: "ron" | "in_person" =
+    String(params.witness_type ?? "ron").trim().toLowerCase() === "in_person"
+      ? "in_person"
+      : "ron";
+  const timingWithAfterHours = [
+    ...new Set<TimingMode>([
+      ...timing,
+      ...(bool(params.after_hours) ? ["after_hours_evening" as const] : []),
+    ]),
+  ];
 
   // Legacy symbolic shipping is deliberately not converted to an invented client
   // courier charge. Actual courier cost is quoted through the canonical composer
@@ -134,7 +145,9 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
       0,
       notarizedSignatureCount - 1,
     ),
-    timing,
+    remoteWitnessCount: witnessType === "ron" ? witnessCount : 0,
+    inPersonWitnessCount: witnessType === "in_person" ? witnessCount : 0,
+    timing: timingWithAfterHours,
     fbiFederalApostille: bool(params.fbi_apostille) || bool(params.fbiApostille),
     executiveInPersonStateHandling:
       bool(params.executive_state_handling) ||
@@ -166,6 +179,9 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     .reduce((sum, item) => sum + item.amount, 0);
   const signatureTrackingTotal = quote.lineItems
     .filter((item) => item.code === "additional_notarized_signature_tracking")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const witnessTotal = quote.lineItems
+    .filter((item) => item.category === "witness")
     .reduce((sum, item) => sum + item.amount, 0);
 
   const breakdown = quote.lineItems.map((item) => ({
@@ -204,18 +220,22 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
       apostille_count: apostilleCount,
       apostille_total: money(apostilleTotal),
       urgency:
-        timing[0] === "rush_same_day"
+        timingWithAfterHours[0] === "rush_same_day"
           ? "rush"
-          : timing[0] === "after_hours_evening"
+          : timingWithAfterHours[0] === "after_hours_evening"
             ? "expedited"
-            : timing[0] === "standard"
+            : timingWithAfterHours[0] === "standard"
               ? "standard"
-              : timing[0],
+              : timingWithAfterHours[0],
       shipping: "none",
       manual_adjustment: money(
         Number(params.manual_adjustment ?? params.manualAdjustment ?? 0) || 0,
       ),
       ron_cost: money(signatureTrackingTotal),
+      witness_count: witnessCount,
+      witness_type: witnessType,
+      witness_total: money(witnessTotal),
+      after_hours: bool(params.after_hours),
     },
   };
 }
