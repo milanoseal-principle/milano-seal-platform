@@ -8,8 +8,8 @@ const certification = readFileSync("docs/FINAL_PRODUCTION_CERTIFICATION.md", "ut
 
 assert.equal(
   vercel.buildCommand,
-  "node scripts/run-vercel-merge-gate.mjs && next build",
-  "Vercel must own the billing-independent merge gate",
+  "node scripts/run-vercel-merge-gate.mjs",
+  "Debug branch must run the merge gate without Next build",
 );
 assert.ok(
   typeof vercel.ignoreCommand === "string" &&
