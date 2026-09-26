@@ -8,8 +8,8 @@ const certification = readFileSync("docs/FINAL_PRODUCTION_CERTIFICATION.md", "ut
 
 assert.equal(
   vercel.buildCommand,
-  "node scripts/run-vercel-merge-gate.mjs",
-  "Diagnostic preview runs the merge gate without Next build",
+  "node scripts/run-vercel-merge-gate.mjs && npm run build",
+  "Vercel must run the deterministic merge gate before the real Next production build",
 );
 assert.ok(
   typeof vercel.ignoreCommand === "string" &&
@@ -101,7 +101,7 @@ const gates = [
 ];
 
 // Final release validation: Vercel runs the complete deterministic gate set.
-const gatesToRun = process.env.VERCEL === "1" ? [["node", ["scripts/diagnose-tests.mjs"]]] : gates;
+const gatesToRun = gates;
 
 for (const [command, args] of gatesToRun) {
   const label = `${command} ${args.join(" ")}`;
@@ -122,4 +122,4 @@ for (const [command, args] of gatesToRun) {
   }
 }
 
-console.log("\nPASS: Vercel merge gate completed. next build may proceed.");
+console.log("\nPASS: Vercel merge gate completed. Starting real Next production build.");
