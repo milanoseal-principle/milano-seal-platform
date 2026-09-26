@@ -161,7 +161,7 @@ export function TrustCoreCinematicField({ children }: { children: ReactNode }) {
 
   return (
     <div ref={rootRef} className="relative isolate">
-      <>{children}</>
+      {children}
 
       {!reduceMotion && core && (
         <div
