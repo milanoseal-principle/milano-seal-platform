@@ -170,7 +170,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
           {intelligence.routeLabel}
         </p>
         <p className="mt-1 text-[11px] leading-5 text-white/42">
-          {apostilleRouteStatus}
+          {compliance.authoritySummary}
         </p>
       </div>
 
