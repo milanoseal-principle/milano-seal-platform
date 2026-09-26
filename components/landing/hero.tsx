@@ -5,6 +5,7 @@ import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 
 const INIT_PHRASES = [
@@ -13,7 +14,7 @@ const INIT_PHRASES = [
   "Preparing Protected Matter Coordination...",
 ];
 
-function HomepageMicroInit() {
+function HomepageMicroInit({ phrases }: { phrases: string[] }) {
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -44,7 +45,7 @@ function HomepageMicroInit() {
         className="font-mono text-[9px] tracking-[0.22em] uppercase"
         style={{ color: "rgba(212,175,55,0.55)" }}
       >
-        {INIT_PHRASES[phraseIdx]}
+        {phrases[phraseIdx]}
       </motion.span>
     </motion.div>
   );
@@ -74,6 +75,7 @@ function useHeroReveal(delays: number[]) {
 }
 
 export function Hero() {
+  const { t } = usePublicTranslations();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -99,7 +101,7 @@ export function Hero() {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[var(--ms-gold)]/[0.025] rounded-full blur-3xl" />
       </motion.div>
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--ms-gold)]/30 to-transparent" />
-      <HomepageMicroInit />
+      <HomepageMicroInit phrases={t.hero.init} />
 
       <motion.div
         style={{ opacity }}
@@ -125,23 +127,23 @@ export function Hero() {
 
             <h1 className="ms-hero-h1 font-serif font-medium leading-[1.08] text-white mb-2">
               <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3rem] xl:text-[3.5rem]${heroVisible[1] ? " is-visible" : ""}`}>
-                Sealing Trust
+                {t.hero.line1}
               </span>
               <span className={`ms-hero-line block text-4xl md:text-5xl lg:text-[3rem] xl:text-[3.5rem]${heroVisible[2] ? " is-visible" : ""}`}>
-                Across <span className="ms-hero-borders-gradient italic">Borders</span>
+                {t.hero.line2a} <span className="ms-hero-borders-gradient italic">{t.hero.line2b}</span>
               </span>
             </h1>
 
             <p className={`ms-hero-line text-base md:text-lg lg:text-xl text-white/70 font-normal mb-3 max-w-xl${heroVisible[3] ? " is-visible" : ""}`}>
-              U.S. Document Execution for International Use
+              {t.hero.subtitle}
             </p>
 
             <p className={`ms-hero-line text-sm text-white/55 mb-2 max-w-xl leading-relaxed font-normal${heroVisible[4] ? " is-visible" : ""}`}>
-              Remote Online Notarization, Apostille Coordination, and International Document Execution Support with structured routing review, payment-gated execution, and secure release coordination.
+              {t.hero.description}
             </p>
 
             <p className={`ms-hero-line text-xs text-white/50 mb-4 max-w-xl font-normal${heroVisible[5] ? " is-visible" : ""}`}>
-              International use is subject to destination and receiving-authority requirements.
+              {t.hero.compliance}
             </p>
 
             <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-4${heroVisible[6] ? " is-visible" : ""}`}>
@@ -149,7 +151,7 @@ export function Hero() {
                 href="/intake"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
               >
-                Begin Secure Intake
+                {t.hero.intake}
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }} />
               </Link>
               <Link
@@ -157,23 +159,18 @@ export function Hero() {
                 className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[var(--ms-gold)]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)]/60 hover:text-white hover:bg-[var(--ms-gold)]/5"
               >
                 <Globe className="w-4 h-4" />
-                Explore Global Document Intelligence
+                {t.hero.intelligence}
               </Link>
             </div>
 
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--ms-gold)]/45 mb-2 text-center lg:text-left">
-                What You Get
+                {t.hero.whatYouGet}
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-3 max-w-xl lg:max-w-none">
-                {[
-                  { icon: "shield", label: "Secure, Verified\nIntake" },
-                  { icon: "monitor", label: "Remote Online\nNotarization" },
-                  { icon: "check", label: "Apostille Routing\nHandled For You" },
-                  { icon: "globe", label: "Destination Rules\nReviewed" },
-                  { icon: "lock", label: "Resources Reserved\nFor Your Matter" },
-                  { icon: "eye", label: "Track Every Step\nIntake to Release" },
-                ].map(({ icon, label }) => (
+                {["shield","monitor","check","globe","lock","eye"].map((icon, index) => {
+                  const label = t.hero.benefits[index];
+                  return (
                   <div key={label} className="flex flex-col items-center gap-1.5 group">
                     <div className="w-9 h-9 rounded-lg border border-[var(--ms-gold)]/20 bg-[var(--ms-gold)]/[0.04] flex items-center justify-center group-hover:border-[var(--ms-gold)]/40 transition-colors">
                       {icon === "shield" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ms-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
@@ -187,10 +184,10 @@ export function Hero() {
                       {label}
                     </span>
                   </div>
-                ))}
+                )})}
               </div>
               <p className="mt-3 max-w-xl text-center font-mono text-[8px] uppercase tracking-[0.1em] text-white/35 lg:text-left">
-                RON availability depends on document type, signer location, jurisdiction, and receiving-authority requirements.
+                {t.hero.ronCompliance}
               </p>
             </div>
 
@@ -216,14 +213,14 @@ export function Hero() {
               style={{ maxWidth: 320 }}
             >
               <p style={{ color: "var(--ms-gold)", fontSize: 10, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>
-                Founder-Led Document Execution
+                {t.hero.founderLed}
               </p>
               <p style={{ color: "rgba(176,176,176,0.6)", fontSize: 12, lineHeight: 1.55, marginBottom: 10 }}>
-                Florida Notary Public &amp; Remote Online Notary. Apostille coordination, international execution, and secure release.
+                {t.hero.founderSummary}
               </p>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                <a href="/founder" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Meet the Founder →</a>
-                <a href="/intake" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>Begin Intake →</a>
+                <a href="/founder" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>{t.hero.meetFounder}</a>
+                <a href="/intake" style={{ color: "var(--ms-gold)", fontSize: 11, textDecoration: "underline", textDecorationColor: "rgba(198,165,90,0.35)" }}>{t.hero.beginIntake}</a>
               </div>
             </motion.div>
           </div>
