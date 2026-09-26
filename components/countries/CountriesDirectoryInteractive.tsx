@@ -60,35 +60,39 @@ const FILTER_COPY: Record<
 };
 
 function routeSignals(destination: Destination) {
-  const path = destination.executionPath.join(" ").toLowerCase();
-  const signals: Array<{
-    label: string;
-    Icon: typeof Languages;
-    active: boolean;
-  }> = [
+  const governed = getPublicCountryExecutionIntelligence(
+    destination.slug,
+    destination.name,
+  );
+  const flags = new Set(governed.publicFlags);
+  return [
     {
-      label: /translation/.test(path) ? "Translation" : "Language review",
+      label: "Translation review",
       Icon: Languages,
-      active: /translation/.test(path),
+      active: flags.has("Translation Review"),
     },
     {
-      label: /witness/.test(path) ? "Witnesses" : "Signer review",
+      label: "Signer review",
       Icon: Users,
-      active: /witness/.test(path),
+      active: true,
     },
     {
-      label: destination.hague ? "Apostille review" : "Authentication",
+      label:
+        governed.routeType === "hague_apostille"
+          ? "Apostille review"
+          : governed.routeType === "authority_review"
+            ? "Authority review"
+            : "Authentication review",
       Icon: Landmark,
       active: true,
     },
     {
-      label: /courier|delivery|release/.test(path) ? "Courier" : "Release",
+      label: "Custody / release",
       Icon: PackageCheck,
-      active: /courier|delivery|release/.test(path),
+      active:
+        flags.has("Courier Release") || flags.has("Custody Release"),
     },
   ];
-
-  return signals;
 }
 
 function CountryDirectoryDossier({ country }: { country: Destination }) {
@@ -98,7 +102,10 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
     country.name,
   );
   const signals = routeSignals(country);
-  const routeSteps = country.executionPath.slice(0, 4);
+  const routeSteps = compliance.publicExecutionPath.slice(0, 4);
+  const apostilleRoute =
+    compliance.routeType === "hague_apostille" &&
+    !compliance.verificationRequired;
   const matterTypes = Array.from(
     new Set(
       country.note
@@ -115,7 +122,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
     <article
       data-critical-card=""
       className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[#0B0B0D] p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 motion-reduce:transform-none ${
-        country.hague
+        apostilleRoute
           ? "border-white/[0.08] hover:border-emerald-500/25 hover:shadow-[0_24px_70px_rgba(0,0,0,0.45),inset_0_0_36px_rgba(16,185,129,0.025)]"
           : "border-amber-500/15 hover:border-amber-500/32 hover:shadow-[0_24px_70px_rgba(0,0,0,0.48),inset_0_0_36px_rgba(245,158,11,0.035)]"
       }`}
@@ -123,7 +130,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
     >
       <div
         className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent ${
-          country.hague ? "via-emerald-400/50" : "via-amber-400/55"
+          apostilleRoute ? "via-emerald-400/50" : "via-amber-400/55"
         }`}
       />
 
@@ -143,12 +150,12 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
         </div>
         <span
           className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[7px] uppercase tracking-[0.12em] ${
-            country.hague
+            apostilleRoute
               ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-300/85"
               : "border-amber-500/25 bg-amber-500/[0.07] text-amber-300/90"
           }`}
         >
-          {country.hague ? "Hague route" : "Auth review"}
+          {apostilleRoute ? "Hague route" : "Auth review"}
         </span>
       </div>
 
@@ -163,7 +170,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
           {intelligence.routeLabel}
         </p>
         <p className="mt-1 text-[11px] leading-5 text-white/42">
-          {country.hagueStatus}
+          {apostilleRouteStatus}
         </p>
       </div>
 
@@ -262,9 +269,16 @@ export function CountriesDirectoryInteractive() {
     if (filter === "featured") return featured;
 
     return [...DESTINATIONS]
-      .filter((destination) =>
-        filter === "hague" ? destination.hague : !destination.hague,
-      )
+      .filter((destination) => {
+        const intelligence = getPublicCountryExecutionIntelligence(
+          destination.slug,
+          destination.name,
+        );
+        const isApostille =
+          intelligence.routeType === "hague_apostille" &&
+          !intelligence.verificationRequired;
+        return filter === "hague" ? isApostille : !isApostille;
+      })
       .sort((a, b) => b.demand - a.demand || a.name.localeCompare(b.name));
   }, [filter]);
 
