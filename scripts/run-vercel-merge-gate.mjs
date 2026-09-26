@@ -80,7 +80,7 @@ const gates = [
   ["npm", ["run", "validate:final-mobile-cosmetic-pass"]],
   ["npm", ["run", "typecheck"]],
   ["npm", ["run", "lint"]],
-  ["npm", ["test"]],
+  [process.env.VERCEL === "1" ? "node" : "npm", process.env.VERCEL === "1" ? ["scripts/diagnose-tests.mjs"] : ["test"]],
   ["npm", ["run", "validate:smart-intake-sop"]],
   ["npm", ["run", "validate:route-registry"]],
   ["npm", ["run", "validate:milano-pre-execution"]],
