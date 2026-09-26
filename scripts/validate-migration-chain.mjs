@@ -13,6 +13,7 @@ const required = [
   "056_matter_truth_snapshot_archive.sql",
   "078_shippo_prepayment_rate_continuity.sql",
   "079_wise_observed_scheduling_gate.sql",
+  "088_payment_gate_search_path_hardening.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -157,6 +158,14 @@ if (!/NEW\.status\s*<>\s*'scheduled'[\s\S]*provider_payment_valid/i.test(observe
 }
 if (/(?:set\s+payment_status|payment_status\s*:=)\s*'paid'/i.test(observedWiseGate)) {
   throw new Error("079 must never author paid state from observed or provider-processing Wise evidence");
+}
+
+const paymentGateSearchPath = fs.readFileSync(
+  path.join(dir, "088_payment_gate_search_path_hardening.sql"),
+  "utf8",
+);
+if (!/alter function public\.check_payment_gate\(\)[\s\S]*set search_path = public, pg_temp;/i.test(paymentGateSearchPath)) {
+  throw new Error("088 must pin public.check_payment_gate() search_path to public, pg_temp");
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
