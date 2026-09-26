@@ -33,21 +33,26 @@ export default function TermsPage() {
               Service Description
             </h2>
             <p className="text-[#B0B0B0] leading-relaxed mb-6">
-              The Milano Seal™ provides document execution services including
-              Remote Online Notarization (RON), mobile notary services, and
-              apostille coordination. Our services are performed by Nicholas
-              Milano, a Certified Florida Notary Public, in compliance with
-              Florida state law.
+              The Milano Seal™ provides U.S. document execution coordination,
+              including Remote Online Notarization (RON), mobile notary
+              coordination, apostille/authentication routing, custody, and
+              release support. Nicholas Milano is a commissioned Florida Notary
+              Public. Matter-specific eligibility, execution method, and
+              receiving-authority requirements control the applicable path.
             </p>
 
             <h2 className="font-serif text-xl font-medium text-white mt-8 mb-4">
               Payment Terms
             </h2>
             <p className="text-[#B0B0B0] leading-relaxed mb-6">
-              All services require payment in full before execution can proceed.
-              Payments are processed through Wise. Pricing is determined based
-              on the selected execution tier and any applicable add-ons. Prices
-              are quoted in USD.
+              Payments are processed through Wise. The governed payment schedule
+              for a Matter controls scheduling, execution, and final release.
+              Where the quoted Matter uses the standard split-payment structure,
+              the initial required payment unlocks scheduling and the remaining
+              balance must be verified before final international release.
+              Pricing is determined from the canonical execution tier, route,
+              approved add-ons, and applicable courier costs. Prices are quoted
+              in USD.
             </p>
 
             <h2 className="font-serif text-xl font-medium text-white mt-8 mb-4">
@@ -64,11 +69,13 @@ export default function TermsPage() {
               International Acceptance
             </h2>
             <p className="text-[#B0B0B0] leading-relaxed mb-6">
-              While we structure documents for international acceptance under
-              the Hague Convention, acceptance of notarized and apostilled
-              documents is ultimately determined by the receiving authority in
-              the destination country. We cannot guarantee acceptance in all
-              jurisdictions.
+              The Milano Seal coordinates the U.S. execution and authentication
+              path using the document origin, signer posture, destination,
+              available authority information, and Matter-specific facts.
+              Apostille is only one possible route. Authentication, consular
+              legalization, translation review, or other receiving-authority
+              requirements may apply. Final acceptance remains subject to the
+              receiving authority, and no acceptance outcome is guaranteed.
             </p>
 
             <h2 className="font-serif text-xl font-medium text-white mt-8 mb-4">
