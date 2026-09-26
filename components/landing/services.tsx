@@ -102,8 +102,8 @@ export function Services() {
             Comprehensive Document Execution
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            High-trust document handling for international acceptance.
-            Discretion and compliance at every step.
+            High-trust document handling for international use.
+            Governed routing, custody, and release control at every step.
           </p>
         </motion.div>
 
