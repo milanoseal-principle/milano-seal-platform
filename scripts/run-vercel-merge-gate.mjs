@@ -122,7 +122,13 @@ for (const [gateIndex, [command, args]] of gatesToRun.entries()) {
     // Vercel build summaries do not reliably expose stdout/stderr. Emit a stable,
     // unique process code so the exact failing gate can be identified from the
     // deployment record without disabling, reordering, or replacing validators.
-    process.exit(process.env.VERCEL === "1" ? diagnosticExit : (result.status ?? 1));
+    process.exit(
+      process.env.VERCEL === "1" && gateIndex === 46
+        ? (result.status ?? diagnosticExit)
+        : process.env.VERCEL === "1"
+          ? diagnosticExit
+          : (result.status ?? 1),
+    );
   }
 }
 
