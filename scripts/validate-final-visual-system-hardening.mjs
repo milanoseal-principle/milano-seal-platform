@@ -29,8 +29,9 @@ for (const token of [
   "MINIMUM_VISIBLE_MS = 700",
   "SETTLE_FADE_MS = 220",
   "SAFETY_RELEASE_MS = 8000",
-  "Preparing the next view",
-  "Preserving your current context",
+  "usePublicTranslations",
+  "t.loading.title",
+  "t.loading.body",
   "z-[9200]",
 ]) {
   if (!navigation.includes(token)) throw new Error(`Navigation continuity missing: ${token}`);
@@ -64,7 +65,11 @@ if (!loading.includes("MilanoRouteSkeleton")) {
 }
 
 const states = readFileSync("components/system/MilanoProductState.tsx", "utf8");
-for (const token of ["Preparing the next view", "Preserving your current context", "aria-busy", "The Milano Seal™", "motion-reduce:animate-none", "min-h-11"]) {
+const publicDictionary = readFileSync("lib/i18n/public-dictionary.ts", "utf8");
+for (const canonicalLoadingCopy of ["Preparing the next view", "Preserving your current context while the destination surface is prepared."]) {
+  if (!publicDictionary.includes(canonicalLoadingCopy)) throw new Error(`Canonical English loading copy missing from public dictionary: ${canonicalLoadingCopy}`);
+}
+for (const token of ["usePublicTranslations", "t.loading.title", "t.loading.body", "aria-busy", "The Milano Seal™", "motion-reduce:animate-none", "min-h-11"]) {
   if (!states.includes(token)) throw new Error(`Canonical Milano product state missing: ${token}`);
 }
 for (const staleToken of ["Preparing secure workspace", "authoritative matter state"]) {
