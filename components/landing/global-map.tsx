@@ -7,7 +7,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { CountryComplianceCard, COUNTRY_COMPLIANCE_DATA } from "@/components/landing/country-compliance-card";
-import { getCorridorIntel, type MatterVector } from "@/data/corridor-intel";
+import { getGlobalRoute, type MatterVector } from "@/src/features/corridors/globalRouteData";
 import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 
 const GlobalIntelMapInteractive = dynamic(
@@ -151,9 +151,9 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
     if (!dest) return;
     setSelectedDest(dest);
     if (dest.lat && dest.lng) setMapFlyTarget({ lat: dest.lat, lng: dest.lng, zoom: 5 });
-    const intel = getCorridorIntel(dest.slug, dest.hague);
-    if (storedMatter) {
-      const mv = intel.matterVectors.find(m => m.label === storedMatter) ?? null;
+    const intel = getGlobalRoute(dest.slug);
+    if (storedMatter && intel) {
+      const mv = intel.matterVectors.find((item) => item.label === storedMatter) ?? null;
       setActiveMatter(mv);
     }
     setShowMemoryBanner(false);
@@ -165,10 +165,10 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
   const closeCompliance = useCallback(() => setComplianceCountryId(null), []);
 
   const corridorIntel = selectedDest
-    ? getCorridorIntel(selectedDest.slug, selectedDest.hague)
+    ? getGlobalRoute(selectedDest.slug) ?? null
     : null;
 
-  const activePath = activeMatter?.path ?? selectedDest?.executionPath ?? [];
+  const activePath = activeMatter?.path ?? corridorIntel?.executionPath ?? [];
   const activeTimeline = activeMatter?.timeline ?? corridorIntel?.timeline ?? null;
 
   const allSorted = [...DESTINATIONS].sort((a, b) => (b.demand || 0) - (a.demand || 0));
@@ -300,7 +300,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
                 {selectedDest && (
                   <motion.div key={`mobile-sheet-${selectedDest.slug}`} initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="absolute bottom-0 left-0 right-0 z-[600] lg:hidden" style={{ background: "rgba(3,3,5,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: "1px solid rgba(212,175,55,0.18)", boxShadow: "0 -8px 40px rgba(0,0,0,0.7)" }}>
                     <div className="flex items-center justify-between px-4 py-3">
-                      <div className="flex items-center gap-3 min-w-0"><span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span><div className="min-w-0"><div className="flex items-center gap-2 mb-0.5"><span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span><span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${selectedDest.hague ? "border-green-500/30 text-green-400/70" : "border-amber-500/30 text-amber-400/70"}`}>{selectedDest.hague ? "HAGUE" : "NON-HAGUE"}</span></div><span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">FL ORIGIN → {selectedDest.name.toUpperCase()}</span></div></div>
+                      <div className="flex items-center gap-3 min-w-0"><span className="text-2xl leading-none flex-shrink-0">{selectedDest.flag}</span><div className="min-w-0"><div className="flex items-center gap-2 mb-0.5"><span className="font-serif text-base text-white leading-tight truncate">{selectedDest.name}</span><span className={`flex-shrink-0 font-mono text-[7px] px-1.5 py-0.5 rounded border ${corridorIntel?.hague && !corridorIntel.verificationRequired ? "border-green-500/30 text-green-400/70" : "border-amber-500/30 text-amber-400/70"}`}>{corridorIntel?.hague && !corridorIntel.verificationRequired ? "APOSTILLE" : "REVIEW"}</span></div><span className="font-mono text-[8px] text-[#C6A55A]/50 tracking-wider">FL ORIGIN → {selectedDest.name.toUpperCase()}</span></div></div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                         {COUNTRY_COMPLIANCE_DATA[selectedDest.slug] && <button onClick={() => openCompliance(selectedDest.slug)} className="p-1.5 rounded border border-[#C6A55A]/25 text-[#C6A55A]/60 hover:text-[#C6A55A] hover:border-[#C6A55A]/50 transition-colors" aria-label="View compliance details"><Shield className="w-3.5 h-3.5" /></button>}
                         <Link href={`/intake?country=${encodeURIComponent(selectedDest.name)}`} className="px-3 py-1.5 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.1em] text-[9px] uppercase rounded-lg">Begin Intake</Link>
@@ -593,7 +593,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
             <AnimatePresence mode="wait">
               {hoveredToken ? (() => {
                 const hd = teaser.find(d => d.slug === hoveredToken);
-                const hi = hd ? getCorridorIntel(hd.slug, hd.hague) : null;
+                const hi = hd ? getGlobalRoute(hd.slug) ?? null : null;
                 return hd && hi ? (
                   <motion.div
                     key={hoveredToken}
@@ -641,7 +641,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
             <span className="font-mono text-[8px] text-[#333] flex-shrink-0 ml-3">{TEASER_LIMIT} OF 150 ACTIVE</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4">
-            {teaser.map((d) => <button key={d.slug} onClick={() => { const next = selectedDest?.slug === d.slug ? null : d; handleSelectDest(next); if (next?.lat && next?.lng) setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 }); }} onMouseEnter={() => setHoveredToken(d.slug)} onMouseLeave={() => setHoveredToken(null)} className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${selectedDest?.slug === d.slug ? "bg-[#C6A55A]/[0.06]" : selectedDest ? "opacity-40 hover:opacity-70 hover:bg-white/[0.02]" : "hover:bg-white/[0.02]"}`}>{selectedDest?.slug === d.slug && <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />}<div className="flex items-center justify-between mb-1.5"><div className="flex items-center gap-2"><span className="text-sm leading-none">{d.flag}</span><span className={`font-mono text-[10px] font-semibold tracking-wider ${selectedDest?.slug === d.slug ? "text-[#C6A55A]" : "text-white/80"}`}>{d.name.toUpperCase()}</span></div><span className={`font-mono text-[7px] px-1.5 py-0.5 rounded border ${d.hague ? "border-green-500/20 text-green-500/50" : "border-amber-500/20 text-amber-500/50"}`}>{d.hague ? "HAGUE" : "NON-HAGUE"}</span></div><div className="font-mono text-[9px] text-[#4A4A4A] tracking-wide truncate">{d.note}</div></button>)}
+            {teaser.map((d) => <button key={d.slug} onClick={() => { const next = selectedDest?.slug === d.slug ? null : d; handleSelectDest(next); if (next?.lat && next?.lng) setMapFlyTarget({ lat: next.lat, lng: next.lng, zoom: 5 }); }} onMouseEnter={() => setHoveredToken(d.slug)} onMouseLeave={() => setHoveredToken(null)} className={`group relative text-left px-4 py-3.5 border-b border-r border-white/[0.03] transition-all duration-300 focus:outline-none ${selectedDest?.slug === d.slug ? "bg-[#C6A55A]/[0.06]" : selectedDest ? "opacity-40 hover:opacity-70 hover:bg-white/[0.02]" : "hover:bg-white/[0.02]"}`}>{selectedDest?.slug === d.slug && <div className="absolute left-0 inset-y-0 w-px bg-[#C6A55A]/50" />}<div className="flex items-center justify-between mb-1.5"><div className="flex items-center gap-2"><span className="text-sm leading-none">{d.flag}</span><span className={`font-mono text-[10px] font-semibold tracking-wider ${selectedDest?.slug === d.slug ? "text-[#C6A55A]" : "text-white/80"}`}>{d.name.toUpperCase()}</span></div><span className={`font-mono text-[7px] px-1.5 py-0.5 rounded border ${getGlobalRoute(d.slug)?.hague && !getGlobalRoute(d.slug)?.verificationRequired ? "border-green-500/20 text-green-500/50" : "border-amber-500/20 text-amber-500/50"}`}>{getGlobalRoute(d.slug)?.hague && !getGlobalRoute(d.slug)?.verificationRequired ? "APOSTILLE" : "REVIEW"}</span></div><div className="font-mono text-[9px] text-[#4A4A4A] tracking-wide truncate">{d.note}</div></button>)}
           </div>
         </motion.div>
 
@@ -687,7 +687,7 @@ export function GlobalMap({ initialCountry }: { initialCountry?: string }) {
                   >
                     <span aria-hidden="true">{destination.flag}</span>
                     <span className="font-mono text-[10px] uppercase tracking-[0.08em]">{destination.name}</span>
-                    <span className="ml-auto font-mono text-[7px] text-white/25">{destination.hague ? "HAGUE" : "REVIEW"}</span>
+                    <span className="ml-auto font-mono text-[7px] text-white/25">{getGlobalRoute(destination.slug)?.hague && !getGlobalRoute(destination.slug)?.verificationRequired ? "APOSTILLE" : "REVIEW"}</span>
                   </button>
                 ))}
               </div>

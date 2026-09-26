@@ -1,8 +1,133 @@
 import { DESTINATIONS } from "@/data/destinations";
-export type RouteType = "hague_apostille" | "authentication" | "consular_legalization" | "receiving_authority_review" | "hybrid_review";
-export type SourceNote = { sourceType: "operator_note" | "official_source"; confidence: "needs_review" | "reviewed"; note: string };
-export type GlobalComplianceAtlasEntry = { slug: string; displayName: string; iso2: string; iso3: string; routeType: RouteType; publicRouteLabel: string; publicSummary: string; receivingAuthorityBoundary: string; hagueStatusLabel: string; ronSuitability: string; wetInkPreferenceRisk: string; translationRisk: string; consularRisk: string; courierRisk: string; publicFlags: string[]; documentWarnings: string[]; industryWarnings: string[]; requiredClientInputs: string[]; requiredOperatorChecks: string[]; requiredAllianceChecks: string[]; requiredVaChecks: string[]; sourceNotes: SourceNote[]; lastReviewedAt: string; reviewCadenceDays: number };
-const ROUTE_LABELS: Record<RouteType, string> = { hague_apostille: "Hague Apostille Execution Route", authentication: "Authentication Review Route", consular_legalization: "Consular Legalization Review Route", receiving_authority_review: "Receiving-Authority Review Route", hybrid_review: "Authentication / Consular Review Route" };
-const iso3Fallback = (iso2: string) => (iso2 || "XX").padEnd(3, "X").slice(0, 3).toUpperCase();
-export const GLOBAL_COMPLIANCE_ATLAS: GlobalComplianceAtlasEntry[] = DESTINATIONS.map((destination) => { const routeType: RouteType = destination.hague ? "hague_apostille" : "hybrid_review"; return { slug: destination.slug, displayName: destination.name, iso2: destination.flag ? destination.slug.slice(0, 2).toUpperCase() : "XX", iso3: iso3Fallback(destination.slug), routeType, publicRouteLabel: ROUTE_LABELS[routeType], publicSummary: `Controlled route snapshot for ${destination.name}. Receiving-authority review applies before execution decisions.`, receivingAuthorityBoundary: "Final acceptance remains subject to the receiving authority, foreign counsel, agency, registry, consulate, bank, court, government office, or private institution reviewing the document.", hagueStatusLabel: destination.hagueStatus, ronSuitability: "RON may be available depending on signer location, document type, platform eligibility, and receiving-authority expectations. Some matters may require mobile, in-person, or wet-ink execution review.", wetInkPreferenceRisk: destination.executionPath.some((s) => /mobile|witness|ink/i.test(s)) ? "review_required" : "medium", translationRisk: /translation/i.test(destination.executionPath.join(" ")) ? "review_required" : "receiving_authority_review", consularRisk: destination.hague ? "low" : "operator_review_required", courierRisk: "international_courier_review", publicFlags: [destination.hague ? "Apostille" : "Authentication", "Receiving-Authority Review", "Courier Release"], documentWarnings: ["Document type and origin state must be reviewed before routing."], industryWarnings: ["High-value asset, private-client, lawyer-led, and registry matters require operator review."], requiredClientInputs: ["document type", "destination country", "origin state", "signer location", "receiving authority if known"], requiredOperatorChecks: ["route type", "RON suitability", "identifier lock", "payment gate", "release gate"], requiredAllianceChecks: ["signer location", "certificate readiness", "witness needs"], requiredVaChecks: ["missing country", "missing document type", "missing signer count", "missing deadline", "missing upload"], sourceNotes: [{ sourceType: "operator_note", confidence: "needs_review", note: "Derived from canonical destination registry; official authority source review required before specific claims." }], lastReviewedAt: "2026-06-27", reviewCadenceDays: 90 }; });
-export function getGlobalComplianceAtlasEntry(slug: string) { return GLOBAL_COMPLIANCE_ATLAS.find((entry) => entry.slug === slug); }
+import { getCountryBySlug } from "@/lib/compliance/countries";
+import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
+
+export type RouteType =
+  | "hague_apostille"
+  | "authentication"
+  | "consular_legalization"
+  | "receiving_authority_review"
+  | "hybrid_review";
+
+export type SourceNote = {
+  sourceType: "operator_note" | "official_source";
+  confidence: "needs_review" | "reviewed";
+  note: string;
+};
+
+export type GlobalComplianceAtlasEntry = {
+  slug: string;
+  displayName: string;
+  iso2: string;
+  iso3: string;
+  routeType: RouteType;
+  publicRouteLabel: string;
+  publicSummary: string;
+  receivingAuthorityBoundary: string;
+  hagueStatusLabel: string;
+  ronSuitability: string;
+  wetInkPreferenceRisk: string;
+  translationRisk: string;
+  consularRisk: string;
+  courierRisk: string;
+  publicFlags: string[];
+  documentWarnings: string[];
+  industryWarnings: string[];
+  requiredClientInputs: string[];
+  requiredOperatorChecks: string[];
+  requiredAllianceChecks: string[];
+  requiredVaChecks: string[];
+  sourceNotes: SourceNote[];
+  lastReviewedAt: string | null;
+  reviewCadenceDays: number;
+};
+
+function atlasRouteType(
+  routeType: ReturnType<typeof getPublicCountryExecutionIntelligence>["routeType"],
+): RouteType {
+  if (routeType === "hague_apostille") return "hague_apostille";
+  if (routeType === "consular_legalization") return "consular_legalization";
+  if (routeType === "hybrid_review") return "hybrid_review";
+  return "receiving_authority_review";
+}
+
+export const GLOBAL_COMPLIANCE_ATLAS: GlobalComplianceAtlasEntry[] =
+  DESTINATIONS.map((destination) => {
+    const compliance = getCountryBySlug(destination.slug);
+    const publicIntel = getPublicCountryExecutionIntelligence(
+      destination.slug,
+      destination.name,
+    );
+    const routeType = atlasRouteType(publicIntel.routeType);
+
+    return {
+      slug: destination.slug,
+      displayName: compliance?.name ?? destination.name,
+      iso2: compliance?.iso2 ?? "XX",
+      iso3: compliance?.iso3 ?? "XXX",
+      routeType,
+      publicRouteLabel: publicIntel.routeLabel,
+      publicSummary: publicIntel.authoritySummary,
+      receivingAuthorityBoundary: publicIntel.complianceBoundary,
+      hagueStatusLabel: publicIntel.statusPill,
+      ronSuitability:
+        "RON suitability is reviewed against signer location, document type, provider capability, and receiving-authority expectations before execution.",
+      wetInkPreferenceRisk: "receiving_authority_review",
+      translationRisk: "receiving_authority_review",
+      consularRisk:
+        routeType === "consular_legalization" || routeType === "hybrid_review"
+          ? "operator_review_required"
+          : "receiving_authority_review",
+      courierRisk: "international_courier_review",
+      publicFlags: publicIntel.publicFlags,
+      documentWarnings: [
+        "Document type and origin authority must be reviewed before routing.",
+      ],
+      industryWarnings: [
+        "High-value asset, private-client, lawyer-led, and registry matters require Matter-specific review.",
+      ],
+      requiredClientInputs: [
+        "document type",
+        "destination country",
+        "origin state or issuing authority",
+        "signer location",
+        "receiving authority if known",
+      ],
+      requiredOperatorChecks: [
+        "route type",
+        "RON suitability",
+        "authority source status",
+        "payment gate",
+        "release gate",
+      ],
+      requiredAllianceChecks: [
+        "signer location",
+        "certificate readiness",
+        "witness posture",
+      ],
+      requiredVaChecks: [
+        "missing country",
+        "missing document type",
+        "missing signer count",
+        "missing deadline",
+        "missing upload",
+      ],
+      sourceNotes: [
+        {
+          sourceType: "operator_note",
+          confidence:
+            publicIntel.sourceStatus === "CANONICAL" ? "reviewed" : "needs_review",
+          note:
+            publicIntel.sourceStatus === "CANONICAL"
+              ? "Public routing posture is projected from the canonical country compliance registry; Matter-specific receiving-authority review still controls execution."
+              : "Current public routing posture requires operator review before specific authority claims are made.",
+        },
+      ],
+      lastReviewedAt: null,
+      reviewCadenceDays: 90,
+    };
+  });
+
+export function getGlobalComplianceAtlasEntry(slug: string) {
+  return GLOBAL_COMPLIANCE_ATLAS.find((entry) => entry.slug === slug);
+}

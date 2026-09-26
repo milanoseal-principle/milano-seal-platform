@@ -28,9 +28,9 @@ promoted to PASS by a build or source validator.
 
 ## Why this runbook exists
 
-Repository validation is certified only when the **Vercel external merge gate**
-passes for the exact SHA entered above. GitHub-hosted Actions are not a launch
-dependency. The remaining gates — live production, Wise production E2E, and the
+Repository source validation requires both the automatic **GitHub pull-request CI**
+and the **Vercel merge gate** to remain healthy for the release path. The remaining
+gates — live production, Wise production E2E, and the
 Damiani dry run — **cannot** be certified from the build environment, because
 that environment cannot prove live Wise/Supabase transaction truth. Calling those gates "passed" from there would be
 false. This checklist is the manual production certification to be executed
@@ -65,7 +65,7 @@ and must not authorize final release.
 **Entry status:**
 
 ```
-CODE + VERCEL MERGE GATE   PASS / FAIL
+CODE + CI / VERCEL GATES    PASS / FAIL
 LIVE VERCEL CERTIFICATION   PENDING
 WISE PRODUCTION E2E         PENDING
 DAMIANI DRY RUN             PENDING
@@ -83,7 +83,7 @@ This document is the current release authority. Gates are certified in order:
 
 ```text
 A. Existing infrastructure / security prerequisites   (MS-OPS-GOLIVE-2026-V1, legacy)
-B. Current production code + external merge gate       (exact CERTIFIED PRODUCTION SHA — PASS required)
+B. Current production code + CI / Vercel gates          (exact CERTIFIED PRODUCTION SHA — PASS required)
 C. Live Vercel certification                           (Phase 1)
 D. TIFFTEST50 Wise E2E                                 (Phase 2)
 E. Damiani dry run                                     (Phase 3)
@@ -99,20 +99,22 @@ infrastructure clearance only (order item A).
 
 ---
 
-## BILLING-INDEPENDENT MERGE GATE
+## CI + VERCEL MERGE GATES
 
-The repository does **not** depend on GitHub-hosted Actions for launch certification.
-Every Vercel preview/production deployment executes `node scripts/run-vercel-merge-gate.mjs` before `next build`.
-That command runs the canonical validators, typecheck, lint, test suite, production-governance,
-Damiani wiring, TIFF certification checks, and explicit module/motion/data-intelligence
-validators. A failed gate prevents the Vercel deployment from reaching a successful status.
+Pull requests targeting `main` run the canonical GitHub validation workflow automatically,
+with manual `workflow_dispatch` retained for recovery. Production Vercel deployments also
+execute `node scripts/run-vercel-merge-gate.mjs` before `next build`.
+The Vercel gate runs the canonical validators, typecheck, lint, test suite,
+production-governance, Damiani wiring, TIFF certification checks, and explicit
+module/motion/data-intelligence validators. A failed gate prevents deployment readiness.
 
-For protected `main`, require the external status check:
+For protected `main`, require the automatic Milano Seal PR CI check and the canonical
+production Vercel status context once branch-protection administration is available.
 
-`Vercel – milano-seal-platform`
+GitHub CI and Vercel source validation are complementary source-level gates. Neither one
+replaces the live transaction certification required for GO / NO-GO.
 
-The GitHub Actions workflow remains manual-only as a recovery/future secondary runner.
-Its billing availability does not control GO / NO-GO.
+A preview commit containing `[validate-preview]` explicitly opts that commit into the full Vercel merge gate when ordinary preview builds are suppressed for spend control.
 
 **Source-validation PASS is not live transaction proof.** TIFF and Damiani live gates remain mandatory.
 

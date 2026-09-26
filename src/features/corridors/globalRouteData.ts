@@ -1,10 +1,7 @@
 import { DESTINATIONS } from "@/data/destinations";
-import {
-  CORRIDOR_INTEL,
-  getCorridorIntel,
-  type MatterVector,
-} from "@/data/corridor-intel";
+import type { MatterVector } from "@/data/corridor-intel";
 import { getCountryBySlug } from "@/lib/compliance/countries";
+import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
 
 export type { MatterVector };
 
@@ -27,8 +24,6 @@ export interface GlobalRouteRecord {
   matterVectors: MatterVector[];
 }
 
-// Visual-routing fallbacks for destination rows that predate coordinate enrichment.
-// These are display coordinates only and do not alter compliance or execution logic.
 const ROUTE_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> = {
   "united-kingdom": { lat: 51.5074, lng: -0.1278 },
   netherlands: { lat: 52.3676, lng: 4.9041 },
@@ -50,48 +45,12 @@ const ROUTE_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> =
   "saudi-arabia": { lat: 24.7136, lng: 46.6753 },
 };
 
-function safeExecutionPath({
-  hague,
-  verificationRequired,
-}: {
-  hague: boolean;
-  verificationRequired: boolean;
-}) {
-  if (verificationRequired) {
-    return [
-      "Document-origin and receiving-authority review",
-      "Execution requirements confirmed before notarization",
-      "Apostille / authentication pathway verified",
-      "Destination release / courier coordination",
-    ];
-  }
-
-  if (hague) {
-    return [
-      "Document-origin and receiving-authority review",
-      "Notarization or certified-copy review, if required",
-      "Competent-authority apostille routing",
-      "Destination release / courier coordination",
-    ];
-  }
-
-  return [
-    "Document-origin and receiving-authority review",
-    "Execution / notarization review, if required",
-    "Authentication / consular pathway confirmation",
-    "Destination release / courier coordination",
-  ];
-}
-
 export const GLOBAL_ROUTE_DATA: GlobalRouteRecord[] = DESTINATIONS.flatMap((destination) => {
-  // Public corridor visuals defer to the canonical compliance registry whenever
-  // that registry has a profile. Legacy DESTINATIONS data remains a fallback only.
   const compliance = getCountryBySlug(destination.slug);
-  const hague = compliance
-    ? compliance.hagueMember === "member"
-    : destination.hague;
-  const verificationRequired =
-    compliance?.verificationStatus === "VERIFICATION_REQUIRED";
+  const publicIntel = getPublicCountryExecutionIntelligence(
+    destination.slug,
+    destination.name,
+  );
 
   const coordinates =
     typeof compliance?.lat === "number" && typeof compliance?.lng === "number"
@@ -102,16 +61,7 @@ export const GLOBAL_ROUTE_DATA: GlobalRouteRecord[] = DESTINATIONS.flatMap((dest
 
   if (!coordinates) return [];
 
-  const intel = getCorridorIntel(destination.slug, hague);
-  const legacyRouteMatchesCanonical = destination.hague === hague;
-  const shouldUseLegacyPath =
-    legacyRouteMatchesCanonical && !verificationRequired;
-
-  const routeType = verificationRequired
-    ? "Route Verification Required"
-    : hague
-      ? "Hague Convention"
-      : "Consular Authentication";
+  const hague = publicIntel.routeType === "hague_apostille";
 
   return [
     {
@@ -121,27 +71,16 @@ export const GLOBAL_ROUTE_DATA: GlobalRouteRecord[] = DESTINATIONS.flatMap((dest
       lat: coordinates.lat,
       lng: coordinates.lng,
       hague,
-      hagueStatus: compliance
-        ? compliance.hagueMember === "member"
-          ? "Hague Convention Member"
-          : compliance.hagueMember === "bilateral"
-            ? "Bilateral / authority review"
-            : "Non-Hague"
-        : destination.hagueStatus,
-      verificationRequired,
+      hagueStatus: publicIntel.statusPill,
+      verificationRequired: publicIntel.verificationRequired,
       demand: destination.demand,
-      timeline: intel.timeline,
-      translationRequired: intel.translationRequired,
-      routeType,
-      executionPath: shouldUseLegacyPath
-        ? destination.executionPath
-        : safeExecutionPath({ hague, verificationRequired }),
+      timeline: "Estimate — not guaranteed",
+      translationRequired: false,
+      routeType: publicIntel.routeLabel,
+      executionPath: publicIntel.publicExecutionPath,
       commonDocuments: destination.commonDocuments,
       note: destination.note,
-      matterVectors:
-        shouldUseLegacyPath && intel.routeType === routeType
-          ? intel.matterVectors
-          : [],
+      matterVectors: [],
     },
   ];
 });
@@ -151,13 +90,9 @@ export function getGlobalRoute(slug: string): GlobalRouteRecord | undefined {
 }
 
 export const HAGUE_ROUTES: GlobalRouteRecord[] = GLOBAL_ROUTE_DATA.filter(
-  (route) => route.hague,
+  (route) => route.hague && !route.verificationRequired,
 ).sort((a, b) => b.demand - a.demand);
 
 export const ALL_ROUTES_SORTED: GlobalRouteRecord[] = [...GLOBAL_ROUTE_DATA].sort(
   (a, b) => b.demand - a.demand,
 );
-
-// Kept exported for existing consumers that import corridor intelligence from
-// this module's dependency graph during static analysis.
-void CORRIDOR_INTEL;

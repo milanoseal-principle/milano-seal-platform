@@ -9,8 +9,6 @@ import {
   Route,
 } from "lucide-react";
 import type { Destination } from "@/data/destinations";
-import { DESTINATIONS } from "@/data/destinations";
-import { getCorridorIntel } from "@/data/corridor-intel";
 import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
 import ExecutionComplianceBoundary from "@/components/intelligence/ExecutionComplianceBoundary";
 
@@ -61,34 +59,13 @@ const ROUTE_COPY: Record<string, string> = {
   uae: "Consular authentication review for UAE",
 };
 
-/**
- * Real, destination-specific routing steps for the intel cards.
- * Uses the canonical executionPath (e.g. "Florida Department of State apostille",
- * "Courier to Italian municipality or consulate") instead of generic placeholder
- * copy. Surfaces (globe hero) that lack the full Destination object resolve the
- * real path by slug; if a slug is unknown, a route-type-derived path is returned —
- * never generic filler.
- */
+/** Public-safe route preview projected from governed country intelligence. */
 export function executionPathPreview(
   slug: string,
-  isHague: boolean,
-  needsTranslation: boolean,
+  _isHague: boolean,
+  _needsTranslation: boolean,
 ): string[] {
-  const canonical = DESTINATIONS.find((item) => item.slug === slug);
-  if (canonical && canonical.executionPath.length > 0) {
-    return canonical.executionPath.slice(0, 5);
-  }
-
-  const steps = isHague
-    ? ["Notarization or RON", "Florida Department of State apostille"]
-    : [
-        "Notarization or RON",
-        "Florida & U.S. Dept. of State authentication",
-        "Destination consular legalization",
-      ];
-  if (needsTranslation) steps.push("Certified translation");
-  steps.push("Courier to receiving authority");
-  return steps;
+  return getPublicCountryExecutionIntelligence(slug).publicExecutionPath.slice(0, 5);
 }
 
 function documentChips(destination: Destination): string[] {
@@ -105,53 +82,27 @@ function documentChips(destination: Destination): string[] {
 export function buildDestinationIntelligence(
   destination: Destination,
 ): DestinationIntelligence {
-  const corridor = getCorridorIntel(destination.slug, destination.hague);
-  const verificationRequired = destination.slug === "uae";
-  const hagueRoute = destination.hague || destination.slug === "mexico";
-  const routeLabel = verificationRequired
-    ? "Consular Legalization Review"
-    : hagueRoute
-      ? "Hague Apostille Route"
-      : "Consular Authentication Route";
-  const statusLabel = verificationRequired
-    ? "Verification Required"
-    : hagueRoute
-      ? "Hague Member"
-      : "Non-Hague Route";
-  const routeProcess = verificationRequired
-    ? "Non-Hague authentication and consular review"
-    : hagueRoute
-      ? "apostille coordination"
-      : "authentication and consular review";
+  const governed = getPublicCountryExecutionIntelligence(
+    destination.slug,
+    destination.name,
+  );
 
   return {
     slug: destination.slug,
-    name: destination.name,
+    name: governed.displayName,
     flag: destination.flag,
-    routeLabel,
-    statusLabel,
-    summary: verificationRequired
-      ? "Non-Hague authentication and consular review may apply. The required route must be verified against the document type, originating authority, and receiving party before execution."
-      : `Florida-origin documents intended for ${destination.name} may require notarization review, ${routeProcess}, and secure release depending on the receiving authority.`,
+    routeLabel: governed.routeLabel,
+    statusLabel: governed.statusPill,
+    summary: governed.authoritySummary,
     documents: documentChips(destination),
     seoLine:
       ROUTE_COPY[destination.slug] ??
       `International document execution for ${destination.name}`,
-    translationReview:
-      corridor.translationRequired ||
-      destination.executionPath.some((step) => /translation/i.test(step)),
-    courierReview: destination.executionPath.some((step) =>
-      /courier|delivery|release/i.test(step),
-    ),
-    pathPreview: verificationRequired
-      ? [
-          "Mobile notarization review",
-          "Florida authentication review",
-          "U.S. Department of State review",
-          "UAE embassy or consular review",
-          "Courier delivery",
-        ]
-      : destination.executionPath.slice(0, 5),
+    translationReview: governed.publicFlags.includes("Translation Review"),
+    courierReview:
+      governed.publicFlags.includes("Courier Release") ||
+      governed.publicFlags.includes("Custody Release"),
+    pathPreview: governed.publicExecutionPath.slice(0, 5),
   };
 }
 
@@ -214,7 +165,7 @@ export function DestinationIntelligenceCard({
         </div>
         <span
           className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[7px] uppercase tracking-[0.12em] ${
-            data.statusLabel === "Hague Member"
+            data.statusLabel === "APOSTILLE REVIEW"
               ? "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-300/80"
               : "border-amber-500/25 bg-amber-500/[0.06] text-amber-300/80"
           }`}
@@ -269,7 +220,7 @@ export function DestinationIntelligenceCard({
           {[
             {
               Icon: FileCheck2,
-              label: data.statusLabel === "Hague Member" ? "Apostille review" : "Authentication review",
+              label: data.statusLabel === "APOSTILLE REVIEW" ? "Apostille review" : "Authentication review",
               active: true,
             },
             { Icon: Languages, label: "Translation review", active: data.translationReview },
