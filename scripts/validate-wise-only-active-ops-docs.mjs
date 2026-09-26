@@ -10,6 +10,10 @@ const ACTIVE_OPERATIONAL_DOCS = [
   "docs/CI_BILLING_INDEPENDENT_GATE.md",
 ];
 
+const SUPERSEDED_OPERATIONAL_DOCS = [
+  "docs/v2026-production-build-directive.md",
+];
+
 const PROHIBITED_ACTIVE_ARCHITECTURE = [
   { label: "Stripe secret-key environment variable", pattern: /\bSTRIPE_SECRET_KEY\b/i },
   { label: "Stripe webhook-secret environment variable", pattern: /\bSTRIPE_WEBHOOK_SECRET\b/i },
@@ -26,6 +30,15 @@ for (const file of ACTIVE_OPERATIONAL_DOCS) {
   for (const prohibited of PROHIBITED_ACTIVE_ARCHITECTURE) {
     assert.ok(!prohibited.pattern.test(content), `${file} contains prohibited ${prohibited.label}`);
   }
+}
+
+for (const file of SUPERSEDED_OPERATIONAL_DOCS) {
+  assert.ok(existsSync(file), `Superseded operational documentation missing: ${file}`);
+  const content = readFileSync(file, "utf8");
+  assert.ok(
+    content.includes("HISTORICAL / SUPERSEDED"),
+    `${file} must be explicitly marked historical/superseded so it cannot override live architecture`,
+  );
 }
 
 const deploy = readFileSync("DEPLOY_CHECKLIST.md", "utf8");
