@@ -114,6 +114,8 @@ production Vercel status context once branch-protection administration is availa
 GitHub CI and Vercel source validation are complementary source-level gates. Neither one
 replaces the live transaction certification required for GO / NO-GO.
 
+A preview commit containing `[validate-preview]` explicitly opts that commit into the full Vercel merge gate when ordinary preview builds are suppressed for spend control.
+
 **Source-validation PASS is not live transaction proof.** TIFF and Damiani live gates remain mandatory.
 
 ---
