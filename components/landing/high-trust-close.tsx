@@ -8,7 +8,7 @@ const trustPoints = [
   "Structured for international use",
   "Procedural control across jurisdictions",
   "Discretion and compliance at every step",
-  "Executed properly the first time",
+  "Execution path reviewed before release",
 ];
 
 export function HighTrustClose() {
