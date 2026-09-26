@@ -4,22 +4,20 @@ import path from "node:path";
 
 function walk(dir) {
   if (!existsSync(dir)) return [];
-  const out = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walk(p));
-    else if (entry.isFile() && entry.name.endsWith(".test.ts")) out.push(p);
+  const out=[];
+  for (const e of readdirSync(dir,{withFileTypes:true})) {
+    const p=path.join(dir,e.name);
+    if (e.isDirectory()) out.push(...walk(p));
+    else if (e.isFile() && (e.name.endsWith(".test.ts") || e.name.endsWith(".test.mjs"))) out.push(p);
   }
   return out.sort();
 }
-
-for (const [root, code] of [["tests",31],["lib",32],["components",33]]) {
-  const targets = walk(root);
-  if (!targets.length) continue;
-  const r = spawnSync(process.execPath, ["--import","tsx","--test",...targets], {
-    stdio: "ignore",
-    env: { ...process.env, CI: "1" },
-  });
-  if ((r.status ?? 1) !== 0) process.exit(code);
+const files=walk("tests");
+const chunks=8;
+for(let i=0;i<chunks;i++){
+  const group=files.filter((_,idx)=>Math.floor(idx*chunks/files.length)===i);
+  if(!group.length) continue;
+  const r=spawnSync(process.execPath,["--import","tsx","--test",...group],{stdio:"ignore",env:{...process.env,CI:"1"}});
+  if((r.status??1)!==0) process.exit(40+i);
 }
 process.exit(0);
