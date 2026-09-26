@@ -100,7 +100,7 @@ const gates = [
   ["node", ["scripts/validate-global-pricing-courier.mjs"]],
 ];
 
-const gatesToRun = process.env.VERCEL === "1" ? [["node", ["scripts/diagnose-typecheck.mjs"]]] : gates;
+const gatesToRun = process.env.VERCEL === "1" ? [["node", ["scripts/diagnose-typecheck-final.mjs"]]] : gates;
 
 for (const [command, args] of gatesToRun) {
   const label = `${command} ${args.join(" ")}`;
