@@ -103,8 +103,9 @@ const gates = [
 // Final release validation: Vercel runs the complete deterministic gate set.
 const gatesToRun = gates;
 
-for (const [command, args] of gatesToRun) {
+for (const [gateIndex, [command, args]] of gatesToRun.entries()) {
   const label = `${command} ${args.join(" ")}`;
+  const diagnosticExit = 20 + gateIndex;
   console.log(`\n=== VERCEL MERGE GATE: ${label} ===`);
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -117,8 +118,11 @@ for (const [command, args] of gatesToRun) {
     process.exit(1);
   }
   if (result.status !== 0) {
-    console.error(`Gate failed (${result.status}): ${label}`);
-    process.exit(result.status ?? 1);
+    console.error(`Gate failed (${result.status}) at index ${gateIndex}: ${label}`);
+    // Vercel build summaries do not reliably expose stdout/stderr. Emit a stable,
+    // unique process code so the exact failing gate can be identified from the
+    // deployment record without disabling, reordering, or replacing validators.
+    process.exit(process.env.VERCEL === "1" ? diagnosticExit : (result.status ?? 1));
   }
 }
 
