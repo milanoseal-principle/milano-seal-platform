@@ -24,6 +24,9 @@ const componentDirs = [
   "trust-alliance-platform","trust","ui","va","workbook"
 ];
 
+if (first.startsWith("components/countries/CountriesDirectoryInteractive.tsx")) process.exit(121);
+if (first.startsWith("components/countries/ItalyChecklist.tsx")) process.exit(122);
+
 if (first.startsWith("components/")) {
   const match = first.match(/^components\/([^/]+)\//);
   if (match) {
