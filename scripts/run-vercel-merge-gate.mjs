@@ -101,7 +101,7 @@ const gates = [
 ];
 
 // Final release validation: Vercel runs the complete deterministic gate set.
-const gatesToRun = process.env.VERCEL === "1" ? gates.slice(0, 46) : gates;
+const gatesToRun = process.env.VERCEL === "1" ? gates.slice(0, 47) : gates;
 
 for (const [command, args] of gatesToRun) {
   const label = `${command} ${args.join(" ")}`;
