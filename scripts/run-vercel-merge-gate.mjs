@@ -18,13 +18,13 @@ assert.ok(
     vercel.ignoreCommand.includes("[validate-preview]"),
   "Vercel must suppress ordinary preview spend while allowing an explicit one-commit validation override",
 );
-assert.ok(!workflow.includes("pull_request:"), "GitHub-hosted PR CI must remain manual-only during billing bypass");
-assert.ok(workflow.includes("workflow_dispatch:"), "Legacy GitHub Actions validation must remain manually recoverable");
+assert.ok(workflow.includes("pull_request:"), "GitHub-hosted PR CI must run automatically for pull requests targeting main");
+assert.ok(workflow.includes("workflow_dispatch:"), "GitHub Actions validation must remain manually recoverable");
 assert.ok(certification.includes("CERTIFIED PRODUCTION SHA"), "Certification must bind to an exact deployed SHA");
 assert.ok(!certification.includes("main @ 310886b"), "Stale hardcoded certification SHA must be removed");
-assert.ok(certification.includes("Vercel external merge gate"), "Certification must name the external merge gate");
+assert.ok(certification.includes("Vercel merge gate"), "Certification must name the Vercel merge gate");
 
-console.log("PASS billing-independent CI governance");
+console.log("PASS dual CI governance");
 
 const gates = [
   ["npm", ["run", "validate:duplicate-source"]],
@@ -115,4 +115,4 @@ for (const [command, args] of gates) {
   }
 }
 
-console.log("\nPASS: billing-independent Vercel merge gate completed. next build may proceed.");
+console.log("\nPASS: Vercel merge gate completed. next build may proceed.");
