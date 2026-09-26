@@ -28,8 +28,7 @@ promoted to PASS by a build or source validator.
 
 ## Why this runbook exists
 
-Repository source validation requires both the automatic **GitHub pull-request CI**
-and the **Vercel merge gate** to remain healthy for the release path. The remaining
+Repository source validation is enforced by the **Vercel merge gate**. The GitHub pull-request CI remains an automatic secondary/recovery runner when hosted-runner capacity is available. The remaining
 gates — live production, Wise production E2E, and the
 Damiani dry run — **cannot** be certified from the build environment, because
 that environment cannot prove live Wise/Supabase transaction truth. Calling those gates "passed" from there would be
@@ -85,7 +84,7 @@ This document is the current release authority. Gates are certified in order:
 A. Existing infrastructure / security prerequisites   (MS-OPS-GOLIVE-2026-V1, legacy)
 B. Current production code + CI / Vercel gates          (exact CERTIFIED PRODUCTION SHA — PASS required)
 C. Live Vercel certification                           (Phase 1)
-D. TIFFTEST50 Wise E2E                                 (Phase 2)
+D. TIFFTEST99 Gate 37 Wise E2E                                 (Phase 2)
 E. Damiani dry run                                     (Phase 3)
 F. Final Truth Review                                  (Phase 4)
 G. GO / NO-GO                                          (Phase 5)
@@ -101,15 +100,13 @@ infrastructure clearance only (order item A).
 
 ## CI + VERCEL MERGE GATES
 
-Pull requests targeting `main` run the canonical GitHub validation workflow automatically,
-with manual `workflow_dispatch` retained for recovery. Production Vercel deployments also
+Pull requests targeting `main` are configured to run the canonical GitHub validation workflow automatically, with manual `workflow_dispatch` retained for recovery; hosted-runner availability is not treated as production evidence. Production Vercel deployments
 execute `node scripts/run-vercel-merge-gate.mjs` before `next build`.
 The Vercel gate runs the canonical validators, typecheck, lint, test suite,
 production-governance, Damiani wiring, TIFF certification checks, and explicit
 module/motion/data-intelligence validators. A failed gate prevents deployment readiness.
 
-For protected `main`, require the automatic Milano Seal PR CI check and the canonical
-production Vercel status context once branch-protection administration is available.
+For protected `main`, require the canonical production Vercel status context. Add the Milano Seal PR CI check as a required context only when GitHub-hosted runner capacity is confirmed available so infrastructure billing cannot deadlock releases.
 
 GitHub CI and Vercel source validation are complementary source-level gates. Neither one
 replaces the live transaction certification required for GO / NO-GO.
@@ -134,10 +131,9 @@ A preview commit containing `[validate-preview]` explicitly opts that commit int
 
 ---
 
-## PHASE 2 — TIFFTEST50 LIVE WISE E2E
+## PHASE 2 — TIFFTEST99 / GATE 37 LIVE WISE E2E
 
-Use a disposable, eligible test Matter. This phase moves **real** money via
-Wise — execute a controlled, minimal payment only.
+Use the controlled Gate 37 test Matter and current runbook at `docs/control-plane/09_TIFFANY_FINAL_15_STEP_PRODUCTION_TEST.md`. This phase moves **real** money via Wise — execute only the governed minimal payment produced by canonical pricing.
 
 **Setup**
 
@@ -169,7 +165,7 @@ Wise — execute a controlled, minimal payment only.
 | 2.8 | Server validates observed **reference** for scheduling authority | ☐ / ☐ | — |
 | 2.9 | Provider reconciliation binds the **transaction ID** to the same Matter | ☐ / ☐ | — |
 | 2.10 | Final verified/settled Wise truth eventually sets `payment_confirmed` as applicable | ☐ / ☐ | — |
-| 2.11 | TIFFTEST50 redeemed exactly **once** through its governed redemption event | ☐ / ☐ | usage_count: __________ |
+| 2.11 | TIFFTEST99 redeemed exactly **once** through its governed redemption event | ☐ / ☐ | usage_count: __________ |
 | 2.12 | Matter scheduling unlocks after a valid integrity-matched Wise submission observation; final settlement may still be pending | ☐ / ☐ | observation + scheduling ts: __________ |
 | 2.13 | Portal distinguishes Submitted / Processing / Confirmed / Settled truth correctly | ☐ / ☐ | screenshot: __________ |
 
@@ -312,14 +308,14 @@ Verify exactly one record and capture public `deal_id`, internal UUID, `created_
 ### STEP 6 — QUOTE / MATTER PARITY
 Compare the server record and UI: `original_total`, `eligible_subtotal`, `non_discountable_total`, `discount_amount`, `final_total`, `invoice_retainer`, `invoice_balance`, `amount_due`, and `currency`. Exact logical and numeric parity is required.
 
-### STEP 7 — TIFFTEST50
-Apply TIFFTEST50 and capture `usage_count` before payment. Verify 50% applies only to canonical `eligible_subtotal`, non-discountable value is untouched, totals and the 50/50 invoice regenerate, payment remains unpaid, `payment_confirmed` remains false, and scheduling/execution remain locked. TIFFTEST50 is not a public reusable client discount.
+### STEP 7 — TIFFTEST99
+Enter TIFFTEST99 on the authenticated Invoice & Payment surface and capture `usage_count` before payment. Verify the governed 99% discount applies to the canonical full Matter total (`applies_to=matter_total`), the itemized order regenerates to the expected final total and 50/50 retainer/balance, payment remains unpaid, `payment_confirmed` remains false, and scheduling/execution remain locked until canonical payment authority exists. TIFFTEST99 is controlled QA only and is not a public reusable client discount.
 
 ### STEP 8 — WISE PAYMENT
 Use only approved production Wise configuration. Verify the Matter reference, amount, and currency exactly; never invent beneficiary/account details. A successful client submission may create scheduling authority only after the server records an integrity-matched Wise observation.
 
 ### STEP 9 — WISE RECONCILIATION / IDEMPOTENCY
-Verify the same UUID/`deal_id` updates once. Preserve distinct truth for observed submission, provider-side Wise evidence, and final settlement. When final settlement is verified, `payment_confirmed`/paid truth and `amount_paid` must be exact. Preserve the Wise transaction ID, no duplicate payment, and **TIFFTEST50 redeemed exactly once** under its governed redemption rule. Replay the observation/provider event/settlement and prove replay does not create a second redemption, payment, or state transition.
+Verify the same UUID/`deal_id` updates once. Preserve distinct truth for observed submission, provider-side Wise evidence, and final settlement. When final settlement is verified, `payment_confirmed`/paid truth and `amount_paid` must be exact. Preserve the Wise transaction ID, no duplicate payment, and **TIFFTEST99 redeemed exactly once** under its governed redemption rule. Replay the observation/provider event/settlement and prove replay does not create a second redemption, payment, or state transition.
 
 ### STEP 10 — PAYMENT → SCHEDULING GATE
 **Before a valid integrity-matched Wise submission observation: scheduling is blocked.** After the observation is recorded, scheduling becomes eligible even while final settlement is pending. Prove discount-only cannot unlock scheduling. Prove client observation alone cannot release the BlueNotary signer link when stronger provider evidence is required. Prove final international release remains separately settlement/release gated.
@@ -369,7 +365,7 @@ Audit Secure Records Intake, Matter cockpit, SecurePaymentCard, Matter Control P
 
 ### QA code governance lock
 
-TIFFTEST50 remains governed: eligibility uses canonical subtotal, application changes the Matter obligation but not payment truth, scheduling authority comes only from a valid integrity-matched Wise submission observation (or other canonical governed authority), execution authority remains stronger where required, redemption occurs only through its governed verified Wise event, and single redemption survives replay. Do not remove usage controls for convenience. For future testing, use an approved reset/reissue lifecycle.
+TIFFTEST99 remains governed: the discount base is the canonical full Matter total for this Gate 37 code, application changes the Matter obligation but not payment truth, scheduling authority comes only from a valid integrity-matched Wise submission observation (or other canonical governed authority), execution authority remains stronger where required, redemption occurs only through its governed verified Wise event, and single-use behavior survives replay. Do not remove usage controls for convenience. For future testing, use an approved reset/reissue lifecycle.
 
 `NICKTEST50`: **DO NOT CREATE**, alter, activate, or migrate it unless a canonical production record or explicit founder-approved specification is first verified.
 
@@ -383,7 +379,7 @@ MILANO SEAL — TIFF REAL 15-STEP CERTIFICATION
 4 DOCUMENT UPLOAD                          PASS / FAIL
 5 SINGLE MATTER PERSISTENCE                PASS / FAIL   MATTER ID: ___
 6 QUOTE / MATTER PARITY                    PASS / FAIL
-7 TIFFTEST50                               PASS / FAIL   USAGE BEFORE PAYMENT: ___
+7 TIFFTEST99                               PASS / FAIL   USAGE BEFORE PAYMENT: ___
 8 WISE PAYMENT                             PASS / FAIL
 9 WISE RECONCILIATION / IDEMPOTENCY        PASS / FAIL   USAGE AFTER PAYMENT: ___
 10 PAYMENT → SCHEDULING GATE               PASS / FAIL
