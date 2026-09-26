@@ -8,8 +8,8 @@ const certification = readFileSync("docs/FINAL_PRODUCTION_CERTIFICATION.md", "ut
 
 assert.equal(
   vercel.buildCommand,
-  "node scripts/run-vercel-merge-gate.mjs",
-  "Debug branch must run the merge gate without Next build",
+  "node scripts/run-vercel-merge-gate.mjs && npm run build",
+  "Vercel must run the deterministic merge gate before the real Next production build",
 );
 assert.ok(
   typeof vercel.ignoreCommand === "string" &&
@@ -80,7 +80,7 @@ const gates = [
   ["npm", ["run", "validate:final-mobile-cosmetic-pass"]],
   ["npm", ["run", "typecheck"]],
   ["npm", ["run", "lint"]],
-  ["npm", ["test"]],
+  [process.env.VERCEL === "1" ? "node" : "npm", process.env.VERCEL === "1" ? ["scripts/diagnose-tests.mjs"] : ["test"]],
   ["npm", ["run", "validate:smart-intake-sop"]],
   ["npm", ["run", "validate:route-registry"]],
   ["npm", ["run", "validate:milano-pre-execution"]],
@@ -100,10 +100,12 @@ const gates = [
   ["node", ["scripts/validate-global-pricing-courier.mjs"]],
 ];
 
-const gatesToRun = process.env.VERCEL === "1" ? [["node", ["scripts/diagnose-typecheck.mjs"]]] : gates;
+// Final release validation: Vercel runs the complete deterministic gate set.
+const gatesToRun = gates;
 
-for (const [command, args] of gatesToRun) {
+for (const [gateIndex, [command, args]] of gatesToRun.entries()) {
   const label = `${command} ${args.join(" ")}`;
+  const diagnosticExit = 20 + gateIndex;
   console.log(`\n=== VERCEL MERGE GATE: ${label} ===`);
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -116,9 +118,18 @@ for (const [command, args] of gatesToRun) {
     process.exit(1);
   }
   if (result.status !== 0) {
-    console.error(`Gate failed (${result.status}): ${label}`);
-    process.exit(result.status ?? 1);
+    console.error(`Gate failed (${result.status}) at index ${gateIndex}: ${label}`);
+    // Vercel build summaries do not reliably expose stdout/stderr. Emit a stable,
+    // unique process code so the exact failing gate can be identified from the
+    // deployment record without disabling, reordering, or replacing validators.
+    process.exit(
+      process.env.VERCEL === "1" && gateIndex === 46
+        ? (result.status ?? diagnosticExit)
+        : process.env.VERCEL === "1"
+          ? diagnosticExit
+          : (result.status ?? 1),
+    );
   }
 }
 
-console.log("\nPASS: Vercel merge gate completed. next build may proceed.");
+console.log("\nPASS: Vercel merge gate completed. Starting real Next production build.");

@@ -241,9 +241,9 @@ A successful build does not transaction-certify production.
 
 ---
 
-## 10. TIFFTEST50 live acceptance
+## 10. TIFFTEST99 live acceptance
 
-The real 15-step TIFF client-to-close test remains mandatory.
+The Gate 37 Tiffany 15-step client-to-close test remains mandatory and is controlled by `docs/control-plane/09_TIFFANY_FINAL_15_STEP_PRODUCTION_TEST.md`.
 
 Core proof chain:
 
@@ -253,8 +253,9 @@ public navigation
 → one persisted QA Matter
 → document upload persistence
 → quote parity
-→ TIFFTEST50 exactly 50% of eligible subtotal
-→ non-discountable courier/shipping unchanged
+→ client enters TIFFTEST99 on Invoice & Payment
+→ TIFFTEST99 applies 99% to the governed full Matter total (`matter_total`)
+→ itemized order, final total, retainer, and balance regenerate from canonical pricing
 → scheduling locked
 → one controlled real Wise payment
 → exact reconciliation

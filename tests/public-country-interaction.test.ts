@@ -34,8 +34,9 @@ test("country route classes are interactive filters backed by the canonical dest
   assert.match(directory, /DESTINATIONS/);
   assert.match(directory, /setFilter\("hague"\)/);
   assert.match(directory, /setFilter\("non_hague"\)/);
-  assert.match(directory, /destination\.hague/);
-  assert.match(directory, /!destination\.hague/);
+  assert.match(directory, /getPublicCountryExecutionIntelligence/);
+  assert.match(directory, /intelligence\.routeType === "hague_apostille"/);
+  assert.match(directory, /!intelligence\.verificationRequired/);
   assert.match(directory, /Hague \/ apostille-route review/);
   assert.match(directory, /Non-Hague \/ authentication review/);
   assert.match(directory, /Apostille review/);
@@ -50,7 +51,8 @@ test("country directory cards are differentiated jurisdiction dossiers, not clon
   assert.match(directory, /Common matters/);
   assert.match(directory, /Route checkpoints/);
   assert.match(directory, /Compliance gate/);
-  assert.match(directory, /country\.executionPath/);
+  assert.match(directory, /compliance\.publicExecutionPath/);
+  assert.match(directory, /compliance\.authoritySummary/);
   assert.match(directory, /country\.note/);
   assert.match(directory, /country\.commonDocuments/);
   assert.match(directory, /buildDestinationIntelligence/);
