@@ -3,7 +3,7 @@
 // duplicated block, while short/common implementation fragments are ignored.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { pathToFileURL } from "node:url";
@@ -91,10 +91,52 @@ export function inspectSource(fileName, source) {
   return findings;
 }
 
+const SKIP_DIRS = new Set([
+  ".git",
+  ".next",
+  ".vercel",
+  "node_modules",
+  "coverage",
+]);
+
+function sourceTreeFiles(dir = ".") {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue;
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...sourceTreeFiles(file));
+      continue;
+    }
+    if (
+      SOURCE_RE.test(file) &&
+      !file.endsWith(".d.ts") &&
+      existsSync(file)
+    ) {
+      out.push(file);
+    }
+  }
+  return out;
+}
+
 function trackedFiles() {
-  return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
-    .split("\0")
-    .filter((file) => SOURCE_RE.test(file) && !file.endsWith(".d.ts") && existsSync(file));
+  try {
+    return execFileSync("git", ["ls-files", "-z"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .split("\0")
+      .filter(
+        (file) =>
+          SOURCE_RE.test(file) &&
+          !file.endsWith(".d.ts") &&
+          existsSync(file),
+      );
+  } catch {
+    // Vercel may provide an immutable source bundle without .git metadata.
+    // In that environment validate the deployed source tree directly.
+    return sourceTreeFiles();
+  }
 }
 
 export function inspectFiles(files = trackedFiles()) {
