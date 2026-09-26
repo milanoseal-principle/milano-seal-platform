@@ -1,6 +1,6 @@
 import type { CountryData } from "@/components/landing/country-compliance-card";
 import type { Destination } from "@/data/destinations";
-import { getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
+import { PUBLIC_COUNTRY_INTELLIGENCE, getPublicCountryExecutionIntelligence } from "@/data/public-country-intelligence";
 
 const SITE_URL = "https://www.themilanoseal.com";
 
@@ -22,7 +22,7 @@ export interface CountryJsonLd {
   breadcrumb: object;
 }
 
-function safeCountryFaqs(
+export function safeCountryFaqs(
   countryName: string,
   routeLabel: string,
   boundary: string,
@@ -39,6 +39,10 @@ function safeCountryFaqs(
     {
       q: `How long does processing for ${countryName} take?`,
       a: "Timing depends on the issuing authority, authentication authority, destination requirements, document type, and carrier. Any timeline shown by Milano is an estimate, not a guarantee.",
+    },
+    {
+      q: `Can remote notarization automatically determine whether a document will be accepted in ${countryName}?`,
+      a: "No. Remote notarization addresses the U.S. execution step only. Document format, authentication, translation, wet-ink, witness, and receiving-authority requirements remain Matter-specific.",
     },
   ];
 }
@@ -120,3 +124,16 @@ export function buildCountryJsonLd(
 
   return { service, faqPage, breadcrumb };
 }
+
+
+export const COUNTRY_FAQS: Record<string, { q: string; a: string }[]> =
+  Object.fromEntries(
+    Object.values(PUBLIC_COUNTRY_INTELLIGENCE).map((entry) => [
+      entry.slug,
+      safeCountryFaqs(
+        entry.displayName,
+        entry.routeLabel,
+        entry.complianceBoundary,
+      ),
+    ]),
+  );
