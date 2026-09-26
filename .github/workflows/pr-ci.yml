@@ -1,7 +1,14 @@
 name: Milano Seal PR CI
 
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+concurrency:
+  group: milano-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
