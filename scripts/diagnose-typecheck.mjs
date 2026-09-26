@@ -13,6 +13,7 @@ const first = output
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
 const rules = [
+  ["components/dashboard/operator-intake-form.tsx", 41],
   ["components/dashboard/", 31],
   ["components/intake/", 32],
   ["components/portal/", 33],
