@@ -30,7 +30,7 @@ for (const stale of [
   assert.ok(!publicCopy.includes(stale), `Stale or overbroad public claim must remain removed: ${stale}`);
 }
 
-assert.match(terms, /commissioned Florida Notary Public/);
+assert.match(terms, /commissioned Florida Notary\s+Public/);
 assert.match(terms, /Payments are processed through Wise/);
 assert.match(terms, /remaining\s+balance must be verified before final international release/);
 assert.match(terms, /Final acceptance remains subject to the\s+receiving authority/);
@@ -41,7 +41,7 @@ assert.match(apostille, /receiving-authority/);
 
 assert.match(learning, /governed route intelligence/);
 assert.match(legacyLookup, /Florida state apostille route applies only to eligible Florida-origin documents/);
-assert.match(close, /Controlled international/);
+assert.match(close, /Controlled international release/);
 
 for (const path of [
   "scripts/run-rendered-production-acceptance.mjs",
