@@ -60,8 +60,10 @@ const publicDictionary = readFileSync("lib/i18n/public-dictionary.ts", "utf8");
 assert.ok(publicDictionary.includes('intake: "Begin Secure Intake"'), "Canonical English intake CTA must remain defined in public dictionary");
 assert.ok(header.includes('CredentialTicker'), "Public header must retain trust ticker");
 
-assert.ok(footer.includes('MILANO_BRAND.positioning'), "Footer must render canonical positioning from brand source");
-assert.ok(footer.includes('MILANO_BRAND.brandPromise'), "Footer must render canonical brand promise from brand source");
+assert.ok(footer.includes('t.footer.positioning'), "Footer must render localized positioning from governed public dictionary");
+assert.ok(footer.includes('t.footer.brandPromise'), "Footer must render localized brand promise from governed public dictionary");
+assert.ok(publicDictionary.includes('positioning:"International Document Execution & Apostille Coordination"'), "Canonical English positioning must remain defined in public dictionary");
+assert.ok(publicDictionary.includes('brandPromise:"Sealing Trust in Every Signature"'), "Canonical English brand promise must remain defined in public dictionary");
 assert.ok(!/Sealing trust with\s+every signature/i.test(footer), "Legacy footer tagline wording is prohibited");
 assert.ok(footer.includes('t.footer.disclaimer'), "Footer must bind legal/compliance boundary to governed public dictionary");
 assert.ok(
