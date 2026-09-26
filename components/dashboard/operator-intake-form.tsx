@@ -22,10 +22,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 interface PricingResult {
-  lane: string;
-  base: number;
-  total: number;
-  witness_total: number;
+  review_required: boolean;
+  review_reasons: string[];
+  lane: string | null;
+  base: number | null;
+  total: number | null;
+  witness_total: number | null;
   addons: { item: string; amount: number }[];
 }
 
@@ -560,7 +562,7 @@ export function OperatorIntakeForm() {
                 </Field>
               )}
               <ToggleRow
-                label="After-hours (+$37 witness fee)"
+                label="After-hours witness support"
                 checked={form.after_hours}
                 onChange={(v) => update("after_hours", v)}
               />
@@ -627,30 +629,43 @@ export function OperatorIntakeForm() {
           </CardHeader>
           <CardContent>
             {pricing ? (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lane</span>
+              pricing.review_required ? (
+                <div className="space-y-3 text-sm">
                   <Badge variant="outline" className="bg-await">
-                    {pricing.lane}
+                    Review required
                   </Badge>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    This Matter includes scope that must be reviewed before an amount is shown.
+                  </p>
                 </div>
-                <Row label="Base" value={formatCurrency(pricing.base)} />
-                {pricing.witness_total > 0 && (
-                  <Row
-                    label="Witnesses"
-                    value={formatCurrency(pricing.witness_total)}
-                  />
-                )}
-                <Separator />
-                <div className="flex justify-between items-baseline">
-                  <span className="text-foreground font-medium">
-                    Estimated total
-                  </span>
-                  <span className="font-serif text-2xl text-gold">
-                    {formatCurrency(pricing.total)}
-                  </span>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Lane</span>
+                    <Badge variant="outline" className="bg-await">
+                      {pricing.lane}
+                    </Badge>
+                  </div>
+                  {pricing.base != null && (
+                    <Row label="Base" value={formatCurrency(pricing.base)} />
+                  )}
+                  {(pricing.witness_total ?? 0) > 0 && (
+                    <Row
+                      label="Witnesses"
+                      value={formatCurrency(pricing.witness_total ?? 0)}
+                    />
+                  )}
+                  <Separator />
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-foreground font-medium">
+                      Estimated total
+                    </span>
+                    <span className="font-serif text-2xl text-gold">
+                      {pricing.total != null ? formatCurrency(pricing.total) : "Review"}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <p className="text-sm text-muted-foreground py-3">
                 Calculating quote…
@@ -662,13 +677,11 @@ export function OperatorIntakeForm() {
         <Card>
           <CardContent className="pt-6 text-xs text-muted-foreground space-y-1.5 leading-relaxed">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mb-2">
-              How lanes are chosen
+              Pricing authority
             </p>
-            <p>· Florida + mobile → Mobile Standard ($135 + miles×2)</p>
-            <p>· Colorado simple RON → RON Simple ($150)</p>
-            <p>· Multi-signer or translation → Priority ($975)</p>
-            <p>· Urgent or multi-country → Executive ($1,850)</p>
-            <p>· Otherwise → Signature ($750)</p>
+            <p>· Preview is calculated by the canonical server pricing engine.</p>
+            <p>· Mobile and translation scope remain review-required until confirmed.</p>
+            <p>· Final Matter pricing is issued from the validated server result.</p>
           </CardContent>
         </Card>
       </aside>
