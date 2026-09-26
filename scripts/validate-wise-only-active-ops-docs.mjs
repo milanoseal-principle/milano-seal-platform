@@ -49,7 +49,7 @@ const requiredDeployTruth = [
   "WISE_API_TOKEN",
   "WISE_PROFILE_ID",
   "WISE_WEBHOOK_ALLOWED_TEST=false",
-  "TIFFTEST50",
+  "TIFFTEST99",
   "DAMIANI50",
   "GO / NO-GO",
   "node scripts/generate-route-map.mjs --check",
