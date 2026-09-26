@@ -5,6 +5,8 @@ const required = [
   "lib/i18n/public-dictionary.ts",
   "components/i18n/PublicI18nProvider.tsx",
   "components/i18n/GlobalLanguageSelector.tsx",
+  "components/i18n/PublicRouteLocaleBridge.tsx",
+  "lib/i18n/public-route-copy.ts",
   "components/landing/header.tsx",
   "components/landing/credential-ticker.tsx",
   "components/landing/hero.tsx",
@@ -52,6 +54,21 @@ assert.ok(!selector.includes("window.location.reload()"), "Selector must not rel
 
 const layout = readFileSync("app/layout.tsx", "utf8");
 assert.ok(layout.includes("PublicI18nProvider initialLocale={locale}"), "Root layout must server-seed public locale from cookie");
+assert.ok(layout.includes("<PublicRouteLocaleBridge />"), "Root layout must activate route-level locale continuity");
+
+const routeBridge = readFileSync("components/i18n/PublicRouteLocaleBridge.tsx", "utf8");
+const routeCopy = readFileSync("lib/i18n/public-route-copy.ts", "utf8");
+for (const route of ["/services","/pricing","/process","/global-document-intelligence","/professional","/secure-portal","/login","/intake"]) {
+  assert.ok(routeBridge.includes(`"${route}"`), `Public route locale bridge missing header destination: ${route}`);
+}
+for (const locale of ['it','es','de','fr','"pt-BR"']) {
+  assert.ok(routeCopy.includes(`${locale}:`), `Route-copy dictionary missing locale coverage: ${locale}`);
+}
+for (const marker of ["Built for international document control, not commodity notarization.","Execution Quote","How It Works","Execution Intelligence Workspace","Professional Execution Access","Secure Access","Begin Your Execution"]) {
+  assert.ok(routeCopy.includes(marker), `Route-copy dictionary missing primary destination marker: ${marker}`);
+}
+assert.ok(routeBridge.includes("MutationObserver"), "Route locale bridge must translate dynamically-rendered public UI");
+assert.ok(routeBridge.includes('["placeholder","aria-label","title"]'), "Route locale bridge must translate public form attributes");
 
 for (const file of required.filter((file) =>
   file.startsWith("components/") &&
@@ -64,4 +81,4 @@ for (const file of required.filter((file) =>
   }
 }
 
-console.log("PASS canonical public i18n runtime: all six locales, server seed, instant selector updates, shared surfaces, and governed IT/PT compliance copy");
+console.log("PASS canonical public i18n runtime: six locales, shared shell, header destinations, dynamic route continuity, forms, and governed compliance copy");
