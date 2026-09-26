@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Globe, FileText, Landmark, ArrowRight } from "lucide-react";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 const CREDENTIALS = [
   { icon: ShieldCheck, text: "Florida Notary Public" },
@@ -48,6 +49,10 @@ const slideRow = {
 };
 
 export function PaymentFounder() {
+  const { t } = usePublicTranslations();
+  const credentials = CREDENTIALS.map((item, index) => ({ ...item, text: t.founder.credentials[index] ?? item.text }));
+  const primarySocials = PRIMARY_SOCIALS.map((item, index) => ({ ...item, label: [t.founder.linkedin, t.founder.instagram, t.founder.reviews][index] ?? item.label }));
+  const secondarySocials = SECONDARY_SOCIALS.map((item) => ({ ...item, label: t.founder.facebook }));
   return (
     <section className="relative py-24 md:py-32 bg-[#050507] overflow-hidden">
       <div
@@ -64,10 +69,10 @@ export function PaymentFounder() {
       >
         <motion.div variants={fadeUp} className="text-center mb-12">
           <span className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#6A5520] mb-4 block">
-            Founder Trust Anchor
+            {t.founder.eyebrow}
           </span>
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-white">
-            Execution Led by the Founder
+            {t.founder.title}
           </h2>
         </motion.div>
 
@@ -131,14 +136,14 @@ export function PaymentFounder() {
               </motion.div>
 
               <motion.p variants={fadeUp} className="text-[#C6A55A] text-sm font-medium tracking-wide mb-1">
-                Founder · Chief Trust Officer
+                {t.founder.role}
               </motion.p>
               <motion.p variants={fadeUp} className="text-[#6A6A6A] text-xs mb-8">
                 The Milano Seal™
               </motion.p>
 
               <ul className="space-y-3 mb-10">
-                {CREDENTIALS.map(({ icon: Icon, text }) => (
+                {credentials.map(({ icon: Icon, text }) => (
                   <motion.li key={text} variants={slideRow} className="flex items-center gap-3">
                     <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#1A1608] border border-[#C6A55A]/20 flex items-center justify-center">
                       <Icon className="w-3.5 h-3.5 text-[#C6A55A]" />
@@ -150,15 +155,10 @@ export function PaymentFounder() {
 
               <motion.div variants={fadeUp} className="mb-5">
                 <span className="font-mono text-[9px] tracking-[0.28em] uppercase text-[#6A5520] block mb-2">
-                  Founder-Led Execution // Personally Overseen
+                  {t.founder.overseen}
                 </span>
                 <p className="text-white/65 text-sm font-normal leading-relaxed">
-                  Nicholas Milano has built his practice at the intersection of international document
-                  execution, procedural compliance, and cross-border coordination — a space most
-                  professionals never operate within directly. Specializing in international execution
-                  workflows and destination-aware document handling, he has developed a methodology
-                  that combines the rigor of Florida notarial standards with the operational precision
-                  demanded by global transactions.
+                  {t.founder.bio}
                 </p>
               </motion.div>
 
@@ -167,20 +167,20 @@ export function PaymentFounder() {
                   href="/founder"
                   className="group inline-flex min-h-11 items-center justify-between gap-3 border-b border-[#C6A55A]/35 px-1 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#D4AF37] transition-all duration-300 hover:border-[#C6A55A] hover:pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A55A]/55 motion-reduce:transition-none motion-reduce:hover:pl-1"
                 >
-                  <span>View Founder Profile</span>
+                  <span>{t.founder.founderProfile}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/about"
                   className="group inline-flex min-h-11 items-center justify-between gap-3 border-b border-white/12 px-1 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70 transition-all duration-300 hover:border-[#C6A55A]/55 hover:pl-2 hover:text-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A55A]/55 motion-reduce:transition-none motion-reduce:hover:pl-1"
                 >
-                  <span>About The Milano Seal</span>
+                  <span>{t.founder.about}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </motion.div>
 
               <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-8">
-                {PRIMARY_SOCIALS.map((chip) => (
+                {primarySocials.map((chip) => (
                   <motion.a
                     key={chip.url}
                     href={chip.url}
@@ -194,7 +194,7 @@ export function PaymentFounder() {
                     {chip.label}
                   </motion.a>
                 ))}
-                {SECONDARY_SOCIALS.map((chip) => (
+                {secondarySocials.map((chip) => (
                   <motion.a
                     key={chip.url}
                     href={chip.url}
@@ -212,7 +212,7 @@ export function PaymentFounder() {
               <motion.div variants={fadeIn} className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#C6A55A]/20" />
                 <span className="font-mono text-[8.5px] tracking-[0.28em] uppercase text-[#6A5520] whitespace-nowrap">
-                  Sealing Trust Across Borders
+                  {t.founder.tagline}
                 </span>
                 <div className="h-px flex-1 bg-[#C6A55A]/20" />
               </motion.div>

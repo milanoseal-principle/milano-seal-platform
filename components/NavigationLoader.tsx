@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 const NAV_INTENT_EVENT = "milano:navigation-intent";
 const MINIMUM_VISIBLE_MS = 700;
@@ -9,6 +10,7 @@ const SETTLE_FADE_MS = 220;
 const SAFETY_RELEASE_MS = 8000;
 
 export function NavigationLoader() {
+  const { t } = usePublicTranslations();
   const pathname = usePathname();
   const previousPathname = useRef(pathname);
   const startedAt = useRef<number | null>(null);
@@ -129,17 +131,17 @@ export function NavigationLoader() {
       role="status"
       aria-live="polite"
       aria-busy={!complete}
-      aria-label="Preparing the next view"
+      aria-label={t.loading.aria}
     >
       <div className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center">
         <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D8C188]/70">
           The Milano Seal™
         </div>
         <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">
-          Preparing the next view
+          {t.loading.title}
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
-          Preserving your current context while the destination surface is prepared.
+          {t.loading.body}
         </p>
         <div className="mt-10 flex items-center gap-4" aria-hidden="true">
           <span className="relative flex h-3 w-3">

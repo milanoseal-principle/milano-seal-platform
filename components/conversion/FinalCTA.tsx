@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 export function FinalCTA() {
+  const { t } = usePublicTranslations();
   return (
     <section
       className="py-24 px-6"
@@ -13,11 +15,11 @@ export function FinalCTA() {
           className="text-3xl md:text-4xl font-medium text-white mb-4"
           style={{ fontFamily: "var(--font-playfair, Georgia, serif)" }}
         >
-          Ready to prepare a document for use abroad?
+          {t.finalCta.title}
         </h2>
 
         <p className="text-sm mb-10" style={{ color: "#8A8A8A" }}>
-          Submit the request first. We will review the matter before scheduling or release.
+          {t.finalCta.body}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -29,7 +31,7 @@ export function FinalCTA() {
               color: "#0A0A0A",
             }}
           >
-            Start Secure Intake
+            {t.finalCta.intake}
           </Link>
           <Link
             href="/secure-portal"
@@ -40,7 +42,7 @@ export function FinalCTA() {
               border: "1px solid rgba(212,175,55,0.5)",
             }}
           >
-            Open Secure Matter Portal
+            {t.finalCta.portal}
           </Link>
         </div>
       </div>

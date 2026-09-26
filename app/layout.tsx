@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { MilanoExecutionCopilot } from "@/components/assistant/MilanoExecutionCopilot";
 import { LanguageSuggestion } from "@/components/i18n/LanguageSuggestion";
+import { PublicI18nProvider } from "@/components/i18n/PublicI18nProvider";
 import { normalizeLocale } from "@/lib/i18n/config";
 import { NavigationLoader } from "@/components/NavigationLoader";
 import { CinematicPageShell } from "@/components/motion/CinematicPageShell";
@@ -134,6 +135,7 @@ export default async function RootLayout({
   return (
     <html lang={locale === "pt-BR" ? "pt-BR" : locale}>
       <body className={`${fontVariables} antialiased`}>
+        <PublicI18nProvider initialLocale={locale}>
         <a
           href="#milano-main"
           className="fixed left-4 top-3 z-[10000] -translate-y-[180%] rounded-lg border border-[#C6A65B]/45 bg-[#0A0A0A] px-4 py-2.5 text-xs font-semibold text-[#F4F1EA] shadow-[0_16px_50px_rgba(0,0,0,0.5)] transition-transform duration-150 focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#C6A65B] motion-reduce:transition-none"
@@ -165,6 +167,7 @@ export default async function RootLayout({
           <MilanoExecutionCopilot />
         </Suspense>
         {process.env.NODE_ENV === "production" && <Analytics />}
+        </PublicI18nProvider>
       </body>
     </html>
   );

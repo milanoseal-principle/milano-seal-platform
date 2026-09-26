@@ -3,69 +3,17 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Monitor, FileCheck, Globe2, Car, ArrowRight } from "lucide-react";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 type FeatureWithTooltip = { label: string; tooltip: string };
 
-const services: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  href: string;
-  features: FeatureWithTooltip[];
-}[] = [
-  {
-    icon: Monitor,
-    title: "Remote Online Notarization Coordination",
-    href: "/services/remote-online-notary",
-    description:
-      "Florida Remote Online Notarization support for eligible documents, including identity verification workflow coordination, signer readiness review, session preparation, and post-execution document QA before apostille or release movement.",
-    features: [
-      { label: "Identity verification workflow", tooltip: "Multi-factor identity verification performed through approved RON platform procedures." },
-      { label: "Signer readiness review", tooltip: "" },
-      { label: "Session preparation", tooltip: "" },
-      { label: "Post-execution QA", tooltip: "" },
-    ],
-  },
-  {
-    icon: FileCheck,
-    title: "Hague Apostille Coordination",
-    href: "/services/apostille",
-    description:
-      "Document routing support for Hague Convention countries, including notarization review, state or federal apostille pathway review, destination-country awareness, courier custody, and receiving-authority sensitivity checks.",
-    features: [
-      { label: "Apostille pathway review", tooltip: "State or federal competent-authority routing is reviewed against the document origin and current Matter facts before submission." },
-      { label: "Destination-country awareness", tooltip: "Destination routing is reviewed against governed treaty status and receiving-authority requirements." },
-      { label: "Courier custody", tooltip: "" },
-      { label: "Receiving-authority checks", tooltip: "" },
-    ],
-  },
-  {
-    icon: Globe2,
-    title: "Non-Hague Authentication & Legalization Review",
-    href: "/services/international-execution",
-    description:
-      "Structured routing review for documents intended for non-Hague jurisdictions that may require state authentication, federal review, embassy or consular legalization, translation review, or specialized release handling.",
-    features: [
-      { label: "State authentication review", tooltip: "" },
-      { label: "Federal review pathway", tooltip: "" },
-      { label: "Embassy/consular legalization", tooltip: "" },
-      { label: "Translation review support", tooltip: "" },
-    ],
-  },
-  {
-    icon: Car,
-    title: "Executive Document Logistics",
-    href: "/services/mobile-notary",
-    description:
-      "High-control support for private-client, corporate, estate, maritime, equestrian, luxury asset, and international transaction documents requiring careful intake, document packet review, chain-of-custody awareness, and release coordination.",
-    features: [
-      { label: "High-control intake", tooltip: "" },
-      { label: "Document packet review", tooltip: "" },
-      { label: "Chain-of-custody awareness", tooltip: "" },
-      { label: "Release coordination", tooltip: "" },
-    ],
-  },
-];
+const SERVICE_META = [
+  { icon: Monitor, href: "/services/remote-online-notary" },
+  { icon: FileCheck, href: "/services/apostille" },
+  { icon: Globe2, href: "/services/international-execution" },
+  { icon: Car, href: "/services/mobile-notary" },
+] as const;
+
 
 function FeaturePill({ label, tooltip }: FeatureWithTooltip) {
   return (
@@ -83,6 +31,15 @@ function FeaturePill({ label, tooltip }: FeatureWithTooltip) {
 }
 
 export function Services() {
+  const { t } = usePublicTranslations();
+  const services = SERVICE_META.map((meta, index) => ({
+    ...meta,
+    ...t.services.cards[index],
+    features: t.services.cards[index].features.map((label, featureIndex) => ({
+      label,
+      tooltip: t.services.cards[index].tooltips[featureIndex] ?? "",
+    })),
+  }));
   return (
     <section className="relative pt-10 pb-24 md:pt-14 md:pb-32 bg-[#050507]">
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050507] to-transparent pointer-events-none" />
@@ -96,14 +53,13 @@ export function Services() {
           className="text-center mb-16"
         >
           <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Our Services
+            {t.services.eyebrow}
           </span>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Comprehensive Document Execution
+            {t.services.title}
           </h2>
           <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            High-trust document handling for international use.
-            Governed routing, custody, and release control at every step.
+            {t.services.summary}
           </p>
         </motion.div>
 

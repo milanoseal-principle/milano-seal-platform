@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
+
 const RAIL_A = [
   { label: "GLOBAL DOCUMENT INTELLIGENCE", tone: "gold" },
   { label: "HAGUE ROUTE REVIEW",            tone: "gold" },
@@ -26,6 +28,9 @@ const RAIL_B: { route: string; workflow: string }[] = [
 ];
 
 export function CredentialTicker() {
+  const { t } = usePublicTranslations();
+  const railA = RAIL_A.map((item, index) => ({ ...item, label: t.ticker.railA[index] ?? item.label }));
+  const railB = RAIL_B.map((item, index) => ({ ...item, workflow: t.ticker.workflows[index] ?? item.workflow }));
   return (
     <div
       className="ms-credential-ticker border-b border-[#D4AF37]/10 bg-black/60 overflow-hidden relative max-w-full"
@@ -33,7 +38,7 @@ export function CredentialTicker() {
     >
       {/* Rail A — operational signals, scrolls left */}
       <div className="ticker-anim flex w-max max-w-none whitespace-nowrap py-1.5 relative">
-        {[...RAIL_A, ...RAIL_A].map((item, i) => (
+        {[...railA, ...railA].map((item, i) => (
           <span
             key={`a-${i}`}
             className="text-[9px] font-mono tracking-[0.3em] mx-8 flex items-center gap-2.5"
@@ -64,7 +69,7 @@ export function CredentialTicker() {
 
       {/* Rail B — corridor map, scrolls right */}
       <div className="ticker-anim-reverse flex w-max max-w-none whitespace-nowrap py-1.5 relative">
-        {[...RAIL_B, ...RAIL_B].map((item, i) => (
+        {[...railB, ...railB].map((item, i) => (
           <span
             key={`b-${i}`}
             className="mx-8 flex items-center gap-3 flex-shrink-0"
