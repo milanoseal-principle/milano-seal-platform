@@ -26,6 +26,46 @@ assert.ok(certification.includes("Vercel merge gate"), "Certification must name 
 
 console.log("PASS dual CI governance");
 
+function ensureGitValidationHistory() {
+  const verify = () => {
+    const parent = spawnSync("git", ["rev-parse", "--verify", "HEAD~1"], {
+      stdio: "ignore",
+    });
+    const main = spawnSync("git", ["rev-parse", "--verify", "origin/main"], {
+      stdio: "ignore",
+    });
+    return parent.status === 0 && main.status === 0;
+  };
+
+  if (verify()) return;
+
+  const ref = process.env.VERCEL_GIT_COMMIT_REF || process.env.GITHUB_HEAD_REF || "main";
+  const fetches = [
+    ["fetch", "--no-tags", "--depth=50", "origin", "main:refs/remotes/origin/main"],
+    ["fetch", "--no-tags", "--depth=50", "origin", ref],
+  ];
+
+  for (const args of fetches) {
+    const result = spawnSync("git", args, {
+      stdio: "inherit",
+      env: { ...process.env },
+      shell: process.platform === "win32",
+    });
+    if (result.error) {
+      console.error(`Unable to prepare git validation history: git ${args.join(" ")}`);
+      console.error(result.error);
+      process.exit(2);
+    }
+  }
+
+  if (!verify()) {
+    console.error("Git validation history is incomplete after governed fetch; refusing to run merge gates without a current parent and origin/main.");
+    process.exit(2);
+  }
+}
+
+ensureGitValidationHistory();
+
 const gates = [
   ["npm", ["run", "validate:duplicate-source"]],
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
