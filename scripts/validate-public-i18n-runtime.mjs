@@ -23,12 +23,16 @@ const dictionary = readFileSync("lib/i18n/public-dictionary.ts", "utf8");
 for (const token of ['en: EN','it: IT','es: ES','de: DE','fr: FR','"pt-BR": PT']) {
   assert.ok(dictionary.includes(token), `Canonical public dictionary missing locale binding: ${token}`);
 }
-for (const forbiddenFallback of [
-  "ticker:EN.ticker",
-  "services:{...EN.services",
-  "process:{...EN.process",
-]) {
-  assert.ok(!dictionary.includes(forbiddenFallback), `Exposed locale must not fall back to English shared-surface arrays: ${forbiddenFallback}`);
+assert.ok(!dictionary.includes("ticker:EN.ticker"), "Exposed locale must not fall back to English ticker copy");
+for (const localeConst of ["IT", "PT", "ES", "DE", "FR"]) {
+  const match = dictionary.match(new RegExp(`const ${localeConst}: PublicTranslation = \\{([\\s\\S]*?)(?=\\nconst |\\nexport const PUBLIC_TRANSLATIONS)`));
+  assert.ok(match, `Missing explicit dictionary block for ${localeConst}`);
+  const block = match?.[1] ?? "";
+  assert.ok(block.includes("cards:["), `${localeConst} must define localized service cards`);
+  assert.ok(block.includes("steps:["), `${localeConst} must define localized process steps`);
+  assert.ok(block.includes("ticker:{railA:["), `${localeConst} must define localized ticker copy`);
+  assert.ok(block.includes("credentials:["), `${localeConst} must define localized founder credentials`);
+  assert.ok(block.includes("network:["), `${localeConst} must define localized footer navigation`);
 }
 for (const governed of [
   "autorità ricevente",
