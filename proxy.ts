@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getHomeRouteForRole, isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
 import { isAccountDisabled } from "@/lib/auth/server-role";
+import { localeFromPathname, resolveLocale } from "@/lib/i18n/resolveLocale";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -75,7 +76,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!isProtected(pathname)) {
-    return NextResponse.next();
+    const publicResponse = NextResponse.next({ request });
+    if (!pathname.startsWith("/api/") && !pathname.startsWith("/webhooks/")) {
+      publicResponse.headers.set("x-tms-locale", resolveLocale({
+        pathLocale: localeFromPathname(pathname),
+        cookieLocale: request.cookies.get("tms_locale")?.value,
+        acceptLanguage: request.headers.get("accept-language"),
+      }));
+    }
+    return publicResponse;
   }
 
   let response = NextResponse.next({ request });
