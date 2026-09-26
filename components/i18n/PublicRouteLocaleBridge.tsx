@@ -6,7 +6,6 @@ import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 import { PUBLIC_ROUTE_COPY } from "@/lib/i18n/public-route-copy";
 
 const PUBLIC_PREFIXES = [
-  "/",
   "/services",
   "/pricing",
   "/process",
@@ -22,8 +21,7 @@ const PUBLIC_PREFIXES = [
 ];
 
 function isPublicPath(pathname: string) {
-  if (pathname === "/") return true;
-  return PUBLIC_PREFIXES.slice(1).some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
+  return PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
 
 function preserveWhitespace(source: string, translated: string) {
@@ -75,17 +73,17 @@ export function PublicRouteLocaleBridge() {
         return;
       }
       if (!(target instanceof Element)) return;
-      if (target.matches("script,style,[data-tms-i18n-ignore]")) return;
+      if (target.matches("script,style,header,footer,[data-tms-i18n-ignore],[data-tms-i18n-native]")) return;
       translateAttributes(target);
       const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
       let current = walker.nextNode();
       while (current) {
         const parent = current.parentElement;
-        if (parent && !parent.closest("script,style,[data-tms-i18n-ignore]")) translateText(current as Text);
+        if (parent && !parent.closest("script,style,header,footer,[data-tms-i18n-ignore],[data-tms-i18n-native]")) translateText(current as Text);
         current = walker.nextNode();
       }
       target.querySelectorAll("*").forEach((el) => {
-        if (!el.closest("[data-tms-i18n-ignore]")) translateAttributes(el);
+        if (!el.closest("header,footer,[data-tms-i18n-ignore],[data-tms-i18n-native]")) translateAttributes(el);
       });
     };
 
