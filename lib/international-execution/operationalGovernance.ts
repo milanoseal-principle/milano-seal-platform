@@ -41,7 +41,7 @@ const addDays = (iso: string, days: number) => {
 export const AUTHORITY_EVIDENCE_REGISTRY: readonly AuthorityEvidenceRecord[] = GLOBAL_COMPLIANCE_ATLAS.map((entry) => {
   const official = entry.sourceNotes.find((note) => note.sourceType === "official_source" && note.confidence === "reviewed");
   const hague = entry.routeType === "hague_apostille";
-  const lastVerifiedAt = official ? entry.lastReviewedAt : undefined;
+  const lastVerifiedAt = official && entry.lastReviewedAt ? entry.lastReviewedAt : undefined;
   return {
     destinationSlug: entry.slug,
     country: entry.displayName,
