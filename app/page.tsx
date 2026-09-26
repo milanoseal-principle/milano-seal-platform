@@ -6,7 +6,6 @@ import { MilanoTrustCore } from "@/components/landing/milano-trust-core";
 import { TrustCoreCinematicField } from "@/components/landing/TrustCoreCinematicField";
 import { Services } from "@/components/landing/services";
 import { PaymentFounder } from "@/components/landing/payment-founder";
-import { ClientTypes } from "@/components/landing/client-types";
 import { HighTrustClose } from "@/components/landing/high-trust-close";
 import { Footer } from "@/components/landing/footer";
 import { CinematicStage } from "@/components/landing/cinematic-stage";
@@ -18,7 +17,6 @@ import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { CorridorTimeStrip } from "@/components/landing/corridor-time-strip";
 import { PublicFAQ } from "@/components/conversion/PublicFAQ";
-import { TrustProof } from "@/components/conversion/TrustProof";
 import { FinalCTA } from "@/components/conversion/FinalCTA";
 import { SectionReveal } from "@/components/motion/SectionReveal";
 
@@ -60,10 +58,8 @@ export default function HomePage() {
         <SectionReveal className="w-full"><div id="process"><HowItWorks /></div></SectionReveal>
         <SectionReveal className="w-full"><div id="map"><HomepageRoutingPreview /></div></SectionReveal>
         <PaymentFounder />
-        <ClientTypes />
       </CinematicStage>
       <HighTrustClose />
-      <TrustProof />
       <PublicFAQ />
       <FinalCTA />
       <Footer />

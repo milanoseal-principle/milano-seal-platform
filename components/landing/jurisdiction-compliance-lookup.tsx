@@ -307,9 +307,9 @@ export function JurisdictionComplianceLookup() {
         {/* Info strip */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {[
-            { title: "RON Authorization by State", desc: "Florida offers broad Remote Online Notarization (RON) authorization. Colorado and Virginia have active RON programs. Most other states permit traditional notarization for cross-border execution. International matters require in-person execution for apostille eligibility." },
-            { title: "Hague Convention Members", desc: "Italy, Spain, Portugal, France, Germany, Greece, Brazil, Argentina, Mexico, and more are Hague members. U.S. documents for use in these countries require apostille authentication via the Florida Department of State." },
-            { title: "Non-Hague Countries", desc: "The UAE and certain other jurisdictions require the full consular legalization chain rather than apostille. These matters require premium coordination and additional authentication steps. Final acceptance always remains subject to the receiving authority." },
+            { title: "Execution Method Review", desc: "RON, mobile, and in-person execution eligibility depends on the notarial act, document, signer posture, provider capability, document origin, and receiving-authority requirements. The Matter is reviewed before an execution method is relied upon." },
+            { title: "Apostille Route Review", desc: "When a Hague apostille route applies, the competent authority is determined from the document origin and execution facts. A Florida state apostille route applies only to eligible Florida-origin documents." },
+            { title: "Authentication / Legalization Review", desc: "When apostille is not the controlling route, state or federal authentication, embassy or consular legalization, translation review, or other authority-specific handling may apply. Final acceptance remains subject to the receiving authority." },
           ].map((s) => (
             <div key={s.title} className="bg-[#111111] border border-[#1A1A1A] rounded-xl overflow-hidden">
               <div style={{ height: 1, background: "linear-gradient(90deg, rgba(198,165,90,0.5), rgba(198,165,90,0.1))" }} />

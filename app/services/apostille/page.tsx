@@ -7,14 +7,14 @@ import { FileCheck, Globe, CheckCircle, ArrowRight, Navigation } from "lucide-re
 export const metadata: Metadata = {
   title: "Apostille Coordination | The Milano Seal™",
   description:
-    "End-to-end apostille coordination through the Florida Department of State. Hague Convention compliance, document sequencing, tracking, and international delivery for cross-border document authentication.",
+    "Apostille and authentication coordination for U.S. documents intended for international use, with document-origin review, competent-authority routing, custody visibility, and receiving-authority awareness.",
   alternates: { canonical: "https://themilanoseal.com/services/apostille" },
 };
 
 const steps = [
-  { title: "Document Assessment", body: "Incoming documents are reviewed for completeness and notarial compliance before submission to the Department of State." },
-  { title: "State Authentication", body: "Documents are submitted to the Florida Department of State for apostille issuance. Processing timelines depend on the current state queue." },
-  { title: "Hague Convention Routing", body: "Destination-country requirements are validated against Hague Convention member status. Non-member countries require consular legalization instead." },
+  { title: "Document Assessment", body: "Incoming documents are reviewed for completeness, origin, execution posture, and route readiness before authority submission." },
+  { title: "Competent Authority Routing", body: "The applicable state or federal competent authority is determined from the document origin and Matter facts before submission. Processing timelines depend on the controlling authority and current queue." },
+  { title: "Destination Route Review", body: "Destination routing is reviewed against governed treaty status and receiving-authority information. Apostille, authentication, consular legalization, translation review, or additional handling may apply." },
   { title: "Tracking & Status", body: "Real-time status visibility maintained through the client portal from submission through return. Transit and courier tracking included." },
   { title: "Delivery Coordination", body: "Apostilled documents delivered digitally and/or physically per destination authority requirements. Expedited courier available for urgent matters." },
 ];
@@ -40,7 +40,7 @@ export default function ApostillePage() {
             Department of State Workflow &amp; Timelines
           </h1>
           <p className="text-lg text-[#B0B0B0] mb-8 max-w-2xl mx-auto leading-relaxed">
-            End-to-end apostille handling from document review through international delivery. Florida Department of State coordination with Hague Convention compliance verification.
+            Governed apostille and authentication coordination from document review through controlled release. The applicable authority route is determined from document origin, destination, and Matter-specific requirements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -90,7 +90,7 @@ export default function ApostillePage() {
             Common Destination Countries
           </h2>
           <p className="text-[#B0B0B0] text-center mb-8 text-sm">
-            Hague Convention members accept apostilles directly. Non-members require consular legalization.
+            These are common destination corridors. The controlling route is determined from current treaty status, document origin, and the receiving authority—not from destination alone.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {haagueMemberExamples.map((country) => (
@@ -114,8 +114,8 @@ export default function ApostillePage() {
       <section className="py-16 px-6 bg-[#111111]">
         <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
           {[
-            { icon: FileCheck, title: "FL Dept of State", body: "Direct submission and coordination with the Florida Secretary of State apostille division." },
-            { icon: Globe, title: "Hague Compliance", body: "Destination-country routing reviewed against current Hague Convention member status." },
+            { icon: FileCheck, title: "Authority Routing", body: "State or federal competent-authority routing is reviewed before submission; Florida Department of State applies only when the document origin and route call for it." },
+            { icon: Globe, title: "Governed Route Review", body: "Destination routing is reviewed against current governed treaty status and receiving-authority requirements." },
             { icon: Navigation, title: "Tracking Provided", body: "Matter status and transit monitoring through the client portal from start to delivery." },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl p-6 text-center">
@@ -160,7 +160,7 @@ export default function ApostillePage() {
             Begin Your Apostille Process
           </h2>
           <p className="text-[#B0B0B0] mb-8">
-            Submit your document details and destination country. We will confirm requirements, timelines, and pricing.
+            Submit your document details, origin, destination, and known receiving authority. We will review the execution route, timing assumptions, and pricing before scheduling.
           </p>
           <Link
             href="/intake"

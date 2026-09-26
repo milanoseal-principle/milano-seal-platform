@@ -33,8 +33,8 @@ const services: {
     description:
       "Document routing support for Hague Convention countries, including notarization review, state or federal apostille pathway review, destination-country awareness, courier custody, and receiving-authority sensitivity checks.",
     features: [
-      { label: "Apostille pathway review", tooltip: "Document sequencing verified directly with the Florida Department of State division." },
-      { label: "Destination-country awareness", tooltip: "Destination-country routing reviewed against Hague Convention authentication requirements." },
+      { label: "Apostille pathway review", tooltip: "State or federal competent-authority routing is reviewed against the document origin and current Matter facts before submission." },
+      { label: "Destination-country awareness", tooltip: "Destination routing is reviewed against governed treaty status and receiving-authority requirements." },
       { label: "Courier custody", tooltip: "" },
       { label: "Receiving-authority checks", tooltip: "" },
     ],

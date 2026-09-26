@@ -8,7 +8,7 @@ const trustPoints = [
   "Structured for international use",
   "Procedural control across jurisdictions",
   "Discretion and compliance at every step",
-  "Executed properly the first time",
+  "Execution path reviewed before release",
 ];
 
 export function HighTrustClose() {
@@ -79,8 +79,7 @@ export function HighTrustClose() {
           </motion.div>
 
           <p className="mt-8 text-sm text-[#B0B0B0]/60">
-            Secure intake. Compliance-first processing. International
-            acceptance.
+            Secure intake. Governed execution. Controlled international release.
           </p>
         </motion.div>
       </div>
