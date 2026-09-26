@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 export const milanoStateActionClass =
   "inline-flex min-h-11 items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A65B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060608] active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100";
@@ -42,6 +45,7 @@ export function MilanoProductState({
 }
 
 export function MilanoRouteSkeleton() {
+  const { t } = usePublicTranslations();
   return (
     <main
       className="min-h-[100dvh] bg-[#060608] px-5 py-12 text-[#F4F1EA] sm:px-6"
@@ -51,9 +55,9 @@ export function MilanoRouteSkeleton() {
     >
       <div className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center">
         <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D8C188]/70">The Milano Seal™</div>
-        <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">Preparing the next view</h1>
+        <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">{t.loading.title}</h1>
         <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
-          Preserving your current context while the destination surface is prepared.
+          {t.loading.body}
         </p>
         <div className="mt-10 flex items-center gap-4" aria-hidden="true">
           <span className="relative flex h-3 w-3">
