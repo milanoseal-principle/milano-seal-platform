@@ -101,7 +101,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-[#B0B0B0] mb-6 leading-relaxed">
-              {MILANO_BRAND.positioning}. {MILANO_BRAND.brandPromise}.
+              {t.footer.positioning}. {t.footer.brandPromise}.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
