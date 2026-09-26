@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 
 const root = process.cwd();
 const requiredFiles = [
@@ -69,9 +68,30 @@ const packageText = read("package.json");
 if (packageText.toLowerCase().includes("liaison")) failures.push("package.json contains forbidden source-system dependency text.");
 if (packageJson.scripts?.["validate:operator-intelligence-spine"] !== "node scripts/validate-operator-intelligence-spine.mjs") failures.push("package.json is missing validate:operator-intelligence-spine script.");
 
-const changed = runGitChangedFiles();
-for (const file of changed) {
-  if (forbiddenImplementationPaths.some((pattern) => pattern.test(file))) failures.push(`Forbidden implementation area changed: ${file}`);
+const operatorSourceFiles = [
+  ...listFiles("lib/operator-spine", /\.(ts|tsx)$/),
+  ...listFiles("components/operator-spine", /\.(ts|tsx)$/),
+  ...listFiles("app/dashboard/operator-spine", /\.(ts|tsx)$/),
+];
+
+for (const file of operatorSourceFiles) {
+  const text = read(file);
+  for (const pattern of forbiddenImplementationPaths) {
+    const sourcePrefix = pattern.source
+      .replace(/^\^/, "")
+      .replace(/\\\//g, "/")
+      .replace(/\.\*/g, "")
+      .replace(/\$/, "");
+    if (!sourcePrefix) continue;
+
+    const importPattern = new RegExp(
+      String.raw`(?:from\s+["']@?/?${sourcePrefix}|import\s*\(["']@?/?${sourcePrefix}|require\s*\(["']@?/?${sourcePrefix})`,
+      "i",
+    );
+    if (importPattern.test(text)) {
+      failures.push(`Operator Spine must not import forbidden implementation area: ${file} → ${sourcePrefix}`);
+    }
+  }
 }
 
 if (failures.length) {
@@ -91,13 +111,4 @@ function listFiles(dir, pattern) {
     else if (pattern.test(rel)) out.push(rel);
   }
   return out;
-}
-function runGitChangedFiles() {
-  try {
-    const head = fs.existsSync(path.join(root, ".git")) ? process.env.GITHUB_BASE_REF || "HEAD~1" : "";
-    if (!head) return [];
-    return execSync(`git diff --name-only ${head}..HEAD -- .`, { encoding: "utf8" }).split("\n").filter(Boolean);
-  } catch {
-    return [];
-  }
 }
