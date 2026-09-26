@@ -100,7 +100,7 @@ const gates = [
   ["node", ["scripts/validate-global-pricing-courier.mjs"]],
 ];
 
-const gatesToRun = process.env.VERCEL === "1" ? gates.slice(0, 35) : gates;
+const gatesToRun = process.env.VERCEL === "1" ? gates.slice(0, 50) : gates;
 
 for (const [command, args] of gatesToRun) {
   const label = `${command} ${args.join(" ")}`;
