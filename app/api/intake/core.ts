@@ -537,21 +537,6 @@ export async function POST(req: NextRequest) {
       apostilleRequired,
     });
 
-    const pricingInput = {
-      ...data,
-      state:
-        executionTruth.execution_method === "ron"
-          ? (data.state as string | undefined)
-          : undefined,
-      apostille: apostilleRequired,
-      mobile: legacyExecution.mobile,
-      miles:
-        executionTruth.execution_method === "mobile"
-          ? Number(data.miles ?? raw.miles ?? 0)
-          : 0,
-      urgency: data.urgency as "standard" | "urgent" | undefined,
-      witness_type: data.witness_type as "ron" | "in_person" | undefined,
-    };
     const requestedTier = String(raw.tier ?? "").toLowerCase();
     const requestedLane: "Signature" | "Priority" | "Executive" =
       requestedTier === "executive"
