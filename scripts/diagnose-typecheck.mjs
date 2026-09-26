@@ -12,8 +12,17 @@ const first = output
   .split(/\r?\n/)
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
+if (first.startsWith("components/dashboard/operator-intake-form.tsx")) {
+  const line = Number(first.match(/\.tsx\((\d+),/)?.[1] ?? 0);
+  if (line <= 120) process.exit(41);
+  if (line <= 220) process.exit(42);
+  if (line <= 340) process.exit(43);
+  if (line <= 460) process.exit(44);
+  if (line <= 580) process.exit(45);
+  process.exit(46);
+}
+
 const rules = [
-  ["components/dashboard/operator-intake-form.tsx", 41],
   ["components/dashboard/", 31],
   ["components/intake/", 32],
   ["components/portal/", 33],
