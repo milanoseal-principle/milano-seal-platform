@@ -20,6 +20,7 @@ assert.match(home, /<FinalCTA\s*\/>/, "Homepage must preserve final intake gate"
 
 const publicCopy = [services, close, terms, apostille, learning, legacyLookup, mapLayout].join("\n");
 for (const stale of [
+  "High-trust document handling for international acceptance.",
   "Certified Florida Notary Public",
   "Executed properly the first time",
   "Hague Convention members accept apostilles directly",
