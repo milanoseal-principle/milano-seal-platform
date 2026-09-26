@@ -12,32 +12,30 @@ const first = output
   .split(/\r?\n/)
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
-const componentDirs = [
-  "acquisition","alliance","animations","assistant","atlas","attribution","brand",
-  "content","control-plane","conversion","countries","dashboard","dispatch","execution-qa",
-  "founder","global-intelligence","globe","high-value-assets","home","i18n","intake",
-  "integrations","intelligence","jurisdictions","landing","layout","loading","map",
-  "milano-seal","mobile-field","module2","motion","notary","operator-spine","operators",
-  "orb","orbit","os","packaging-delivery","payment","payments","portal","portal2","process",
-  "professional-network","professional","progressive-certainty","releases","reviews","ritual",
-  "rituals","ron","scheduling","seo","services","shared","shipping","system",
-  "trust-alliance-platform","trust","ui","va","workbook"
+const exact = [
+  ["lib/pricing/canonicalFacade.ts", 81],
+  ["lib/pricing.ts", 82],
+  ["lib/pricing/pricingComposer.ts", 83],
+  ["lib/pricing/pricingCatalog.ts", 84],
+  ["lib/intake/operatorHandoff.ts", 85],
+  ["lib/format.ts", 86],
+  ["lib/security/access-control.ts", 87],
 ];
+for (const [file, code] of exact) if (first.startsWith(file)) process.exit(code);
 
-if (first.startsWith("components/countries/CountriesDirectoryInteractive.tsx")) process.exit(121);
-if (first.startsWith("components/countries/ItalyChecklist.tsx")) process.exit(122);
-
-if (first.startsWith("components/")) {
-  const match = first.match(/^components\/([^/]+)\//);
+const dirs = [
+  "alliance","atlas","canonical","command-center","compliance","content","control-plane",
+  "core","country","custody","dashboard","dispatch","government","high-value-assets",
+  "i18n","intake","intelligence","jurisdictions","matter","notifications","payments",
+  "platform","portal","pre-execution","pricing","professional","procurement","revenue",
+  "revenue-stack","safety","security","seo","shippo","supabase","trust-network","wise"
+];
+if (first.startsWith("lib/")) {
+  const match = first.match(/^lib\/([^/]+)\//);
   if (match) {
-    const index = componentDirs.indexOf(match[1]);
-    if (index >= 0) process.exit(50 + index);
+    const index = dirs.indexOf(match[1]);
+    if (index >= 0) process.exit(90 + index);
   }
-  process.exit(120);
+  process.exit(125);
 }
-if (first.startsWith("app/")) process.exit(21);
-if (first.startsWith("lib/")) process.exit(23);
-if (first.startsWith("tests/")) process.exit(24);
-if (first.startsWith("scripts/")) process.exit(25);
-if (first.startsWith("types/")) process.exit(26);
-process.exit(27);
+process.exit(126);
