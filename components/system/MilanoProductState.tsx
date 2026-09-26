@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-const skeletonClass = "bg-white/[0.045] motion-safe:animate-pulse motion-reduce:animate-none";
-
 export const milanoStateActionClass =
   "inline-flex min-h-11 items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A65B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060608] active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100";
 
@@ -57,16 +55,15 @@ export function MilanoRouteSkeleton() {
         <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
           Preserving your current context while the destination surface is prepared.
         </p>
-        <div className="mt-8 h-px w-full overflow-hidden bg-[#D8C188]/10" aria-hidden="true">
-          <div className="h-full w-2/3 origin-left bg-gradient-to-r from-transparent via-[#D8C188]/80 to-transparent motion-safe:animate-pulse motion-reduce:animate-none" />
-        </div>
-        <div className="mt-6 grid gap-3" aria-hidden="true">
-          <div className={`${skeletonClass} h-16 rounded-xl border border-[#D8C188]/10`} />
-          <div className={`${skeletonClass} h-28 rounded-xl border border-[#D8C188]/10`} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className={`${skeletonClass} h-20 rounded-xl border border-white/[0.055]`} />
-            <div className={`${skeletonClass} h-20 rounded-xl border border-white/[0.055]`} />
+        <div className="mt-10 flex items-center gap-4" aria-hidden="true">
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#D8C188]/40 motion-safe:animate-ping motion-reduce:animate-none" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[#D8C188]" />
+          </span>
+          <div className="relative h-px flex-1 overflow-hidden bg-[#D8C188]/10">
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-[#D8C188] to-transparent motion-safe:animate-pulse motion-reduce:animate-none" />
           </div>
+        </div>
         </div>
       </div>
     </main>
