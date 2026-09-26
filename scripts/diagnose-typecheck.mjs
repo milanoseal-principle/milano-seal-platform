@@ -12,45 +12,29 @@ const first = output
   .split(/\r?\n/)
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
-const rules = [
-  ["components/acquisition/", 41],
-  ["components/alliance/", 42],
-  ["components/animations/", 43],
-  ["components/atlas/", 44],
-  ["components/attribution/", 45],
-  ["components/brand/", 46],
-  ["components/content/", 47],
-  ["components/conversion/", 48],
-  ["components/countries/", 49],
-  ["components/dispatch/", 50],
-  ["components/execution-qa/", 51],
-  ["components/founder/", 52],
-  ["components/global-intelligence/", 53],
-  ["components/globe/", 54],
-  ["components/high-value-assets/", 55],
-  ["components/home/", 56],
-  ["components/i18n/", 57],
-  ["components/process/", 58],
-  ["components/professional-network/", 59],
-  ["components/professional/", 60],
-  ["components/progressive-certainty/", 61],
-  ["components/releases/", 62],
-  ["components/reviews/", 63],
-  ["components/ritual/", 64],
-  ["components/rituals/", 65],
-  ["components/scheduling/", 66],
-  ["components/seo/", 67],
-  ["components/services/", 68],
-  ["components/shared/", 69],
-  ["components/shipping/", 70],
-  ["components/system/", 71],
-  ["components/trust-alliance-platform/", 72],
-  ["components/trust/", 73],
-  ["components/va/", 74],
-  ["components/workbook/", 75],
-  ["components/", 76],
+const componentDirs = [
+  "acquisition","alliance","animations","assistant","atlas","attribution","brand",
+  "content","control-plane","conversion","countries","dashboard","dispatch","execution-qa",
+  "founder","global-intelligence","globe","high-value-assets","home","i18n","intake",
+  "integrations","intelligence","jurisdictions","landing","layout","loading","map",
+  "milano-seal","mobile-field","module2","motion","notary","operator-spine","operators",
+  "orb","orbit","os","packaging-delivery","payment","payments","portal","portal2","process",
+  "professional-network","professional","progressive-certainty","releases","reviews","ritual",
+  "rituals","ron","scheduling","seo","services","shared","shipping","system",
+  "trust-alliance-platform","trust","ui","va","workbook"
 ];
-for (const [prefix, code] of rules) {
-  if (first.startsWith(prefix)) process.exit(code);
+
+if (first.startsWith("components/")) {
+  const match = first.match(/^components\/([^/]+)\//);
+  if (match) {
+    const index = componentDirs.indexOf(match[1]);
+    if (index >= 0) process.exit(50 + index);
+  }
+  process.exit(120);
 }
-process.exit(77);
+if (first.startsWith("app/")) process.exit(21);
+if (first.startsWith("lib/")) process.exit(23);
+if (first.startsWith("tests/")) process.exit(24);
+if (first.startsWith("scripts/")) process.exit(25);
+if (first.startsWith("types/")) process.exit(26);
+process.exit(27);
