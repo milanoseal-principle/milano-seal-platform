@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
-import { calculatePrice, determineLaneAndPrice } from "@/lib/pricing";
+import { calculatePrice } from "@/lib/pricing";
 import {
   nonDiscountableTotalFromBreakdown,
   eligibleSubtotalFromTotal,
@@ -552,7 +552,6 @@ export async function POST(req: NextRequest) {
       urgency: data.urgency as "standard" | "urgent" | undefined,
       witness_type: data.witness_type as "ron" | "in_person" | undefined,
     };
-    const legacyPricing = determineLaneAndPrice(pricingInput);
     const requestedTier = String(raw.tier ?? "").toLowerCase();
     const requestedLane: "Signature" | "Priority" | "Executive" =
       requestedTier === "executive"
@@ -594,6 +593,9 @@ export async function POST(req: NextRequest) {
           : delivery === "domestic_courier"
             ? "standard_domestic"
             : "none",
+      witness_count: Math.max(0, Number(data.witnesses ?? raw.witnesses ?? 0)),
+      witness_type: data.witness_type ?? raw.witness_type,
+      after_hours: data.after_hours ?? raw.after_hours,
     });
     const pricing = {
       lane: pricedLane,
@@ -602,7 +604,7 @@ export async function POST(req: NextRequest) {
       addons: canonicalPricing.breakdown
         .filter((item) => !item.internal_only && item.key !== "base")
         .map((item) => ({ item: item.label, amount: item.amount })),
-      witness_total: legacyPricing.witness_total,
+      witness_total: canonicalPricing.internal.witness_total,
     };
     stage = "PRICED";
 
