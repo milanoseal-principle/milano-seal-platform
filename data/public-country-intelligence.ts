@@ -1,12 +1,12 @@
 // Milano Seal — PUBLIC Country Intelligence (client-safe teaser layer)
 //
-// This is the ONLY country-intelligence module allowed in public/client
-// bundles. It exposes WHAT and WHY (authority, route, compliance boundary) and
-// never the operating playbook (operator/VA/founder/revenue/ledger/payment-gate
-// copy). The full private engine lives in data/country-execution-intelligence.ts
-// which is marked `server-only` and must never be imported client-side.
+// Public surfaces may use destination presentation data (name, flag, demand,
+// common matter types), but compliance/routing posture must come from the
+// canonical country compliance registry. Missing or verification-required
+// profiles fail closed to receiving-authority review.
 
 import { DESTINATIONS, type Destination } from "@/data/destinations";
+import { getCountryBySlug } from "@/lib/compliance/countries";
 
 export type PublicRouteType =
   | "hague_apostille"
@@ -28,6 +28,8 @@ export interface PublicCountryIntelligence {
   complianceBoundary: string;
   primaryCtaLabel: string;
   secondaryCtaLabel: string;
+  verificationRequired: boolean;
+  sourceStatus: "CANONICAL" | "REVIEW_REQUIRED" | "UNAVAILABLE";
 }
 
 const EYEBROW = "EXECUTION INTELLIGENCE";
@@ -35,31 +37,50 @@ const PRIMARY_CTA = "Start Controlled Intake";
 const SECONDARY_CTA = "Open Global Atlas";
 
 const ROUTE_LABELS: Record<PublicRouteType, string> = {
-  hague_apostille: "HAGUE APOSTILLE EXECUTION ROUTE",
-  consular_legalization: "CONSULAR LEGALIZATION REVIEW ROUTE",
-  authority_review: "RECEIVING-AUTHORITY REVIEW ROUTE",
-  hybrid_review: "AUTHENTICATION / CONSULAR REVIEW ROUTE",
+  hague_apostille: "HAGUE APOSTILLE REVIEW ROUTE",
+  consular_legalization: "AUTHENTICATION / CONSULAR REVIEW ROUTE",
+  authority_review: "RECEIVING-AUTHORITY REVIEW REQUIRED",
+  hybrid_review: "HYBRID AUTHENTICATION REVIEW ROUTE",
 };
 
 const STATUS_PILLS: Record<PublicRouteType, string> = {
-  hague_apostille: "HAGUE MEMBER",
-  consular_legalization: "CONSULAR REVIEW",
-  authority_review: "AUTHORITY CHECK",
+  hague_apostille: "APOSTILLE REVIEW",
+  consular_legalization: "AUTHENTICATION REVIEW",
+  authority_review: "REVIEW REQUIRED",
   hybrid_review: "HYBRID REVIEW",
 };
 
-// Public-safe execution path — never the internal workflow sequence.
-const PUBLIC_PATH = [
-  "01 Pre-flight readiness",
-  "02 Authority route check",
-  "03 Custody-controlled release",
-];
+const PUBLIC_PATHS: Record<PublicRouteType, string[]> = {
+  hague_apostille: [
+    "01 Document-origin and receiving-authority review",
+    "02 Notarial / certified-copy readiness review",
+    "03 Competent-authority apostille coordination",
+    "04 Custody-controlled international release",
+  ],
+  consular_legalization: [
+    "01 Document-origin and receiving-authority review",
+    "02 Authentication pathway confirmation",
+    "03 Consular / embassy step review where applicable",
+    "04 Custody-controlled international release",
+  ],
+  authority_review: [
+    "01 Document-origin and receiving-authority review",
+    "02 Current authority pathway verification",
+    "03 Execution requirements confirmed before action",
+    "04 Custody-controlled international release",
+  ],
+  hybrid_review: [
+    "01 Document-origin and receiving-authority review",
+    "02 Apostille / authentication pathway verification",
+    "03 Additional authority step review where applicable",
+    "04 Custody-controlled international release",
+  ],
+};
 
-// Only these flag labels may appear publicly.
 const SAFE_FLAGS = new Set([
-  "Apostille",
-  "Authentication",
-  "Consular Review",
+  "Apostille Review",
+  "Authentication Review",
+  "Authority Review",
   "Translation Review",
   "Courier Release",
   "Corporate",
@@ -68,7 +89,6 @@ const SAFE_FLAGS = new Set([
   "Citizenship",
   "Real Estate",
   "Private Client",
-  "Authority Review",
   "Custody Release",
 ]);
 
@@ -84,88 +104,126 @@ function normalizeFlag(raw: string): string | null {
   return null;
 }
 
-function deriveRouteType(dest: Destination): PublicRouteType {
-  if (dest.slug === "uae" || dest.slug === "saudi-arabia" || dest.slug === "qatar") {
-    return "consular_legalization";
+function governedRouteType(slug: string): {
+  routeType: PublicRouteType;
+  verificationRequired: boolean;
+  sourceStatus: PublicCountryIntelligence["sourceStatus"];
+} {
+  const profile = getCountryBySlug(slug);
+  if (!profile) {
+    return {
+      routeType: "authority_review",
+      verificationRequired: true,
+      sourceStatus: "UNAVAILABLE",
+    };
   }
-  if (dest.hague) return "hague_apostille";
-  if (dest.slug === "mexico" || dest.slug === "canada") return "authority_review";
-  return "consular_legalization";
+
+  if (profile.verificationStatus === "VERIFICATION_REQUIRED") {
+    return {
+      routeType: "authority_review",
+      verificationRequired: true,
+      sourceStatus: "REVIEW_REQUIRED",
+    };
+  }
+
+  if (profile.hagueMember === "member") {
+    return {
+      routeType: "hague_apostille",
+      verificationRequired: false,
+      sourceStatus: "CANONICAL",
+    };
+  }
+
+  if (profile.hagueMember === "bilateral") {
+    return {
+      routeType: "hybrid_review",
+      verificationRequired: false,
+      sourceStatus: "CANONICAL",
+    };
+  }
+
+  return {
+    routeType: "consular_legalization",
+    verificationRequired: false,
+    sourceStatus: "CANONICAL",
+  };
 }
 
-// Public priority copy (teaser subset only — no workflow).
-const PUBLIC_PRIORITY: Record<string, Partial<PublicCountryIntelligence>> = {
+const PUBLIC_PRIORITY_COPY: Record<
+  string,
+  Partial<Pick<PublicCountryIntelligence, "authoritySummary" | "publicFlags" | "complianceBoundary">>
+> = {
   italy: {
-    displayName: "Italy",
-    routeType: "hague_apostille",
     authoritySummary:
-      "Italy-bound documents are screened for notarial readiness, apostille routing, citizenship/private-client use, translation risk, and receiving-authority presentation before release.",
-    publicFlags: ["Citizenship", "POA", "Civil Record", "Apostille", "Translation Review"],
+      "Italy-bound documents are screened for document origin, execution readiness, authority routing, translation posture, and receiving-authority presentation before release.",
+    publicFlags: ["Citizenship", "POA", "Civil Record", "Apostille Review", "Translation Review"],
     complianceBoundary:
-      "Routing snapshot only — final acceptance remains subject to Italian receiving-authority review.",
+      "Routing snapshot only — final acceptance remains subject to the receiving authority in Italy.",
   },
   brazil: {
-    displayName: "Brazil",
-    routeType: "hague_apostille",
     authoritySummary:
-      "Florida-origin documents for Brazil are routed through a controlled Hague apostille pathway with notarial readiness review, destination-use screening, translation/courier risk check, and release packet coordination.",
+      "Brazil-bound documents are reviewed for document origin, execution readiness, authority routing, translation posture, and custody-controlled release.",
     publicFlags: ["Corporate", "POA", "Civil Record", "Translation Review", "Courier Release"],
     complianceBoundary:
-      "Routing snapshot only — final acceptance remains subject to Brazilian receiving-authority review.",
+      "Routing snapshot only — final acceptance remains subject to the receiving authority in Brazil.",
   },
   uae: {
-    displayName: "United Arab Emirates",
-    routeType: "consular_legalization",
     authoritySummary:
-      "UAE-bound documents require higher-control authentication review, with notarial readiness, state/federal route assessment, consular handling risk, and receiving-party presentation checked before release.",
-    publicFlags: ["Corporate", "Consular Review", "Private Client", "Authentication", "Courier Release"],
+      "UAE-bound documents remain authority-review controlled until the applicable authentication, apostille, consular, translation, and receiving-party requirements are confirmed.",
+    publicFlags: ["Corporate", "Authority Review", "Private Client", "Authentication Review", "Courier Release"],
     complianceBoundary:
-      "Routing snapshot only — UAE matters may require authentication and consular review before receiving-party acceptance.",
+      "Routing snapshot only — current authority requirements must be confirmed before execution or release.",
   },
 };
 
 function buildPublic(dest: Destination): PublicCountryIntelligence {
-  const routeType = deriveRouteType(dest);
-  const isHague = routeType === "hague_apostille";
-  const override = PUBLIC_PRIORITY[dest.slug] ?? {};
+  const governed = governedRouteType(dest.slug);
+  const override = PUBLIC_PRIORITY_COPY[dest.slug] ?? {};
 
   const derivedFlags = Array.from(
     new Set(
       (dest.commonDocuments ?? [])
         .map(normalizeFlag)
-        .filter((f): f is string => Boolean(f))
-        .concat(isHague ? "Apostille" : "Authentication", "Custody Release"),
+        .filter((flag): flag is string => Boolean(flag))
+        .concat(
+          governed.routeType === "hague_apostille"
+            ? "Apostille Review"
+            : governed.routeType === "authority_review"
+              ? "Authority Review"
+              : "Authentication Review",
+          "Custody Release",
+        ),
     ),
   ).slice(0, 5);
 
   const summary =
     override.authoritySummary ??
-    (isHague
-      ? `Florida-origin documents for ${dest.name} are screened for notarial readiness, apostille routing, destination-use, translation risk, and receiving-authority presentation before custody-controlled release.`
-      : `${dest.name}-bound documents are screened for notarial readiness, authentication route assessment, consular handling risk, and receiving-party presentation before custody-controlled release.`);
+    (governed.verificationRequired
+      ? `Current authority routing for ${dest.name} requires operator review before execution decisions are presented as authoritative.`
+      : `${dest.name}-bound documents are screened for document origin, execution readiness, authority routing, receiving-authority posture, and custody-controlled release.`);
 
   const boundary =
     override.complianceBoundary ??
-    `Routing snapshot only — final acceptance remains subject to ${dest.name} receiving-authority review.`;
-
-  const rt = override.routeType ?? routeType;
+    `Final acceptance remains subject to the receiving authority in ${dest.name}; Matter-specific review controls execution and release.`;
 
   return {
     slug: dest.slug,
-    displayName: override.displayName ?? dest.name,
+    displayName: dest.name,
     flag: dest.flag,
-    routeType: rt,
-    statusPill: STATUS_PILLS[rt],
+    routeType: governed.routeType,
+    statusPill: STATUS_PILLS[governed.routeType],
     eyebrow: EYEBROW,
-    routeLabel: ROUTE_LABELS[rt],
+    routeLabel: ROUTE_LABELS[governed.routeType],
     authoritySummary: summary,
     publicFlags: (override.publicFlags ?? derivedFlags).filter(
-      (f) => normalizeFlag(f) !== null,
+      (flag) => normalizeFlag(flag) !== null,
     ),
-    publicExecutionPath: PUBLIC_PATH,
+    publicExecutionPath: PUBLIC_PATHS[governed.routeType],
     complianceBoundary: boundary,
     primaryCtaLabel: PRIMARY_CTA,
     secondaryCtaLabel: SECONDARY_CTA,
+    verificationRequired: governed.verificationRequired,
+    sourceStatus: governed.sourceStatus,
   };
 }
 
@@ -181,19 +239,27 @@ export function getPublicCountryExecutionIntelligence(
 ): PublicCountryIntelligence {
   const found = PUBLIC_COUNTRY_INTELLIGENCE[slug];
   if (found) return found;
-  const dest = DESTINATIONS.find((d) => d.slug === slug);
-  if (dest) return buildPublic(dest);
-  const name = fallbackName ?? slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return buildPublic({
+
+  const name =
+    fallbackName ??
+    slug.replace(/-/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+
+  return {
     slug,
-    name,
-    flag: "🌐",
-    hague: true,
-    hagueStatus: "Hague Convention Member",
-    apostilleRequired: true,
-    demand: 0,
-    note: "",
-    executionPath: [],
-    commonDocuments: ["Civil Record", "Corporate"],
-  } as Destination);
+    displayName: name,
+    routeType: "authority_review",
+    statusPill: STATUS_PILLS.authority_review,
+    eyebrow: EYEBROW,
+    routeLabel: ROUTE_LABELS.authority_review,
+    authoritySummary:
+      "Current authority routing is not available in the public registry. Operator review is required before execution.",
+    publicFlags: ["Authority Review", "Custody Release"],
+    publicExecutionPath: PUBLIC_PATHS.authority_review,
+    complianceBoundary:
+      "No public routing assumption is made without governed authority intelligence.",
+    primaryCtaLabel: PRIMARY_CTA,
+    secondaryCtaLabel: SECONDARY_CTA,
+    verificationRequired: true,
+    sourceStatus: "UNAVAILABLE",
+  };
 }
