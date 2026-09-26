@@ -26,8 +26,8 @@ for (const file of required) {
 const navigation = readFileSync("components/NavigationLoader.tsx", "utf8");
 for (const token of [
   "milano:navigation-intent",
-  "MINIMUM_VISIBLE_MS = 2200",
-  "SETTLE_FADE_MS = 300",
+  "MINIMUM_VISIBLE_MS = 700",
+  "SETTLE_FADE_MS = 220",
   "SAFETY_RELEASE_MS = 8000",
   "Preparing the next view",
   "Preserving your current context",
@@ -40,6 +40,9 @@ if (navigation.includes("setTimeout(() => setLoading(false), 900)")) {
 }
 if (navigation.includes("<MilanoPageLoader")) {
   throw new Error("Navigation loader must use the full Milano transition surface, not the legacy top rail only");
+}
+for (const staleSkeleton of ["h-16 rounded-xl", "h-28 rounded-xl"]) {
+  if (navigation.includes(staleSkeleton)) throw new Error(`Navigation loader must not restore gray skeleton cards: ${staleSkeleton}`);
 }
 
 const shell = readFileSync("components/motion/CinematicPageShell.tsx", "utf8");
@@ -84,6 +87,9 @@ for (const token of ["Global Intelligence", "Begin secure intake", "MilanoProduc
 }
 
 const header = readFileSync("components/landing/header.tsx", "utf8");
+if (header.includes('{ label: "About", href: "/about" }')) {
+  throw new Error("Public header must keep About out of primary navigation; Founder/About remain available in the founder trust card.");
+}
 for (const token of [
   "document.body.style.overflow = \"hidden\"",
   "event.key !== \"Escape\"",
@@ -91,6 +97,8 @@ for (const token of [
   "aria-modal=\"true\"",
   "useMilanoReducedMotion",
   "min-h-12",
+  "max-w-[1480px]",
+  "min-[1360px]:flex",
 ]) {
   if (!header.includes(token)) throw new Error(`Header product-quality safeguard missing: ${token}`);
 }
