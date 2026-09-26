@@ -95,6 +95,7 @@ try {
     "supabase/migrations/085_authority_packet_composer.sql",
     "supabase/migrations/086_matter_shipment_legs.sql",
     "supabase/migrations/087_authority_processing_intelligence.sql",
+    "supabase/migrations/088_payment_gate_search_path_hardening.sql",
     "supabase/migrations/202609260001_translation_entry_rls_hardening.sql",
     // Step 6: additive shipment-leg reconciliation after the existing
     // HMAC-verified courier path (HMAC verification unchanged).
