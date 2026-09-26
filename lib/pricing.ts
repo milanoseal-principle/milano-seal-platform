@@ -61,9 +61,9 @@ export const SHIPPING_FEES = {
 } as const;
 
 export const WITNESS_FEES = {
-  ron: 35,
-  in_person: 55,
-  after_hours: 37,
+  ron: 50,
+  in_person: 75,
+  after_hours: 150,
 } as const;
 
 type Tier = keyof typeof TIERS;
