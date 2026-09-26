@@ -16,7 +16,6 @@ const publicNavLinks = [
   { label: "Process", href: "/process" },
   { label: "Global Intelligence", href: "/global-document-intelligence" },
   { label: "Professional", href: "/professional" },
-  { label: "About", href: "/about" },
   { label: "Secure Portal", href: "/secure-portal" },
 ];
 
@@ -95,11 +94,11 @@ export function Header() {
         style={{ paddingTop: "var(--sa-top)" }}
       >
         <div className={isScrolled ? "border-b border-white/[0.06] shadow-[0_14px_40px_rgba(0,0,0,0.22)]" : ""}>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="flex h-20 items-center justify-between gap-3">
+          <div className="mx-auto w-full max-w-[1480px] px-5 sm:px-6 lg:px-8">
+            <div className="flex h-20 items-center gap-5">
               <Link
                 href={isProfessionalAccess ? "/professional" : "/"}
-                className="group flex min-w-0 flex-shrink select-none items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ms-black)] sm:gap-3"
+                className="group flex w-[250px] flex-none select-none items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ms-black)] sm:gap-3"
                 aria-label={`${MILANO_BRAND.name} ${isProfessionalAccess ? "professional access" : "home"}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -114,12 +113,12 @@ export function Header() {
                     display: "block",
                     objectFit: "contain",
                     flexShrink: 0,
-                    width: "clamp(48px, 6vw, 72px)",
-                    height: "clamp(48px, 6vw, 72px)",
+                    width: "56px",
+                    height: "56px",
                   }}
                 />
                 <span className="flex min-w-0 flex-col leading-none">
-                  <span className="truncate font-serif text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--ms-gold)] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)] sm:text-[17px] sm:tracking-[0.22em] xl:text-[20px] xl:tracking-[0.28em]">
+                  <span className="whitespace-nowrap font-serif text-[15px] font-semibold uppercase tracking-[0.16em] text-[var(--ms-gold)] drop-shadow-[0_0_12px_rgba(198,166,91,0.18)] sm:text-[17px] sm:tracking-[0.20em] 2xl:text-[19px] 2xl:tracking-[0.24em]">
                     {MILANO_BRAND.name}
                   </span>
                   <span className="mt-1.5 hidden text-[8px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/60 sm:block">
@@ -128,7 +127,7 @@ export function Header() {
                 </span>
               </Link>
 
-              <nav className="hidden items-center gap-6 xl:flex 2xl:gap-8" aria-label={isProfessionalAccess ? "Professional navigation" : "Primary navigation"}>
+              <nav className="hidden min-w-0 flex-1 items-center justify-center gap-4 min-[1360px]:flex 2xl:gap-6" aria-label={isProfessionalAccess ? "Professional navigation" : "Primary navigation"}>
                 {navLinks.map((link) => {
                   const active = isActivePath(pathname ?? "/", link.href);
                   return (
@@ -145,17 +144,17 @@ export function Header() {
                 })}
               </nav>
 
-              <div className="hidden flex-shrink-0 items-center gap-3 xl:flex">
+              <div className="ml-auto hidden flex-shrink-0 items-center gap-2.5 min-[1360px]:flex">
                 <GlobalLanguageSelector />
                 <Link
                   href="/login"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--ms-gold)]/60 px-5 py-2.5 text-sm font-medium text-[var(--ms-gold)] transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--ms-gold)]/45 px-4 py-2.5 text-sm font-medium text-[var(--ms-gold)] transition-all duration-300 hover:border-[var(--ms-gold)] hover:bg-[var(--ms-gold)]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
                 >
                   {isProfessionalAccess ? "Professional Login" : "Login"}
                 </Link>
                 <Link
                   href={intakeHref}
-                  className="group inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-2.5 text-sm font-medium text-[var(--ms-black)] transition-all duration-300 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
+                  className="group inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--ms-gold)] px-4 py-2.5 text-sm font-medium text-[var(--ms-black)] transition-all duration-300 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ms-black)] motion-reduce:transition-none"
                 >
                   <span>{intakeLabel}</span>
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
@@ -166,7 +165,7 @@ export function Header() {
                 ref={menuButtonRef}
                 type="button"
                 onClick={() => setIsMobileMenuOpen((open) => !open)}
-                className="flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-lg p-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] xl:hidden"
+                className="ml-auto flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-lg p-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)] min-[1360px]:hidden"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="milano-mobile-navigation"
@@ -188,7 +187,7 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
-            className="fixed inset-x-0 z-40 max-h-[calc(100dvh-var(--header-total-height)-var(--sa-top))] overflow-y-auto overscroll-contain border-b border-[#2A2A2A] bg-[var(--ms-black)] shadow-[0_28px_80px_rgba(0,0,0,0.5)] xl:hidden"
+            className="fixed inset-x-0 z-40 max-h-[calc(100dvh-var(--header-total-height)-var(--sa-top))] overflow-y-auto overscroll-contain border-b border-[#2A2A2A] bg-[var(--ms-black)] shadow-[0_28px_80px_rgba(0,0,0,0.5)] min-[1360px]:hidden"
             style={{ top: "calc(var(--header-total-height) + var(--sa-top))" }}
             role="dialog"
             aria-modal="true"
