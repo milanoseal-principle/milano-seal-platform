@@ -74,6 +74,7 @@ test("professional hub and country pages preserve premium Matter-first positioni
   const hub = fs.readFileSync(path.join(root, "app/professional/page.tsx"), "utf8");
   const country = fs.readFileSync(path.join(root, "app/professional/[country]/page.tsx"), "utf8");
   const header = fs.readFileSync(path.join(root, "components/landing/header.tsx"), "utf8");
+  const publicDictionary = fs.readFileSync(path.join(root, "lib/i18n/public-dictionary.ts"), "utf8");
 
   assert.match(hub, /U\.S\. Apostille & Document Execution/);
   assert.match(hub, /Matter review comes first/);
@@ -83,7 +84,8 @@ test("professional hub and country pages preserve premium Matter-first positioni
   assert.doesNotMatch(hub, /\$750|\$975|\$1,850/);
   assert.doesNotMatch(country, /\$750|\$975|\$1,850/);
   assert.match(header, /professionalNavLinks/);
-  assert.match(header, /Submit Client Matter/);
+  assert.match(header, /t\.header\.submitClientMatter/);
+  assert.match(publicDictionary, /submitClientMatter:\s*"Submit Client Matter"/);
   assert.doesNotMatch(
     header.match(/const professionalNavLinks = \[([\s\S]*?)\];/)?.[1] ?? "",
     /Pricing|\/pricing/,
