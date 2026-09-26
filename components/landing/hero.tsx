@@ -8,12 +8,6 @@ import { GlobalTrustCoreHero } from "@/components/landing/global-trust-core-hero
 import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 
-const INIT_PHRASES = [
-  "Initializing International Execution Environment...",
-  "Reviewing Cross-Border Routing Requirements...",
-  "Preparing Protected Matter Coordination...",
-];
-
 function HomepageMicroInit({ phrases }: { phrases: string[] }) {
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [visible, setVisible] = useState(true);
