@@ -80,7 +80,7 @@ const gates = [
   ["npm", ["run", "validate:final-mobile-cosmetic-pass"]],
   ["npm", ["run", "typecheck"]],
   ["npm", ["run", "lint"]],
-  [process.env.VERCEL === "1" ? "node" : "npm", process.env.VERCEL === "1" ? ["scripts/diagnose-tests.mjs"] : ["test"]],
+  ["npm", ["test"]],
   ["npm", ["run", "validate:smart-intake-sop"]],
   ["npm", ["run", "validate:route-registry"]],
   ["npm", ["run", "validate:milano-pre-execution"]],
@@ -122,13 +122,7 @@ for (const [gateIndex, [command, args]] of gatesToRun.entries()) {
     // Vercel build summaries do not reliably expose stdout/stderr. Emit a stable,
     // unique process code so the exact failing gate can be identified from the
     // deployment record without disabling, reordering, or replacing validators.
-    process.exit(
-      process.env.VERCEL === "1" && gateIndex === 46
-        ? (result.status ?? diagnosticExit)
-        : process.env.VERCEL === "1"
-          ? diagnosticExit
-          : (result.status ?? 1),
-    );
+    process.exit(process.env.VERCEL === "1" ? diagnosticExit : (result.status ?? 1));
   }
 }
 
