@@ -7,20 +7,16 @@ const result = spawnSync("npm", ["run", "typecheck", "--", "--pretty", "false"],
 });
 
 const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
-if ((result.status ?? 1) === 0) {
-  console.log("TYPECHECK_DIAGNOSTIC_PASS");
-  process.exit(0);
-}
+if ((result.status ?? 1) === 0) process.exit(0);
 
-const rules = [
-  ["lib/pricing/canonicalFacade.ts", 11],
-  ["lib/pricing.ts", 12],
-  ["app/api/intake/core.ts", 13],
-  ["app/api/admin/pricing/quote/route.ts", 14],
-  ["components/dashboard/operator-intake-form.tsx", 15],
-  ["tests/unit/pricingSecurityConvergence.test.ts", 16],
-];
-for (const [file, code] of rules) {
-  if (output.includes(file)) process.exit(code);
-}
-process.exit(17);
+const first = output
+  .split(/\r?\n/)
+  .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
+
+if (first.startsWith("app/")) process.exit(21);
+if (first.startsWith("components/")) process.exit(22);
+if (first.startsWith("lib/")) process.exit(23);
+if (first.startsWith("tests/")) process.exit(24);
+if (first.startsWith("scripts/")) process.exit(25);
+if (first.startsWith("types/")) process.exit(26);
+process.exit(27);
