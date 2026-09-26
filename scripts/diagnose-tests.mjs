@@ -15,13 +15,17 @@ function walkTests(dir) {
 
 const files = ["tests", "lib", "components"].flatMap(walkTests).sort();
 const chunks = 8;
-for (let chunk = 0; chunk < chunks; chunk += 1) {
-  const group = files.filter((_, index) => Math.floor((index * chunks) / files.length) === chunk);
-  console.log(`DIAG canonical npm-test chunk ${chunk + 1}/${chunks}: ${group.length} files of ${files.length}`);
-  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", ...group], {
+const targetChunk = 4;
+const group = files.filter((_, index) => Math.floor((index * chunks) / files.length) === targetChunk);
+console.log(`DIAG canonical npm-test chunk 5/8: ${group.length} files`);
+
+for (let index = 0; index < group.length; index += 1) {
+  const file = group[index];
+  console.log(`DIAG TEST ${index}: ${file}`);
+  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", file], {
     stdio: "inherit",
     env: { ...process.env, CI: "1" },
   });
-  if ((result.status ?? 1) !== 0) process.exit(100 + chunk);
+  if ((result.status ?? 1) !== 0) process.exit(120 + index);
 }
 process.exit(0);
