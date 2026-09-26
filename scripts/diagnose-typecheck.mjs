@@ -5,7 +5,6 @@ const result = spawnSync("npm", ["run", "typecheck", "--", "--pretty", "false"],
   env: { ...process.env, CI: "1" },
   shell: process.platform === "win32",
 });
-
 const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
 if ((result.status ?? 1) === 0) process.exit(0);
 
@@ -13,10 +12,18 @@ const first = output
   .split(/\r?\n/)
   .find((line) => /\.(?:ts|tsx)\(\d+,\d+\): error TS\d+/.test(line)) ?? "";
 
-if (first.startsWith("app/")) process.exit(21);
-if (first.startsWith("components/")) process.exit(22);
-if (first.startsWith("lib/")) process.exit(23);
-if (first.startsWith("tests/")) process.exit(24);
-if (first.startsWith("scripts/")) process.exit(25);
-if (first.startsWith("types/")) process.exit(26);
-process.exit(27);
+const rules = [
+  ["components/dashboard/", 31],
+  ["components/intake/", 32],
+  ["components/portal/", 33],
+  ["components/landing/", 34],
+  ["components/assistant/", 35],
+  ["components/control-plane/", 36],
+  ["components/ron/", 37],
+  ["components/ui/", 38],
+  ["components/", 39],
+];
+for (const [prefix, code] of rules) {
+  if (first.startsWith(prefix)) process.exit(code);
+}
+process.exit(40);
