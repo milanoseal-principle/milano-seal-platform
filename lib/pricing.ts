@@ -60,6 +60,12 @@ export const SHIPPING_FEES = {
   international: 150,
 } as const;
 
+export const WITNESS_FEES = {
+  ron: 35,
+  in_person: 55,
+  after_hours: 37,
+} as const;
+
 type Tier = keyof typeof TIERS;
 type UrgencyKey = keyof typeof URGENCY_FEES;
 type ShippingKey = keyof typeof SHIPPING_FEES;
@@ -150,6 +156,10 @@ export interface PriceResult {
     shipping: ShippingKey;
     manual_adjustment: number;
     ron_cost: number;
+    witness_count: number;
+    witness_type: "ron" | "in_person";
+    witness_total: number;
+    after_hours: boolean;
   };
 }
 
@@ -183,6 +193,10 @@ export interface PriceInput {
   fbiApostille?: unknown;
   manual_adjustment?: unknown;
   manualAdjustment?: unknown;
+  witness_count?: unknown;
+  witnesses?: unknown;
+  witness_type?: unknown;
+  after_hours?: unknown;
 }
 
 export function calculatePrice(params: PriceInput = {}): PriceResult {
@@ -224,6 +238,15 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     toBool(params.direct_state_handling);
   const fbiApostille = toBool(params.fbi_apostille) || toBool(params.fbiApostille);
   const manualAdj = Number(params.manual_adjustment ?? params.manualAdjustment ?? 0) || 0;
+  const witnessCount = Math.max(
+    0,
+    toNonNegativeInt(params.witness_count ?? params.witnesses, 0),
+  );
+  const witnessType: "ron" | "in_person" =
+    String(params.witness_type ?? "ron").toLowerCase() === "in_person"
+      ? "in_person"
+      : "ron";
+  const afterHours = toBool(params.after_hours);
 
   const breakdown: PriceBreakdownItem[] = [];
   const base = tierConfig.base;
@@ -350,6 +373,21 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     total += shippingAmount;
   }
 
+  const witnessTotal =
+    witnessCount > 0
+      ? witnessCount * WITNESS_FEES[witnessType] +
+        (afterHours ? WITNESS_FEES.after_hours : 0)
+      : 0;
+  if (witnessTotal > 0) {
+    breakdown.push({
+      key: "witness_support",
+      label: `Witness support (${witnessCount})`,
+      amount: witnessTotal,
+      internal_only: true,
+    });
+    total += witnessTotal;
+  }
+
   if (manualAdj !== 0) {
     breakdown.push({
       key: "manual_adjustment",
@@ -386,6 +424,10 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
       shipping,
       manual_adjustment: money(manualAdj),
       ron_cost: money(notarizedSigCount * COMPLEXITY.notarized_signature),
+      witness_count: witnessCount,
+      witness_type: witnessType,
+      witness_total: money(witnessTotal),
+      after_hours: afterHours,
     },
   };
 }
@@ -453,84 +495,6 @@ export function getPublicPricingCopy() {
   };
 }
 
-export interface PricingData {
-  state?: string;
-  apostille?: boolean;
-  docs?: number;
-  mobile?: boolean;
-  miles?: number;
-  signers?: number;
-  translation?: boolean;
-  urgency?: "standard" | "urgent";
-  multi_country?: boolean;
-  witnesses?: number;
-  witness_type?: "ron" | "in_person";
-  after_hours?: boolean;
-  origin_authority_type?: string;
-  document_type?: string;
-}
-
-export function shouldBlockFederalAffidaviitPricing(data: PricingData): boolean {
-  const docType = (data.document_type || "").toLowerCase();
-  const isAffidavit = docType.includes("affidavit");
-  const isFederal = data.origin_authority_type === "federal_document";
-  if (!isAffidavit || !isFederal) return false;
-  return !(docType.includes("fbi") || docType.includes("federal"));
-}
-
-export interface PricingResult {
-  lane: ExecutionLane;
-  total: number;
-  base: number;
-  addons: { item: string; amount: number }[];
-  witness_total: number;
-}
-
-function calcWitness(data: PricingData): number {
-  if (!data.witnesses) return 0;
-  const base = data.witness_type === "ron" ? 35 : 55;
-  return base * data.witnesses + (data.after_hours ? 37 : 0);
-}
-
-export function determineLaneAndPrice(data: PricingData): PricingResult {
-  if (data.state === "Colorado" && data.apostille === false && (data.docs || 1) === 1) {
-    const witnessTotal = calcWitness(data);
-    return {
-      lane: "RON_SIMPLE",
-      base: 150,
-      total: 150 + witnessTotal,
-      addons: [],
-      witness_total: witnessTotal,
-    };
-  }
-
-  if (data.state === "Florida" && data.mobile === true) {
-    const mileage = (data.miles || 0) * 2;
-    const base = 135 + mileage;
-    const witnessTotal = calcWitness(data);
-    return {
-      lane: "MOBILE_STANDARD",
-      base,
-      total: base + witnessTotal,
-      addons: [],
-      witness_total: witnessTotal,
-    };
-  }
-
-  let lane: ExecutionLane = "Signature";
-  let base: number = TIERS.signature.base;
-  if ((data.signers || 1) > 1 || data.translation) {
-    lane = "Priority";
-    base = TIERS.priority.base;
-  }
-  if (data.urgency === "urgent" || data.multi_country) {
-    lane = "Executive";
-    base = TIERS.executive.base;
-  }
-  const witnessTotal = calcWitness(data);
-  return { lane, base, total: base + witnessTotal, addons: [], witness_total: witnessTotal };
-}
-
 export type ExecutionLaneId = "signature" | "priority" | "executive";
 
 export interface ExecutionLaneConfig {
@@ -545,7 +509,7 @@ export const EXECUTION_LANES: Record<ExecutionLaneId, ExecutionLaneConfig> = {
   signature: {
     id: "signature",
     label: "Signature Lane",
-    price: 750,
+    price: TIERS.signature.base,
     turnaround: "Standard",
     included: [
       "First Document Execution Coordination",
@@ -558,7 +522,7 @@ export const EXECUTION_LANES: Record<ExecutionLaneId, ExecutionLaneConfig> = {
   priority: {
     id: "priority",
     label: "Priority Lane",
-    price: 975,
+    price: TIERS.priority.base,
     turnaround: "Priority",
     included: [
       "First Document Execution Coordination",
@@ -573,7 +537,7 @@ export const EXECUTION_LANES: Record<ExecutionLaneId, ExecutionLaneConfig> = {
   executive: {
     id: "executive",
     label: "Executive Lane",
-    price: 1850,
+    price: TIERS.executive.base,
     turnaround: "White Glove",
     included: [
       "First Document Execution Coordination",
@@ -609,13 +573,13 @@ export const PRICING_ADDONS: Record<PricingAddonId, PricingAddon> = {
   apostille: {
     id: "apostille",
     label: "First Apostille Coordination",
-    price: 250,
+    price: APOSTILLE_FEES.first,
     included_in_lanes: ["signature", "priority", "executive"],
   },
-  rush: { id: "rush", label: "Rush Processing", price: 400, included_in_lanes: [] },
-  extraSigner: { id: "extraSigner", label: "Additional Signer", price: 150, included_in_lanes: [] },
-  witnessRemote: { id: "witnessRemote", label: "Remote Witness", price: 50, included_in_lanes: [] },
-  witnessInPerson: { id: "witnessInPerson", label: "In-Person Witness", price: 75, included_in_lanes: [] },
+  rush: { id: "rush", label: "Rush Processing", price: URGENCY_FEES.rush, included_in_lanes: [] },
+  extraSigner: { id: "extraSigner", label: "Additional Signer", price: COMPLEXITY.additional_signer, included_in_lanes: [] },
+  witnessRemote: { id: "witnessRemote", label: "Remote Witness", price: WITNESS_FEES.ron, included_in_lanes: [] },
+  witnessInPerson: { id: "witnessInPerson", label: "In-Person Witness", price: WITNESS_FEES.in_person, included_in_lanes: [] },
   translationReview: { id: "translationReview", label: "Translation Review", price: 150, included_in_lanes: [] },
   courier: { id: "courier", label: "International Courier", price: 0, included_in_lanes: ["signature", "priority", "executive"] },
 };
