@@ -40,7 +40,7 @@ for (const file of publicFiles) {
   }
 }
 
-const changed = run("git", ["diff", "--name-only", "HEAD~1..HEAD"]);
+const changed = process.env.VERCEL === "1" ? "" : run("git", ["diff", "--name-only", "HEAD~1..HEAD"]);
 const protectedPatterns = [
   /^app\/api\/webhooks?\/wise/,
   /^app\/api\/webhook\/wise/,
