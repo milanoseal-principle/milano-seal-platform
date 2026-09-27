@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
+import { ExecutionTiers } from "@/components/landing/execution-tiers";
 
 export const metadata: Metadata = {
   title: "Execution Quote | The Milano Seal™",
@@ -178,6 +179,8 @@ export default function PricingPage() {
             </aside>
           </div>
         </section>
+
+        <ExecutionTiers />
 
         <section className="px-4 py-16 sm:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
