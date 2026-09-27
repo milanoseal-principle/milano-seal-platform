@@ -34,6 +34,15 @@ export async function POST(
   if (profileError || !profile) return NextResponse.json({ error: "Profile not found." }, { status: 404 });
 
   let userId = profile.user_id as string | null;
+  if (userId) {
+    const { data: linkedUser, error: linkedUserError } = await admin.auth.admin.getUserById(userId);
+    if (linkedUserError || !linkedUser?.user) {
+      return NextResponse.json(
+        { error: "The linked Milano account could not be verified.", code: "PROFESSIONAL_ACCOUNT_INVALID" },
+        { status: 409 },
+      );
+    }
+    const linkedRole = linkedUser.user.app_metadata?.role;
 
   if (userId) {
     const { data: linked, error: linkedError } = await admin.auth.admin.getUserById(userId);
@@ -61,6 +70,9 @@ export async function POST(
         { status: 409 },
       );
     }
+    if (linkedRole !== "professional") {
+      const { error: roleError } = await admin.auth.admin.updateUserById(userId, {
+        app_metadata: { ...linkedUser.user.app_metadata, role: "professional" },
 
     if (linkedRole !== "professional") {
       const { error: roleError } = await admin.auth.admin.updateUserById(linkedUser.id, {

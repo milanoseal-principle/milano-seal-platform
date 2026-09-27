@@ -318,6 +318,28 @@ test("channel attribution derives from canonical Matter truth and never invents 
   assert.equal(summary.reviewRequiredCount, 1);
 });
 
+test("professional activation verifies a pre-linked account before assigning the role", () => {
+  const activation = read("app/api/admin/professionals/[id]/activate/route.ts");
+  assert.match(activation, /getUserById\(userId\)/);
+  assert.match(activation, /linkedRole && linkedRole !== "professional"/);
+  assert.match(activation, /PROFESSIONAL_ROLE_CONFLICT/);
+  assert.doesNotMatch(activation, /user_metadata/);
+});
+
+test("public production health and debug routes disclose no provider posture", () => {
+  const health = read("app/api/health/route.ts");
+  assert.doesNotMatch(health, /SUPABASE|service.role|supabase_url|packageJson/i);
+  assert.match(health, /status: "ok"/);
+
+  for (const route of [
+    "app/api/debug/supabase/route.ts",
+    "app/api/debug/supabase-env/route.ts",
+    "app/api/debug/session/route.ts",
+  ]) {
+    const source = read(route);
+    assert.match(source, /VERCEL_ENV === "production"/);
+    assert.match(source, /status: 404/);
+  }
 
 test("professional activation verifies pre-linked accounts and fails closed on role collisions", () => {
   const activation = read("app/api/admin/professionals/[id]/activate/route.ts");

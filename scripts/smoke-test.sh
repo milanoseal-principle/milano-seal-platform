@@ -197,6 +197,10 @@ check_body_contains "GET /api/health → status:ok" \
   "$BASE_URL/api/health" "200" '"status":"ok"'
 check_body_contains "GET /api/health → has timestamp" \
   "$BASE_URL/api/health" "200" '"timestamp"'
+check_body_not_contains "GET /api/health → hides environment" \
+  "$BASE_URL/api/health" "200" '"environment"'
+check_body_not_contains "GET /api/health → hides provider configuration" \
+  "$BASE_URL/api/health" "200" '"supabase"'
 check_body_not_contains "GET /api/health → hides environment posture" \
   "$BASE_URL/api/health" "200" '"environment"'
 check_body_not_contains "GET /api/health → hides Supabase/provider posture" \
