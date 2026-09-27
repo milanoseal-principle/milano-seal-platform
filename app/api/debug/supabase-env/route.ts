@@ -7,6 +7,10 @@ export const dynamic = "force-dynamic";
 // Never exposes full keys, service role key, or private values.
 // Disable by removing this file or setting ENABLE_DEBUG_ENV=false after diagnosis is complete.
 export async function GET() {
+  if (process.env.VERCEL_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   if (process.env.ENABLE_DEBUG_ENV !== "true") {
     return NextResponse.json({ error: "Disabled" }, { status: 403 });
   }

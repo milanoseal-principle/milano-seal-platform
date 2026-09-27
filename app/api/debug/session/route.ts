@@ -6,6 +6,10 @@ export const dynamic = "force-dynamic";
 
 // SMOKE TEST ONLY — disable after launch by setting ENABLE_DEBUG_SESSION=false
 export async function GET() {
+  if (process.env.VERCEL_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   if (process.env.ENABLE_DEBUG_SESSION !== "true") {
     return NextResponse.json({ error: "Disabled" }, { status: 403 });
   }

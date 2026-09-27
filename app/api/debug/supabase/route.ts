@@ -24,6 +24,10 @@ function safeCause(error: unknown) {
 }
 
 export async function GET() {
+  if (process.env.VERCEL_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
