@@ -2,6 +2,7 @@
 # ============================================================
 # The Milano Seal™ — Production Smoke Test Runner
 # Document Reference: MS-OPS-SMOKETEST-2026-V1
+# Release validation: professional counsel hardening
 # Usage: ./scripts/smoke-test.sh https://themilanoseal.com
 # ============================================================
 
