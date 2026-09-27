@@ -54,6 +54,7 @@ const gates = [
   ["npm", ["run", "validate:data-intel-compliance-ui"]],
   ["npm", ["run", "validate:final-public-polish"]],
   ["npm", ["run", "validate:public-i18n-runtime"]],
+  ["npm", ["run", "validate:execution-scope-dashboard-discovery"]],
   ["npm", ["run", "validate:final-wiring-confirmation"]],
   ["npm", ["run", "validate:final-branch-salvage-audit"]],
   ["npm", ["run", "validate:mini-atlas-intelligence-flow"]],
