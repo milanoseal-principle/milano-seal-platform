@@ -25,7 +25,7 @@ One or more application-controlled modules were not actually exercised. No block
 | M. Device QA result | BLOCKED at all required viewports: 1440×900, 768×1024, 430×932, and 390×844. |
 | N. Security / role result | BLOCKED — unauthenticated and role-boundary requests could not reach production. |
 | O. Defects found | One source-verifiable routing defect: the rendered operator navigation advertised `/dashboard/settings`, but no static page or registered dynamic module resolved it. |
-| P. Fix PRs / commits | This branch adds the missing governed settings destination and a navigation route regression test. Commit and PR identifiers are recorded by Git/GitHub after this evidence file is written. |
+| P. Fix PRs / commits | Fix commit `c625b7e621aeaeaaa584e2235a544848d3ad7f12` is on `codex/create-fresh-branch-agent/operator-live-certification`. A real GitHub PR, preview status, merge SHA, and production deployment remain unverified because this runner cannot reach or authenticate to GitHub. |
 | Q. Final production SHA after fixes | Not available. This runner cannot merge or verify a production deployment. |
 | R. Unresolved external-provider dependencies | Wise settlement/reconciliation, BlueNotary/RON, authority responses, Supabase, courier/Shippo, Vercel preview and production deployment. |
 | S. Human/real-world completion required | Supply approved operator authentication; allow production HTTPS access; select one controlled production Matter; execute every matrix row at all viewports; validate API negative cases and Supabase truth; execute provider handoffs only where authorized; merge only after Vercel is green; then repeat the failed/blocked production checks. |
@@ -48,3 +48,13 @@ Outbound requests to both the canonical domain and the handed-off Vercel deploym
 ## Required next gate
 
 This artifact is not a substitute for live proof. After PR checks pass, an authorized human must merge, wait for the production deployment of the merged SHA, and run the full matrix in a real authenticated session. The only permissible conclusion remains **NOT CERTIFIED** until that occurs.
+
+## Release workflow boundary
+
+The source fix is committed on the requested continuing branch, but the release workflow is not complete. This runner has no authenticated GitHub session, and its HTTPS CONNECT proxy returned HTTP 403 when fetching the repository. Therefore it cannot honestly claim that it pushed the commit, opened a real GitHub PR, triggered or observed a Vercel preview, merged the PR, or verified production aliases and SHA. The sanitized command evidence is stored in [`release-workflow-boundary.txt`](./release-workflow-boundary.txt).
+
+**APPLICATION DEFECT FIX:** Awaiting deployment verification. It becomes **PASS** only when `/dashboard/settings` is deployed for the exact merged SHA and the regression test is green.
+
+**AUTHENTICATED LIVE MODULE CERTIFICATION:** **NOT CERTIFIED** until a browser environment with production access and valid operator authentication manually exercises all 120 destinations.
+
+The handoff prompt for that real browser run is stored in [`NEXT_AUTHENTICATED_BROWSER_RUN.md`](./NEXT_AUTHENTICATED_BROWSER_RUN.md).
