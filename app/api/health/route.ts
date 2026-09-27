@@ -12,5 +12,11 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     },
     { headers: { "cache-control": "no-store" } },
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    },
   );
 }

@@ -43,6 +43,27 @@ export async function POST(
       );
     }
     const linkedRole = linkedUser.user.app_metadata?.role;
+
+  if (userId) {
+    const { data: linked, error: linkedError } = await admin.auth.admin.getUserById(userId);
+    const linkedUser = linked?.user ?? null;
+    if (linkedError || !linkedUser) {
+      return NextResponse.json(
+        { error: "The linked Milano account could not be verified.", code: "PROFESSIONAL_LINKED_ACCOUNT_INVALID" },
+        { status: 409 },
+      );
+    }
+
+    if (
+      linkedUser.email?.trim().toLowerCase() !== String(profile.email).trim().toLowerCase()
+    ) {
+      return NextResponse.json(
+        { error: "The linked Milano account does not match this professional profile.", code: "PROFESSIONAL_ACCOUNT_MISMATCH" },
+        { status: 409 },
+      );
+    }
+
+    const linkedRole = linkedUser.app_metadata?.role;
     if (linkedRole && linkedRole !== "professional") {
       return NextResponse.json(
         { error: "This email already holds another Milano role.", code: "PROFESSIONAL_ROLE_CONFLICT" },
@@ -52,10 +73,15 @@ export async function POST(
     if (linkedRole !== "professional") {
       const { error: roleError } = await admin.auth.admin.updateUserById(userId, {
         app_metadata: { ...linkedUser.user.app_metadata, role: "professional" },
+
+    if (linkedRole !== "professional") {
+      const { error: roleError } = await admin.auth.admin.updateUserById(linkedUser.id, {
+        app_metadata: { ...linkedUser.app_metadata, role: "professional" },
       });
       if (roleError) return NextResponse.json({ error: "Role assignment failed." }, { status: 500 });
     }
   }
+
   if (!userId) {
     const origin = new URL(request.url).origin;
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(

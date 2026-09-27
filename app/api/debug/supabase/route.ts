@@ -26,6 +26,8 @@ function safeCause(error: unknown) {
 export async function GET() {
   if (process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (process.env.VERCEL_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();

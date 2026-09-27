@@ -13,6 +13,12 @@ export async function GET() {
     process.env.ENABLE_DEBUG_ENV !== "true"
   ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (process.env.VERCEL_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
+  if (process.env.ENABLE_DEBUG_ENV !== "true") {
+    return NextResponse.json({ error: "Disabled" }, { status: 403 });
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? null;

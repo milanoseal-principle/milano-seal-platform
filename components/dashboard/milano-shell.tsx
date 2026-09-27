@@ -86,6 +86,7 @@ const NAV_GROUPS: {
       { href: "/dashboard/conversion", label: "Conversion Recovery", icon: TrendingUp },
       { href: "/dashboard/seo-revenue", label: "SEO Revenue", icon: SearchCheck },
       { href: "/dashboard/matter-ops", label: "Matter Ops QA", icon: ClipboardList },
+      { href: "/dashboard/referrals", label: "Referral Intelligence", icon: Network },
     ],
   },
   {

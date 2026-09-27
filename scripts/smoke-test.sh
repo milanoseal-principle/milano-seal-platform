@@ -2,6 +2,7 @@
 # ============================================================
 # The Milano Seal™ — Production Smoke Test Runner
 # Document Reference: MS-OPS-SMOKETEST-2026-V1
+# Release validation: professional counsel hardening
 # Usage: ./scripts/smoke-test.sh https://themilanoseal.com
 # ============================================================
 
@@ -200,6 +201,15 @@ check_body_not_contains "GET /api/health → hides environment" \
   "$BASE_URL/api/health" "200" '"environment"'
 check_body_not_contains "GET /api/health → hides provider configuration" \
   "$BASE_URL/api/health" "200" '"supabase"'
+check_body_not_contains "GET /api/health → hides environment posture" \
+  "$BASE_URL/api/health" "200" '"environment"'
+check_body_not_contains "GET /api/health → hides Supabase/provider posture" \
+  "$BASE_URL/api/health" "200" '"supabase"'
+
+echo "── Production diagnostics are non-enumerating"
+check_status "GET /api/debug/supabase → 404" "$BASE_URL/api/debug/supabase" "404"
+check_status "GET /api/debug/supabase-env → 404" "$BASE_URL/api/debug/supabase-env" "404"
+check_status "GET /api/debug/session → 404" "$BASE_URL/api/debug/session" "404"
 
 # ── ROUTE 13: Database Health ────────────────────────────────
 echo "── Route 13 — Database Health"
