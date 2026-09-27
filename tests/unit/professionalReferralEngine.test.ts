@@ -317,3 +317,38 @@ test("channel attribution derives from canonical Matter truth and never invents 
   assert.equal(summary.routeTypes.consular_legalization, 1);
   assert.equal(summary.reviewRequiredCount, 1);
 });
+
+
+test("professional activation verifies pre-linked accounts and fails closed on role collisions", () => {
+  const activation = read("app/api/admin/professionals/[id]/activate/route.ts");
+  assert.match(activation, /getUserById\(userId\)/);
+  assert.match(activation, /PROFESSIONAL_LINKED_ACCOUNT_INVALID/);
+  assert.match(activation, /PROFESSIONAL_ACCOUNT_MISMATCH/);
+  assert.match(activation, /PROFESSIONAL_ROLE_CONFLICT/);
+  assert.match(activation, /linkedUser\.app_metadata\?\.role/);
+  assert.match(activation, /app_metadata:\s*\{\s*\.\.\.linkedUser\.app_metadata,\s*role:\s*"professional"/s);
+  assert.doesNotMatch(activation, /user_metadata[^\n]*(role|professional)/i);
+});
+
+test("public health is minimal and production diagnostics fail closed", () => {
+  const health = read("app/api/health/route.ts");
+  assert.match(health, /status:\s*"ok"/);
+  assert.match(health, /service:\s*"milano-seal-platform"/);
+  assert.match(health, /timestamp:/);
+  assert.match(health, /Cache-Control/);
+  assert.match(health, /no-store/);
+  assert.doesNotMatch(health, /SUPABASE|service_role|environment|auth\/v1\/health/i);
+
+  for (const file of [
+    "app/api/debug/session/route.ts",
+    "app/api/debug/supabase-env/route.ts",
+    "app/api/debug/supabase/route.ts",
+  ]) {
+    const source = read(file);
+    assert.match(source, /VERCEL_ENV === "production"/, file);
+    assert.match(source, /status:\s*404/, file);
+  }
+
+  const legacyShell = read("components/dashboard/milano-shell.tsx");
+  assert.match(legacyShell, /\/dashboard\/referrals/);
+});
