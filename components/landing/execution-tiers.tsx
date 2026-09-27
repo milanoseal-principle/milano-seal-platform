@@ -1,171 +1,142 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-const tiers = [
+const scopes = [
   {
     name: "Signature",
-    tagline: "Standard Bureau Filing & International Release",
-    timeline: "Standard State Processing + Selected International Transit",
+    eyebrow: "Governed Standard Scope",
     description:
-      "Designed for non-urgent international documents where standard state processing is appropriate. The matter is reviewed, prepared, submitted through the applicable state route, and released internationally once authentication is complete.",
+      "For a Matter that can move through the standard governed execution path after document, signer, jurisdiction, destination, and authority requirements are reviewed.",
     features: [
-      "Remote Online Notarization",
-      "State authentication channel routing",
-      "Digital document delivery",
-      "International release coordination",
-      "Document scope review",
+      "Structured Matter review",
+      "Applicable execution-method coordination",
+      "Apostille or authentication pathway review when required",
+      "Governed custody and release controls",
     ],
-    highlight: false,
   },
   {
     name: "Priority",
-    tagline: "Capital Desk Coordination // Priority International Release",
-    timeline: "Accelerated State Handoff + Selected Express Transit",
+    eyebrow: "Elevated Coordination Scope",
     description:
-      "Designed for matters requiring faster movement into the state authentication channel. Documents are prepared, reviewed, and coordinated for accelerated state-facing submission, followed by priority international release once the authenticated document is returned.",
+      "For a Matter requiring additional coordination, urgency handling, or execution complexity beyond the standard path. Priority is assigned from reviewed Matter facts—not selected as a checkout upgrade.",
     features: [
-      "Everything in Signature",
-      "Accelerated state-facing submission",
-      "Selected express transit",
-      "Priority international release",
-      "Matter status updates",
+      "Everything operationally applicable from Signature",
+      "Elevated coordination and monitoring",
+      "Urgency and routing complexity considered in review",
+      "Matter-specific release planning",
     ],
-    highlight: true,
   },
   {
     name: "Executive",
-    tagline: "Executive State Handling // Priority Global Release",
-    timeline: "Highest-Touch State Coordination + Priority International Transit",
+    eyebrow: "Highest-Control Scope",
     description:
-      "Designed for urgent or high-liability international matters requiring founder-level oversight, direct coordination, and heightened chain-of-custody control. This lane prioritizes the preparation, submission, monitoring, and release sequence while preserving destination-specific review requirements.",
+      "For high-complexity, high-touch, or institutionally sensitive Matters requiring greater founder oversight, custody control, coordination, or bespoke execution planning.",
     features: [
-      "Everything in Priority",
-      "Founder-level oversight",
-      "Chain-of-custody control",
-      "Destination-specific review",
-      "Direct mobile access",
-      "After-hours availability",
+      "Everything operationally applicable from Priority",
+      "Founder-level oversight where appropriate",
+      "Heightened custody and exception control",
+      "Custom execution planning when standard routing is insufficient",
     ],
-    highlight: false,
   },
-];
+] as const;
 
 export function ExecutionTiers() {
   return (
-    <section className="relative py-24 md:py-32 bg-[#050507]">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Section header */}
+    <section
+      aria-labelledby="execution-scope-heading"
+      className="relative overflow-hidden border-y border-white/[0.055] bg-[#070707] px-4 py-16 sm:px-6 md:py-24"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 0%, rgba(198,166,91,0.09), transparent 32rem)",
+        }}
+      />
+
+      <div className="relative mx-auto max-w-7xl">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.45 }}
+          className="mx-auto max-w-3xl text-center"
         >
-          <span className="text-[var(--ms-gold)] text-sm font-medium tracking-wider uppercase mb-4 block">
-            Execution Lanes
-          </span>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-6 text-balance">
-            Choose Your Execution Level
+          <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#C6A65B]/70">
+            How Milano Scopes Execution
+          </p>
+          <h2
+            id="execution-scope-heading"
+            className="mt-4 font-serif text-4xl leading-tight text-white sm:text-5xl md:text-6xl"
+          >
+            Three execution scopes. <em className="text-[#C6A65B]">Assigned after review.</em>
           </h2>
-          <p className="text-[#B0B0B0] text-lg max-w-2xl mx-auto leading-relaxed">
-            Select the lane that matches your matter's timeline and handling requirements.
+          <p className="mt-5 text-base leading-7 text-white/48">
+            Signature, Priority, and Executive are governed execution scopes inside the Milano pricing and operations system. They are not self-selected service packages and they do not create fixed completion promises.
           </p>
         </motion.div>
 
-        {/* Tiers grid */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {tiers.map((tier, index) => (
-            <motion.div
-              key={tier.name}
-              initial={{ opacity: 0, y: 30 }}
+        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          {scopes.map((scope, index) => (
+            <motion.article
+              key={scope.name}
+              initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative group ${
-                tier.highlight ? "md:-mt-4 md:mb-4" : ""
-              }`}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.4, delay: index * 0.06 }}
+              className="relative overflow-hidden rounded-[1.6rem] border border-white/[0.07] bg-[#0B0B0B]/94 p-6 shadow-[0_26px_80px_rgba(0,0,0,0.3)] sm:p-7"
             >
-              {/* Highlight badge */}
-              {tier.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className="px-4 py-1 text-xs font-medium text-[#0A0A0A] bg-[var(--ms-gold)] rounded-full">
-                    Most Requested
-                  </span>
-                </div>
-              )}
-
               <div
-                className={`bg-[#111111] border rounded-xl p-8 h-full transition-all duration-300 ${
-                  tier.highlight
-                    ? "border-[var(--ms-gold)]/50 gold-glow"
-                    : "border-[#2A2A2A] hover:border-[var(--ms-gold)]/30 gold-glow-hover"
-                }`}
-              >
-                {/* Header */}
-                <div className="mb-5">
-                  <h3 className="font-serif text-2xl font-medium text-white mb-1">
-                    {tier.name}
-                  </h3>
-                  <p className="text-sm text-[var(--ms-gold)] leading-snug">{tier.tagline}</p>
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-px"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent, rgba(198,166,91,0.55), transparent)",
+                }}
+              />
+
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#C6A65B]/55">
+                    {scope.eyebrow}
+                  </p>
+                  <h3 className="mt-2 font-serif text-3xl text-[#F6F1E6]">{scope.name}</h3>
                 </div>
-
-                {/* Timeline anchor */}
-                <div className="mb-5 px-3 py-2 bg-black/40 border border-white/[0.05] rounded-lg">
-                  <span className="font-mono text-[9px] tracking-[0.22em] uppercase text-[#555] block mb-1">
-                    Timeline Anchor
-                  </span>
-                  <span className="font-mono text-[10px] text-[#888] leading-snug">
-                    {tier.timeline}
-                  </span>
-                </div>
-
-                {/* Description */}
-                <p className="text-[#B0B0B0] text-sm leading-relaxed mb-7">
-                  {tier.description}
-                </p>
-
-                {/* Features */}
-                <ul className="space-y-3 mb-8">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-4 h-4 text-[var(--ms-gold)] mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-[#B0B0B0]">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <Link
-                  href={`/intake?tier=${tier.name.toLowerCase()}`}
-                  className={`group/btn w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
-                    tier.highlight
-                      ? "bg-[var(--ms-gold)] text-[#0A0A0A] hover:bg-[#D4B76A]"
-                      : "bg-[#1A1A1A] text-white border border-[#2A2A2A] hover:border-[var(--ms-gold)]/50 hover:bg-[var(--ms-gold)]/10"
-                  }`}
-                >
-                  <span>Select {tier.name}</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                </Link>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#C6A65B]/20 bg-[#C6A65B]/[0.055] text-[#C6A65B]">
+                  <ShieldCheck className="h-4.5 w-4.5" />
+                </span>
               </div>
-            </motion.div>
+
+              <p className="mt-5 min-h-[7.5rem] text-sm leading-6 text-white/46">{scope.description}</p>
+
+              <ul className="mt-6 space-y-3 border-t border-white/[0.055] pt-5">
+                {scope.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3 text-sm leading-6 text-white/55">
+                    <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-[#C6A65B]" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.article>
           ))}
         </div>
 
-        {/* Note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center text-sm text-[#B0B0B0]/60 mt-12"
-        >
-          Pricing provided upon intake completion. Add-ons available for
-          apostille coordination, urgent handling, and additional signers.
-        </motion.p>
+        <div className="mt-10 flex flex-col items-center justify-between gap-5 rounded-[1.4rem] border border-[#C6A65B]/15 bg-[#C6A65B]/[0.035] px-5 py-5 text-center sm:flex-row sm:text-left">
+          <p className="max-w-3xl text-sm leading-6 text-white/45">
+            Milano determines the execution scope only after reviewing the Matter. Final pricing, timing posture, execution method, authority path, courier requirements, and release conditions remain Matter-specific.
+          </p>
+          <Link
+            href="/intake?source=pricing&intent=scope-review"
+            className="group inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#C6A65B]/30 px-5 text-sm font-medium text-[#E7CD87] transition-colors hover:border-[#C6A65B]/60 hover:bg-[#C6A65B]/[0.06]"
+          >
+            Begin Matter Review
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
     </section>
   );

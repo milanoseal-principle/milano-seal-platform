@@ -65,8 +65,14 @@ assert.ok(
   "Shared shell must include an accessible mobile navigation drawer",
 );
 assert.ok(
-  shared.includes("Navigation only · no state mutation"),
+  shared.includes("navigation only"),
   "Command palette must remain navigation-only",
+);
+assert.ok(
+  shared.includes("tms_os_favorites_") &&
+    shared.includes("tms_os_recent_") &&
+    shared.includes("localStorage"),
+  "Canonical command palette discovery may use device-local favorites/recent state only",
 );
 assert.ok(
   !shared.includes("createClient") &&

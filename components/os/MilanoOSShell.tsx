@@ -37,6 +37,8 @@ import {
   Receipt,
   Search,
   Settings,
+  Star,
+  Clock3,
   ShieldCheck,
   Sparkles,
   Truck,
@@ -223,6 +225,9 @@ export function MilanoOSShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [favoriteHrefs, setFavoriteHrefs] = useState<string[]>([]);
+  const [recentHrefs, setRecentHrefs] = useState<string[]>([]);
+  const [discoveryReady, setDiscoveryReady] = useState(false);
 
   const groupedNav = useMemo(() => groupNavigation(nav), [nav]);
   const activeItem = useMemo(
@@ -237,6 +242,63 @@ export function MilanoOSShell({
       `${item.label} ${item.group ?? ""} ${item.hint ?? ""}`.toLowerCase().includes(needle),
     );
   }, [nav, query]);
+
+  const favoriteItems = useMemo(
+    () => favoriteHrefs.map((href) => nav.find((item) => item.href === href)).filter(Boolean) as MilanoOSNavItem[],
+    [favoriteHrefs, nav],
+  );
+  const recentItems = useMemo(
+    () => recentHrefs.map((href) => nav.find((item) => item.href === href)).filter(Boolean) as MilanoOSNavItem[],
+    [recentHrefs, nav],
+  );
+
+  const paletteSections = useMemo(() => {
+    if (query.trim()) return [{ label: "Search Results", items: paletteItems }];
+    return [
+      { label: "Favorites", items: favoriteItems },
+      { label: "Recent", items: recentItems },
+      { label: "All Destinations", items: nav },
+    ].filter((section) => section.items.length > 0);
+  }, [favoriteItems, nav, paletteItems, query, recentItems]);
+
+  useEffect(() => {
+    const favoriteKey = `tms_os_favorites_${mode}`;
+    const recentKey = `tms_os_recent_${mode}`;
+    try {
+      const storedFavorites = JSON.parse(window.localStorage.getItem(favoriteKey) ?? "[]");
+      const storedRecent = JSON.parse(window.localStorage.getItem(recentKey) ?? "[]");
+      setFavoriteHrefs(Array.isArray(storedFavorites) ? storedFavorites.filter((href): href is string => typeof href === "string") : []);
+      setRecentHrefs(Array.isArray(storedRecent) ? storedRecent.filter((href): href is string => typeof href === "string") : []);
+    } catch {
+      setFavoriteHrefs([]);
+      setRecentHrefs([]);
+    } finally {
+      setDiscoveryReady(true);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (!discoveryReady || !activeItem) return;
+    setRecentHrefs((current) => {
+      const next = [activeItem.href, ...current.filter((href) => href !== activeItem.href)].slice(0, 6);
+      try {
+        window.localStorage.setItem(`tms_os_recent_${mode}`, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [activeItem, discoveryReady, mode]);
+
+  function toggleFavorite(href: string) {
+    setFavoriteHrefs((current) => {
+      const next = current.includes(href)
+        ? current.filter((item) => item !== href)
+        : [href, ...current].slice(0, 12);
+      try {
+        window.localStorage.setItem(`tms_os_favorites_${mode}`, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -490,27 +552,47 @@ export function MilanoOSShell({
               </div>
               <div className="ms-os-palette__results">
                 {paletteItems.length ? (
-                  paletteItems.map((item) => {
-                    const Icon = ICONS[item.icon];
-                    const active = isActiveRoute(pathname, item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`ms-os-palette__item ${active ? "is-active" : ""}`}
-                      >
-                        <span className="ms-os-palette__item-icon">
-                          <Icon size={17} strokeWidth={1.7} />
-                        </span>
-                        <span className="ms-os-palette__item-copy">
-                          <strong>{item.label}</strong>
-                          <small>{item.hint ?? item.group ?? "Workspace"}</small>
-                        </span>
-                        <span className="ms-os-palette__item-route">{item.href}</span>
-                        <ChevronRight size={14} />
-                      </Link>
-                    );
-                  })
+                  paletteSections.map((section) => (
+                    <div className="ms-os-palette__section" key={section.label}>
+                      <div className="ms-os-palette__section-label">
+                        <span>{section.label}</span>
+                        {section.label === "Recent" ? <Clock3 size={11} strokeWidth={1.6} /> : null}
+                        {section.label === "Favorites" ? <Star size={11} strokeWidth={1.6} /> : null}
+                      </div>
+                      {section.items.map((item) => {
+                        const Icon = ICONS[item.icon];
+                        const active = isActiveRoute(pathname, item.href);
+                        const favorite = favoriteHrefs.includes(item.href);
+                        return (
+                          <div className="ms-os-palette__row" key={`${section.label}-${item.href}`}>
+                            <Link
+                              href={item.href}
+                              className={`ms-os-palette__item ${active ? "is-active" : ""}`}
+                            >
+                              <span className="ms-os-palette__item-icon">
+                                <Icon size={17} strokeWidth={1.7} />
+                              </span>
+                              <span className="ms-os-palette__item-copy">
+                                <strong>{item.label}</strong>
+                                <small>{item.hint ?? item.group ?? "Workspace"}</small>
+                              </span>
+                              <span className="ms-os-palette__item-route">{item.href}</span>
+                              <ChevronRight size={14} />
+                            </Link>
+                            <button
+                              type="button"
+                              className={`ms-os-palette__favorite ${favorite ? "is-favorite" : ""}`}
+                              onClick={() => toggleFavorite(item.href)}
+                              aria-label={favorite ? `Remove ${item.label} from favorites` : `Add ${item.label} to favorites`}
+                              title={favorite ? "Remove from favorites" : "Add to favorites"}
+                            >
+                              <Star size={14} strokeWidth={1.6} fill={favorite ? "currentColor" : "none"} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
                 ) : (
                   <div className="ms-os-palette__empty">No workspace destination matches “{query}”.</div>
                 )}
@@ -520,7 +602,7 @@ export function MilanoOSShell({
                   <Command size={12} /> K to open
                 </span>
                 <span>ESC to close</span>
-                <span>Navigation only · no state mutation</span>
+                <span>Favorites + recent stay on this device · navigation only</span>
               </div>
             </motion.section>
           </motion.div>
