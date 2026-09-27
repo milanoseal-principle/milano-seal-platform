@@ -1,5 +1,5 @@
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { inflateRawSync } from "node:zlib";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,60 +16,10 @@ const outputPath = path.join(
 
 function xmlEntry(entry) {
   if (!entry) throw new Error("Workbook sheet entry is missing.");
-
-  const zip = readFileSync(sourcePath);
-  const target = Buffer.from(entry);
-  const eocdSignature = 0x06054b50;
-  let eocdOffset = -1;
-
-  for (let i = zip.length - 22; i >= Math.max(0, zip.length - 0xffff - 22); i--) {
-    if (zip.readUInt32LE(i) === eocdSignature) {
-      eocdOffset = i;
-      break;
-    }
-  }
-
-  if (eocdOffset < 0) throw new Error("WORKBOOK_ZIP_INVALID: end-of-central-directory not found.");
-
-  const totalEntries = zip.readUInt16LE(eocdOffset + 10);
-  let offset = zip.readUInt32LE(eocdOffset + 16);
-
-  for (let index = 0; index < totalEntries; index++) {
-    if (zip.readUInt32LE(offset) !== 0x02014b50) {
-      throw new Error("WORKBOOK_ZIP_INVALID: central-directory entry not found.");
-    }
-
-    const method = zip.readUInt16LE(offset + 10);
-    const compressedSize = zip.readUInt32LE(offset + 20);
-    const fileNameLength = zip.readUInt16LE(offset + 28);
-    const extraLength = zip.readUInt16LE(offset + 30);
-    const commentLength = zip.readUInt16LE(offset + 32);
-    const localHeaderOffset = zip.readUInt32LE(offset + 42);
-    const nameStart = offset + 46;
-    const nameEnd = nameStart + fileNameLength;
-    const fileName = zip.subarray(nameStart, nameEnd);
-
-    if (fileName.equals(target)) {
-      if (zip.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
-        throw new Error(`WORKBOOK_ZIP_INVALID: local header missing for ${entry}`);
-      }
-
-      const localNameLength = zip.readUInt16LE(localHeaderOffset + 26);
-      const localExtraLength = zip.readUInt16LE(localHeaderOffset + 28);
-      const dataStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
-      const payload = zip.subarray(dataStart, dataStart + compressedSize);
-
-      if (method === 0) return payload.toString("utf8");
-      if (method === 8) return inflateRawSync(payload).toString("utf8");
-      throw new Error(
-        `WORKBOOK_ZIP_UNSUPPORTED: compression method ${method} for ${entry}`,
-      );
-    }
-
-    offset = nameEnd + extraLength + commentLength;
-  }
-
-  throw new Error(`Workbook ZIP entry not found: ${entry}`);
+  return execFileSync("unzip", ["-p", sourcePath, entry], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
 }
 
 function decodeXml(value = "") {
