@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { inflateRawSync } from "node:zlib";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,10 +16,45 @@ const outputPath = path.join(
 
 function xmlEntry(entry) {
   if (!entry) throw new Error("Workbook sheet entry is missing.");
-  return execFileSync("unzip", ["-p", sourcePath, entry], {
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  });
+
+  const zip = readFileSync(sourcePath);
+  const nameBytes = Buffer.from(entry);
+  let offset = 0;
+
+  while (offset + 30 <= zip.length) {
+    const signature = zip.readUInt32LE(offset);
+    if (signature !== 0x04034b50) break;
+
+    const flags = zip.readUInt16LE(offset + 6);
+    const method = zip.readUInt16LE(offset + 8);
+    const compressedSize = zip.readUInt32LE(offset + 18);
+    const fileNameLength = zip.readUInt16LE(offset + 26);
+    const extraLength = zip.readUInt16LE(offset + 28);
+    const nameStart = offset + 30;
+    const nameEnd = nameStart + fileNameLength;
+    const dataStart = nameEnd + extraLength;
+    const fileName = zip.subarray(nameStart, nameEnd);
+
+    if ((flags & 0x08) !== 0) {
+      throw new Error(
+        `WORKBOOK_ZIP_UNSUPPORTED: data descriptor entry ${fileName.toString("utf8")}`,
+      );
+    }
+
+    if (fileName.equals(nameBytes)) {
+      const dataEnd = dataStart + compressedSize;
+      const payload = zip.subarray(dataStart, dataEnd);
+      if (method === 0) return payload.toString("utf8");
+      if (method === 8) return inflateRawSync(payload).toString("utf8");
+      throw new Error(
+        `WORKBOOK_ZIP_UNSUPPORTED: compression method ${method} for ${entry}`,
+      );
+    }
+
+    offset = dataStart + compressedSize;
+  }
+
+  throw new Error(`Workbook ZIP entry not found: ${entry}`);
 }
 
 function decodeXml(value = "") {
