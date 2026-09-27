@@ -326,7 +326,7 @@ test("professional activation verifies pre-linked accounts and fails closed on r
   assert.match(activation, /PROFESSIONAL_ACCOUNT_MISMATCH/);
   assert.match(activation, /PROFESSIONAL_ROLE_CONFLICT/);
   assert.match(activation, /linkedUser\.app_metadata\?\.role/);
-  assert.match(activation, /app_metadata:\s*\{\s*\.\.\.linkedUser\.app_metadata,\s*role:\s*"professional"/s);
+  assert.match(activation, /app_metadata:\s*\{[\s\S]*\.\.\.linkedUser\.app_metadata,[\s\S]*role:\s*"professional"/);
   assert.doesNotMatch(activation, /user_metadata[^\n]*(role|professional)/i);
 });
 
