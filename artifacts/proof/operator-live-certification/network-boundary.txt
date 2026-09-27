@@ -1,0 +1,12 @@
+Timestamp: 2026-09-27T07:08:12Z
+Command: curl -sSIL --max-time 30 https://www.themilanoseal.com/dashboard
+Result: BLOCKED
+Observed response: HTTP/1.1 403 Forbidden from the execution-environment CONNECT tunnel (server: envoy).
+
+Command: curl -sSIL --max-time 30 https://milano-seal-platform-uwilwssoh-themilanoseal-7008s-projects.vercel.app/
+Result: BLOCKED
+Observed response: HTTP/1.1 403 Forbidden from the execution-environment CONNECT tunnel (server: envoy).
+
+Authentication material: no operator credential or authenticated browser storage state was supplied.
+Relevant provider environment variable names present: none.
+Secret values were not inspected, printed, created, or committed.
