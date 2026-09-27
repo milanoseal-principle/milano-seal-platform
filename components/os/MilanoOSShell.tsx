@@ -171,6 +171,12 @@ function isActiveRoute(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function findActiveNavItem(pathname: string, nav: MilanoOSNavItem[]) {
+  return nav
+    .filter((item) => isActiveRoute(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+}
+
 function groupNavigation(nav: MilanoOSNavItem[]) {
   const groups = new Map<string, MilanoOSNavItem[]>();
   for (const item of nav) {
@@ -231,7 +237,7 @@ export function MilanoOSShell({
 
   const groupedNav = useMemo(() => groupNavigation(nav), [nav]);
   const activeItem = useMemo(
-    () => nav.find((item) => isActiveRoute(pathname, item.href)),
+    () => findActiveNavItem(pathname, nav),
     [nav, pathname],
   );
 
@@ -345,7 +351,7 @@ export function MilanoOSShell({
             <div className="ms-os-nav__items">
               {items.map((item) => {
                 const Icon = ICONS[item.icon];
-                const active = isActiveRoute(pathname, item.href);
+                const active = item.href === activeItem?.href;
                 return (
                   <Link
                     key={item.href}
@@ -561,7 +567,7 @@ export function MilanoOSShell({
                       </div>
                       {section.items.map((item) => {
                         const Icon = ICONS[item.icon];
-                        const active = isActiveRoute(pathname, item.href);
+                        const active = item.href === activeItem?.href;
                         const favorite = favoriteHrefs.includes(item.href);
                         return (
                           <div className="ms-os-palette__row" key={`${section.label}-${item.href}`}>
