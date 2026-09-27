@@ -41,6 +41,9 @@ for (const token of [
   assert.ok(shell.includes(token), `Canonical OS shell missing discoverability token: ${token}`);
 }
 assert.ok(shell.includes("localStorage"), "Favorites/recent must remain device-local UI state and not create a backend data model");
+assert.ok(shell.includes("function findActiveNavItem"), "Dashboard discovery must resolve nested destinations through one canonical active-item selector");
+assert.ok(shell.includes("b.href.length - a.href.length"), "Nested dashboard discovery must prefer the longest matching destination over its parent route");
+assert.ok(shell.includes("item.href === activeItem?.href"), "Sidebar and palette active state must highlight only the canonical longest-match destination");
 assert.ok(shell.includes("⌘K") || shell.includes("Command"), "Existing command-palette behavior must remain intact");
 assert.ok(shellCss.includes(".ms-os-palette__favorite"), "Command palette favorite control styling is missing");
 assert.ok(shellCss.includes(".ms-os-palette__section-label"), "Command palette grouped discovery styling is missing");
