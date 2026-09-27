@@ -806,6 +806,53 @@
   padding: 4px 8px 10px;
 }
 
+.ms-os-palette__section + .ms-os-palette__section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(216, 193, 136, 0.06);
+}
+
+.ms-os-palette__section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 7px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(228, 200, 121, 0.42);
+}
+
+.ms-os-palette__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 4px;
+}
+
+.ms-os-palette__favorite {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(246, 241, 230, 0.22);
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.ms-os-palette__favorite:hover {
+  border-color: rgba(216, 193, 136, 0.14);
+  background: rgba(216, 193, 136, 0.05);
+  color: rgba(228, 200, 121, 0.72);
+}
+
+.ms-os-palette__favorite.is-favorite {
+  color: rgba(228, 200, 121, 0.9);
+}
+
 .ms-os-palette__item {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr) auto 15px;
