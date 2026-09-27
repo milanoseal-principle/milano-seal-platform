@@ -81,8 +81,7 @@ const gates = [
   ["npm", ["run", "validate:cinematic-route-coverage"]],
   ["npm", ["run", "validate:responsive-safety"]],
   ["npm", ["run", "validate:final-mobile-cosmetic-pass"]],
-  ["node", ["scripts/generate-command-center-workbook-intelligence.mjs"]],
-  ["npm", ["exec", "tsc", "--", "--noEmit"]],
+  ["npm", ["run", "typecheck"]],
   ["npm", ["run", "lint"]],
   ["npm", ["test"]],
   ["npm", ["run", "validate:smart-intake-sop"]],
@@ -123,31 +122,6 @@ for (const [gateIndex, [command, args]] of gatesToRun.entries()) {
   }
   if (result.status !== 0) {
     console.error(`Gate failed (${result.status}) at index ${gateIndex}: ${label}`);
-    // Preserve an exact diagnostic code for TypeScript so Vercel's deployment
-    // record can identify the failing source family even when build logs are unavailable.
-    if (
-      process.env.VERCEL === "1" &&
-      command === "npm" &&
-      args[0] === "exec" &&
-      args[1] === "tsc"
-    ) {
-      const diagnostic = spawnSync("npm", ["exec", "tsc", "--", "--noEmit", "--pretty", "false"], {
-        encoding: "utf8",
-        env: { ...process.env, CI: "1" },
-        shell: process.platform === "win32",
-      });
-      const output = `${diagnostic.stdout ?? ""}\n${diagnostic.stderr ?? ""}`;
-      let typeCode = 80;
-      if (/app\/api\/admin\/professionals\/\[id\]\/activate\/route\.ts/.test(output)) typeCode = 81;
-      else if (/components\/dashboard\/milano-shell\.tsx/.test(output)) typeCode = 82;
-      else if (/app\/api\/debug\//.test(output)) typeCode = 83;
-      else if (/app\/api\/health\/route\.ts/.test(output)) typeCode = 84;
-      else if (/\.next\/(?:dev\/)?types\//.test(output)) typeCode = 85;
-      else if (/tests\/unit\/professionalReferralEngine\.test\.ts/.test(output)) typeCode = 86;
-      else if (/scripts\//.test(output)) typeCode = 87;
-      console.error(`TypeScript diagnostic family code: ${typeCode}`);
-      process.exit(typeCode);
-    }
     // Vercel build summaries do not reliably expose stdout/stderr. Emit a stable,
     // unique process code so the exact failing gate can be identified from the
     // deployment record without disabling, reordering, or replacing validators.
