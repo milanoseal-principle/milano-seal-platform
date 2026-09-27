@@ -104,6 +104,7 @@ const NAV_GROUPS: {
   {
     group: "Network",
     items: [
+      { href: "/dashboard/referrals", label: "Referral Intelligence", icon: Network },
       { href: "/dashboard/va", label: "Execution Support", icon: ClipboardList },
       { href: "/dashboard/alliance/intelligence-platform", label: "Trust Network", icon: Network },
       { href: "/dashboard/dispatch", label: "Dispatch", icon: Network },

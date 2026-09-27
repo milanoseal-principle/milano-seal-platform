@@ -34,6 +34,28 @@ export async function POST(
   if (profileError || !profile) return NextResponse.json({ error: "Profile not found." }, { status: 404 });
 
   let userId = profile.user_id as string | null;
+  if (userId) {
+    const { data: linkedUser, error: linkedUserError } = await admin.auth.admin.getUserById(userId);
+    if (linkedUserError || !linkedUser?.user) {
+      return NextResponse.json(
+        { error: "The linked Milano account could not be verified.", code: "PROFESSIONAL_ACCOUNT_INVALID" },
+        { status: 409 },
+      );
+    }
+    const linkedRole = linkedUser.user.app_metadata?.role;
+    if (linkedRole && linkedRole !== "professional") {
+      return NextResponse.json(
+        { error: "This email already holds another Milano role.", code: "PROFESSIONAL_ROLE_CONFLICT" },
+        { status: 409 },
+      );
+    }
+    if (linkedRole !== "professional") {
+      const { error: roleError } = await admin.auth.admin.updateUserById(userId, {
+        app_metadata: { ...linkedUser.user.app_metadata, role: "professional" },
+      });
+      if (roleError) return NextResponse.json({ error: "Role assignment failed." }, { status: 500 });
+    }
+  }
   if (!userId) {
     const origin = new URL(request.url).origin;
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
@@ -58,7 +80,7 @@ export async function POST(
       );
     }
     const { error: roleError } = await admin.auth.admin.updateUserById(invited.user.id, {
-      app_metadata: { role: "professional" },
+      app_metadata: { ...invited.user.app_metadata, role: "professional" },
     });
     if (roleError) return NextResponse.json({ error: "Role assignment failed." }, { status: 500 });
     userId = invited.user.id;

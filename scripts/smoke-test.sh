@@ -194,12 +194,12 @@ fi
 echo "── Route 12 — Health Root"
 check_body_contains "GET /api/health → status:ok" \
   "$BASE_URL/api/health" "200" '"status":"ok"'
-check_body_contains "GET /api/health → has environment" \
-  "$BASE_URL/api/health" "200" '"environment"'
-check_body_contains "GET /api/health → has version" \
-  "$BASE_URL/api/health" "200" '"version"'
 check_body_contains "GET /api/health → has timestamp" \
   "$BASE_URL/api/health" "200" '"timestamp"'
+check_body_not_contains "GET /api/health → hides environment" \
+  "$BASE_URL/api/health" "200" '"environment"'
+check_body_not_contains "GET /api/health → hides provider configuration" \
+  "$BASE_URL/api/health" "200" '"supabase"'
 
 # ── ROUTE 13: Database Health ────────────────────────────────
 echo "── Route 13 — Database Health"
