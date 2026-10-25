@@ -214,7 +214,11 @@ export default function Dashboard() {
   const { data, isLoading, isError } = useApi<DashboardSummary>(
     "/api/dashboard/summary",
   );
-  const { data: slaAlerts } = useApi<SlaAlert[]>("/api/admin/sla-alerts");
+  const {
+    data: slaAlerts,
+    isLoading: slaAlertsLoading,
+    isError: slaAlertsError,
+  } = useApi<SlaAlert[]>("/api/admin/sla-alerts");
   const { data: quickActionsData } = useApi<QuickActionSummary>("/api/dashboard/quick-actions");
 
   if (isLoading)
@@ -419,7 +423,28 @@ export default function Dashboard() {
         <p className="text-[11px] uppercase tracking-[0.2em] text-gold font-medium">
           Immediate Action
         </p>
-        {slaAlerts && slaAlerts.length > 0 ? (
+        {slaAlertsLoading ? (
+          <div
+            className="flex items-center gap-2.5 p-3 rounded-md border border-border bg-card"
+            role="status"
+            aria-live="polite"
+          >
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Checking SLA status…
+            </span>
+          </div>
+        ) : slaAlertsError || !slaAlerts ? (
+          <div
+            className="flex items-center gap-2.5 p-3 rounded-md border border-amber-500/40 bg-amber-500/5"
+            role="status"
+          >
+            <ShieldAlert className="w-4 h-4 text-amber-500" />
+            <span className="text-sm text-muted-foreground">
+              SLA status unavailable. Do not treat this as an all-clear.
+            </span>
+          </div>
+        ) : slaAlerts.length > 0 ? (
           <div className="space-y-2">
             {slaAlerts.map((alert) => (
               <Link key={alert.deal_id} href={`/dashboard/deals/${alert.deal_id}`}>
