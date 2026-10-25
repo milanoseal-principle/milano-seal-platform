@@ -195,12 +195,6 @@ const cardVariants = {
   },
 };
 
-const alertRowVariants = {
-  hidden: { opacity: 0, x: -8 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
-};
-
-
 export default function Dashboard() {
   const [entryComplete, setEntryComplete] = useState(false);
   const [actionPanelOpen, setActionPanelOpen] = useState(false);
@@ -408,9 +402,9 @@ export default function Dashboard() {
           <h1 className="font-serif text-4xl text-foreground">
             Today at the Seal
           </h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
-            Live snapshot of every matter in the international execution
-            pipeline — intake to apostille to delivery.
+          <p className="text-muted-foreground mt-1 text-sm">
+            {data.open_deals} active · {data.awaiting_payment} awaiting payment ·{" "}
+            {data.in_execution} in execution
           </p>
         </div>
         <Link href="/dashboard/intake">
@@ -420,9 +414,60 @@ export default function Dashboard() {
         </Link>
       </motion.div>
 
-      <InternalModuleGrid />
+      {/* 1 · IMMEDIATE ACTION — blockers surfaced before anything else */}
+      <section aria-label="Immediate Action" className="space-y-2">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-gold font-medium">
+          Immediate Action
+        </p>
+        {slaAlerts && slaAlerts.length > 0 ? (
+          <div className="space-y-2">
+            {slaAlerts.map((alert) => (
+              <Link key={alert.deal_id} href={`/dashboard/deals/${alert.deal_id}`}>
+                <div
+                  className={`flex items-center justify-between gap-3 p-3 rounded-md border cursor-pointer hover-elevate ${
+                    alert.severity === "high"
+                      ? "border-destructive/60 bg-destructive/5"
+                      : alert.severity === "medium"
+                        ? "border-amber-500/40 bg-amber-500/5"
+                        : "border-border"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldAlert
+                      className={`w-4 h-4 flex-shrink-0 ${
+                        alert.severity === "high" ? "text-destructive" : "text-amber-500"
+                      }`}
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm text-foreground truncate">
+                        {alert.client_name ?? alert.deal_id}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {slaAlertLabel(alert)}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={alert.severity === "high" ? "bg-critical" : "bg-await"}
+                  >
+                    {alert.severity.toUpperCase()}
+                  </Badge>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 p-3 rounded-md border border-border bg-card">
+            <CheckCircle2 className="w-4 h-4 text-gold" />
+            <span className="text-sm text-muted-foreground">
+              No SLA escalations. Every matter is within service thresholds.
+            </span>
+          </div>
+        )}
+      </section>
 
-      {/* Status strip — 6 cards */}
+      {/* 2 · OPERATIONS TELEMETRY — status strip, 6 cards */}
       <motion.div
         className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
         initial="hidden"
@@ -486,82 +531,52 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Execution Status Rail — live pipeline stage counts */}
+      {/* 3 · TODAY'S PIPELINE — canonical stage rail */}
       <ExecutionStatusRail />
 
-      {/* SLA Alerts */}
-      {slaAlerts && slaAlerts.length > 0 && (
-        <motion.div
-          className="space-y-2"
-          initial="hidden"
-          animate={entryComplete ? "visible" : "hidden"}
-          variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.55 } } }}
-        >
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
-            SLA Alerts
-          </p>
-          {slaAlerts.map((alert) => (
-            <motion.div key={alert.deal_id} variants={alertRowVariants}>
-              <Link href={`/dashboard/deals/${alert.deal_id}`}>
-                <div className={`flex items-center justify-between gap-3 p-3 rounded-md border cursor-pointer hover-elevate ${
-                  alert.severity === "high"
-                    ? "border-destructive/60 bg-destructive/5"
-                    : alert.severity === "medium"
-                      ? "border-amber-500/40 bg-amber-500/5"
-                      : "border-border"
-                }`}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <ShieldAlert className={`w-4 h-4 flex-shrink-0 ${
-                      alert.severity === "high" ? "text-destructive" : "text-amber-500"
-                    }`} />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm text-foreground truncate">{alert.client_name ?? alert.deal_id}</span>
-                      <span className="text-xs text-muted-foreground">{slaAlertLabel(alert)}</span>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className={
-                    alert.severity === "high" ? "bg-critical" : "bg-await"
-                  }>
-                    {alert.severity.toUpperCase()}
-                  </Badge>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Execution Pipeline */}
-      <ExecutionOrchestrationPipeline
-        counts={{
-          reviewing_count: data.reviewing_count,
-          awaiting_payment: data.awaiting_payment,
-          scheduled_count: data.scheduled_count,
-          in_execution: data.in_execution,
-          apostille_count: data.apostille_count,
-          shipped_count: data.shipped_count,
-        }}
-        slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
-      />
-
-      {/* Pipeline Load Matrix */}
-      <StatusGlowMatrix
-        counts={{
-          reviewing_count: data.reviewing_count,
-          awaiting_payment: data.awaiting_payment,
-          scheduled_count: data.scheduled_count,
-          in_execution: data.in_execution,
-          apostille_count: data.apostille_count,
-          shipped_count: data.shipped_count,
-        }}
-      />
-
-      {/* Matter Queue */}
+      {/* 4 · PRIORITY MATTERS */}
       <Card className="bg-card border-gold">
         <CardContent className="pt-6">
           <MatterQueue onMatterClick={(id) => setSelectedMatterId(id)} />
         </CardContent>
       </Card>
+
+      {/* MORE INTELLIGENCE — every operational module preserved, collapsed below the command center */}
+      <details className="rounded-md border border-gold/40 bg-card/40">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-[11px] uppercase tracking-[0.2em] text-gold font-medium">
+          <span>More Intelligence</span>
+          <span className="text-xs normal-case tracking-normal text-muted-foreground">
+            Modules · telemetry · custody · audit · lanes
+          </span>
+        </summary>
+        <div className="space-y-6 border-t border-gold/20 p-5">
+          {/* Internal Module Directory */}
+          <InternalModuleGrid />
+
+          {/* Execution Pipeline */}
+          <ExecutionOrchestrationPipeline
+            counts={{
+              reviewing_count: data.reviewing_count,
+              awaiting_payment: data.awaiting_payment,
+              scheduled_count: data.scheduled_count,
+              in_execution: data.in_execution,
+              apostille_count: data.apostille_count,
+              shipped_count: data.shipped_count,
+            }}
+            slaEscalation={Boolean(slaAlerts && slaAlerts.length > 0)}
+          />
+
+          {/* Pipeline Load Matrix */}
+          <StatusGlowMatrix
+            counts={{
+              reviewing_count: data.reviewing_count,
+              awaiting_payment: data.awaiting_payment,
+              scheduled_count: data.scheduled_count,
+              in_execution: data.in_execution,
+              apostille_count: data.apostille_count,
+              shipped_count: data.shipped_count,
+            }}
+          />
 
       {/* Recent Matters + Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -870,6 +885,8 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+        </div>
+      </details>
     </div>
       </motion.div>
 
