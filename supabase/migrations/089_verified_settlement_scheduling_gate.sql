@@ -45,8 +45,9 @@ begin
   if NEW.status = any(protected_states)
      or NEW.deal_status = any(protected_states) then
     if settlement_verified then
-      if TG_OP = 'UPDATE' and NEW.status = 'scheduled'
-         and OLD.status not in ('payment_confirmed', 'scheduled') then
+      if TG_OP = 'UPDATE'
+         and (NEW.status = 'scheduled' or NEW.deal_status = 'scheduled')
+         and coalesce(OLD.status, '') not in ('payment_confirmed', 'scheduled') then
         raise exception 'INVALID_STATE_TRANSITION: scheduling requires payment_confirmed';
       end if;
       return NEW;
