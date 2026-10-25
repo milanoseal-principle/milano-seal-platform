@@ -71,3 +71,13 @@ test("Today surface invents no fabricated operational status labels", () => {
   // Guard against literal fabricated states slipping into the markup.
   assert.doesNotMatch(page, />\s*(PAID|SCHEDULED|VERIFIED|COMPLETED|SHIPPED|APOSTILLED)\s*</);
 });
+
+
+test("Immediate Action distinguishes SLA loading/error from verified empty results", () => {
+  assert.match(page, /isLoading:\s*slaAlertsLoading/);
+  assert.match(page, /isError:\s*slaAlertsError/);
+  assert.match(page, /Checking SLA status/);
+  assert.match(page, /SLA status unavailable\. Do not treat this as an all-clear\./);
+  assert.match(page, /slaAlerts\.length > 0/);
+  assert.match(page, /No SLA escalations\. Every matter is within service thresholds\./);
+});
