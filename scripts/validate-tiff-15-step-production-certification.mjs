@@ -16,7 +16,7 @@ export const REQUIRED_CONTROLS = [
   "Discount / Courtesy Code",
   "scheduling remains blocked",
   "payment_observed_at",
-  "valid observed Wise submission unlocks scheduling",
+  "After verified Wise settlement",
   "settlement remains pending",
   "BlueNotary session starts",
   "in_execution",
@@ -44,7 +44,7 @@ export function validateRunbook(source) {
   assert.doesNotMatch(source, /TIFFTEST50/);
   assert.match(source, /TIFFTEST99[\s\S]{0,220}99%/);
   assert.match(source, /discount[\s\S]{0,300}never marks a Matter paid/i);
-  assert.match(source, /observed Wise submission[\s\S]{0,260}unlock scheduling/i);
+  assert.match(source, /observed Wise submission cannot unlock scheduling/i);
   assert.match(source, /does not mark the Matter paid/i);
   assert.match(source, /final release remains separately settlement-gated/i);
   assert.match(source, /Scheduled[\s\S]{0,400}BlueNotary session starts[\s\S]{0,240}in_execution/);

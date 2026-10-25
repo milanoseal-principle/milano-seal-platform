@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const gate = readFileSync("lib/scheduling/complimentarySchedulingGate.ts", "utf8");
@@ -7,13 +8,13 @@ const readiness = readFileSync("components/ron/MatterRONReadiness.tsx", "utf8");
 const alerts = readFileSync("lib/notifications/transactionalEmailAlerts.ts", "utf8");
 
 const checks = [
-  ["observed Wise submission authorizes scheduling", /wise_submission_observed/.test(gate) && /authorizes scheduling while settlement remains pending/.test(gate)],
+  ["observed Wise submission cannot authorize scheduling", /scheduling remains locked until verified Wise settlement/.test(gate) && !/paymentRequirementMethod: "wise_submission_observed"/.test(gate)],
   ["BlueNotary creation uses scheduling authority", /assertCanCreateRONSession[\s\S]*verifySchedulingAuthorized/.test(guards)],
-  ["BlueNotary does not require verified settlement for session creation", !/assertCanCreateRONSession[\s\S]*await verifyPaymentConfirmed/.test(guards)],
-  ["RON UI exposes submitted scheduling authority", /Wise submitted · scheduling authorized/.test(readiness)],
-  ["operator processing note authorizes scheduling now", /Scheduling payment authority is satisfied now/.test(alerts)],
+  ["BlueNotary delegates to the strict shared settlement gate", !/assertCanCreateRONSession[\s\S]*await verifyPaymentConfirmed/.test(guards)],
+  ["RON UI exposes submitted scheduling lock", /Wise submitted · scheduling locked/.test(readiness)],
+  ["operator processing note requires settlement", /Scheduling will unlock only after verified settlement/.test(alerts)],
   ["operator note preserves settlement pending truth", /Wise processing \/ settlement pending/.test(alerts)],
-  ["stale settlement-first scheduling copy removed", !/Scheduling will unlock only after verified settlement/.test(alerts)],
+  ["pre-settlement authorization copy removed", !/without waiting for Wise settlement/.test(alerts)],
   ["final release remains settlement protected", /settlement-dependent final release remains protected/.test(alerts)],
 ];
 
@@ -23,4 +24,8 @@ for (const [label, ok] of checks) {
   else { console.error(`FAIL ${label}`); failed += 1; }
 }
 if (failed) process.exit(1);
-console.log(`Immediate Wise scheduling authority: ${checks.length}/${checks.length} passed`);
+// Keep the historical entry point so existing deployment wiring remains intact.
+const behavioral = spawnSync(process.execPath, ["--import", "tsx", "--test",
+  "tests/unit/schedulingPaymentGate.test.ts", "tests/unit/verifiedSettlementLifecycle.test.ts"], { stdio: "inherit" });
+if (behavioral.status !== 0) process.exit(behavioral.status ?? 1);
+console.log(`Verified-settlement scheduling authority: ${checks.length}/${checks.length} source checks and behavioral tests passed`);

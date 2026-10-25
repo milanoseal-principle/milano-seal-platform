@@ -13,7 +13,7 @@ const genericDeal = read("app/api/deals/[id]/route.ts");
 const portalRON = read("app/portal/ron/page.tsx");
 
 assert.match(scheduling, /wise_submission_observed/);
-assert.match(scheduling, /Observed Wise submission authorizes scheduling while settlement remains pending/);
+assert.match(scheduling, /scheduling remains locked until verified Wise settlement/);
 assert.match(ronGuard, /evaluateSchedulingGate/);
 assert.match(ronGuard, /NOTARIAL_ACT_REVIEW_REQUIRED/);
 assert.doesNotMatch(ronGuard, /is_platform_fee_only'/);

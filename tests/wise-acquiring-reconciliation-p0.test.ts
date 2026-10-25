@@ -57,7 +57,7 @@ test("unsupported statement access fails closed instead of fabricating settlemen
   assert.match(reconciliation, /confirmed:\s*false/);
 });
 
-test("provider-evidenced processing can execute while final paid truth remains separate", () => {
+test("provider processing cannot bypass the shared verified-settlement gate", () => {
   assert.match(guards, /verifyExecutionPaymentAuthorized/);
   assert.match(guards, /wise_transaction_reference/);
   assert.match(guards, /payment_funding_method === 'wise_acquiring_payment'/);

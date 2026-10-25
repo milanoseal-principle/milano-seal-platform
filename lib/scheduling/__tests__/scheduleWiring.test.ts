@@ -38,7 +38,7 @@ test("canonical schedule endpoint enforces every protected scheduling invariant"
   assert.match(scheduleRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
   assert.match(scheduleRoute, /!schedulingGate\.schedulingEligible/);
   assert.match(scheduleRoute, /PAYMENT_REQUIRED/);
-  assert.match(scheduleRoute, /normalizedCurrent !== "awaiting_payment"/);
+  assert.match(scheduleRoute, /normalizedCurrent !== "payment_confirmed"/);
   assert.match(scheduleRoute, /UNAUTHENTICATED/);
   assert.match(scheduleRoute, /FORBIDDEN/);
   assert.match(scheduleRoute, /INVALID_STATE_TRANSITION/);

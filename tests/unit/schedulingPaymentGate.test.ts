@@ -27,7 +27,7 @@ test("a courtesy discount alone never unlocks scheduling", () => {
 });
 
 test("verified payment of the discounted amount unlocks scheduling", () => {
-  const paid = { ...unpaidDiscountedMatter, payment_status: "paid", amount_paid: 625, payment_confirmed: true };
+  const paid = { ...unpaidDiscountedMatter, payment_status: "paid", amount_paid: 625, payment_confirmed: true, payment_settlement_status: "cleared" };
   assert.equal(evaluatePaymentGate(paid), "PAYMENT_CONFIRMED");
   const gate = evaluateSchedulingGate({ matter: paid });
   assert.equal(gate.schedulingEligible, true);
@@ -62,17 +62,17 @@ const observedSubmission = {
   payment_observed_reference: "MS-2026-4887",
 };
 
-test("governed Wise submission unlocks scheduling while unpaid (Tiffany MS-2026-4887)", () => {
+test("governed Wise submission stays locked while unpaid (Tiffany MS-2026-4887)", () => {
   const gate = evaluateSchedulingGate({ matter: observedSubmission });
-  assert.equal(gate.schedulingEligible, true);
-  assert.equal(gate.paymentRequirementSatisfied, true);
-  assert.equal(gate.paymentRequirementMethod, "wise_submission_observed");
+  assert.equal(gate.schedulingEligible, false);
+  assert.equal(gate.paymentRequirementSatisfied, false);
+  assert.equal(gate.paymentRequirementMethod, "not_satisfied");
   assert.equal(evaluatePaymentGate(observedSubmission), "PAYMENT_REQUIRED");
 });
 
-test("legacy observation with explicit null snapshot columns remains trusted", () => {
+test("legacy observation with null snapshot columns cannot substitute for settlement", () => {
   const legacy = { ...observedSubmission, payment_observed_amount: null, payment_observed_currency: null, payment_observed_reference: null };
-  assert.equal(evaluateSchedulingGate({ matter: legacy }).schedulingEligible, true);
+  assert.equal(evaluateSchedulingGate({ matter: legacy }).schedulingEligible, false);
 });
 
 test("observed submission from an under-selected read model fails closed", () => {
@@ -114,6 +114,50 @@ test("failed/mismatch settlement state removes submission scheduling authority",
 });
 
 test("open operational requirements block scheduling even when paid", () => {
-  const paid = { ...unpaidDiscountedMatter, payment_status: "paid", amount_paid: 625, payment_confirmed: true };
+  const paid = { ...unpaidDiscountedMatter, payment_status: "paid", amount_paid: 625, payment_confirmed: true, payment_settlement_status: "cleared" };
   assert.equal(evaluateSchedulingGate({ matter: paid, allOperationalRequirementsPassed: false }).schedulingEligible, false);
+});
+
+test("only verified exact settlement can unlock scheduling", () => {
+  const settled = {
+    ...observedSubmission,
+    payment_status: "paid",
+    payment_confirmed: true,
+    payment_settlement_status: "cleared",
+    amount_paid: 6.88,
+  };
+  assert.equal(evaluateSchedulingGate({ matter: settled }).schedulingEligible, true);
+  for (const change of [
+    { payment_confirmed: false },
+    { payment_confirmed: null },
+    { payment_status: "unpaid" },
+    { payment_settlement_status: "observed_pending" },
+    { payment_settlement_status: "failed" },
+    { payment_settlement_status: "refunded" },
+    { payment_settlement_status: null },
+    { amount_due: 0, amount_paid: 0 },
+    { amount_paid: 6.87 },
+    { amount_paid: 6.89 },
+    { amount_paid: Number.NaN },
+    { amount_paid: Number.POSITIVE_INFINITY },
+    { amount_due: Number.NaN },
+  ]) {
+    const result = evaluateSchedulingGate({ matter: { ...settled, ...change } });
+    assert.equal(result.schedulingEligible, false, JSON.stringify(change));
+    assert.equal(result.paymentRequirementSatisfied, false);
+  }
+});
+
+test("zero-value courtesy authorization never substitutes for Wise settlement", () => {
+  const result = evaluateSchedulingGate({ matter: {
+    ...unpaidDiscountedMatter,
+    amount_due: 0,
+    payment_disposition: "complimentary",
+    comp_authorized: true,
+    comp_authorization_id: "authorization",
+    comp_authorized_at: "2026-10-25T00:00:00Z",
+    verified_revenue: 0,
+  } });
+  assert.equal(result.schedulingEligible, false);
+  assert.equal(result.paymentRequirementMethod, "not_satisfied");
 });

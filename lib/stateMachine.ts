@@ -3,12 +3,14 @@ export const CANONICAL_MATTER_STATES = [
   "under_review",
   "quoted",
   "awaiting_payment",
+  "payment_confirmed",
   "scheduled",
   "in_execution",
   "apostille_processing",
   "in_transit",
   "delivered",
   "completed",
+  "dormant",
 ] as const;
 
 export type MatterStatus = (typeof CANONICAL_MATTER_STATES)[number];
@@ -35,13 +37,15 @@ export const ALLOWED_TRANSITIONS: Record<MatterStatus, MatterStatus[]> = {
   intake_received: ["under_review"],
   under_review: ["quoted"],
   quoted: ["awaiting_payment"],
-  awaiting_payment: ["scheduled"],
+  awaiting_payment: ["payment_confirmed"],
+  payment_confirmed: ["scheduled"],
   scheduled: ["in_execution"],
   in_execution: ["apostille_processing", "in_transit"],
   apostille_processing: ["in_transit"],
   in_transit: ["delivered"],
   delivered: ["completed"],
   completed: [],
+  dormant: [],
 };
 
 export const STATUS_ORDER: MatterStatus[] = [...CANONICAL_MATTER_STATES];
@@ -69,12 +73,14 @@ export const SLA_HOURS: Record<MatterStatus, number> = {
   under_review: 8,
   quoted: 24,
   awaiting_payment: 48,
+  payment_confirmed: 24,
   scheduled: 24,
   in_execution: 48,
   apostille_processing: 96,
   in_transit: 168,
   delivered: 24,
   completed: 0,
+  dormant: 0,
 };
 
 export function isOpenStage(stage: string): boolean {

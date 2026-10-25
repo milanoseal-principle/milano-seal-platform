@@ -14,6 +14,7 @@ const required = [
   "078_shippo_prepayment_rate_continuity.sql",
   "079_wise_observed_scheduling_gate.sql",
   "088_payment_gate_search_path_hardening.sql",
+  "089_verified_settlement_scheduling_gate.sql",
 ];
 const missing = required.filter((f) => !files.includes(f));
 if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
@@ -169,3 +170,11 @@ if (!/alter function public\.check_payment_gate\(\)[\s\S]*set search_path = publ
 }
 
 console.log(`Migration contract validated across ${files.length} SQL files.`);
+
+const settlementGate = fs.readFileSync(path.join(dir, "089_verified_settlement_scheduling_gate.sql"), "utf8");
+for (const invariant of ["payment_settlement_status = 'cleared'", "NEW.payment_confirmed is true", "NEW.payment_status = 'paid'", "NEW.status := 'payment_confirmed'", "NEW.deal_status := 'payment_confirmed'", "set search_path = public, pg_temp"]) {
+  if (!settlementGate.includes(invariant)) throw new Error(`089 verified settlement guard missing ${invariant}`);
+}
+if (/observed_submission_valid|provider_payment_valid|comp_authorized/.test(settlementGate)) {
+  throw new Error("089 must not permit observation/provider-processing/complimentary scheduling bypasses");
+}
