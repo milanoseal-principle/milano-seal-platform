@@ -340,6 +340,7 @@ test("public production health and debug routes disclose no provider posture", (
     assert.match(source, /VERCEL_ENV === "production"/);
     assert.match(source, /status: 404/);
   }
+});
 
 test("professional activation verifies pre-linked accounts and fails closed on role collisions", () => {
   const activation = read("app/api/admin/professionals/[id]/activate/route.ts");
