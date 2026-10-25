@@ -12,12 +12,6 @@ export async function GET() {
     process.env.ENABLE_DEBUG_SESSION !== "true"
   ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (process.env.VERCEL_ENV === "production") {
-    return new NextResponse(null, { status: 404 });
-  }
-
-  if (process.env.ENABLE_DEBUG_SESSION !== "true") {
-    return NextResponse.json({ error: "Disabled" }, { status: 403 });
   }
 
   const supabase = await createClient();
