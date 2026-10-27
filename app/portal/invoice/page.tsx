@@ -328,7 +328,7 @@ export default function ClientInvoicePage() {
             <div className="mt-2 text-[11px] leading-5 text-white/38">Wise reference: <span className="font-mono text-[#C6A55A]/75">{invoice.wiseReference}</span></div>
             {paymentProcessing && (
               <div className="mt-3 text-xs leading-5 text-amber-100/60">
-                Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling may proceed when the remaining Matter requirements are ready.
+                Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling stays locked until verified Wise settlement and the remaining Matter requirements are ready.
               </div>
             )}
           </div>
@@ -382,7 +382,7 @@ export default function ClientInvoicePage() {
       </div>
 
       <p className="mt-5 text-[11px] leading-5 text-white/30">
-        A submitted Wise payment remains processing and never marks a Matter paid. A recorded submission may satisfy scheduling authority; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
+        A submitted Wise payment remains processing and never marks a Matter paid. Scheduling stays locked until verified Wise settlement; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
       </p>
     </div>
   );

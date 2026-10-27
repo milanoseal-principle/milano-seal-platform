@@ -10,6 +10,7 @@ const VALID_STAGES = [
   "reviewing",
   "quoted",
   "awaiting_payment",
+  "payment_confirmed",
   "scheduled",
   "in_execution",
   "apostille",
@@ -32,7 +33,7 @@ export async function moveDeal(
   const { data: deal, error: fetchErr } = await supabase
     .from("deals")
     .select(
-      "id, deal_id, status, payment_status, amount_due, amount_paid, verified_revenue, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, execution_truth, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country, amount",
+      "id, deal_id, status, payment_status, payment_confirmed, payment_settlement_status, amount_due, amount_paid, verified_revenue, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, execution_truth, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country, amount",
     )
     .eq("deal_id", deal_id)
     .single();
@@ -80,7 +81,7 @@ export async function moveDeal(
       return {
         ok: false,
         error:
-          "Payment required before advancing to this stage — verified Wise settlement or an active Complimentary Authorization is required.",
+          "Payment required before advancing to this stage — verified Wise settlement is required.",
       };
     }
   }

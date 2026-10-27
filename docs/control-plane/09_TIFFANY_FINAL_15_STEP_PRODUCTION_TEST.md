@@ -40,7 +40,7 @@ REMAINING BALANCE                             $6.87
 
 Production precondition: `TIFFTEST99` must be active as a 99% percentage discount applied to `matter_total`. The code must be entered by the client on the portal Invoice & Payment screen. It must not be auto-applied by intake, the database, an operator override, or any payment bypass.
 
-The test discount changes pricing only. It never marks a Matter paid and never unlocks scheduling. A valid observed Wise submission may unlock scheduling while settlement remains pending. That observation does not mark the Matter paid, does not clear settlement, and does not authorize final release. Verified Wise/provider evidence remains required for execution actions that require provider payment authority, and final release remains separately settlement-gated.
+The test discount changes pricing only. It never marks a Matter paid and never unlocks scheduling. An observed Wise submission cannot unlock scheduling while settlement remains pending. That observation does not mark the Matter paid, does not clear settlement, and does not authorize final release. Verified Wise/provider evidence remains required for execution actions that require provider payment authority, and final release remains separately settlement-gated.
 
 ## 15-Step Certification
 
@@ -89,7 +89,7 @@ Save a screenshot. STOP if the code cannot be entered, the itemized order change
 
 11. Confirm the same Matter records the Wise submission exactly once. Verify correct Matter ID, `$6.88` observed amount, Wise reference, `payment_observed_at`, settlement state, no duplicate Matter, and no duplicate payment event. If settlement is still pending, the Matter must remain not-paid/uncleared.
 
-12. Attempt scheduling again. PASS only if the valid observed Wise submission unlocks scheduling for the same Matter. Complete one test appointment. Scheduling must not wait for final settlement reconciliation.
+12. Attempt scheduling again while settlement remains pending: it must remain locked. After verified Wise settlement, confirm payment confirmation on the same Matter and exactly-once scheduling eligibility. Complete one test appointment only after settlement is verified.
 
 13. Verify the client portal remains accessible using the same confirmed client account. Test Forgot Password separately: request a reset, open the email, set a new password, return to login, and verify the same client Matter remains attached. Password recovery must not create a second account or Matter.
 
@@ -123,7 +123,7 @@ Capture and return:
 - itemized portal order screenshot
 - `TIFFTEST99` before/after screenshot
 - Wise `$6.88` reference and payment screenshot
-- scheduling confirmation after observed Wise submission
+- scheduling confirmation after verified Wise settlement
 - BlueNotary session evidence
 - `in_execution` Matter state after provider session start
 - signed-document retrieval evidence
@@ -142,7 +142,7 @@ Verified client account
 → TIFFTEST99 entered on Invoice & Payment
 → $13.75 final Matter total
 → $6.88 Wise submission observed exactly once
-→ scheduling unlock while settlement may remain pending
+→ verified Wise settlement → payment confirmation → exactly-once scheduling unlock
 → BlueNotary provider execution
 → canonical in_execution state
 → signed documents retrieved
@@ -155,7 +155,7 @@ Verified client account
 
 ### Corridor control labels (each must hold end-to-end)
 
-- Payment: observed Wise submission unlocks scheduling; **verified Wise settlement** remains required before final release and is never implied by observation alone.
+- Payment: observed Wise submission never unlocks scheduling; **verified Wise settlement** is required before scheduling and final release and is never implied by observation alone.
 - Execution / RON: BlueNotary provider execution advances the same Matter to canonical `in_execution`; signed documents are retrieved to private Milano storage before Apostille QA.
 - Apostille: explicit operator Apostille QA is the sole authoritative `in_execution → apostille_processing` transition; no automatic advancement.
 - Release / Courier: release stays settlement-gated; the same governed Shippo shipment identity carries label, tracking, and delivery.

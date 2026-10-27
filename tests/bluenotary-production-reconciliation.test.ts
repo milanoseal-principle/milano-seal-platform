@@ -25,14 +25,14 @@ test('BlueNotary session creation uses the canonical scheduling authority while 
   assert.doesNotMatch(guards, /payment_status !== 'paid'/);
 });
 
-test('recorded Wise submission may authorize RON scheduling without fabricating paid state', () => {
-  assert.match(readiness, /Wise submitted · scheduling authorized/);
+test('recorded Wise submission cannot authorize RON scheduling', () => {
+  assert.match(readiness, /Wise submitted · scheduling locked/);
   assert.match(readiness, /evaluateSchedulingGate/);
-  assert.match(queue, /Wise submitted · scheduling authorized/);
+  assert.match(queue, /Wise submitted · scheduling locked/);
   assert.match(queue, /evaluateSchedulingGate/);
   assert.match(detail, /Paid truth:/);
   assert.match(detail, /schedulingAuthorized/);
-  assert.match(invoice, /A recorded submission may satisfy scheduling authority/);
+  assert.match(invoice, /Scheduling stays locked until verified Wise settlement/);
   assert.match(invoice, /verified Wise settlement remains the authority for paid state/);
 });
 

@@ -82,13 +82,19 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Operational requirements remain open." };
   }
 
-  if (evaluatePaymentGate(params.matter) === "PAYMENT_CONFIRMED") {
+  const due = Number(params.matter.amount_due);
+  const paid = Number(params.matter.amount_paid);
+  const settlementVerified = params.matter.payment_confirmed === true &&
+    params.matter.payment_settlement_status === "cleared" &&
+    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
+    Math.round(paid * 100) === Math.round(due * 100);
+  if (settlementVerified && evaluatePaymentGate(params.matter) === "PAYMENT_CONFIRMED") {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified Wise settlement satisfies scheduling gate." };
   }
 
   const submission = classifyObservedSubmission(params.matter);
   if (submission === "observed") {
-    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Observed Wise submission authorizes scheduling while settlement remains pending." };
+    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Wise submission is observed, but scheduling remains locked until verified Wise settlement." };
   }
   if (submission === "projection_incomplete") {
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path." };
@@ -97,18 +103,6 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "The Matter's payable amount, currency or reference changed after the recorded submission. A new governed payment submission is required before scheduling." };
   }
 
-  const compActive = params.matter.payment_disposition === "complimentary" &&
-    params.matter.comp_authorized === true &&
-    !!params.matter.comp_authorization_id &&
-    !!params.matter.comp_authorized_at &&
-    !params.matter.comp_revoked_at &&
-    Number(params.matter.amount_due ?? 0) === 0 &&
-    Number(params.matter.amount_paid ?? 0) === 0 &&
-    Number(params.matter.verified_revenue ?? 0) === 0;
-
-  if (compActive) {
-    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "complimentary_authorization", reason: "Satisfied by Complimentary Authorization." };
-  }
-
-  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Wise submission, verified settlement, or active complimentary authorization required." };
+  // Neither courtesy authorization nor a paid flag substitutes for settlement.
+  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified Wise settlement is required before scheduling." };
 }

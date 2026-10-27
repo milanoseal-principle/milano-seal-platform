@@ -96,8 +96,8 @@ async function getRONData() {
 function paymentLabel(matter: PreSessionMatter) {
   const gate = evaluateSchedulingGate({ matter });
   if (gate.paymentRequirementMethod === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (gate.paymentRequirementMethod === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (gate.paymentRequirementMethod === 'complimentary_authorization') return 'Complimentary authorization · scheduling authorized';
+  if (gate.paymentRequirementMethod === 'wise_submission_observed') return 'Wise submitted · scheduling locked';
+  if (gate.paymentRequirementMethod === 'complimentary_authorization') return 'Complimentary authorization · settlement still required';
   return gate.reason;
 }
 

@@ -20,15 +20,15 @@ function badge(ok: boolean) {
 
 function schedulingAuthorityLabel(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
   if (method === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (method === 'complimentary_authorization') return 'Complimentary authorization · scheduling authorized';
+  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling locked';
+  if (method === 'complimentary_authorization') return 'Complimentary authorization · settlement still required';
   return 'Scheduling payment authority not satisfied';
 }
 
 function schedulingAuthorityDetail(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
   if (method === 'verified_payment') return 'Payment is verified. BlueNotary readiness now depends only on the remaining execution facts.';
-  if (method === 'wise_submission_observed') return 'The governed Wise submission satisfies scheduling while settlement continues separately in the background.';
-  if (method === 'complimentary_authorization') return 'A governed Complimentary Authorization satisfies scheduling without fabricating paid revenue.';
+  if (method === 'wise_submission_observed') return 'Scheduling stays locked until verified Wise settlement.';
+  if (method === 'complimentary_authorization') return 'Courtesy authorization is not verified settlement and cannot unlock scheduling.';
   return 'Resolve the canonical scheduling payment requirement before creating the provider session.';
 }
 
