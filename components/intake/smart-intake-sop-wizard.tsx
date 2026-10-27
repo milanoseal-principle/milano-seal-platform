@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import { FileUploadZone } from "@/components/intake/FileUploadZone";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
-import { classifyIntake } from "@/lib/intake/smartClassification";
+import { classifyIntake, type AiExtraction } from "@/lib/intake/smartClassification";
 import { buildIntakeClarifications, type IntakeQuestion } from "@/lib/intake/intakeClarifications";
 import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
 import { projectClientPricing } from "@/lib/pricing/pricingProjections";
@@ -19,6 +19,8 @@ import {
   type DeliveryChoice,
   type TimelineChoice,
 } from "@/lib/intake/reviewReadiness";
+
+import { INTAKE_DRAFT_KEY, intakeFormSchema, intakeAnalysisSchema, restoreIntakeDraft, type IntakeFormState as FormState } from "@/lib/intake/intakeDraft";
 
 interface IntakePrefill {
   country?: string;
@@ -35,31 +37,7 @@ interface Props {
   professionalReferral?: { profileId: string; reference: string };
 }
 
-type Choice = "yes" | "no" | "unsure" | "";
-type NotaryChoice = "yes" | "no" | "already" | "unsure" | "";
 type UploadState = "pending" | "uploading" | "uploaded" | "failed";
-
-interface FormState {
-  description: string;
-  name: string;
-  email: string;
-  phone: string;
-  documentType: string;
-  documentCount: number;
-  signerCount: number;
-  originState: string;
-  signerLocation: string;
-  destinationCountry: string;
-  executionType: "RON" | "Mobile" | "Unsure";
-  mobileAddress: string;
-  notarizationChoice: NotaryChoice;
-  apostilleChoice: Choice;
-  translationChoice: Choice;
-  deadline: string;
-  courierRequired: boolean;
-  timelineChoice: TimelineChoice;
-  deliveryChoice: DeliveryChoice;
-}
 
 const INITIAL: FormState = {
   description: "",
@@ -72,7 +50,7 @@ const INITIAL: FormState = {
   originState: "",
   signerLocation: "",
   destinationCountry: "",
-  executionType: "Unsure",
+  executionType: "",
   mobileAddress: "",
   notarizationChoice: "",
   apostilleChoice: "",
@@ -107,7 +85,7 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
         <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9A9488]">{label}</div>
         <div className="mt-1 break-words text-sm font-light text-[#E8DCC0]">{value || "To be confirmed"}</div>
       </div>
-      {onEdit && <button type="button" onClick={onEdit} className={secondaryCls}>Edit</button>}
+      {onEdit && <button type="button" onClick={onEdit} aria-label={`Edit ${label}`} className={secondaryCls}>Edit</button>}
     </div>
   );
 }
@@ -121,7 +99,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     documentType: prefill?.document?.replace(/-/g, " ") || "",
     description: prefill?.matter ? prefill.matter.replace(/_/g, " ") : "",
   });
-  const [analysis, setAnalysis] = useState<MatterAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<AiExtraction | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [questionDrafts, setQuestionDrafts] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
@@ -130,6 +108,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const [matterId, setMatterId] = useState<string | null>(null);
   const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
   const [savedWithUploadFailure, setSavedWithUploadFailure] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const [executionDraft, setExecutionDraft] = useState<FormState["executionType"]>("");
+  const [draftStorageAvailable, setDraftStorageAvailable] = useState(true);
+  const draftContext = JSON.stringify([initialTier, prefill?.country, prefill?.document, prefill?.matter, courtesyCode, professionalReferral?.profileId]);
   const startedRef = useRef(false);
   const submittedRef = useRef(false);
   const reviewViewedRef = useRef(false);
@@ -137,6 +120,42 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError(null);
+  };
+
+  useEffect(() => {
+    try {
+      const draft = restoreIntakeDraft(sessionStorage.getItem(INTAKE_DRAFT_KEY), draftContext);
+      if (draft) { setForm(draft.form); setAnalysis(draft.analysis ?? null); setExecutionDraft(draft.form.executionType); setStep(draft.step); }
+    } catch { setDraftStorageAvailable(false); }
+    setDraftReady(true);
+  }, [draftContext]);
+
+  useEffect(() => {
+    if (!draftReady || submittedRef.current) return;
+    try { sessionStorage.setItem(INTAKE_DRAFT_KEY, JSON.stringify({ version: 1, context: draftContext, savedAt: Date.now(), step, form, analysis: analysis ? intakeAnalysisSchema.parse(analysis) : null })); }
+    catch { setDraftStorageAvailable(false); }
+  }, [draftReady, draftContext, form, analysis, step]);
+
+  const focusField = (id: string) => {
+    requestAnimationFrame(() => {
+      const field = document.getElementById(id);
+      const details = field?.closest("details");
+      if (details) details.open = true;
+      field?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      field?.focus({ preventScroll: true });
+    });
+  };
+
+  const saveExecutionMethod = () => {
+    if (!executionDraft || !intakeFormSchema.shape.executionType.safeParse(executionDraft).success) {
+      setError("Choose a supported execution method or request document review, then save it.");
+      focusField("review-execution-method");
+      return;
+    }
+    setForm((prev) => ({ ...prev, executionType: executionDraft,
+      notarizationChoice: executionDraft === "None" ? "no" : executionDraft === "Unsure" ? "unsure" : "yes" }));
+    setError(null);
+    setSaveNotice("Execution preference saved. Document review will confirm the authorized route and final quote.");
   };
 
   const classification = useMemo(() => classifyIntake({
@@ -149,8 +168,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       signerLocation: form.signerLocation || undefined,
       destinationCountry: form.destinationCountry || undefined,
       notarization: form.notarizationChoice === "already" ? "already_completed" : form.notarizationChoice === "yes" ? true : form.notarizationChoice === "no" ? false : undefined,
-      ron: form.executionType === "RON" ? true : undefined,
-      mobile: form.executionType === "Mobile" ? true : undefined,
+      ron: form.executionType === "RON" ? true : form.executionType ? false : undefined,
+      mobile: form.executionType ? false : undefined,
       apostille: form.apostilleChoice === "yes" ? true : form.apostilleChoice === "no" ? false : undefined,
       translation: form.translationChoice === "yes" ? true : form.translationChoice === "no" ? false : undefined,
     },
@@ -175,9 +194,10 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         classification,
         timeline: form.timelineChoice,
         delivery: form.deliveryChoice,
-        pricingApproved: clientPricing.mode === "approved_price",
+        pricingApproved: clientPricing.mode === "approved_price" && !form.executionType,
+        executionReviewRequested: Boolean(form.executionType),
       }),
-    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode],
+    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType],
   );
 
   const quoteReady = useMemo(
@@ -186,16 +206,18 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         classification,
         timeline: form.timelineChoice,
         delivery: form.deliveryChoice,
-        pricingApproved: clientPricing.mode === "approved_price",
+        pricingApproved: clientPricing.mode === "approved_price" && !form.executionType,
+        executionReviewRequested: Boolean(form.executionType),
       }),
-    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode],
+    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType],
   );
 
   const matterTypeLabel = useMemo(() => {
     if (classification.apostille === "required") return "International Apostille Coordination";
     if (classification.authentication === "required") return "International Authentication Coordination";
     if (classification.ron === "required" || form.executionType === "RON") return "Remote Online Notarization";
-    if (classification.mobile === "required" || form.executionType === "Mobile") return "Mobile Notary Deployment";
+    if (form.executionType === "InPerson") return "In-person Notarization";
+    if (classification.mobile === "required") return "Mobile Notary Deployment";
     if (classification.notarization === "required") return "Notarization Coordination";
     return "Document Execution Coordination";
   }, [classification, form.executionType]);
@@ -258,7 +280,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     } else if (question.id === "resolve_ron") {
       setField("executionType", value === "Yes" ? "RON" : "Unsure");
     } else if (question.id === "resolve_mobile") {
-      setField("executionType", value === "Yes" ? "Mobile" : "Unsure");
+      setField("executionType", value === "Yes" ? "InPerson" : "Unsure");
     }
     setQuestionDrafts((prev) => ({ ...prev, [question.id]: "" }));
     track("clarification_completed", { questionCount: clarifications.questions.length });
@@ -333,16 +355,31 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     // intentionally price as quote_after_review (mobile / authentication /
     // translation coordination) must still be submittable so a Matter is
     // created for the operator to review and quote.
-    if (outstanding.length > 0) return setError("Please resolve the remaining details above before checkout.");
-    if (!consent) return setError("Confirm the review notice before completing your order.");
+    if (executionDraft !== form.executionType) {
+      setError("Save your execution method before submitting, or choose document review and save it.");
+      focusField("save-execution-method");
+      return;
+    }
+    if (outstanding.length > 0) {
+      setError("Complete the details below, or request document review for the execution method.");
+      focusField(requirementField(outstanding[0]));
+      return;
+    }
+    if (!consent) { setError("Confirm the review notice before submitting."); focusField("review-consent"); return; }
     setSubmitting(true);
     setError(null);
     markStarted();
 
     const payload = {
       source_channel: "Website Form",
+      ...(form.executionType ? {
+        execution_method: form.executionType === "RON" ? "ron" : form.executionType === "InPerson" ? "in_person" : "review_required",
+        notarization_requirement: form.executionType === "None" ? "not_required" : form.executionType === "Unsure" ? "review_required" : "required",
+        authentication_requirement: classification.apostille === "required" ? "apostille" : classification.authentication === "required" ? "authentication_legalization" : "review_required",
+        notarial_act: "review_required",
+      } : {}),
       tier: initialTier,
-      client_quoted_total: clientPricing.mode === "approved_price" ? clientPricing.amount : undefined,
+      client_quoted_total: quoteReady ? clientPricing.amount : undefined,
       pricing_engine_version: "canonical-pricing-v1",
       name: form.name,
       client_name: form.name,
@@ -369,7 +406,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       timeline_preference: form.timelineChoice || undefined,
       delivery_method: form.deliveryChoice || undefined,
       deadline_date: form.deadline,
-      notes: form.executionType === "Mobile" && form.mobileAddress ? `Mobile signing address: ${form.mobileAddress}` : "",
+      notes: form.executionType === "InPerson" && form.mobileAddress ? `Requested in-person location: ${form.mobileAddress}` : "",
       courier_required: form.courierRequired ? "yes" : undefined,
       name_match: true,
       files_uploaded: files.length > 0,
@@ -390,6 +427,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       if (!id) throw new Error("Matter was created without an identifier");
       setMatterId(id);
       submittedRef.current = true;
+      try { sessionStorage.removeItem(INTAKE_DRAFT_KEY); } catch {}
       track("intake_submitted", { uploadCount: files.length, pricingState: clientPricing.mode }, id);
 
       if (typeof sessionStorage !== "undefined") {
@@ -428,30 +466,26 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     }
   };
 
-  const edit = (target: "matter" | "destination" | "notarization" | "apostille" | "translation" | "timeline" | "delivery") => {
+  const requirementField = (requirement: string) => {
+    if (requirement.includes("document title")) return "review-document-title";
+    if (requirement.includes("Issuing")) return "review-origin";
+    if (requirement.includes("Destination")) return "review-destination";
+    if (requirement.includes("timeline")) return "review-timeline";
+    if (requirement.includes("Delivery")) return "review-delivery";
+    return "review-execution-method";
+  };
+
+  const edit = (target: "matter" | "documents" | "destination" | "notarization" | "apostille" | "translation" | "timeline" | "delivery") => {
     track("review_edited", { step: 3 });
-    if (target === "destination") {
-      setField("destinationCountry", "");
-      setStep(2);
-    } else if (target === "notarization") {
-      setField("notarizationChoice", "");
-      setStep(2);
-    } else if (target === "apostille") {
-      setField("apostilleChoice", "");
-      setStep(2);
-    } else if (target === "translation") {
-      setField("translationChoice", "");
-      setStep(2);
-    } else {
-      setStep(1);
-    }
+    const targets = { matter: "review-document-title", documents: "review-document-count", destination: "review-destination", notarization: "review-execution-method", apostille: "review-apostille", translation: "review-translation", timeline: "review-timeline", delivery: "review-delivery" };
+    focusField(targets[target]);
   };
 
   if (savedWithUploadFailure && matterId) {
     const uploaded = files.filter((file) => uploadStates[fileKey(file)] === "uploaded").length;
     const failed = files.filter((file) => uploadStates[fileKey(file)] === "failed").length;
     return (
-      <div className="mx-auto w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
+      <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
         <div className="rounded-2xl border border-[rgba(198,165,90,0.28)] bg-[#0A0A0A] px-6 py-8 sm:px-10">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]">Your request was saved</div>
           <h2 className="mb-3 font-serif text-2xl text-[#E8DCC0]">Some documents did not finish uploading.</h2>
@@ -465,7 +499,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const progress = step === 1 ? 0 : step === 2 ? 50 : 100;
 
   return (
-    <div className="mx-auto w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9A9488]">
           <span>Your Matter</span><span>Execution</span><span>Review</span>
@@ -483,8 +517,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
               <SmartMatterIntake onAnalysisReady={handleAnalysisReady} onFilesPicked={(picked) => { markStarted(); setFiles((prev) => [...prev, ...picked.filter((file) => !prev.some((existing) => fileKey(existing) === fileKey(file)))].slice(0, 10)); }} initialMessage={form.description} />
 
               <div className="mt-6">
-                <label className={labelCls}>Describe your matter <span className="text-[var(--ms-gold)]">*</span></label>
-                <textarea value={form.description} onFocus={markStarted} onChange={(e) => setField("description", e.target.value)} rows={4} placeholder="I need a power of attorney notarized for use in Italy." className={`${inputCls} min-h-28 resize-none`} />
+                <label htmlFor="intake-description" className={labelCls}>Describe your matter <span className="text-[var(--ms-gold)]">*</span></label>
+                <textarea id="intake-description" value={form.description} onFocus={markStarted} onChange={(e) => setField("description", e.target.value)} rows={4} placeholder="I need a power of attorney notarized for use in Italy." className={`${inputCls} min-h-28 resize-none`} />
               </div>
 
               <div className="mt-5">
@@ -496,11 +530,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 <div className="mt-7 rounded-sm border border-[rgba(198,165,90,0.24)] bg-[rgba(198,165,90,0.05)] p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]">We Understand</span>
-                    <button type="button" onClick={() => track("analysis_corrected", { step: 1 })} className={secondaryCls}>Edit</button>
+                    <button type="button" onClick={() => { track("analysis_corrected", { step: 1 }); focusField("intake-description"); }} className={secondaryCls}>Edit</button>
                   </div>
                   <ReviewRow label="Document" value={classification.documentType || "Not yet confirmed"} />
                   <ReviewRow label="Destination" value={classification.destinationCountry || "Not yet confirmed"} />
-                  <ReviewRow label="Requested service" value={form.executionType === "RON" ? "Remote Online Notarization" : form.executionType === "Mobile" ? "Mobile Deployment" : classification.notarization === "required" ? "Notarization" : "To be confirmed"} />
+                  <ReviewRow label="Requested service" value={form.executionType === "RON" ? "Remote Online Notarization" : form.executionType === "InPerson" ? "In-person Notarization" : classification.notarization === "required" ? "Notarization" : "To be confirmed"} />
                   <ReviewRow label="Already completed" value={classification.notarization === "already_completed" ? "Notarization" : classification.apostille === "already_completed" ? "Apostille" : "None confirmed"} />
                   <ReviewRow label="Potential requirements" value={classification.manualReviewReasons.length ? "Additional route review may be required" : "No additional requirements confirmed yet"} />
                 </div>
@@ -509,13 +543,13 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
               <div className="mt-7 border-t border-[rgba(198,165,90,0.1)] pt-6">
                 <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ms-gold)]/70">Your contact</div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div><label className={labelCls}>Name *</label><input value={form.name} onFocus={markStarted} onChange={(e) => setField("name", e.target.value)} className={inputCls} autoComplete="name" /></div>
-                  <div><label className={labelCls}>Email *</label><input type="email" value={form.email} onFocus={markStarted} onChange={(e) => setField("email", e.target.value)} className={inputCls} autoComplete="email" /></div>
+                  <div><label htmlFor="intake-name" className={labelCls}>Name *</label><input id="intake-name" value={form.name} onFocus={markStarted} onChange={(e) => setField("name", e.target.value)} className={inputCls} autoComplete="name" /></div>
+                  <div><label htmlFor="intake-email" className={labelCls}>Email *</label><input id="intake-email" type="email" value={form.email} onFocus={markStarted} onChange={(e) => setField("email", e.target.value)} className={inputCls} autoComplete="email" /></div>
                 </div>
-                <div className="mt-4"><label className={labelCls}>Phone <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label><input type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} autoComplete="tel" /></div>
+                <div className="mt-4"><label htmlFor="intake-phone" className={labelCls}>Phone <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label><input id="intake-phone" type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} autoComplete="tel" /></div>
               </div>
 
-              {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+              {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
               <button type="button" onClick={continueFromStep1} className={`${primaryCls} mt-7`}>Continue <ArrowRight className="ml-2 inline h-4 w-4" /></button>
             </>
           )}
@@ -559,16 +593,45 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
               <div className="mb-6 overflow-hidden rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A]">
                 <div className="border-b border-[rgba(198,165,90,0.1)] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Your Matter</div>
-                <ReviewRow label="Matter Type" value={matterTypeLabel} onEdit={() => edit("matter")} />
-                <ReviewRow label="Documents" value={`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`} onEdit={() => edit("matter")} />
+                <ReviewRow label="Matter Type" value={matterTypeLabel} onEdit={() => edit(classification.apostille === "required" || classification.authentication === "required" ? "apostille" : "notarization")} />
+                <ReviewRow label="Documents" value={`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`} onEdit={() => edit("documents")} />
                 <ReviewRow label="Document Titles" value={documentIdentityLabel(classification.documentType)} onEdit={() => edit("matter")} />
                 <ReviewRow label="Destination" value={classification.destinationCountry || "Destination confirmation required"} onEdit={() => edit("destination")} />
-                <ReviewRow label="Requested Service" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : matterTypeLabel} onEdit={() => edit("matter")} />
+                <ReviewRow label="Requested Service" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : matterTypeLabel} onEdit={() => edit(classification.apostille === "required" || classification.authentication === "required" ? "apostille" : "notarization")} />
                 <ReviewRow label="Notarization" value={serviceStateLabel(classification.notarization, "Notarization required")} onEdit={() => edit("notarization")} />
-                <ReviewRow label="Remote Online Notarization" value={serviceStateLabel(classification.ron, "Remote Online Notarization")} onEdit={() => edit("matter")} />
+                <ReviewRow label="Remote Online Notarization" value={serviceStateLabel(classification.ron, "Remote Online Notarization")} onEdit={() => edit("notarization")} />
                 <ReviewRow label="Apostille / Authentication" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : serviceStateLabel(classification.apostille, "Apostille Coordination")} onEdit={() => edit("apostille")} />
                 <ReviewRow label="Translation" value={serviceStateLabel(classification.translation, "Translation required")} onEdit={() => edit("translation")} />
               </div>
+
+              <section aria-labelledby="execution-method-heading" className="mb-6 min-w-0 space-y-4 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[#0A0A0A] p-4">
+                <h3 id="execution-method-heading" className="font-serif text-lg text-[#E8DCC0]">How will your documents be executed?</h3>
+                <p id="execution-method-help" className="text-sm leading-relaxed text-[#9A9488]">Choose your requested method, then save it. Document review will confirm eligibility for your document, signer location and receiving authority before the route and final pricing are approved.</p>
+                <label htmlFor="review-execution-method" className={labelCls}>Execution method</label>
+                <select id="review-execution-method" aria-describedby="execution-method-help execution-save-status" className={`${inputCls} scroll-mt-28`} value={executionDraft} onChange={(e) => { setExecutionDraft(e.target.value as FormState["executionType"]); setSaveNotice(""); }}>
+                  <option value="">Select an execution method</option>
+                  <option value="RON">Remote online notarization</option>
+                  <option value="InPerson">In-person notarization</option>
+                  <option value="None">No notarization required — authentication only</option>
+                  <option value="Unsure">Not sure — request document review</option>
+                </select>
+                <button id="save-execution-method" type="button" onClick={saveExecutionMethod} className={`${secondaryCls} w-full`}>Save execution method</button>
+                <p id="execution-save-status" role="status" className="text-sm leading-relaxed text-[#9A9488]">{saveNotice || (executionDraft !== form.executionType ? "Unsaved change. Save your execution method to update this request." : form.executionType ? "Saved preference restored. Document review is still required before an authorized route and quote are issued." : "No method saved yet. Choose a method or request document review.")}</p>
+                <p className="text-xs leading-relaxed text-[#9A9488]">{draftStorageAvailable ? "Your draft is saved in this tab for up to 24 hours. Reattach documents after a reload; files and consent are not saved." : "Browser storage is unavailable. Keep this page open until you submit; your selection cannot be restored after reload."}</p>
+              </section>
+
+              <details className="mb-6 rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A] p-4" open>
+                <summary className="min-h-11 cursor-pointer text-sm text-[#E8DCC0]">Edit Matter details</summary>
+                <div className="mt-3 grid min-w-0 gap-4">
+                  <div><label htmlFor="review-document-title" className={labelCls}>Exact document title</label><input id="review-document-title" className={inputCls} value={form.documentType || classification.documentType || ""} onChange={(e) => setField("documentType", e.target.value)} /></div>
+                  <div><label htmlFor="review-document-count" className={labelCls}>Number of documents</label><input id="review-document-count" type="number" min="1" className={inputCls} value={form.documentCount || classification.documentCount} onChange={(e) => setField("documentCount", Math.max(1, Number(e.target.value)))} /></div>
+                  <div><label htmlFor="review-origin" className={labelCls}>Issuing state / authority</label><input id="review-origin" className={inputCls} value={form.originState} onChange={(e) => setField("originState", e.target.value)} /></div>
+                  <div><label htmlFor="review-signer-location" className={labelCls}>Signer physical location</label><input id="review-signer-location" className={inputCls} value={form.signerLocation} onChange={(e) => setField("signerLocation", e.target.value)} placeholder="City, state and country" /></div>
+                  <div><label htmlFor="review-destination" className={labelCls}>Destination country</label><select id="review-destination" className={inputCls} value={form.destinationCountry} onChange={(e) => setField("destinationCountry", e.target.value)}><option value="">Select destination</option>{Array.from(new Set([...COUNTRIES, ...(form.destinationCountry ? [form.destinationCountry] : [])])).map((country) => <option key={country}>{country}</option>)}</select></div>
+                  <div><label htmlFor="review-apostille" className={labelCls}>Apostille / authentication request</label><select id="review-apostille" className={inputCls} value={form.apostilleChoice} onChange={(e) => setField("apostilleChoice", e.target.value as FormState["apostilleChoice"])}><option value="">Confirm during review</option><option value="yes">Apostille requested — subject to authority review</option><option value="no">No apostille requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
+                  <div><label htmlFor="review-translation" className={labelCls}>Translation request</label><select id="review-translation" className={inputCls} value={form.translationChoice} onChange={(e) => setField("translationChoice", e.target.value as FormState["translationChoice"])}><option value="">Confirm during review</option><option value="yes">Translation requested</option><option value="no">No translation requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
+                </div>
+              </details>
 
               <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A] px-4 py-5">
                 <div className="mb-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Execution Path</div>
@@ -577,8 +640,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
               <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls}>Preferred execution timeline <span className="text-[var(--ms-gold)]">*</span></label>
-                  <select value={form.timelineChoice} onChange={(e) => setField("timelineChoice", e.target.value as TimelineChoice)} className={inputCls}>
+                  <label htmlFor="review-timeline" className={labelCls}>Preferred execution timeline <span className="text-[var(--ms-gold)]">*</span></label>
+                  <select id="review-timeline" value={form.timelineChoice} onChange={(e) => setField("timelineChoice", e.target.value as TimelineChoice)} className={inputCls}>
                     <option value="">— Select timeline —</option>
                     <option value="standard">Standard</option>
                     <option value="expedited">Expedited</option>
@@ -586,8 +649,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Delivery method <span className="text-[var(--ms-gold)]">*</span></label>
-                  <select value={form.deliveryChoice} onChange={(e) => setField("deliveryChoice", e.target.value as DeliveryChoice)} className={inputCls}>
+                  <label htmlFor="review-delivery" className={labelCls}>Delivery method <span className="text-[var(--ms-gold)]">*</span></label>
+                  <select id="review-delivery" value={form.deliveryChoice} onChange={(e) => setField("deliveryChoice", e.target.value as DeliveryChoice)} className={inputCls}>
                     <option value="">— Select delivery —</option>
                     <option value="digital">Digital return</option>
                     <option value="domestic_courier">Domestic courier</option>
@@ -601,10 +664,10 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                   <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/80">Requirements Still Needed</div>
                   <ul className="space-y-2">
                     {outstanding.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[13px] font-light text-[#E8DCC0]"><span className="mt-1 text-[var(--ms-gold)]">•</span>{item}</li>
+                      <li key={item} className="flex flex-wrap items-center gap-2 text-[13px] font-light text-[#E8DCC0]"><span className="min-w-0 flex-1">{item}</span><button type="button" className={secondaryCls} onClick={() => focusField(requirementField(item))}>Complete detail</button></li>
                     ))}
                   </ul>
-                  <p className="mt-4 text-[11px] font-light text-[#9A9488]">Checkout opens once these quote-critical details are confirmed.</p>
+                  <p className="mt-4 text-[11px] font-light text-[#9A9488]">Complete these details using the controls above. If you are unsure about execution, select “Not sure — request document review” and save it; our team will confirm the route before payment.</p>
                 </div>
               )}
 
@@ -635,7 +698,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 </div>
               )}
 
-              {!quoteReady && clientPricing.mode !== "approved_price" && outstanding.length === 0 && (
+              {!quoteReady && outstanding.length === 0 && (
                 <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-5">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Quote Status</div>
                   <div className="mt-1 text-lg font-semibold text-white">Ready for review</div>
@@ -643,11 +706,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 </div>
               )}
 
-              <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-sm border border-[rgba(198,165,90,0.16)] bg-[#0A0A0A] p-4 text-sm text-[#E8DCC0]"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4" /><span>I understand that all matters are reviewed and payment is required before scheduling or execution.</span></label>
-              {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+              <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-sm border border-[rgba(198,165,90,0.16)] bg-[#0A0A0A] p-4 text-sm text-[#E8DCC0]"><input id="review-consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4" /><span>I understand that all matters are reviewed and payment is required before scheduling or execution.</span></label>
+              {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" onClick={() => setStep(clarifications.questions.length ? 2 : 1)} className={secondaryCls}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
-                <button type="button" onClick={submit} disabled={submitting || outstanding.length > 0} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>Complete My Order <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
+                <button type="button" onClick={submit} disabled={submitting} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>{quoteReady ? "Complete My Order" : "Submit for document review"} <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
               </div>
             </>
           )}

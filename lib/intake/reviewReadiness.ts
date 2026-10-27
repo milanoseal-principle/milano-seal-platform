@@ -44,6 +44,7 @@ export interface ReadinessInput {
   timeline: TimelineChoice;
   delivery: DeliveryChoice;
   pricingApproved: boolean;
+  executionReviewRequested?: boolean;
 }
 
 export function outstandingRequirements(input: ReadinessInput): string[] {
@@ -66,7 +67,7 @@ export function outstandingRequirements(input: ReadinessInput): string[] {
   // Unknown notarization is intentionally NOT a client blocker. Smart Intake or
   // document review resolves it. Only a positively-required notarization needs
   // the client to choose the execution method when neither RON nor mobile is known.
-  if (c.notarization === "required" && c.ron === "unknown" && c.mobile === "unknown") {
+  if (!input.executionReviewRequested && c.notarization === "required" && c.ron !== "required" && c.mobile !== "required") {
     out.push("Execution method (remote or in-person)");
   }
 
@@ -77,5 +78,5 @@ export function outstandingRequirements(input: ReadinessInput): string[] {
 }
 
 export function isQuoteReady(input: ReadinessInput): boolean {
-  return input.pricingApproved && outstandingRequirements(input).length === 0;
+  return !input.executionReviewRequested && input.pricingApproved && outstandingRequirements(input).length === 0;
 }

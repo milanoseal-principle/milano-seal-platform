@@ -27,6 +27,7 @@ import {
 import { safeText } from "@/lib/security/app-guards";
 import { resolveProfessionalReferral } from "@/lib/professional/referral";
 import {
+  EXECUTION_METHODS,
   executionTruthToLegacy,
   normalizeExecutionTruth,
   validateExecutionTruth,
@@ -259,6 +260,10 @@ export async function POST(req: NextRequest) {
   try {
     let raw = (await req.json()) as Record<string, unknown>;
 
+    if (raw.execution_method !== undefined && !(EXECUTION_METHODS as readonly unknown[]).includes(raw.execution_method)) {
+      return safeFailure("VALIDATION_FAILED", correlationId, 400, "Choose a supported execution method or request document review.");
+    }
+
     const useCase = String(raw.use_case || raw.useCase || "");
     const prefillDoc = String(raw.document_type || raw.document || "");
     const prefillCountry = String(raw.country || raw.destination_country || "");
@@ -328,9 +333,11 @@ export async function POST(req: NextRequest) {
     // Operator-entered and professional-referred Matters never auto-issue a
     // Wise request while execution facts are unresolved: they enter operator
     // review and receive a Matter-specific quote afterwards.
-    const executionReviewRequired =
+    const clientExecutionPreference = typeof raw.execution_method === "string" && sourceHint !== "admin" && sourceHint !== "professional";
+    const executionReviewRequired = clientExecutionPreference || (
       (sourceHint === "admin" || sourceHint === "professional") &&
-      (!executionValidation.valid || executionValidation.reviewRequired);
+      (!executionValidation.valid || executionValidation.reviewRequired)
+    );
 
     // Professional attribution is accepted only for a server-signed referral
     // reference bound to an existing, non-inactive profile. Anything else
@@ -353,7 +360,7 @@ export async function POST(req: NextRequest) {
     if (executionReviewRequired) {
       const reviewReasons = Array.from(
         new Set(
-          [...executionValidation.errors, "EXECUTION_REVIEW_REQUIRED"].filter(
+          [...executionValidation.errors, ...(clientExecutionPreference ? ["CLIENT_EXECUTION_PREFERENCE_REQUIRES_DOCUMENT_AND_JURISDICTION_REVIEW"] : []), "EXECUTION_REVIEW_REQUIRED"].filter(
             Boolean,
           ),
         ),
