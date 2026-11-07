@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -69,7 +70,10 @@ export async function GET(request: Request) {
   }
 
   // Fallback: check email against deals (new client with no role metadata yet)
-  const userEmail = user.email?.toLowerCase();
+  const userEmail = normalizeEmail(user.email);
+  if (userEmail && user.email_confirmed_at) {
+    try {
+      const emailPattern = userEmail.replace(/[\\%_]/g, "\\  const userEmail = user.email?.toLowerCase();
   if (userEmail) {
     try {
       const admin = createAdminClient();
@@ -80,6 +84,18 @@ export async function GET(request: Request) {
         .limit(1)
         .maybeSingle();
       if (dealMatch) {
+        return NextResponse.redirect(`${origin}/portal`);
+      }
+    } catch {}
+  }");
+      const admin = createAdminClient();
+      const { data: dealMatch } = await admin
+        .from("deals")
+        .select("id, email")
+        .ilike("email", emailPattern)
+        .limit(1)
+        .maybeSingle();
+      if (dealMatch && emailsMatch(dealMatch.email, userEmail)) {
         return NextResponse.redirect(`${origin}/portal`);
       }
     } catch {}
