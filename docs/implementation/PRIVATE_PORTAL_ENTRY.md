@@ -8,7 +8,7 @@ The service-role client Matter lookup also now requires a confirmed client ident
 
 ## Verification
 
-- Typecheck and lint passed.
+- Typecheck and lint passed. The production build passed after replacing the worktree dependency symlink with a local copy. The aggregate gate passed its other checks; its initial build failed solely on that Turbopack symlink restriction.
 - Full test suite: 1,030 passed; targeted tests cover redirect behavior, exact client ownership, wildcard candidates and rejected identities.
 - Portal entry validator passed; it now guards the private entry contract instead of requiring the old public demo.
 - Local HTTP rendering contains the canonical Next.js redirect instruction to `/portal`, with no sample operational panels.
