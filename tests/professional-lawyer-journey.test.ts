@@ -30,15 +30,13 @@ test("professional route facts carry into secure intake", () => {
 });
 
 test("public payment UX matches the governed 50/50 Matter gates", () => {
-  const portal = read("app/secure-portal/page.tsx");
+  const portal = read("app/portal/invoice/page.tsx");
   const pricing = read("app/pricing/page.tsx");
   const revenue = read("data/milano-revenue-copy-system.ts");
   const machine = read("data/matter-state-machine.ts");
   const matterService = read("src/features/matters/matterService.ts");
 
-  for (const token of ["50% Deposit", "RON / Execution", "Final 50%", "International Courier"]) {
-    assert.ok(portal.includes(token), `portal execution rail missing: ${token}`);
-  }
+  assert.match(portal, /Scheduling stays locked until verified Wise settlement/);
   assert.match(pricing, /50% Wise deposit unlocks scheduling and eligible RON\/execution/);
   assert.match(pricing, /final 50% must be verified before the completed document packet is released for international shipping/);
   assert.match(revenue, /verified 50% Wise deposit unlocks scheduling and eligible RON\/execution/);

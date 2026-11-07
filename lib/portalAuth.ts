@@ -1,3 +1,6 @@
+import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
+import { readAppRole } from "@/lib/auth/server-role";
+import { isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -39,32 +42,44 @@ export interface PortalDeal {
   is_paid_and_released: boolean | null;
 }
 
-export async function getAllClientDeals(): Promise<{
+export async function getAllClientDeals(
+  dependencies = { session: createServerClient, admin: createAdminClient },
+): Promise<{
   email: string;
   deals: PortalDeal[];
 } | null> {
-  const supabase = await createServerClient();
+  const supabase = await dependencies.session();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user?.email) return null;
+  if (
+    !user?.email ||
+    !user.email_confirmed_at ||
+    !isRouteAllowedForRole("/portal", readAppRole(user))
+  )
+    return null;
 
-  const email = user.email.trim().toLowerCase();
-  const admin = createAdminClient();
+  const email = normalizeEmail(user.email);
+  const emailPattern = email.replace(/[\\%_]/g, "\\$&");
+  const admin = dependencies.admin();
   const { data } = await admin
     .from("deals")
     .select(
       "id, client_name, email, phone, document_type, destination_country, country, status, payment_status, payment_confirmed, amount, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
     )
-    .ilike("email", email)
+    .ilike("email", emailPattern)
     .order("created_at", { ascending: false });
 
-  return { email, deals: (data as PortalDeal[]) ?? [] };
+  // Pattern matching is a query optimization, never ownership authority.
+  // Exact normalized comparison also rejects PostgREST wildcard aliases and
+  // any unexpected candidate row before it can reach a portal response.
+  const deals = ((data as PortalDeal[]) ?? []).filter((deal) =>
+    emailsMatch(deal.email, email),
+  );
+  return { email, deals };
 }
 
-export async function getCurrentClientDeal(
-  dealId?: string | null,
-): Promise<{
+export async function getCurrentClientDeal(dealId?: string | null): Promise<{
   email: string;
   deal: PortalDeal | null;
 } | null> {
