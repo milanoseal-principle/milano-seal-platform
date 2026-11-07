@@ -57,12 +57,13 @@ try {
       const page = await context.newPage();
       const errors = [];
       const conciergeRequests = [];
+      let expectedConciergeFailure = false;
 
       page.on("pageerror", (error) => errors.push(`pageerror: ${error.stack || error.message}`));
       page.on("response", (response) => {
         if (response.status() < 400) return;
         const url = new URL(response.url());
-        if (route.concierge && url.pathname === "/api/concierge") return;
+        if (route.concierge && expectedConciergeFailure && response.status() === 503 && url.pathname === "/api/concierge") return;
         if (localRun && url.pathname === "/_vercel/insights/script.js") return;
         errors.push(`response ${response.status()}: ${response.url()}`);
       });
@@ -70,6 +71,7 @@ try {
         if (message.type() !== "error") return;
         const text = message.text();
         if (text.startsWith("Failed to load resource: the server responded with a status of 404")) return;
+        if (route.concierge && expectedConciergeFailure && text.startsWith("Failed to load resource: the server responded with a status of 503")) return;
         errors.push(`console: ${text}`);
       });
       page.on("requestfailed", (request) => {
@@ -150,8 +152,10 @@ try {
           await requestRoute.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, reference: submitted.request_id, notification: "unavailable" }) });
         });
 
+        expectedConciergeFailure = true;
         await submit.click();
         await page.getByRole("alert").waitFor({ state: "visible" });
+        expectedConciergeFailure = false;
         assert.equal(await name.inputValue(), "Maria Rossi");
         assert.equal(await page.evaluate(() => document.activeElement?.id), "concierge-form-error");
         await submit.click();
