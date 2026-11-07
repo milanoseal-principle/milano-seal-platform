@@ -90,7 +90,9 @@ const PORTAL_STAGE_INDEX: Record<string, number> = {
 };
 
 function slugFromPathname(pathname: string): string | undefined {
-  const match = pathname.match(/^\/(?:countries|professional)\/([a-z0-9-]+)(?:\/|$)/i);
+  const match = pathname.match(
+    /^\/(?:countries|professional)\/([a-z0-9-]+)(?:\/|$)/i,
+  );
   return match?.[1]?.toLowerCase();
 }
 
@@ -112,7 +114,12 @@ function contextForLocation(
   if (pathname.startsWith("/pricing")) {
     return {
       label: "Execution Quote",
-      chips: ["How is my quote built?", "Which execution lane fits?", "Start a Matter", "Payment process"],
+      chips: [
+        "How is my quote built?",
+        "Which execution lane fits?",
+        "Start a Matter",
+        "Payment process",
+      ],
       progress: ["Scope", "Route", "Quote", "Payment", "Execution"],
       activeProgressIndex: 0,
     };
@@ -121,7 +128,12 @@ function contextForLocation(
   if (pathname.startsWith("/process")) {
     return {
       label: "Execution Process",
-      chips: ["Show my next step", "Explain the payment gate", "Apostille stage", "Start a Matter"],
+      chips: [
+        "Show my next step",
+        "Explain the payment gate",
+        "Apostille stage",
+        "Start a Matter",
+      ],
       progress: ["Intake", "Review", "Payment", "Execution", "Release"],
       activeProgressIndex: 0,
     };
@@ -129,12 +141,24 @@ function contextForLocation(
 
   if (pathname.startsWith("/portal")) {
     const matterLabel = portalDeal?.display_id || portalDeal?.matter_id;
-    const detail = [portalDeal?.destination_country, portalDeal?.document_type].filter(Boolean).join(" · ");
+    const detail = [portalDeal?.destination_country, portalDeal?.document_type]
+      .filter(Boolean)
+      .join(" · ");
     return {
-      label: matterLabel ? `${matterLabel}${detail ? ` · ${detail}` : ""}` : "Secure Matter Portal",
-      chips: ["What is my Matter status?", "What happens next?", "Explain my current stage", "Request Milano review"],
+      label: matterLabel
+        ? `${matterLabel}${detail ? ` · ${detail}` : ""}`
+        : "Secure Matter Portal",
+      chips: [
+        "What is my Matter status?",
+        "What happens next?",
+        "Explain my current stage",
+        "Request Milano review",
+      ],
       progress: ["Matter", "Payment", "Execution", "Authentication", "Release"],
-      activeProgressIndex: Math.max(0, Math.min(4, PORTAL_STAGE_INDEX[portalDeal?.matter_status || ""] ?? 0)),
+      activeProgressIndex: Math.max(
+        0,
+        Math.min(4, PORTAL_STAGE_INDEX[portalDeal?.matter_status || ""] ?? 0),
+      ),
     };
   }
 
@@ -150,31 +174,67 @@ function contextForLocation(
     session.signer && session.signer !== "unknown" ? session.signer : undefined,
   ].filter(Boolean).length;
 
-  if (pathname.startsWith("/countries") || pathname.startsWith("/map") || pathname.startsWith("/professional")) {
+  if (
+    pathname.startsWith("/countries") ||
+    pathname.startsWith("/map") ||
+    pathname.startsWith("/professional")
+  ) {
     return {
-      label: label || (pathname.startsWith("/professional") ? "International Professional Execution" : "Global Document Intelligence"),
+      label:
+        label ||
+        (pathname.startsWith("/professional")
+          ? "International Professional Execution"
+          : "Global Document Intelligence"),
       chips: [
-        destination ? `Review the ${destination.name} route` : "Check a country",
+        destination
+          ? `Review the ${destination.name} route`
+          : "Check a country",
         "Pre-flight my Matter",
         "Common rejection risks",
         "Start secure intake",
       ],
-      progress: ["Destination", "Document", "Origin", "Signer", "Operator review"],
+      progress: [
+        "Destination",
+        "Document",
+        "Origin",
+        "Signer",
+        "Operator review",
+      ],
       activeProgressIndex: Math.min(4, completed),
     };
   }
 
   return {
     label: label || "Global Document Intelligence",
-    chips: ["Review my document route", "Check a country", "Pre-flight my Matter", "Start secure intake"],
-    progress: ["Destination", "Document", "Origin", "Signer", "Operator review"],
+    chips: [
+      "Review my document route",
+      "Check a country",
+      "Pre-flight my Matter",
+      "Start secure intake",
+    ],
+    progress: [
+      "Destination",
+      "Document",
+      "Origin",
+      "Signer",
+      "Operator review",
+    ],
     activeProgressIndex: Math.min(4, completed),
   };
 }
 
-function ProgressStrip({ items, activeIndex }: { items: string[]; activeIndex: number }) {
+function ProgressStrip({
+  items,
+  activeIndex,
+}: {
+  items: string[];
+  activeIndex: number;
+}) {
   return (
-    <div className="grid grid-cols-5 gap-1.5" aria-label="Current execution progress">
+    <div
+      className="grid grid-cols-5 gap-1.5"
+      aria-label="Current execution progress"
+    >
       {items.map((item, index) => {
         const complete = index < activeIndex;
         const active = index === activeIndex;
@@ -182,10 +242,16 @@ function ProgressStrip({ items, activeIndex }: { items: string[]; activeIndex: n
           <div key={item} className="min-w-0">
             <div
               className={`h-1 rounded-full transition-colors ${
-                complete ? "bg-emerald-400/70" : active ? "bg-[var(--ms-gold)]" : "bg-white/[0.07]"
+                complete
+                  ? "bg-emerald-400/70"
+                  : active
+                    ? "bg-[var(--ms-gold)]"
+                    : "bg-white/[0.07]"
               }`}
             />
-            <p className={`mt-1.5 truncate text-[10px] ${complete ? "text-emerald-300/55" : active ? "text-[var(--ms-gold)]/80" : "text-white/25"}`}>
+            <p
+              className={`mt-1.5 truncate text-[10px] ${complete ? "text-emerald-300/55" : active ? "text-[var(--ms-gold)]/80" : "text-white/25"}`}
+            >
               {item}
             </p>
           </div>
@@ -208,7 +274,9 @@ function PreflightSelect({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-white/38">{label}</span>
+      <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-white/38">
+        {label}
+      </span>
       <span className="relative block">
         <select
           value={value}
@@ -227,7 +295,7 @@ export function MilanoExecutionCopilot() {
   const pathname = usePathname();
   // Counsel has a focused inquiry and mobile action; the global launcher must
   // not cover its controls or introduce another first-contact workflow.
-  return pathname === "/counsel" ? null : <ExecutionCopilotContent />;
+  return pathname?.startsWith("/counsel") ? null : <ExecutionCopilotContent />;
 }
 
 function ExecutionCopilotContent() {
@@ -241,7 +309,8 @@ function ExecutionCopilotContent() {
   const [loading, setLoading] = useState(false);
   const [reviewRequestBusy, setReviewRequestBusy] = useState(false);
   const [portalDeal, setPortalDeal] = useState<PortalSafeDeal | null>(null);
-  const [professionalSession, setProfessionalSession] = useState<ProfessionalSessionState>({ version: 1 });
+  const [professionalSession, setProfessionalSession] =
+    useState<ProfessionalSessionState>({ version: 1 });
   const [receivingAuthority, setReceivingAuthority] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -253,8 +322,11 @@ function ExecutionCopilotContent() {
       destinationFromQuery(searchParams.get("destination")) ||
       destinationFromQuery(searchParams.get("country"));
     const destinationSlug = pathnameSlug || querySlug || stored.destinationSlug;
-    const documentCandidate = searchParams.get("document_type") || searchParams.get("document");
-    const validDocument = PROFESSIONAL_DOCUMENT_OPTIONS.some((option) => option.value === documentCandidate)
+    const documentCandidate =
+      searchParams.get("document_type") || searchParams.get("document");
+    const validDocument = PROFESSIONAL_DOCUMENT_OPTIONS.some(
+      (option) => option.value === documentCandidate,
+    )
       ? (documentCandidate as ProfessionalDocumentClass)
       : stored.documentClass;
     const next = sanitizeProfessionalSession({
@@ -274,10 +346,13 @@ function ExecutionCopilotContent() {
 
   useEffect(() => {
     const onSession = (event: Event) => {
-      setProfessionalSession(sanitizeProfessionalSession((event as CustomEvent<unknown>).detail));
+      setProfessionalSession(
+        sanitizeProfessionalSession((event as CustomEvent<unknown>).detail),
+      );
     };
     window.addEventListener(PROFESSIONAL_SESSION_EVENT, onSession);
-    return () => window.removeEventListener(PROFESSIONAL_SESSION_EVENT, onSession);
+    return () =>
+      window.removeEventListener(PROFESSIONAL_SESSION_EVENT, onSession);
   }, []);
 
   useEffect(() => {
@@ -289,7 +364,9 @@ function ExecutionCopilotContent() {
     void fetch("/api/portal/me", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
-        const body = (await response.json()) as { deal?: PortalSafeDeal | null };
+        const body = (await response.json()) as {
+          deal?: PortalSafeDeal | null;
+        };
         return body.deal ?? null;
       })
       .then((deal) => {
@@ -367,14 +444,20 @@ function ExecutionCopilotContent() {
         const response = await fetch("/api/assistant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: prompt, role, context: safeAssistantContext }),
+          body: JSON.stringify({
+            message: prompt,
+            role,
+            context: safeAssistantContext,
+          }),
         });
         const data = (await response.json()) as { reply?: string };
         setMessages((previous) => [
           ...previous,
           {
             role: "assistant",
-            text: data.reply || "I can help structure the next operational step for this Matter.",
+            text:
+              data.reply ||
+              "I can help structure the next operational step for this Matter.",
           },
         ]);
       } catch {
@@ -400,22 +483,30 @@ function ExecutionCopilotContent() {
     if (reviewRequestBusy) return;
     setReviewRequestBusy(true);
     try {
-      const publicSessionReference = role === "PUBLIC"
-        ? `copilot-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
-        : undefined;
+      const publicSessionReference =
+        role === "PUBLIC"
+          ? `copilot-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
+          : undefined;
       const response = await fetch("/api/review-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           matter_id: role === "PORTAL" ? portalDeal?.matter_id : undefined,
           session_reference: publicSessionReference,
-          country: role === "PORTAL" ? portalDeal?.destination_country : journey.destination?.name,
-          document_type: role === "PORTAL" ? portalDeal?.document_type : professionalSession.documentClass,
+          country:
+            role === "PORTAL"
+              ? portalDeal?.destination_country
+              : journey.destination?.name,
+          document_type:
+            role === "PORTAL"
+              ? portalDeal?.document_type
+              : professionalSession.documentClass,
           origin: professionalSession.origin,
           signer_posture: professionalSession.signer,
-          question: role === "PORTAL"
-            ? "Human review requested from the secure Matter portal through Milano Execution Copilot."
-            : "Human review requested from Milano Execution Copilot before Matter creation.",
+          question:
+            role === "PORTAL"
+              ? "Human review requested from the secure Matter portal through Milano Execution Copilot."
+              : "Human review requested from Milano Execution Copilot before Matter creation.",
           safe_context: {
             pathname,
             route_status: role === "PUBLIC" ? journey.status : undefined,
@@ -423,15 +514,20 @@ function ExecutionCopilotContent() {
           },
         }),
       });
-      const body = (await response.json()) as { review?: { id?: string; client_label?: string }; error?: string };
-      if (!response.ok || !body.review?.id) throw new Error(body.error || "REVIEW_REQUEST_FAILED");
+      const body = (await response.json()) as {
+        review?: { id?: string; client_label?: string };
+        error?: string;
+      };
+      if (!response.ok || !body.review?.id)
+        throw new Error(body.error || "REVIEW_REQUEST_FAILED");
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
-          text: role === "PORTAL"
-            ? `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. You can track persisted human-review status in Portal → Milano Review.`
-            : `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. Continue secure intake to create the Matter; this request remains a separate governed review record until an authorized Matter link exists.`,
+          text:
+            role === "PORTAL"
+              ? `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. You can track persisted human-review status in Portal → Milano Review.`
+              : `${body.review?.client_label || "MILANO REVIEW REQUESTED"}. Continue secure intake to create the Matter; this request remains a separate governed review record until an authorized Matter link exists.`,
         },
       ]);
       setMode("chat");
@@ -445,17 +541,33 @@ function ExecutionCopilotContent() {
     } catch {
       setMessages((previous) => [
         ...previous,
-        { role: "assistant", text: "Milano Review was not recorded. No human-review status has been claimed. Please retry." },
+        {
+          role: "assistant",
+          text: "Milano Review was not recorded. No human-review status has been claimed. Please retry.",
+        },
       ]);
       setMode("chat");
     } finally {
       setReviewRequestBusy(false);
     }
-  }, [journey, pathname, portalDeal, professionalSession, receivingAuthority, reviewRequestBusy, role, router]);
+  }, [
+    journey,
+    pathname,
+    portalDeal,
+    professionalSession,
+    receivingAuthority,
+    reviewRequestBusy,
+    role,
+    router,
+  ]);
 
   const handleAction = (chip: string) => {
     const normalized = chip.toLowerCase();
-    if (normalized.includes("pre-flight") || normalized.includes("preflight") || normalized.includes("document route")) {
+    if (
+      normalized.includes("pre-flight") ||
+      normalized.includes("preflight") ||
+      normalized.includes("document route")
+    ) {
       setMode("preflight");
       return;
     }
@@ -521,14 +633,27 @@ function ExecutionCopilotContent() {
             aria-label="Milano Execution Copilot"
           >
             <header className="border-b border-white/[0.06] p-4 sm:p-5">
-              <div className="mx-auto mb-3 hidden h-1 w-12 rounded-full bg-white/10 max-sm:block" aria-hidden="true" />
+              <div
+                className="mx-auto mb-3 hidden h-1 w-12 rounded-full bg-white/10 max-sm:block"
+                aria-hidden="true"
+              />
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/brand/milano-seal-orb-v2.png" alt="" width={38} height={38} className="h-[38px] w-[38px] object-contain" />
+                  <img
+                    src="/brand/milano-seal-orb-v2.png"
+                    alt=""
+                    width={38}
+                    height={38}
+                    className="h-[38px] w-[38px] object-contain"
+                  />
                   <div>
-                    <p className="text-sm font-semibold tracking-[0.04em] text-white">Milano Execution Copilot</p>
-                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/70">● READY · Global Document Intelligence</p>
+                    <p className="text-sm font-semibold tracking-[0.04em] text-white">
+                      Milano Execution Copilot
+                    </p>
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/70">
+                      ● READY · Global Document Intelligence
+                    </p>
                   </div>
                 </div>
                 <button
@@ -542,9 +667,18 @@ function ExecutionCopilotContent() {
               </div>
 
               <div className="mt-4 rounded-xl border border-[var(--ms-gold)]/12 bg-[var(--ms-gold)]/[0.025] p-3.5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/50">Current context</p>
-                <p className="mt-1.5 text-[15px] text-white/72">{context.label}</p>
-                <div className="mt-3"><ProgressStrip items={context.progress} activeIndex={context.activeProgressIndex} /></div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ms-gold)]/50">
+                  Current context
+                </p>
+                <p className="mt-1.5 text-[15px] text-white/72">
+                  {context.label}
+                </p>
+                <div className="mt-3">
+                  <ProgressStrip
+                    items={context.progress}
+                    activeIndex={context.activeProgressIndex}
+                  />
+                </div>
               </div>
             </header>
 
@@ -559,58 +693,99 @@ function ExecutionCopilotContent() {
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to conversation
                   </button>
 
-                  <p className="font-mono text-[10px] uppercase tracking-[0.17em] text-[var(--ms-gold)]/58">Pre-flight a Matter</p>
-                  <h2 className="mt-2 font-serif text-2xl text-white">Structure the route before execution.</h2>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.17em] text-[var(--ms-gold)]/58">
+                    Pre-flight a Matter
+                  </p>
+                  <h2 className="mt-2 font-serif text-2xl text-white">
+                    Structure the route before execution.
+                  </h2>
                   <p className="mt-2 text-sm leading-6 text-white/40">
-                    These selections organize the operational pathway. They do not approve, pay, schedule, create, or modify a Matter.
+                    These selections organize the operational pathway. They do
+                    not approve, pay, schedule, create, or modify a Matter.
                   </p>
 
                   <div className="mt-5 space-y-4">
                     <PreflightSelect
                       label="Where will the document be used?"
                       value={professionalSession.destinationSlug || ""}
-                      onChange={(value) => updateSession({ destinationSlug: value || undefined })}
+                      onChange={(value) =>
+                        updateSession({ destinationSlug: value || undefined })
+                      }
                     >
                       <option value="">Select destination</option>
                       {HAGUE_PROFESSIONAL_DESTINATIONS.map((destination) => (
-                        <option key={destination.slug} value={destination.slug}>{destination.name}</option>
+                        <option key={destination.slug} value={destination.slug}>
+                          {destination.name}
+                        </option>
                       ))}
                     </PreflightSelect>
 
                     <PreflightSelect
                       label="What type of document?"
                       value={professionalSession.documentClass || ""}
-                      onChange={(value) => updateSession({ documentClass: (value || undefined) as ProfessionalDocumentClass | undefined })}
+                      onChange={(value) =>
+                        updateSession({
+                          documentClass: (value || undefined) as
+                            | ProfessionalDocumentClass
+                            | undefined,
+                        })
+                      }
                     >
                       <option value="">Select document class</option>
                       {PROFESSIONAL_DOCUMENT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </PreflightSelect>
 
                     <PreflightSelect
                       label="Where was it issued / executed?"
                       value={professionalSession.origin || ""}
-                      onChange={(value) => updateSession({ origin: (value || undefined) as OriginPosture | undefined })}
+                      onChange={(value) =>
+                        updateSession({
+                          origin: (value || undefined) as
+                            | OriginPosture
+                            | undefined,
+                        })
+                      }
                     >
                       <option value="">Select U.S. origin</option>
-                      {ORIGINS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      {ORIGINS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </PreflightSelect>
 
                     <PreflightSelect
                       label="Signer posture"
                       value={professionalSession.signer || ""}
-                      onChange={(value) => updateSession({ signer: (value || undefined) as SignerPosture | undefined })}
+                      onChange={(value) =>
+                        updateSession({
+                          signer: (value || undefined) as
+                            | SignerPosture
+                            | undefined,
+                        })
+                      }
                     >
                       <option value="">Select signer posture</option>
-                      {SIGNERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      {SIGNERS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </PreflightSelect>
 
                     <label className="block">
-                      <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-white/38">Receiving authority — if known</span>
+                      <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-white/38">
+                        Receiving authority — if known
+                      </span>
                       <input
                         value={receivingAuthority}
-                        onChange={(event) => setReceivingAuthority(event.target.value)}
+                        onChange={(event) =>
+                          setReceivingAuthority(event.target.value)
+                        }
                         placeholder="Court, registry, notary, municipality, bank…"
                         className="min-h-12 w-full rounded-xl border border-white/[0.08] bg-[#0B0B0E] px-3 text-[15px] text-white/74 outline-none placeholder:text-white/22 focus:border-[var(--ms-gold)]/35"
                       />
@@ -620,19 +795,32 @@ function ExecutionCopilotContent() {
                   <div className="mt-6 rounded-2xl border border-[var(--ms-gold)]/14 bg-[var(--ms-gold)]/[0.025] p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--ms-gold)]/58">Matter pre-flight</p>
-                        <p className="mt-1 font-serif text-xl text-white">{journey.routeLabel}</p>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--ms-gold)]/58">
+                          Matter pre-flight
+                        </p>
+                        <p className="mt-1 font-serif text-xl text-white">
+                          {journey.routeLabel}
+                        </p>
                       </div>
-                      <span className="rounded-full border border-white/[0.08] px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/48">{reviewStatus}</span>
+                      <span className="rounded-full border border-white/[0.08] px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/48">
+                        {reviewStatus}
+                      </span>
                     </div>
 
                     {journey.routeSteps.length > 0 && (
                       <div className="mt-4 space-y-0">
                         {journey.routeSteps.map((step, index) => (
-                          <div key={`${step}-${index}`} className="relative flex gap-3 pb-4 last:pb-0">
-                            {index < journey.routeSteps.length - 1 && <span className="absolute left-[6px] top-4 h-[calc(100%-4px)] w-px bg-[var(--ms-gold)]/18" />}
+                          <div
+                            key={`${step}-${index}`}
+                            className="relative flex gap-3 pb-4 last:pb-0"
+                          >
+                            {index < journey.routeSteps.length - 1 && (
+                              <span className="absolute left-[6px] top-4 h-[calc(100%-4px)] w-px bg-[var(--ms-gold)]/18" />
+                            )}
                             <span className="relative mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--ms-gold)]/35 bg-[#060608]" />
-                            <p className="text-sm leading-5 text-white/62">{step}</p>
+                            <p className="text-sm leading-5 text-white/62">
+                              {step}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -640,18 +828,40 @@ function ExecutionCopilotContent() {
 
                     <div className="mt-5 grid gap-2 sm:grid-cols-2">
                       <div className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
-                        <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-emerald-300/55">Confirmed</p>
+                        <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-emerald-300/55">
+                          Confirmed
+                        </p>
                         <div className="mt-2 space-y-1.5">
-                          {journey.confirmed.length ? journey.confirmed.map((item) => (
-                            <p key={item} className="flex gap-2 text-xs leading-5 text-white/44"><Check className="mt-1 h-3 w-3 shrink-0 text-emerald-300/60" />{item}</p>
-                          )) : <p className="text-xs text-white/28">Add routing facts to begin.</p>}
+                          {journey.confirmed.length ? (
+                            journey.confirmed.map((item) => (
+                              <p
+                                key={item}
+                                className="flex gap-2 text-xs leading-5 text-white/44"
+                              >
+                                <Check className="mt-1 h-3 w-3 shrink-0 text-emerald-300/60" />
+                                {item}
+                              </p>
+                            ))
+                          ) : (
+                            <p className="text-xs text-white/28">
+                              Add routing facts to begin.
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="rounded-xl border border-amber-300/10 bg-amber-300/[0.02] p-3">
-                        <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-amber-200/55">Still to confirm</p>
+                        <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-amber-200/55">
+                          Still to confirm
+                        </p>
                         <div className="mt-2 space-y-1.5">
                           {journey.reviewRequired.map((item) => (
-                            <p key={item} className="flex gap-2 text-xs leading-5 text-white/42"><Circle className="mt-1 h-3 w-3 shrink-0 text-amber-200/45" />{item}</p>
+                            <p
+                              key={item}
+                              className="flex gap-2 text-xs leading-5 text-white/42"
+                            >
+                              <Circle className="mt-1 h-3 w-3 shrink-0 text-amber-200/45" />
+                              {item}
+                            </p>
                           ))}
                         </div>
                       </div>
@@ -667,7 +877,10 @@ function ExecutionCopilotContent() {
                   </div>
 
                   <p className="mt-4 text-xs leading-5 text-white/28">
-                    The Milano Seal coordinates document execution and authentication logistics. Legal advice and receiving-authority legal judgment remain with counsel or the appropriate professional advisor.
+                    The Milano Seal coordinates document execution and
+                    authentication logistics. Legal advice and
+                    receiving-authority legal judgment remain with counsel or
+                    the appropriate professional advisor.
                   </p>
                 </div>
               ) : (
@@ -675,10 +888,13 @@ function ExecutionCopilotContent() {
                   {empty && (
                     <div>
                       <p className="text-base leading-7 text-white/72">
-                        I can structure a document route, identify missing operational inputs, explain the Milano process, and hand your selections into secure intake.
+                        I can structure a document route, identify missing
+                        operational inputs, explain the Milano process, and hand
+                        your selections into secure intake.
                       </p>
                       <p className="mt-2 text-xs leading-5 text-white/34">
-                        I do not provide legal advice or guarantee apostille issuance or receiving-authority acceptance.
+                        I do not provide legal advice or guarantee apostille
+                        issuance or receiving-authority acceptance.
                       </p>
 
                       <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -697,13 +913,38 @@ function ExecutionCopilotContent() {
                       <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.012] p-4">
                         <div className="flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-[var(--ms-gold)]/80" />
-                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/60">Progressive Certainty</p>
+                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/60">
+                            Progressive Certainty
+                          </p>
                         </div>
                         <div className="mt-3 space-y-2.5">
-                          {["Destination", "Document", "Origin", "Signer posture", "Operator review"].map((item, index) => (
-                            <div key={item} className="flex items-center gap-2.5">
-                              {index < context.activeProgressIndex ? <Check className="h-3.5 w-3.5 text-emerald-300/70" /> : index === context.activeProgressIndex ? <Check className="h-3.5 w-3.5 text-[var(--ms-gold)]" /> : <Circle className="h-3.5 w-3.5 text-white/18" />}
-                              <span className={index <= context.activeProgressIndex ? "text-xs text-white/62" : "text-xs text-white/30"}>{item}</span>
+                          {[
+                            "Destination",
+                            "Document",
+                            "Origin",
+                            "Signer posture",
+                            "Operator review",
+                          ].map((item, index) => (
+                            <div
+                              key={item}
+                              className="flex items-center gap-2.5"
+                            >
+                              {index < context.activeProgressIndex ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-300/70" />
+                              ) : index === context.activeProgressIndex ? (
+                                <Check className="h-3.5 w-3.5 text-[var(--ms-gold)]" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5 text-white/18" />
+                              )}
+                              <span
+                                className={
+                                  index <= context.activeProgressIndex
+                                    ? "text-xs text-white/62"
+                                    : "text-xs text-white/30"
+                                }
+                              >
+                                {item}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -713,15 +954,22 @@ function ExecutionCopilotContent() {
 
                   <div className="space-y-3">
                     {messages.map((message, index) => (
-                      <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-6 ${message.role === "user" ? "border border-[var(--ms-gold)]/18 bg-[var(--ms-gold)]/[0.06] text-white/82" : "border border-white/[0.07] bg-white/[0.02] text-white/68"}`}>
+                      <div
+                        key={`${message.role}-${index}`}
+                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-6 ${message.role === "user" ? "border border-[var(--ms-gold)]/18 bg-[var(--ms-gold)]/[0.06] text-white/82" : "border border-white/[0.07] bg-white/[0.02] text-white/68"}`}
+                        >
                           {message.text}
                         </div>
                       </div>
                     ))}
                     {loading && (
                       <div className="flex justify-start">
-                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-sm text-white/38">Structuring response…</div>
+                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-sm text-white/38">
+                          Structuring response…
+                        </div>
                       </div>
                     )}
                     <div ref={endRef} />
@@ -770,7 +1018,10 @@ function ExecutionCopilotContent() {
                     disabled={reviewRequestBusy}
                     className="inline-flex min-h-10 items-center gap-2 text-xs text-white/36 transition-colors hover:text-[var(--ms-gold)] disabled:opacity-40"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" /> {reviewRequestBusy ? "Recording Milano review…" : "Request Milano review"}
+                    <MessageCircle className="h-3.5 w-3.5" />{" "}
+                    {reviewRequestBusy
+                      ? "Recording Milano review…"
+                      : "Request Milano review"}
                   </button>
                 </div>
               </form>

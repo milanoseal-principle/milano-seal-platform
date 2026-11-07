@@ -1,3 +1,8 @@
+import { COUNSEL_USE_CASES } from "@/lib/counsel/content";
+import {
+  CounselDiscovery,
+  CounselFAQ,
+} from "@/components/counsel/CounselContent";
 import type { Metadata } from "next";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { CounselExperience } from "@/components/counsel/CounselExperience";
@@ -40,7 +45,15 @@ export default function CounselPage() {
   return (
     <PublicShell>
       <main className="counsel-page">
-        <CounselExperience countries={countries} />
+        <CounselExperience
+          countries={countries}
+          useCases={COUNSEL_USE_CASES.map(({ slug, title }) => ({
+            slug,
+            title,
+          }))}
+        />
+        <CounselDiscovery />
+        <CounselFAQ />
       </main>
     </PublicShell>
   );

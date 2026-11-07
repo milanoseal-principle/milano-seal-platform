@@ -21,14 +21,21 @@ export async function POST(request: Request) {
       typeof raw.matterId === "string" ? raw.matterId : undefined,
     );
 
-    await recordUxLearningEvent({
+    const result = await recordUxLearningEvent({
       matterId: payload.matterId,
-      surface: raw.event.startsWith("counsel_") ? "public_site" : "intake",
+      surface:
+        raw.event.startsWith("counsel_") ||
+        payload.metadata.journeySurface === "counsel"
+          ? "public_site"
+          : "intake",
       eventType: payload.event,
       metadata: payload.metadata,
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      { ok: result.recorded },
+      { status: result.recorded ? 200 : 202 },
+    );
   } catch {
     // Analytics is observational only and must never block the client workflow.
     return NextResponse.json({ ok: false }, { status: 202 });

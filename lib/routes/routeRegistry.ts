@@ -1,6 +1,12 @@
+import { COUNSEL_USE_CASES } from "@/lib/counsel/content";
 export const PUBLIC_LIVE_ROUTES = [
   "/",
   "/counsel",
+  "/counsel/corridors",
+  "/counsel/use-cases",
+  ...COUNSEL_USE_CASES.map(
+    (item) => `/counsel/use-cases/${item.slug}` as const,
+  ),
   "/pricing",
   "/secure-portal",
   "/intake",
@@ -52,7 +58,11 @@ export const FUTURE_PROGRAMMATIC_ENGINE = {
   ],
 } as const;
 
-export type RouteStatus = "public_live" | "internal_noindex" | "staged_noindex" | "unknown";
+export type RouteStatus =
+  | "public_live"
+  | "internal_noindex"
+  | "staged_noindex"
+  | "unknown";
 export type PublicLiveRoute = (typeof PUBLIC_LIVE_ROUTES)[number];
 export type InternalDashboardRoute = (typeof INTERNAL_DASHBOARD_ROUTES)[number];
 export type StagedAuthorityRoute = (typeof STAGED_AUTHORITY_ROUTES)[number];
@@ -61,11 +71,15 @@ export function isPublicLiveRoute(route: string): route is PublicLiveRoute {
   return PUBLIC_LIVE_ROUTES.includes(route as PublicLiveRoute);
 }
 
-export function isInternalDashboardRoute(route: string): route is InternalDashboardRoute {
+export function isInternalDashboardRoute(
+  route: string,
+): route is InternalDashboardRoute {
   return INTERNAL_DASHBOARD_ROUTES.includes(route as InternalDashboardRoute);
 }
 
-export function isStagedAuthorityRoute(route: string): route is StagedAuthorityRoute {
+export function isStagedAuthorityRoute(
+  route: string,
+): route is StagedAuthorityRoute {
   return STAGED_AUTHORITY_ROUTES.includes(route as StagedAuthorityRoute);
 }
 

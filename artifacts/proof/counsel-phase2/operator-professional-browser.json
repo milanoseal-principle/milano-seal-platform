@@ -1,0 +1,148 @@
+{
+  "results": [
+    {
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "width": 412,
+      "overflow": false
+    },
+    {
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 412,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 1280,
+      "overflow": false
+    },
+    {
+      "surface": "professional_form",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 412,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 1280,
+      "overflow": false
+    },
+    {
+      "surface": "professional_dashboard",
+      "width": 1440,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "notes": [
+    "Isolated existing operator component, synthetic responses; not hosted auth/RLS/provider certification."
+  ]
+}

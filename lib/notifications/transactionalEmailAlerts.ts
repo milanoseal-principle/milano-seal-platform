@@ -248,7 +248,7 @@ export async function sendCounselInquiryAlerts(
         .maybeSingle();
       if (prior?.status === "sent" && prior.provider_message_id)
         return "provider_accepted";
-      const message = `Counsel inquiry ${reference}. Review in the operator inbox: /dashboard/marketing/counsel. Name: ${lead.full_name}. Firm: ${String(lead.details?.firm ?? "Not provided").slice(0, 240)}. Country: ${lead.country}. Email: ${lead.email}. Destination: ${String(lead.details?.destination ?? "Not provided").slice(0, 100)}. Source: ${String(lead.details?.attribution?.utm_source ?? lead.details?.attribution?.source ?? "Not provided").slice(0, 100)}. Document: ${lead.details?.document_status ?? "not_provided"}. Review the summary and document in the authenticated inbox. No Matter has been authorized.`;
+      const message = `Counsel inquiry ${reference}. Review in the operator inbox: https://www.themilanoseal.com/dashboard/marketing/counsel#inquiry-${reference}. Name: ${lead.full_name}. Firm: ${String(lead.details?.firm ?? "Not provided").slice(0, 240)}. Country: ${lead.country}. Email: ${lead.email}. Destination: ${String(lead.details?.destination ?? "Not provided").slice(0, 100)}. Source: ${String(lead.details?.attribution?.utm_source ?? lead.details?.attribution?.source ?? "Not provided").slice(0, 100)}. Document: ${lead.details?.document_status ?? "not_provided"}. Review the summary and document in the authenticated inbox. No Matter has been authorized.`;
       let notificationId = prior?.id;
       if (!notificationId) {
         const { data, error: queueError } = await admin

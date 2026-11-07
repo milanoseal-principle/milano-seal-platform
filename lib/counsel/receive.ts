@@ -1,13 +1,17 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { inquirySchema, documentError } from "@/lib/counsel/inquiry";
+import {
+  inquirySchema,
+  documentError,
+  safeCounselFilename,
+} from "@/lib/counsel/inquiry";
 import { sendCounselInquiryAlerts } from "@/lib/notifications/transactionalEmailAlerts";
 
 const hash = (value: string | Uint8Array) =>
   createHash("sha256").update(value).digest("hex");
-const fail = (error: string, status: number) =>
-  NextResponse.json({ ok: false, error }, { status });
+const fail = (error: string, status: number, code = "RECEIPT_UNCONFIRMED") =>
+  NextResponse.json({ ok: false, error, code }, { status });
 
 export async function receiveCounselInquiry(
   request: Request,
@@ -84,11 +88,16 @@ export async function receiveCounselInquiry(
       .eq("id", inquiry.request_id)
       .maybeSingle();
     if (lookupError)
-      return fail("We could not receive your request. Please try again.", 503);
+      return fail(
+        "We could not receive your request. Please try again.",
+        503,
+        "PERSISTENCE_UNAVAILABLE",
+      );
     if (existing && existing.details?.fingerprint !== fingerprint)
       return fail(
         "This request changed. Please start a fresh submission.",
         409,
+        "IDEMPOTENCY_CONFLICT",
       );
     if (!existing) {
       // Hash network address; do not retain the raw address in inquiry records.
@@ -105,6 +114,7 @@ export async function receiveCounselInquiry(
         return fail(
           "We could not receive your request. Please try again.",
           503,
+          "PERSISTENCE_UNAVAILABLE",
         );
       if ((count ?? 0) >= 20)
         return fail("Please wait before sending another request.", 429);
@@ -128,11 +138,13 @@ export async function receiveCounselInquiry(
         return fail(
           "We could not receive your request. Please try again.",
           503,
+          "PERSISTENCE_UNAVAILABLE",
         );
       if (error)
         return fail(
           "A submission is already being processed. Please retry.",
           409,
+          "DUPLICATE_IN_PROGRESS",
         );
     }
     let documentStatus =
@@ -144,6 +156,7 @@ export async function receiveCounselInquiry(
         return fail(
           "Your inquiry was saved, but private document storage is unavailable. Please retry later.",
           503,
+          "PRIVATE_STORAGE_UNAVAILABLE",
         );
       const path = `counsel/${inquiry.request_id}/${hash(bytes)}`;
       const { error: uploadError } = await admin.storage
@@ -153,27 +166,42 @@ export async function receiveCounselInquiry(
         return fail(
           "Your inquiry was saved, but the document was not received. Retry with the same document to finish.",
           503,
+          "UPLOAD_FAILED",
         );
-      const { error: updateError } = await admin
+      const { data: latest, error: latestError } = await admin
+        .from("sales_leads")
+        .select("id,details")
+        .eq("id", inquiry.request_id)
+        .maybeSingle();
+      if (latestError || !latest || latest.details?.fingerprint !== fingerprint)
+        return fail(
+          "Document confirmation is unavailable. Please retry.",
+          503,
+          "DOCUMENT_CONFIRMATION_UNAVAILABLE",
+        );
+      const { data: confirmed, error: updateError } = await admin
         .from("sales_leads")
         .update({
           details: {
-            ...inquiry,
-            fingerprint,
+            ...latest.details,
             document_status: "received",
             document: {
               path,
-              name: file.name.slice(0, 200),
+              name: safeCounselFilename(file.name),
               type: file.type,
               size: file.size,
             },
           },
         })
-        .eq("id", inquiry.request_id);
-      if (updateError)
+        .eq("id", inquiry.request_id)
+        .eq("details", JSON.stringify(latest.details))
+        .select("id")
+        .maybeSingle();
+      if (updateError || !confirmed)
         return fail(
           "Document confirmation is unavailable. Please retry to finish.",
           503,
+          "DOCUMENT_CONFIRMATION_UNAVAILABLE",
         );
       documentStatus = "received";
     }

@@ -4,16 +4,32 @@
 // never carry client PII, signer identification, passport data or any
 // Matter-specific legal conclusion across Matters.
 
-export const PROFESSIONAL_STATUSES = ["prospect", "active", "paused", "inactive"] as const;
+export const PROFESSIONAL_STATUSES = [
+  "prospect",
+  "active",
+  "paused",
+  "inactive",
+] as const;
 export type ProfessionalStatus = (typeof PROFESSIONAL_STATUSES)[number];
 
-export const CLIENT_HANDOFF_MODES = ["professional_submits", "client_completes"] as const;
+export const CLIENT_HANDOFF_MODES = [
+  "professional_submits",
+  "client_completes",
+] as const;
 export type ClientHandoffMode = (typeof CLIENT_HANDOFF_MODES)[number];
 
-export const NOTIFICATION_PREFERENCES = ["all_milestones", "key_milestones", "exceptions_only"] as const;
+export const NOTIFICATION_PREFERENCES = [
+  "all_milestones",
+  "key_milestones",
+  "exceptions_only",
+] as const;
 export type NotificationPreference = (typeof NOTIFICATION_PREFERENCES)[number];
 
-export const EXECUTION_METHOD_PREFERENCES = ["ron_when_eligible", "in_person", "no_preference"] as const;
+export const EXECUTION_METHOD_PREFERENCES = [
+  "ron_when_eligible",
+  "in_person",
+  "no_preference",
+] as const;
 
 export interface ProfessionalProfileInput {
   firm_name: string;
@@ -75,7 +91,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const clean = (value: unknown, max = 200): string | null => {
   if (typeof value !== "string") return null;
-  const trimmed = value.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
+  const trimmed = value
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .trim()
+    .slice(0, max);
   return trimmed || null;
 };
 
@@ -94,8 +113,14 @@ const list = (value: unknown, maxItems = 12): string[] => {
   ].slice(0, maxItems);
 };
 
-const oneOf = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
-  typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+const oneOf = <T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T,
+): T =>
+  typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
 
 export function normalizeProfessionalEmail(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -103,13 +128,16 @@ export function normalizeProfessionalEmail(value: unknown): string {
 
 export function normalizeProfessionalProfileInput(
   body: Record<string, unknown>,
-): { ok: true; profile: ProfessionalProfileInput } | { ok: false; error: string } {
+):
+  | { ok: true; profile: ProfessionalProfileInput }
+  | { ok: false; error: string } {
   const email = normalizeProfessionalEmail(body.email);
   const firmName = clean(body.firm_name);
   const contactName = clean(body.contact_name);
   if (!firmName) return { ok: false, error: "Firm name is required." };
   if (!contactName) return { ok: false, error: "Contact name is required." };
-  if (!EMAIL_PATTERN.test(email)) return { ok: false, error: "A valid professional email is required." };
+  if (!EMAIL_PATTERN.test(email))
+    return { ok: false, error: "A valid professional email is required." };
 
   const website = clean(body.website, 300);
   if (website && !/^https?:\/\//i.test(website)) {
@@ -130,22 +158,40 @@ export function normalizeProfessionalProfileInput(
       website,
       practice_focus: clean(body.practice_focus, 300),
       preferred_language: clean(body.preferred_language, 40),
-      preferred_destination_countries: list(body.preferred_destination_countries),
+      preferred_destination_countries: list(
+        body.preferred_destination_countries,
+      ),
       typical_document_types: list(body.typical_document_types),
       preferred_execution_method:
-        preferredExecution && (EXECUTION_METHOD_PREFERENCES as readonly string[]).includes(preferredExecution)
+        preferredExecution &&
+        (EXECUTION_METHOD_PREFERENCES as readonly string[]).includes(
+          preferredExecution,
+        )
           ? preferredExecution
           : null,
       default_receiving_authority: clean(body.default_receiving_authority, 200),
-      default_client_handoff_mode: oneOf(body.default_client_handoff_mode, CLIENT_HANDOFF_MODES, "professional_submits"),
-      client_instruction_template: clean(body.client_instruction_template, 2000),
-      notification_preference: oneOf(body.notification_preference, NOTIFICATION_PREFERENCES, "all_milestones"),
+      default_client_handoff_mode: oneOf(
+        body.default_client_handoff_mode,
+        CLIENT_HANDOFF_MODES,
+        "professional_submits",
+      ),
+      client_instruction_template: clean(
+        body.client_instruction_template,
+        2000,
+      ),
+      notification_preference: oneOf(
+        body.notification_preference,
+        NOTIFICATION_PREFERENCES,
+        "all_milestones",
+      ),
     },
   };
 }
 
 /** Defaults a returning professional's new Matter form may prefill. */
-export function professionalMatterDefaults(profile: Partial<ProfessionalProfileRecord>) {
+export function professionalMatterDefaults(
+  profile: Partial<ProfessionalProfileRecord>,
+) {
   const defaults: Record<string, unknown> = {};
   for (const field of REUSABLE_PROFESSIONAL_DEFAULT_FIELDS) {
     if (profile[field] !== undefined) defaults[field] = profile[field];
@@ -154,6 +200,21 @@ export function professionalMatterDefaults(profile: Partial<ProfessionalProfileR
 }
 
 /** A professional may act on Matters only while their profile is active. */
-export function professionalCanSubmit(profile: Pick<ProfessionalProfileRecord, "status" | "user_id"> | null) {
+export function professionalCanSubmit(
+  profile: Pick<ProfessionalProfileRecord, "status" | "user_id"> | null,
+) {
   return Boolean(profile && profile.status === "active" && profile.user_id);
+}
+
+/** A fresh Matter may reuse workflow presentation defaults, never execution facts. */
+export function professionalMatterEntryDefaults(
+  profile: Partial<ProfessionalProfileRecord>,
+) {
+  return {
+    default_client_handoff_mode:
+      profile.default_client_handoff_mode === "client_completes"
+        ? ("client_completes" as const)
+        : ("professional_submits" as const),
+    client_instruction_template: profile.client_instruction_template ?? "",
+  };
 }

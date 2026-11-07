@@ -1,0 +1,2409 @@
+PASS dedicated Damiani route auto-carries courtesy
+PASS Damiani Italian default
+PASS Damiani route noindex nofollow
+PASS courtesy language remains server-verified
+PASS courtesy page handoff
+PASS wizard server payload
+PASS server courtesy validation
+PASS canonical Wise reference
+PASS exact amount due stored
+PASS courtesy fail closed
+PASS discount uses deals
+PASS explicit eligible subtotal
+PASS Damiani source is preserved server-side
+PASS review-required intake is not awaiting payment
+PASS discount source restriction enforced
+PASS DAMIANI50 governed metadata is additive
+PASS atomic Wise RPC
+PASS redemption deal lock
+PASS discount row lock
+PASS exact amount in RPC
+PASS currency fail closed
+PASS service-role confirm
+PASS service-role redeem
+Damiani production wiring: 23/23 passed
+Complimentary Matter validation passed.
+Route registry validation passed.
+Cross-system gate validator passed.
+OK: All canonical foundation files present
+OK: Canonical Matter controlling type + fields intact
+OK: State adapters delegate to the controlling state machine
+OK: State adapter enforces payment-before-scheduling
+OK: Pricing gateway delegates to controlling engine
+OK: No duplicate public pricing constants in gateway
+OK: Partner Passport controlling decision recorded
+OK: Country governance (conflict-preserving) recorded
+OK: package.json valid JSON
+OK: No files deleted in current PR delta
+OK: No protected business-logic files changed in current PR delta
+
+VALIDATOR: canonical-foundation PASSED.
+validate:responsive-safety passed (global overflow clamped on html+body, safe-area viewport, 82 public files clean of bare w-screen)
+Final wiring confirmation validation passed.
+Generated data/command-center/workbook-intelligence.generated.json from Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx
+Source SHA-256: 457fa017af2c3675a1dd15af9d87d548e69920f0849b03b869a750c1edde035b
+(node:46134) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/milano-seal-platform/eslint.config.js?mtime=1793808587892 is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/milano-seal-platform/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Generated data/command-center/workbook-intelligence.generated.json from Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx
+Source SHA-256: 457fa017af2c3675a1dd15af9d87d548e69920f0849b03b869a750c1edde035b
+✔ 80%+ completion, required tools complete, compliance ready and SAFE becomes routing-eligible (0.784147ms)
+✔ completion below 80 blocks routing (0.185959ms)
+✔ non-SAFE compliance account states block routing even with complete toolbelt (0.116835ms)
+✔ dispatch eligibility composes Tool Belt with capability, availability, and jurisdiction (0.147711ms)
+✔ all six executive questions are answered (1.072619ms)
+✔ no verified revenue => industry revenue is insufficient evidence, never fabricated (0.120641ms)
+✔ matter control requires organization-linked paid matters (none yet) (0.182815ms)
+✔ vertical expansion is planning-only from real targets, not labelled as revenue (0.205909ms)
+✔ every answer carries confidence + a next action (0.192469ms)
+✔ HCCH Apostille Convention profile is locked to 130 Contracting Parties with Matter-specific caveat (0.982183ms)
+✔ international execution model includes RON, state apostille, federal and non-Hague lanes (0.138337ms)
+✔ canonical international Matter facts include origin, destination, receiving authority and notarial decisions (0.174592ms)
+✔ RON is never selected when eligibility is unresolved (0.176344ms)
+✔ wet-ink receiving-authority requirement blocks RON routing (0.161472ms)
+✔ federal origin never falls into state apostille routing (0.096274ms)
+✔ state Hague route requires operative Matter-specific Convention evidence (0.094491ms)
+✔ domain governance forbids automatic RON, apostille and notarial-act selection (0.087141ms)
+✔ control plane preserves exactly five parent systems (1.280702ms)
+✔ delivery statuses preserve code versus live certification boundaries (0.117075ms)
+✔ system registry is internally valid (0.384077ms)
+✔ every legacy internal module is surfaced in the master registry (0.151257ms)
+✔ every institutional expansion engine is surfaced in the master registry (0.171007ms)
+✔ Wise remains the sole registered payment authority (0.248973ms)
+✔ intelligence/control projections cannot silently mutate canonical truth (0.185769ms)
+✔ placement gate rejects duplicate capabilities before build (0.381232ms)
+✔ placement gate requires source authority, UX placement and validation (0.298118ms)
+✔ high demand remains INSUFFICIENT_EVIDENCE while critical evidence is unknown (0.995143ms)
+✔ low demand plus critical unknowns remains INSUFFICIENT_EVIDENCE rather than a negative decision (0.177607ms)
+✔ mixed currency observed revenue is not fabricated into one aggregate (0.139199ms)
+✔ scale decision exposes independent factors rather than a black-box score (0.168022ms)
+✔ status controls operational status; stage stays separate; deal_status is fallback-only (0.929044ms)
+✔ status/deal_status conflict is reported (not overwritten) (0.193581ms)
+✔ destination_country controls; country is null-only fallback; conflict reported (0.165268ms)
+✔ company_name controls; company is null-only fallback (0.103856ms)
+✔ document_type controls; document is null-only fallback (0.12655ms)
+✔ payment fields map correctly (0.158578ms)
+✔ comp fields normalize from raw when present, else null (0.165538ms)
+✔ base column list has status+stage+destination; comp columns are a separate list (0.333711ms)
+✔ compCapability is available when comp columns select succeeds (0.325909ms)
+✔ compCapability is unavailable when comp columns absent but base works (0.283595ms)
+✔ fetchCanonicalDeals throws DealsSchemaError when base query also fails (0.471878ms)
+✔ DealsSchemaError message is sanitized (0.303846ms)
+✔ adapter is read-only (no writes) (0.197737ms)
+✔ Sources #1–#3 consume only the canonical adapter (0.201031ms)
+✔ loaders surface conflicts as verified_with_limitations (0.149164ms)
+✔ revenue loader flags complimentary capability unavailable (0.188563ms)
+✔ gate evaluates operational status (NEW.status), not deal_status or stage (0.890777ms)
+✔ gate never uses NEW.amount_due (0.110867ms)
+✔ paid advancement allowed via payment_confirmed OR payment_status='paid' (0.090066ms)
+✔ complimentary advancement requires the full zero-revenue authorization (0.274672ms)
+✔ protects the canonical operational states (0.135383ms)
+✔ is idempotent (create or replace / if not exists / drop trigger if exists) (0.216806ms)
+✔ no destructive operations and no row rewrites (0.139349ms)
+✔ does not modify migration 043 semantics (separate file, additive only) (0.150135ms)
+✔ vessel maps to vessel category and maritime-linked matter (1.467001ms)
+✔ preferred ship mortgage requires USCG/legal/title review (0.20677ms)
+✔ aircraft bill of sale requires FAA/specialist review (0.409885ms)
+✔ exotic vehicle title transfer requires title/legal review (0.217326ms)
+✔ art/provenance docs require specialist review (0.258058ms)
+✔ apostille package detects international handling (0.414813ms)
+✔ unknown category defaults to review-required (0.186069ms)
+✔ document registry descriptions avoid guarantees (0.866851ms)
+✔ urgency engine honors payment-before-scheduling and never guarantees (0.304788ms)
+✔ vessel matter bridges into maritime; events dedup (1.829855ms)
+✔ pricing adapter delegates to canonical gateway (manual quote, internal) (0.61332ms)
+✔ safety guard blocks approval/guarantee claims (0.172049ms)
+✔ matter validation requires the no-guarantee flag (0.191808ms)
+✔ analytics registry contains the required Smart Intake lifecycle (0.744457ms)
+✔ analytics payload strips raw client/document/private data (0.824687ms)
+✔ Colorado birth certificate → Italy: asks nothing already known; no signer location (3.034703ms)
+✔ mobile notary, two signers: signer count NOT re-asked; asks location only if missing (0.905138ms)
+✔ already notarized affidavit, apostille only: does not ask notarization (0.218809ms)
+✔ no apostille, notarization required: does not ask apostille (0.501322ms)
+✔ foreign destination, apostille unknown: asks apostille (route/price resolution) (0.22037ms)
+✔ contradiction is the first question (0.209685ms)
+✔ origin_state is NOT universally required (execution doc without origin need) (0.195954ms)
+✔ straightforward matter stays within 0–3 questions (0.142584ms)
+✔ ordinary matter never produces more than 3 Step-2 questions (0.224567ms)
+✔ submit payload does not fabricate apostille from a foreign destination (0.776334ms)
+✔ handleAnalysisReady respects explicit client choice (precedence) (0.188473ms)
+✔ quickTags has no duplicate RON override block (0.273911ms)
+✔ no-notarization phrase resolves apostille=true, RON=false (3.538689ms)
+✔ positive / negative / already-completed polarity for notarization (2.770147ms)
+✔ punctuation terminates negation scope (0.309485ms)
+✔ coordinated negation applies to RON and translation (0.195203ms)
+✔ coordinated negation reaches legacy intake flags without fabrication (2.207041ms)
+✔ contradictions are recorded, not silently resolved (0.205478ms)
+✔ apostille quantity is extracted (0.115984ms)
+✔ no-fabrication: apostille never auto-creates notarization/RON (0.702284ms)
+✔ fixture 1: 2 apostille Colombia no notarization needed (0.587632ms)
+✔ fixture 2: POA notarized remotely and apostilled for Italy (0.203625ms)
+✔ fixture 3: already notarized affidavit, only need Florida apostille (0.523505ms)
+✔ fixture 4: mobile notary tonight, two signers (0.250235ms)
+✔ fixture 5: Colorado birth certificate going to Italy — no auto notarization (0.148493ms)
+✔ fixture 7: 'No apostille, notarization required' (0.129214ms)
+✔ fixture 8: apostille yes, notary unsure — RON not auto-true (0.108493ms)
+✔ fixture 9: translation + priority reach the flags (0.167281ms)
+✔ negated translation is suppressed (0.162674ms)
+✔ handoff pricing equals priceCanonicalMatter (no independent recompute) (3.635214ms)
+✔ explicit negatives and contradictions are retained (0.796785ms)
+✔ already-completed service state is preserved (not collapsed to required) (0.196605ms)
+✔ file references retained; no raw contents (0.181272ms)
+✔ client projection excludes the operator packet + internal reasons (0.423004ms)
+✔ handoff is operator-audience and deterministic for the same matter (0.375223ms)
+✔ negated notarization does not require RON review (5.902867ms)
+✔ real notarization / RON request flags RON review (0.290657ms)
+✔ negation before an unrelated clause does not suppress a real notarization need (0.154913ms)
+✔ apostille still detected alongside a notarization negation (0.174752ms)
+✔ Colorado birth certificate → Italy: apostille not auto-added, no notarization (1.978849ms)
+✔ already-notarized affidavit → Colombia, apostille only (1.25976ms)
+✔ mobile notary for two signers: mobile + notarization required, apostille unknown (0.548963ms)
+✔ origin vs signer location are distinct (0.283926ms)
+✔ precedence: explicit structured selection outranks AI (0.15361ms)
+✔ precedence: explicit client text negative outranks AI positive (0.221573ms)
+✔ AI fills an unknown only (0.14007ms)
+✔ country alias Columbia → Colombia is recorded, not silent (0.622354ms)
+✔ contradiction is surfaced and marks the service contradictory (0.311988ms)
+✔ missing critical facts + international-apostille-unknown flags manual review (0.255593ms)
+✔ no fabrication: apostille never implies notarization (0.177496ms)
+✔ structured already-completed notarization overrides conflicting text (2.713131ms)
+✔ structured negative notarization overrides conflicting text (0.682144ms)
+✔ configured is not healthy — health is evidence-based (0.761543ms)
+✔ missing configuration reports action_required, not a fake green state (0.189965ms)
+✔ matter integration summaries are empty (no fabricated matters) (0.531768ms)
+✔ decision receipt uses only supplied reasons and evidence (1.496385ms)
+✔ payment state remains separate from execution blocker (0.162164ms)
+✔ empty reasons stay empty instead of being AI-filled (0.385388ms)
+✔ authority intelligence without provenance fails closed to REVIEW_REQUIRED (0.760611ms)
+✔ stale authority evidence is not treated as CURRENT (0.164587ms)
+✔ authority review flag overrides otherwise current dates (0.097967ms)
+✔ unknown Alliance status stays NEEDS_REVIEW (0.11326ms)
+✔ Alliance paused suspended and lost states remain distinct (0.191668ms)
+✔ unknown evidence remains UNKNOWN and never becomes REJECTED (0.714832ms)
+✔ authority rejection remains distinct from execution failure (0.233551ms)
+✔ professional loss remains distinct from client cancellation (0.130145ms)
+✔ payment block remains distinct from execution failure (0.172398ms)
+✔ unrelated explicit negative events do not collapse (0.119229ms)
+✔ real assignment contributes one workload item; duplicate dedupes (2.024898ms)
+✔ unassigned active Matter is counted (0.128293ms)
+✔ completed Matter is excluded from active workload (0.105528ms)
+✔ sample Matter is excluded (0.304527ms)
+✔ scheduled/overdue/SLA remain null without a canonical source (0.124937ms)
+✔ no threshold invented → capacity unknown + verified_with_limitations (0.149965ms)
+✔ no evidence returns insufficient_evidence (0.168983ms)
+✔ blank assignee is treated as unassigned, not a distinct actor (0.195263ms)
+✔ inputs are not mutated (0.256625ms)
+✔ snapshot never serializes the assignee id (counts only) (0.263435ms)
+✔ capacity mapper derives status/assignee-presence from canonical rows (0.460922ms)
+✔ capacity loader is read-only, no reassignment, founder/admin gated, server-only (0.318388ms)
+✔ schema failure surfaces as unavailable (0.184807ms)
+✔ Sources #1-#4 wiring remains intact; integration honest-empty; no migration touched (0.241142ms)
+✔ no duplicate capacity engine — read-model builder reusing excludeSamples (0.330697ms)
+✔ configured provider is configuration_present, never active (1.008784ms)
+✔ active state only from real active/healthy health evidence (0.136555ms)
+✔ degraded state only from degraded health evidence (0.154842ms)
+✔ sample integration evidence is excluded (0.169905ms)
+✔ no providers returns insufficient_evidence (0.140371ms)
+✔ configured-but-not-active returns verified_with_limitations (0.165218ms)
+✔ latency / uptime / error rate remain null (0.126149ms)
+✔ unconfigured provider is missing_configuration (0.139359ms)
+✔ inputs are not mutated (0.209154ms)
+✔ snapshot serializes no secret/key/payload (0.344897ms)
+✔ Health Center alignment: 'configured' maps to configuration_present, never active (0.168503ms)
+✔ integration loader reuses Health Center, read-only, no provider calls, founder-gated, server-only (0.325979ms)
+✔ Sources #1-#5 wiring intact; no duplicate integration engine (0.32011ms)
+✔ canonical Matter records populate the snapshot (1.075214ms)
+✔ sample Matters are excluded (0.142874ms)
+✔ missing timestamps produce null average duration (0.25348ms)
+✔ average duration computes when both timestamps exist (0.123455ms)
+✔ no records returns insufficient_evidence (0.109684ms)
+✔ completed and active counts use canonical stage state only (0.12039ms)
+✔ Matter-state snapshot infers no revenue (0.129304ms)
+✔ Matter-state snapshot infers no organization metric (0.15364ms)
+✔ input records are not mutated (0.161953ms)
+✔ mapper maps canonical deal columns and keeps unknowns null (0.252368ms)
+✔ server loader is read-only, founder/admin gated, and not client-exported (0.234311ms)
+✔ no client component imports the server loader (0.156134ms)
+✔ only a computed snapshot (not raw rows) is passed to the client section (0.173109ms)
+✔ existing Founder Command remains intact (0.095864ms)
+✔ remaining snapshots retain honest empty states (revenue/org deferred) (0.135364ms)
+✔ real Organization records populate the snapshot (1.169995ms)
+✔ sample Organizations are excluded (0.144317ms)
+✔ unsupported org fields remain null with limitations (0.24631ms)
+✔ no organizations returns insufficient_evidence (0.121503ms)
+✔ target organizations only from canonical values (null when unsupported) (0.110616ms)
+✔ active organizations null when no canonical status field (0.105127ms)
+✔ commercial-account count uses supplied canonical evidence only (0.191998ms)
+✔ vertical totals only when real vertical evidence exists (0.778788ms)
+✔ geography totals use real records only (0.163075ms)
+✔ no relationship, revenue, or account-health fields are inferred (0.235163ms)
+✔ input records are not mutated (0.15305ms)
+✔ newInRange counts orgs first seen at/after the range start (0.156685ms)
+✔ org mapper uses company_name + destination_country and drops blank orgs (0.181913ms)
+✔ org loader is read-only, founder/admin gated, server-only, computed-snapshot only (0.347371ms)
+✔ no PII/notes/billing columns are selected (via canonical adapter) (0.297587ms)
+✔ Matter and Revenue wiring remain intact (0.281462ms)
+✔ deferred snapshots (relationship/capacity/integration) remain honest-empty (0.654903ms)
+✔ no duplicate Organization engine — read-only builder reusing excludeSamples (0.261653ms)
+✔ real Matter evidence creates one org↔Matter edge; duplicates dedupe (1.023125ms)
+✔ interaction evidence counts; identical rows dedupe (0.161332ms)
+✔ referral edges remain null without a canonical referral source (0.199409ms)
+✔ sample Matters and sample interactions are excluded (0.149644ms)
+✔ no evidence returns insufficient_evidence (0.112719ms)
+✔ no relationship score / network strength / dormancy is inferred (0.157366ms)
+✔ latest activity uses a real timestamp (0.152999ms)
+✔ no org edge is created without an organization key (0.170226ms)
+✔ inputs are not mutated (0.208593ms)
+✔ mappers derive refs/interactions from canonical rows; PII columns not read (0.321342ms)
+✔ relationship loader is read-only, founder/admin gated, server-only, computed-snapshot only (0.378337ms)
+✔ schema failure surfaces as unavailable, not fake zeros (0.154872ms)
+✔ Sources #1-#3 wiring remains intact and capacity/integration stay empty (0.263336ms)
+✔ no duplicate Relationship Intelligence engine — reuses read-model builder + excludeSamples (0.231257ms)
+✔ snapshots never mutate inputs (2.070516ms)
+✔ verified revenue excludes forecasts (forecast is a separate null field) (0.123675ms)
+✔ complimentary Matters contribute $0 verified revenue (0.13337ms)
+✔ sample records are excluded from all snapshots (0.111287ms)
+✔ zero evidence returns insufficient_evidence (0.444858ms)
+✔ integration reliability requires provider-verified events (0.163646ms)
+✔ capacity derives from real active assignments only (0.21977ms)
+✔ relationship edges require an organizationId (real evidence) (0.182874ms)
+✔ unknown values remain null (forecast, generatedAt) (0.265689ms)
+✔ no protected systems are imported by the snapshot layer (0.510917ms)
+✔ Founder Command is extended additively, not replaced (0.239589ms)
+✔ no duplicate dashboard/analytics engine — read-only pure functions only (0.295674ms)
+✔ verticals and organizations only appear with real tags/links (0.152078ms)
+✔ verified paid evidence contributes revenue (1.009966ms)
+✔ quote-only / unconfirmed records do not contribute revenue (0.160931ms)
+✔ forecast is separate and never in verified revenue (0.125298ms)
+✔ complimentary Matter revenue stays $0 and is excluded from paid count (0.215634ms)
+✔ sample payments are excluded (0.150586ms)
+✔ unconfirmed payment is excluded from revenue (0.102533ms)
+✔ unknown amount does not fabricate revenue (0.19942ms)
+✔ mixed currencies are not converted — verifiedRevenue null with limitation (0.276284ms)
+✔ single currency is preserved on the snapshot (0.155784ms)
+✔ refunded/reversed (not confirmed) is excluded (0.245929ms)
+✔ inputs are not mutated (0.178869ms)
+✔ revenue mapper maps canonical payment columns and keeps unknowns null (0.205489ms)
+✔ revenue loader is read-only, founder/admin gated, server-only, computed-snapshot only (0.431257ms)
+✔ only an explicit safe column list is selected (no wildcard, no raw payload columns) (0.272068ms)
+✔ Matter-state wiring and Founder Command remain intact (0.155063ms)
+✔ no duplicate revenue engine — reuses buildMatterPerformanceSnapshot (0.19323ms)
+✔ projection pagination includes Matter rows beyond 500 without duplicates or skips (2.04621ms)
+✔ projection pagination performs one terminating empty read for exact page multiples (0.403255ms)
+✔ projection pagination rejects an oversized page returned by a broken reader (0.562133ms)
+✔ registry has no duplicate entries (0.687461ms)
+✔ price-driving canonical fields are registered (0.171297ms)
+✔ builds a complete jurat playbook from resolved facts (1.234051ms)
+✔ unknown execution facts block operator use instead of being fabricated (0.240431ms)
+✔ required witness state requires a witness count (0.132729ms)
+✔ jurat requires oath confirmation (0.221663ms)
+✔ Matter-record adapter uses stored execution facts and preserves unknowns (0.400501ms)
+✔ Matter-record adapter never infers missing notarial requirements (0.137947ms)
+✔ no gate can be bypassed by any role (0.747962ms)
+✔ payment is the first gate and blocks everything downstream (0.211247ms)
+✔ a downstream gate cannot pass while a prior required gate has not passed (0.262043ms)
+✔ mayProceed only when every required gate passes; not_required is skipped (0.176275ms)
+✔ review-dependent AI outputs require operator confirmation (0.270385ms)
+✔ Matter B: two signers elevate to Priority with signer + signature tracking (3.683106ms)
+✔ Matter C: Priority + first apostille included + notarized-signature tracking = $1,000 (0.91959ms)
+✔ Matter D: same-day apostille elevates to Executive and adds rush (0.250446ms)
+✔ Matter E: Executive + apostille + 2 signers includes signature tracking (0.236926ms)
+✔ additional signer math: 3 signers => 2 additional => $300 (0.306059ms)
+✔ Matter F: mobile unknown scope => quote after review, no invented fee (0.264447ms)
+✔ Matter H: apostille-only (Colorado BC → Italy) => review, NOT $250 or $750+250 (0.188573ms)
+✔ Matter G: already notarized + apostille => no new notarization; apostille-only review (0.230926ms)
+✔ Matter J: government context => government_quote, never consumer lane (0.302965ms)
+✔ no-fabrication: foreign destination alone never adds apostille or a price (0.256976ms)
+✔ no-fabrication: apostille never adds notarization; execution lane not forced (0.25971ms)
+✔ apostille quantity uses first + additional apostille pricing (0.205449ms)
+✔ rush not applied from vague urgency (deadline exists but no same-day/rush word) (0.228823ms)
+✔ payment gate + scheduling lock always asserted (0.225799ms)
+✔ same canonical Matter produces an identical pricing result (determinism) (2.420151ms)
+✔ field-equal Matters priced by different surfaces match on lane/add-ons/total/review (0.272408ms)
+✔ executionTier selects the lane only when execution is independently established (0.245498ms)
+✔ executionTier alone never fabricates an execution service (0.441433ms)
+✔ government contract Matter routes to government_quote, never a consumer lane (0.144537ms)
+✔ already-completed apostille is never re-priced (0.250947ms)
+✔ payment gate and scheduling lock are preserved on canonical pricing (0.146169ms)
+✔ client projection shows approved amount from canonical result (not hard-coded) (1.561182ms)
+✔ client projection exposes no internal fields (0.454943ms)
+✔ apostille-only review → quote_after_review, no fabricated amount (0.213821ms)
+✔ all three projections read the SAME underlying approved result (0.282674ms)
+✔ all three projections preserve review instead of inventing a price (0.14005ms)
+✔ Tiffany Gate 37 Italy Matter includes first apostille in lane base (1.03348ms)
+✔ TIFFTEST99 discounts 99% of the full $1,125 Matter and preserves 50/50 invoice math (0.235123ms)
+✔ 99% test discount changes money math only; invoice remains awaiting payment (0.115784ms)
+✔ all ten revenue channels are registered (0.787802ms)
+✔ maritime & government channels reuse existing verticals (0.322695ms)
+✔ actual revenue requires verified payment; quotes are not paid (0.195133ms)
+✔ only payment_confirmed counts as actual revenue (0.154592ms)
+✔ empty registry yields zero real paid revenue (honest empty state) (0.112198ms)
+✔ banned public revenue phrases are detected (0.148483ms)
+✔ pipeline board routes scheduled through the canonical schedule endpoint (1.041212ms)
+✔ protected Matter transition policy excludes virtual assistants (0.136295ms)
+✔ canonical schedule endpoint enforces every protected scheduling invariant (0.225609ms)
+✔ schedule persists canonical scheduled_at, notes, and optimistic state guard (0.162394ms)
+✔ schedule accepts UUID and public Matter identifiers (0.135664ms)
+✔ canonical execute endpoint enforces every protected execution invariant (0.197806ms)
+✔ execute advances both statuses, records executed_at, and rejects stale concurrent transitions (0.161933ms)
+✔ legacy admin move cannot grant VA protected scheduling or execution authority (0.083565ms)
+✔ founder generic status route cannot bypass dedicated scheduling or execution (0.209895ms)
+✔ Matter drawer has no manual payment-confirm mutation (0.369395ms)
+✔ VA and Alliance can never confirm payment, unlock scheduling, authorize release, or mutate custody (0.721953ms)
+✔ no non-founder/operator role holds a protected capability (0.229344ms)
+✔ operator can assign; alliance cannot assign (0.199249ms)
+✔ VA↔Alliance coordination requires a shared matter (0.132469ms)
+✔ VA can perform an assigned reminder task but not one requiring assignment authority (0.247662ms)
+✔ duplicate open tasks are deduplicated by key (0.180882ms)
+✔ sixteen authority pillars exist (0.761052ms)
+✔ country topics derive from Atlas (canonical source = atlas), not a duplicate registry (0.219379ms)
+✔ every topic maps to a known pillar and links to intake (no orphans by rule) (1.082694ms)
+✔ banned content claims and doorway/duplicate intent are detectable (0.437216ms)
+✔ SEO metrics without a real source are treated as fabricated (0.136134ms)
+✔ thin content is never indexable (0.904567ms)
+✔ missing authority source blocks indexation (0.121883ms)
+✔ duplicate primary intent (cannibalization) blocks indexation (0.100761ms)
+✔ stale sources block fresh indexation (0.14663ms)
+✔ guaranteed/unsupported claims block indexation (0.112229ms)
+✔ a fully-verified, operator-approved page becomes approved_indexable and enters sitemap (0.150766ms)
+✔ passing the gate without operator approval stays review_required (no mass auto-index) (0.094492ms)
+✔ sitemap contains only approved-indexable pages (0.190265ms)
+✔ fifteen verticals registered, each reusing canonical engines where applicable (0.837617ms)
+✔ authority score requires evidence; zero evidence => zero score (0.211878ms)
+✔ account is real only with paid evidence; empty registry is honest (0.570757ms)
+✔ actual org revenue excludes quotes and samples (0.195163ms)
+✔ dormancy derives from real interactions only (0.153029ms)
+✔ banned commercial public claims are detected (0.140421ms)
+✔ batch 1 has 10-25 real target organizations (0.641573ms)
+✔ every target is real data with no fabricated contacts/touchpoints/relationships (0.231888ms)
+✔ every target maps to a known vertical (0.137516ms)
+✔ segment coverage spans the maritime cluster (0.167251ms)
+✔ operator navigation exposes canonical payment and discount governance routes (0.761442ms)
+✔ Alliance navigation exposes read-only benefit surface (0.14008ms)
+✔ reporting keeps Wise as paid-revenue authority (0.919389ms)
+✔ Alliance benefit assignment is metadata scoped and read-only (0.270415ms)
+✔ admin discount + Alliance benefits governance validator passes (32.081304ms)
+✔ discount manager cannot directly mutate canonical Matter monetary truth (0.432138ms)
+✔ Alliance benefits are read-only and referral attribution is authenticated-account derived (0.26646ms)
+✔ intake and Matter discount application enforce governed restrictions (0.325188ms)
+✔ governed reporting preserves currency boundaries and unique partner attribution (0.494382ms)
+✔ governed reporting does not misstate adjusted Matter value as paid revenue (0.194482ms)
+✔ Alliance benefits API is authenticated and read-only (0.671657ms)
+✔ no authorization code reads role/permissions from user_metadata (33.617754ms)
+✔ proxy reads role from app_metadata only (0.374361ms)
+✔ canonical guards route through resolveServerRole (0.204196ms)
+✔ all spec roles normalize to a canonical family (0.161092ms)
+✔ unknown / missing role normalizes to null (not defaulted) (0.127522ms)
+✔ home route per role (0.121712ms)
+✔ missing / unknown role → safe denied route, never a protected default (0.14005ms)
+✔ operator/admin/founder reach dashboard + va + alliance oversight (0.161882ms)
+✔ client is isolated to the portal (0.215053ms)
+✔ VA and alliance stay in their own areas (0.309143ms)
+✔ missing / unknown role is blocked on every protected surface (0.183726ms)
+✔ keeps current verified authority active (0.730285ms)
+✔ fails closed when authority provenance is missing (0.123045ms)
+✔ fails closed when authority verification is stale (0.141232ms)
+✔ flags review due soon without prematurely deactivating valid routing (0.109304ms)
+✔ never activates client-provided or unverified authority claims (0.122474ms)
+✔ role homes remain isolated and unknown roles fail closed (0.730375ms)
+✔ client VA and Alliance roles cannot cross workspace boundaries (0.211438ms)
+✔ operator family receives oversight without widening client or partner roles (0.1267ms)
+✔ canonical Matter list API requires server-authenticated app-metadata-derived role resolution (0.365408ms)
+✔ generic Matter detail API cannot author Wise payment or governed lifecycle truth (0.437276ms)
+✔ portal authorization remains app_metadata governed and private surfaces stay noindex (0.3734ms)
+✔ BlueNotary session creation uses the canonical scheduling authority while release remains settlement verified (0.804888ms)
+✔ recorded Wise submission cannot authorize RON scheduling (0.167782ms)
+✔ client Wise settlement refresh is interactive, live, and visibly reports the result (0.184817ms)
+✔ BlueNotary session creation fails closed on incomplete RON truth (0.108794ms)
+✔ same Matter signer state and document package are seeded into the existing RON module (0.138278ms)
+✔ RON document transfer reads the canonical private Matter bucket (0.091918ms)
+✔ operator surfaces expose hardened pre-session readiness and real handoff controls (0.199499ms)
+✔ production reconciliation creates one canonical RON schema with current app_metadata RLS (0.138889ms)
+✔ BRTH field-visit donor is converted into governed operator protocol (1.841744ms)
+✔ BRTH Italy authority source remains source-specific and fail-safe (1.646139ms)
+✔ BRTH runtime does not reintroduce retired donor architecture (0.699119ms)
+✔ BRTH source audit records quarantine decisions (0.294632ms)
+✔ secure login exposes a complete enumeration-safe password recovery path (0.922775ms)
+✔ portal home and invoice share one client-safe itemized pricing projection (0.152419ms)
+✔ client invoice routes discount mutations through the one canonical discount service (0.300651ms)
+✔ homepage country selection survives into the full Atlas and forces country focus (0.132339ms)
+✔ Wise collection no longer calls the unsupported payment-request API (0.375944ms)
+✔ signup confirmation always returns through the controlled auth callback (0.801282ms)
+✔ verified signup is separated from interactive login on every device (0.117817ms)
+✔ client portal can never fail as an unexplained black screen (0.116415ms)
+✔ anonymous inquiry persists once and retains acquisition without creating a Matter (10.991943ms)
+✔ persistence failure never returns receipt or attempts notification (1.5131ms)
+✔ upload receipt requires storage and metadata confirmation, retry uses same inquiry (10.107524ms)
+[counsel] notification unavailable { reference: 'b628ed63-a1ed-4603-8094-c10acc105b84' }
+✔ failed upload stays pending and never claims success (1.905399ms)
+✔ notification failure is separate from a successfully saved inquiry (1.477627ms)
+✔ low commitment inquiry does not require destination or professional activation (0.824417ms)
+✔ retry with changed facts cannot overwrite receipt (1.582133ms)
+✔ invalid fields, misleading MIME and cross-origin submissions are rejected (2.891228ms)
+✔ destination and real attribution are carried without inferred sources (0.639309ms)
+✔ operational conversion counts require canonical quote and cleared settlement facts (2.275274ms)
+✔ private storage is required and metadata failures never confirm document receipt (2.666441ms)
+✔ canonical handoff requires established professional attribution and the inquiry's professional identity (1.357216ms)
+✔ upload confirmation retains concurrent operator evidence and never returns it publicly (1.474993ms)
+✔ anonymous/professional callers cannot invoke operator actions or enumerate documents (5.29188ms)
+✔ operator action persistence stamps the server actor and is retry-idempotent (3.526962ms)
+✔ concurrent edits and missing response evidence fail closed without losing inquiry data (1.303666ms)
+✔ qualification cannot assert a mismatched professional identity (0.662324ms)
+✔ professional handoff requires canonical attribution; failures remain observable without Matter mutation (2.095214ms)
+✔ notification retry preserves provider failure truth and signed document access stays operator-only (0.809384ms)
+✔ operator stages require persisted evidence and canonical records (2.486231ms)
+✔ action retries preserve the original evidence and cannot be replayed as another action (0.509795ms)
+✔ operational cohort and marketing source segments remain bounded and unknown remains unknown (7.621525ms)
+✔ context links preserve real campaigns without carrying identity or operational authority (0.838648ms)
+✔ new Matter defaults never carry destination, receiving authority or execution preferences forward (0.163064ms)
+✔ all selected corridors use existing intelligence and use cases link to supported service scope (0.37324ms)
+✔ malicious filenames cannot control storage paths or expose control characters (0.195954ms)
+✔ untrusted source and destination labels cannot mutate object prototypes (0.354041ms)
+✔ public acquisition input cannot establish professional or execution authority (0.82015ms)
+✔ today's operator cohort uses the New York business day across UTC midnight (0.61987ms)
+✔ upload-failure telemetry requires evidence and never infers failure from missing confirmation (1.193661ms)
+✔ duplicate-source validator detects repeated implementation bodies (10.018882ms)
+✔ duplicate-source validator detects duplicate declarations and test names (1.195864ms)
+✔ duplicate-source validator detects duplicate component constants (1.008854ms)
+✔ duplicate-source validator permits matching test names in separate suites (0.470366ms)
+✔ execution payment gate describes scheduling authority rather than asserting paid settlement (0.730756ms)
+✔ execution blocker UI answers why what who and next action (0.132899ms)
+✔ execution readiness keeps receiving-authority and notarial boundaries fail closed (0.197526ms)
+✔ execution readiness remains projection-only (0.179089ms)
+✔ executive command exposes Matter Execution Corridor priority flow (0.724687ms)
+✔ executive intelligence fails visibly instead of rendering a blank or fallback metrics (0.137095ms)
+✔ authority coverage does not turn missing authority evidence into a synthetic zero score (0.165839ms)
+✔ executive command is responsive and exposes reduced-motion-safe loading state (0.20002ms)
+✔ executive command remains a read model and declares no mutation request (0.159689ms)
+✔ scheduling readiness projects the canonical gate instead of creating a second authority (0.759219ms)
+✔ operator notification center reads the existing audit log without duplicating notification truth (0.183326ms)
+✔ completion desk remains fail-closed on delivery and client-notification evidence (0.163536ms)
+✔ apostille desk preserves canonical operational read while adding mobile execution hierarchy (0.124487ms)
+✔ operator navigation exposes the continuous execution journey (0.177978ms)
+✔ app/api/dispatch/jobs/route.ts is governed and does not fabricate operational success (1.021353ms)
+✔ app/api/dispatch/request/route.ts is governed and does not fabricate operational success (0.155974ms)
+✔ app/api/dispatch/reassign/route.ts is governed and does not fabricate operational success (0.117145ms)
+✔ app/api/dispatch/escalate/route.ts is governed and does not fabricate operational success (0.120601ms)
+✔ app/api/dispatch/jobs/[id]/route.ts is governed and does not fabricate operational success (0.119119ms)
+✔ app/api/webhooks/alliance/job/route.ts delegates to authenticated durable evidence recording (0.184898ms)
+✔ app/api/webhooks/alliance/toolbelt/route.ts delegates to authenticated durable evidence recording (0.17956ms)
+✔ app/api/webhooks/alliance/credential/route.ts delegates to authenticated durable evidence recording (0.119679ms)
+✔ Alliance webhook helper remains fail closed when unconfigured or unsigned (0.281753ms)
+✔ professional destination authority exposes one record per slug (0.907011ms)
+✔ Mexico resolves to a Hague apostille posture with receiving-authority review (0.696545ms)
+✔ every governed Hague professional destination passes the shared journey (2.381253ms)
+✔ professional session sanitizer keeps only safe governed fields (0.344977ms)
+✔ STEP 12 planning model never converts support into an approval claim (0.322544ms)
+✔ Comprehensive EMP planning fails closed below two domestic business years (0.18646ms)
+✔ meta-gate chains ONLY existing pure-node validators, excluding itself (1.277857ms)
+✔ missing optional validator is reported as skipped, present ones as present (0.804156ms)
+✔ meta-gate runs the four core gates (0.130566ms)
+✔ meta-gate stops on first REQUIRED failure and exits nonzero (0.108423ms)
+✔ release-critical validators all exist and are separate from advisory (0.337115ms)
+✔ advisory validators are reported, NOT blocking (surfaced honestly) (0.147651ms)
+✔ meta-gate makes NO live provider / infra calls and prints no env values (0.169474ms)
+✔ preflight scans return the expected clean shape on this repo (75.269788ms)
+✔ sign-off contains all 15 required sections (0.289995ms)
+✔ unverified live items default to NOT VERIFIED, never a checked box (0.34634ms)
+✔ final status is not PRODUCTION VERIFIED while live items are unverified (0.15328ms)
+✔ architecture decisions 001-010 remain active and graph is acyclic (1.58671ms)
+✔ hardening capabilities remain registered without a second payment or Matter authority (0.185157ms)
+✔ Matter 360 capabilities remain derived and cannot become competing Matter/payment authorities (0.227381ms)
+✔ HCCH Convention coverage is 130 parties while Matter applicability remains separate (0.277876ms)
+✔ RON fails closed on missing signer/notarial evidence and rejects wet ink (0.203376ms)
+✔ witness translation and original-copy governance fail closed (0.463345ms)
+✔ document origin matrix preserves federal and state authority boundaries (0.154132ms)
+✔ Matter discrepancy model catches payment scheduling and closeout contradictions (0.387412ms)
+✔ Matter completeness is evidence-state based with no numeric score (0.656585ms)
+✔ Alliance dispatch fails closed on compliance and never computes a ranking score (0.366831ms)
+✔ Alliance reassignment requires a new partner and rationale (0.332629ms)
+✔ knowledge graph requires provenance and completed Matter evidence drives return context (0.241222ms)
+✔ environment dependency registry exposes names only and never marks env existence as healthy (0.183866ms)
+✔ three execution tiers remain canonical and separate from courier economics (2.054763ms)
+✔ Signature passes through the real provider rate (0.319529ms)
+✔ Priority applies no more than fifty dollars (0.200611ms)
+✔ Executive applies no more than one hundred dollars (0.167922ms)
+✔ locked courier examples use exact integer-cent economics (0.218958ms)
+✔ provider rates fail closed instead of using floating point or currency conversion (0.39309ms)
+✔ unknown tiers fail closed and unknown routes require review (0.182524ms)
+✔ canonical Matter pricing separates execution, route, courier credit, and payment plan (0.317206ms)
+✔ pending authority fees do not become confirmed zero-value pricing (0.243245ms)
+✔ prepayment rate preview remains operator-governed without authoring payment or custody truth (0.496074ms)
+✔ label creation continues the persisted shipment row and rejects rate substitution (0.204467ms)
+✔ dispatch persistence remains linked to canonical Matter truth (1.095364ms)
+✔ dispatch mutation routes require governed operator authorization (0.138608ms)
+✔ dispatch creation, assignment and escalation use atomic RPC authorities (0.158447ms)
+✔ Alliance webhook input is signed, replay bounded, durable and evidence only (0.219599ms)
+✔ dispatch and Alliance surfaces contain no fabricated success markers (0.141322ms)
+✔ execution reconciliation blocks release when Wise evidence is incomplete (0.883265ms)
+✔ truth alerts are generated only from explicit reconciliation discrepancies (0.205478ms)
+✔ knowledge graph creates only evidence-backed edges (0.140541ms)
+✔ client return engine requires a completed Matter (0.147221ms)
+✔ Trust Engine 2.0 never fabricates a percentage score (0.18004ms)
+✔ Alliance intelligence fails closed on compliance, capacity or exceptions (0.138557ms)
+✔ Pinellas record is real data, submitted / not awarded (0.684597ms)
+✔ Pinellas rate schedule remains exact (0.165568ms)
+✔ open items remain pending verification, not fabricated (0.208443ms)
+✔ award cannot be set without documented evidence (0.821903ms)
+✔ real submissions include only non-sample records (0.294823ms)
+✔ Pinellas resolves from registry (0.104416ms)
+✔ duplicate equivalent procurement actions are removed (1.238227ms)
+✔ reference without confirmed consent is not ready (0.779821ms)
+✔ public-safe reference excludes private contact details (0.160852ms)
+✔ broker letter is not treated as bound insurance (0.157236ms)
+✔ canonical Matter quote snapshot preserves discount basis and discounted 50/50 payment truth (1.322053ms)
+✔ persisted quote verifier accepts Supabase numeric strings and rejects monetary or discount-basis drift (0.306279ms)
+✔ source validator locks intake carryover to persisted Matter truth (33.726483ms)
+✔ localized routes stay fail-closed until complete human review (1.141903ms)
+✔ localized publication requires reviewed copy and reviewer evidence (0.185719ms)
+✔ localized runtime resolves exact governed locale/path pairs only (0.246821ms)
+✔ Matter Truth baseline uses only the prior accepted snapshot (0.967201ms)
+✔ Matter Truth accepted state requires valid internally ordered acceptance evidence (0.205028ms)
+✔ Matter Truth delta returns CHANGED UNCHANGED and UNKNOWN without manufacturing differences (6.23215ms)
+✔ Matter Truth comparison is deterministic across evidence order duplicates and object key order (0.232049ms)
+✔ Matter Truth comparison prohibits cross-Matter baselines (0.289404ms)
+✔ Matter output envelope is explicitly a MATTER_CONTROL projection and cannot become a state engine (0.657747ms)
+✔ evidence reconciliation uses strong references for exact match but never authorizes canonical mutation (0.398818ms)
+✔ conflicting strong evidence references fail into conflict review (0.181422ms)
+✔ identity-only evidence remains review-required and cannot attach to a Matter ledger (0.298768ms)
+✔ invalid evidence time fails unmatched before Matter attachment (0.337506ms)
+✔ Matter provenance matrix preserves separate authorities and UNKNOWN for missing domains (0.442093ms)
+✔ Matter provenance fails closed for future timestamps missing evidence and invalid cadence (0.625269ms)
+✔ Matter 360 index view exists and renders the canonical spine ordering (0.801413ms)
+✔ Matter 360 reuses the canonical Matter read model and creates no second engine (0.116915ms)
+✔ Matter 360 performs no canonical mutation (read-only projection) (0.20599ms)
+✔ Matter 360 keeps payment language fail-closed and never asserts PAID (0.190726ms)
+✔ Matter 360 renders the full canonical lifecycle from intake to closed (0.15302ms)
+✔ Matter 360 supports reduced motion and explicit non-happy states (0.175013ms)
+✔ certifies only one continuous canonical Matter with complete evidence (0.936234ms)
+✔ fails certification when any system points at a different Matter (0.252229ms)
+✔ never treats Wise processing as verified settlement (0.134071ms)
+✔ SecurePaymentCard uses the canonical server discount route (0.791457ms)
+✔ discount application regenerates canonical Wise retainer instructions (0.167682ms)
+✔ Matter detail uses SecurePaymentCard and demotes complimentary authorization (0.145028ms)
+✔ portal payment reuses canonical secure payment UX (0.146579ms)
+✔ portal verified payment states normalize to paid before rendering (0.11313ms)
+✔ Pro Forma payment review reuses canonical secure payment UX (0.12638ms)
+✔ portal payment truth preserves canonical invoice, paid amount, and Wise fields (0.148543ms)
+✔ Milano OS V2 payment surfaces remain Wise-only (0.168002ms)
+✔ Milano operator intake captures notarial act as canonical execution truth (0.973931ms)
+✔ legacy intake remains fail-closed instead of inferring acknowledgment or jurat (0.291558ms)
+✔ operator notarial act resolution is authenticated role governed and concurrency safe (0.175563ms)
+✔ notarial confirmation writes canonical execution truth plus governed Matter evidence (0.18666ms)
+✔ notarial resolution never authors payment truth (0.171808ms)
+✔ RON UX distinguishes Wise submission verified payment and complimentary authority (0.144848ms)
+✔ Matter execution page no longer renders an unwired placeholder gate ladder (0.121112ms)
+✔ observed scheduling authority fails closed when a read model omits integrity fields (0.125669ms)
+✔ every RON scheduling and command-center projection carries observation integrity fields (0.270606ms)
+✔ global Signing Room uses Milano visual hierarchy and truthful next-action copy (0.27291ms)
+✔ client submission requires a governed Milano-to-Wise handoff snapshot (0.997627ms)
+✔ client cannot author financial truth from the payment-submission request (0.210616ms)
+✔ already-observed production Matters remain idempotent without requiring a fabricated second handoff (0.15332ms)
+✔ submitted state is projected client-safely across the portal (0.183145ms)
+✔ payment card does not ask for duplicate payment and keeps scheduling settlement-gated (0.121242ms)
+✔ payment page describes submission and settlement as separate authorities (0.10024ms)
+✔ invoice settlement check performs live server-side Wise reconciliation (0.142554ms)
+✔ canonical scheduler rejects submission without ever authoring paid state (0.245939ms)
+✔ scheduling authority fails closed when the payable scope is mutated after submission (0.274392ms)
+✔ RON continues to consume the canonical scheduling gate and keeps notarial readiness independent (0.31332ms)
+✔ observed Wise submission cannot satisfy scheduling payment authority (0.736224ms)
+✔ BlueNotary session creation uses scheduling authority instead of verified settlement (0.286199ms)
+✔ processing alerts keep scheduling locked without inventing paid truth (0.159048ms)
+✔ client copy keeps scheduling locked until settlement (0.128142ms)
+✔ stagnation API is operator-guarded and read-only (0.692409ms)
+✔ stagnation page reflects server truth and asserts no SLA (0.28045ms)
+✔ portal matter intelligence delegates scheduling authority to canonical scheduling gate (0.730986ms)
+✔ legacy payment_confirmed lifecycle state is not treated as settled payment (0.161112ms)
+✔ client payment projection exposes submission settlement and scheduling as distinct truths (0.341333ms)
+✔ payment milestone copy does not overstate settlement (0.111978ms)
+✔ /portal/tracking is the sole canonical tracking implementation (0.894522ms)
+✔ /portal/trackingNow redirects to /portal/tracking preserving query params (0.154792ms)
+✔ /portal/v2 redirects to /portal (0.093009ms)
+✔ legacy routes retain NO data fetching or business logic (0.199079ms)
+✔ canonical app_metadata client auth guard remains enforced on the portal (0.134772ms)
+✔ all portal routes stay noindex (0.127691ms)
+✔ portal is excluded from the sitemap (0.154542ms)
+✔ no redirect loop: compat targets differ from their own paths (0.252289ms)
+✔ observed Wise submission can enter scheduling without authoring paid state (0.896976ms)
+✔ BlueNotary provider start advances the same Matter into execution only (0.34621ms)
+✔ signed documents require explicit operator Apostille QA advancement (0.256115ms)
+✔ client progress projects Apostille only after signed-document truth (0.245989ms)
+✔ legacy apostille route is fail-closed and defers to governed RON QA (0.248412ms)
+✔ Shippo has one executable webhook authority (0.854932ms)
+✔ unverified Alliance status webhook cannot fake success (0.132369ms)
+✔ reconciliation surface is live-data only (0.250466ms)
+✔ release certificate actions never advertise a dead PDF generator (0.198128ms)
+✔ orphan placeholder data modules stay removed (0.172429ms)
+✔ E2E demo mutations can never activate on Vercel Production (0.357967ms)
+✔ courier webhook fails closed and uses one atomic transition (0.903516ms)
+✔ notarial act transition commits Matter truth and evidence in one RPC (0.295113ms)
+✔ Alliance success returns a durable observation identifier (0.174392ms)
+✔ 10/10 validator is enforced by the existing merge gate (0.787892ms)
+✔ certification cannot infer live production completion from source checks (0.288533ms)
+✔ source gate locks scheduling, RON, provider evidence, and release boundaries (0.262624ms)
+✔ professional Convention destination layer exposes 130 unique governed destinations (0.907712ms)
+✔ newly governed Convention destinations resolve through the shared professional engine (0.932268ms)
+✔ Thailand and Viet Nam stay visible but fail closed before Convention entry into force (0.377556ms)
+✔ all 130 governed professional destinations pass the same route engine (2.087883ms)
+✔ homepage routes new attorneys into counsel acquisition (0.901934ms)
+✔ lawyer-access is an optional intelligence layer, not a competing execution funnel (0.25322ms)
+✔ professional route facts carry into secure intake (0.228032ms)
+✔ public payment UX matches the governed 50/50 Matter gates (0.357606ms)
+✔ professional network exposes distinct governed professional lanes (0.683856ms)
+✔ counsel experience keeps the legal and execution responsibilities separate (0.324446ms)
+✔ verified execution partner designation remains evidence-gated (0.464206ms)
+✔ execution coordinator designation does not create licensed authority (0.225138ms)
+✔ professional network presentation cannot mutate canonical transaction truth (0.347341ms)
+✔ existing user is located by email (case-insensitive) (0.986991ms)
+✔ missing user returns null (safe stop, no fabrication) (0.129905ms)
+✔ existing user with no permissions gets exactly the scoped base set (0.697065ms)
+✔ revoke is added only when included in the required set (0.213229ms)
+✔ rerun is idempotent — already-provisioned yields zero additions (0.120421ms)
+✔ unrelated existing permissions are preserved (0.155944ms)
+✔ source never assigns founder_admin or any role (0.189375ms)
+✔ source never resets a password or requires TIFFANY_OPERATOR_PASSWORD (0.167181ms)
+✔ source never touches discount codes (0.204107ms)
+✔ source never creates users (0.252079ms)
+✔ source honors revoke flag and dry-run env (0.176305ms)
+✔ source writes an immutable audit event (0.082243ms)
+✔ source never prints the email or secret env values (0.221903ms)
+✔ globe country intelligence opens beside the globe instead of covering it (0.793701ms)
+✔ country route classes are interactive filters backed by the canonical destination registry (0.156815ms)
+✔ country directory cards are differentiated jurisdiction dossiers, not cloned generic cards (0.120651ms)
+✔ filtered country dossiers preserve fail-closed routing without duplicate treaty registries (0.238929ms)
+✔ access experience separates execution, intelligence, counsel, concierge, and network lanes (0.754182ms)
+✔ counsel products expose substantive deliverables rather than brochure access (0.188473ms)
+✔ public commercial surfaces do not disclose numeric pricing (0.325389ms)
+✔ secure portal public preview is a Matter command center and does not replace authenticated portal truth (0.125037ms)
+✔ process route uses one cinematic execution experience instead of duplicate tutorial stacks (0.176985ms)
+✔ homepage exposes one document plus corridor intelligence workspace instead of separate islands (0.184767ms)
+✔ root metadata preserves authored page titles without re-appending the brand (0.780591ms)
+✔ public route title templates remain neutral (0.342193ms)
+✔ release certificate route cannot fabricate certificate truth from free-form demo input (0.768684ms)
+✔ release certificate route remains an evidence projection rather than release authority (0.163415ms)
+✔ legacy dashboard Alliance route is only a redirect and carries no placeholder intelligence (0.143074ms)
+✔ review safe context strips sensitive and arbitrary keys (0.805849ms)
+✔ honeypot and obvious automated spam fail closed (0.252419ms)
+✔ review event ledger is immutable and isolated from Matter state (0.753711ms)
+✔ every governed review transition writes a matching event (0.195633ms)
+✔ operator linking never creates or transitions a Matter (0.707922ms)
+✔ review workflow permits only governed forward transitions (1.004267ms)
+✔ client acknowledgement language is evidence-backed (0.20695ms)
+✔ review input requires a real question and carries safe context only (0.403525ms)
+✔ priority state registry fails closed until official authority review (0.838488ms)
+✔ credential-ready partner does not bypass state authority review (0.724668ms)
+✔ unknown receiving-authority acceptance blocks RON dispatch (0.311979ms)
+✔ wet-ink requirement blocks RON dispatch (0.20664ms)
+✔ portal RON consumes canonical scheduling and keeps Wise settlement separate (0.748543ms)
+✔ client never chooses or guesses the notarial act (0.159219ms)
+✔ BlueNotary creation stays canonical and idempotent (0.343866ms)
+✔ browser return cannot fabricate provider completion or downstream authority (0.320441ms)
+✔ portal journey is mobile and reduced-motion safe (0.197236ms)
+✔ Search Console cron requires bearer authorization and finalized window (0.844487ms)
+✔ Search Console cron refreshes activation downstream without making it authoritative (0.115824ms)
+✔ Search Console cron runs once daily at 06:00 UTC (0.794773ms)
+✔ manual Search Console sync is governed and exposes operational states (0.647021ms)
+✔ manual sync records an auditable run without fabricating rows (0.235423ms)
+✔ activation path normalization accepts only Milano-owned search pages (0.838458ms)
+✔ external authority only counts as fresh when verification evidence is complete and current (0.517747ms)
+✔ activation queue uses verified search demand without claiming query-to-revenue causation (6.615676ms)
+✔ fresh verified authority evidence suppresses the earn-citation gap for the same page (0.355193ms)
+✔ professional relationships produce outreach work until real placement evidence is verified (0.262484ms)
+✔ all unreviewed localized routes stay in the human-review activation queue (0.165639ms)
+✔ migration keeps authority control plane private and evidence-gated (0.541473ms)
+✔ fresh Supabase replay adds delivery projection columns before client-safe view creation (0.203365ms)
+✔ legacy RON migration never requires a phantom va_assignments table during fresh replay (0.436826ms)
+✔ evidence is fresh at its governed verification date (0.668192ms)
+✔ phase-one matrix contains exactly 35 governed routes (0.747131ms)
+✔ every governed route passes the indexability gate (2.96547ms)
+✔ governed indexable SEO nodes have unique intent/query pairs (1.256996ms)
+✔ every indexable node has useful semantic links (1.043295ms)
+✔ shipping has one canonical operator surface (0.829214ms)
+✔ carrier policy keeps the approved Milano stack and governed override (0.291678ms)
+✔ Shippo delivery evidence has one authenticated atomic authority (0.240581ms)
+✔ shipping control room does not introduce fake tracking telemetry (0.16641ms)
+✔ rate preview consumes canonical Matter tier and ranks only approved carriers (0.712088ms)
+✔ label purchase verifies selected rate against Shippo shipment server-side (0.126279ms)
+✔ recommended label can be auto-selected but still requires operator confirmation in UI (0.273911ms)
+✔ tier policy is deterministic and does not hardcode Italy to DHL (0.350466ms)
+✔ Signature chooses the lowest approved cost (0.911207ms)
+✔ Priority chooses fastest service inside governed value ceiling (0.195853ms)
+✔ Executive chooses fastest approved service (0.208993ms)
+✔ all approved alternatives remain visible and ranked (0.626329ms)
+✔ TIFF certification validator is registered and accepts the controlling Gate 37 runbook (1.65949ms)
+✔ TIFFTEST99 is entered on the client invoice and recalculates before Wise payment (0.180191ms)
+✔ discount mutation is fail-closed after Wise payment starts and never grants paid status (0.281983ms)
+✔ certification locks one Matter, payment gate, password recovery, and governed closeout (0.134071ms)
+✔ TrustCoreCinematicField accepts ReactNode children without a single-child guard (0.780571ms)
+✔ TrustCoreCinematicField preserves reduced-motion and interactive field wiring (0.160782ms)
+✔ Italy private document projects a Hague route without an acceptance guarantee (1.408744ms)
+✔ federal non-Hague / consular route fails closed to review (0.21309ms)
+✔ rush timing is review-required even when destination route is otherwise known (0.249124ms)
+✔ document readiness blocks missing document or unusable scan and otherwise can be ready (0.222513ms)
+✔ route architect leaves unresolved authority questions for review (0.610656ms)
+✔ federal non-Hague route retains consular and federal review (0.288163ms)
+✔ readiness scan blocks absent or unusable documents (0.225769ms)
+✔ readiness scan only returns ready when every governed check passes (0.677506ms)
+✔ 1. missing authority → NOT_READY (2.723397ms)
+✔ 2. official form absent → NOT_READY (0.360691ms)
+✔ 3. official form unverified → REVIEW_REQUIRED with the Florida verification reason (0.336715ms)
+✔ 4. superseded / review-required / ambiguous form → REVIEW_REQUIRED, never selected (0.637997ms)
+✔ 5. document preflight BLOCKED → NOT_READY; unscanned → REVIEW_REQUIRED (0.608984ms)
+✔ 6. execution incomplete where required → NOT_READY; RON evidence required for RON (0.46658ms)
+✔ 7. paper-out required but incomplete → NOT_READY (not generated) / REVIEW_REQUIRED (in progress); never silently N/A (0.401322ms)
+✔ 8. unknown government fee → REVIEW_REQUIRED; fee never invented (0.317206ms)
+✔ 9. stale government fee source → REVIEW_REQUIRED and fee hidden (0.211597ms)
+✔ 10. destination missing → NOT_READY (0.297556ms)
+✔ 11. document count mismatch → NOT_READY; unrecorded count → REVIEW_REQUIRED (0.335082ms)
+✔ 12. return shipment requirement unknown → REVIEW_REQUIRED (0.31295ms)
+✔ 13. operator QA incomplete → not READY_FOR_DISPATCH (0.440931ms)
+✔ 14. all prerequisites satisfied → READY_TO_ASSEMBLE (0.715544ms)
+✔ 15. operator marks assembled → ASSEMBLED (0.257336ms)
+✔ 16. QA complete + dispatch approval + all gates → READY_FOR_DISPATCH; regression voids it (0.482343ms)
+✔ 17. browser cannot set READY_FOR_DISPATCH (or any status) directly (0.729254ms)
+✔ 18. government fee is PASS_THROUGH and never Milano service revenue (0.613861ms)
+✔ 19. official asset hash mismatch → NOT_READY (blocked) (0.917586ms)
+✔ 20. DISPATCHED only from canonical custody evidence after dispatch approval (0.415183ms)
+✔ blocking Matter exceptions and route consistency (0.559719ms)
+✔ evaluation simulation mirrors the RPC merge: changed facts clear assembly, QA and dispatch approval (0.402714ms)
+✔ no form generation, no legal advice, no label creation, operator-only surface (4.888033ms)
+✔ expired observation → STALE (no advisory days) (1.054402ms)
+✔ missing official source → LOW_CONFIDENCE / review (0.38678ms)
+✔ fresh verified observation → usable advisory with required fields (0.231658ms)
+✔ source content change → authority review event (classified), baseline first (3.834363ms)
+✔ monitor watches official sources only (0.531347ms)
+✔ operator approval required: decisions are operator-only and never touch canonical authority (0.372329ms)
+✔ no guaranteed completion date emitted; timeline is durations only (0.921282ms)
+✔ no hardcoded permanent wait times (0.523806ms)
+✔ 1. outbound authority leg: Matter-linked, sequence 1, created only when the packet is dispatch-ready (1.252179ms)
+✔ 2. return leg only when the packet requires a prepaid return (and explicit request) (0.27285ms)
+✔ 3. return label without explicit operator request → RETURN_LABEL_REVIEW_REQUIRED (0.335914ms)
+✔ 4. no rate snapshot → no label (return and outbound) (0.201302ms)
+✔ 5. absolute-cheapest bypass prohibited; existing governed ranking is used (1.129805ms)
+✔ 6. label creation stores transaction + tracking and does not set shipped (0.303625ms)
+✔ 7. dispatch confirmation updates canonical custody evidence (and feeds Step 5 DISPATCHED) (0.368542ms)
+✔ 8. webhook HMAC failure is rejected before any leg update (0.693751ms)
+✔ 9. duplicate webhook is idempotent (stable event hash + unique event_hash) (0.288853ms)
+✔ 10. authority delivery → authority_received; Matter is not completed (0.445588ms)
+✔ 11. return delivery → received_back (0.191738ms)
+✔ 12. final international delivery → leg delivered; Matter completion stays governed separately (0.168924ms)
+✔ 13 + 14. portal projection hides raw label URL, provider transaction/shipment ids, rate ids, costs, evidence and notes (0.517095ms)
+✔ 15. duplicate Matter sequence rejected (unique constraint) (0.151938ms)
+✔ 16. wrong-Matter leg mutation rejected (0.870165ms)
+✔ 17. final shipment before the release gate → blocked (0.472228ms)
+✔ 18. final shipment before the required Wise final payment → blocked (0.278548ms)
+✔ 19. exception return requires a documented operator reason (0.145859ms)
+✔ 20. authority packet not dispatch-ready → outbound leg blocked (0.185077ms)
+✔ addresses are never invented; operator routes are gated; no second shipping engine (0.628653ms)
+✔ mobile=false never implies RON (2.51899ms)
+✔ explicit RON remains explicit and requires signer/KBA/credential evidence (0.866289ms)
+✔ in-person and mobile require an execution location (0.194662ms)
+✔ already-notarized requires jurisdiction and certificate type (0.143816ms)
+✔ apostille and notarization are independent decisions (0.108583ms)
+✔ document type never auto-selects acknowledgment or jurat (0.180821ms)
+✔ review-required decisions remain fail-closed (0.106801ms)
+✔ authentication Matter starts at 599 with first document and first apostille coordination included (0.980732ms)
+✔ signature Matter supports either RON or in-person without stacking another Matter base (0.193961ms)
+✔ six-document apostille packet prices without generic document double charge (0.183876ms)
+✔ Florida in-person Matter itemizes notarial acts, travel and rush (0.142053ms)
+✔ over-50-mile mobile work requires quote review instead of invented travel fee (0.241813ms)
+✔ international passport document review / execution coordination Matter remains 350 (0.117857ms)
+✔ quote-review-only consular work never receives an invented fixed fee (0.207772ms)
+✔ already-issued apostille Matter selects Authentication base (1.41304ms)
+✔ RON signature Matter uses the Signature base and included first apostille (0.171698ms)
+✔ Florida mobile quote itemizes statutory act, travel and same-day handling (0.222153ms)
+✔ passport review execution is country-neutral (0.181041ms)
+✔ pass-through courier and authority charges remain outside eligible discount subtotal (0.175744ms)
+✔ governed exceptions block automatic quote approval (0.189465ms)
+✔ normalizeEmail trims and lowercases (0.685148ms)
+✔ emailsMatch is exact on normalized form and fails closed on empty (0.139139ms)
+✔ validateSignupCredentials requires a valid email (0.229534ms)
+✔ validateSignupCredentials enforces password length bounds (0.105288ms)
+✔ client invoice prefers persisted canonical quote breakdown (0.817417ms)
+✔ client Matter summary shows reviewed scope and 50/50 payment without public rate matrix (0.191588ms)
+✔ portal payment renders the reviewed Matter summary before payment controls (0.150966ms)
+✔ Damiani third record remains open and pre-revenue (1.115814ms)
+✔ lost opportunities never inflate collected revenue (0.276054ms)
+✔ client registry preserves Damiani history and collected lifetime value (0.225358ms)
+✔ projection is deterministic and provenance-backed (0.896075ms)
+✔ legacy create-label route requires an authenticated operator before any work (0.86704ms)
+✔ DAMIANI50 applies exactly 50% to eligible service subtotal (0.788243ms)
+✔ excluded charges remain outside the discounted subtotal (0.117055ms)
+✔ DAMIANI50 is single-use through usage_limit (0.653741ms)
+✔ inactive, exhausted, expired, and future codes are rejected (0.171958ms)
+✔ matter-restricted code cannot be used on a different matter (0.109715ms)
+✔ courtesy adjustment never exceeds eligible subtotal (0.218138ms)
+✔ DAMIANI50 computes exactly 50% of the eligible subtotal (0.723585ms)
+✔ percentage codes apply their configured percentage to any canonical eligible price (0.137276ms)
+✔ 50% retainer always derives after the configured percentage discount (0.294232ms)
+✔ courtesy discounts only the eligible subtotal, never pass-through shipping (0.224567ms)
+✔ Wise amount (invoice retainer) derives from the DISCOUNTED total (0.176575ms)
+✔ courtesy adjustment can never exceed the eligible subtotal (0.098969ms)
+✔ operator dashboard captures all canonical execution decisions (0.849104ms)
+✔ intake permanently removes mobile=false to RON inference (0.343525ms)
+✔ apostille/authentication never auto-creates notarization (0.180341ms)
+✔ operator review-required execution stops before Wise (0.165168ms)
+✔ live quote consumes execution truth and exposes review state (0.167932ms)
+✔ migration repairs live payment status, discount amount and due-at drift (0.254321ms)
+✔ production schema accepts canonical unpaid intake state and persists discount amount (0.861793ms)
+✔ intake persistence fails closed instead of silently saving a stripped fallback Matter (0.293661ms)
+✔ operator intake surfaces safe error code and correlation reference (0.243135ms)
+✔ critical intake workflow no longer silently swallows compliance failure (0.228303ms)
+✔ 1. Italy vital record: state origin, already certified, Hague route, Authentication Matter, first apostille included (3.015814ms)
+✔ 2. Italy POA: new signer execution is required and never inferred from the POA alone (1.745428ms)
+✔ 3. FBI background check routes federal and never through state apostille (0.75984ms)
+✔ 4. UAE corporate document: consular/legalization review blocks the automatic final quote (0.799619ms)
+✔ 5. unknown receiving authority for an authority-dependent document class blocks the final quote (0.399289ms)
+✔ 6. six vital records with six apostilles = Authentication base + five additional apostilled documents (0.43336ms)
+✔ 7. apostilled documents are never double-charged the non-apostille document fee (0.545849ms)
+✔ 8. payment activity locks quote mutation (0.453039ms)
+✔ 9. browser-supplied route intelligence and review flags cannot override the server projection (0.63349ms)
+✔ 10. public surfaces cannot import the private numeric pricing catalog or quote engine (28.916686ms)
+✔ document classification fails closed and never selects an execution method (0.514562ms)
+✔ clean PDF is READY and produces a stable SHA-256 (15.110581ms)
+✔ existing signature marker routes to REVIEW_REQUIRED rather than rejection (3.095855ms)
+✔ certification signature marker routes to REVIEW_REQUIRED (3.389435ms)
+✔ malformed PDF is BLOCKED (0.741963ms)
+✔ unsupported MIME is BLOCKED (0.237165ms)
+✔ oversize file is BLOCKED before structural parsing (0.29378ms)
+✔ upload route persists preflight evidence without exposing file path or SHA (0.531978ms)
+✔ preflight evidence columns map every scanner field (4.366471ms)
+✔ encrypted PDF is BLOCKED and the original bytes are never mutated (2.534743ms)
+✔ RON readiness fails closed unless execution documents pass structural preflight (0.51294ms)
+✔ canonical file size ceiling remains 20MB (0.135434ms)
+✔ execution readiness fails closed across both files column dialects (3.934503ms)
+✔ both upload paths persist preflight evidence and BlueNotary fails closed server-side (0.525788ms)
+✔ hard gate: document BLOCKED → no RON (1.201914ms)
+✔ hard gate: RON review unresolved → no RON (0.167612ms)
+✔ hard gate: authority stale → no authoritative dispatch (1.689084ms)
+✔ hard gate: federal document → no state apostille (2.410767ms)
+✔ hard gate: consular unresolved → review required (0.864417ms)
+✔ hard gate: no Wise payment truth → no scheduling (0.251127ms)
+✔ hard gate: no execution evidence → no apostille progression (0.221723ms)
+✔ hard gate: no authentication completion → no final release; no final payment → no release (0.244747ms)
+✔ hard gates: label created ≠ shipped; tracking ≠ delivered; delivered leg ≠ Matter completed (0.428363ms)
+✔ existing Matter workspace carries every Step 9 section (no second dashboard or shell) (0.793831ms)
+✔ missing execution method remains a blocker until a selection or review request is saved (1.379109ms)
+✔ explicitly negative RON/mobile still requires a method or an actionable review request (0.219809ms)
+✔ review submission does not excuse missing client-owned routing inputs (0.207631ms)
+✔ ron preference never approves unresolved document/jurisdiction requirements (0.248253ms)
+✔ in_person preference never approves unresolved document/jurisdiction requirements (0.107602ms)
+✔ review_required preference never approves unresolved document/jurisdiction requirements (0.067031ms)
+✔ server captures explicit public preferences for review before pricing and Wise issuance (0.343745ms)
+✔ saved preference, routing inputs and lower-precedence analysis restore, not consent or files (1.541693ms)
+✔ invalid, stale, future and unrelated drafts cannot restore order state (0.903856ms)
+✔ federal non-Hague consular projection cannot resolve READY (1.135865ms)
+✔ compatibility route architect resolves UAE aliases through canonical registry (0.5802ms)
+✔ Hague private-document route remains eligible for READY when no review flags exist (0.139789ms)
+✔ already-certified 2-document apostille Matter uses Authentication base and governed courier pricing (1.557106ms)
+✔ explicit zero notarized signatures never fabricates signature tracking fee (0.254272ms)
+✔ timeline preference does not reduce matter-structure confidence (0.452749ms)
+✔ command-center pricing intelligence derives from the canonical private catalog (0.708633ms)
+✔ intake success response carries canonical discount-boundary totals (0.664157ms)
+✔ Operations Desk route resolves to the implemented integrations workspace (0.231808ms)
+✔ unresolved notarial act is review-required (screenshot case) (1.361032ms)
+✔ intake no longer rejects review-required operator matters with 409 (0.570707ms)
+✔ review-required operator matter is SAVED as intake_received / unpaid (0.205328ms)
+✔ review-required save creates NO invoice and NO Wise payment request (0.169945ms)
+✔ dashboard renders review-required success without dereferencing pricing (0.198749ms)
+✔ banned maritime claims are detected (0.740111ms)
+✔ unknown values remain null (never guessed) (0.129244ms)
+✔ deadlines are framed, never guaranteed (0.101382ms)
+✔ no commercial accounts are active without real paid evidence (0.612529ms)
+✔ maritime pricing delegates to canonical gateway (operator-prepared, internal) (0.189624ms)
+✔ duplicate maritime operator actions are removed (0.190115ms)
+✔ no payment blocks scheduling and routes to verify_payment (1.083125ms)
+✔ urgency escalates by hours remaining but never guarantees a deadline (0.171417ms)
+✔ uncertain receiving authority forces manual review (0.107892ms)
+✔ unverified signer authority is a blocker (0.144366ms)
+✔ Signature Matter includes first apostille coordination in $750 base (1.336565ms)
+✔ six already-certified vital records use Authentication base plus five additional apostilled documents (0.61359ms)
+✔ additional apostille documents are not double charged as generic documents (0.327652ms)
+✔ 50/50 Signature Matter pricing preserves deposit and final-balance gates (0.312258ms)
+✔ every dashboard destination in the operator shell resolves to a page (1.735013ms)
+✔ generic deal PATCH cannot author any Wise settlement or payment lifecycle field (0.944077ms)
+✔ generic deal PATCH rejects payment-provider mutation entirely and never references Stripe (0.155223ms)
+✔ generic deal PATCH cannot author any canonical Matter state (0.110586ms)
+✔ generic deal PATCH cannot author execution-through-delivery evidence (0.168734ms)
+✔ protected scheduling and execution share governed role policy without virtual assistants (0.138628ms)
+✔ schedule route requires canonical state, execution truth, and payment authority (0.194892ms)
+✔ schedule and execute routes authenticate before privileged Matter reads (0.216655ms)
+✔ protected transitions use optimistic state predicates (0.12014ms)
+✔ legacy admin move pipeline cannot bypass execution or canonical scheduling gate (0.191047ms)
+✔ admin move route requires authenticated governed operator authority (0.215784ms)
+✔ founder manual payment-confirm endpoint is disabled (0.173771ms)
+✔ manual payment action surfaces are absent (0.270566ms)
+✔ review-required mobile capture preserves mileage (0.20051ms)
+✔ operator detail delegates Wise-only payment UX to SecurePaymentCard (0.299239ms)
+✔ Matter detail restoration preserves non-payment operator UX (0.176265ms)
+✔ apostille past the 72h alert threshold raises an ALERT with proven stage age (1.462054ms)
+✔ apostille well past critical raises CRITICAL (0.175143ms)
+✔ courier/shipped uses shipped_at as stage-entry basis (0.132809ms)
+✔ awaiting payment measures inactivity from updated_at (last_activity basis) (0.158377ms)
+✔ FAIL CLOSED: monitored stage with no basis timestamp is INSUFFICIENT_EVIDENCE, no fabricated age (0.115303ms)
+✔ FAIL CLOSED: a future basis timestamp is not trusted as elapsed time (0.116034ms)
+✔ terminal and dormant matters are never stagnant (0.156765ms)
+✔ unmonitored stage produces no alert (0.134782ms)
+✔ fresh matter within threshold is OK (0.18624ms)
+✔ summary sorts most-severe first then by greatest age, and buckets insufficient evidence (0.934652ms)
+✔ policy only monitors defensible stages and every policy has a timestamp basis (0.16012ms)
+✔ premium professional corridors stay locked to the five high-value Hague markets (1.130857ms)
+✔ every premium corridor has deep professional query and answer coverage (0.262164ms)
+✔ search acquisition source normalization covers target discovery engines (0.620792ms)
+✔ UTM source outranks generic landing campaign labels (0.11364ms)
+✔ referral capture stores attribution without changing operational state (0.27999ms)
+✔ professional hub and country pages preserve premium Matter-first positioning (0.57364ms)
+✔ canonical pricing owns witness support arithmetic (1.330035ms)
+✔ intake and admin pricing no longer call the legacy quote engine (0.440471ms)
+✔ admin pricing mutation boundary is operator authenticated (0.220151ms)
+✔ translation mutation RLS is role gated (0.258187ms)
+✔ proposal assembler uses canonical registry sections in order (1.255493ms)
+✔ agency-specific sections are flagged per-opportunity (0.158668ms)
+✔ award requires documented, verified evidence (0.776385ms)
+✔ insurance is bound only with bound status (not broker letter) (0.12708ms)
+✔ reference usable only when consent confirmed (0.172398ms)
+✔ banned public claims are detected (0.25357ms)
+✔ unknown/blank values normalize to null, never guessed (0.166079ms)
+✔ professional creates a Matter through canonical intake review, never a parallel Matter system (3.288814ms)
+✔ referral attribution is persisted only for a correctly signed reference on a live profile (1.251498ms)
+✔ client handoff link preserves the professional relationship and carries no client facts (0.777686ms)
+✔ returning professional defaults load firm-level fields and never client PII or legal conclusions (0.455113ms)
+✔ an unauthorized professional cannot view another firm's Matter or operator surfaces (0.523325ms)
+✔ operator-only fields never leak into the professional projection (0.520271ms)
+✔ public professional surfaces keep numeric pricing hidden and quotes Matter-specific (0.868373ms)
+✔ Wise stays canonical and scheduling stays payment-gated in the professional view (0.324677ms)
+✔ receiving-authority disclaimer is preserved on every professional message and view (0.590736ms)
+✔ completion is visible to the professional after the Matter closes (0.301963ms)
+✔ channel attribution derives from canonical Matter truth and never invents revenue (6.754324ms)
+✔ professional activation verifies a pre-linked account before assigning the role (0.213671ms)
+✔ public production health and debug routes disclose no provider posture (0.327221ms)
+✔ professional activation verifies pre-linked accounts and fails closed on role collisions (0.235914ms)
+✔ public health is minimal and production diagnostics fail closed (0.450966ms)
+✔ review-required quote commits fail when pricing evidence cannot persist (0.676996ms)
+✔ approved quote commits fail when pricing evidence cannot persist (0.140171ms)
+✔ documentIdentityLabel returns the real title when known (0.862824ms)
+✔ documentIdentityLabel never invents a generic category (0.183706ms)
+✔ serviceStateLabel renders explicit negatives as a resolved instruction (0.107581ms)
+✔ serviceStateLabel renders required/completed/unknown correctly (0.082754ms)
+✔ unknown notarization does not trap an apostille client in manual checkout edits (0.793741ms)
+✔ required notarization still requires an execution method (0.113079ms)
+✔ outstandingRequirements is empty when every quote-critical fact is resolved (0.120951ms)
+✔ outstandingRequirements flags a generic document identity (0.18658ms)
+✔ outstandingRequirements requires issuing authority only when apostille/authentication required (0.259489ms)
+✔ outstandingRequirements requires explicit timeline and delivery (0.198247ms)
+✔ outstandingRequirements ignores pricing approval so review-only matters stay submittable (0.184106ms)
+✔ isQuoteReady requires approved pricing AND nothing outstanding (0.175052ms)
+✔ clean document + supported provider + known authority → RON_READY (1.681092ms)
+✔ document preflight REVIEW_REQUIRED / NOT_RUN → operator review; BLOCKED → RON_BLOCKED (0.281232ms)
+✔ unknown receiving-authority acceptance → review; not accepted → blocked (0.255273ms)
+✔ wet-ink or original requirement is incompatible with RON → blocked (0.168313ms)
+✔ unsupported identity capability or provider is governed by deterministic provider truth (0.224487ms)
+✔ notarial act is never inferred and unresolved execution facts need review (0.111277ms)
+✔ payment / scheduling gate remains required (0.148072ms)
+✔ provider identity outcomes are read as status words only; failures need review (0.448042ms)
+✔ persisted evidence is provider-safe only; no raw passport, MRZ, image, biometric or KBA content (0.637176ms)
+✔ server recomputes readiness before the BlueNotary call and ignores client-supplied capability (0.535994ms)
+✔ operator posture is recorded atomically with evidence and never inferred (0.473681ms)
+✔ unpaid matter cannot schedule (PAYMENT_REQUIRED semantics) (0.95301ms)
+✔ a courtesy discount alone never unlocks scheduling (0.151778ms)
+✔ verified payment of the discounted amount unlocks scheduling (0.118698ms)
+✔ a payment_confirmed flag without a settled payment does NOT unlock scheduling (0.118718ms)
+✔ partial payment (underpayment) does not unlock scheduling (0.108052ms)
+✔ governed Wise submission stays locked while unpaid (Tiffany MS-2026-4887) (0.191177ms)
+✔ legacy observation with null snapshot columns cannot substitute for settlement (0.14025ms)
+✔ observed submission from an under-selected read model fails closed (0.290967ms)
+✔ material amount mutation after submission fails scheduling closed (0.168974ms)
+✔ currency mutation after submission fails scheduling closed (0.200731ms)
+✔ Wise reference mutation after submission fails scheduling closed (0.108192ms)
+✔ failed/mismatch settlement state removes submission scheduling authority (0.109925ms)
+✔ open operational requirements block scheduling even when paid (0.119529ms)
+✔ only verified exact settlement can unlock scheduling (0.237256ms)
+✔ zero-value courtesy authorization never substitutes for Wise settlement (0.134702ms)
+✔ FBI background checks use federal authentication routing and never instruct notarization (0.890997ms)
+✔ state public records route through the issuing-state competent authority (0.147471ms)
+✔ private or mixed documents do not fabricate apostille or notarization requirements (0.203555ms)
+✔ operator intelligence uses one read-only canonical projection (0.867672ms)
+✔ ledger and review queues no longer use hardcoded empty arrays (0.207211ms)
+✔ authority verification is production evidence, not a local demo workflow (0.120851ms)
+✔ pipeline is canonical read-only and does not render legacy mutation board (0.123145ms)
+✔ apostille, courier and release reads do not depend on nonexistent or stale status fields (0.303735ms)
+✔ operator release flow stays operator-only and labels review truthfully (0.112418ms)
+✔ all eight /today destinations carry focused Matter context (0.213731ms)
+✔ official government source may become VERIFIED; facts surface only then (1.240811ms)
+✔ third-party-only or model-generated rules cannot become VERIFIED (0.423795ms)
+✔ missing source → INSUFFICIENT_EVIDENCE (0.115653ms)
+✔ expired next_review_at → STALE, and stale facts read as unknown (0.125378ms)
+✔ legacy in-code state registry is never production truth (0.305208ms)
+✔ superseded or review-required form cannot be selected for a packet (0.385418ms)
+✔ active Florida DOS form resolves from the registry; unverified asset needs operator verification (0.209254ms)
+✔ no AI-generated substitute: committed official form is byte-identical to the registered hash (1.013671ms)
+✔ paper-out checklist is operator-recorded, complete only with approval, and never asserts DOS acceptance (0.795583ms)
+✔ server decides verification status; the request cannot set it (0.42601ms)
+✔ command-center sections are present and ranked on the Today surface (0.806149ms)
+✔ every pre-existing Today module is still rendered (nothing removed) (0.727903ms)
+✔ key modules appear exactly once (no accidental duplication in the reorg) (0.177336ms)
+✔ Today surface invents no fabricated operational status labels (0.26003ms)
+✔ Immediate Action distinguishes SLA loading/error from verified empty results (0.225087ms)
+✔ one projection with every required section, status and metadata (2.049214ms)
+✔ status: hard block anywhere → BLOCKED (0.476656ms)
+✔ status: no hard block but governed review → REVIEW_REQUIRED (0.319048ms)
+✔ status: all applicable requirements satisfied → READY (0.754693ms)
+✔ return label required surfaces in logistics once the packet is dispatch-ready (0.231688ms)
+✔ execution brief derives only from canonical facts; unknown stays unknown (0.812579ms)
+✔ client-safe summary: no internal notes, evidence, legal advice or guarantee (0.247732ms)
+✔ read-only projection: no new Matter, no writes, no state machine (0.641062ms)
+✔ premium Hague corridor dates use verified entry-into-force dates (0.77973ms)
+✔ Canada is treated as a Hague Apostille Convention country from 2024-01-11 (0.127291ms)
+✔ UAE does not receive a fabricated Hague apostille-only route (0.102964ms)
+✔ verified overrides preserve truly unaffected country profiles (0.114873ms)
+✔ locked Matter vocabulary includes payment confirmation and dormancy (1.457727ms)
+✔ scheduling cannot skip the payment-confirmed lifecycle step (0.305929ms)
+✔ Wise retainer uses persisted canonical amount_due after discount (0.81969ms)
+✔ normal 1250 Matter preserves 50 percent retainer and balance (0.924587ms)
+✔ Wise add-on fallbacks derive from canonical pricing constants (0.184787ms)
+✔ translation payment fails closed when no approved stored fee exists (0.104246ms)
+✔ every canonical Hague destination resolves through the same professional journey engine (3.897598ms)
+✔ professional journey preserves legal-advice and receiving-authority boundaries (0.193911ms)
+✔ receiving-authority context advances readiness without authorizing execution (0.258608ms)
+✔ missing facts fail closed rather than inventing route certainty (0.172769ms)
+✔ Wise personal-token reconciliation treats Activity as optional enrichment (1.19983ms)
+✔ Wise profile authority is token-validated, business-specific, and cached per runtime (0.220051ms)
+✔ settled balance statement can verify payment without Acquiring Activity (0.194172ms)
+✔ provider observation never authors paid state before settled Wise evidence (0.219199ms)
+✔ Wise fee is reconciled as part of gross client obligation instead of false underpayment (0.117977ms)
+✔ unsupported statement access fails closed instead of fabricating settlement (0.140621ms)
+✔ provider processing cannot bypass the shared verified-settlement gate (0.178618ms)
+✔ automatic reconciliation runs every minute behind the cron secret (0.166069ms)
+✔ Wise exception scanner does not query removed platform-fee column (0.800111ms)
+✔ portal distinguishes submitted payment, scheduling authority, and verified settlement (0.918077ms)
+✔ client observation never authors paid state (0.20619ms)
+✔ discount mutation locks once Wise submission is observed (0.101672ms)
+✔ operator notification recipients include both production inboxes (0.122393ms)
+✔ notification reconciler is near-real-time and cron-secret protected (0.138888ms)
+✔ client portal uses one Milano-branded Wise payment transition ritual (0.723315ms)
+✔ Wise ritual explicitly explains the external payment handoff without creating fear (0.141302ms)
+✔ Wise ritual secures the Matter handoff before enabling the external payment link (0.185949ms)
+✔ Wise ritual intercepts Wise links and preserves explicit user control (0.121973ms)
+✔ Wise ritual is keyboard dismissible, modal-accessible, and rendered above portal stacking contexts (0.109364ms)
+✔ provider-notification recovery remains Wise-only and delegates paid truth to the canonical payment RPC (3.200111ms)
+✔ provider-notification recovery fails closed on reference, amount, currency, resource, timestamp and observed-submission mismatches (0.153811ms)
+✔ provider evidence is service-role only and immutable in authority scope (0.183685ms)
+✔ Wise stuck-payment exceptions are detected automatically without authoring paid state (0.8065ms)
+✔ exception lane preserves immediate scheduling authority and refuses amount-time guessing (0.2597ms)
+✔ operator recovery is authenticated, role restricted, exact-evidence only, and delegates to canonical Wise authority (0.210326ms)
+✔ automatic reconciliation cron also maintains the exception queue (0.106259ms)
+✔ exception storage is service-role governed (0.130075ms)
+ℹ tests 1045
+ℹ suites 0
+ℹ pass 1045
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18946.414764
+Generated data/command-center/workbook-intelligence.generated.json from Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx
+Source SHA-256: 457fa017af2c3675a1dd15af9d87d548e69920f0849b03b869a750c1edde035b
+▲ Next.js 16.2.0 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 65s
+  Skipping validation of types
+  Finished TypeScript config validation in 9ms ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/2832) ...
+  Generating static pages using 2 workers (708/2832)
+  Generating static pages using 2 workers (1416/2832)
+  Generating static pages using 2 workers (2124/2832)
+✓ Generating static pages using 2 workers (2832/2832) in 5.8s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /about
+├ ƒ /access
+├ ƒ /admin/login
+├ ƒ /affidavit-name-discrepancy
+├ ƒ /affidavit-non-existence-record
+├ ƒ /affidavit-one-and-the-same
+├ ƒ /affidavit-translation-accuracy
+├ ƒ /alliance
+├ ƒ /alliance/apply
+├ ƒ /alliance/benefits
+├ ƒ /alliance/certification
+├ ƒ /alliance/command
+├ ƒ /alliance/commissions
+├ ƒ /alliance/compliance
+├ ƒ /alliance/credentials
+├ ƒ /alliance/dashboard
+├ ƒ /alliance/documents
+├ ƒ /alliance/jobs
+├ ƒ /alliance/jobs/[id]
+├ ƒ /alliance/login
+├ ƒ /alliance/matters
+├ ƒ /alliance/messages
+├ ƒ /alliance/onboarding
+├ ƒ /alliance/payouts
+├ ƒ /alliance/profile
+├ ƒ /alliance/referrals
+├ ƒ /alliance/referrals/new
+├ ƒ /alliance/resources
+├ ƒ /alliance/security
+├ ƒ /alliance/support
+├ ƒ /alliance/toolbelt
+├ ƒ /alliance/training
+├ ƒ /api
+├ ƒ /api/acquisition/intelligence
+├ ƒ /api/admin/activity
+├ ƒ /api/admin/certification
+├ ƒ /api/admin/certification/[runId]
+├ ƒ /api/admin/certification/[runId]/evidence
+├ ƒ /api/admin/close
+├ ƒ /api/admin/commissions
+├ ƒ /api/admin/counsel
+├ ƒ /api/admin/db-health
+├ ƒ /api/admin/discounts/comp-clear
+├ ƒ /api/admin/discounts/requests
+├ ƒ /api/admin/discounts/requests/[id]/approve
+├ ƒ /api/admin/followups
+├ ƒ /api/admin/founder-pricing-override
+├ ƒ /api/admin/leaderboard
+├ ƒ /api/admin/matters/[id]/confirm-payment
+├ ƒ /api/admin/matters/[id]/status
+├ ƒ /api/admin/move
+├ ƒ /api/admin/operators
+├ ƒ /api/admin/operators/[id]
+├ ƒ /api/admin/operators/[id]/approve
+├ ƒ /api/admin/operators/[id]/eligibility
+├ ƒ /api/admin/override
+├ ƒ /api/admin/pipeline
+├ ƒ /api/admin/pricing/quote
+├ ƒ /api/admin/professionals
+├ ƒ /api/admin/professionals/[id]/activate
+├ ƒ /api/admin/schema-inspect
+├ ƒ /api/admin/scoring
+├ ƒ /api/admin/seo/activation/actions/[id]
+├ ƒ /api/admin/seo/activation/sync
+├ ƒ /api/admin/seo/authority/placements
+├ ƒ /api/admin/seo/authority/placements/[id]
+├ ƒ /api/admin/seo/authority/relationships
+├ ƒ /api/admin/seo/authority/relationships/[id]
+├ ƒ /api/admin/seo/editorial
+├ ƒ /api/admin/seo/editorial/[country]/[document]
+├ ƒ /api/admin/seo/search-console/health
+├ ƒ /api/admin/seo/search-console/sync
+├ ƒ /api/admin/sla
+├ ƒ /api/admin/sla-alerts
+├ ƒ /api/admin/tests/production-matter-ledger
+├ ƒ /api/admin/wise/diagnose
+├ ƒ /api/admin/wise/health
+├ ƒ /api/admin/wise/payments
+├ ƒ /api/admin/wise/reconciliation-exceptions
+├ ƒ /api/ai/generate
+├ ƒ /api/ai/parse
+├ ƒ /api/alliance/assistant
+├ ƒ /api/alliance/benefits
+├ ƒ /api/alliance/certification
+├ ƒ /api/alliance/commissions
+├ ƒ /api/alliance/dashboard
+├ ƒ /api/alliance/discounts/request
+├ ƒ /api/alliance/documents
+├ ƒ /api/alliance/intake-links
+├ ƒ /api/alliance/jobs
+├ ƒ /api/alliance/jobs/[id]/action
+├ ƒ /api/alliance/messages
+├ ƒ /api/alliance/operator/availability
+├ ƒ /api/alliance/operator/profile
+├ ƒ /api/alliance/operator/toolbelt
+├ ƒ /api/alliance/partner
+├ ƒ /api/alliance/referrals
+├ ƒ /api/alliance/referrals/review
+├ ƒ /api/alliance/submit
+├ ƒ /api/assistant
+├ ƒ /api/auth/login
+├ ƒ /api/auth/password/reset-request
+├ ƒ /api/auth/signout
+├ ƒ /api/auth/signup
+├ ƒ /api/compliance/[jurisdiction]
+├ ƒ /api/compliance/country/[country]
+├ ƒ /api/compliance/intelligence
+├ ƒ /api/compliance/list
+├ ƒ /api/compliance/list/[code]
+├ ƒ /api/complimentary/report
+├ ƒ /api/counsel
+├ ƒ /api/courier/active
+├ ƒ /api/courier/labels
+├ ƒ /api/courier/rates
+├ ƒ /api/courier/tracking/[matterId]
+├ ƒ /api/courier/webhook
+├ ƒ /api/cron/authority-freshness
+├ ƒ /api/cron/authority-monitor
+├ ƒ /api/cron/notification-reconcile
+├ ƒ /api/cron/seo-search-console
+├ ƒ /api/cron/sla-watch
+├ ƒ /api/cron/track-shipments
+├ ƒ /api/cron/wise-payment-reconcile
+├ ƒ /api/dashboard/access-audit
+├ ƒ /api/dashboard/active-timeline
+├ ƒ /api/dashboard/atlas-governance
+├ ƒ /api/dashboard/authority-reviews
+├ ƒ /api/dashboard/authority-reviews/[id]
+├ ƒ /api/dashboard/autopilot
+├ ƒ /api/dashboard/certificates/generate
+├ ƒ /api/dashboard/country-ops
+├ ƒ /api/dashboard/custody/[matterId]
+├ ƒ /api/dashboard/destination-intelligence
+├ ƒ /api/dashboard/discounts
+├ ƒ /api/dashboard/discounts/report
+├ ƒ /api/dashboard/exceptions
+├ ƒ /api/dashboard/execution-control
+├ ƒ /api/dashboard/execution-intelligence
+├ ƒ /api/dashboard/execution-qa
+├ ƒ /api/dashboard/execution-qa/[matterId]
+├ ƒ /api/dashboard/execution-qa/[matterId]/block
+├ ƒ /api/dashboard/execution-qa/[matterId]/pass
+├ ƒ /api/dashboard/execution-readiness
+├ ƒ /api/dashboard/executive
+├ ƒ /api/dashboard/failure-check/[matterId]
+├ ƒ /api/dashboard/global-execution-motion
+├ ƒ /api/dashboard/incidents
+├ ƒ /api/dashboard/intelligence
+├ ƒ /api/dashboard/matter-detail/[id]
+├ ƒ /api/dashboard/matters
+├ ƒ /api/dashboard/matters/[id]/authority-packet
+├ ƒ /api/dashboard/matters/[id]/execution-intelligence
+├ ƒ /api/dashboard/matters/[id]/execution-truth
+├ ƒ /api/dashboard/matters/[id]/mark-lost
+├ ƒ /api/dashboard/matters/[id]/paper-out
+├ ƒ /api/dashboard/matters/[id]/ron-posture
+├ ƒ /api/dashboard/operational-log
+├ ƒ /api/dashboard/operator-intelligence
+├ ƒ /api/dashboard/orb/chat
+├ ƒ /api/dashboard/payments
+├ ƒ /api/dashboard/pipeline
+├ ƒ /api/dashboard/quick-actions
+├ ƒ /api/dashboard/readiness/[matterId]
+├ ƒ /api/dashboard/receiving-authorities
+├ ƒ /api/dashboard/receiving-authorities/[id]
+├ ƒ /api/dashboard/recent-activity
+├ ƒ /api/dashboard/referral-ledger
+├ ƒ /api/dashboard/rejections
+├ ƒ /api/dashboard/release-certificates
+├ ƒ /api/dashboard/releases
+├ ƒ /api/dashboard/revenue
+├ ƒ /api/dashboard/ron/sessions
+├ ƒ /api/dashboard/ron/sessions/[id]
+├ ƒ /api/dashboard/ron/sessions/[id]/advance-to-apostille
+├ ƒ /api/dashboard/ron/sessions/[id]/apostille-qa
+├ ƒ /api/dashboard/ron/sessions/[id]/documents
+├ ƒ /api/dashboard/ron/sessions/[id]/expire
+├ ƒ /api/dashboard/ron/sessions/[id]/reschedule
+├ ƒ /api/dashboard/ron/sessions/[id]/signed-documents
+├ ƒ /api/dashboard/session-playbook/[matterId]
+├ ƒ /api/dashboard/shippo/delivered-not-released
+├ ƒ /api/dashboard/shippo/health
+├ ƒ /api/dashboard/shippo/labels
+├ ƒ /api/dashboard/shippo/rates
+├ ƒ /api/dashboard/shippo/shipments
+├ ƒ /api/dashboard/shippo/tracking
+├ ƒ /api/dashboard/sops
+├ ƒ /api/dashboard/sops/[id]
+├ ƒ /api/dashboard/sops/[id]/versions
+├ ƒ /api/dashboard/stagnation
+├ ƒ /api/dashboard/state-authorities
+├ ƒ /api/dashboard/state-authorities/[id]
+├ ƒ /api/dashboard/state-authorities/[id]/processing-observations
+├ ƒ /api/dashboard/state-authorities/assets/[id]
+├ ƒ /api/dashboard/summary
+├ ƒ /api/dashboard/top-stats
+├ ƒ /api/dashboard/trust-alerts
+├ ƒ /api/dashboard/va-tasks
+├ ƒ /api/dashboard/va/tasks
+├ ƒ /api/dashboard/va/tasks/assign
+├ ƒ /api/dashboard/witness-network
+├ ƒ /api/deals
+├ ƒ /api/deals/[id]
+├ ƒ /api/deals/[id]/activity
+├ ƒ /api/deals/[id]/apostille
+├ ƒ /api/deals/[id]/apply-discount
+├ ƒ /api/deals/[id]/custody
+├ ƒ /api/deals/[id]/execute
+├ ƒ /api/deals/[id]/messages
+├ ƒ /api/deals/[id]/pay
+├ ƒ /api/deals/[id]/payment
+├ ƒ /api/deals/[id]/payment/confirm-final
+├ ƒ /api/deals/[id]/payment/manual-confirm
+├ ƒ /api/deals/[id]/payment/request-final
+├ ƒ /api/deals/[id]/quote
+├ ƒ /api/deals/[id]/release
+├ ƒ /api/deals/[id]/schedule
+├ ƒ /api/deals/[id]/shipment-legs
+├ ƒ /api/deals/[id]/shipment-legs/[legId]/dispatch
+├ ƒ /api/deals/[id]/shipment-legs/[legId]/label
+├ ƒ /api/deals/[id]/shipment-legs/[legId]/rates
+├ ƒ /api/debug/session
+├ ƒ /api/debug/supabase
+├ ƒ /api/debug/supabase-env
+├ ƒ /api/dispatch/assign
+├ ƒ /api/dispatch/escalate
+├ ƒ /api/dispatch/jobs
+├ ƒ /api/dispatch/jobs/[id]
+├ ƒ /api/dispatch/reassign
+├ ƒ /api/dispatch/request
+├ ƒ /api/evidence/[id]
+├ ƒ /api/export/[id]
+├ ƒ /api/follow-ups
+├ ƒ /api/follow-ups/[id]
+├ ƒ /api/health
+├ ƒ /api/health/assistant
+├ ƒ /api/health/database
+├ ƒ /api/health/dispatch
+├ ƒ /api/health/payment
+├ ƒ /api/health/storage
+├ ƒ /api/health/webhooks
+├ ƒ /api/intake
+├ ƒ /api/intake/analytics
+├ ƒ /api/intake/extract
+├ ƒ /api/intake/upload
+├ ƒ /api/intel
+├ ƒ /api/intelligence/generate
+├ ƒ /api/internal/e2e/log-event
+├ ƒ /api/internal/e2e/seed
+├ ƒ /api/internal/e2e/status
+├ ƒ /api/matter-intelligence
+├ ƒ /api/matters/[matterId]/complimentary
+├ ƒ /api/matters/[matterId]/complimentary/authorize
+├ ƒ /api/matters/[matterId]/complimentary/request
+├ ƒ /api/matters/[matterId]/complimentary/revoke
+├ ƒ /api/notary/apply
+├ ƒ /api/notary/credentials
+├ ƒ /api/portal/assistant
+├ ƒ /api/portal/check-email
+├ ƒ /api/portal/confirm
+├ ƒ /api/portal/files
+├ ƒ /api/portal/files/[id]/download
+├ ƒ /api/portal/me
+├ ƒ /api/portal/me/certificate
+├ ƒ /api/portal/me/courier
+├ ƒ /api/portal/me/discount
+├ ƒ /api/portal/me/documents
+├ ƒ /api/portal/me/invoice
+├ ƒ /api/portal/me/matter-intelligence
+├ ƒ /api/portal/me/matter-intelligence-v2
+├ ƒ /api/portal/me/messages
+├ ƒ /api/portal/me/payment-observation
+├ ƒ /api/portal/me/readiness
+├ ƒ /api/portal/me/ron
+├ ƒ /api/portal/me/timeline
+├ ƒ /api/portal/me/tracking
+├ ƒ /api/portal/me/upload
+├ ƒ /api/portal/verify
+├ ƒ /api/pricing/quote
+├ ƒ /api/professional/account
+├ ƒ /api/professional/handoff
+├ ƒ /api/professional/matters
+├ ƒ /api/professional/profile
+├ ƒ /api/public/payment-status
+├ ƒ /api/revenue/intelligence
+├ ƒ /api/review-requests
+├ ƒ /api/review-requests/[id]
+├ ƒ /api/review-requests/[id]/link-matter
+├ ƒ /api/reviews/request
+├ ƒ /api/runStep
+├ ƒ /api/sales/capture
+├ ƒ /api/shipping/create-label/[id]
+├ ƒ /api/tools/courier
+├ ƒ /api/tools/embassy
+├ ƒ /api/tools/hague
+├ ƒ /api/tools/legalization
+├ ƒ /api/tools/ron
+├ ƒ /api/tools/signer
+├ ƒ /api/tools/translation
+├ ƒ /api/upload
+├ ƒ /api/va/assistant
+├ ƒ /api/va/checklists
+├ ƒ /api/va/courier/tasks
+├ ƒ /api/va/events
+├ ƒ /api/va/matters
+├ ƒ /api/va/matters/[id]
+├ ƒ /api/va/me
+├ ƒ /api/va/messages/drafts
+├ ƒ /api/va/messages/drafts/[id]
+├ ƒ /api/va/ron/tasks
+├ ƒ /api/va/sops
+├ ƒ /api/va/tasks
+├ ƒ /api/va/tasks/[id]
+├ ƒ /api/va/tasks/[id]/complete
+├ ƒ /api/va/tasks/[id]/escalate
+├ ƒ /api/va/uploads
+├ ƒ /api/verify/[verificationId]
+├ ƒ /api/webhooks/alliance/credential
+├ ƒ /api/webhooks/alliance/job
+├ ƒ /api/webhooks/alliance/toolbelt
+├ ƒ /api/webhooks/bluenotary
+├ ƒ /api/webhooks/wise
+├ ƒ /apostille-intel
+├ ƒ /apostille-intel/[country]/[document]
+├ ƒ /apostille/[country]
+├ ƒ /apostille/[country]/[document]
+├ ƒ /apostille/[country]/[document]/[use-case]
+├ ● /apostille/[country]/authority/[authority]/[document]
+├ ○ /apostille/sitemap.xml
+├ ƒ /apostille/us
+├ ƒ /apostille/us/[state]
+├ ƒ /auth/callback
+├ ƒ /auth/recovery
+├ ○ /authority/sitemap.xml
+├ ƒ /blog
+├ ƒ /book
+├ ƒ /bradenton/apostille-services
+├ ƒ /brandon/apostille-services
+├ ƒ /case-studies/colorado-italy-consulate-miami
+├ ƒ /clearwater/apostille-services
+├ ƒ /contact
+├ ƒ /counsel
+├ ƒ /counsel/corridors
+├ ƒ /counsel/use-cases
+├ ƒ /counsel/use-cases/[useCase]
+├ ƒ /countries
+├ ƒ /countries/[country]
+├ ƒ /dashboard
+├ ƒ /dashboard/[module]
+├ ƒ /dashboard/acquisition
+├ ƒ /dashboard/admin
+├ ƒ /dashboard/admin/payments
+├ ƒ /dashboard/admin/reconciliation
+├ ƒ /dashboard/admin/validate
+├ ƒ /dashboard/ads
+├ ƒ /dashboard/alliance
+├ ƒ /dashboard/alliance/dispatch
+├ ƒ /dashboard/alliance/intelligence-platform
+├ ƒ /dashboard/alliance/platform
+├ ƒ /dashboard/alliance/quality
+├ ƒ /dashboard/alliance/referrals
+├ ƒ /dashboard/alliance/ron-coverage
+├ ƒ /dashboard/alliance/trust-graph
+├ ƒ /dashboard/alliance/vault
+├ ƒ /dashboard/analytics
+├ ƒ /dashboard/apostille
+├ ƒ /dashboard/apostille-rules
+├ ƒ /dashboard/assets
+├ ƒ /dashboard/atlas
+├ ƒ /dashboard/authorities
+├ ƒ /dashboard/authorities/verify
+├ ƒ /dashboard/authority-acquisition
+├ ƒ /dashboard/authority-research
+├ ƒ /dashboard/automation
+├ ƒ /dashboard/booking-intake
+├ ƒ /dashboard/build-center
+├ ƒ /dashboard/certification
+├ ƒ /dashboard/command
+├ ƒ /dashboard/command-center
+├ ƒ /dashboard/commercial
+├ ƒ /dashboard/commercial/intelligence
+├ ƒ /dashboard/completion
+├ ƒ /dashboard/compliance
+├ ƒ /dashboard/compliance-atlas
+├ ƒ /dashboard/content
+├ ƒ /dashboard/control-plane
+├ ƒ /dashboard/conversion
+├ ƒ /dashboard/copilot
+├ ƒ /dashboard/corridors
+├ ƒ /dashboard/corridors/certification
+├ ƒ /dashboard/countries
+├ ƒ /dashboard/courier
+├ ƒ /dashboard/credentials
+├ ƒ /dashboard/deals
+├ ƒ /dashboard/deals/[id]
+├ ƒ /dashboard/deliveries
+├ ƒ /dashboard/demand
+├ ƒ /dashboard/deployment
+├ ƒ /dashboard/discounts
+├ ƒ /dashboard/dispatch
+├ ƒ /dashboard/dna
+├ ƒ /dashboard/docs/human-touch-trust-engine
+├ ƒ /dashboard/documents
+├ ƒ /dashboard/economics
+├ ƒ /dashboard/emails
+├ ƒ /dashboard/exceptions
+├ ƒ /dashboard/execution-control
+├ ƒ /dashboard/execution-jobs
+├ ƒ /dashboard/execution-qa
+├ ƒ /dashboard/executive
+├ ƒ /dashboard/expansion
+├ ƒ /dashboard/field-visits
+├ ƒ /dashboard/financials
+├ ƒ /dashboard/fingerprint-apostille-network
+├ ƒ /dashboard/fingerprinting
+├ ƒ /dashboard/follow-ups
+├ ƒ /dashboard/forecast
+├ ƒ /dashboard/founder
+├ ƒ /dashboard/founder-pricing
+├ ƒ /dashboard/founder/integrations
+├ ƒ /dashboard/go-live
+├ ƒ /dashboard/government
+├ ƒ /dashboard/government-intelligence
+├ ƒ /dashboard/high-value-assets
+├ ƒ /dashboard/ideas
+├ ƒ /dashboard/incidents
+├ ƒ /dashboard/intake
+├ ƒ /dashboard/intelligence-platform
+├ ƒ /dashboard/intelligence/acceptance
+├ ƒ /dashboard/intelligence/acquisition
+├ ƒ /dashboard/intelligence/autopilot
+├ ƒ /dashboard/intelligence/compliance
+├ ƒ /dashboard/intelligence/country
+├ ƒ /dashboard/intelligence/freshness
+├ ƒ /dashboard/intelligence/operators
+├ ƒ /dashboard/intelligence/platform-status
+├ ƒ /dashboard/intelligence/rejections
+├ ƒ /dashboard/intelligence/revenue
+├ ƒ /dashboard/intelligence/sales-lab
+├ ƒ /dashboard/invoices
+├ ƒ /dashboard/italy-records
+├ ƒ /dashboard/jurisdictions
+├ ƒ /dashboard/lanes
+├ ƒ /dashboard/leads
+├ ƒ /dashboard/ledger
+├ ƒ /dashboard/legal
+├ ƒ /dashboard/maritime
+├ ƒ /dashboard/marketing/counsel
+├ ƒ /dashboard/matter-intelligence
+├ ƒ /dashboard/matter-intelligence/packet-review
+├ ƒ /dashboard/matter-intelligence/reconciliation
+├ ƒ /dashboard/matter-intelligence/routing-rules
+├ ƒ /dashboard/matter-ops
+├ ƒ /dashboard/matters/[matterId]
+├ ƒ /dashboard/matters/[matterId]/execution
+├ ƒ /dashboard/matters/[matterId]/truth
+├ ƒ /dashboard/memory
+├ ƒ /dashboard/monitoring
+├ ƒ /dashboard/motion-preview
+├ ƒ /dashboard/needs-review
+├ ƒ /dashboard/notary-network
+├ ƒ /dashboard/notifications
+├ ƒ /dashboard/observations
+├ ƒ /dashboard/operations
+├ ƒ /dashboard/operations/integrations
+├ ƒ /dashboard/operator-spine
+├ ƒ /dashboard/operator-terminal
+├ ƒ /dashboard/opportunities
+├ ƒ /dashboard/outreach
+├ ƒ /dashboard/packaging-delivery
+├ ƒ /dashboard/packet-builder
+├ ƒ /dashboard/payments
+├ ƒ /dashboard/payments/discounts
+├ ƒ /dashboard/payments/discounts/report
+├ ƒ /dashboard/payments/reconciliation
+├ ƒ /dashboard/pipeline
+├ ƒ /dashboard/pricing
+├ ƒ /dashboard/pro-forma/[id]
+├ ƒ /dashboard/professional360
+├ ƒ /dashboard/prospects
+├ ƒ /dashboard/reconciliation
+├ ƒ /dashboard/recovery
+├ ƒ /dashboard/referral
+├ ƒ /dashboard/referrals
+├ ƒ /dashboard/rejections
+├ ƒ /dashboard/relationships
+├ ƒ /dashboard/releases
+├ ƒ /dashboard/releases/certificates
+├ ƒ /dashboard/revenue
+├ ƒ /dashboard/review-requests
+├ ƒ /dashboard/reviews
+├ ƒ /dashboard/ron
+├ ƒ /dashboard/ron/[session_id]
+├ ƒ /dashboard/runbook
+├ ƒ /dashboard/scheduling-readiness
+├ ƒ /dashboard/scripts
+├ ƒ /dashboard/security
+├ ƒ /dashboard/seo
+├ ƒ /dashboard/seo-authority
+├ ƒ /dashboard/seo-revenue
+├ ƒ /dashboard/seo/editorial
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/shipping
+├ ƒ /dashboard/sops
+├ ƒ /dashboard/sops/[id]
+├ ƒ /dashboard/sops/[id]/edit
+├ ƒ /dashboard/sops/new
+├ ƒ /dashboard/stagnation
+├ ƒ /dashboard/system/integrations
+├ ƒ /dashboard/terminal
+├ ƒ /dashboard/testing/tiffany-e2e
+├ ƒ /dashboard/tools
+├ ƒ /dashboard/topical-authority
+├ ƒ /dashboard/translations
+├ ƒ /dashboard/trust
+├ ƒ /dashboard/trust-network
+├ ƒ /dashboard/truth
+├ ƒ /dashboard/va
+├ ƒ /dashboard/va/command
+├ ƒ /dashboard/witness-network
+├ ƒ /dashboard/workbook
+├ ƒ /dashboard/workbook/[sheet]
+├ ● /de/[...slug]
+├ ƒ /docs/api
+├ ƒ /docs/auth
+├ ƒ /docs/embeds
+├ ƒ /docs/rate-limits
+├ ƒ /docs/webhooks
+├ ƒ /document-authentication/[country]
+├ ƒ /documents/[document]
+├ ƒ /documents/[document]/[country]
+├ ƒ /dunedin/apostille-services
+├ ● /es/[...slug]
+├ ƒ /faq
+├ ƒ /florida/apostille-services
+├ ƒ /florida/international-notary
+├ ƒ /forgot-password
+├ ƒ /founder
+├ ● /fr/[...slug]
+├ ƒ /global-document-intelligence
+├ ƒ /guides/apostille-for-italian-citizenship-documents
+├ ƒ /guides/apostille-for-vital-records
+├ ƒ /guides/apostille-vs-legalization
+├ ƒ /guides/document-origin-vs-destination-country
+├ ƒ /guides/florida-apostille-timeline
+├ ƒ /guides/how-to-prepare-documents-for-use-abroad
+├ ƒ /guides/notarized-document-for-use-abroad
+├ ƒ /guides/power-of-attorney-for-use-abroad
+├ ƒ /guides/remote-online-notary-international-documents
+├ ƒ /guides/what-is-an-apostille
+├ ○ /icon.png
+├ ƒ /intake
+├ ƒ /intake/confirmation
+├ ƒ /international-affidavit
+├ ƒ /international-affidavits
+├ ● /it/[...slug]
+├ ƒ /lakewood-ranch/apostille-services
+├ ƒ /land-o-lakes/apostille-services
+├ ƒ /largo/apostille-services
+├ ƒ /lawyer-access
+├ ƒ /learn
+├ ƒ /learn/apostille-vs-authentication
+├ ƒ /learn/can-a-ron-document-be-apostilled
+├ ƒ /learn/can-ron-documents-be-apostilled
+├ ƒ /learn/fbi-background-check-apostille
+├ ƒ /learn/hague-vs-non-hague-countries
+├ ƒ /learn/international-document-courier
+├ ƒ /learn/international-document-courier-release
+├ ƒ /learn/italy-citizenship-affidavit
+├ ƒ /learn/power-of-attorney-abroad
+├ ƒ /learn/power-of-attorney-for-use-abroad
+├ ƒ /learn/what-is-an-apostille
+├ ƒ /locations
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /map
+├ ƒ /new-port-richey/apostille-services
+├ ƒ /notary/join
+├ ƒ /oldsmar/apostille-services
+├ ○ /opengraph-image
+├ ƒ /operator/login
+├ ƒ /palm-harbor/apostille-services
+├ ƒ /partners/[segment]
+├ ƒ /partners/attorneys
+├ ƒ /partners/international-clients
+├ ƒ /partners/medical
+├ ƒ /partners/private-clients
+├ ƒ /partners/real-estate
+├ ƒ /partners/ron-notary-alliance
+├ ƒ /partners/ron-notary-alliance/apply
+├ ƒ /portal
+├ ƒ /portal/[token]
+├ ƒ /portal/documents
+├ ƒ /portal/invoice
+├ ƒ /portal/matter-room
+├ ƒ /portal/messages
+├ ƒ /portal/payment
+├ ƒ /portal/release
+├ ƒ /portal/review
+├ ƒ /portal/ron
+├ ƒ /portal/ron/complete
+├ ƒ /portal/tracking
+├ ƒ /portal/trackingNow
+├ ƒ /portal/v2
+├ ƒ /ports/port-tampa-bay-document-execution
+├ ƒ /power-of-attorney-international
+├ ƒ /pricing
+├ ƒ /privacy
+├ ƒ /process
+├ ƒ /professional
+├ ƒ /professional-network
+├ ƒ /professional/[country]
+├ ƒ /professional/account
+├ ƒ /professional/damiani
+├ ƒ /professional/matters
+├ ƒ /professional/matters/new
+├ ƒ /professional/profile
+├ ○ /professional/sitemap.xml
+├ ƒ /professional/start
+├ ƒ /professionals
+├ ƒ /professionals/family-offices
+├ ƒ /professionals/institutional-access
+├ ƒ /professionals/law-firms
+├ ƒ /professionals/white-label-support
+├ ● /pt-br/[...slug]
+├ ● /pt/[...slug]
+├ ƒ /reset-password
+├ ƒ /review
+├ ƒ /review/[token]
+├ ○ /robots.txt
+├ ƒ /sarasota/apostille-services
+├ ƒ /secure-portal
+├ ƒ /services
+├ ƒ /services/[service]
+├ ƒ /services/airport-emergency-document-execution
+├ ƒ /services/apostille
+├ ƒ /services/apostille-authentication
+├ ƒ /services/attorney-document-execution-referrals
+├ ƒ /services/education-credential-apostille
+├ ƒ /services/embassy-consular-legalization
+├ ƒ /services/equine-document-apostille
+├ ƒ /services/fbi-background-check-apostille
+├ ƒ /services/fbi-fingerprinting-document-routing
+├ ƒ /services/federal-apostille-authentication
+├ ƒ /services/fingerprint-cards
+├ ƒ /services/fingerprinting-document-support
+├ ƒ /services/florida-apostille-courier
+├ ƒ /services/florida-ron-international
+├ ƒ /services/gem-diamond-document-apostille
+├ ƒ /services/government-document-execution
+├ ƒ /services/high-value-asset-document-execution
+├ ƒ /services/hnwi-document-execution
+├ ƒ /services/immigration-documents
+├ ƒ /services/immigration-fingerprinting-documents
+├ ƒ /services/international-affidavit-execution
+├ ƒ /services/international-execution
+├ ƒ /services/international-passport-document-execution
+├ ƒ /services/italy-apostille
+├ ƒ /services/loan-signing-agent-services
+├ ƒ /services/luxury-asset-document-apostille
+├ ƒ /services/maritime-global-logistics-document-execution
+├ ƒ /services/medical-document-apostille
+├ ƒ /services/mobile-fingerprinting-coordination
+├ ƒ /services/mobile-notary
+├ ƒ /services/power-of-attorney-for-use-abroad
+├ ƒ /services/private-client-apostille
+├ ƒ /services/regenerative-medicine-document-support
+├ ƒ /services/remote-online-notarization
+├ ƒ /services/remote-online-notary
+├ ƒ /services/translation-coordination
+├ ƒ /services/us-documents-abroad
+├ ƒ /services/vital-record-apostille
+├ ƒ /services/yacht-document-apostille
+├ ○ /sitemap.xml
+├ ƒ /st-petersburg/apostille-services
+├ ƒ /tampa/apostille-services
+├ ƒ /terms
+├ ƒ /today
+├ ƒ /today/professional
+├ ƒ /trinity/apostille-services
+├ ƒ /trust
+├ ○ /twitter-image
+├ ƒ /va
+├ ƒ /va/apply
+├ ƒ /va/checklists
+├ ƒ /va/courier
+├ ƒ /va/dashboard
+├ ƒ /va/documents
+├ ƒ /va/escalations
+├ ƒ /va/follow-ups
+├ ƒ /va/matters
+├ ƒ /va/messages
+├ ƒ /va/portal
+├ ƒ /va/ron
+├ ƒ /va/tasks
+├ ƒ /va/uploads
+├ ƒ /verify/[verificationId]
+├ ƒ /verticals/equine
+├ ƒ /verticals/international-lawyers
+├ ƒ /verticals/life-sciences
+├ ƒ /verticals/luxury-assets
+├ ƒ /verticals/maritime
+├ ƒ /verticals/private-wealth
+├ ƒ /wesley-chapel/apostille-services
+├ ƒ /westchase/apostille-services
+└ ƒ /workspace/release
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+Duplicate-source gate passed (2557 source files inspected).
+✓ found 124 destination slugs
+✓ getCountryExecutionIntelligence present
+✓ registry built from DESTINATIONS.reduce
+✓ priority slug "italy" present
+✓ priority slug "brazil" present
+✓ priority slug "uae" present
+✓ all required field names present
+✓ country intelligence validation passed
+✓ no weak legacy labels in public surfaces
+✓ no forbidden phrases in public surfaces
+✓ country-execution-intelligence.ts present with EXECUTION INTELLIGENCE marker
+✓ execution-intelligence-matrix.ts exports getExecutionIntelligenceForAudience
+✓ execution intelligence validation passed
+  ✓ PASS: no public surface imports the private execution-intelligence engine
+  ✓ PASS: no public surface leaks private workflow / revenue tokens
+
+────────────────────────────────────────────────
+
+✓ Public intelligence safety passed.
+
+  ✓ PASS: exists: app/access/page.tsx
+  ✓ PASS: exists: app/lawyer-access/page.tsx
+  ✓ PASS: exists: app/alliance/apply/page.tsx
+  ✓ PASS: exists: app/(public)/va/apply/page.tsx
+  ✓ PASS: exists: app/api/sales/capture/route.ts
+  ✓ PASS: exists: data/access-products.ts
+  ✓ PASS: exists: data/milano-revenue-copy-system.ts
+
+────────────────────────────────────────────────
+
+✓ Sales engine validation passed.
+
+  ✗ FAIL: app/lawyer-access/page.tsx missing required semantic: Milano execution proposition
+  ✗ FAIL: app/lawyer-access/page.tsx missing required semantic: controlled intake CTA
+  ✗ FAIL: no public page includes CTA "Request Lawyer Access"
+
+────────────────────────────────────────────────
+
+✗ Revenue copy validation FAILED — 3 issue(s).
+
+✗ hero RON label missing eligible RON language
+✗ hero RON support boundary missing
+✗ expected one Milano Trust Core label, found 2
+✓ Service positioning validation passed
+Command Center intelligence validation failed:
+- app/pricing/page.tsx exposes forbidden public phrase: legal advice
+- Command Center implies live metrics without a live backend qualifier
+- Command Center missing Wise-first payment provider copy
+Internal module registry validation failed:
+- Dashboard nav or home missing href: /dashboard/command-center
+- Dashboard nav or home missing href: /dashboard/seo-authority
+- Dashboard nav or home missing href: /dashboard/compliance-atlas
+- Dashboard nav or home missing href: /dashboard/operator-terminal
+Public final copy lock validation failed:
+- /pricing does not link to /intake
+- Share card missing: #15120A
+Canonical locks validation passed.
+Referral intelligence validation passed.
+nav missing seo authority
+Pricing conversion clarity validation passed.
+OK: All required pricing files present
+OK: Canonical bases verified in lib/pricing.ts: signature 750 / priority 975 / executive 1850
+OK: pricingDoctrine.ts contains no duplicate lane-base literals
+OK: Public /pricing says 'Execution Quote'
+OK: Public /pricing links to /intake
+OK: Public /pricing shows no exact prices
+OK: Smart Intake gates auto-draft on manual review (no auto-finalize)
+OK: Regulated / fingerprint / loan signing gated to manual review
+OK: Payment gate + scheduling lock intact
+OK: No checkout / cheap / competitor-anchor language on public surfaces
+OK: No Wise / release gate / custody / payment-confirmation drift in current PR delta
+
+VALIDATOR: smart-intake-pricing-engine PASSED.
+
+validate:motion-system passed (16 motion files, map-free, demo-disclaimed, reduced-motion safe, no backend imports)
+OK: Audit doc present
+OK: No unapproved protected files touched (Wise/payment/release/custody/RLS/Shippo/BlueNotary/PIP)
+OK: All documented salvage files present
+OK: No PIP/Liaison OS added
+
+VALIDATOR: final-branch-salvage-audit PASSED.
+Data intelligence compliance UI validation passed.
+Final mobile cosmetic pass validation passed.
+Touchpoint registry validation passed.
+Client touchpoint wiring validation passed.
+Alliance touchpoint wiring validation passed.
+VA/operator touchpoint wiring validator passed.
+Global acceptance intelligence validation passed.
+Milano execution routing upgrade validation passed.
+Operator Intelligence Spine validation passed.
+warning: in the working copy of 'next-env.d.ts', CRLF will be replaced by LF the next time Git touches it
+Final Intelligence Operator OS validation passed.
+Public copy safety validation failed:
+- unsafe legal advice context in app/lawyer-access/page.tsx
+- Executed properly the first time found in app/services/[service]/page.tsx
+- unsafe legal advice context in components/portal/ClientMatterQuoteSummary.tsx
+- unsafe legal advice context in components/seo/CountryDocumentAuthorityPage.tsx
+PASS final public polish + rendered-device QA governance
+PASS canonical public i18n runtime: six locales, shared shell, header destinations, dynamic route continuity, forms, and governed compliance copy
+PASS execution-scope explainer + canonical dashboard discovery: additive, governed, no pricing/state-machine rebuild
+OK fingerprint-apostille-expansion: all module files present
+OK fingerprint-routing-rules
+OK apostille-authentication-rules
+OK translation-coordination
+OK booking-intake-gates
+OK regulated-public-claims: no banned claims in Module 2 public pages
+Revenue stream engine validation passed.
+Trust network intelligence validation passed.
+Next five production builds validation failed:
+- Missing required file: lib/portal2/documentVault.ts
+- Missing required file: lib/dispatch/partnerApplication.ts
+- Missing required file: lib/dispatch/dispatchQueue.ts
+warning: in the working copy of 'next-env.d.ts', CRLF will be replaced by LF the next time Git touches it
+Next three revenue ops validation passed.
+app/pricing/page.tsx missing required semantic: Signature Execution
+Cinematic UI system validation passed.
+Cinematic route coverage passed for 16 route entry points.
+Milano Seal Trust Network / Alliance / Intelligence Platform validation passed.
+OK   exists: lib/government/types.ts
+OK   exists: lib/government/governmentServicesRegistry.ts
+OK   exists: lib/government/procurementOpportunityEngine.ts
+OK   exists: lib/government/vendorRegistrationTracker.ts
+OK   exists: lib/government/commodityCodeRegistry.ts
+OK   exists: lib/government/governmentCrmEngine.ts
+OK   exists: lib/government/bidNoBidScoring.ts
+OK   exists: lib/government/capabilityStatementModel.ts
+OK   exists: lib/government/governmentSafety.ts
+OK   exists: app/services/government-document-execution/page.tsx
+OK   exists: app/dashboard/government/page.tsx
+OK   exists: components/dashboard/government/GovernmentCommandCenter.tsx
+OK   exists: components/dashboard/government/GovernmentCRMBoard.tsx
+OK   exists: components/dashboard/government/ProcurementOpportunityBoard.tsx
+OK   exists: components/dashboard/government/VendorRegistrationTracker.tsx
+OK   exists: components/dashboard/government/CommodityCodeRegistry.tsx
+OK   exists: components/dashboard/government/CapabilityStatementManager.tsx
+OK   exists: components/dashboard/government/BidNoBidScoringPanel.tsx
+OK   exists: components/dashboard/government/GovernmentRevenuePanel.tsx
+OK   exists: components/dashboard/government/GovernmentSafetyPanel.tsx
+OK   exists: docs/government/GOVERNMENT_PUBLIC_SECTOR_VERTICAL.md
+OK   exists: docs/government/PINELLAS_VENDOR_REGISTRATION_PLAN.md
+OK   exists: docs/government/GOVERNMENT_CAPABILITY_STATEMENT_TEMPLATE.md
+OK   exists: docs/government/PROCUREMENT_COMMODITY_CODE_TRACKER.md
+OK   exists: docs/government/BID_NO_BID_SCORING_SOP.md
+OK   exists: docs/outreach/GOVERNMENT_CAPABILITY_STATEMENT_OUTREACH_SCRIPT.md
+OK   exists: docs/investor/GOVERNMENT_PUBLIC_SECTOR_VERTICAL_INVESTOR_INSERT.md
+OK   Pinellas plan content complete
+OK   no banned claims detected in public page + docs
+
+OK — Government & Public Sector vertical validated.
+
+Mini Atlas Intelligence Flow validation
+
+  [32m✓[0m components/landing/homepage-routing-preview.tsx exists
+  [32m✓[0m components/home/MiniAtlasPreview.tsx exists
+  [32m✓[0m top dotted globe removed from homepage preview
+  [32m✓[0m crude MiniCorridorMapPreview no longer used
+  [32m✓[0m MiniAtlasPreview embedded in homepage preview
+  [32m✓[0m Execution Intelligence card retained
+  [32m✓[0m layout is grid-cols-1 lg:grid-cols-2
+  [32m✓[0m Mini Atlas precedes Execution Intelligence in DOM (mobile order correct)
+  [32m✓[0m Mini Atlas does not embed the full Leaflet Atlas (teases, not clones)
+  [32m✓[0m Mini Atlas is a Global Execution Network command widget
+  [32m✓[0m Mini Atlas is animated (living corridor)
+  [32m✓[0m Mini Atlas uses canonical DESTINATIONS data
+  [32m✓[0m Mini Atlas deep-links to full Atlas with country slug
+  [32m✓[0m Mini Atlas auto-cycles with pause-on-interaction
+  [32m✓[0m Mini Atlas surfaces the Florida execution origin
+
+[32mAll 15 checks passed[0m
+
+
+Milano Trust Core intelligence engine validation
+
+  [32m✓[0m components/landing/milano-trust-core.tsx exists
+  [32m✓[0m lib/homepage/activeCorridorStore.ts exists
+  [32m✓[0m preserves review concept: Secure Intake
+  [32m✓[0m preserves review concept: Global Document Intelligence
+  [32m✓[0m preserves review concept: Payment-Gated Scheduling
+  [32m✓[0m preserves review concept: Chain-of-Custody Visibility
+  [32m✓[0m preserves review concept: Apostille Coordination
+  [32m✓[0m preserves review concept: International Release
+  [32m✓[0m Trust Core syncs to the active Mini Atlas corridor
+  [32m✓[0m Trust Core uses canonical destination data
+  [32m✓[0m Trust Core respects reduced-motion
+  [32m✓[0m demonstration state labelled as illustrative platform sequence
+  [32m✓[0m no fake Trust Score
+  [32m✓[0m no fake live matter counts / verification results
+  [32m✓[0m no protected-system references in Trust Core
+  [32m✓[0m Mini Atlas publishes its corridor to the shared store
+  [32m✓[0m store provides an SSR-safe server snapshot
+
+[32mAll 17 checks passed[0m
+
+
+Universal Procurement Engine validation
+
+  [32m✓[0m preserved: lib/government/bidNoBidScoring.ts
+  [32m✓[0m preserved: lib/government/vendorRegistrationTracker.ts
+  [32m✓[0m preserved: lib/government/commodityCodeRegistry.ts
+  [32m✓[0m preserved: lib/government/governmentCrmEngine.ts
+  [32m✓[0m preserved: lib/government/intelligence/agencyRegistry.ts
+  [32m✓[0m preserved: lib/government/intelligence/procurementKnowledgeGraph.ts
+  [32m✓[0m preserved: lib/operatorActions.ts
+  [32m✓[0m preserved: lib/pricing/canonicalPricingGateway.ts
+  [32m✓[0m preserved: app/services/government-document-execution/page.tsx
+  [32m✓[0m preserved: app/dashboard/government/page.tsx
+  [32m✓[0m created: lib/procurement/procurementSafety.ts
+  [32m✓[0m created: lib/government/submissions/pinellasItq250786.ts
+  [32m✓[0m created: lib/procurement/submissions/submissionRegistry.ts
+  [32m✓[0m created: lib/procurement/references/referenceConsentTracker.ts
+  [32m✓[0m created: lib/procurement/readiness/insuranceRegistry.ts
+  [32m✓[0m created: lib/procurement/proposals/proposalSectionRegistry.ts
+  [32m✓[0m created: lib/procurement/sow/sowBuilder.ts
+  [32m✓[0m created: lib/procurement/pricing/procurementPricingAdapter.ts
+  [32m✓[0m no duplicate procurement dashboard route
+  [32m✓[0m pricing adapter delegates to canonical gateway (no new calculator)
+  [32m✓[0m Pinellas ITQ #25-0786 record present
+  [32m✓[0m Pinellas record is real data (isSample: false)
+  [32m✓[0m Pinellas remains not_awarded
+  [32m✓[0m Pinellas has no fabricated award evidence
+  [32m✓[0m submission registry enforces award evidence
+  [32m✓[0m procurement safety policy exports guards
+  [32m✓[0m no fabricated guarantees/endorsements in procurement modules
+  [32m✓[0m no protected-system imports in procurement modules
+  [32m✓[0m Government dashboard renders Procurement Command Center
+  [32m✓[0m Procurement Command Center component exists
+  [32m✓[0m no third/parallel government dashboard route
+  [32m✓[0m command center renders real Pinellas record as Submitted · Not Awarded
+  [32m✓[0m command center shows honest empty states
+  [32m✓[0m command center labels real vs sample data
+  [32m✓[0m command center tabs are responsive (mobile select + wrapping)
+  [32m✓[0m procurement operator actions include dedup + full action set
+  [32m✓[0m test present: tests/unit/procurementSafety.test.ts
+  [32m✓[0m test present: tests/unit/procurementProposalAssembler.test.ts
+  [32m✓[0m test present: tests/integration/pinellasSubmissionRecord.test.ts
+  [32m✓[0m test present: tests/integration/procurementAwardEvidenceGate.test.ts
+  [32m✓[0m test present: tests/integration/procurementReferenceInsurance.test.ts
+  [32m✓[0m test present: tests/integration/procurementOperatorActions.test.ts
+  [32m✓[0m SOP present: PROCUREMENT_OPERATOR_SOP.md
+  [32m✓[0m SOP present: BID_NO_BID_SOP.md
+  [32m✓[0m SOP present: COMPLIANCE_MATRIX_SOP.md
+  [32m✓[0m SOP present: PROPOSAL_ASSEMBLY_SOP.md
+  [32m✓[0m SOP present: REFERENCE_CONSENT_SOP.md
+  [32m✓[0m SOP present: INSURANCE_READINESS_SOP.md
+  [32m✓[0m SOP present: VENDOR_REGISTRATION_SOP.md
+  [32m✓[0m SOP present: SUBMISSION_AND_CONFIRMATION_SOP.md
+  [32m✓[0m SOP present: AWARD_AND_DEBRIEF_SOP.md
+  [32m✓[0m SOP present: AIRPORT_RELATIONSHIP_AND_SPONSORSHIP_PLAYBOOK.md
+  [32m✓[0m airport playbook enforces relationship-first, no-guarantee safety
+  [32m✓[0m package.json valid
+
+[32mAll 54 checks passed[0m
+
+
+Maritime & Global Logistics Execution validation
+
+  [32m✓[0m canonical present: lib/pricing/canonicalPricingGateway.ts
+  [32m✓[0m canonical present: lib/platform/canonicalMatter.ts
+  [32m✓[0m canonical present: data/destinations.ts
+  [32m✓[0m created: lib/maritime/types.ts
+  [32m✓[0m created: lib/maritime/maritimeSafety.ts
+  [32m✓[0m created: lib/maritime/urgency/maritimeUrgency.ts
+  [32m✓[0m created: lib/maritime/documents/maritimeDocumentRegistry.ts
+  [32m✓[0m created: lib/maritime/pricing/maritimePricingAdapter.ts
+  [32m✓[0m created: lib/maritime/accounts/commercialAccount.ts
+  [32m✓[0m created: lib/maritime/operatorActions.ts
+  [32m✓[0m created: lib/trust-chain/maritimeTrustEvents.ts
+  [32m✓[0m created: components/dashboard/maritime/MaritimeCommandCenter.tsx
+  [32m✓[0m created: app/dashboard/maritime/page.tsx
+  [32m✓[0m created: app/services/maritime-global-logistics-document-execution/page.tsx
+  [32m✓[0m created: app/ports/port-tampa-bay-document-execution/page.tsx
+  [32m✓[0m maritime pricing delegates to canonical gateway (no new calculator)
+  [32m✓[0m trust events use chain-of-custody visibility (no legal guarantee)
+  [32m✓[0m public + port pages contain no banned authority/guarantee claims
+  [32m✓[0m public + port pages render the maritime safety notice
+  [32m✓[0m command center shows honest empty states
+  [32m✓[0m command center is responsive (mobile select + wrapping tabs)
+  [32m✓[0m urgency engine honors payment-before-scheduling
+  [32m✓[0m no protected-system imports in maritime modules
+  [32m✓[0m test present: tests/unit/maritimeUrgency.test.ts
+  [32m✓[0m test present: tests/unit/maritimeSafety.test.ts
+  [32m✓[0m package.json valid
+
+[32mAll 26 checks passed[0m
+
+
+High-Value Asset Intelligence validation
+
+  [32m✓[0m present: lib/high-value-assets/types.ts
+  [32m✓[0m present: lib/high-value-assets/assetClassifier.ts
+  [32m✓[0m present: lib/high-value-assets/documentRegistry.ts
+  [32m✓[0m present: lib/high-value-assets/urgency.ts
+  [32m✓[0m present: lib/high-value-assets/maritimeBridge.ts
+  [32m✓[0m present: lib/high-value-assets/pricingAdapter.ts
+  [32m✓[0m present: lib/high-value-assets/safetyGuard.ts
+  [32m✓[0m present: components/high-value-assets/HighValueAssetCommandCenter.tsx
+  [32m✓[0m present: app/dashboard/high-value-assets/page.tsx
+  [32m✓[0m present: app/services/high-value-asset-document-execution/page.tsx
+  [32m✓[0m present: lib/high-value-assets/__tests__/assetClassifier.test.ts
+  [32m✓[0m present: lib/high-value-assets/__tests__/highValueAssets.test.ts
+  [32m✓[0m pricing adapter delegates to canonical gateway (no independent calculator)
+  [32m✓[0m maritime bridge reuses the Maritime vertical
+  [32m✓[0m no duplicate maritime command center
+  [32m✓[0m safety guard blocks forbidden claims
+  [32m✓[0m public + dashboard copy contain no forbidden guarantee/approval claims
+  [32m✓[0m public page contains the review disclaimer
+  [32m✓[0m command center has honest empty states + responsive tabs
+  [32m✓[0m urgency engine honors payment-before-scheduling
+  [32m✓[0m no protected-system imports
+  [32m✓[0m package.json valid
+
+[32mAll 22 checks passed[0m
+
+
+Unified Revenue Stack validation
+
+  [32m✓[0m present: lib/revenue-stack/types.ts
+  [32m✓[0m present: lib/revenue-stack/channelRegistry.ts
+  [32m✓[0m present: lib/revenue-stack/revenueOpportunity.ts
+  [32m✓[0m present: lib/revenue-stack/revenueSafety.ts
+  [32m✓[0m present: lib/revenue-stack/index.ts
+  [32m✓[0m present: components/dashboard/revenue/UnifiedRevenueCommandCenter.tsx
+  [32m✓[0m present: lib/revenue-stack/__tests__/revenueStack.test.ts
+  [32m✓[0m ten revenue channels registered
+  [32m✓[0m channels reuse procurement / maritime / high-value-assets verticals
+  [32m✓[0m unified command center wired into existing revenue dashboard
+  [32m✓[0m no duplicate revenue dashboard route
+  [32m✓[0m actual revenue requires verified payment; planning scenarios labelled
+  [32m✓[0m real paid revenue excludes quotes and samples
+  [32m✓[0m command center separates verified revenue from planning scenarios
+  [32m✓[0m no protected-system imports in revenue-stack
+  [32m✓[0m package.json valid
+
+[32mAll 16 checks passed[0m
+
+
+Topical Authority Engine validation
+
+  [32m✓[0m present: lib/topical-authority/types.ts
+  [32m✓[0m present: lib/topical-authority/topicRegistry.ts
+  [32m✓[0m present: lib/topical-authority/contentRegistry.ts
+  [32m✓[0m present: lib/topical-authority/internalLinkEngine.ts
+  [32m✓[0m present: lib/topical-authority/contentSafety.ts
+  [32m✓[0m present: lib/topical-authority/index.ts
+  [32m✓[0m present: components/dashboard/topical-authority/TopicalAuthorityCommandCenter.tsx
+  [32m✓[0m present: app/dashboard/topical-authority/page.tsx
+  [32m✓[0m present: lib/topical-authority/__tests__/topicalAuthority.test.ts
+  [32m✓[0m sixteen authority pillars registered
+  [32m✓[0m country topics derive from Atlas (no duplicate country registry)
+  [32m✓[0m no duplicate sitemap/schema/metadata engine created
+  [32m✓[0m existing sitemap/robots/schema utilities preserved for reuse
+  [32m✓[0m internal-link + orphan engine present
+  [32m✓[0m dashboard shows no fabricated rankings/traffic/backlinks
+  [32m✓[0m content safety guards fabricated metrics + banned claims
+  [32m✓[0m topical authority dashboard is noindex
+  [32m✓[0m no protected-system imports
+  [32m✓[0m programmatic page-quality + indexation gate present
+  [32m✓[0m quality gate blocks thin / unsourced / duplicate-intent pages
+  [32m✓[0m only approved-indexable, operator-approved pages enter the sitemap
+  [32m✓[0m quality gate reuses existing content-safety guard (no duplicate)
+  [32m✓[0m package.json valid
+
+[32mAll 23 checks passed[0m
+
+
+Vertical Intelligence + Commercial Account OS validation
+
+  [32m✓[0m present: lib/vertical-intelligence/verticalRegistry.ts
+  [32m✓[0m present: lib/vertical-intelligence/verticalIntelligenceSafety.ts
+  [32m✓[0m present: lib/vertical-intelligence/authorityScore.ts
+  [32m✓[0m present: lib/commercial-accounts/accountRegistry.ts
+  [32m✓[0m present: lib/relationship-intelligence/relationshipHealth.ts
+  [32m✓[0m present: components/dashboard/commercial/CommercialCommandCenter.tsx
+  [32m✓[0m present: app/dashboard/commercial/page.tsx
+  [32m✓[0m present: lib/vertical-intelligence/__tests__/commercialOs.test.ts
+  [32m✓[0m fifteen verticals registered
+  [32m✓[0m verticals reuse existing engines (procurement/maritime/revenue-stack/high-value-assets)
+  [32m✓[0m no duplicate Matter/pricing engine in commercial-accounts
+  [32m✓[0m commercial command route renders command center and is noindex
+  [32m✓[0m real revenue requires verified payment; forecast labelled planning scenario
+  [32m✓[0m authority score is evidence-based and internal only
+  [32m✓[0m commercial account requires paid evidence
+  [32m✓[0m command center has honest empty states + responsive tabs
+  [32m✓[0m no protected-system imports
+  [32m✓[0m package.json valid
+
+[32mAll 18 checks passed[0m
+
+
+Relationship Intelligence (executive layer) validation
+
+  [32m✓[0m present: lib/commercial-intelligence/executiveEngine.ts
+  [32m✓[0m present: components/dashboard/commercial/intelligence/ExecutiveIntelligence.tsx
+  [32m✓[0m present: app/dashboard/commercial/intelligence/page.tsx
+  [32m✓[0m present: lib/commercial-intelligence/__tests__/executiveEngine.test.ts
+  [32m✓[0m executive engine reads existing canonical engines
+  [32m✓[0m no duplicate Organization/Contact/Matter/Account model defined
+  [32m✓[0m answers all six executive questions
+  [32m✓[0m verified revenue gated; insufficient-evidence honored
+  [32m✓[0m planning signals separated from verified
+  [32m✓[0m intelligence route reuses dashboard shell/auth and is noindex
+  [32m✓[0m no parallel relationship dashboard route
+  [32m✓[0m no protected-system imports
+  [32m✓[0m package.json valid
+
+[32mAll 13 checks passed[0m
+
+
+Trusted Integration Command (permission core) validation
+
+  [32m✓[0m present: lib/integration-command/rolePermissions.ts
+  [32m✓[0m present: lib/task-orchestration/types.ts
+  [32m✓[0m present: lib/task-orchestration/taskPermissionEngine.ts
+  [32m✓[0m present: lib/task-orchestration/__tests__/taskOrchestration.test.ts
+  [32m✓[0m present: scripts/check-integration-configuration.mjs
+  [32m✓[0m capability defined: confirm_payment
+  [32m✓[0m capability defined: unlock_scheduling
+  [32m✓[0m capability defined: authorize_release
+  [32m✓[0m capability defined: mutate_custody
+  [32m✓[0m capability defined: mark_ron_complete
+  [32m✓[0m VA + Alliance hard-denied protected capabilities
+  [32m✓[0m no protected/provider imports in permission core
+  [32m✓[0m VA↔Alliance coordination is matter-gated
+  [32m✓[0m task deduplication present
+  [32m✓[0m config check reports presence only and never prints secret values
+  [32m✓[0m config check does not claim live/verified
+  [32m✓[0m no duplicate payment/release/custody gate introduced
+  [32m✓[0m read model imports no provider SDK
+  [32m✓[0m read model health is evidence-based (configured is not healthy)
+  [32m✓[0m route/component present: app/dashboard/founder/integrations/page.tsx
+  [32m✓[0m route/component present: app/dashboard/operations/integrations/page.tsx
+  [32m✓[0m route/component present: app/dashboard/va/command/page.tsx
+  [32m✓[0m route/component present: app/alliance/command/page.tsx
+  [32m✓[0m route/component present: app/dashboard/system/integrations/page.tsx
+  [32m✓[0m route/component present: components/integrations/RoleIntegrationCommand.tsx
+  [32m✓[0m route/component present: components/integrations/health/IntegrationHealthGrid.tsx
+  [32m✓[0m health grid conveys state by text (not colour alone)
+  [32m✓[0m package.json valid
+
+[32mAll 28 checks passed[0m
+
+
+Milano Pre-Execution Intelligence validation
+
+  [32m✓[0m present: lib/pre-execution/executionGates.ts
+  [32m✓[0m present: lib/pre-execution/preExecutionSafety.ts
+  [32m✓[0m present: components/dashboard/execution/ExecutionReadiness.tsx
+  [32m✓[0m present: app/dashboard/matters/[matterId]/execution/page.tsx
+  [32m✓[0m present: lib/pre-execution/__tests__/executionGates.test.ts
+  [32m✓[0m gates are non-bypassable (canBypassGate always false)
+  [32m✓[0m gate ladder spans payment → apostille readiness
+  [32m✓[0m downstream gates block on prior required gate
+  [32m✓[0m AI/compliance boundary: AI cannot approve/bypass; operator confirms
+  [32m✓[0m pre-execution engine imports no protected/provider systems
+  [32m✓[0m no Liaison-OS / provider / medical contamination in pre-execution files
+  [32m✓[0m package.json valid
+
+[32mAll 12 checks passed[0m
+
+Migration contract validated across 93 SQL files.
+OK: package.json valid, no duplicate scripts
+OK: present: lib/intake/intakeInterpretation.ts
+OK: present: lib/intake/smartClassification.ts
+OK: present: lib/intake/intakeClarifications.ts
+OK: present: lib/intake/operatorHandoff.ts
+OK: present: lib/intake/intakeAnalytics.ts
+OK: present: lib/pricing/milanoPricingTruth.ts
+OK: present: lib/pricing/priceCanonicalMatter.ts
+OK: present: lib/pricing/pricingProjections.ts
+OK: present: components/intake/smart-intake-sop-wizard.tsx
+OK: present: app/api/intake/analytics/route.ts
+OK: wired: lib/pricing/priceCanonicalMatter.ts /export function priceCanonicalMatter/
+OK: wired: lib/pricing/pricingProjections.ts /export function projectClientPricing/
+OK: wired: lib/intake/intakeClarifications.ts /export function buildIntakeClarifications/
+OK: wired: lib/intake/operatorHandoff.ts /export function buildOperatorHandoff/
+OK: wired: lib/intake/intakeAnalytics.ts /INTAKE_ANALYTICS_EVENTS/
+OK: wired: lib/pricing/milanoPricingTruth.ts /paymentGateRequired/
+OK: wired: lib/pricing/milanoPricingTruth.ts /schedulingLockedUntilPayment/
+OK: active /intake uses SmartIntakeSOPWizard
+OK: live Step 2 consumes buildIntakeClarifications
+OK: live Step 2 renders canonical questions only
+OK: live Step 3 consumes projectClientPricing
+OK: live intake prices via canonical engine
+OK: Matter-first Step 1 + WE UNDERSTAND present
+OK: same-Matter retry UX present
+OK: upload retry never POSTs /api/intake
+OK: upload retry preserves Matter ID
+OK: successful upload files are skipped on retry
+OK: no copied lane-price table / price arithmetic in intake UI
+OK: required Smart Intake analytics vocabulary present
+OK: analytics safe metadata contract excludes raw/private keys
+OK: analytics is non-blocking in live intake
+OK: standard clarification list capped at 3
+OK: document origin is conditional
+OK: signer location is execution-conditional
+OK: structured notarization correction has canonical precedence
+OK: no conflict markers in Smart Intake scope
+OK: behavioral fixtures passed (10 suites)
+
+VALIDATOR: smart-intake-sop PASSED.
+PASS production governance script is wired
+PASS canonical discount schema and immutable redemption ledger exist
+PASS discount tables remain protected by RLS
+PASS discount redemption is atomic and service-role restricted
+PASS Wise confirmation and discount redemption share one locked transaction
+PASS atomic confirmation validates amount currency and payment reference
+PASS duplicate settlement cannot double redeem
+PASS canonical Matter lifecycle starts at intake_received
+PASS canonical intake insert separates lifecycle payment and legacy states
+PASS review-required intake capture separates lifecycle payment and legacy states
+PASS review-required intake capture creates no invoice or Wise amount
+PASS deal engine handoff starts intake_received and unpaid
+PASS Damiani dedicated route is deterministic Italian-first and server-verified
+PASS Damiani courtesy is only requested client-side never redeemed client-side
+PASS intake validates courtesy server-side and does not redeem during preview
+PASS canonical discount service requires explicit eligible subtotal and non-discountable total
+PASS intake preserves the eligible-subtotal boundary instead of discounting pass-through charges
+PASS client monetary truth uses discounted effective total
+PASS Wise payment request derives from discounted invoice amount
+PASS Wise webhook verifies signature and deduplicates deliveries
+PASS Wise webhook fails closed on amount currency and reference reconciliation
+PASS Wise test bypass cannot operate in production
+PASS scheduling is state, execution-truth, and payment gated before an optimistic canonical transition
+PASS portal projection exposes client-safe courtesy money fields
+PASS portal payment surface uses shared Wise-only SecurePaymentCard and explicit server-validated courtesy entry
+PASS portal invoice separates Wise processing scheduling authority from verified paid truth
+PASS client signup requires confirmation posture and client role
+Production governance: 27/27 passed
+External live certification: UNVERIFIED by this source-only validator
+PASS Tiffany Gate 37 post-payment RON production certification runbook contract
+NOTE Live BlueNotary identity/session execution is not performed or certified by this validator.
+SEO authority validation passed: 35 governed country-document routes; fail-closed localization; evidence, intent, link, sitemap, and indexability controls present.
+SEO authority validation passed: 35 governed country-document routes; fail-closed localization; evidence, intent, link, sitemap, and indexability controls present.
+SEO authority validation passed: 35 governed country-document routes; fail-closed localization; evidence, intent, link, sitemap, and indexability controls present.
+SEO authority validation passed: 35 governed country-document routes; fail-closed localization; evidence, intent, link, sitemap, and indexability controls present.
+SEO authority validation passed: 35 governed country-document routes; fail-closed localization; evidence, intent, link, sitemap, and indexability controls present.
+SEO localization validation passed: machine/unreviewed routes remain NOINDEX.
+SEO sitemap validation passed: governed INDEXABLE records only.
+SEO public-claims validation passed.
+
+Advisory validators (non-blocking):
+  61/70 passed
+  Reporting (does not block release):
+    REPORT validate:revenue-copy
+    REPORT validate:brand-language
+    REPORT validate:command-center-intelligence
+    REPORT validate:internal-module-registry
+    REPORT validate:public-final-copy-lock
+    REPORT validate:seo-phase-authority
+    REPORT validate:public-copy-safety
+    REPORT validate:next-five-production-builds
+    REPORT validate:mobile-cinematic-hotfix
+
+Final production meta-gate
+────────────────────────────────────────────────────
+  PASS  package.json valid
+  PASS  merge-artifact-scan
+  PASS  auth-source-scan
+  PASS  secret-exposure-scan
+  PASS  validate:damiani-production-wiring     268ms
+  PASS  validate:complimentary-matter-flow     288ms
+  PASS  validate:route-registry                406ms
+  PASS  validate:cross-system-gates            304ms
+  PASS  validate:canonical-foundation          253ms
+  PASS  validate:responsive-safety             158ms
+  PASS  validate:final-wiring-confirmation     174ms
+  PASS  typecheck                              47820ms
+  PASS  lint                                   1439ms
+  PASS  test                                   19251ms
+  PASS  build                                  76108ms
+────────────────────────────────────────────────────

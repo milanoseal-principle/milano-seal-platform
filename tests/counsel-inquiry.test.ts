@@ -36,6 +36,7 @@ function fixture(
     notificationFailure?: boolean;
     publicBucket?: boolean;
     metadataFailure?: boolean;
+    duringUpload?: () => void;
   } = {},
 ) {
   const rows = new Map<string, Record<string, any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -69,6 +70,15 @@ function fixture(
           return query;
         },
         maybeSingle() {
+          if (mode === "update") {
+            if (options.metadataFailure)
+              return Promise.resolve({
+                data: null,
+                error: { code: "DB_FAILURE" },
+              });
+            writes.push(table);
+            rows.set(id!, { ...rows.get(id!), ...input });
+          }
           return Promise.resolve({
             data: rows.get(id ?? "") ?? null,
             error: null,
@@ -100,6 +110,7 @@ function fixture(
         return {
           async upload() {
             uploads++;
+            options.duringUpload?.();
             return {
               error: options.uploadFailure
                 ? { message: "storage unavailable" }
@@ -340,4 +351,38 @@ test("canonical handoff requires established professional attribution and the in
     counselHandoffError({ ...valid, profileEmail: "another-firm@example.com" }),
   );
   assert.ok(counselHandoffError({ ...valid, profileEmail: null }));
+});
+
+test("upload confirmation retains concurrent operator evidence and never returns it publicly", async () => {
+  const options: { duringUpload?: () => void } = {};
+  const f = fixture(options);
+  options.duringUpload = () => {
+    f.rows.get(payload.request_id)!.details.operator_actions = [
+      {
+        kind: "review",
+        note: "Private operator review note",
+        actor: "operator",
+      },
+    ];
+  };
+  const file = new File(["%PDF-1.4 test"], "instruction.pdf", {
+    type: "application/pdf",
+  });
+  const response = await receiveCounselInquiry(
+    request(payload, file),
+    f.dependencies,
+  );
+  assert.equal(response.status, 200);
+  assert.equal(
+    f.rows.get(payload.request_id)!.details.operator_actions.length,
+    1,
+  );
+  const body = await response.json();
+  assert.equal(body.document_status, "received");
+  assert.equal("operator_actions" in body, false);
+  assert.equal("details" in body, false);
+  assert.equal(
+    JSON.stringify(body).includes("Private operator review note"),
+    false,
+  );
 });

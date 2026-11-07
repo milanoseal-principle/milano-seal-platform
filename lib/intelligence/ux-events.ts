@@ -12,7 +12,6 @@ export type UxEventType =
   | "counsel_inquiry_opened"
   | "counsel_inquiry_submitted"
   | "counsel_submission_failed"
-
   | "intake_started"
   | "description_completed"
   | "document_uploaded"
@@ -45,10 +44,10 @@ export async function recordUxLearningEvent(params: {
   eventType: UxEventType;
   eventLabel?: string;
   metadata?: Record<string, unknown>;
-}): Promise<void> {
+}): Promise<{ recorded: boolean }> {
   try {
     const supabase = await createClient();
-    await supabase.from("ux_learning_events").insert({
+    const { error } = await supabase.from("ux_learning_events").insert({
       user_id: params.userId ?? null,
       client_email: params.clientEmail ?? null,
       matter_id: params.matterId ?? null,
@@ -57,7 +56,11 @@ export async function recordUxLearningEvent(params: {
       event_label: params.eventLabel ?? null,
       metadata: params.metadata ?? {},
     });
+    if (error) console.warn("[ux-events] observation unavailable", { event_type: params.eventType, surface: params.surface, code: error.code });
+    return { recorded: !error };
   } catch {
-    // Silent fail — never block client workflow
+    // Observational failure cannot block execution; callers can expose unavailable telemetry.
+    console.warn("[ux-events] observation unavailable", { event_type: params.eventType, surface: params.surface });
+    return { recorded: false };
   }
 }
