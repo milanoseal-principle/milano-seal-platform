@@ -28,8 +28,14 @@ async function waitForServer(url, timeoutMs = 90_000) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
+// Country controls include a flag in their accessible text. Scope the button
+// to its exact country-label descendant; retain the selected-state assertions.
+function countryButton(page, country) {
+  return page.getByRole("button").filter({ has: page.getByText(country, { exact: true }) }).first();
+}
+
 async function clickCountry(page, country) {
-  const button = page.getByRole("button", { name: country, exact: true }).first();
+  const button = countryButton(page, country);
   await button.waitFor({ state: "visible", timeout: 15_000 });
   await button.click();
 }
@@ -69,14 +75,14 @@ try {
       waitUntil: "networkidle",
       timeout: 45_000,
     });
-    await page.getByRole("button", { name: "Italy", exact: true }).first().waitFor({ state: "visible", timeout: 20_000 });
+    await countryButton(page, "Italy").waitFor({ state: "visible", timeout: 20_000 });
 
     for (const country of COUNTRY_SEQUENCE.slice(1)) {
       await clickCountry(page, country);
       await page.waitForTimeout(120);
     }
 
-    const finalButton = page.getByRole("button", { name: "Colombia", exact: true }).first();
+    const finalButton = countryButton(page, "Colombia");
     const latestCountryAuthority = (await finalButton.getAttribute("aria-pressed")) === "true";
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,

@@ -20,15 +20,26 @@ Automated unit/source regression and the isolated PostgreSQL RPC fixture are cod
 
 Rendered acceptance is wired into PR CI at 320, 390, 768 and 1440 pixels. It uses the actual changed components with explicitly mocked quote/review transport. The temporary app route is created and removed by the test; it is not deployed. Screenshots/results are uploaded as CI artifacts.
 
+## Observed deployment evidence
+
+- PR #431 was merged externally during verification. Main/deployed SHA: `75257f687ccc41d207fbba0e3716a0b484957114`.
+- Vercel production deployment `dpl_5eTohqMZPGF9Fp7wUUrCoTNFh9yB` is READY with that exact SHA.
+- P3 migration applied after detecting the deployed-code/database mismatch. Hosted migration version/name: `20261107223527 / p3_domestic_execution`; repository source: `20261107215959_p3_domestic_execution.sql`. Preserve this mapping for provenance reconciliation; neither history was rewritten.
+- Hosted preference column and all three RPCs verified present. RPC execute privilege: anon false, authenticated false, service_role true; empty search paths verified.
+- Main PR CI run `42420735265` passed, including controlled rendered acceptance at all four viewport widths and reduced-motion mode. Public rendered CI run `42420735260` passed.
+- Public domestic execution and pricing routes returned HTTP 200; apex returned a 308 redirect to www. A scoped five-minute production error/fatal log query returned no log groups; this is a bounded observation, not a global health certification.
+- The map runner's obsolete browser installation was repaired. Its country-button selector also requires the follow-up test fix: match the exact country-label descendant inside the button containing the flag, preserving selected-state and rendering assertions.
+
 ## Release gates still required
 
-- Authoritative PR CI including rendered acceptance must pass.
-- Apply and verify `20261107215959_p3_domestic_execution.sql` before enabling code requiring its column/RPCs.
+- Follow-up map rendered proof must pass with the corrected selector.
+- Follow-up P3 rendered proof must pass the strengthened full-page PNG-width check. Visual inspection found the initial document-width assertion could miss clipped horizontal content in the six-column mobile journey strip. The follow-up uses a three-column mobile grid and retains the desktop strip.
+- Record and reconcile the repository/hosted migration-version mapping above in the provenance work.
 - Hosted schema provenance needs review: read-only inspection found `public.matter_state_events`, `public.is_valid_matter_transition(text,text)` and the canonical transition trigger absent, despite repository migration 046 defining them. Do not replay historical migrations blindly. This is not fixed or certified by a green source validator.
-- Exact merged SHA, Vercel READY, www/apex behavior, protected surfaces and runtime-error scan must be verified after a governed release.
+- Complete authenticated operator/client hosted verification. Public-route and exact-SHA checks above do not prove an authenticated transaction.
 - No live Wise payment, RON execution, government submission, courier handoff or customer notification was performed by this work.
 
 ## Phase disposition
 
-P3 implementation is prepared for review; P3 production completion remains blocked until its release gates are evidenced.
+P3 code is deployed and its additive migration is applied. Production completion remains unclaimed until the remaining gates and schema-provenance finding are resolved.
 P4–P18 are not implemented by this PR. P19–P23 require the controlled live evidence specified in the directive. No later phase is labelled complete or started ahead of P3's gate.
