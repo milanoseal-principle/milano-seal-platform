@@ -16,7 +16,7 @@ const publicNavLinks = [
   { label: "Pricing", href: "/pricing" },
   { label: "Process", href: "/process" },
   { label: "Global Intelligence", href: "/global-document-intelligence" },
-  { label: "Professional", href: "/professional" },
+  { label: "For Counsel", href: "/counsel" },
   { label: "Secure Portal", href: "/secure-portal" },
 ];
 

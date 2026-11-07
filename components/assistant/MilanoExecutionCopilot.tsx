@@ -224,6 +224,13 @@ function PreflightSelect({
 }
 
 export function MilanoExecutionCopilot() {
+  const pathname = usePathname();
+  // Counsel has a focused inquiry and mobile action; the global launcher must
+  // not cover its controls or introduce another first-contact workflow.
+  return pathname === "/counsel" ? null : <ExecutionCopilotContent />;
+}
+
+function ExecutionCopilotContent() {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const searchParams = useSearchParams();

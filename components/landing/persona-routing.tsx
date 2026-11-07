@@ -28,8 +28,8 @@ const PATHWAYS = [
     icon: Scale,
     title: "International Counsel Execution Lane",
     desc: "For international attorneys, law firms, advisors, and professional coordinators structuring the U.S. execution side of a client Matter.",
-    cta: "Open Professional Execution",
-    href: "/professional",
+    cta: "Send a U.S. Matter",
+    href: "/counsel",
     primary: true,
   },
   {

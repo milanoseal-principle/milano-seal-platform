@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   let leadId: string | null = null;
 
-  // Best-effort persistence. A missing table or missing env must never 500.
+  // Receipt requires persistence. Missing infrastructure returns a retryable 503.
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -97,17 +97,18 @@ export async function POST(request: Request) {
       leadId = String(data.id);
     }
   } catch {
-    // Swallow — lead is captured best-effort, never block the user.
+    // No reference means no confirmed receipt; the response below must fail.
     leadId = null;
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: Boolean(leadId),
+    ...(leadId ? {} : { error: "Your request could not be saved. Please try again." }),
     leadId,
     leadType,
     nextUrl: "/intake",
     recommendedAction:
       "Start your controlled intake so The Milano Seal can review your route. Routing snapshots remain subject to receiving-authority review.",
     ctaLabel: "Start Controlled Intake",
-  });
+  }, { status: leadId ? 200 : 503 });
 }

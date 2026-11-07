@@ -1,5 +1,6 @@
 export const PUBLIC_LIVE_ROUTES = [
   "/",
+  "/counsel",
   "/pricing",
   "/secure-portal",
   "/intake",

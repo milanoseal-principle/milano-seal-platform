@@ -5,7 +5,7 @@ import { isPendingApostilleConventionDestination } from "@/lib/professional/univ
 
 export function UniversalProfessionalCountrySurface({ destination }: { destination: Destination }) {
   const pendingConvention = isPendingApostilleConventionDestination(destination);
-  const intakeHref = `/intake?lane=professional&destination=${encodeURIComponent(destination.slug)}&country=${encodeURIComponent(destination.name)}&source=professional-${encodeURIComponent(destination.slug)}-universal`;
+  const intakeHref = `/counsel?destination=${encodeURIComponent(destination.name)}&source=professional-${encodeURIComponent(destination.slug)}#inquiry`;
 
   return (
     <main
@@ -37,7 +37,7 @@ export function UniversalProfessionalCountrySurface({ destination }: { destinati
                 href={intakeHref}
                 className="group inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#C6A65B] px-7 text-sm font-semibold text-[#050507] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#D4B76A]"
               >
-                Structure a {destination.name} Matter
+                Send a U.S. Matter for {destination.name}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link

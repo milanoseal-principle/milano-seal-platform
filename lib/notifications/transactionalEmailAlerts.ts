@@ -224,3 +224,100 @@ export async function sendPaymentClearedAlerts(input: {
     html,
   })));
 }
+
+/** Inquiry receipt is independent of a canonical Matter and never unlocks it. */
+export async function sendCounselInquiryAlerts(
+  reference: string,
+): Promise<string> {
+  const admin = createAdminClient();
+  const { data: lead, error } = await admin
+    .from("sales_leads")
+    .select("id,full_name,email,country,details")
+    .eq("id", reference)
+    .single();
+  if (error || !lead) return "unavailable";
+  const results = await Promise.all(
+    operatorEmails().map(async (recipient) => {
+      const { data: prior } = await admin
+        .from("notifications")
+        .select("id,status,provider_message_id,delivery_attempts")
+        .eq("type", "operator_counsel_inquiry")
+        .eq("recipient_email", recipient)
+        .contains("metadata", { inquiry_reference: reference })
+        .limit(1)
+        .maybeSingle();
+      if (prior?.status === "sent" && prior.provider_message_id)
+        return "provider_accepted";
+      const message = `Counsel inquiry ${reference}. Review in the operator inbox: /dashboard/marketing/counsel. Name: ${lead.full_name}. Firm: ${String(lead.details?.firm ?? "Not provided").slice(0, 240)}. Country: ${lead.country}. Email: ${lead.email}. Destination: ${String(lead.details?.destination ?? "Not provided").slice(0, 100)}. Source: ${String(lead.details?.attribution?.utm_source ?? lead.details?.attribution?.source ?? "Not provided").slice(0, 100)}. Document: ${lead.details?.document_status ?? "not_provided"}. Review the summary and document in the authenticated inbox. No Matter has been authorized.`;
+      let notificationId = prior?.id;
+      if (!notificationId) {
+        const { data, error: queueError } = await admin
+          .from("notifications")
+          .insert({
+            recipient_email: recipient,
+            channel: "email",
+            type: "operator_counsel_inquiry",
+            subject: `Counsel inquiry — ${reference}`,
+            message,
+            status: "pending",
+            metadata: {
+              inquiry_reference: reference,
+              final_delivery_proven: false,
+            },
+          })
+          .select("id")
+          .single();
+        if (queueError || !data) return "unavailable";
+        notificationId = data.id;
+      }
+      let providerId: string | null = null;
+      let failure: string | null = null;
+      try {
+        if (!process.env.RESEND_API_KEY) failure = "RESEND_API_KEY_MISSING";
+        else {
+          const result = await new Resend(
+            process.env.RESEND_API_KEY,
+          ).emails.send(
+            {
+              from: FROM,
+              to: recipient,
+              subject: `Counsel inquiry — ${reference}`,
+              text: message,
+            },
+            { idempotencyKey: `counsel-${reference}-${recipient}` },
+          );
+          providerId = result.data?.id ?? null;
+          failure =
+            result.error?.message ??
+            (providerId ? null : "PROVIDER_ACCEPTANCE_UNCONFIRMED");
+        }
+      } catch {
+        failure = "PROVIDER_REQUEST_FAILED";
+      }
+      const { error: recordError } = await admin
+        .from("notifications")
+        .update({
+          status: providerId ? "sent" : "failed",
+          provider: "resend",
+          provider_message_id: providerId,
+          delivery_attempts: (prior?.delivery_attempts ?? 0) + 1,
+          delivery_status: providerId ? "provider_accepted" : "failed",
+          error_message: failure,
+          sent_at: providerId ? new Date().toISOString() : null,
+          failed_at: failure ? new Date().toISOString() : null,
+          last_provider_event_at: new Date().toISOString(),
+        })
+        .eq("id", notificationId);
+      return recordError
+        ? "unavailable"
+        : providerId
+          ? "provider_accepted"
+          : "failed";
+    }),
+  );
+  return results.every((state) => state === "provider_accepted")
+    ? "provider_accepted"
+    : results.includes("unavailable")
+      ? "unavailable"
+      : "failed";
+}

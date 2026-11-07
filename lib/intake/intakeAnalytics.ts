@@ -1,6 +1,11 @@
 import { detectAcquisitionSource } from "@/lib/acquisition/referralCapture";
 
 export const INTAKE_ANALYTICS_EVENTS = [
+  "counsel_visit",
+  "counsel_inquiry_opened",
+  "counsel_inquiry_submitted",
+  "counsel_submission_failed",
+
   "intake_started",
   "description_completed",
   "document_uploaded",
@@ -23,6 +28,7 @@ export const INTAKE_ANALYTICS_EVENTS = [
 export type IntakeAnalyticsEvent = (typeof INTAKE_ANALYTICS_EVENTS)[number];
 
 const SAFE_METADATA_KEYS = new Set([
+  "intent", "document_received", "inquiryReference",
   "step",
   "questionCount",
   "documentFamily",

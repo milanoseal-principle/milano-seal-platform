@@ -1,0 +1,322 @@
+[
+  {
+    "name": "validate:command-center-workbook-projection",
+    "code": 0
+  },
+  {
+    "name": "validate:intelligence",
+    "code": 0
+  },
+  {
+    "name": "validate:execution-intelligence",
+    "code": 0
+  },
+  {
+    "name": "validate:intelligence-safety",
+    "code": 0
+  },
+  {
+    "name": "validate:sales-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:revenue-copy",
+    "code": 1
+  },
+  {
+    "name": "validate:brand-language",
+    "code": 1
+  },
+  {
+    "name": "validate:service-positioning",
+    "code": 0
+  },
+  {
+    "name": "validate:command-center-intelligence",
+    "code": 1
+  },
+  {
+    "name": "validate:internal-module-registry",
+    "code": 1
+  },
+  {
+    "name": "validate:public-final-copy-lock",
+    "code": 1
+  },
+  {
+    "name": "validate:route-registry",
+    "code": 0
+  },
+  {
+    "name": "validate:project",
+    "code": 1
+  },
+  {
+    "name": "validate:canonical-locks",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-phase-authority",
+    "code": 1
+  },
+  {
+    "name": "validate:referral-intelligence",
+    "code": 0
+  },
+  {
+    "name": "validate:pricing-luxury-canon",
+    "code": 0
+  },
+  {
+    "name": "validate:motion-system",
+    "code": 0
+  },
+  {
+    "name": "validate:smart-intake-pricing-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:responsive-safety",
+    "code": 0
+  },
+  {
+    "name": "validate:data-intel-compliance-ui",
+    "code": 0
+  },
+  {
+    "name": "validate:final-branch-salvage-audit",
+    "code": 0
+  },
+  {
+    "name": "validate:final-wiring-confirmation",
+    "code": 0
+  },
+  {
+    "name": "validate:final-mobile-cosmetic-pass",
+    "code": 0
+  },
+  {
+    "name": "validate:touchpoint-registry",
+    "code": 0
+  },
+  {
+    "name": "validate:client-touchpoint-wiring",
+    "code": 0
+  },
+  {
+    "name": "validate:alliance-touchpoint-wiring",
+    "code": 0
+  },
+  {
+    "name": "validate:cross-system-gates",
+    "code": 0
+  },
+  {
+    "name": "validate:va-operator-touchpoint-wiring",
+    "code": 0
+  },
+  {
+    "name": "validate:global-acceptance-intelligence",
+    "code": 0
+  },
+  {
+    "name": "validate:milano-execution-routing-upgrade",
+    "code": 0
+  },
+  {
+    "name": "validate:operator-intelligence-spine",
+    "code": 0
+  },
+  {
+    "name": "validate:final-intelligence-operator-os",
+    "code": 0
+  },
+  {
+    "name": "validate:final-public-polish",
+    "code": 0
+  },
+  {
+    "name": "validate:public-i18n-runtime",
+    "code": 0
+  },
+  {
+    "name": "validate:execution-scope-dashboard-discovery",
+    "code": 0
+  },
+  {
+    "name": "validate:public-copy-safety",
+    "code": 1
+  },
+  {
+    "name": "validate:fingerprint-apostille-expansion",
+    "code": 0
+  },
+  {
+    "name": "validate:fingerprint-routing-rules",
+    "code": 0
+  },
+  {
+    "name": "validate:apostille-authentication-rules",
+    "code": 0
+  },
+  {
+    "name": "validate:translation-coordination",
+    "code": 0
+  },
+  {
+    "name": "validate:booking-intake-gates",
+    "code": 0
+  },
+  {
+    "name": "validate:regulated-public-claims",
+    "code": 0
+  },
+  {
+    "name": "validate:revenue-stream-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:trust-network-intelligence",
+    "code": 0
+  },
+  {
+    "name": "validate:next-five-production-builds",
+    "code": 1
+  },
+  {
+    "name": "validate:next-three-revenue-ops",
+    "code": 0
+  },
+  {
+    "name": "validate:mobile-cinematic-hotfix",
+    "code": 1
+  },
+  {
+    "name": "validate:cinematic-ui-system",
+    "code": 0
+  },
+  {
+    "name": "validate:complimentary-matter-flow",
+    "code": 0
+  },
+  {
+    "name": "validate:cinematic-route-coverage",
+    "code": 0
+  },
+  {
+    "name": "validate:government-public-sector",
+    "code": 0
+  },
+  {
+    "name": "validate:trust-alliance-platform",
+    "code": 0
+  },
+  {
+    "name": "validate:mini-atlas-intelligence-flow",
+    "code": 0
+  },
+  {
+    "name": "validate:canonical-foundation",
+    "code": 0
+  },
+  {
+    "name": "validate:trust-core-intelligence-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:universal-procurement-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:maritime-logistics-execution",
+    "code": 0
+  },
+  {
+    "name": "validate:unified-revenue-stack",
+    "code": 0
+  },
+  {
+    "name": "validate:high-value-assets",
+    "code": 0
+  },
+  {
+    "name": "validate:topical-authority-engine",
+    "code": 0
+  },
+  {
+    "name": "validate:relationship-intelligence-layer",
+    "code": 0
+  },
+  {
+    "name": "validate:vertical-intelligence-commercial-os",
+    "code": 0
+  },
+  {
+    "name": "validate:duplicate-source",
+    "code": 0
+  },
+  {
+    "name": "validate:trusted-integration-command",
+    "code": 0
+  },
+  {
+    "name": "validate:milano-pre-execution",
+    "code": 0
+  },
+  {
+    "name": "validate:migration-chain",
+    "code": 0
+  },
+  {
+    "name": "validate:production-governance",
+    "code": 0
+  },
+  {
+    "name": "validate:damiani-production-wiring",
+    "code": 0
+  },
+  {
+    "name": "validate:tiff-15-step-production-certification",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-authority",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-intent",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-indexability",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-evidence",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-links",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-localization",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-sitemaps",
+    "code": 0
+  },
+  {
+    "name": "validate:seo-public-claims",
+    "code": 0
+  },
+  {
+    "name": "validate:smart-intake-sop",
+    "code": 0
+  },
+  {
+    "name": "validate:final-production-regression",
+    "code": 0
+  }
+]

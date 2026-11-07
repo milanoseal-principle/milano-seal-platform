@@ -1,0 +1,73 @@
+{
+  "results": [
+    {
+      "width": 320,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 360,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 375,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 412,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 430,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 1280,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "width": 1440,
+      "overflow": false,
+      "heroVisible": true,
+      "primaryCTA": true
+    },
+    {
+      "realMissingCredentialsStatus": 503,
+      "realMissingCredentialsBody": {
+        "ok": false,
+        "error": "We could not receive your request. Your form is still here; please try again."
+      },
+      "note": "Successful UI receipts above used explicit Playwright response mocks, not a live database."
+    }
+  ],
+  "errors": []
+}

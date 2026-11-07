@@ -1,0 +1,60 @@
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE TABLE
+GRANT
+GRANT
+BEGIN
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+DROP POLICY
+CREATE POLICY
+CREATE INDEX
+NOTICE:  policy "service_role_sales_leads" for relation "public.sales_leads" does not exist, skipping
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+DROP POLICY
+CREATE POLICY
+CREATE INDEX
+CREATE INDEX
+NOTICE:  relation "sales_leads" already exists, skipping
+NOTICE:  column "ip_hash" of relation "sales_leads" already exists, skipping
+NOTICE:  column "canonical_matter_id" of relation "sales_leads" already exists, skipping
+NOTICE:  column "linked_by" of relation "sales_leads" already exists, skipping
+NOTICE:  column "linked_at" of relation "sales_leads" already exists, skipping
+NOTICE:  relation "sales_leads_counsel_created" already exists, skipping
+NOTICE:  relation "sales_leads_ip_created" already exists, skipping
+COMMIT
+BEGIN
+INSERT 0 1
+SET
+INSERT 0 1
+UPDATE 1
+RESET
+DO
+SET
+DO
+RESET
+SET
+DO
+RESET
+SET
+DO
+RESET
+ROLLBACK
+PASS: service persistence, private grants, RLS enabled, Matter FK and duplicate-ID protection

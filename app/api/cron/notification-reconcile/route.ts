@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  sendCounselInquiryAlerts,
   sendOperatorIntakeAlerts,
   sendPaymentObservedAlerts,
   sendPaymentClearedAlerts,
@@ -81,7 +82,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, ...summary });
+  const { data: inquiries, error: inquiryError } = await admin.from("sales_leads").select("id").eq("lead_type", "counsel_inquiry").gte("created_at", since).order("created_at", { ascending: false }).limit(100);
+  const inquiryNotifications: Record<string, string> = {};
+  for (const inquiry of inquiries ?? []) {
+    try { inquiryNotifications[inquiry.id] = await sendCounselInquiryAlerts(inquiry.id); }
+    catch { inquiryNotifications[inquiry.id] = "unavailable"; }
+  }
+  return NextResponse.json({ success: true, ...summary, inquiry_scan: inquiryError ? "unavailable" : "complete", inquiry_notifications: inquiryNotifications });
 }
 
 export async function POST(req: NextRequest) {
