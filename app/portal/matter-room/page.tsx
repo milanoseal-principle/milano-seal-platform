@@ -49,20 +49,11 @@ export default async function MatterRoomPage({
   let matter: MatterRow | null = null;
   if (matter_id) {
     const email = normalizeEmail(user.email);
-    const emailPattern = email.replace(/[\\%_]/g, "\\  if (matter_id) {
     const { data } = await supabase
       .from("deals")
       .select(SAFE_MATTER_FIELDS)
       .eq("id", matter_id)
-      .ilike("email", user.email ?? "")
-      .single();
-    matter = data as unknown as MatterRow | null;
-  }");
-    const { data } = await supabase
-      .from("deals")
-      .select(SAFE_MATTER_FIELDS)
-      .eq("id", matter_id)
-      .ilike("email", emailPattern)
+      .eq("email", email)
       .single();
     const candidate = data as unknown as MatterRow | null;
     matter = candidate && emailsMatch(candidate.email, email) ? candidate : null;
