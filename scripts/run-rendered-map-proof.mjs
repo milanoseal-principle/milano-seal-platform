@@ -64,6 +64,14 @@ try {
       viewport: { width: profile.width, height: profile.height },
       reducedMotion: profile.reducedMotion,
     });
+    // Vercel serves this endpoint only on its hosting platform. Keep local
+    // browser proof independent of hosted telemetry; deployed-target proof
+    // still loads the real script and retains every application error check.
+    if (START_SERVER) {
+      await context.route(`${BASE_URL}/_vercel/insights/script.js`, (route) =>
+        route.fulfill({ status: 200, contentType: "application/javascript", body: "/* local proof: Vercel telemetry unavailable */" }),
+      );
+    }
     const page = await context.newPage();
     const consoleErrors = [];
     const pageErrors = [];
