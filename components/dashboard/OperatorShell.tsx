@@ -3,6 +3,7 @@
 import { MilanoOSShell, type MilanoOSNavItem } from "@/components/os/MilanoOSShell";
 
 const NAV: MilanoOSNavItem[] = [
+  { href: "/dashboard/marketing/counsel", label: "Counsel Inquiries", icon: "filePlus", group: "Matter", hint: "First-contact review and notification evidence" },
   { href: "/dashboard", label: "Today", icon: "activity", group: "Matter", hint: "Live Matter posture" },
   { href: "/dashboard/deals", label: "Matters", icon: "briefcase", group: "Matter", hint: "Canonical Matter records" },
   { href: "/dashboard/intake", label: "Intake", icon: "filePlus", group: "Matter", hint: "Secure Matter capture" },

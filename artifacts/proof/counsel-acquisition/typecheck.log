@@ -1,0 +1,15 @@
+
+> milano-seal-platform@0.1.0 pretypecheck
+> node scripts/generate-command-center-workbook-intelligence.mjs
+
+Generated data/command-center/workbook-intelligence.generated.json from Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx
+Source SHA-256: 457fa017af2c3675a1dd15af9d87d548e69920f0849b03b869a750c1edde035b
+
+> milano-seal-platform@0.1.0 typecheck
+> tsc --noEmit
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

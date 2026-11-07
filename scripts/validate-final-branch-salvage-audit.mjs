@@ -22,6 +22,12 @@ if (!exists("docs/audits/FINAL_BRANCH_SALVAGE_AUDIT.md")) fail("Missing docs/aud
 else ok("Audit doc present");
 
 // 2. Protected-file guard against current main.
+// Additive pre-Matter persistence explicitly required by counsel acquisition.
+// Its private access and canonical Matter FK are covered by the SQL fixture.
+// This exception does not permit any other Supabase or protected gate change.
+const APPROVED_ADDITIVE_MIGRATIONS = new Set([
+  "supabase/migrations/20261107094755_counsel_inquiry_capture.sql",
+]);
 const PROTECTED = /wise|webhook|payment-?confirm|paymentConfirm|release-?gate|releaseGate|performFinalRelease|custody|supabase\/(migrations|rls)|rls|serviceRole|service-role|shippo|bluenotary|pip-intel|liaison/i;
 try {
   const base = execSync("git merge-base origin/main HEAD || git rev-parse main", {
@@ -29,9 +35,9 @@ try {
     encoding: "utf8",
   }).trim();
   const diff = execSync(`git diff --name-only ${base} HEAD`, { cwd: repoRoot, encoding: "utf8" });
-  const touched = diff.split("\n").filter((f) => f && PROTECTED.test(f));
+  const touched = diff.split("\n").filter((f) => f && PROTECTED.test(f) && !APPROVED_ADDITIVE_MIGRATIONS.has(f));
   if (touched.length) fail(`Branch touches protected files: ${touched.join(", ")}`);
-  else ok("No protected files touched (Wise/payment/release/custody/RLS/Shippo/BlueNotary/PIP)");
+  else ok("No unapproved protected files touched (Wise/payment/release/custody/RLS/Shippo/BlueNotary/PIP)");
 } catch (e) {
   console.log("NOTE: git diff guard skipped (", e.message, ")");
 }

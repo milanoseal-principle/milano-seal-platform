@@ -116,10 +116,10 @@ export default function LawFirmsPage() {
                   The Milano Seal treats every document as part of a controlled lifecycle. Documents are reviewed, routed, executed, tracked, and released through defined status gates so attorneys, professional firms, and private clients can see where a matter stands without exposing internal operational details.
                 </p>
                 <Link
-                  href="/intake"
+                  href="/counsel"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C6A55A]/10 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:bg-[#C6A55A]/20 transition-colors"
                 >
-                  Submit Professional Matter <ArrowRight className="w-3 h-3" />
+                  Send a U.S. Matter <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
@@ -140,10 +140,10 @@ export default function LawFirmsPage() {
                 <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Professional Matter</p>
                 <p className="text-white font-serif text-lg leading-snug mb-4">Law-Firm Document Coordination</p>
                 <Link
-                  href="/intake"
+                  href="/counsel"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.12em] text-[11px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors mb-3"
                 >
-                  Submit Professional Matter <ArrowRight className="w-3.5 h-3.5" />
+                  Send a U.S. Matter <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   href="/alliance"

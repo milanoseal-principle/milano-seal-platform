@@ -1,0 +1,52 @@
+[
+  {
+    "name": "validate:revenue-copy",
+    "code": 1,
+    "output": "\n────────────────────────────────────────────────\n  ✗ FAIL: app/lawyer-access/page.tsx missing required semantic: Milano execution proposition\n  ✗ FAIL: app/lawyer-access/page.tsx missing required semantic: controlled intake CTA\n  ✗ FAIL: no public page includes CTA \"Request Lawyer Access\"\n\n✗ Revenue copy validation FAILED — 3 issue(s).\n\n"
+  },
+  {
+    "name": "validate:brand-language",
+    "code": 1,
+    "output": "✗ hero RON label missing eligible RON language\n✗ hero RON support boundary missing\n✗ expected one Milano Trust Core label, found 2\n"
+  },
+  {
+    "name": "validate:command-center-intelligence",
+    "code": 1,
+    "output": "Command Center intelligence validation failed:\n- app/pricing/page.tsx exposes forbidden public phrase: legal advice\n- Command Center implies live metrics without a live backend qualifier\n- Command Center missing Wise-first payment provider copy\n"
+  },
+  {
+    "name": "validate:internal-module-registry",
+    "code": 1,
+    "output": "Internal module registry validation failed:\n- Dashboard nav or home missing href: /dashboard/command-center\n- Dashboard nav or home missing href: /dashboard/seo-authority\n- Dashboard nav or home missing href: /dashboard/compliance-atlas\n- Dashboard nav or home missing href: /dashboard/operator-terminal\n"
+  },
+  {
+    "name": "validate:public-final-copy-lock",
+    "code": 1,
+    "output": "Public final copy lock validation failed:\n- /pricing does not link to /intake\n- Share card missing: #15120A\n"
+  },
+  {
+    "name": "validate:seo-phase-authority",
+    "code": 1,
+    "output": "nav missing seo authority\n"
+  },
+  {
+    "name": "validate:project",
+    "code": 1,
+    "output": "\n[1] Config integrity\n  ✓ PASS: package.json is valid JSON\n  ✓ PASS: tsconfig.json is valid JSON\n  ✓ PASS: vercel.json is valid JSON\n  ✓ PASS: docs/architecture/LAYER_MANIFEST.json is valid JSON\n\n[2] Root Next.js integrity\n  ✓ PASS: next.config.mjs has one nextConfig definition\n  ✓ PASS: Root layout valid\n  ✓ PASS: Root page valid\n\n[3] Milano domain isolation\n  ✓ PASS: No unrelated product/domain patterns found in production code\n\n[4] Stripe Checkout guard\n  ✓ PASS: No Stripe Checkout patterns found\n\n[5] Public layout safety\n\n[6] Critical card clipping\n\n[7] Secret/client boundary\n  ✓ PASS: No service-role references in client code\n  ✓ PASS: No hardcoded password literals found\n\n[8] Architecture control plane\n  ✓ PASS: Architecture control-plane validator present\n  ✗ FAIL: Hardcoded public top offsets: app/affidavit-name-discrepancy/page.tsx, app/affidavit-non-existence-record/page.tsx, app/affidavit-one-and-the-same/page.tsx, app/affidavit-translation-accuracy/page.tsx, app/documents/[document]/[country]/page.tsx, app/guides/apostille-for-italian-citizenship-documents/page.tsx, app/guides/apostille-for-vital-records/page.tsx, app/guides/apostille-vs-legalization/page.tsx, app/guides/document-origin-vs-destination-country/page.tsx, app/guides/florida-apostille-timeline/page.tsx, app/guides/how-to-prepare-documents-for-use-abroad/page.tsx, app/guides/notarized-document-for-use-abroad/page.tsx, app/guides/power-of-attorney-for-use-abroad/page.tsx, app/guides/remote-online-notary-international-documents/page.tsx, app/guides/what-is-an-apostille/page.tsx, app/international-affidavit/page.tsx, app/international-affidavits/page.tsx, app/partners/attorneys/page.tsx, app/partners/international-clients/page.tsx, app/partners/medical/page.tsx, app/partners/real-estate/page.tsx, app/power-of-attorney-international/page.tsx, app/services/[service]/page.tsx, app/services/apostille/page.tsx, app/services/equine-document-apostille/page.tsx, app/services/florida-apostille-courier/page.tsx, app/services/gem-diamond-document-apostille/page.tsx, app/services/hnwi-document-execution/page.tsx, app/services/immigration-documents/page.tsx, app/services/international-execution/page.tsx, app/services/luxury-asset-document-apostille/page.tsx, app/services/medical-document-apostille/page.tsx, app/services/mobile-notary/page.tsx, app/services/page.tsx, app/services/regenerative-medicine-document-support/page.tsx, app/services/remote-online-notary/page.tsx, app/services/yacht-document-apostille/page.tsx, app/terms/page.tsx\n  ✗ FAIL: Possible public country/title truncation: app/today/page.tsx\n  ✗ FAIL: Critical card clipping: components/countries/CountriesDirectoryInteractive.tsx\n\n✗ Validation FAILED — 3 issue(s).\n\n"
+  },
+  {
+    "name": "validate:public-copy-safety",
+    "code": 1,
+    "output": "Public copy safety validation failed:\n- unsafe legal advice context in app/lawyer-access/page.tsx\n- Executed properly the first time found in app/services/[service]/page.tsx\n- unsafe legal advice context in components/portal/ClientMatterQuoteSummary.tsx\n- unsafe legal advice context in components/seo/CountryDocumentAuthorityPage.tsx\n"
+  },
+  {
+    "name": "validate:next-five-production-builds",
+    "code": 1,
+    "output": "Next five production builds validation failed:\n- Missing required file: lib/portal2/documentVault.ts\n- Missing required file: lib/dispatch/partnerApplication.ts\n- Missing required file: lib/dispatch/dispatchQueue.ts\n"
+  },
+  {
+    "name": "validate:mobile-cinematic-hotfix",
+    "code": 1,
+    "output": "app/pricing/page.tsx missing required semantic: Signature Execution\n"
+  }
+]

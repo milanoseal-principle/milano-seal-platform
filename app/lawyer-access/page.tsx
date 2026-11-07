@@ -49,9 +49,9 @@ export default function Page() {
           <div className="mb-8 rounded-2xl border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.045] p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
             <div>
               <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-[var(--ms-gold)]/65">Canonical attorney journey</p>
-              <p className="mt-2 text-sm leading-6 text-white/52">International counsel should start in Professional Execution. This page is the optional intelligence/reporting layer, not a second Matter-entry workflow.</p>
+              <p className="mt-2 text-sm leading-6 text-white/52">International counsel can send a U.S. Matter to Milano without an account. This page is the optional intelligence/reporting layer, not a second Matter-entry workflow.</p>
             </div>
-            <Link href="/professional" className="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507] sm:mt-0">Open Professional Execution<ArrowRight className="h-3.5 w-3.5" /></Link>
+            <Link href="/counsel" className="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507] sm:mt-0">Send a U.S. Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
 
           <div className="grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
@@ -61,10 +61,10 @@ export default function Page() {
               </div>
               <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--ms-gold)]/65">Optional Intelligence Layer for U.S. & Foreign Counsel</p>
               <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl lg:text-6xl">Route intelligence for counsel managing documents that must <span className="italic text-[var(--ms-gold)]">work across borders.</span></h1>
-              <p className="mt-6 max-w-3xl text-base leading-7 text-white/52">Use Professional Execution for the client Matter. Use this intelligence desk when counsel wants an additional route report, authority matrix, recurring desk access, or evidence-backed execution analysis.</p>
+              <p className="mt-6 max-w-3xl text-base leading-7 text-white/52">Send Milano the client Matter for initial review. Use this intelligence desk when counsel wants an additional route report, authority matrix, recurring desk access, or evidence-backed execution analysis.</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/professional" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Start Professional Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
-                <Link href="#execution-intelligence-report" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/28 bg-black/25 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]/82">View Counsel Intelligence<Network className="h-3.5 w-3.5" /></Link>
+                <Link href="/counsel" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--ms-gold)] px-5 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-[#050507]">Send a U.S. Matter<ArrowRight className="h-3.5 w-3.5" /></Link>
+                <Link href="#execution-intelligence-report" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[var(--ms-gold)]/28 bg-black/25 px-5 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-[var(--ms-gold)]/82">View Execution Intelligence<Network className="h-3.5 w-3.5" /></Link>
               </div>
             </div>
             <div className="rounded-2xl border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.05] p-5">

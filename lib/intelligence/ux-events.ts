@@ -8,6 +8,11 @@ export type UxEventSurface =
   | "operations_desk";
 
 export type UxEventType =
+  | "counsel_visit"
+  | "counsel_inquiry_opened"
+  | "counsel_inquiry_submitted"
+  | "counsel_submission_failed"
+
   | "intake_started"
   | "description_completed"
   | "document_uploaded"

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     await recordUxLearningEvent({
       matterId: payload.matterId,
-      surface: "intake",
+      surface: raw.event.startsWith("counsel_") ? "public_site" : "intake",
       eventType: payload.event,
       metadata: payload.metadata,
     });

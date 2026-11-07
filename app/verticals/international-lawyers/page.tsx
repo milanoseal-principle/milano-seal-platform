@@ -95,7 +95,7 @@ export default function InternationalLawyersPage() {
                     { label: "Hague vs. Non-Hague Countries", href: "/learn/hague-vs-non-hague-countries" },
                     { label: "FBI Background Check Apostille", href: "/learn/fbi-background-check-apostille" },
                     { label: "Global Document Atlas", href: "/map" },
-                    { label: "Begin Secure Intake", href: "/intake" },
+                    { label: "Send a U.S. Matter", href: "/counsel" },
                   ].map(({ label, href }) => (
                     <Link key={href} href={href} className="flex items-center justify-between py-1.5 text-[#555] hover:text-[#888] text-sm transition-colors group">
                       <span>{label}</span>
@@ -120,7 +120,7 @@ export default function InternationalLawyersPage() {
                 <p className="font-mono text-[8px] tracking-[0.06em] uppercase text-[#C6A55A]/70 mb-3">Professional Matter</p>
                 <p className="text-white font-serif text-lg leading-snug mb-4">International Legal Counsel</p>
                 <Link
-                  href="/intake"
+                  href="/counsel"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.12em] text-[11px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors mb-3"
                 >
                   Submit Professional Matter <ArrowRight className="w-3.5 h-3.5" />

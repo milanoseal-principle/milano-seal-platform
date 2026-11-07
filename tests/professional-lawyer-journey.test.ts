@@ -4,22 +4,22 @@ import test from "node:test";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-test("homepage routes attorneys into the canonical professional execution lane", () => {
+test("homepage routes new attorneys into counsel acquisition", () => {
   const persona = read("components/landing/persona-routing.tsx");
   const publicCta = read("components/conversion/MilanoPublicCtaModule.tsx");
 
-  assert.match(persona, /href: "\/professional"/);
+  assert.match(persona, /href: "\/counsel"/);
   assert.doesNotMatch(persona, /href: "\/lawyer-access"/);
   assert.match(persona, /International Counsel Execution Lane/);
   assert.match(publicCta, /For International Counsel/);
-  assert.match(publicCta, /href: "\/professional"/);
+  assert.match(publicCta, /href: "\/counsel"/);
 });
 
 test("lawyer-access is an optional intelligence layer, not a competing execution funnel", () => {
   const counsel = read("app/lawyer-access/page.tsx");
   assert.match(counsel, /not a second Matter-entry workflow/);
-  assert.match(counsel, /Open Professional Execution/);
-  assert.match(counsel, /href="\/professional"/);
+  assert.match(counsel, /Send a U.S. Matter/);
+  assert.match(counsel, /href="\/counsel"/);
 });
 
 test("professional route facts carry into secure intake", () => {
