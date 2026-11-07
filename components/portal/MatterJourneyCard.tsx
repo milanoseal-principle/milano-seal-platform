@@ -110,10 +110,11 @@ function StagePip({
   const active = current === index;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, position: "relative" }}>
       {/* Connector line before */}
       {index > 0 && (
         <div
+          className="hidden sm:block"
           style={{
             position: "absolute",
             left: 0,
@@ -129,6 +130,7 @@ function StagePip({
       {/* Connector line after */}
       {index < total - 1 && (
         <div
+          className="hidden sm:block"
           style={{
             position: "absolute",
             left: "50%",
@@ -199,7 +201,7 @@ function StagePip({
           color: active ? GOLD : done ? "rgba(198,165,90,0.55)" : "rgba(255,255,255,0.3)",
           fontWeight: active ? 600 : 400,
           transition: reduced ? "none" : "color 0.3s",
-          whiteSpace: "nowrap",
+          whiteSpace: "normal",
         }}
       >
         {stage.label}
@@ -477,8 +479,8 @@ export function MatterJourneyCard({ deal }: Props) {
       {authenticationNotRequired && <p className="mb-4 text-xs text-white/60">Apostille / authentication: Not required following Milano review.</p>}
       {/* Stage strip */}
       <div
+        className="grid grid-cols-3 gap-y-4 sm:flex"
         style={{
-          display: "flex",
           alignItems: "flex-start",
           padding: "0 14px",
           marginBottom: 8,

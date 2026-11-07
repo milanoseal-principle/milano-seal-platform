@@ -33,6 +33,7 @@ Rendered acceptance is wired into PR CI at 320, 390, 768 and 1440 pixels. It use
 ## Release gates still required
 
 - Follow-up map rendered proof must pass with the corrected selector.
+- Follow-up P3 rendered proof must pass the strengthened full-page PNG-width check. Visual inspection found the initial document-width assertion could miss clipped horizontal content in the six-column mobile journey strip. The follow-up uses a three-column mobile grid and retains the desktop strip.
 - Record and reconcile the repository/hosted migration-version mapping above in the provenance work.
 - Hosted schema provenance needs review: read-only inspection found `public.matter_state_events`, `public.is_valid_matter_transition(text,text)` and the canonical transition trigger absent, despite repository migration 046 defining them. Do not replay historical migrations blindly. This is not fixed or certified by a green source validator.
 - Complete authenticated operator/client hosted verification. Public-route and exact-SHA checks above do not prove an authenticated transaction.

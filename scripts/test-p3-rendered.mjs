@@ -41,7 +41,8 @@ try {
     assert.equal(reviewPayload.execution_method,'in_person');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Horizontal overflow');
     writeFileSync(`${out}/runtime-${width}.json`,JSON.stringify({errors},null,2));
-    await page.screenshot({path:`${out}/domestic-${width}.png`,fullPage:true});
+    const screenshot = await page.screenshot({path:`${out}/domestic-${width}.png`,fullPage:true});
+    assert.equal(screenshot.readUInt32BE(16),width,'Full-page capture reveals clipped horizontal content');
     assert.deepEqual(errors,[],'Browser runtime errors');
     results.push({width,status:'PASS',scope:'Controlled UI; mocked quote and review transport. Database RPCs tested separately.'});
     await page.close();
