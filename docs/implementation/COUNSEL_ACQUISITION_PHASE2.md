@@ -84,6 +84,34 @@ Chromium is not real-device keyboard certification. Provider/hosted integration 
 
 The ten known baseline validator failures must remain separately identified. Final local gate counts, rendered results and baseline comparison are recorded in `artifacts/proof/counsel-phase2/`; a failure is never relabeled PASS without an actual successful rerun. No validator is changed for Phase 2.
 
+## Final local validation
+
+- Full suite: **1,045 tests passed, zero failed**.
+- Typecheck and lint: **PASS**.
+- Production build: **PASS**, 2,832 static pages generated; no deployment performed.
+- Aggregate release gate: **PASS**, including its own typecheck, lint, full tests, build and canonical governance checks.
+- All 80 declared validators executed on the committed Phase 2 delta: **70 PASS, 10 baseline FAIL**. No new validator findings; the same failed findings are reproduced in an isolated worktree of merged main `f28c8a0`. No validators were modified.
+- Isolated PostgreSQL private-access/FK/duplicate and JSON concurrency checks: **PASS**.
+- Public rendered checks: **220 PASS**, zero overflow or page errors (22 routes, ten widths).
+- Existing counsel journey: **PASS** at ten widths, with explicit response fixtures and real unconfigured API fail-closed behavior.
+- Operator/professional component harness: **30 width checks PASS**, zero page errors, including response/qualification retries, prospect/activation controls and repeat-entry safeguards. Synthetic responses are explicitly identified; this is not hosted authorization certification.
+- Hosted Supabase/RLS/auth/private storage, real provider delivery, live Wise/scheduling, authenticated hosted end-to-end workflow and real-device keyboard behavior: **UNVERIFIED — HOSTED ACCESS REQUIRED** (real devices also required for keyboard certification).
+
+### Existing baseline validator failures
+
+- `validate:revenue-copy`
+- `validate:brand-language`
+- `validate:command-center-intelligence`
+- `validate:internal-module-registry`
+- `validate:public-final-copy-lock`
+- `validate:project`
+- `validate:seo-phase-authority`
+- `validate:public-copy-safety`
+- `validate:next-five-production-builds`
+- `validate:mobile-cinematic-hotfix`
+
+Full outputs and baseline/branch findings are retained in the proof directory. Production deployment, hosted migration application and merging remain unperformed.
+
 ## File inventory
 
 - `app/api/admin/counsel/route.ts`
@@ -95,6 +123,20 @@ The ten known baseline validator failures must remain separately identified. Fin
 - `app/dashboard/marketing/counsel/page.tsx`
 - `app/professional/[country]/page.tsx`
 - `app/sitemap.ts`
+- `artifacts/proof/counsel-phase2/baseline-comparison.json`
+- `artifacts/proof/counsel-phase2/database.log`
+- `artifacts/proof/counsel-phase2/desktop-uae.png`
+- `artifacts/proof/counsel-phase2/desktop-use-case.png`
+- `artifacts/proof/counsel-phase2/inquiry-browser.json`
+- `artifacts/proof/counsel-phase2/lint.log`
+- `artifacts/proof/counsel-phase2/mobile-context.png`
+- `artifacts/proof/counsel-phase2/operator-mobile-fixture.png`
+- `artifacts/proof/counsel-phase2/operator-professional-browser.json`
+- `artifacts/proof/counsel-phase2/production-regression.log`
+- `artifacts/proof/counsel-phase2/public-pages.json`
+- `artifacts/proof/counsel-phase2/targeted-tests.log`
+- `artifacts/proof/counsel-phase2/typecheck.log`
+- `artifacts/proof/counsel-phase2/validators.json`
 - `components/assistant/MilanoExecutionCopilot.tsx`
 - `components/counsel/CounselContent.tsx`
 - `components/counsel/CounselContextLink.tsx`

@@ -64,7 +64,8 @@
       "realMissingCredentialsStatus": 503,
       "realMissingCredentialsBody": {
         "ok": false,
-        "error": "We could not receive your request. Your form is still here; please try again."
+        "error": "We could not receive your request. Your form is still here; please try again.",
+        "code": "RECEIPT_UNCONFIRMED"
       },
       "note": "Successful UI receipts above used explicit Playwright response mocks, not a live database."
     }

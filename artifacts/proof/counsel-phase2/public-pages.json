@@ -1049,6 +1049,56 @@
       "path": "/professional/uae",
       "width": 1440,
       "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 360,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 412,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 1280,
+      "overflow": false
+    },
+    {
+      "path": "/professional/switzerland",
+      "width": 1440,
+      "overflow": false
     }
   ],
   "errors": [],
