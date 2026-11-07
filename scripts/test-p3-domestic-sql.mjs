@@ -1,5 +1,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
 const db=new PGlite();
 await db.exec(`create role anon; create role authenticated; create role service_role;
 create schema auth; create table auth.users(id uuid primary key, raw_app_meta_data jsonb, banned_until timestamptz);
@@ -22,24 +24,11 @@ await db.exec(`alter table public.deals add column total_price numeric,add colum
  add column eligible_subtotal numeric,add column non_discountable_total numeric,add column discount_amount numeric,
  add column matter_pricing_type text,add column quote_execution_method text,add column pricing_version text,add column quote_breakdown jsonb;
  create function auth.uid() returns uuid language sql as $$ select null::uuid $$;`);
-// This fixture tests the existing transition function and P3 RPCs. It is not
-// a clean migration-chain or hosted-schema certification (P12 owns that).
-const stateSource=readFileSync('supabase/migrations/046_canonical_matter_state_machine.sql','utf8');
-const stateFunction=stateSource.match(/create or replace function public\.is_valid_matter_transition[\s\S]*?\$\$;/)?.[0];
-if(!stateFunction) throw Error('Canonical state function missing');
-await db.exec(stateFunction);
-await db.exec(`create table public.matter_state_events(id uuid default gen_random_uuid(),matter_id uuid references public.deals(id),new_state text,created_at timestamptz default now());
-create function public.fixture_state_transition() returns trigger language plpgsql as $$ begin
- if TG_OP='INSERT' then
-  if not public.is_valid_matter_transition(null,NEW.status) then raise exception 'INVALID_INITIAL_STATE'; end if;
- elsif NEW.status is distinct from OLD.status then
-  if not public.is_valid_matter_transition(OLD.status,NEW.status) then raise exception 'INVALID_TRANSITION'; end if;
- else return NEW;
- end if;
- insert into public.matter_state_events(matter_id,new_state) values(NEW.id,NEW.status);
- return NEW;
-end $$;
-create trigger fixture_state_transition after insert or update of status on public.deals for each row execute function public.fixture_state_transition();`);
+// Apply the actual forward repair, including AFTER audit timing and append-only
+// controls, rather than a substitute fixture trigger. No hosted certification.
+await db.exec(readFileSync('supabase/migrations/20261107234218_p3_canonical_lifecycle_reconciliation.sql','utf8'));
+await db.exec(`alter table public.deals add column payment_settlement_status text default 'unpaid';`);
+await db.exec(readFileSync('supabase/migrations/089_verified_settlement_scheduling_gate.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/20261107215959_p3_domestic_execution.sql','utf8'));
 const first=(await db.query(`select * from convert_sales_lead_to_matter('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001')`)).rows[0];
 const repeat=(await db.query(`select * from convert_sales_lead_to_matter('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001')`)).rows[0];
@@ -66,6 +55,50 @@ if(approved.matter.status!=='awaiting_payment'||approved.matter.payment_confirme
 const states=(await db.query('select new_state from matter_state_events where matter_id=$1 order by created_at, id',[first.matter_id])).rows.map(x=>x.new_state);
 for(const state of ['intake_received','under_review','quoted','awaiting_payment']) if(!states.includes(state)) throw Error('Missing canonical state '+state);
 console.log('Private quote ordered canonical transitions: PASS');
+// Exhaustive parity against the actual TypeScript transition authority.
+const compiled=ts.transpileModule(readFileSync('lib/stateMachine.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const stateMachine=await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const statesToTest=[...stateMachine.CANONICAL_MATTER_STATES,'unknown',''];
+for(const from of statesToTest) for(const to of statesToTest) {
+ const actual=(await db.query('select public.is_valid_matter_transition($1,$2) as valid',[from,to])).rows[0].valid;
+ assert.equal(actual,stateMachine.canTransition(from,to),`${from} -> ${to}`);
+}
+assert.equal((await db.query("select public.is_valid_matter_transition(null,null) as valid")).rows[0].valid,false);
+console.log('SQL/TypeScript transition parity: PASS (196 pairs plus null)');
+async function expectDenied(sql,params=[],code) {
+ let rejected=false;try{await db.query(sql,params)}catch(e){rejected=code?e.code===code:true}
+ assert.equal(rejected,true,sql);
+}
+await expectDenied("update deals set status='completed' where id=$1",[first.matter_id]);
+assert.equal((await db.query('select status from deals where id=$1',[first.matter_id])).rows[0].status,'awaiting_payment');
+await expectDenied("update deals set status='scheduled' where id=$1",[first.matter_id]);
+await db.query("update deals set payment_confirmed=true,payment_status='paid',payment_settlement_status='cleared',amount_paid=374.99 where id=$1",[first.matter_id]);
+assert.equal((await db.query('select status from deals where id=$1',[first.matter_id])).rows[0].status,'awaiting_payment');
+await expectDenied("update deals set status='scheduled' where id=$1",[first.matter_id]);
+// 089 mutates status on a payment-only update. The AFTER-all-updates trigger
+// must record that final stage, although status was absent from the SET list.
+await db.query("update deals set payment_confirmed=true,payment_status='paid',payment_settlement_status='cleared',amount_paid=375 where id=$1",[first.matter_id]);
+assert.equal((await db.query('select status from deals where id=$1',[first.matter_id])).rows[0].status,'payment_confirmed');
+assert.equal((await db.query("select count(*)::int as n from matter_state_events where matter_id=$1 and previous_state='awaiting_payment' and new_state='payment_confirmed'",[first.matter_id])).rows[0].n,1);
+await expectDenied("update deals set status='in_execution' where id=$1",[first.matter_id],'23514');
+await db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[first.matter_id]);
+await db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[first.matter_id]);
+const beforeNoop=(await db.query('select count(*)::int as n from matter_state_events')).rows[0].n;
+await db.query("update deals set internal_notes='Metadata only' where id=$1",[first.matter_id]);
+assert.equal((await db.query('select count(*)::int as n from matter_state_events')).rows[0].n,beforeNoop);
+await expectDenied('update matter_state_events set reason=$1',['rewrite'],'42501');
+await expectDenied('delete from matter_state_events',[],'42501');
+for(const role of ['anon','authenticated']) {
+ const privileges=(await db.query("select has_table_privilege($1,'public.matter_state_events','SELECT') as read,has_table_privilege($1,'public.matter_state_events','INSERT') as write,has_function_privilege($1,'public.enforce_canonical_matter_transition()','EXECUTE') as call",[role])).rows[0];
+ assert.deepEqual(privileges,{read:false,write:false,call:false});
+}
+// A ledger insert failure must roll back the lifecycle change itself.
+await db.exec(`create function public.fail_state_fixture() returns trigger language plpgsql as $$ begin raise exception 'state ledger unavailable'; end $$;
+create trigger fail_state_fixture before insert on matter_state_events for each row execute function public.fail_state_fixture();`);
+await expectDenied("update deals set status='in_transit',deal_status='in_transit' where id=$1",[first.matter_id]);
+assert.equal((await db.query('select status from deals where id=$1',[first.matter_id])).rows[0].status,'in_execution');
+await db.exec('drop trigger fail_state_fixture on matter_state_events;');
+console.log('Settlement stage, skipped states, append-only roles, no-op and audit rollback: PASS');
 // An evidence failure must roll back BOTH Matter creation and source linkage.
 await db.exec(`insert into public.sales_leads select '00000000-0000-4000-8000-000000000004',full_name,email,phone,document_type,country,details,product_interest,lead_type,source_route,null,null,null from sales_leads limit 1;
 create function public.fail_fixture_evidence() returns trigger language plpgsql as $$ begin raise exception 'fixture evidence unavailable'; end $$;
