@@ -149,7 +149,7 @@ export function Hero() {
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }} />
               </Link>
               <Link
-                href="/pricing?source=homepage"
+                href="/pricing?source=homepage#get-pricing"
                 className="inline-flex items-center justify-center px-7 py-3.5 border border-[var(--ms-gold)]/40 text-white/85 font-medium rounded-lg transition-colors duration-300 hover:border-[var(--ms-gold)]/70 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ms-gold)]"
               >
                 Get Pricing

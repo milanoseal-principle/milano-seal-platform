@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { ExecutionTiers } from "@/components/landing/execution-tiers";
+import { GetPricingForm } from "@/components/conversion/GetPricingForm";
+import { resolveConciergeContext } from "@/lib/acquisition/concierge-context";
+
+type SearchParams = Record<string, string | string[] | undefined>;
 
 export const metadata: Metadata = {
   title: "Execution Quote | The Milano Seal™",
@@ -108,7 +112,8 @@ const paymentSteps = [
   ["06", "Release / courier", "The completed packet is released into the approved delivery route."],
 ] as const;
 
-export default function PricingPage() {
+export default async function PricingPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const context = resolveConciergeContext(await searchParams);
   return (
     <PublicShell>
       <main
@@ -369,30 +374,35 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="border-t border-white/[0.055] px-4 py-16 text-center sm:px-6 md:py-24">
+        <section id="get-pricing" className="scroll-mt-28 border-t border-white/[0.055] px-4 py-16 sm:px-6 md:py-24">
           <div className="mx-auto max-w-3xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/60">Ready For Review</p>
-            <h2 className="mt-4 font-serif text-4xl text-white sm:text-5xl">See your exact Matter path before you pay.</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/44">
-              Submit the document, destination, origin, signer posture, and deadline. Milano returns the recommended path, what is included, what remains unresolved, and the final quote required to proceed.
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#C6A65B]/60">Get Pricing</p>
+              <h2 className="mt-4 font-serif text-4xl text-white sm:text-5xl">Request a reviewed quote.</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/44">
+                Tell us about your document and how it will be used. You do not need to know whether you require RON, in-person notarization, apostille, authentication, or translation — if you are unsure, choose “review my document.” Milano reviews your request and returns the recommended path and a private quote.
+              </p>
+            </div>
+            <div className="mx-auto mt-10 max-w-2xl">
+              <GetPricingForm {...context} />
+            </div>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 text-center sm:flex-row">
               <Link
                 href="/intake?source=pricing-final"
-                className="group inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#C6A65B] px-8 text-sm font-semibold text-[#070707] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#D3B56A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A65B]"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 text-sm font-medium text-white/66 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A65B]"
               >
-                Start Secure Intake
+                Prefer to start the full secure intake now?
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/secure-portal"
-                className="inline-flex min-h-13 items-center justify-center rounded-xl border border-white/[0.1] px-7 text-sm font-medium text-white/66 hover:border-[#C6A65B]/35 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A65B]"
+                className="inline-flex min-h-12 items-center justify-center text-sm font-medium text-white/50 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A65B]"
               >
                 Existing Matter
               </Link>
             </div>
-            <p className="mt-6 text-xs leading-5 text-white/28">
-              Final acceptance remains subject to the receiving authority. The Milano Seal does not provide legal advice.
+            <p className="mt-6 text-center text-xs leading-5 text-white/28">
+              Requesting pricing does not create a Matter, appointment, or payment. Final acceptance and route remain subject to Milano review and the receiving authority. The Milano Seal does not provide legal advice.
             </p>
           </div>
         </section>

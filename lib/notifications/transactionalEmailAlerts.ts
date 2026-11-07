@@ -423,3 +423,109 @@ export async function sendConciergeInquiryAlerts(reference: string): Promise<str
       ? "unavailable"
       : "failed";
 }
+
+// Operator alert for a "Get Pricing" request. Evidence is provider-acceptance
+// only — never a claim of delivery — and the request's document facts and
+// free-text are never placed in the email body; operators review them in the
+// authenticated Lead Pipeline. A notification failure never erases the lead.
+export async function sendPricingRequestAlerts(reference: string): Promise<string> {
+  const admin = createAdminClient();
+  const { data: lead, error } = await admin
+    .from("sales_leads")
+    .select("id,full_name,email,phone,product_interest,country,urgency,source_route")
+    .eq("id", reference)
+    .eq("lead_type", "pricing_request")
+    .single();
+  if (error || !lead) return "unavailable";
+
+  const states = await Promise.all(operatorEmails().map(async (recipient) => {
+    const { data: prior } = await admin
+      .from("notifications")
+      .select("id,status,provider_message_id,delivery_attempts")
+      .eq("type", "operator_pricing_request")
+      .eq("recipient_email", recipient)
+      .contains("metadata", { pricing_request_id: reference })
+      .limit(1)
+      .maybeSingle();
+    if (prior?.status === "sent" && prior.provider_message_id) return "provider_accepted";
+
+    let notificationId = prior?.id;
+    if (!notificationId) {
+      const { data, error: queueError } = await admin
+        .from("notifications")
+        .insert({
+          recipient_email: recipient,
+          channel: "email",
+          type: "operator_pricing_request",
+          subject: `Pricing request — ${reference}`,
+          message: `New pricing request ${reference}; review it in the authenticated Lead Pipeline. No Matter, quote, payment, or scheduling state was created.`,
+          status: "pending",
+          delivery_status: "queued",
+          delivery_attempts: 0,
+          metadata: { pricing_request_id: reference, evidence_scope: "provider_acceptance_only", final_delivery_proven: false },
+        })
+        .select("id")
+        .single();
+      if (queueError || !data) return "unavailable";
+      notificationId = data.id;
+    }
+
+    const attempt = (prior?.delivery_attempts ?? 0) + 1;
+    const { error: attemptError } = await admin
+      .from("notifications")
+      .update({
+        status: "pending",
+        delivery_status: prior ? "retrying" : "queued",
+        delivery_attempts: attempt,
+        error_message: null,
+        failed_at: null,
+        last_provider_event_at: new Date().toISOString(),
+      })
+      .eq("id", notificationId);
+    if (attemptError) return "unavailable";
+
+    let providerId: string | null = null;
+    let failure: string | null = null;
+    try {
+      if (!process.env.RESEND_API_KEY) failure = "RESEND_API_KEY_MISSING";
+      else {
+        const result = await new Resend(process.env.RESEND_API_KEY).emails.send(
+          {
+            from: FROM,
+            to: recipient,
+            subject: `Pricing request — ${reference}`,
+            text: `A new pricing request is recorded. Name: ${lead.full_name}. Email: ${lead.email}. Phone: ${lead.phone || "Not provided"}. Service intent: ${lead.product_interest || "Review required"}. Destination: ${lead.country || "Not provided"}. Urgency: ${lead.urgency || "Not provided"}. Origin: ${lead.source_route || "Not provided"}. Review the request in the authenticated Lead Pipeline. Document details and description are not included in email. No Matter, quote, payment, or scheduling state was created.`,
+          },
+          { idempotencyKey: `pricing-${reference}-${recipient}` },
+        );
+        providerId = result.error ? null : result.data?.id ?? null;
+        failure = result.error?.message ?? (providerId ? null : "PROVIDER_ACCEPTANCE_UNCONFIRMED");
+      }
+    } catch {
+      failure = "PROVIDER_REQUEST_FAILED";
+    }
+
+    const { error: recordError } = await admin
+      .from("notifications")
+      .update({
+        status: providerId ? "sent" : "failed",
+        provider: "resend",
+        provider_message_id: providerId,
+        delivery_attempts: attempt,
+        delivery_status: providerId ? "provider_accepted" : "failed",
+        error_message: failure,
+        sent_at: providerId ? new Date().toISOString() : null,
+        failed_at: failure ? new Date().toISOString() : null,
+        last_provider_event_at: new Date().toISOString(),
+      })
+      .eq("id", notificationId);
+    if (recordError) return "unavailable";
+    return providerId ? "provider_accepted" : "failed";
+  }));
+
+  return states.every((state) => state === "provider_accepted")
+    ? "provider_accepted"
+    : states.includes("unavailable")
+      ? "unavailable"
+      : "failed";
+}
