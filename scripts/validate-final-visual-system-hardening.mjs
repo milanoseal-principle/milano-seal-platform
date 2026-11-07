@@ -128,4 +128,16 @@ for (const token of ["useMilanoReducedMotion", "pointer-events-none", "trust-neu
   if (!trust.includes(token)) throw new Error(`Trust Core cinematic safeguard missing: ${token}`);
 }
 
+for (const file of [
+  "components/landing/TrustCoreCinematicField.tsx",
+  "components/landing/milano-trust-core.tsx",
+  "components/landing/homepage-routing-preview.tsx",
+  "components/home/MiniAtlasPreview.tsx",
+]) {
+  const source = readFileSync(file, "utf8");
+  if (!source.includes("useMilanoReducedMotion") || source.includes("useReducedMotion()")) {
+    throw new Error(`Homepage reduced-motion consumer must use the canonical hydration-safe hook: ${file}`);
+  }
+}
+
 console.log("Final visual-system hardening validation passed.");
