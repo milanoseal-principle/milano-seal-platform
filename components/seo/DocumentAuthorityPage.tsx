@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { DocumentTaxonomyItem } from "@/lib/compliance/documents";
 import { CLIENT_COPY } from "@/lib/compliance/clientCopy";
 import { COUNTRY_REGISTRY } from "@/lib/compliance/countries";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 
 interface Props {
   document: DocumentTaxonomyItem;
@@ -22,6 +23,12 @@ export function DocumentAuthorityPage({ document }: Props) {
       <p className="text-[#8A8A8A] text-base md:text-lg font-light max-w-2xl mb-8 leading-relaxed">
         {document.seoDescription}
       </p>
+
+      <CommercialCtaRow
+        context={{ serviceIntent: document.commonlyApostilled ? "apostille" : "unsure", documentType: document.name, source: "document" }}
+        actions={["get_pricing", "speak"]}
+        className="mb-10"
+      />
 
       <div style={{ width: 80, height: 1, background: "linear-gradient(90deg, transparent, rgba(198,165,90,0.4), transparent)", marginBottom: 40 }} />
 

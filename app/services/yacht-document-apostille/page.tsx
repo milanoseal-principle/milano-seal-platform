@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { ArrowRight, CheckCircle } from "lucide-react";
@@ -74,6 +75,7 @@ export default function YachtDocumentApostillePage() {
             <p className="mt-8 text-xs text-[#4A4A4A] leading-relaxed">
               The Milano Seal supports document execution logistics, notarization coordination, apostille coordination, courier tracking, and release controls. The Milano Seal does not provide yacht brokerage, vessel valuation, maritime legal guidance, customs brokerage, or title opinions.</p>
           </div>
+                  <CommercialCtaRow context={{ serviceIntent: "apostille", source: "service-yacht-document-apostille" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
         <Footer />
       </main>

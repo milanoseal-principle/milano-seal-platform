@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
@@ -58,6 +59,7 @@ export default function InternationalAffidavitLibraryPage() {
             <Link href="/intake" className="rounded-sm bg-[#C6A55A] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-[#0A0A0A] transition-colors hover:bg-[#D4BB7A]">Begin Secure Intake</Link>
             <Link href="/map" className="rounded-sm border border-[#C6A55A]/35 px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-[#C6A55A] transition-colors hover:border-[#C6A55A]">Global Document Intelligence</Link>
           </div>
+                  <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "international-affidavits" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
 
         <section className="mx-auto max-w-5xl border-t border-[#1A1A1A] px-6 py-12">

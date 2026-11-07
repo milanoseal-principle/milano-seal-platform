@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Users, CheckCircle, ArrowRight, FileCheck, Globe } from "lucide-react";
@@ -47,7 +48,8 @@ export default function ImmigrationDocumentsPage() {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-      </section>
+                <CommercialCtaRow context={{ serviceIntent: "unsure", source: "service-immigration-documents" }} actions={["get_pricing", "speak"]} className="mt-6" />
+        </section>
 
       <section className="py-16 px-6 bg-[#111111]">
         <div className="max-w-4xl mx-auto">

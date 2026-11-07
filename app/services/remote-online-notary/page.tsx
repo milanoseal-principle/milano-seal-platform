@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Monitor, Shield, Video, CheckCircle, ArrowRight, Lock } from "lucide-react";
@@ -52,7 +53,8 @@ export default function RemoteOnlineNotaryPage() {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-      </section>
+                <CommercialCtaRow context={{ serviceIntent: "ron", source: "service-remote-online-notary" }} actions={["get_pricing", "speak"]} className="mt-6" />
+        </section>
 
       {/* Process Steps */}
       <section className="py-16 px-6 bg-[#111111]">

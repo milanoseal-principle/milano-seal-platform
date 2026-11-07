@@ -4,6 +4,7 @@ import { Footer } from "@/components/landing/footer";
 import { documents, countries, getDocumentBySlug } from "@/lib/seo-data";
 import { ArrowRight, FileText, Globe, Shield, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -98,7 +99,8 @@ export default async function ServicePage({ params }: PageProps) {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-      </section>
+                <CommercialCtaRow context={{ serviceIntent: "unsure", source: "service-[service]" }} actions={["get_pricing", "speak"]} className="mt-6" />
+        </section>
 
       {/* Features */}
       <section className="py-16 px-6 bg-[#111111]">

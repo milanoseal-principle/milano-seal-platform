@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
@@ -48,6 +49,7 @@ export default function TranslationAccuracyAffidavitPage() {
             A sworn translator statement used when a receiving authority asks for a formal declaration that the translated document accurately reflects the original.
           </p>
           <Link href="/intake" className="mt-8 inline-block rounded-sm bg-[#C6A55A] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-[#0A0A0A] transition-colors hover:bg-[#D4BB7A]">Begin Secure Intake</Link>
+                  <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "affidavit-translation-accuracy" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
 
         <section className="mx-auto max-w-4xl border-t border-[#1A1A1A] px-6 py-12">

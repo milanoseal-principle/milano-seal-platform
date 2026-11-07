@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import type { Metadata } from "next";
 import { ServicePageLayout } from "@/components/module2/ServicePageLayout";
 import { getGovernmentServices } from "@/lib/government/governmentServicesRegistry";
@@ -68,6 +69,7 @@ export default function GovernmentDocumentExecutionPage() {
         >
           Begin Secure Intake
         </Link>
+        <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "service-government-document-execution" }} actions={["get_pricing", "speak"]} className="mt-6" />
       </div>
     </ServicePageLayout>
   );
