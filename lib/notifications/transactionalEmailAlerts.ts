@@ -321,3 +321,105 @@ export async function sendCounselInquiryAlerts(
       ? "unavailable"
       : "failed";
 }
+
+export async function sendConciergeInquiryAlerts(reference: string): Promise<string> {
+  const admin = createAdminClient();
+  const { data: lead, error } = await admin
+    .from("sales_leads")
+    .select("id,full_name,email,phone,product_interest,country,urgency,source_route,details")
+    .eq("id", reference)
+    .eq("lead_type", "concierge_inquiry")
+    .single();
+  if (error || !lead) return "unavailable";
+
+  const states = await Promise.all(operatorEmails().map(async (recipient) => {
+    const { data: prior } = await admin
+      .from("notifications")
+      .select("id,status,provider_message_id,delivery_attempts")
+      .eq("type", "operator_concierge_inquiry")
+      .eq("recipient_email", recipient)
+      .contains("metadata", { concierge_inquiry_id: reference })
+      .limit(1)
+      .maybeSingle();
+    if (prior?.status === "sent" && prior.provider_message_id) return "provider_accepted";
+
+    let notificationId = prior?.id;
+    if (!notificationId) {
+      const { data, error: queueError } = await admin
+        .from("notifications")
+        .insert({
+          recipient_email: recipient,
+          channel: "email",
+          type: "operator_concierge_inquiry",
+          subject: `Concierge inquiry — ${reference}`,
+          message: `New concierge inquiry ${reference}; review it in the authenticated Lead Pipeline. No Matter, quote, payment, or scheduling state was created.`,
+          status: "pending",
+          delivery_status: "queued",
+          delivery_attempts: 0,
+          metadata: { concierge_inquiry_id: reference, evidence_scope: "provider_acceptance_only", final_delivery_proven: false },
+        })
+        .select("id")
+        .single();
+      if (queueError || !data) return "unavailable";
+      notificationId = data.id;
+    }
+
+    const attempt = (prior?.delivery_attempts ?? 0) + 1;
+    const { error: attemptError } = await admin
+      .from("notifications")
+      .update({
+        status: "pending",
+        delivery_status: prior ? "retrying" : "queued",
+        delivery_attempts: attempt,
+        error_message: null,
+        failed_at: null,
+        last_provider_event_at: new Date().toISOString(),
+      })
+      .eq("id", notificationId);
+    if (attemptError) return "unavailable";
+
+    let providerId: string | null = null;
+    let failure: string | null = null;
+    try {
+      if (!process.env.RESEND_API_KEY) failure = "RESEND_API_KEY_MISSING";
+      else {
+        const result = await new Resend(process.env.RESEND_API_KEY).emails.send(
+          {
+            from: FROM,
+            to: recipient,
+            subject: `Concierge inquiry — ${reference}`,
+            text: `A new concierge inquiry is recorded. Name: ${lead.full_name}. Email: ${lead.email}. Phone: ${lead.phone || "Not provided"}. Service intent: ${lead.product_interest || "Review required"}. Destination: ${lead.country || "Not provided"}. Urgency: ${lead.urgency || "Not provided"}. Origin: ${lead.source_route || "Not provided"}. Review the inquiry in the authenticated Lead Pipeline. The message summary is not included in email. No Matter or operational state was created.`,
+          },
+          { idempotencyKey: `concierge-${reference}-${recipient}` },
+        );
+        providerId = result.error ? null : result.data?.id ?? null;
+        failure = result.error?.message ?? (providerId ? null : "PROVIDER_ACCEPTANCE_UNCONFIRMED");
+      }
+    } catch {
+      failure = "PROVIDER_REQUEST_FAILED";
+    }
+
+    const { error: recordError } = await admin
+      .from("notifications")
+      .update({
+        status: providerId ? "sent" : "failed",
+        provider: "resend",
+        provider_message_id: providerId,
+        delivery_attempts: attempt,
+        delivery_status: providerId ? "provider_accepted" : "failed",
+        error_message: failure,
+        sent_at: providerId ? new Date().toISOString() : null,
+        failed_at: failure ? new Date().toISOString() : null,
+        last_provider_event_at: new Date().toISOString(),
+      })
+      .eq("id", notificationId);
+    if (recordError) return "unavailable";
+    return providerId ? "provider_accepted" : "failed";
+  }));
+
+  return states.every((state) => state === "provider_accepted")
+    ? "provider_accepted"
+    : states.includes("unavailable")
+      ? "unavailable"
+      : "failed";
+}
