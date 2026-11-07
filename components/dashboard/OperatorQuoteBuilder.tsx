@@ -201,6 +201,9 @@ export function OperatorQuoteBuilder({
   initial,
   onCommitted,
 }: OperatorQuoteBuilderProps) {
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
+  const [reviewReason, setReviewReason] = useState("");
   const truth = initial?.executionTruth ?? null;
   const [form, setForm] = useState<QuoteForm>({
     matter_base: initial?.matterBase ?? "authentication",
@@ -311,6 +314,29 @@ export function OperatorQuoteBuilder({
       controller.abort();
     };
   }, [form]);
+
+  async function confirmExecutionReview() {
+    setReviewing(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/dashboard/matters/${matterId}/execution-review`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...quoteRequestBody(form), review: {
+          document_reviewed: reviewConfirmed, signer_reviewed: reviewConfirmed,
+          witness_reviewed: reviewConfirmed, eligibility_reviewed: reviewConfirmed,
+          signer_count: form.signer_count,
+          witness_count: form.remote_witness_count + form.in_person_witness_count,
+          reason: reviewReason,
+        } }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Execution review was not saved.");
+      toast.success("Execution review saved. Private quote approval remains a separate step.");
+      onCommitted?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Execution review was not saved.");
+    } finally { setReviewing(false); }
+  }
 
   async function commitQuote() {
     if (locked || committing) return;
@@ -479,13 +505,27 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Signer location (RON)">
-                <Input value={form.signer_location} disabled={locked || form.execution_method !== "ron"} onChange={(e) => patch("signer_location", e.target.value)} />
+              <Field label="Signer location">
+                <Input value={form.signer_location} disabled={locked} onChange={(e) => patch("signer_location", e.target.value)} />
               </Field>
               <Field label="Execution location (in person)">
                 <Input value={form.execution_location} disabled={locked || form.execution_method !== "in_person"} onChange={(e) => patch("execution_location", e.target.value)} />
               </Field>
             </div>
+          </section>
+
+          <section className="space-y-3 rounded-md border border-border/60 p-4">
+            <p className="text-sm">Confirm the document title, readiness, deadline, signer count and locations, witness requirements, and execution eligibility. Review applicable provider and receiving-authority restrictions. This review does not establish legal sufficiency or payment.</p>
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" checked={reviewConfirmed} disabled={locked || reviewing} onChange={(e) => setReviewConfirmed(e.target.checked)} />
+              I have reviewed these facts and resolved the execution blockers.
+            </label>
+            <label className="block text-sm">Review evidence / instruction reference
+              <Input value={reviewReason} disabled={locked || reviewing} onChange={(e) => setReviewReason(e.target.value)} />
+            </label>
+            <Button type="button" disabled={locked || reviewing || !reviewConfirmed || reviewReason.trim().length < 10} onClick={() => void confirmExecutionReview()}>
+              {reviewing ? "Saving review…" : "Confirm execution review"}
+            </Button>
           </section>
 
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

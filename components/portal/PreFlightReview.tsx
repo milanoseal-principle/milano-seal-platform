@@ -141,7 +141,7 @@ interface Props {
 }
 
 export function PreFlightReview({ deal }: Props) {
-  const items = PREFLIGHT_ITEMS.map((item) => ({
+  const items = PREFLIGHT_ITEMS.filter((item) => item.id !== "apostille_submitted" || deal.authentication_requirement !== "not_required").map((item) => ({
     ...item,
     done: item.check(deal),
   }));
@@ -160,6 +160,7 @@ export function PreFlightReview({ deal }: Props) {
         marginBottom: 16,
       }}
     >
+      {deal.authentication_requirement === "not_required" && <p className="mb-3 text-xs text-white/60">Apostille / authentication: Not required following Milano review.</p>}
       {/* Header */}
       <div
         style={{

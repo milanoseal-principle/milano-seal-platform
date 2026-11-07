@@ -86,6 +86,8 @@
     "validate:milano-pre-execution": "node scripts/validate-milano-pre-execution.mjs",
     "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts",
     "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
+    "test:p3-database": "node scripts/test-p3-domestic-sql.mjs",
+    "test:p3-rendered": "node scripts/test-p3-rendered.mjs",
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
@@ -165,6 +167,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "playwright": "1.65.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/leaflet": "^1.9.14",
     "@types/node": "^22",

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
+import { customerExecutionPreference, provisionalExecutionTruth } from "@/lib/matter/executionPreference";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatter, validateMatter, riskScore } from "@/lib/validation";
@@ -323,9 +326,17 @@ export async function POST(req: NextRequest) {
       typeof raw.notarization_requirement === "string" ||
       typeof raw.authentication_requirement === "string" ||
       typeof raw.notarial_act === "string";
-    const executionTruth = normalizeExecutionTruth(
+    let executionTruth = normalizeExecutionTruth(
       hasCanonicalExecution ? raw : legacyExecutionTruthInput(raw),
     );
+    let verifiedOperator = false;
+    try {
+      const session = await createClient();
+      const { data: { user } } = await session.auth.getUser();
+      verifiedOperator = Boolean(user && canPerformProtectedMatterTransition(await resolveServerRole(user)));
+    } catch { /* Unavailable identity never grants execution authority. */ }
+    const executionPreference = customerExecutionPreference(raw);
+    if (!verifiedOperator) executionTruth = provisionalExecutionTruth(executionTruth);
     const executionValidation = validateExecutionTruth(executionTruth);
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
     const legacyExecution = executionTruthToLegacy(executionTruth);
@@ -334,7 +345,7 @@ export async function POST(req: NextRequest) {
     // Wise request while execution facts are unresolved: they enter operator
     // review and receive a Matter-specific quote afterwards.
     const clientExecutionPreference = typeof raw.execution_method === "string" && sourceHint !== "admin" && sourceHint !== "professional";
-    const executionReviewRequired = clientExecutionPreference || (
+    const executionReviewRequired = clientExecutionPreference || !verifiedOperator || (
       (sourceHint === "admin" || sourceHint === "professional") &&
       (!executionValidation.valid || executionValidation.reviewRequired)
     );
@@ -392,7 +403,7 @@ export async function POST(req: NextRequest) {
         source,
         companyName,
         execution_truth: executionTruth,
-        execution_review: { required: true, reasons: reviewReasons },
+        execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
         quote_state: "review_required",
         amount_due: null,
         currency: "USD",
@@ -415,6 +426,7 @@ export async function POST(req: NextRequest) {
         origin_state: String(raw.origin_state || data.state || "") || null,
         apostille_required: apostilleRequired,
         execution_truth: executionTruth,
+        customer_execution_preference: executionPreference,
         docs_count: Number(data.docs ?? 1),
         urgency: (data.urgency as string) ?? "standard",
         mobile: legacyExecution.mobile,
@@ -493,7 +505,7 @@ export async function POST(req: NextRequest) {
           deal_id: (reviewDeal as { deal_id?: string })?.deal_id || deal_id,
           quote_state: "review_required",
           execution_truth: executionTruth,
-          execution_review: { required: true, reasons: reviewReasons },
+          execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
           status: "intake_received",
           payment_status: "unpaid",
           payment_confirmed: false,
@@ -888,6 +900,7 @@ export async function POST(req: NextRequest) {
       origin_state: String(raw.origin_state || data.state || "") || null,
       apostille_required: apostilleRequired,
       execution_truth: executionTruth,
+      customer_execution_preference: executionPreference,
       docs_count: Number(data.docs ?? 1),
       lane: finalLane,
       urgency: (data.urgency as string) ?? "standard",

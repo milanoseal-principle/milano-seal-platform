@@ -2,6 +2,7 @@
 // Operators see full deal records. Portal actors see only this subset.
 
 export interface PortalSafeMatter {
+  authentication_requirement: string | null;
   id: string;
   status: string;
   payment_status: string | null;
@@ -28,6 +29,7 @@ export interface PortalSafeMatter {
 }
 
 export function projectMatterForPortal(deal: {
+  execution_truth?: Record<string, unknown> | null;
   id: string;
   status?: string | null;
   payment_status?: string | null;
@@ -59,7 +61,9 @@ export function projectMatterForPortal(deal: {
     Boolean(deal.discount_code) && Number.isFinite(discountAmount) && discountAmount > 0;
   const amountPaid = Number(deal.amount_paid ?? deal.payment_amount_received ?? 0);
 
+  const authentication = deal.execution_truth?.authentication_requirement;
   return {
+    authentication_requirement: typeof authentication === "string" && ["not_required", "apostille", "authentication_legalization", "review_required"].includes(authentication) ? authentication : null,
     id: deal.id,
     status: deal.status ?? "new",
     payment_status: deal.payment_status ?? null,

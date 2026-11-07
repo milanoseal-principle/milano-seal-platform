@@ -5,6 +5,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface PortalDeal {
+  execution_truth?: Record<string, unknown> | null;
   id: string;
   client_name: string | null;
   email: string | null;
@@ -65,7 +66,7 @@ export async function getAllClientDeals(
   const { data } = await admin
     .from("deals")
     .select(
-      "id, client_name, email, phone, document_type, destination_country, country, status, payment_status, payment_confirmed, amount, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
+      "id, execution_truth, client_name, email, phone, document_type, destination_country, country, status, payment_status, payment_confirmed, amount, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
     )
     .ilike("email", emailPattern)
     .order("created_at", { ascending: false });

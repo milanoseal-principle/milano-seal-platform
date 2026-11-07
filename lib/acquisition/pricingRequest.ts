@@ -27,6 +27,7 @@ export const pricingRequestSchema = z.object({
   // The visitor must not need to know their execution route to request pricing:
   // "unsure" (review my document) is a first-class, valid choice.
   service_intent: z.enum(CONCIERGE_SERVICE_INTENTS),
+  execution_preference: z.enum(["ron", "in_person", "mobile", "review_required"]).default("review_required"),
   document_type: z.string().trim().max(200).default(""),
   document_origin: z.string().trim().max(200).default(""),
   signer_location: z.string().trim().max(200).default(""),

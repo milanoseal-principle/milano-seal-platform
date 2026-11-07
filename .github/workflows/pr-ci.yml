@@ -73,6 +73,9 @@ jobs:
       - name: Migration chain
         run: npm run validate:migration-chain
 
+      - name: P3 atomic domestic Matter database regression
+        run: npm run test:p3-database
+
       - name: Wise-only active operations
         run: node scripts/validate-wise-only-active-ops-docs.mjs
 
@@ -104,3 +107,17 @@ jobs:
 
       - name: Final production regression
         run: npm run validate:final-production-regression
+
+      - name: Install browser for P3 controlled rendered acceptance
+        run: npx playwright install --with-deps chromium
+
+      - name: P3 controlled rendered acceptance
+        run: npm run test:p3-rendered
+
+      - name: Upload P3 controlled UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p3-controlled-ui-evidence
+          path: artifacts/proof/p3-controlled/
+          if-no-files-found: ignore
