@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Car, MapPin, CheckCircle, ArrowRight, Calendar, Users } from "lucide-react";
@@ -46,7 +47,8 @@ export default function MobileNotaryPage() {
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-      </section>
+                <CommercialCtaRow context={{ serviceIntent: "domestic_execution", source: "service-mobile-notary" }} actions={["get_pricing", "speak"]} className="mt-6" />
+        </section>
 
       {/* Features */}
       <section className="py-16 px-6 bg-[#111111]">

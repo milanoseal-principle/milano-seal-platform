@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
@@ -48,6 +49,7 @@ export default function NonExistenceRecordAffidavitPage() {
             When an expected civil, archival, parish, or government record cannot be located, a receiving authority may request a sworn explanation of the search performed and the record’s unavailability.
           </p>
           <Link href="/intake" className="mt-8 inline-block rounded-sm bg-[#C6A55A] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-[#0A0A0A] transition-colors hover:bg-[#D4BB7A]">Begin Secure Intake</Link>
+                  <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "affidavit-non-existence-record" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
 
         <section className="mx-auto max-w-4xl border-t border-[#1A1A1A] px-6 py-12">

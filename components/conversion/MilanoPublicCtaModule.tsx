@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { commercialHref } from "@/lib/conversion/commercialCta";
 import {
   MILANO_PUBLIC_PROMISE,
   MILANO_PAYMENT_SCHEDULING_LINE,
@@ -8,6 +9,7 @@ import {
 export function MilanoPublicCtaModule({ className = "" }: { className?: string }) {
   const ctas = [
     { label: "Begin Secure Intake", href: "/intake", primary: true },
+    { label: "Get Pricing", href: commercialHref("get_pricing", { source: "public-cta-module" }) },
     { label: "Send a U.S. Matter · For International Counsel", href: "/counsel" },
     { label: "Apply for Alliance Access", href: "/alliance/apply" },
     { label: "Request Private Client Review", href: "/access?interest=private-client" },

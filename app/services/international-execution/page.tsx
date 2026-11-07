@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { Globe2, CheckCircle, ArrowRight, FileCheck, Shield } from "lucide-react";
@@ -54,7 +55,8 @@ export default function InternationalExecutionPage() {
             </Link>
           </div>
         </div>
-      </section>
+                <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "service-international-execution" }} actions={["get_pricing", "speak"]} className="mt-6" />
+        </section>
 
       {/* Process */}
       <section className="py-16 px-6 bg-[#111111]">

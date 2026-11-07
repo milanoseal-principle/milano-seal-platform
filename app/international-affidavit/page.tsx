@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
@@ -66,6 +67,7 @@ export default function InternationalAffidavitPage() {
               Check Your Country
             </Link>
           </div>
+                  <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "international-affidavit" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
 
         {/* What is an international affidavit */}

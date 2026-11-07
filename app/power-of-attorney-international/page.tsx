@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CommercialCtaRow } from "@/components/conversion/CommercialCtaRow";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 
@@ -77,6 +78,7 @@ export default function PowerOfAttorneyInternationalPage() {
             <Link href="/intake" className="px-8 py-3.5 bg-[#C6A55A] text-[#0A0A0A] text-xs font-semibold tracking-[0.15em] uppercase rounded-sm hover:bg-[#D4BB7A] transition-colors">Begin Your Matter</Link>
             <Link href="/map" className="px-8 py-3.5 border border-[#2A2A2A] text-[#C6A55A] text-xs font-semibold tracking-[0.15em] uppercase rounded-sm hover:border-[#C6A55A] transition-colors">Global Document Intelligence</Link>
           </div>
+                  <CommercialCtaRow context={{ serviceIntent: "international_execution", source: "power-of-attorney-international" }} actions={["get_pricing", "speak"]} className="mt-6" />
         </section>
 
         <section className="max-w-4xl mx-auto px-6 py-12 border-t border-[#1A1A1A]">

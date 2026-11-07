@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import Link from "next/link";
+import { commercialHref } from "@/lib/conversion/commercialCta";
 import type { Metadata } from "next";
 import {
   ArrowRight,
@@ -372,6 +373,18 @@ export default async function CountryPage({ params }: PageProps) {
                   className="flex items-center justify-center gap-2 w-full py-3 bg-[#C6A55A] text-[#050507] font-bold tracking-[0.12em] text-[11px] uppercase rounded-lg hover:bg-[#D4B76A] transition-colors mb-3"
                 >
                   Begin {dest.name} Intake <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={commercialHref("get_pricing", { serviceIntent: isHague ? "apostille" : "authentication", destination: dest.name, source: "country-intelligence" })}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/30 text-[#C6A55A] text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:border-[#C6A55A]/60 transition-colors mb-3"
+                >
+                  Get Pricing
+                </Link>
+                <Link
+                  href={commercialHref("speak", { serviceIntent: isHague ? "apostille" : "authentication", destination: dest.name, source: "country-intelligence" })}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 border border-[#C6A55A]/20 text-[#C6A55A]/70 text-[11px] uppercase font-mono tracking-[0.1em] rounded-lg hover:border-[#C6A55A]/50 hover:text-[#C6A55A] transition-colors mb-3"
+                >
+                  Speak With Nicholas
                 </Link>
                 <Link
                   href={apostilleHref}
