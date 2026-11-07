@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { CONCIERGE_SERVICE_INTENTS, type ConciergeServiceIntent } from "@/lib/acquisition/concierge-service-intents";
 
@@ -38,11 +38,11 @@ export function NicholasContactForm({
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (receipt) receiptRef.current?.focus();
   }, [receipt]);
 

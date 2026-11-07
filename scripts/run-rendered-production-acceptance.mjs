@@ -17,6 +17,8 @@ const profiles = [
   { name: "iphone-412", width: 412, height: 915, mobile: true },
   { name: "iphone-430", width: 430, height: 932, mobile: true },
   { name: "tablet-768", width: 768, height: 1024, mobile: false },
+  { name: "desktop-1024", width: 1024, height: 900, mobile: false },
+  { name: "desktop-1280", width: 1280, height: 900, mobile: false },
   { name: "desktop-1440", width: 1440, height: 900, mobile: false },
 ];
 
@@ -35,7 +37,8 @@ const routes = [
   { path: "/services/apostille", expect: /Apostille Coordination|Competent Authority Routing/i },
 ];
 
-const browser = await chromium.launch({ headless: true });
+const results = [];
+const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}) });
 
 try {
   for (const profile of profiles) {
@@ -46,6 +49,7 @@ try {
       reducedMotion: "reduce",
     });
 
+    if (localRun) await context.route("**/_vercel/insights/script.js", request => request.fulfill({ status: 200, contentType: "application/javascript", body: "/* Local fixture: Vercel analytics runtime is not served by next start. */" }));
     await context.addInitScript(() => {
       try {
         sessionStorage.setItem("milano_ritual_home_seen", "1");
@@ -70,15 +74,22 @@ try {
       page.on("console", (message) => {
         if (message.type() !== "error") return;
         const text = message.text();
-        if (text.startsWith("Failed to load resource: the server responded with a status of 404")) return;
-        if (route.concierge && expectedConciergeFailure && text.startsWith("Failed to load resource: the server responded with a status of 503")) return;
+
+        if (route.concierge && expectedConciergeFailure && text.startsWith("Failed to load resource: the server responded with a status of 503")) {
+          const location = message.location().url;
+          if (location && new URL(location).origin === new URL(baseUrl).origin && new URL(location).pathname === "/api/concierge") return;
+        }
         errors.push(`console: ${text}`);
       });
       page.on("requestfailed", (request) => {
         const url = request.url();
-        if (url.includes("/_next/") || url.includes("/world.geojson") || url.includes("/brand/")) {
-          errors.push(`requestfailed: ${url} ${request.failure()?.errorText || ""}`);
-        }
+        // Next intentionally cancels speculative RSC prefetches as viewport
+        // links change. Only a positively identified cancelled prefetch is not
+        // an application transport failure; navigation/API/asset failures stay fatal.
+        if (request.failure()?.errorText === "net::ERR_ABORTED"
+          && request.headers()["next-router-prefetch"] === "1"
+          && new URL(url).searchParams.has("_rsc")) return;
+        errors.push(`requestfailed: ${url} ${request.failure()?.errorText || ""}`);
       });
 
       const routeBaseUrl = route.hosted ? productionBaseUrl : baseUrl;
@@ -145,7 +156,7 @@ try {
         await page.route("**/api/concierge", async (requestRoute) => {
           const submitted = requestRoute.request().postDataJSON();
           conciergeRequests.push(submitted);
-          if (conciergeRequests.length === 1) {
+          if (conciergeRequests.length <= 2) {
             await requestRoute.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ ok: false, error: "Please retry." }) });
             return;
           }
@@ -154,19 +165,28 @@ try {
 
         expectedConciergeFailure = true;
         await submit.click();
-        await page.getByRole("alert").waitFor({ state: "visible" });
+        await page.locator("#concierge-form-error[role=alert]").waitFor({ state: "visible" });
+        await page.waitForFunction(() => document.activeElement?.id === "concierge-form-error");
         expectedConciergeFailure = false;
         assert.equal(await name.inputValue(), "Maria Rossi");
         assert.equal(await page.evaluate(() => document.activeElement?.id), "concierge-form-error");
+        assert.equal(await page.locator("form").getAttribute("aria-describedby"), "concierge-form-error");
+        expectedConciergeFailure = true;
+        await submit.click();
+        await page.waitForFunction(() => document.activeElement?.id === "concierge-form-error");
+        expectedConciergeFailure = false;
+        assert.equal(await email.inputValue(), "maria@example.com");
+        assert.equal(await page.locator('textarea[name="question"]').inputValue(), "I need help deciding what this apostille request requires.");
         await submit.click();
         await page.getByRole("heading", { name: "Your inquiry is recorded." }).waitFor({ state: "visible" });
-        assert.equal(conciergeRequests.length, 2);
+        assert.equal(conciergeRequests.length, 3);
+        assert.equal(conciergeRequests[1].request_id, conciergeRequests[2].request_id);
         assert.equal(conciergeRequests[0].request_id, conciergeRequests[1].request_id);
         assert.equal(conciergeRequests[1].service_intent, "apostille");
         assert.equal(conciergeRequests[1].destination, "Italy");
         assert.equal(conciergeRequests[1].originating_page, "/services/apostille");
         assert.equal(conciergeRequests[1].attribution.campaign, "rendered-test");
-        assert.ok(await page.evaluate(() => document.activeElement?.textContent?.includes("Your inquiry is recorded.")));
+        await page.waitForFunction(() => document.activeElement?.textContent?.includes("Your inquiry is recorded."));
         assert.match(await page.locator("body").innerText(), /An operator email alert could not be confirmed/);
       }
 
@@ -178,6 +198,7 @@ try {
         fullPage: true,
       });
 
+      results.push({ profile: profile.name, width: profile.width, route: route.path, finalUrl: page.url(), status: response.status(), consolePageNetworkErrors: errors, conciergeMock: Boolean(route.concierge), hosted: Boolean(route.hosted) });
       console.log(`PASS ${profile.name} ${route.path}`);
       await page.close();
     }
@@ -185,6 +206,7 @@ try {
     await context.close();
   }
 } finally {
+  fs.writeFileSync(path.join(outputDir, "results.json"), JSON.stringify({ baseUrl, productionBaseUrl, expectedChecks: profiles.length * routes.length, passedChecks: results.length, results }, null, 2));
   await browser.close();
 }
 

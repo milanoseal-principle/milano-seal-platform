@@ -14,6 +14,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
+import { hasMotionPreference } from "./lib/reduced-motion-contract.mjs";
 
 const RED = "\x1b[31m";
 const GREEN = "\x1b[32m";
@@ -56,7 +57,7 @@ if (existsSync(corePath)) {
     "Trust Core uses canonical destination data",
     "Trust Core must use canonical DESTINATIONS data");
 
-  check(/useReducedMotion/.test(core) && /reduce/.test(core),
+  check(hasMotionPreference(core, readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8")) && /reduce/.test(core),
     "Trust Core respects reduced-motion",
     "Trust Core must respect reduced-motion");
 
