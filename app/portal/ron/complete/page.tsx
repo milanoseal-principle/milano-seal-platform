@@ -13,10 +13,7 @@ export default async function RONReturnPage() {
   if (!user?.email) redirect("/login?next=/portal/ron/complete");
   const admin = createAdminClient();
   const email = normalizeEmail(user.email);
-  const emailPattern = email.replace(/[\\%_]/g, "\\  const admin = createAdminClient();
-  const { data: deal } = await admin.from("deals").select("id, deal_id").ilike("email", user.email).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  const { data: session } = deal ?");
-  const { data: candidate } = await admin.from("deals").select("id, deal_id, email").ilike("email", emailPattern).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: candidate } = await admin.from("deals").select("id, deal_id, email").eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const deal = candidate && emailsMatch(candidate.email, email) ? candidate : null;
   const { data: session } = deal ? await admin.from("ron_sessions").select("milano_ron_status").eq("matter_id", deal.id).order("created_at", { ascending: false }).limit(1).maybeSingle() : { data: null };
   const verified = Boolean(session && VERIFIED.has(session.milano_ron_status));
