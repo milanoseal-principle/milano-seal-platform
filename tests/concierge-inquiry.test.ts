@@ -162,6 +162,8 @@ test("operator pipeline distinguishes concierge inquiries from Matter leads and 
   assert.match(source, /\.from\("sales_leads"\)[\s\S]*?\.eq\("lead_type", "concierge_inquiry"\)/);
   assert.match(source, /kind: "Concierge inquiry"/);
   assert.match(source, /kind: "Canonical Matter"/);
+  assert.match(source, /Lead pipeline data is temporarily unavailable or incomplete/);
+  assert.match(source, /pipelineDataUnavailable \? "Lead data unavailable\."/);
 });
 
 test("concierge context preserves service, destination, audience, urgency and attribution", () => {

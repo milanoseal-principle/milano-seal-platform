@@ -46,6 +46,7 @@ export default async function LeadsPage() {
       .order("created_at", { ascending: false })
       .limit(300),
   ]);
+  const pipelineDataUnavailable = Boolean(matterResult.error || conciergeResult.error || notificationResult.error);
 
   const alertsByLead = new Map<string, string>();
   for (const notification of notificationResult.data ?? []) {
@@ -103,6 +104,11 @@ export default async function LeadsPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.92)", margin: "0 0 24px" }}>
           Lead Acquisition Pipeline
         </h1>
+        {pipelineDataUnavailable && (
+          <p role="alert" style={{ margin: "0 0 20px", color: "#fca5a5", fontSize: 13 }}>
+            Lead pipeline data is temporarily unavailable or incomplete. Refresh to retry.
+          </p>
+        )}
 
         {/* Count chips */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
@@ -141,7 +147,7 @@ export default async function LeadsPage() {
           </div>
           {leads.length === 0 ? (
             <p style={{ padding: 32, color: "rgba(255,255,255,0.35)", fontFamily: "monospace", fontSize: 12, margin: 0, textAlign: "center" }}>
-              No leads in pipeline.
+              {pipelineDataUnavailable ? "Lead data unavailable." : "No leads in pipeline."}
             </p>
           ) : (
             <div style={{ overflowX: "auto" }}>
