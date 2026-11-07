@@ -73,26 +73,11 @@ export async function GET(request: Request) {
   const userEmail = normalizeEmail(user.email);
   if (userEmail && user.email_confirmed_at) {
     try {
-      const emailPattern = userEmail.replace(/[\\%_]/g, "\\  const userEmail = user.email?.toLowerCase();
-  if (userEmail) {
-    try {
-      const admin = createAdminClient();
-      const { data: dealMatch } = await admin
-        .from("deals")
-        .select("id")
-        .ilike("email", userEmail)
-        .limit(1)
-        .maybeSingle();
-      if (dealMatch) {
-        return NextResponse.redirect(`${origin}/portal`);
-      }
-    } catch {}
-  }");
       const admin = createAdminClient();
       const { data: dealMatch } = await admin
         .from("deals")
         .select("id, email")
-        .ilike("email", emailPattern)
+        .eq("email", userEmail)
         .limit(1)
         .maybeSingle();
       if (dealMatch && emailsMatch(dealMatch.email, userEmail)) {
