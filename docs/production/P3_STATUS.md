@@ -28,12 +28,14 @@ Rendered acceptance is wired into PR CI at 320, 390, 768 and 1440 pixels. It use
 - Hosted preference column and all three RPCs verified present. RPC execute privilege: anon false, authenticated false, service_role true; empty search paths verified.
 - Main PR CI run `42420735265` passed, including controlled rendered acceptance at all four viewport widths and reduced-motion mode. Public rendered CI run `42420735260` passed.
 - Public domestic execution and pricing routes returned HTTP 200; apex returned a 308 redirect to www. A scoped five-minute production error/fatal log query returned no log groups; this is a bounded observation, not a global health certification.
-- The map runner's obsolete browser installation was repaired. Its country-button selector also requires the follow-up test fix: match the exact country-label descendant inside the button containing the flag, preserving selected-state and rendering assertions.
+- PR #432 was merged externally. Latest verified production SHA: `ab120c461019d55a3625da3b48b60151f83ffb91`; Vercel `dpl_4M9fpaQFYgv5R2UyLHeB83VrSGQp` is READY at that exact SHA.
+- PR CI run `42421700854` passed 1,109 tests, validators, production build, SQL fixture and strengthened P3 rendered acceptance. Corrected full-page capture widths are exactly 320, 390, 768 and 1440 pixels; runtime error arrays are empty.
+- Map proof runner cleanup is in PR #433. Run `42422527877` reached all five profiles: country selection, horizontal layout, reduced motion and page runtime checks passed; each profile reported one resource 404. Resource diagnostics identified only `/_vercel/insights/script.js`, a Vercel-hosted telemetry endpoint absent from local Next.js. The local-server fixture now explicitly stubs that exact script; external-target proof and production analytics are unchanged. Await the corrected run before claiming map proof green.
 
 ## Release gates still required
 
-- Follow-up map rendered proof must pass with the corrected selector.
-- Follow-up P3 rendered proof must pass the strengthened full-page PNG-width check. Visual inspection found the initial document-width assertion could miss clipped horizontal content in the six-column mobile journey strip. The follow-up uses a three-column mobile grid and retains the desktop strip.
+- Follow-up map rendered proof must pass with the explicit local telemetry fixture; retain the exact country-label selector and bounded process cleanup.
+- Strengthened P3 rendered proof passed in run `42421700854`. The three-column mobile journey grid fixes clipped horizontal content while preserving the desktop strip; this is controlled component evidence, not a hosted transaction.
 - Record and reconcile the repository/hosted migration-version mapping above in the provenance work.
 - Hosted schema provenance needs review: read-only inspection found `public.matter_state_events`, `public.is_valid_matter_transition(text,text)` and the canonical transition trigger absent, despite repository migration 046 defining them. Do not replay historical migrations blindly. This is not fixed or certified by a green source validator.
 - Complete authenticated operator/client hosted verification. Public-route and exact-SHA checks above do not prove an authenticated transaction.
