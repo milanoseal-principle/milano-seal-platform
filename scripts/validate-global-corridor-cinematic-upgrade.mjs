@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync } from "node:fs";
+import { hasMotionPreference } from "./lib/reduced-motion-contract.mjs";
 
 const GREEN = "\x1b[32m";
 const RED = "\x1b[31m";
@@ -69,10 +70,11 @@ check(
   "verification-required corridors render a distinct safe state",
   "verification-required corridors must not be mislabeled as automatically Hague or consular",
 );
+const sharedMotionHook = readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8");
 check(
-  /useReducedMotion/.test(source.corridor) && /useReducedMotion/.test(source.globe) && /useReducedMotion/.test(source.mini),
+  [source.corridor, source.globe, source.mini].every(surface => hasMotionPreference(surface, sharedMotionHook)),
   "reduced-motion behavior is implemented across upgraded motion surfaces",
-  "all upgraded motion surfaces must honor reduced motion",
+  "all upgraded motion surfaces must honor reduced motion through a valid imported hook",
 );
 check(
   /Execution Corridor/.test(source.mini) && !/Live Corridor/.test(source.mini),
