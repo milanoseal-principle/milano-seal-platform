@@ -336,6 +336,12 @@ export async function POST(req: NextRequest) {
       verifiedOperator = Boolean(user && canPerformProtectedMatterTransition(await resolveServerRole(user)));
     } catch { /* Unavailable identity never grants execution authority. */ }
     const executionPreference = customerExecutionPreference(raw);
+    const customerExecutionRequest = {
+      execution_preference: executionPreference,
+      notarization_preference: executionTruth.notarization_requirement,
+      authentication_preference: executionTruth.authentication_requirement,
+      requested_notarial_act: executionTruth.notarial_act,
+    };
     if (!verifiedOperator) executionTruth = provisionalExecutionTruth(executionTruth);
     const executionValidation = validateExecutionTruth(executionTruth);
     const sourceHint = String(raw.source_channel ?? "web").toLowerCase();
@@ -402,6 +408,7 @@ export async function POST(req: NextRequest) {
       const reviewMetadata = {
         source,
         companyName,
+        customer_execution_request: customerExecutionRequest,
         execution_truth: executionTruth,
         execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
         quote_state: "review_required",
@@ -838,6 +845,7 @@ export async function POST(req: NextRequest) {
     const intakeMetadata = {
       source,
       companyName,
+      customer_execution_request: customerExecutionRequest,
       execution_truth: executionTruth,
       originAuthorityLabel: originAuthorityLabel ?? null,
       normalizedRouting: normalizedRouting ?? null,

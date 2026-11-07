@@ -85,6 +85,8 @@ test("conversion and review APIs require server role authorization before privil
 
 test("intake source labels cannot grant operator authority", () => {
   const src = readFileSync("app/api/intake/core.ts", "utf8");
+  assert.match(src, /customer_execution_request: customerExecutionRequest/);
+  assert.ok(src.indexOf("const customerExecutionRequest") < src.indexOf("if (!verifiedOperator) executionTruth = provisionalExecutionTruth"));
   assert.match(src, /if \(!verifiedOperator\) executionTruth = provisionalExecutionTruth/);
   assert.match(src, /executionReviewRequired = clientExecutionPreference \|\| !verifiedOperator/);
 });
