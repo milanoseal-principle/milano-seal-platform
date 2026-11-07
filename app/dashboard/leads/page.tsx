@@ -27,7 +27,7 @@ export default async function LeadsPage() {
 
   const supabase = createAdminClient();
 
-  const [matterResult, conciergeResult, notificationResult] = await Promise.all([
+  const [matterResult, conciergeResult, pricingResult, notificationResult] = await Promise.all([
     supabase
       .from("deals")
       .select("id, client_name, email, destination_country, document_type, created_at, conversion_score, payment_status, matter_status")
@@ -40,18 +40,28 @@ export default async function LeadsPage() {
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
-      .from("notifications")
-      .select("status,delivery_status,metadata,created_at")
-      .eq("type", "operator_concierge_inquiry")
+      .from("sales_leads")
+      .select("id,full_name,email,country,document_type,product_interest,urgency,source_route,details,created_at,canonical_matter_id")
+      .eq("lead_type", "pricing_request")
       .order("created_at", { ascending: false })
-      .limit(300),
+      .limit(100),
+    supabase
+      .from("notifications")
+      .select("status,delivery_status,metadata,created_at,type")
+      .in("type", ["operator_concierge_inquiry", "operator_pricing_request"])
+      .order("created_at", { ascending: false })
+      .limit(400),
   ]);
-  const pipelineDataUnavailable = Boolean(matterResult.error || conciergeResult.error || notificationResult.error);
+  const pipelineDataUnavailable = Boolean(matterResult.error || conciergeResult.error || pricingResult.error || notificationResult.error);
 
   const alertsByLead = new Map<string, string>();
   for (const notification of notificationResult.data ?? []) {
     const metadata = notification.metadata as Record<string, unknown> | null;
-    const leadId = typeof metadata?.concierge_inquiry_id === "string" ? metadata.concierge_inquiry_id : null;
+    const leadId = typeof metadata?.concierge_inquiry_id === "string"
+      ? metadata.concierge_inquiry_id
+      : typeof metadata?.pricing_request_id === "string"
+        ? metadata.pricing_request_id
+        : null;
     if (leadId && !alertsByLead.has(leadId)) {
       alertsByLead.set(leadId, notification.delivery_status ?? notification.status ?? "unknown");
     }
@@ -84,6 +94,25 @@ export default async function LeadsPage() {
         urgency: lead.urgency,
         source: lead.source_route,
         question: typeof details?.question === "string" ? details.question : null,
+        notification_status: alertsByLead.get(lead.id) ?? "not_confirmed",
+        created_at: lead.created_at,
+        conversion_score: null,
+      };
+    }),
+    ...(pricingResult.data ?? []).map((lead) => {
+      const details = lead.details as Record<string, unknown> | null;
+      const serviceLabel = lead.product_interest ? `Pricing: ${lead.product_interest}` : "Pricing: review required";
+      const docLabel = lead.document_type ? `${serviceLabel} · ${lead.document_type}` : serviceLabel;
+      return {
+        id: lead.id,
+        kind: lead.canonical_matter_id ? "Pricing request → Matter" : "Pricing request",
+        client_name: lead.full_name,
+        email: lead.email,
+        destination_country: lead.country,
+        document_type: docLabel,
+        urgency: lead.urgency,
+        source: lead.source_route,
+        question: typeof details?.description === "string" ? details.description : null,
         notification_status: alertsByLead.get(lead.id) ?? "not_confirmed",
         created_at: lead.created_at,
         conversion_score: null,

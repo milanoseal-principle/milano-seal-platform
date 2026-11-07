@@ -34,7 +34,7 @@ export function FinalCTA() {
             Start Your Request
           </Link>
           <Link
-            href="/pricing?source=homepage-final"
+            href="/pricing?source=homepage-final#get-pricing"
             className="inline-flex min-h-12 items-center justify-center text-sm font-medium py-3 px-8 rounded transition-colors"
             style={{
               background: "transparent",
