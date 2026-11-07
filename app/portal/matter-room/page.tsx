@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
 import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
+import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 
 export const metadata: Metadata = {
   title: "Matter Room | The Milano Seal™",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 // optional columns (currency, wise_payment_url, amount_due) are derived
 // with in-app fallbacks so a missing column can't fail the whole select.
 const SAFE_MATTER_FIELDS = [
-  "id", "status", "payment_status",
+  "id", "email", "status", "payment_status",
   "wise_reference", "document_type", "destination_country",
   "total_price", "created_at", "updated_at", "client_name",
 ].join(", ");
@@ -39,7 +40,7 @@ export default async function MatterRoomPage({
   if (!profile || profile.role !== "client") redirect("/portal");
 
   type MatterRow = {
-    id: string; status?: string | null; payment_status?: string | null;
+    id: string; email?: string | null; status?: string | null; payment_status?: string | null;
     wise_reference?: string | null; total_price?: number | null;
     document_type?: string | null; destination_country?: string | null;
     created_at?: string | null; updated_at?: string | null;
@@ -47,6 +48,8 @@ export default async function MatterRoomPage({
   };
   let matter: MatterRow | null = null;
   if (matter_id) {
+    const email = normalizeEmail(user.email);
+    const emailPattern = email.replace(/[\\%_]/g, "\\  if (matter_id) {
     const { data } = await supabase
       .from("deals")
       .select(SAFE_MATTER_FIELDS)
@@ -54,6 +57,15 @@ export default async function MatterRoomPage({
       .ilike("email", user.email ?? "")
       .single();
     matter = data as unknown as MatterRow | null;
+  }");
+    const { data } = await supabase
+      .from("deals")
+      .select(SAFE_MATTER_FIELDS)
+      .eq("id", matter_id)
+      .ilike("email", emailPattern)
+      .single();
+    const candidate = data as unknown as MatterRow | null;
+    matter = candidate && emailsMatch(candidate.email, email) ? candidate : null;
   }
 
   const matterPaid = matter?.payment_status === "paid";
