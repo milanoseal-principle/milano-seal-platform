@@ -26,6 +26,8 @@ export interface PaymentGateMatter {
   payment_status?: string | null;
   amount_due?: number | null;
   amount_paid?: number | null;
+  payment_confirmed?: boolean | null;
+  payment_settlement_status?: string | null;
 }
 
 export function evaluatePaymentGate(matter: PaymentGateMatter): PaymentGateResult {
@@ -33,8 +35,13 @@ export function evaluatePaymentGate(matter: PaymentGateMatter): PaymentGateResul
   const due = Number(matter.amount_due ?? 0);
   const paid = Number(matter.amount_paid ?? 0);
 
-  if (status === "paid" && paid >= due && due > 0) return "PAYMENT_CONFIRMED";
-  if (status === "paid" && due === 0) return "PAYMENT_CONFIRMED";
+  const settlementVerified = matter.payment_confirmed === true &&
+    status === "paid" &&
+    matter.payment_settlement_status === "cleared" &&
+    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
+    Math.round(paid * 100) === Math.round(due * 100);
+
+  if (settlementVerified) return "PAYMENT_CONFIRMED";
   if (paid > 0 && paid < due) return "PARTIAL_PAYMENT";
   if (status === "failed") return "PAYMENT_FAILED";
   if (status === "refunded") return "PAYMENT_REFUNDED";
