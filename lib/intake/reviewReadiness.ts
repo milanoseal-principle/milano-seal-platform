@@ -36,7 +36,7 @@ export function serviceStateLabel(state: string, requiredLabel: string): string 
 }
 
 export function isDomesticDestination(destination?: string): boolean {
-  return /^(united states|usa|u\.?s\.?a?\.?|america)$/i.test((destination ?? "").trim());
+  return /^(united states(?: of america)?|usa|u\.?s\.?a?\.?|america)$/i.test((destination ?? "").trim());
 }
 
 export interface ReadinessInput {

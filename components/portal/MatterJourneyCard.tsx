@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getWorkflowOrDerive, getCountry, getDocumentType } from "@/data/intelligence";
 import type { PortalClientMatter } from "@/components/portal/portal-context";
 
@@ -340,7 +341,7 @@ interface Props {
 }
 
 export function MatterJourneyCard({ deal }: Props) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const authenticationNotRequired = deal.authentication_requirement === "not_required";
   const stages = authenticationNotRequired ? JOURNEY_STAGES.map((stage) => stage.id === "apostille"
     ? { ...stage, id: "release", label: "Release", nextAction: "Authentication is not required for this reviewed Matter. Release and delivery remain subject to recorded evidence." }

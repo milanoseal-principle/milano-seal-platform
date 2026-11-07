@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
+import { AnimatePresence, motion } from 'framer-motion';
 
 export interface StatusStep { keys: string[]; label: string; desc: string }
 
@@ -46,7 +47,7 @@ const GOLD_FAINT = 'rgba(198,165,90,0.18)';
 const GOLD_MID = 'rgba(198,165,90,0.45)';
 
 export function PortalStatusRail({ matterStatus, paymentStatus, authenticationRequirement }: { matterStatus: string | null | undefined; paymentStatus?: string | null; authenticationRequirement?: string | null }) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const currentIdx = resolveStepIndex(matterStatus);
   const summary = resolvePortalLifecycleSummary(matterStatus, paymentStatus, authenticationRequirement);
   const noAuthentication = authenticationRequirement === 'not_required';

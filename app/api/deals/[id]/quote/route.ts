@@ -92,7 +92,7 @@ export async function POST(
     const { data: matter, error: matterError } = await admin
       .from("deals")
       .select(
-        "id,deal_id,client_name,email,payment_status,amount_paid,payment_observed_at,deal_status,discount_code,destination_country,document_type,origin_state,execution_truth,customer_execution_preference,signers,witnesses,updated_at",
+        "id,deal_id,client_name,email,payment_status,amount_paid,payment_observed_at,deal_status,discount_code,destination_country,document_type,origin_state,execution_truth,customer_execution_preference,docs_count,signers,witnesses,updated_at",
       )
       .eq("id", id)
       .single();
@@ -117,8 +117,8 @@ export async function POST(
       return NextResponse.json({ error: "Confirm document, signer, witness and eligibility review before quoting.", code: "EXECUTION_REVIEW_REQUIRED" }, { status: 409 });
     }
     const submittedWitnesses = Number(body.remote_witness_count ?? 0) + Number(body.in_person_witness_count ?? 0);
-    if (reviewedMatter && (Number(body.signer_count ?? matter.signers) !== Number(matter.signers) || submittedWitnesses !== Number(matter.witnesses))) {
-      return NextResponse.json({ error: "Signer or witness requirements changed. Confirm the execution review again.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
+    if (reviewedMatter && (Number(body.document_count ?? matter.docs_count) !== Number(matter.docs_count) || Number(body.signer_count ?? matter.signers) !== Number(matter.signers) || submittedWitnesses !== Number(matter.witnesses))) {
+      return NextResponse.json({ error: "Document, signer or witness requirements changed. Confirm the execution review again.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
     }
     if (reviewedMatter && JSON.stringify(normalizeExecutionTruth(body)) !== JSON.stringify(normalizeExecutionTruth({ execution_truth: recordedTruth }))) {
       return NextResponse.json({ error: "Execution facts changed. Confirm the execution review again before quoting.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
@@ -130,7 +130,7 @@ export async function POST(
     const composition = composeGovernedQuote({
       ...body,
       ...routeFacts.facts,
-      ...(reviewedMatter ? { execution_truth: recordedTruth, signer_count: matter.signers } : {}),
+      ...(reviewedMatter ? { execution_truth: recordedTruth, document_count: matter.docs_count, signer_count: matter.signers, origin_state: matter.origin_state } : {}),
       manual_adjustment: manualAdjustment,
     });
     const { route, projection } = composition;

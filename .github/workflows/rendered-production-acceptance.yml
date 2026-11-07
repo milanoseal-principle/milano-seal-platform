@@ -52,8 +52,8 @@ jobs:
       - name: Install application dependencies
         run: npm ci
 
-      - name: Install Playwright without mutating lockfiles
-        run: npm install --no-save --no-package-lock playwright@1.55.0
+      - name: Verify locked Playwright version
+        run: node -e "const expected=require('./package.json').devDependencies.playwright; if(require('playwright/package.json').version!==expected) throw new Error('Playwright lock mismatch');"
 
       - name: Provision Chromium
         run: npx playwright install --with-deps chromium

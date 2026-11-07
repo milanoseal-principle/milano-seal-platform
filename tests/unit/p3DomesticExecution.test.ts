@@ -9,7 +9,7 @@ import { projectMatterForPortal } from "@/lib/portalProjection";
 import { serializeDealMS } from "@/lib/milanoSerialize";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 
-for (const country of ["United States", "USA", "U.S.", "us", "America"]) {
+for (const country of ["United States", "United States of America", "USA", "U.S.", "us", "America"]) {
   test(`${country} preview does not manufacture an international legalization chain`, () => {
     const result = buildExecutionPath({ country });
     assert.deepEqual(result.steps, ["Document & Execution Review", "Domestic Release"]);

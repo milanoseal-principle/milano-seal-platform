@@ -40,8 +40,9 @@ try {
     assert.equal(reviewPayload.review.signer_count,1);
     assert.equal(reviewPayload.execution_method,'in_person');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Horizontal overflow');
-    assert.deepEqual(errors,[],'Browser runtime errors');
+    writeFileSync(`${out}/runtime-${width}.json`,JSON.stringify({errors},null,2));
     await page.screenshot({path:`${out}/domestic-${width}.png`,fullPage:true});
+    assert.deepEqual(errors,[],'Browser runtime errors');
     results.push({width,status:'PASS',scope:'Controlled UI; mocked quote and review transport. Database RPCs tested separately.'});
     await page.close();
   }
