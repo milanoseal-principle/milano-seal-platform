@@ -116,6 +116,10 @@ export async function POST(
     if (reviewedMatter && (!recordedTruth?.review_confirmed_at || !recordedTruth?.review_confirmed_by)) {
       return NextResponse.json({ error: "Confirm document, signer, witness and eligibility review before quoting.", code: "EXECUTION_REVIEW_REQUIRED" }, { status: 409 });
     }
+    const submittedWitnesses = Number(body.remote_witness_count ?? 0) + Number(body.in_person_witness_count ?? 0);
+    if (reviewedMatter && (Number(body.signer_count ?? matter.signers) !== Number(matter.signers) || submittedWitnesses !== Number(matter.witnesses))) {
+      return NextResponse.json({ error: "Signer or witness requirements changed. Confirm the execution review again.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
+    }
     if (reviewedMatter && JSON.stringify(normalizeExecutionTruth(body)) !== JSON.stringify(normalizeExecutionTruth({ execution_truth: recordedTruth }))) {
       return NextResponse.json({ error: "Execution facts changed. Confirm the execution review again before quoting.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
     }

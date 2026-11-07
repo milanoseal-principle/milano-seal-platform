@@ -72,6 +72,7 @@ language plpgsql security definer set search_path = '' as $$
 declare
   v_matter public.deals%rowtype;
   v_prior jsonb;
+  v_prior_facts jsonb;
   v_now timestamptz := now();
   v_evidence_id uuid;
 begin
@@ -86,6 +87,11 @@ begin
     p_review->>'witness_reviewed' is distinct from 'true' or
     p_review->>'eligibility_reviewed' is distinct from 'true' or
     nullif(trim(p_review->>'reason'),'') is null or
+    nullif(trim(p_review->>'document_type'),'') is null or
+    nullif(trim(p_review->>'destination_country'),'') is null or
+    coalesce((p_review->>'document_count')::integer,0) not between 1 and 100 or
+    coalesce((p_review->>'signer_count')::integer,0) not between 1 and 100 or
+    coalesce((p_review->>'witness_count')::integer,-1) not between 0 and 100 or
     coalesce(p_truth->>'notarization_requirement','review_required') not in ('required','not_required') or
     coalesce(p_truth->>'authentication_requirement','review_required') not in ('apostille','authentication_legalization','not_required') then
     raise exception using errcode='22023',message='EXECUTION_REVIEW_INCOMPLETE';
@@ -110,9 +116,12 @@ begin
     raise exception using errcode='22023',message='EXECUTION_REVIEW_LOCKED';
   end if;
   v_prior := coalesce(v_matter.execution_truth,'{}'::jsonb);
+  v_prior_facts := jsonb_build_object('document_type',v_matter.document_type,'destination_country',v_matter.destination_country,'origin_state',v_matter.origin_state,'document_count',v_matter.docs_count,'signer_count',v_matter.signers,'witness_count',v_matter.witnesses);
   -- Preserve existing provider/authority evidence, merging only normalized
   -- execution fields. The server supplies the normalized allowlisted object.
   update public.deals set execution_truth=v_prior || p_truth || jsonb_build_object('review_confirmed_by',p_actor_id,'review_confirmed_at',v_now),
+    document_type=p_review->>'document_type', destination_country=p_review->>'destination_country',
+    origin_state=nullif(p_review->>'origin_state',''), docs_count=(p_review->>'document_count')::integer,
     mobile=p_truth->>'execution_method'='mobile',
     apostille_required=p_truth->>'authentication_requirement'='apostille',
     signers=(p_review->>'signer_count')::integer,
@@ -124,7 +133,7 @@ begin
   where id=p_matter_id returning * into v_matter;
   insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,prior_value,new_value,reason,metadata)
   values(p_matter_id,'EXECUTION_REVIEW_CONFIRMED','execution','operator',p_actor_id,v_now,'operator_execution_review',
-    v_prior,v_matter.execution_truth,p_review->>'reason',p_review)
+    v_prior,v_matter.execution_truth,p_review->>'reason',p_review || jsonb_build_object('prior_review_facts',v_prior_facts))
   returning id into v_evidence_id;
   return query select to_jsonb(v_matter),v_evidence_id;
 end;

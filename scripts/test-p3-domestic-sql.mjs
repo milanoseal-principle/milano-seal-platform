@@ -8,7 +8,7 @@ create table public.deals(id uuid primary key default gen_random_uuid(),deal_id 
  execution_truth jsonb,payment_status text default 'unpaid',payment_confirmed boolean,amount_paid numeric,currency text,
  status text,deal_status text,quote_review_required boolean,quote_review_reasons jsonb,internal_notes text,
  updated_at timestamptz default now(),last_activity timestamptz,payment_observed_at timestamptz,
- mobile boolean,apostille_required boolean,signers int,witnesses int,quote_approved_at timestamptz,quote_approved_by text);
+ mobile boolean,apostille_required boolean,docs_count int,signers int,witnesses int,quote_approved_at timestamptz,quote_approved_by text);
 create table public.sales_leads(id uuid primary key,full_name text,email text,phone text,document_type text,country text,
  details jsonb,product_interest text,lead_type text,source_route text,canonical_matter_id uuid references public.deals(id),linked_by uuid,linked_at timestamptz);
 create table public.matter_evidence_ledger(id uuid primary key default gen_random_uuid(),matter_id uuid references public.deals(id),
@@ -48,7 +48,7 @@ let denied=false;try {await db.query(`select * from convert_sales_lead_to_matter
 if(!denied) throw Error('Client conversion authorized');
 const matter=(await db.query('select * from deals where id=$1',[first.matter_id])).rows[0];
 const truth={version:1,execution_method:'mobile',notarization_requirement:'required',notarial_act:'jurat',authentication_requirement:'not_required',signer_location:'Florida',execution_location:'Largo, Florida'};
-const review={document_reviewed:true,signer_reviewed:true,witness_reviewed:true,eligibility_reviewed:true,signer_count:1,witness_count:0,reason:'Controlled fixture document review'};
+const review={document_type:'Affidavit',destination_country:'United States',origin_state:'Florida',document_count:1,requested_deadline:'Not specified',document_reviewed:true,signer_reviewed:true,witness_reviewed:true,eligibility_reviewed:true,signer_count:1,witness_count:0,reason:'Controlled fixture document review'};
 const args=[first.matter_id,matter.updated_at,JSON.stringify(truth),JSON.stringify(review),'00000000-0000-4000-8000-000000000001'];
 const confirmed=(await db.query('select * from confirm_matter_execution_review($1,$2,$3,$4,$5)',args)).rows[0];
 if(confirmed.matter.execution_truth.execution_method!=='mobile'||!confirmed.evidence_id||confirmed.matter.payment_confirmed!==false) throw Error('Invalid review transition');

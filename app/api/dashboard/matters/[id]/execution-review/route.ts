@@ -7,6 +7,11 @@ import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterT
 import { normalizeExecutionTruth, validateExecutionTruth } from "@/lib/matter/executionTruth";
 
 const reviewSchema = z.object({
+  document_type: z.string().trim().min(1).max(200),
+  destination_country: z.string().trim().min(1).max(100),
+  origin_state: z.string().trim().max(200).default(""),
+  document_count: z.number().int().min(1).max(100),
+  requested_deadline: z.string().trim().max(120).default("Not specified"),
   document_reviewed: z.literal(true), signer_reviewed: z.literal(true),
   witness_reviewed: z.literal(true), eligibility_reviewed: z.literal(true),
   signer_count: z.number().int().min(1).max(100), witness_count: z.number().int().min(0).max(100),
