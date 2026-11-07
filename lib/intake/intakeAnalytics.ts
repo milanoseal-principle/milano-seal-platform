@@ -5,6 +5,7 @@ export const INTAKE_ANALYTICS_EVENTS = [
   "counsel_inquiry_opened",
   "counsel_inquiry_submitted",
   "counsel_submission_failed",
+  "review_clicked",
 
   "intake_started",
   "description_completed",
@@ -28,7 +29,16 @@ export const INTAKE_ANALYTICS_EVENTS = [
 export type IntakeAnalyticsEvent = (typeof INTAKE_ANALYTICS_EVENTS)[number];
 
 const SAFE_METADATA_KEYS = new Set([
-  "intent", "document_received", "inquiryReference",
+  "journeySurface",
+  "ctaIntent",
+  "originatingPage",
+  "practiceArea",
+  "corridor",
+  "medium",
+  "content",
+  "intent",
+  "document_received",
+  "inquiryReference",
   "step",
   "questionCount",
   "documentFamily",
@@ -72,7 +82,9 @@ function clientAcquisitionMetadata(): Record<string, string> {
 
   let referrerHost: string | undefined;
   try {
-    referrerHost = document.referrer ? new URL(document.referrer).hostname.slice(0, 120) : undefined;
+    referrerHost = document.referrer
+      ? new URL(document.referrer).hostname.slice(0, 120)
+      : undefined;
   } catch {
     referrerHost = undefined;
   }
@@ -102,7 +114,10 @@ export function buildIntakeAnalyticsPayload(
   const safe: Record<string, unknown> = clientAcquisitionMetadata();
   for (const [key, value] of Object.entries(metadata)) {
     if (!SAFE_METADATA_KEYS.has(key)) continue;
-    if (["string", "number", "boolean"].includes(typeof value) || value == null) {
+    if (
+      ["string", "number", "boolean"].includes(typeof value) ||
+      value == null
+    ) {
       safe[key] = typeof value === "string" ? value.slice(0, 160) : value;
     }
   }

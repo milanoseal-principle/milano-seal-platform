@@ -1,23 +1,31 @@
+import { COUNSEL_CORRIDORS } from "@/lib/counsel/content";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, CheckCircle, FileText, Globe2, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle,
+  FileText,
+  Globe2,
+  ShieldCheck,
+} from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { UniversalProfessionalCountrySurface } from "@/components/professional/UniversalProfessionalCountrySurface";
 import {
   PROFESSIONAL_CONVENTION_DESTINATIONS,
   getProfessionalDestination,
 } from "@/lib/professional/universal-attorney-journey";
-import {
-  getPremiumCorridor,
-} from "@/lib/seo-premium-corridors";
+import { getPremiumCorridor } from "@/lib/seo-premium-corridors";
 import { getCountryBySlug } from "@/lib/compliance/countries";
 import { applyVerifiedCountryOverride } from "@/lib/compliance/verified-country-overrides";
 
 type Props = { params: Promise<{ country: string }> };
 
 export function generateStaticParams() {
-  return PROFESSIONAL_CONVENTION_DESTINATIONS.map((destination) => ({
+  return [
+    ...PROFESSIONAL_CONVENTION_DESTINATIONS,
+    getProfessionalDestination("uae")!,
+  ].map((destination) => ({
     country: destination.slug,
   }));
 }
@@ -25,10 +33,37 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country: slug } = await params;
   const destination = getProfessionalDestination(slug);
-  if (!destination || !PROFESSIONAL_CONVENTION_DESTINATIONS.some((item) => item.slug === slug)) {
+  if (
+    !destination ||
+    (!PROFESSIONAL_CONVENTION_DESTINATIONS.some((item) => item.slug === slug) &&
+      slug !== "uae")
+  ) {
     return {};
   }
 
+  if ((COUNSEL_CORRIDORS as readonly string[]).includes(slug)) {
+    const title = `U.S. Document Execution for ${destination.name} Counsel | The Milano Seal™`;
+    const description = `Document-specific U.S. execution review, custody and international release coordination for counsel handling ${destination.name} matters. Final acceptance remains with the receiving authority.`;
+    const canonical = `https://www.themilanoseal.com/professional/${slug}`;
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: {
+        title,
+        description,
+        url: canonical,
+        type: "website",
+        images: ["https://www.themilanoseal.com/og-image.png"],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: ["https://www.themilanoseal.com/og-image.png"],
+      },
+    };
+  }
   const corridor = getPremiumCorridor(slug);
   const baseCountry = getCountryBySlug(slug);
   const canonical = `https://www.themilanoseal.com/professional/${slug}`;
@@ -102,13 +137,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProfessionalCountryPage({ params }: Props) {
   const { country: slug } = await params;
   const destination = getProfessionalDestination(slug);
-  const governed = PROFESSIONAL_CONVENTION_DESTINATIONS.some((item) => item.slug === slug);
+  const governed =
+    PROFESSIONAL_CONVENTION_DESTINATIONS.some((item) => item.slug === slug) ||
+    slug === "uae";
   if (!destination || !governed) notFound();
 
   const corridor = getPremiumCorridor(slug);
   const baseCountry = getCountryBySlug(slug);
 
-  if (!corridor || !baseCountry) {
+  if (
+    !corridor ||
+    !baseCountry ||
+    (COUNSEL_CORRIDORS as readonly string[]).includes(slug)
+  ) {
     return (
       <PublicShell>
         <UniversalProfessionalCountrySurface destination={destination} />
@@ -174,7 +215,9 @@ export default async function ProfessionalCountryPage({ params }: Props) {
     <PublicShell>
       <main
         className="min-h-screen bg-[#060606] text-white"
-        style={{ paddingTop: "calc(var(--header-total-height) + var(--sa-top))" }}
+        style={{
+          paddingTop: "calc(var(--header-total-height) + var(--sa-top))",
+        }}
       >
         <script
           type="application/ld+json"
@@ -195,7 +238,11 @@ export default async function ProfessionalCountryPage({ params }: Props) {
                 {corridor.positioning}
               </p>
               <p className="text-[#777] text-base leading-7 max-w-3xl">
-                The Milano Seal coordinates the U.S. side of the Matter: document-origin review, execution when required, competent-authority routing, custody, status, and secure release. The foreign receiving authority remains the source of truth for its matter-specific acceptance requirements.
+                The Milano Seal coordinates the U.S. side of the Matter:
+                document-origin review, execution when required,
+                competent-authority routing, custody, status, and secure
+                release. The foreign receiving authority remains the source of
+                truth for its matter-specific acceptance requirements.
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -209,7 +256,9 @@ export default async function ProfessionalCountryPage({ params }: Props) {
                   href={`/apostille/${slug}`}
                   className="inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-lg border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium hover:border-[#C6A55A] transition-colors"
                 >
-                  {isHague ? "View Apostille Corridor" : "View Authentication Corridor"}
+                  {isHague
+                    ? "View Apostille Corridor"
+                    : "View Authentication Corridor"}
                 </Link>
               </div>
             </div>
@@ -348,7 +397,9 @@ export default async function ProfessionalCountryPage({ params }: Props) {
               Send the Matter. We will structure the U.S. execution path.
             </h2>
             <p className="text-[#707070] leading-relaxed mb-7">
-              Current matter facts are confirmed during secure intake. Prior-client recognition never bypasses identity, pricing, authority, payment, or execution controls.
+              Current matter facts are confirmed during secure intake.
+              Prior-client recognition never bypasses identity, pricing,
+              authority, payment, or execution controls.
             </p>
             <Link
               href={intakeHref}

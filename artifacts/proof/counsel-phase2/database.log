@@ -1,0 +1,50 @@
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE TABLE
+GRANT
+GRANT
+BEGIN
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+DROP POLICY
+NOTICE:  policy "service_role_sales_leads" for relation "public.sales_leads" does not exist, skipping
+CREATE POLICY
+CREATE INDEX
+CREATE INDEX
+COMMIT
+BEGIN
+INSERT 0 1
+SET
+INSERT 0 1
+UPDATE 1
+RESET
+DO
+SET
+DO
+RESET
+SET
+DO
+RESET
+SET
+DO
+RESET
+ROLLBACK
+PASS: service persistence, private grants, RLS enabled, Matter FK and duplicate-ID protection
+BEGIN
+SET
+INSERT 0 1
+SELECT 1
+UPDATE 1
+DO
+UPDATE 1
+DO
+RESET
+ROLLBACK
+PASS: stale JSON snapshots cannot overwrite operator evidence; upload confirmation retains source and actions

@@ -1,0 +1,54 @@
+
+> milano-seal-platform@0.1.0 pretest
+> node scripts/generate-command-center-workbook-intelligence.mjs
+
+Generated data/command-center/workbook-intelligence.generated.json from Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx
+Source SHA-256: 457fa017af2c3675a1dd15af9d87d548e69920f0849b03b869a750c1edde035b
+
+> milano-seal-platform@0.1.0 test
+> node scripts/run-tests.mjs tests/counsel-phase2.test.ts tests/counsel-inquiry.test.ts tests/counsel-operator-api.test.ts
+
+✔ anonymous inquiry persists once and retains acquisition without creating a Matter (9.87524ms)
+✔ persistence failure never returns receipt or attempts notification (1.265658ms)
+✔ upload receipt requires storage and metadata confirmation, retry uses same inquiry (9.062352ms)
+[counsel] notification unavailable { reference: 'b628ed63-a1ed-4603-8094-c10acc105b84' }
+✔ failed upload stays pending and never claims success (1.503776ms)
+✔ notification failure is separate from a successfully saved inquiry (1.120811ms)
+✔ low commitment inquiry does not require destination or professional activation (0.684276ms)
+✔ retry with changed facts cannot overwrite receipt (1.210866ms)
+✔ invalid fields, misleading MIME and cross-origin submissions are rejected (2.472277ms)
+✔ destination and real attribution are carried without inferred sources (0.512429ms)
+✔ operational conversion counts require canonical quote and cleared settlement facts (1.934371ms)
+✔ private storage is required and metadata failures never confirm document receipt (2.335783ms)
+✔ canonical handoff requires established professional attribution and the inquiry's professional identity (1.225127ms)
+✔ upload confirmation retains concurrent operator evidence and never returns it publicly (3.129193ms)
+✔ anonymous/professional callers cannot invoke operator actions or enumerate documents (5.25366ms)
+✔ operator action persistence stamps the server actor and is retry-idempotent (3.116403ms)
+✔ concurrent edits and missing response evidence fail closed without losing inquiry data (1.153379ms)
+✔ qualification cannot assert a mismatched professional identity (0.564066ms)
+✔ professional handoff requires canonical attribution; failures remain observable without Matter mutation (1.796264ms)
+✔ notification retry preserves provider failure truth and signed document access stays operator-only (0.778338ms)
+✔ operator stages require persisted evidence and canonical records (2.319489ms)
+✔ action retries preserve the original evidence and cannot be replayed as another action (0.580931ms)
+✔ operational cohort and marketing source segments remain bounded and unknown remains unknown (7.331114ms)
+✔ context links preserve real campaigns without carrying identity or operational authority (0.800801ms)
+✔ new Matter defaults never carry destination, receiving authority or execution preferences forward (0.163014ms)
+✔ all selected corridors use existing intelligence and use cases link to supported service scope (1.175543ms)
+✔ malicious filenames cannot control storage paths or expose control characters (0.160281ms)
+✔ untrusted source and destination labels cannot mutate object prototypes (0.318438ms)
+✔ public acquisition input cannot establish professional or execution authority (0.582364ms)
+✔ today's operator cohort uses the New York business day across UTC midnight (0.56658ms)
+✔ upload-failure telemetry requires evidence and never infers failure from missing confirmation (1.088723ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 917.932652
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

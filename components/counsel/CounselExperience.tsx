@@ -15,7 +15,12 @@ function track(
     void fetch("/api/intake/analytics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildIntakeAnalyticsPayload(event, metadata)),
+      body: JSON.stringify(
+        buildIntakeAnalyticsPayload(event, {
+          ...metadata,
+          journeySurface: "counsel",
+        }),
+      ),
       keepalive: true,
     }).catch(() => undefined);
   } catch {
@@ -24,6 +29,7 @@ function track(
 }
 import {
   counselAttribution,
+  confirmedUploadFailure,
   documentError,
   inquirySchema,
   type CounselInquiry,
@@ -45,9 +51,12 @@ type Field =
   | "summary";
 export function CounselExperience({
   countries,
+  useCases,
 }: {
   countries: { name: string; slug: string }[];
+  useCases: { slug: string; title: string }[];
 }) {
+  const [entryContext, setEntryContext] = useState("");
   const [intent, setIntent] =
     useState<CounselInquiry["intent"]>("execution_review");
   const [values, setValues] = useState<Record<Field, string>>({
@@ -62,6 +71,7 @@ export function CounselExperience({
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
   const [error, setError] = useState("");
+  const [conflict, setConflict] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -73,6 +83,17 @@ export function CounselExperience({
   const successRef = useRef<HTMLDivElement>(null);
   const attribution = useRef<Record<string, string>>({});
   const opened = useRef(false);
+  const received = useRef(false);
+  useEffect(() => {
+    const leave = () => {
+      if (opened.current && !received.current)
+        track("intake_abandoned", {
+          failureCategory: "page_exit_before_confirmed_receipt",
+        });
+    };
+    window.addEventListener("pagehide", leave);
+    return () => window.removeEventListener("pagehide", leave);
+  }, []);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const destination = params.get("destination") ?? "";
@@ -87,6 +108,10 @@ export function CounselExperience({
         destination: known?.name ?? destination.slice(0, 100),
       }));
     attribution.current = counselAttribution(params);
+    setEntryContext(
+      useCases.find((item) => item.slug === attribution.current.practice_area)
+        ?.title || "",
+    );
     try {
       const stored = JSON.parse(
         sessionStorage.getItem(SEO_ATTRIBUTION_STORAGE_KEY) ?? "null",
@@ -99,8 +124,13 @@ export function CounselExperience({
     } catch {
       /* Storage is optional; never persist inquiry contents. */
     }
-    track("counsel_visit");
-  }, [countries]);
+    track("counsel_visit", {
+      ...attribution.current,
+      originatingPage: attribution.current.landing_page,
+      practiceArea: attribution.current.practice_area,
+      corridor: attribution.current.corridor,
+    });
+  }, [countries, useCases]);
   useEffect(() => {
     if (receipt) successRef.current?.focus();
   }, [receipt]);
@@ -108,6 +138,7 @@ export function CounselExperience({
     if (error) errorRef.current?.focus();
   }, [error]);
   function open(next: CounselInquiry["intent"]) {
+    track("review_clicked", { ctaIntent: next });
     setIntent(next);
     setActive(true);
     if (!opened.current) {
@@ -139,6 +170,7 @@ export function CounselExperience({
     event.preventDefault();
     if (busy) return;
     setError("");
+    setConflict(false);
     const result = inquirySchema.safeParse({
       request_id: requestId.current ?? crypto.randomUUID(),
       intent,
@@ -183,6 +215,9 @@ export function CounselExperience({
         setProgress(Math.round((event.loaded / event.total) * 100));
     };
     const failed = () => {
+      track("counsel_submission_failed", {
+        failureCategory: "network_or_timeout",
+      });
       setError(
         "We could not confirm receipt. Please retry; your details are still here.",
       );
@@ -205,10 +240,27 @@ export function CounselExperience({
           setError(
             body.error ?? "We could not confirm receipt. Please try again.",
           );
-          track("counsel_submission_failed");
+          if (
+            file &&
+            intent === "execution_review" &&
+            confirmedUploadFailure(body.code)
+          )
+            track("upload_failed", {
+              failureCategory: body.code ?? `http_${xhr.status}`,
+            });
+          setConflict(xhr.status === 409);
+          track("counsel_submission_failed", {
+            failureCategory: body.code ?? `http_${xhr.status}`,
+          });
           return;
         }
+        received.current = true;
         setReceipt(body);
+        if (body.document_status === "received")
+          track("document_uploaded", {
+            inquiryReference: body.reference,
+            uploadCount: 1,
+          });
         track("counsel_inquiry_submitted", {
           intent,
           document_received: body.document_status === "received",
@@ -263,6 +315,11 @@ export function CounselExperience({
   return (
     <>
       <section className="counsel-hero counsel-wrap">
+        <p className="counsel-note">
+          {entryContext
+            ? `Professional context: ${entryContext}. Confirm Matter-specific facts below.`
+            : ""}
+        </p>
         <p className="counsel-eyebrow">For international counsel</p>
         <h1>
           Your U.S. execution desk
@@ -631,6 +688,22 @@ export function CounselExperience({
               By submitting, you ask Milano to contact you about this request.{" "}
               <Link href="/privacy">Privacy</Link>
             </p>
+            {conflict && (
+              <button
+                type="button"
+                className="counsel-text-link"
+                onClick={() => {
+                  requestId.current = null;
+                  submittedPayload.current = null;
+                  setConflict(false);
+                  setError(
+                    "A fresh submission is ready. Review your details, then submit again.",
+                  );
+                }}
+              >
+                Start a fresh request
+              </button>
+            )}
           </form>
         )}
       </section>

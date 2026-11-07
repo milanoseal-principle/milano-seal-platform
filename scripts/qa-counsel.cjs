@@ -30,7 +30,7 @@ const fs = require("fs");
       overflow,
       heroVisible: hero.y < 900,
       primaryCTA: await page
-        .locator(".counsel-actions .counsel-button")
+        .locator(".counsel-hero .counsel-actions .counsel-button")
         .isVisible(),
     });
     if (width === 390 || width === 1440)
@@ -40,7 +40,7 @@ const fs = require("fs");
       });
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator(".counsel-actions .counsel-button").click();
+  await page.locator(".counsel-hero .counsel-actions .counsel-button").click();
   if (await page.locator(".counsel-mobile-action").count())
     throw Error("mobile action remained over form");
   await page
@@ -127,7 +127,7 @@ const fs = require("fs");
   await page.goto("http://localhost:3000/counsel", {
     waitUntil: "networkidle",
   });
-  await page.locator(".counsel-actions .counsel-text-link").click();
+  await page.locator(".counsel-hero .counsel-actions .counsel-text-link").click();
   if (await page.getByLabel("Destination country", { exact: true }).count())
     throw Error("question asks destination");
   await page.getByLabel("Name", { exact: true }).fill("Ana Counsel");
@@ -166,7 +166,7 @@ const fs = require("fs");
   if (await page.getByLabel("Name", { exact: true }).inputValue())
     throw Error("sensitive draft persisted");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.locator(".counsel-actions .counsel-button").click();
+  await page.locator(".counsel-hero .counsel-actions .counsel-button").click();
   await page.keyboard.press("Tab");
   await page.locator(".counsel-upload summary").click();
   await page
