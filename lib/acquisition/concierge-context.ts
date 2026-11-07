@@ -43,11 +43,11 @@ export function resolveConciergeContext(params: SearchParams) {
     ? requestedUrgency
     : undefined;
   const initialDestination = first(params.destination)?.trim().slice(0, 100) || undefined;
-  const attribution = Object.fromEntries(
-    ATTRIBUTION_KEYS
-      .map((key) => [key, first(params[key])?.trim().slice(0, 500)] as const)
-      .filter((entry): entry is readonly [string, string] => Boolean(entry[1])),
-  );
+  const attribution: Record<string, string> = {};
+  for (const key of ATTRIBUTION_KEYS) {
+    const value = first(params[key])?.trim().slice(0, 500);
+    if (value) attribution[key] = value;
+  }
   attribution.originating_page = normalizeConciergeOriginatingPage(first(params.originating_page));
 
   return { attribution, initialServiceIntent, initialDestination, initialAudience, initialUrgency };
