@@ -8,6 +8,7 @@ import { normalizeExecutionTruth } from "@/lib/matter/executionTruth";
 import { ClientProgressSpine } from "@/components/portal/ClientProgressSpine";
 import { PortalRONStatusCard } from "@/components/ron/PortalRONStatusCard";
 import type { RONSession, RONSigner } from "@/lib/bluenotary/types";
+import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 
 export const metadata: Metadata = { title: "Remote Online Notarization | The Milano Seal™", description: "Your governed remote signing session." };
 
@@ -16,9 +17,11 @@ export default async function PortalRONPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) redirect("/login?next=/portal/ron");
 
-  const email = user.email.toLowerCase();
+  const email = normalizeEmail(user.email);
+  const emailPattern = email.replace(/[\\%_]/g, "\\  const email = user.email.toLowerCase();");
   const admin = createAdminClient();
-  const { data: deal } = await admin.from("deals").select("id, deal_id, status, deal_status, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").ilike("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: candidate } = await admin.from("deals").select("id, deal_id, email, status, deal_status, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").ilike("email", emailPattern).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const deal = candidate && emailsMatch(candidate.email, email) ? candidate : null;
 
   if (!deal) return <main className="mx-auto max-w-2xl px-4 py-16"><h1 className="text-3xl text-[#F6F1E6]">Your signing session</h1><p className="mt-4 text-sm text-white/55">No active Matter was found. Contact your Milano coordinator if you need assistance.</p></main>;
 
