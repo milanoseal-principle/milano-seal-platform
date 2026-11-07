@@ -67,8 +67,12 @@ try {
     const page = await context.newPage();
     const consoleErrors = [];
     const pageErrors = [];
+    const failedResources = [];
+    page.on("response", (response) => {
+      if (response.status() >= 400) failedResources.push({ status: response.status(), url: response.url() });
+    });
     page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
+      if (message.type() === "error") consoleErrors.push(`${message.text()} [${message.location().url}]`);
     });
     page.on("pageerror", (error) => pageErrors.push(String(error)));
 
@@ -126,6 +130,7 @@ try {
       reducedMotionEvidence,
       reducedMotionPassed,
       consoleErrors: badConsole,
+      failedResources,
       pageErrors,
       passed,
       screenshot,
