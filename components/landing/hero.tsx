@@ -140,22 +140,35 @@ export function Hero() {
               {t.hero.compliance}
             </p>
 
-            <div className={`ms-hero-line flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-4${heroVisible[6] ? " is-visible" : ""}`}>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 justify-center lg:justify-start mb-3">
               <Link
-                href="/intake"
+                href="/intake?source=homepage"
                 className="ms-cta-vault group relative inline-flex items-center justify-center gap-3 px-7 py-3.5 bg-[var(--ms-gold)] text-[#0A0A0A] font-semibold rounded-lg overflow-hidden"
               >
-                {t.hero.intake}
+                Start Your Request
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }} />
               </Link>
               <Link
-                href="/map"
-                className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[var(--ms-gold)]/30 text-white/75 font-medium rounded-lg transition-all duration-300 hover:border-[var(--ms-gold)]/60 hover:text-white hover:bg-[var(--ms-gold)]/5"
+                href="/pricing?source=homepage"
+                className="inline-flex items-center justify-center px-7 py-3.5 border border-[var(--ms-gold)]/40 text-white/85 font-medium rounded-lg transition-colors duration-300 hover:border-[var(--ms-gold)]/70 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ms-gold)]"
               >
-                <Globe className="w-4 h-4" />
-                {t.hero.intelligence}
+                Get Pricing
               </Link>
+              <a
+                href="mailto:nicholas@themilanoseal.com?subject=Speak%20with%20Nicholas%20-%20The%20Milano%20Seal"
+                className="inline-flex min-h-12 items-center justify-center px-4 text-sm font-medium text-white/65 underline decoration-[var(--ms-gold)]/35 underline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ms-gold)]"
+              >
+                Speak With Nicholas
+              </a>
             </div>
+
+            <Link
+              href="/map"
+              className="mb-5 inline-flex items-center gap-2 text-xs text-white/45 transition-colors hover:text-white/75 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ms-gold)]"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {t.hero.intelligence}
+            </Link>
 
             <div className={`ms-hero-line w-full${heroVisible[6] ? " is-visible" : ""}`}>
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--ms-gold)]/45 mb-2 text-center lg:text-left">
