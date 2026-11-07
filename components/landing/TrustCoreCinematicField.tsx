@@ -11,8 +11,8 @@ import {
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
 } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 const TRUST_LABELS = [
   "Secure Intake",
@@ -40,7 +40,7 @@ export function TrustCoreCinematicField({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const beamRotation = useMotionValue(0);
   const loopRef = useRef<ReturnType<typeof animate> | null>(null);
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = useMilanoReducedMotion();
   const [core, setCore] = useState<Point | null>(null);
   const [hovered, setHovered] = useState<HoverTarget | null>(null);
 

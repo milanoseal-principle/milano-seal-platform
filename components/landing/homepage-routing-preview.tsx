@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Route } from "lucide-react";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { DOCUMENTS } from "@/components/landing/document-intelligence";
@@ -10,6 +10,7 @@ import { buildHomeCorridor } from "@/lib/intelligence/homeCorridors";
 import { DestinationIntelligenceCard } from "@/components/landing/destination-intelligence-card";
 import { MiniAtlasPreview } from "@/components/home/MiniAtlasPreview";
 import { HomeShippingCorridorPanel } from "@/components/home/HomeShippingCorridorPanel";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 function normalizedCountryName(name: string) {
   if (name === "UK") return "United Kingdom";
@@ -32,7 +33,7 @@ export function HomepageRoutingPreview() {
     relevantDestinations[0] ??
     DESTINATIONS[0];
 
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
   const corridor = buildHomeCorridor(selected);
 
   const selectDocument = (nextId: string) => {

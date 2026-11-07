@@ -45,7 +45,10 @@ try {
       const page = await context.newPage();
       const errors = [];
 
-      page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+      page.on("pageerror", (error) => errors.push(`pageerror: ${error.stack || error.message}`));
+      page.on("response", (response) => {
+        if (response.status() >= 400) errors.push(`response ${response.status()}: ${response.url()}`);
+      });
       page.on("console", (message) => {
         if (message.type() === "error") errors.push(`console: ${message.text()}`);
       });
