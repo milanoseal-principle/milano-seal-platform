@@ -37,6 +37,7 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       MILANO_RENDERED_BASE_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:3100' || inputs.production_url || 'https://www.themilanoseal.com' }}
+      MILANO_PRODUCTION_BASE_URL: ${{ inputs.production_url || 'https://www.themilanoseal.com' }}
 
     steps:
       - name: Checkout

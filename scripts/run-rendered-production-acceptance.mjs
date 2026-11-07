@@ -4,6 +4,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const baseUrl = (process.env.MILANO_RENDERED_BASE_URL || "https://www.themilanoseal.com").replace(/\/$/, "");
+const productionBaseUrl = (process.env.MILANO_PRODUCTION_BASE_URL || "https://www.themilanoseal.com").replace(/\/$/, "");
 const localRun = ["localhost", "127.0.0.1"].includes(new URL(baseUrl).hostname);
 const outputDir = path.resolve("artifacts/proof/rendered-production");
 fs.mkdirSync(outputDir, { recursive: true });
@@ -20,7 +21,7 @@ const routes = [
   { path: "/intake", expect: /Secure Records Intake|Begin Your Execution/i },
   { path: "/global-document-intelligence", expect: /Execution Intelligence|Global Document Intelligence|Country Directory/i, map: true },
   { path: "/professional/damiani", expect: /Damiani|Bentornata|pratica/i },
-  { path: "/secure-portal", expect: /Secure Matter Portal|portal|sign in|login/i },
+  { path: "/secure-portal", expect: /Secure Matter Portal|portal|sign in|login/i, hosted: true },
   { path: "/services/apostille", expect: /Apostille Coordination|Competent Authority Routing/i },
 ];
 
@@ -67,7 +68,8 @@ try {
         }
       });
 
-      const response = await page.goto(`${baseUrl}${route.path}`, {
+      const routeBaseUrl = route.hosted ? productionBaseUrl : baseUrl;
+      const response = await page.goto(`${routeBaseUrl}${route.path}`, {
         waitUntil: "networkidle",
         timeout: 90000,
       });
