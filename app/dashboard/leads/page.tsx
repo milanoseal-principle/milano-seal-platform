@@ -101,8 +101,11 @@ export default async function LeadsPage() {
     }),
     ...(pricingResult.data ?? []).map((lead) => {
       const details = lead.details as Record<string, unknown> | null;
+      const uploadCount = Array.isArray(details?.uploads) ? (details!.uploads as unknown[]).length : 0;
       const serviceLabel = lead.product_interest ? `Pricing: ${lead.product_interest}` : "Pricing: review required";
-      const docLabel = lead.document_type ? `${serviceLabel} · ${lead.document_type}` : serviceLabel;
+      const baseLabel = lead.document_type ? `${serviceLabel} · ${lead.document_type}` : serviceLabel;
+      // Reference/state only — never document contents.
+      const docLabel = uploadCount ? `${baseLabel} · ${uploadCount} doc${uploadCount === 1 ? "" : "s"} attached` : baseLabel;
       return {
         id: lead.id,
         kind: lead.canonical_matter_id ? "Pricing request → Matter" : "Pricing request",
