@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientProgressSpine } from "@/components/portal/ClientProgressSpine";
+import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 
 const VERIFIED = new Set(["RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"]);
 
@@ -11,7 +12,9 @@ export default async function RONReturnPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) redirect("/login?next=/portal/ron/complete");
   const admin = createAdminClient();
-  const { data: deal } = await admin.from("deals").select("id, deal_id").ilike("email", user.email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const email = normalizeEmail(user.email);
+  const { data: candidate } = await admin.from("deals").select("id, deal_id, email").eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const deal = candidate && emailsMatch(candidate.email, email) ? candidate : null;
   const { data: session } = deal ? await admin.from("ron_sessions").select("milano_ron_status").eq("matter_id", deal.id).order("created_at", { ascending: false }).limit(1).maybeSingle() : { data: null };
   const verified = Boolean(session && VERIFIED.has(session.milano_ron_status));
 

@@ -34,6 +34,13 @@ test("verified payment of the discounted amount unlocks scheduling", () => {
   assert.equal(gate.paymentRequirementMethod, "verified_payment");
 });
 
+test("paid status without verified cleared settlement does not satisfy the canonical payment gate", () => {
+  const observedOnly = { ...unpaidDiscountedMatter, payment_status: "paid", amount_paid: 625, payment_confirmed: false, payment_settlement_status: "observed_pending" };
+  assert.equal(evaluatePaymentGate(observedOnly), "PAYMENT_REQUIRED");
+  const uncleared = { ...observedOnly, payment_confirmed: true };
+  assert.equal(evaluatePaymentGate(uncleared), "PAYMENT_REQUIRED");
+});
+
 test("a payment_confirmed flag without a settled payment does NOT unlock scheduling", () => {
   const flaggedButUnsettled = { ...unpaidDiscountedMatter, payment_status: "unpaid", amount_paid: 0, payment_confirmed: true };
   assert.equal(evaluatePaymentGate(flaggedButUnsettled), "PAYMENT_REQUIRED");
