@@ -44,12 +44,12 @@ export function FinalCTA() {
           >
             Get Pricing
           </Link>
-          <a
-            href="mailto:nicholas@themilanoseal.com?subject=Speak%20with%20Nicholas%20-%20The%20Milano%20Seal"
+          <Link
+            href="/speak-with-nicholas?source=homepage-final&originating_page=%2F"
             className="inline-flex min-h-12 items-center justify-center px-6 text-sm font-medium text-white/65 underline decoration-[#C6A55A]/45 underline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A55A]"
           >
             Speak With Nicholas
-          </a>
+          </Link>
         </div>
         <Link
           href="/secure-portal"
