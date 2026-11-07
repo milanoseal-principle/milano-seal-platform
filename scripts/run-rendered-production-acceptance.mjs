@@ -52,6 +52,7 @@ try {
         const url = new URL(response.url());
         if (localRun && url.pathname === "/_vercel/insights/script.js") return;
         errors.push(`response ${response.status()}: ${response.url()}`);
+        if (response.status() >= 400) errors.push(`response ${response.status()}: ${response.url()}`);
       });
       page.on("console", (message) => {
         if (message.type() !== "error") return;
