@@ -17,14 +17,13 @@ export async function GET() {
   }
 
   const email = normalizeEmail(user.email);
-  const emailPattern = email.replace(/[\\%_]/g, "\\  const email = user.email.toLowerCase();");
   const admin = createAdminClient();
 
   // Find the matter linked to this portal user
   const { data: deal } = await admin
     .from('deals')
     .select('id, email, payment_status')
-    .ilike('email', emailPattern)
+    .eq('email', email)
     .order('created_at', { ascending: false })
     .limit(1)
     .single();
