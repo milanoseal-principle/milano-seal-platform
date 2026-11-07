@@ -1,13 +1,5 @@
-// validate:portal-prelogin — Phase 1 trust fix guard.
-//
-// The pre-login portal VALUE page lives at /secure-portal (public), NOT /portal.
-// /portal is the authenticated matter tree and stays behind the auth wall
-// (proxy.ts + app/portal/layout.tsx redirect unauthenticated visitors to /login),
-// so a pre-login value page cannot live there without weakening auth.
-//
-// This validator asserts the value page exists with the required trust copy and
-// CTAs, that it carries no banned phrases, and that the authenticated portal tree
-// (/portal, /portal/[token], etc.) and payment/auth/DB files were NOT altered.
+// Guard the private portal entry and preserve the authenticated portal routes.
+// /secure-portal resolves into /portal, whose session and role gates own access.
 
 import { readFileSync, existsSync } from "fs";
 
@@ -15,47 +7,16 @@ const errors = [];
 
 const PAGE = "app/secure-portal/page.tsx";
 if (!existsSync(PAGE)) {
-  errors.push(`${PAGE} does not exist (pre-login value page missing)`);
+  errors.push(`${PAGE} does not exist (private portal entry missing)`);
 }
 const src = existsSync(PAGE) ? readFileSync(PAGE, "utf8") : "";
 
-// Required copy / CTAs.
-const REQUIRED = [
-  "Secure Matter Portal",
-  "Track your matter from intake to international release",
-  "Login",
-  "Begin Secure Intake",
-  "Payment-Gated Execution",
-  "Final acceptance remains subject to the receiving authority",
-];
-for (const phrase of REQUIRED) {
-  if (!src.includes(phrase)) errors.push(`${PAGE} is missing required copy: "${phrase}"`);
-}
-// CTA destinations.
-if (!/href="\/intake"/.test(src)) errors.push(`${PAGE} is missing a Begin Secure Intake CTA -> /intake`);
-if (!/href="\/login/.test(src)) errors.push(`${PAGE} is missing a Login CTA -> /login`);
-
-// Banned phrases on this public surface.
-const BANNED = [
-  /\bStripe\b/,
-  /AES-?256/i,
-  /guaranteed accept/i,
-  /government approved/i,
-  /legal advice/i,
-  /instant approval/i,
-  /Notarize From Anywhere/i,
-  /Mission Control/i,
-  /Sovereign Command/i,
-  /Compliance Map/i,
-  /Virtual Assistant/i,
-  /VA Support Role/i,
-  // fake courier ETA / GPS / live-tracking language
-  /live tracking map/i,
-  /GPS tracking/i,
-  /real-?time GPS/i,
-];
-for (const re of BANNED) {
-  if (re.test(src)) errors.push(`${PAGE} contains banned phrase: ${re}`);
+// The secure entry must resolve into the real access-controlled portal.
+// Marketing previews and fabricated operational states do not belong here.
+if (!/redirect\(["']\/portal["']\)/.test(src)) errors.push("Secure entry must redirect to the canonical /portal");
+if (!/robots:\s*\{\s*index:\s*false/.test(src)) errors.push("Secure entry must be noindex");
+for (const phrase of ["Live Matter shell preview", "MS-2026-08-###", "50% deposit verified", "scheduling gate satisfied", "const PANELS", "EXECUTION_RAIL"]) {
+  if (src.includes(phrase)) errors.push(`Secure entry renders a forbidden sample operational state: ${phrase}`);
 }
 
 // The authenticated portal tree must remain intact (do not remove protected routes).
@@ -83,5 +44,5 @@ if (errors.length) {
   throw new Error(`${errors.length} portal-prelogin error(s)`);
 }
 console.log(
-  "validate:portal-prelogin passed (/secure-portal value page present with required copy + CTAs; authenticated /portal tree and auth gate intact)",
+  "validate:portal-prelogin passed (/secure-portal redirects to protected /portal; no sample operational states; authenticated portal and auth gate intact)",
 );

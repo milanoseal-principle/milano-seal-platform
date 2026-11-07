@@ -6,7 +6,6 @@ const homepage = readFileSync("app/page.tsx", "utf8");
 const access = readFileSync("app/access/page.tsx", "utf8");
 const lawyerAccess = readFileSync("app/lawyer-access/page.tsx", "utf8");
 const pricing = readFileSync("app/pricing/page.tsx", "utf8");
-const securePortal = readFileSync("app/secure-portal/page.tsx", "utf8");
 const processPage = readFileSync("app/process/page.tsx", "utf8");
 const processExperience = readFileSync("components/process/ProcessExperience.tsx", "utf8");
 const routingPreview = readFileSync("components/landing/homepage-routing-preview.tsx", "utf8");
@@ -41,14 +40,14 @@ test("public commercial surfaces do not disclose numeric pricing", () => {
   assert.match(lawyerAccess, /Professional access by review/);
 });
 
-test("secure portal public preview is a Matter command center and does not replace authenticated portal truth", () => {
-  assert.match(securePortal, /Secure Matter Command Center/);
-  assert.match(securePortal, /Matter Truth/);
-  assert.match(securePortal, /Transaction/);
-  assert.match(securePortal, /Document Vault/);
-  assert.match(securePortal, /Chain of Custody/);
-  assert.match(securePortal, /Next required action/);
-  assert.match(securePortal, /illustrative only/);
+test("secure portal entry redirects to the protected portal and renders no sample Matter", async () => {
+  const { default: entry, metadata } = await import("@/app/secure-portal/page");
+  assert.equal(metadata.robots && typeof metadata.robots === "object" && metadata.robots.index, false);
+  assert.throws(() => entry(), (error: unknown) => {
+    assert.ok(error && typeof error === "object" && "digest" in error);
+    assert.match(String(error.digest), /NEXT_REDIRECT;replace;\/portal;307;/);
+    return true;
+  });
 });
 
 test("process route uses one cinematic execution experience instead of duplicate tutorial stacks", () => {
