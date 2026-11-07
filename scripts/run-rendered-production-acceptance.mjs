@@ -82,8 +82,10 @@ try {
       assert.deepEqual(brokenImages, [], `${profile.name} ${route.path}: broken images: ${brokenImages.join(", ")}`);
 
       if (route.home) {
-        const intakeLinks = page.getByRole("link", { name: /Begin Secure Intake|Start Secure Intake/i });
+        const intakeLinks = page.getByRole("link", { name: /Start Your Request|Begin Secure Intake|Start Secure Intake/i });
         assert.ok(await intakeLinks.count(), `${profile.name}: homepage intake CTA missing`);
+        assert.ok(await page.getByRole("link", { name: /Get Pricing/i }).count(), `${profile.name}: homepage pricing CTA missing`);
+        assert.ok(await page.getByRole("link", { name: /Speak With Nicholas/i }).count(), `${profile.name}: homepage concierge CTA missing`);
       }
 
       if (route.map) {

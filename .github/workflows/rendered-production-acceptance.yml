@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 40
     env:
       NEXT_TELEMETRY_DISABLED: "1"
-      MILANO_RENDERED_BASE_URL: ${{ inputs.production_url || 'https://www.themilanoseal.com' }}
+      MILANO_RENDERED_BASE_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:3100' || inputs.production_url || 'https://www.themilanoseal.com' }}
 
     steps:
       - name: Checkout
@@ -56,6 +56,17 @@ jobs:
 
       - name: Provision Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Build pull request application
+        if: github.event_name == 'pull_request'
+        run: npm run build
+
+      - name: Start pull request production server
+        if: github.event_name == 'pull_request'
+        run: |
+          npm start -- --hostname 127.0.0.1 --port 3100 > /tmp/milano-next.log 2>&1 &
+          echo $! > /tmp/milano-next.pid
+          curl --fail --retry 30 --retry-connrefused --retry-delay 2 --retry-max-time 60 http://127.0.0.1:3100/
 
       - name: Execute rendered device matrix
         run: node scripts/run-rendered-production-acceptance.mjs
