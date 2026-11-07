@@ -13,7 +13,7 @@ test("TrustCoreCinematicField accepts ReactNode children without a single-child 
 });
 
 test("TrustCoreCinematicField preserves reduced-motion and interactive field wiring", () => {
-  assert.match(source, /useReducedMotion\(\)/);
+  assert.match(source, /useMilanoReducedMotion\(\)/);
   assert.match(source, /root\.addEventListener\("pointerover"/);
   assert.match(source, /root\.addEventListener\("pointerout"/);
   assert.match(source, /!reduceMotion\s*&&\s*core/);
