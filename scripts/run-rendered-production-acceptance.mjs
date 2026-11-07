@@ -4,6 +4,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const baseUrl = (process.env.MILANO_RENDERED_BASE_URL || "https://www.themilanoseal.com").replace(/\/$/, "");
+const localRun = ["localhost", "127.0.0.1"].includes(new URL(baseUrl).hostname);
 const outputDir = path.resolve("artifacts/proof/rendered-production");
 fs.mkdirSync(outputDir, { recursive: true });
 
@@ -47,10 +48,17 @@ try {
 
       page.on("pageerror", (error) => errors.push(`pageerror: ${error.stack || error.message}`));
       page.on("response", (response) => {
+        if (response.status() < 400) return;
+        const url = new URL(response.url());
+        if (localRun && url.pathname === "/_vercel/insights/script.js") return;
+        errors.push(`response ${response.status()}: ${response.url()}`);
         if (response.status() >= 400) errors.push(`response ${response.status()}: ${response.url()}`);
       });
       page.on("console", (message) => {
-        if (message.type() === "error") errors.push(`console: ${message.text()}`);
+        if (message.type() !== "error") return;
+        const text = message.text();
+        if (text.startsWith("Failed to load resource: the server responded with a status of 404")) return;
+        errors.push(`console: ${text}`);
       });
       page.on("requestfailed", (request) => {
         const url = request.url();
