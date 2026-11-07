@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { portalRONProjection } from '@/lib/bluenotary/projection';
 import type { RONSession, RONSigner } from '@/lib/bluenotary/types';
+import { emailsMatch, normalizeEmail } from '@/lib/auth/clientAccount';
 
 // GET /api/portal/me/ron — client-safe RON status for logged-in portal user
 export async function GET() {
@@ -15,19 +16,20 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const email = user.email.toLowerCase();
+  const email = normalizeEmail(user.email);
+  const emailPattern = email.replace(/[\\%_]/g, "\\  const email = user.email.toLowerCase();");
   const admin = createAdminClient();
 
   // Find the matter linked to this portal user
   const { data: deal } = await admin
     .from('deals')
-    .select('id, payment_status')
-    .ilike('email', email)
+    .select('id, email, payment_status')
+    .ilike('email', emailPattern)
     .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
-  if (!deal) {
+  if (!deal || !emailsMatch(deal.email, email)) {
     return NextResponse.json({ ron_session: null });
   }
 
