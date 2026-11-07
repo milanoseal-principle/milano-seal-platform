@@ -41,11 +41,12 @@ async function clickCountry(page, country) {
 }
 
 let server;
+let browser;
 try {
   await mkdir(ARTIFACT_DIR, { recursive: true });
 
   if (START_SERVER) {
-    server = spawn("npm", ["start", "--", "-H", "127.0.0.1", "-p", String(PORT)], {
+    server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(PORT)], {
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, NODE_ENV: "production" },
     });
@@ -54,7 +55,7 @@ try {
     await waitForServer(`${BASE_URL}${ROUTE}`);
   }
 
-  const browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true });
   const results = [];
   let failures = 0;
 
@@ -134,6 +135,7 @@ try {
   }
 
   await browser.close();
+  browser = undefined;
   await writeFile(`${ARTIFACT_DIR}/report.json`, JSON.stringify({
     generatedAt: new Date().toISOString(),
     baseUrl: BASE_URL,
@@ -150,5 +152,12 @@ try {
     console.log("Rendered map proof green across all exact viewport profiles and reduced-motion mode.");
   }
 } finally {
-  if (server && !server.killed) server.kill("SIGTERM");
+  await browser?.close().catch(() => {});
+  if (server && server.exitCode === null && server.signalCode === null) {
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => { server.kill("SIGKILL"); resolve(); }, 5000);
+      server.once("close", () => { clearTimeout(timer); resolve(); });
+      server.kill("SIGTERM");
+    });
+  }
 }
