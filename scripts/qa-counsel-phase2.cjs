@@ -34,6 +34,7 @@ const fs = require("fs");
     "france",
     "germany",
     "uae",
+    "switzerland",
   ];
   for (const path of [
     "/counsel/corridors",

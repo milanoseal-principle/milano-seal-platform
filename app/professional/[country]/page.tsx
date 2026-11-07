@@ -1,3 +1,4 @@
+import { CounselContextLink } from "@/components/counsel/CounselContextLink";
 import { COUNSEL_CORRIDORS } from "@/lib/counsel/content";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -160,7 +161,10 @@ export default async function ProfessionalCountryPage({ params }: Props) {
   const country = applyVerifiedCountryOverride(baseCountry);
   const isHague = country.hagueMember === "member";
   const canonical = `https://www.themilanoseal.com/professional/${slug}`;
-  const intakeHref = `/intake?lane=professional&destination=${slug}&country=${encodeURIComponent(country.name)}&source=professional-${slug}-seo`;
+  const context = {
+    corridor: `us-${slug}`,
+    landing_page: `/professional/${slug}`,
+  };
 
   const schema = {
     "@context": "https://schema.org",
@@ -246,12 +250,13 @@ export default async function ProfessionalCountryPage({ params }: Props) {
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href={intakeHref}
+                <CounselContextLink
+                  destination={country.name}
+                  context={context}
                   className="inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-lg bg-[#C6A55A] text-[#050507] font-semibold text-sm hover:bg-[#D4B76A] transition-colors"
                 >
-                  Coordinate a U.S. Matter <ArrowRight className="w-4 h-4" />
-                </Link>
+                  Send a U.S. Matter <ArrowRight className="w-4 h-4" />
+                </CounselContextLink>
                 <Link
                   href={`/apostille/${slug}`}
                   className="inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-lg border border-[#C6A55A]/30 text-[#C6A55A] text-sm font-medium hover:border-[#C6A55A] transition-colors"
@@ -401,12 +406,13 @@ export default async function ProfessionalCountryPage({ params }: Props) {
               Prior-client recognition never bypasses identity, pricing,
               authority, payment, or execution controls.
             </p>
-            <Link
-              href={intakeHref}
+            <CounselContextLink
+              destination={country.name}
+              context={context}
               className="inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-lg bg-[#C6A55A] text-[#050507] font-semibold text-sm hover:bg-[#D4B76A] transition-colors"
             >
-              Begin Professional Intake <ArrowRight className="w-4 h-4" />
-            </Link>
+              Send a U.S. Matter <ArrowRight className="w-4 h-4" />
+            </CounselContextLink>
           </div>
         </section>
       </main>

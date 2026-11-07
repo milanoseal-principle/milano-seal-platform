@@ -52,7 +52,7 @@ Analytics insertion reports unavailable telemetry rather than claiming successfu
 ## Discovery, content, SEO and trust
 
 - `/counsel/corridors` links into existing `/professional/{country}` routes for Italy, Spain, Portugal, Greece, Brazil, Mexico, France, Germany and UAE.
-- Priority country pages use canonical public intelligence and explain review dependencies, likely sources of delay, what to send and what happens next. UNKNOWN and REVIEW REQUIRED remain visible. Country membership does not determine instrument-level requirements.
+- The remaining premium Switzerland acquisition CTAs also converge on the same context-preserving counsel entry. Priority country pages use canonical public intelligence and explain review dependencies, likely sources of delay, what to send and what happens next. UNKNOWN and REVIEW REQUIRED remain visible. Country membership does not determine instrument-level requirements.
 - `/counsel/use-cases` and one shared `/counsel/use-cases/[useCase]` template cover private client, immigration/nationality, citizenship, real estate, estates, private wealth, corporate, cross-border family, litigation support and maritime/yacht situations. Each has situation-specific document examples, facts needed, delay dependencies and related existing scope. They describe execution support, not legal practice by Milano.
 - Existing educational country/document pages show a contextual counsel invitation only when their canonical audience includes counsel/professional users.
 - `/counsel` keeps its existing capture experience and gains server-rendered discovery/FAQ sections. The credential wording is: “Nicholas Milano is a commissioned Florida Notary Public.” No fabricated metrics, testimonials, partnerships or acceptance claims are added.
@@ -72,7 +72,7 @@ Isolated PostgreSQL tests apply only the existing Phase 1 migration in a disposa
 
 Rendered QA has three separately labeled scopes:
 
-1. Real local public pages: nine corridors, ten use cases and two indexes at all ten widths (210 checks), canonical/context checks and practice navigation.
+1. Real local public pages: nine priority corridors, ten use cases and two indexes, plus a Switzerland regression at all ten widths (220 checks), canonical/context checks and practice navigation.
 2. Existing `/counsel` form/error/upload/receipt paths: real local page with explicit synthetic success/failure responses, plus actual fail-closed response without configured database credentials.
 3. Protected operator/professional components: isolated CSR harness with synthetic API data at all ten widths, operator retry/qualification/prospect/activation controls, repeat-entry reconfirmation and signed-handoff display. This does not bypass or certify hosted application authorization. Real protected routes continue to require authentication.
 
