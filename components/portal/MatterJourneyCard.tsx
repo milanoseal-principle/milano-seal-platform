@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getWorkflowOrDerive, getCountry, getDocumentType } from "@/data/intelligence";
 import type { PortalClientMatter } from "@/components/portal/portal-context";
 
@@ -45,7 +46,7 @@ const JOURNEY_STAGES: JourneyStage[] = [
   {
     id: "apostille",
     label: "Apostille & Transit",
-    keys: ["apostille_processing", "courier_ready", "shipped"],
+    keys: ["apostille_processing", "courier_ready", "shipped", "in_transit"],
     nextAction: "Your document is in apostille processing or has been released to courier. No action needed.",
     actionHref: "/portal/tracking",
     actionLabel: "Track Shipment →",
@@ -60,9 +61,9 @@ const JOURNEY_STAGES: JourneyStage[] = [
   },
 ];
 
-function resolveStageIndex(status: string | null | undefined): number {
+function resolveStageIndex(status: string | null | undefined, stages = JOURNEY_STAGES): number {
   if (!status) return 0;
-  const idx = JOURNEY_STAGES.findIndex((s) => s.keys.includes(status));
+  const idx = stages.findIndex((s) => s.keys.includes(status));
   return idx === -1 ? 0 : idx;
 }
 
@@ -340,9 +341,13 @@ interface Props {
 }
 
 export function MatterJourneyCard({ deal }: Props) {
-  const reduced = useReducedMotion();
-  const stageIdx = resolveStageIndex(deal.matter_status);
-  const currentStage = JOURNEY_STAGES[stageIdx];
+  const reduced = useMilanoReducedMotion();
+  const authenticationNotRequired = deal.authentication_requirement === "not_required";
+  const stages = authenticationNotRequired ? JOURNEY_STAGES.map((stage) => stage.id === "apostille"
+    ? { ...stage, id: "release", label: "Release", nextAction: "Authentication is not required for this reviewed Matter. Release and delivery remain subject to recorded evidence." }
+    : stage) : JOURNEY_STAGES;
+  const stageIdx = resolveStageIndex(deal.matter_status, stages);
+  const currentStage = stages[stageIdx];
   const isPaymentGate =
     (deal.matter_status === "awaiting_payment" || deal.matter_status === "quoted") &&
     deal.payment_status !== "paid" &&
@@ -354,7 +359,7 @@ export function MatterJourneyCard({ deal }: Props) {
     deal.matter_status === "payment_confirmed";
   const isShipped = ["shipped", "delivered"].includes(deal.matter_status ?? "");
   const isDelivered = deal.matter_status === "delivered" || deal.matter_status === "completed" || deal.matter_status === "closed" || deal.is_paid_and_released;
-  const isApostille = deal.matter_status === "apostille_processing" || deal.matter_status === "courier_ready";
+  const isApostille = !authenticationNotRequired && (deal.matter_status === "apostille_processing" || deal.matter_status === "courier_ready");
 
   return (
     <motion.div
@@ -469,6 +474,7 @@ export function MatterJourneyCard({ deal }: Props) {
         </div>
       </div>
 
+      {authenticationNotRequired && <p className="mb-4 text-xs text-white/60">Apostille / authentication: Not required following Milano review.</p>}
       {/* Stage strip */}
       <div
         style={{
@@ -478,13 +484,13 @@ export function MatterJourneyCard({ deal }: Props) {
           marginBottom: 8,
         }}
       >
-        {JOURNEY_STAGES.map((stage, i) => (
+        {stages.map((stage, i) => (
           <StagePip
             key={stage.id}
             stage={stage}
             index={i}
             current={stageIdx}
-            total={JOURNEY_STAGES.length}
+            total={stages.length}
             reduced={reduced}
           />
         ))}
@@ -559,10 +565,10 @@ export function MatterJourneyCard({ deal }: Props) {
       </AnimatePresence>
 
       {/* Workflow intelligence */}
-      <WorkflowIntelBlock
+      {!authenticationNotRequired && <WorkflowIntelBlock
         documentType={deal.document_type}
         destinationCountry={deal.destination_country}
-      />
+      />}
     </motion.div>
   );
 }

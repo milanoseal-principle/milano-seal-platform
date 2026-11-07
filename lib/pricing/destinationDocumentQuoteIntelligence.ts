@@ -1,3 +1,4 @@
+import { isDomesticDestination } from "@/lib/intake/reviewReadiness";
 // INTERNAL ONLY — destination × document route intelligence for governed pricing.
 //
 // This module is a projection over the canonical registries. It does not own a
@@ -25,6 +26,7 @@ import {
 } from "@/lib/international-execution/operationalGovernance";
 
 export type QuoteRouteType =
+  | "domestic_execution"
   | "hague_apostille"
   | "authentication"
   | "consular_legalization"
@@ -65,6 +67,7 @@ export type QuoteRouteReviewCode =
   | "ROUTE_AUTHORITY_EVIDENCE_UNVERIFIED";
 
 export interface QuoteRouteIntelligenceInput {
+  authentication_requirement?: unknown;
   destination_country?: unknown;
   origin_state?: unknown;
   document_type?: unknown;
@@ -243,6 +246,25 @@ export function projectQuoteRouteIntelligence(
     if (!reasons.has(code)) reasons.set(code, message);
   };
   const advisories: string[] = [];
+
+  // Only governed no-authentication truth permits a domestic execution quote.
+  // Destination alone cannot clear an authentication requirement.
+  if (isDomesticDestination(destination) && input.authentication_requirement === "not_required") {
+    const { category, source } = classifyQuoteDocument(documentType, input.document_category);
+    if (!documentType) flag("ROUTE_DOCUMENT_TYPE_UNRESOLVED", "Document identity/type is unresolved.");
+    return {
+      destination, destinationSlug: "united-states", documentCategory: category,
+      documentCategorySource: source, issuingAuthority, issuingLane: "unresolved",
+      federalAgency: null, receivingAuthority: receivingAuthority || null,
+      receivingAuthorityType: classifyReceivingAuthority(receivingAuthority),
+      routeType: "domestic_execution", routeLabel: "Reviewed Domestic Execution",
+      authorityPath: [], authorityStatus: "NOT_APPLICABLE",
+      reviewRequired: reasons.size > 0, reviewCodes: [...reasons.keys()],
+      reviewReasons: [...reasons.values()], advisories: [],
+      pricingFacts: { consular_legalization: false, federal_apostille: false, receiving_authority_uncertain: false },
+      acceptanceNotice: RECEIVING_AUTHORITY_ACCEPTANCE_NOTICE, safetyNotice: SAFETY_NOTICE,
+    };
+  }
 
   // ── Destination (canonical registry only; never a synthetic fallback) ──
   const destinationSlug = destination ? canonicalDestinationSlug(destination) : null;

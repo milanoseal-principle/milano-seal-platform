@@ -12,6 +12,7 @@ import {
 import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
 
 export interface PortalClientMatter {
+  authentication_requirement?: string | null;
   id: string;
   matter_id: string;
   display_id: string;
@@ -85,6 +86,7 @@ function numberOrNull(value: unknown): number | null {
 function normalizeMatter(raw: RawMatter): PortalClientMatter {
   const matterId = (raw.matter_id ?? raw.id ?? "") as string;
   return {
+    authentication_requirement: typeof raw.authentication_requirement === "string" ? raw.authentication_requirement : null,
     id: matterId,
     matter_id: matterId,
     display_id: (raw.display_id ?? raw.deal_id ?? matterId) as string,

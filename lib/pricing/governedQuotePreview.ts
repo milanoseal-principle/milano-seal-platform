@@ -123,7 +123,7 @@ export function composeGovernedQuote(input: Record<string, unknown>): GovernedQu
   const body = stripServerProjectedKeys(input);
   const truth = normalizeExecutionTruth(body);
   const executionReviewReasons = executionQuoteReviewReasons(truth);
-  const route = projectQuoteRouteIntelligence(body);
+  const route = projectQuoteRouteIntelligence({ ...body, authentication_requirement: truth.authentication_requirement });
   const view = routeView(route);
 
   if (executionReviewReasons.length > 0) {

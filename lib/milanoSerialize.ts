@@ -1,4 +1,6 @@
 export interface MilanoDeal {
+  execution_truth: Record<string, unknown> | null;
+  customer_execution_preference: string | null;
   id: string;
   deal_id: string | null;
   client_name: string | null;
@@ -53,6 +55,8 @@ export function serializeDealMS(row: Record<string, unknown>): MilanoDeal {
   const id = String(row.id ?? "");
   return {
     id,
+    execution_truth: row.execution_truth && typeof row.execution_truth === "object" ? row.execution_truth as Record<string, unknown> : null,
+    customer_execution_preference: typeof row.customer_execution_preference === "string" ? row.customer_execution_preference : null,
     deal_id: (row.deal_id as string) || id || null,
     client_name:
       ((row.client_name as string) ?? (row.full_name as string)) || null,

@@ -1,3 +1,5 @@
+import { isDomesticDestination } from "@/lib/intake/reviewReadiness";
+import { normalizeExecutionTruth } from "@/lib/matter/executionTruth";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -90,7 +92,7 @@ export async function POST(
     const { data: matter, error: matterError } = await admin
       .from("deals")
       .select(
-        "id,deal_id,client_name,email,payment_status,amount_paid,payment_observed_at,deal_status,discount_code,destination_country,document_type,origin_state",
+        "id,deal_id,client_name,email,payment_status,amount_paid,payment_observed_at,deal_status,discount_code,destination_country,document_type,origin_state,execution_truth,customer_execution_preference,docs_count,signers,witnesses,updated_at",
       )
       .eq("id", id)
       .single();
@@ -109,12 +111,26 @@ export async function POST(
       );
     }
 
+    const recordedTruth = matter.execution_truth as Record<string, unknown> | null;
+    const reviewedMatter = isDomesticDestination(matter.destination_country) || matter.customer_execution_preference != null;
+    if (reviewedMatter && (!recordedTruth?.review_confirmed_at || !recordedTruth?.review_confirmed_by)) {
+      return NextResponse.json({ error: "Confirm document, signer, witness and eligibility review before quoting.", code: "EXECUTION_REVIEW_REQUIRED" }, { status: 409 });
+    }
+    const submittedWitnesses = Number(body.remote_witness_count ?? 0) + Number(body.in_person_witness_count ?? 0);
+    if (reviewedMatter && (Number(body.document_count ?? matter.docs_count) !== Number(matter.docs_count) || Number(body.signer_count ?? matter.signers) !== Number(matter.signers) || submittedWitnesses !== Number(matter.witnesses))) {
+      return NextResponse.json({ error: "Document, signer or witness requirements changed. Confirm the execution review again.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
+    }
+    if (reviewedMatter && JSON.stringify(normalizeExecutionTruth(body)) !== JSON.stringify(normalizeExecutionTruth({ execution_truth: recordedTruth }))) {
+      return NextResponse.json({ error: "Execution facts changed. Confirm the execution review again before quoting.", code: "EXECUTION_REVIEW_CHANGED" }, { status: 409 });
+    }
+
     // Re-run the full governed composition server-side. Browser preview state
     // (including any submitted route_intelligence or review flags) is ignored.
     const routeFacts = resolveRouteFacts(body, matter as Record<string, unknown>);
     const composition = composeGovernedQuote({
       ...body,
       ...routeFacts.facts,
+      ...(reviewedMatter ? { execution_truth: recordedTruth, document_count: matter.docs_count, signer_count: matter.signers, origin_state: matter.origin_state } : {}),
       manual_adjustment: manualAdjustment,
     });
     const { route, projection } = composition;
@@ -213,6 +229,7 @@ export async function POST(
           : projection.matterBase.charAt(0).toUpperCase() + projection.matterBase.slice(1);
 
     const quoteUpdate = {
+      execution_truth: { ...recordedTruth, ...composition.truth },
       lane: laneLabel,
       execution_tier: laneLabel,
       base_price: baseLine?.amount ?? 0,
@@ -242,13 +259,24 @@ export async function POST(
       quote_approved_by: operator.email,
     };
 
-    const { data: quotedMatter, error: quoteError } = await admin
+    let quotedMatter: Record<string, unknown>;
+    if (reviewedMatter) {
+      const { data: approval, error: approvalError } = await admin.rpc("approve_reviewed_matter_quote", {
+        p_matter_id: id, p_expected_updated_at: matter.updated_at, p_updates: quoteUpdate,
+        p_actor_id: operator.id, p_route_evidence: routeEvidence,
+      });
+      const result = Array.isArray(approval) ? approval[0] : approval;
+      if (approvalError || !result?.matter) return NextResponse.json({ error: "QUOTE_APPROVAL_CONFLICT", code: approvalError?.code === "40001" ? "STALE_MATTER_STATE" : "QUOTE_NOT_SAVED" }, { status: 409 });
+      quotedMatter = result.matter;
+    } else {
+    const { data: legacyQuotedMatter, error: quoteError } = await admin
       .from("deals")
       .update(quoteUpdate)
       .eq("id", id)
       .select("*")
       .single();
     if (quoteError) throw quoteError;
+    quotedMatter = legacyQuotedMatter;
 
     const { error: quoteEvidenceError } = await admin
       .from("matter_evidence_ledger")
@@ -275,6 +303,7 @@ export async function POST(
         metadata: { pricing_version: PRICING_VERSION },
       });
     if (quoteEvidenceError) throw quoteEvidenceError;
+    }
 
     let finalMatter = quotedMatter;
     if (discountCode) {

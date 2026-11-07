@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 const PORTAL_SAFE_FIELDS = new Set([
+  "authentication_requirement",
   "id",
   "display_id",
   "matter_id",

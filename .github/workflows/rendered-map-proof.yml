@@ -50,14 +50,14 @@ jobs:
         if: ${{ !inputs.production_url }}
         run: npm run build
 
-      - name: Install Playwright without mutating lockfiles
-        run: npm install --no-save --no-package-lock playwright@1.43.0
+      - name: Verify locked Playwright version
+        run: node -e "const expected=require('./package.json').devDependencies.playwright; if(require('playwright/package.json').version!==expected) throw new Error('Playwright lock mismatch');"
 
       - name: Cache Chromium payload
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: milano-playwright-${{ runner.os }}-1.43.0
+          key: milano-playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Provision Chromium deterministically
         run: npx playwright install --with-deps chromium

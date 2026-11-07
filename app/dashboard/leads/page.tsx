@@ -1,3 +1,5 @@
+import { LeadMatterAction } from "@/components/dashboard/LeadMatterAction";
+import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
 export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
@@ -9,6 +11,8 @@ export const metadata = {
 
 interface LeadRow {
   id: string;
+  matter_id?: string | null;
+  convertible?: boolean;
   kind: string;
   client_name: string | null;
   email: string | null;
@@ -23,7 +27,7 @@ interface LeadRow {
 }
 
 export default async function LeadsPage() {
-  await requireDashboardAccess();
+  const { role } = await requireDashboardAccess();
 
   const supabase = createAdminClient();
 
@@ -35,7 +39,7 @@ export default async function LeadsPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("sales_leads")
-      .select("id,full_name,email,country,product_interest,urgency,source_route,details,created_at")
+      .select("id,full_name,email,country,product_interest,urgency,source_route,details,created_at,canonical_matter_id")
       .eq("lead_type", "concierge_inquiry")
       .order("created_at", { ascending: false })
       .limit(100),
@@ -87,6 +91,7 @@ export default async function LeadsPage() {
       return {
         id: lead.id,
         kind: "Concierge inquiry",
+        matter_id: lead.canonical_matter_id, convertible: true,
         client_name: lead.full_name,
         email: lead.email,
         destination_country: lead.country,
@@ -108,6 +113,7 @@ export default async function LeadsPage() {
       const docLabel = uploadCount ? `${baseLabel} · ${uploadCount} doc${uploadCount === 1 ? "" : "s"} attached` : baseLabel;
       return {
         id: lead.id,
+        matter_id: lead.canonical_matter_id, convertible: true,
         kind: lead.canonical_matter_id ? "Pricing request → Matter" : "Pricing request",
         client_name: lead.full_name,
         email: lead.email,
@@ -209,7 +215,7 @@ export default async function LeadsPage() {
                 <tbody>
                   {leads.map((l) => (
                     <tr key={`${l.kind}-${l.id}`} id={`lead-${l.id}`} style={{ borderBottom: "1px solid rgba(212,175,55,0.04)" }}>
-                      <td style={{ padding: "12px 16px", color: "rgba(198,165,90,0.8)", fontSize: 11 }}>{l.kind}</td>
+                      <td style={{ padding: "12px 16px", color: "rgba(198,165,90,0.8)", fontSize: 11 }}>{l.kind}{l.convertible && canPerformProtectedMatterTransition(role) && <LeadMatterAction leadId={l.id} matterId={l.matter_id} />}</td>
                       <td style={{ padding: "12px 16px", color: "rgba(255,255,255,0.85)", fontSize: 13 }}>{l.client_name ?? "—"}</td>
                       <td style={{ padding: "12px 16px", color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: "monospace" }}>{l.email ?? "—"}</td>
                       <td style={{ padding: "12px 16px", color: "rgba(255,255,255,0.75)", fontSize: 13 }}>{l.destination_country ?? "—"}</td>

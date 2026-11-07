@@ -1,3 +1,4 @@
+import { isDomesticDestination } from "./reviewReadiness";
 import { isHagueMember } from "./hagueMembers";
 
 export interface ExecutionPathInput {
@@ -44,6 +45,15 @@ export function buildExecutionPath(
   input: ExecutionPathInput,
 ): ExecutionPathResult {
   const country = (input.country || "").trim();
+  // Resolve domestic use before the non-Hague branch. A routing preview never
+  // confirms legal requirements or an execution method.
+  if (isDomesticDestination(country)) {
+    return {
+      steps: ["Document & Execution Review", ...(input.apostilleRequired ? ["Authentication Review"] : []), "Domestic Release"],
+      hagueMember: isHagueMember(country),
+      reasoning: "Domestic use: Milano reviews execution and any separately requested authentication before private quoting.",
+    };
+  }
   const hagueMember = isHagueMember(country);
   const apostilleRequired = input.apostilleRequired ?? hagueMember;
   const translationNeeded = Boolean(input.translationNeeded);

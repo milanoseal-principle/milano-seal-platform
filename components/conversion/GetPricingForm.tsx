@@ -118,6 +118,7 @@ export function GetPricingForm({
           phone: values.get("phone"),
           audience: values.get("audience"),
           service_intent: values.get("service_intent"),
+          execution_preference: values.get("execution_preference"),
           document_type: values.get("document_type"),
           document_origin: values.get("document_origin"),
           signer_location: values.get("signer_location"),
@@ -229,6 +230,15 @@ export function GetPricingForm({
           What do you need?
           <select name="service_intent" defaultValue={initialServiceIntent ?? "unsure"} className={selectCls}>
             {CONCIERGE_SERVICE_INTENTS.map((value) => <option key={value} value={value}>{SERVICE_LABELS[value]}</option>)}
+          </select>
+        </label>
+        <label className="block text-sm text-white/75">
+          Preferred execution method (subject to review)
+          <select name="execution_preference" defaultValue={initialServiceIntent === "ron" ? "ron" : "review_required"} className={selectCls}>
+            <option value="review_required">Not sure, review my document</option>
+            <option value="ron">Remote online notarization</option>
+            <option value="in_person">In person notarization</option>
+            <option value="mobile">Mobile notary visit</option>
           </select>
         </label>
         <label className="block text-sm text-white/75">

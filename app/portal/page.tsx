@@ -633,6 +633,7 @@ export default function MyMatterPage() {
             <div className="pp-card">
               <div className="pp-card-h">Execution Progress</div>
               <PortalStatusRail
+                authenticationRequirement={deal.authentication_requirement}
                 matterStatus={deal.matter_status}
                 paymentStatus={deal.payment_status}
               />
