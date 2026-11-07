@@ -34,8 +34,8 @@ function fixture(
     persistenceFailure?: boolean;
     uploadFailure?: boolean;
     notificationFailure?: boolean;
-  publicBucket?: boolean;
-  metadataFailure?: boolean;
+    publicBucket?: boolean;
+    metadataFailure?: boolean;
   } = {},
 ) {
   const rows = new Map<string, Record<string, any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -77,7 +77,10 @@ function fixture(
         then(resolve: (value: unknown) => unknown) {
           if (mode === "insert" || mode === "update") {
             writes.push(table);
-            if (options.persistenceFailure || (mode === "update" && options.metadataFailure))
+            if (
+              options.persistenceFailure ||
+              (mode === "update" && options.metadataFailure)
+            )
               return Promise.resolve(
                 resolve({ error: { code: "DATABASE_UNAVAILABLE" } }),
               );
@@ -287,15 +290,54 @@ test("operational conversion counts require canonical quote and cleared settleme
   });
 });
 
-
 test("private storage is required and metadata failures never confirm document receipt", async () => {
-  const file = new File(["%PDF-1.4 test"], "instruction.pdf", { type: "application/pdf" });
+  const file = new File(["%PDF-1.4 test"], "instruction.pdf", {
+    type: "application/pdf",
+  });
   const publicStorage = fixture({ publicBucket: true });
-  assert.equal((await receiveCounselInquiry(request(payload, file), publicStorage.dependencies)).status, 503);
+  assert.equal(
+    (
+      await receiveCounselInquiry(
+        request(payload, file),
+        publicStorage.dependencies,
+      )
+    ).status,
+    503,
+  );
   assert.equal(publicStorage.uploads(), 0);
   const metadata = fixture({ metadataFailure: true });
-  const response = await receiveCounselInquiry(request(payload, file), metadata.dependencies);
+  const response = await receiveCounselInquiry(
+    request(payload, file),
+    metadata.dependencies,
+  );
   assert.equal(response.status, 503);
   assert.equal((await response.json()).ok, false);
-  assert.equal(metadata.rows.get(payload.request_id)!.details.document_status, "pending");
+  assert.equal(
+    metadata.rows.get(payload.request_id)!.details.document_status,
+    "pending",
+  );
+});
+
+test("canonical handoff requires established professional attribution and the inquiry's professional identity", async () => {
+  const { counselHandoffError } = await import("@/lib/counsel/handoff");
+  const valid = {
+    inquiryEmail: "Counsel@example.com",
+    profileEmail: " counsel@example.com ",
+    professionalProfileId: "canonical-profile",
+    referralSourceType: "professional_submitted",
+  };
+  assert.equal(counselHandoffError(valid), null);
+  assert.equal(
+    counselHandoffError({
+      ...valid,
+      referralSourceType: "professional_client_handoff",
+    }),
+    null,
+  );
+  assert.ok(counselHandoffError({ ...valid, professionalProfileId: null }));
+  assert.ok(counselHandoffError({ ...valid, referralSourceType: "instagram" }));
+  assert.ok(
+    counselHandoffError({ ...valid, profileEmail: "another-firm@example.com" }),
+  );
+  assert.ok(counselHandoffError({ ...valid, profileEmail: null }));
 });

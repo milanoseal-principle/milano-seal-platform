@@ -9,7 +9,7 @@ Public attorney discovery previously led into country-route selection, professio
 ## Files and architecture
 
 - `app/counsel/*`, `components/counsel/CounselExperience.tsx`: acquisition page, metadata, responsive editorial layout, form, optional upload, retry, confirmation, mobile action.
-- `lib/counsel/inquiry.ts`, `receive.ts`, `funnel.ts`, `app/api/counsel/route.ts`: bounded validation/streaming, file signatures, persisted retry identity/fingerprint, basic persisted hourly abuse limit, lead receipt and canonical read-only funnel projections.
+- `lib/counsel/inquiry.ts`, `receive.ts`, `funnel.ts`, `handoff.ts`, `app/api/counsel/route.ts`: bounded validation/streaming, file signatures, persisted retry identity/fingerprint, basic persisted hourly abuse limit, lead receipt and canonical read-only funnel projections.
 - `app/api/admin/counsel/route.ts`, `app/dashboard/marketing/counsel/page.tsx`, `components/dashboard/OperatorShell.tsx`: role-gated inbox, private document access, notification evidence/retry, operator-stamped association with an existing canonical Matter.
 - `app/api/sales/capture/route.ts`: fails truthfully when existing lead persistence fails.
 - `lib/notifications/transactionalEmailAlerts.ts`, `app/api/cron/notification-reconcile/route.ts`: reuse Resend, recipient configuration, notification log and existing reconciliation cron for inquiry alerts.
@@ -42,7 +42,7 @@ The source audit found multiple separate notification channels: canonical Matter
 
 Real supplied `source`, `audience`, `campaign`, `content` and UTM values are retained with the inquiry. Existing canonical first-touch context is retained separately when available. No source is invented when absent. Contextual professional country CTAs carry destination into the form. Public metadata is not accepted as professional identity or lifecycle authority.
 
-An operator follows up, uses the existing governed professional/Matter intake and associates its resulting canonical Matter UUID with the inquiry. The association stores operator and timestamp, refuses reassignment and preserves existing referral/source fields. Inquiry documents remain attached to the inquiry; the operator can download them and use the existing canonical Matter document workflow when required. It does not automatically create or activate a professional account.
+An operator follows up, uses the existing governed professional/Matter intake and associates its resulting canonical Matter UUID with the inquiry. The association stores operator and timestamp, refuses reassignment and preserves existing referral/source fields. It requires an existing canonical professional referral and a referring profile whose email matches the inquiry (case-insensitively); missing attribution or mismatched identities fail closed for operator review. Inquiry documents remain attached to the inquiry; the operator can download them and use the existing canonical Matter document workflow when required. It does not automatically create or activate a professional account.
 
 The inbox separates observational visit/open/submit events from persisted inquiries and canonical approved-quote, cleared-settlement, completion and repeat-profile facts. Canonical counts explicitly cover Matters associated with the displayed latest 100 inquiries. Repeat-source counts cover linked Matters only. They are not lifetime totals. Marketing events can be blocked, duplicated or missing and never authorize operations.
 
@@ -68,7 +68,7 @@ No production deployment was performed. PR review does not imply release certifi
 
 - Typecheck: PASS.
 - Lint: PASS (existing package module-type warning only).
-- Full test suite: PASS, 1,026 tests, zero failures.
+- Full test suite: PASS, 1,027 tests, zero failures.
 - Production build: PASS, 2,819 pages generated; counsel and operator/API routes included.
 - All 80 declared `validate:*` scripts executed: 70 PASS, 10 FAIL. Each failing validator also fails in an isolated checkout of baseline `f92223f`; details and names are preserved in the evidence JSON. Failures were not relabeled as passes.
 - Production regression meta-gate: PASS, including its own typecheck/lint/test/build and canonical/scheduling/Wise checks.
@@ -78,3 +78,10 @@ No production deployment was performed. PR review does not imply release certifi
 - Hosted Supabase persistence/storage/RLS, authenticated operator integration, provider delivery and live Wise settlement/scheduling: BLOCKED by absent staging runtime credentials/provider access. Real mobile virtual keyboard QA: UNVERIFIED.
 
 `next-env.d.ts` had an existing worktree change at task start and is intentionally excluded from the PR. No production deployment or hosted migration was performed.
+
+
+## Follow-up attribution hardening
+
+The operator association now fails closed unless the canonical Matter has an established professional referral and the referring professional profile email matches the inquiry. This does not create an identity, rewrite referral/source fields, or activate a profile. Behavioral tests cover both canonical referral modes, absent attribution, absent profiles and mismatched emails.
+
+Post-commit canonical-foundation and legacy branch-salvage checks exposed their protected migration scope guards, which were not exercised by the earlier pre-commit delta. Their reviewed-path allowlists now include only the additive counsel lead migration; the other protected-file rules remain intact. This correction is part of the reviewable PR.

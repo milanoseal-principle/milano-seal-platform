@@ -1,3 +1,4 @@
+import { counselHandoffError } from "@/lib/counsel/handoff";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: lead, error } = await admin
     .from("sales_leads")
-    .select("id,details,canonical_matter_id")
+    .select("id,email,details,canonical_matter_id")
     .eq("id", reference)
     .eq("lead_type", "counsel_inquiry")
     .single();
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
     );
   const { data: matter } = await admin
     .from("deals")
-    .select("id")
+    .select("id,professional_profile_id,referral_source_type")
     .eq("id", matter_id)
     .single();
   if (!matter)
@@ -156,6 +157,26 @@ export async function POST(request: Request) {
       { error: "Canonical Matter not found." },
       { status: 404 },
     );
+  const { data: profile, error: profileError } = matter.professional_profile_id
+    ? await admin
+        .from("professional_profiles")
+        .select("email")
+        .eq("id", matter.professional_profile_id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (profileError)
+    return NextResponse.json(
+      { error: "Professional identity could not be verified." },
+      { status: 503 },
+    );
+  const handoffError = counselHandoffError({
+    inquiryEmail: lead.email,
+    profileEmail: profile?.email,
+    professionalProfileId: matter.professional_profile_id,
+    referralSourceType: matter.referral_source_type,
+  });
+  if (handoffError)
+    return NextResponse.json({ error: handoffError }, { status: 409 });
   // Association preserves the original inquiry and acquisition record. It never
   // writes referral identity, lifecycle, quote, payment or scheduling authority.
   const { data: linked, error: linkError } = await admin

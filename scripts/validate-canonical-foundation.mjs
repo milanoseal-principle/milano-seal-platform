@@ -88,6 +88,10 @@ try {
   // reviewed file for the governed execution-intelligence sequence; adding a
   // path here is itself a visible, reviewable governance change.
   const APPROVED_PROTECTED_CHANGES = new Set([
+    // Counsel acquisition: completes the existing lead capture contract only.
+    // Canonical Matter/payment schemas are unchanged; private grants, RLS,
+    // idempotence and the Matter FK are exercised in the isolated SQL fixture.
+    "supabase/migrations/20261107094755_counsel_inquiry_capture.sql",
     "supabase/migrations/081_document_structural_preflight.sql",
     "supabase/migrations/082_professional_referral_engine.sql",
     "supabase/migrations/083_ron_provider_capability_evidence.sql",

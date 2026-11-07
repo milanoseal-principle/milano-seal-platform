@@ -1,0 +1,13 @@
+OK: All canonical foundation files present
+OK: Canonical Matter controlling type + fields intact
+OK: State adapters delegate to the controlling state machine
+OK: State adapter enforces payment-before-scheduling
+OK: Pricing gateway delegates to controlling engine
+OK: No duplicate public pricing constants in gateway
+OK: Partner Passport controlling decision recorded
+OK: Country governance (conflict-preserving) recorded
+OK: package.json valid JSON
+OK: No files deleted in current PR delta
+OK: No protected business-logic files changed in current PR delta
+
+VALIDATOR: canonical-foundation PASSED.

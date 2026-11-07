@@ -48,27 +48,23 @@
     "code": 0
   },
   {
-    "name": "validate:project",
-    "code": 1
-  },
-  {
     "name": "validate:canonical-locks",
     "code": 0
-  },
-  {
-    "name": "validate:seo-phase-authority",
-    "code": 1
   },
   {
     "name": "validate:referral-intelligence",
     "code": 0
   },
   {
-    "name": "validate:pricing-luxury-canon",
-    "code": 0
+    "name": "validate:project",
+    "code": 1
   },
   {
-    "name": "validate:motion-system",
+    "name": "validate:seo-phase-authority",
+    "code": 1
+  },
+  {
+    "name": "validate:pricing-luxury-canon",
     "code": 0
   },
   {
@@ -76,11 +72,11 @@
     "code": 0
   },
   {
-    "name": "validate:responsive-safety",
+    "name": "validate:motion-system",
     "code": 0
   },
   {
-    "name": "validate:data-intel-compliance-ui",
+    "name": "validate:responsive-safety",
     "code": 0
   },
   {
@@ -88,15 +84,15 @@
     "code": 0
   },
   {
-    "name": "validate:final-wiring-confirmation",
-    "code": 0
-  },
-  {
     "name": "validate:final-mobile-cosmetic-pass",
     "code": 0
   },
   {
-    "name": "validate:touchpoint-registry",
+    "name": "validate:data-intel-compliance-ui",
+    "code": 0
+  },
+  {
+    "name": "validate:final-wiring-confirmation",
     "code": 0
   },
   {
@@ -108,15 +104,15 @@
     "code": 0
   },
   {
-    "name": "validate:cross-system-gates",
-    "code": 0
-  },
-  {
     "name": "validate:va-operator-touchpoint-wiring",
     "code": 0
   },
   {
-    "name": "validate:global-acceptance-intelligence",
+    "name": "validate:touchpoint-registry",
+    "code": 0
+  },
+  {
+    "name": "validate:cross-system-gates",
     "code": 0
   },
   {
@@ -124,8 +120,16 @@
     "code": 0
   },
   {
+    "name": "validate:global-acceptance-intelligence",
+    "code": 0
+  },
+  {
     "name": "validate:operator-intelligence-spine",
     "code": 0
+  },
+  {
+    "name": "validate:public-copy-safety",
+    "code": 1
   },
   {
     "name": "validate:final-intelligence-operator-os",
@@ -144,10 +148,6 @@
     "code": 0
   },
   {
-    "name": "validate:public-copy-safety",
-    "code": 1
-  },
-  {
     "name": "validate:fingerprint-apostille-expansion",
     "code": 0
   },
@@ -164,11 +164,11 @@
     "code": 0
   },
   {
-    "name": "validate:booking-intake-gates",
+    "name": "validate:regulated-public-claims",
     "code": 0
   },
   {
-    "name": "validate:regulated-public-claims",
+    "name": "validate:booking-intake-gates",
     "code": 0
   },
   {
@@ -180,23 +180,23 @@
     "code": 0
   },
   {
-    "name": "validate:next-five-production-builds",
-    "code": 1
-  },
-  {
     "name": "validate:next-three-revenue-ops",
     "code": 0
+  },
+  {
+    "name": "validate:next-five-production-builds",
+    "code": 1
   },
   {
     "name": "validate:mobile-cinematic-hotfix",
     "code": 1
   },
   {
-    "name": "validate:cinematic-ui-system",
+    "name": "validate:complimentary-matter-flow",
     "code": 0
   },
   {
-    "name": "validate:complimentary-matter-flow",
+    "name": "validate:cinematic-ui-system",
     "code": 0
   },
   {
@@ -204,19 +204,19 @@
     "code": 0
   },
   {
-    "name": "validate:government-public-sector",
-    "code": 0
-  },
-  {
     "name": "validate:trust-alliance-platform",
     "code": 0
   },
   {
-    "name": "validate:mini-atlas-intelligence-flow",
+    "name": "validate:government-public-sector",
     "code": 0
   },
   {
     "name": "validate:canonical-foundation",
+    "code": 0
+  },
+  {
+    "name": "validate:mini-atlas-intelligence-flow",
     "code": 0
   },
   {
@@ -232,11 +232,11 @@
     "code": 0
   },
   {
-    "name": "validate:unified-revenue-stack",
+    "name": "validate:high-value-assets",
     "code": 0
   },
   {
-    "name": "validate:high-value-assets",
+    "name": "validate:unified-revenue-stack",
     "code": 0
   },
   {
@@ -244,15 +244,11 @@
     "code": 0
   },
   {
-    "name": "validate:relationship-intelligence-layer",
-    "code": 0
-  },
-  {
     "name": "validate:vertical-intelligence-commercial-os",
     "code": 0
   },
   {
-    "name": "validate:duplicate-source",
+    "name": "validate:relationship-intelligence-layer",
     "code": 0
   },
   {
@@ -265,6 +261,10 @@
   },
   {
     "name": "validate:migration-chain",
+    "code": 0
+  },
+  {
+    "name": "validate:duplicate-source",
     "code": 0
   },
   {
