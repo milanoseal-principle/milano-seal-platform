@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { DESTINATIONS, type Destination } from "@/data/destinations";
 import { setActiveCorridor } from "@/lib/homepage/activeCorridorStore";
 import { getGlobalRoute } from "@/src/features/corridors/globalRouteData";
@@ -94,7 +94,7 @@ function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }
 
 export function MiniAtlasPreview({ selected, onSelect, autoCycle = true }: Props) {
   const pausedRef = useRef(false);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
   const [analyzing, setAnalyzing] = useState(false);
 
   const routeRecord = useMemo(() => getGlobalRoute(selected.slug), [selected.slug]);

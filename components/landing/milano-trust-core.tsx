@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, Globe, Lock, Eye, FileCheck, Send } from "lucide-react";
 import { DESTINATIONS } from "@/data/destinations";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import {
   subscribeActiveCorridor,
   getActiveCorridorSnapshot,
@@ -177,7 +178,7 @@ function Pillar({
 export function MilanoTrustCore() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const reduce = useReducedMotion() ?? false;
+  const reduce = useMilanoReducedMotion();
 
   // ── Intelligence engine: sync to the active Mini Atlas corridor ──────────
   const activeSlug = useSyncExternalStore(

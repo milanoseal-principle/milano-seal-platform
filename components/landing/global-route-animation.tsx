@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 const ROUTES = [
   { id: "italy",  curve: "M210,260 C285,160 360,120 440,165", destX: 440, destY: 165 },
@@ -22,7 +23,7 @@ export function GlobalRouteAnimation({ activeRouteId: externalActiveRouteId, onR
   const [hasEntered, setHasEntered] = useState(false);
   const [internalActiveId, setInternalActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useMilanoReducedMotion();
 
   // Merge external + internal active id
   const activeRouteId = externalActiveRouteId ?? internalActiveId;

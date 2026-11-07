@@ -124,7 +124,7 @@ for (const token of ["aria-busy", "refresh", "disabled"]) {
 }
 
 const trust = readFileSync("components/landing/TrustCoreCinematicField.tsx", "utf8");
-for (const token of ["useReducedMotion", "pointer-events-none", "trust-neural-signal", "beamRotation"]) {
+for (const token of ["useMilanoReducedMotion", "pointer-events-none", "trust-neural-signal", "beamRotation"]) {
   if (!trust.includes(token)) throw new Error(`Trust Core cinematic safeguard missing: ${token}`);
 }
 
