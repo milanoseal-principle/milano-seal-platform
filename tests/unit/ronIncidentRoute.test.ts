@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const userId='00000000-0000-4000-8000-000000000001';
 const body = {
  id:'00000000-0000-4000-8000-000000000002',session_id:'00000000-0000-4000-8000-000000000003',
- detected_at:'2026-01-01T12:00:00Z',summary:'Controlled incident route fixture',status:'OPEN',
+ detected_at:'2026-01-01T12:00:00Z',summary:'Controlled incident route fixture',status:'INCIDENT_OPENED',
  evidence:{category:'JOURNAL',containment:'OPEN',responsible_operator:userId,authority_basis_reference:'fixture:authority-review',required_authorities:['LAW_ENFORCEMENT'],notifications:{}},
 };
 function fixture(role='admin_operator',loggedIn=true,rpcError: unknown=null) {
@@ -54,6 +54,6 @@ test('API records authenticated actor, returns actual RPC outcome, and handles r
 test('active incident queue is bounded and orders oldest detection deadlines first',async()=>{
  const f=fixture();assert.equal((await f.route.GET()).status,200);
  assert.ok(f.calls.some(c=>c.name==='limit'&&c.args[0]===101));
- assert.ok(f.calls.some(c=>c.name==='not'&&c.args[0]==='status'&&c.args[2]==='(CLOSED,RESOLVED)'));
- assert.ok(f.calls.some(c=>c.name==='order'&&c.args[0]==='discovered_at'&&(c.args[1] as {ascending:boolean}).ascending));
+ assert.ok(f.calls.some(c=>c.name==='not'&&c.args[0]==='status'&&c.args[2]==='(CLOSED,MATTER_RESTORED_OR_CLOSED)'));
+ assert.ok(f.calls.some(c=>c.name==='order'&&c.args[0]==='detected_at'&&(c.args[1] as {ascending:boolean}).ascending));
 });
