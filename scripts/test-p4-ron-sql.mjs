@@ -11,7 +11,27 @@ create function auth.email() returns text language sql as $$select ''::text$$;
 create table public.deals(id uuid primary key,email text,execution_truth jsonb,witnesses int default 0,status text,deal_status text);
 grant usage on schema public to anon,authenticated,service_role;`);
 for(const name of ['025_execution_qa_and_witness_network.sql','034_compliance_incidents.sql','037_identifier_lock_document_versions.sql','062_bluenotary_ron_production_reconciliation.sql','063_ron_document_storage_bucket.sql','083_ron_provider_capability_evidence.sql'])await db.exec(readFileSync('supabase/migrations/'+name,'utf8'));
-await db.exec(`alter table public.compliance_incidents add column if not exists matter_id uuid, add column if not exists release_frozen boolean not null default true, add column if not exists summary text;`);
+await db.exec(`alter table public.compliance_incidents
+  add column if not exists matter_id uuid,
+  add column if not exists release_frozen boolean not null default true,
+  add column if not exists summary text;
+alter table public.compliance_incidents alter column title drop not null;
+alter table public.compliance_incidents
+  drop constraint if exists compliance_incidents_severity_check,
+  drop constraint if exists compliance_incidents_status_check;
+alter table public.compliance_incidents
+  add constraint compliance_incidents_severity_check check (
+    severity in ('low','medium','high','critical','LOW','MODERATE','HIGH','CRITICAL')
+  ),
+  add constraint compliance_incidents_status_check check (
+    status in (
+      'OPEN','INVESTIGATING','REMEDIATION_IN_PROGRESS','PENDING_CLIENT','RESOLVED','CLOSED','FROZEN',
+      'INCIDENT_OPENED','RECORDS_PRESERVED','ROOT_CAUSE_REVIEW','CLIENT_IMPACT_REVIEW',
+      'CORRECTION_PLAN_DRAFTED','FOUNDER_APPROVED_RESPONSE','CLIENT_NOTIFIED',
+      'CORRECTION_EXECUTED','DISCOUNT_OR_COURTESY_REVIEW','FINAL_QA_COMPLETED',
+      'MATTER_RESTORED_OR_CLOSED'
+    )
+  );`);
 await db.exec(readFileSync('supabase/migrations/20261108041000_ron_incident_enum_extensions.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/20261108042000_p4_ron_statutory_evidence.sql','utf8'));
 const actor='00000000-0000-4000-8000-000000000001',client='00000000-0000-4000-8000-000000000002',matter='00000000-0000-4000-8000-000000000003',session='00000000-0000-4000-8000-000000000004',signer='00000000-0000-4000-8000-000000000005';
