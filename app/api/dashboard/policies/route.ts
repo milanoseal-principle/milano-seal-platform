@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       const surfaces = Array.isArray(body.required_surfaces) ? body.required_surfaces.map(String) : [];
       const effectiveAt = typeof body.effective_at === "string" ? body.effective_at : "";
       if (!(POLICY_TYPES as readonly string[]).includes(policyType) || !content.trim() || Number.isNaN(Date.parse(effectiveAt))
-        || surfaces.some((s) => !SURFACE_PATTERN.test(s)) || typeof body.version !== "string") {
+        || surfaces.some((s) => !SURFACE_PATTERN.test(s)) || typeof body.version !== "string" || !/^[A-Za-z0-9._-]{1,40}$/.test(body.version) || Buffer.byteLength(content) > 100000) {
         return NextResponse.json({ ok: false, code: "INVALID_POLICY_DRAFT" }, { status: 422 });
       }
       const sha = createHash("sha256").update(content).digest("hex");
