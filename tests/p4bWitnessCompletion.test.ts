@@ -50,8 +50,11 @@ test('P4B operator UI never displays fake QA success after failed request', () =
   assert.match(desk, /Verify and complete witness QA/);
 });
 
-test('P4B executed document correction can be retrieved after evidence reopening', () => {
-  assert.match(retrievalGuard, /const retrievable = \['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'\]/);
-  assert.match(retrievalGuard, /retrievable\.includes\(session\.ron_lifecycle_state\)/);
-  assert.doesNotMatch(retrievalGuard, /if \(session\.milano_ron_status === 'RON_REVIEW_REQUIRED'\)\s*throw/);
+test('P4B corrected provider documents require actual provider completion and governed reopening', () => {
+  assert.match(retrievalGuard, /const lifecycleCompleted =/);
+  assert.match(retrievalGuard, /const recordedProviderCompletion = Boolean/);
+  assert.match(retrievalGuard, /session\.blue_notary_status === 'COMPLETED'/);
+  assert.match(retrievalGuard, /const correctionPermitted =/);
+  assert.match(retrievalGuard, /session\.evidence_reopened_at/);
+  assert.doesNotMatch(retrievalGuard, /\['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'\]\.includes/);
 });
