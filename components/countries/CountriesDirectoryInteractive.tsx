@@ -121,7 +121,7 @@ function CountryDirectoryDossier({ country }: { country: Destination }) {
   return (
     <article
       data-critical-card=""
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[#0B0B0D] p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 motion-reduce:transform-none ${
+      className={`group relative flex h-full flex-col rounded-2xl border bg-[#0B0B0D] p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 motion-reduce:transform-none ${
         apostilleRoute
           ? "border-white/[0.08] hover:border-emerald-500/25 hover:shadow-[0_24px_70px_rgba(0,0,0,0.45),inset_0_0_36px_rgba(16,185,129,0.025)]"
           : "border-amber-500/15 hover:border-amber-500/32 hover:shadow-[0_24px_70px_rgba(0,0,0,0.48),inset_0_0_36px_rgba(245,158,11,0.035)]"

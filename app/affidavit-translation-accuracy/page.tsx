@@ -42,7 +42,7 @@ export default function TranslationAccuracyAffidavitPage() {
       }) }} />
       <Header />
       <main className="min-h-screen bg-[#0A0A0A]">
-        <section className="mx-auto max-w-4xl px-6 pb-16 pt-32">
+        <section className="mx-auto max-w-4xl px-6 pb-16 pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)]">
           <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C6A55A]">International Affidavit Library</p>
           <h1 className="mb-6 font-serif text-4xl leading-tight text-white md:text-5xl">Affidavit of Translation Accuracy</h1>
           <p className="max-w-2xl text-lg font-light leading-relaxed text-[#8A8A8A]">

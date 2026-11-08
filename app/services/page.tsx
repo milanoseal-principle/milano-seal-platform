@@ -40,7 +40,7 @@ export default function ServicesPage() {
   return (
     <main className="min-h-screen bg-[#050507] text-white">
       <Header />
-      <section className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-28 sm:px-6 lg:px-8">
+      <section className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/70">
             Secure International Document Execution & Authentication Infrastructure

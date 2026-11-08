@@ -47,6 +47,18 @@ try{
   const png=await page.screenshot({path:`${out}/ron-incident-${width}.png`,fullPage:true});assert.equal(png.readUInt32BE(16),width,'No clipped horizontal content');assert.deepEqual(errors,[]);
   results.push({width,status:'PASS',runtime_errors:errors});await page.close();
  }
+ const publicResults=[];
+ for(const width of [320,1440])for(const path of ['/services','/terms','/affidavit-name-discrepancy','/guides/what-is-an-apostille','/countries']){
+  const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+path,{waitUntil:'networkidle'});
+  await page.locator('h1').first().waitFor();
+  const layout=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth,heading:document.querySelector('h1')?.getBoundingClientRect().top,headerHeight:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-total-height'))||0}));
+  assert.ok(layout.scroll<=layout.viewport,`No horizontal overflow on ${path} at ${width}`);
+  assert.ok(layout.heading>=layout.headerHeight,`Heading must clear the fixed header on ${path} at ${width}`);assert.deepEqual(errors,[]);
+  await page.screenshot({path:`${out}/public-${path.replaceAll('/','-')}-${width}.png`,fullPage:true});
+  publicResults.push({path,width,status:'PASS',layout,runtime_errors:errors});await page.close();
+ }
+ writeFileSync(`${out}/public-layout.json`,JSON.stringify({live_certification:false,results:publicResults},null,2));
  writeFileSync(`${out}/rendered.json`,JSON.stringify({live_certification:false,transport:'mocked',results},null,2));console.log(JSON.stringify(results));
 }finally{
  await browser?.close();server.kill('SIGTERM');if(server.exitCode===null)await new Promise(resolve=>{const timer=setTimeout(()=>{server.kill('SIGKILL');resolve()},8000);server.once('exit',()=>{clearTimeout(timer);resolve()})});rmSync(route,{recursive:true,force:true});rmSync('.next/dev/types',{recursive:true,force:true});writeFileSync(`${out}/server.log`,log);

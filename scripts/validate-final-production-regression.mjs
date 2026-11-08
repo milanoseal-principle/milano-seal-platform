@@ -178,6 +178,7 @@ async function main() {
   // final gate remains deterministic/offline and cannot drift by downloading a
   // different tool version from the network during release validation.
   for (const [label, cmd, args] of [
+    ["project structure", "npm", ["run", "--silent", "validate:project"]],
     ["typecheck", "npm", ["run", "--silent", "typecheck"]],
     ["lint", "npm", ["run", "--silent", "lint"]],
     ["test", "npm", ["test", "--silent"]],
