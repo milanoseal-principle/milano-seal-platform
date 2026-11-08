@@ -149,7 +149,7 @@ export async function assertCanCreateRONSession(
 
   const { data: existing } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, ron_lifecycle_state')
+    .select('id, milano_ron_status, ron_lifecycle_state, provider_completed_at, provider_session_completed_at, blue_notary_status, evidence_reopened_at')
     .eq('matter_id', matterId)
     .not('milano_ron_status', 'in', '("RON_EXPIRED","RON_COMPLETED")')
     .maybeSingle();
@@ -209,9 +209,20 @@ export async function assertCanRetrieveSignedDocuments(
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  const providerCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state) ||
-    ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'].includes(session.milano_ron_status);
-  if (!providerCompleted) {
+  // SESSION_PROCESSING / RON_REVIEW_REQUIRED are presentation states, not
+  // proof that the provider actually completed its session. Old P4 sessions
+  // may lack the newer lifecycle marker; they must carry an independently
+  // recorded provider completion timestamp plus verified provider status.
+  const lifecycleCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state);
+  const recordedProviderCompletion = Boolean(session.provider_completed_at || session.provider_session_completed_at) &&
+    session.blue_notary_status === 'COMPLETED';
+  // A legacy RON_REVIEW_REQUIRED correction requires the governed reopening
+  // record; the newer P4B EVIDENCE_PENDING lifecycle is already its proof.
+  const correctionPermitted = session.milano_ron_status !== 'RON_REVIEW_REQUIRED' ||
+    Boolean(session.evidence_reopened_at);
+  const providerCompleted = lifecycleCompleted || (recordedProviderCompletion && correctionPermitted);
+  if (['FAILED', 'CANCELLED'].includes(session.ron_lifecycle_state) ||
+      session.milano_ron_status === 'RON_EXPIRED' || !providerCompleted) {
     throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);
   }
 }
