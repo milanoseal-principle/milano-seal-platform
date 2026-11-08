@@ -149,7 +149,7 @@ export async function assertCanCreateRONSession(
 
   const { data: existing } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, ron_lifecycle_state, provider_completed_at, provider_session_completed_at, blue_notary_status, evidence_reopened_at')
+    .select('id, milano_ron_status, ron_lifecycle_state')
     .eq('matter_id', matterId)
     .not('milano_ron_status', 'in', '("RON_EXPIRED","RON_COMPLETED")')
     .maybeSingle();
@@ -204,7 +204,7 @@ export async function assertCanRetrieveSignedDocuments(
 ): Promise<void> {
   const { data: session } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, ron_lifecycle_state')
+    .select('id, milano_ron_status, ron_lifecycle_state, provider_completed_at, provider_session_completed_at, blue_notary_status, evidence_reopened_at')
     .eq('id', ronSessionId)
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
