@@ -211,7 +211,7 @@ export async function PUT(req: NextRequest) {
           ? "Wise reports this payment as cancelled. Please review the payment before continuing."
           : reconciliation.providerStatus === "REQUIRES_ATTENTION"
             ? "Wise reports that the payment requires attention. Your Matter remains preserved while it is reviewed."
-            : "Payment submission is recorded. Scheduling and safe preparation may continue while settlement completes in the background."
+            : "Payment submission is recorded. Your Matter remains active while settlement completes; scheduling stays locked until verified Wise settlement."
         : state.paymentObservedAt
           ? "Payment submission is recorded. Your Matter remains active while settlement completes in the background."
           : "No payment submission has been recorded yet.";
