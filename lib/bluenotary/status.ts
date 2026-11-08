@@ -14,7 +14,7 @@ const BN_EVENT_MAP: Record<string, MilanoRONStatus> = {
   leave_session:              'SESSION_LEFT',
   session_started:            'SESSION_STARTED',
   session_completed_clicked:  'SESSION_PROCESSING',
-  session_completed:          'RON_COMPLETED',
+  session_completed:          'SESSION_PROCESSING',
   session_expired:            'RON_EXPIRED',
 };
 
