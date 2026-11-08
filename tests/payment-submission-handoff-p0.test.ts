@@ -51,10 +51,10 @@ test("payment card does not ask for duplicate payment and keeps scheduling settl
   assert.doesNotMatch(paymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 
-test("payment page describes submission and settlement as separate authorities", () => {
-  assert.match(paymentPage, /governed Wise submission is recorded/);
-  assert.match(paymentPage, /payment portion of scheduling is satisfied/);
-  assert.doesNotMatch(paymentPage, /Scheduling remains locked until verified Wise reconciliation/);
+test("payment page keeps scheduling locked until exact Milano settlement is verified", () => {
+  assert.match(paymentPage, /Scheduling stays locked until the exact Milano payment is verified as settled/);
+  assert.match(paymentPage, /submitted or pending payment does not authorize scheduling/);
+  assert.doesNotMatch(paymentPage, /payment portion of scheduling is satisfied while final settlement/);
 });
 
 test("invoice settlement check performs live server-side Wise reconciliation", () => {
