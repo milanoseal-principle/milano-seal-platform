@@ -51,15 +51,10 @@ async function requireDashboardRole() {
 }
 
 export async function GET() {
-  if (!await requireDashboardRole()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  if (!await requireDashboardRole()) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("compliance_incidents")
-    .select("id,matter_id,incident_type,severity,status,release_frozen,document_already_released,apostille_already_submitted,client_impact_level,financial_exposure_estimate,summary,internal_notes,client_safe_message,correction_plan,founder_review_status,counsel_review_status,insurance_review_status,opened_by,assigned_to,closed_by,closed_at,created_at,updated_at")
-    .order("created_at", { ascending: false }).limit(100);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     .select("id,matter_id,ron_session_id,incident_category,detected_at,reported_at,containment_action,responsible_operator,law_enforcement_notification,law_enforcement_notified_at,law_enforcement_evidence_ref,state_notification,state_notified_at,state_notification_evidence_ref,notification_deadline_at,remediation,credential_replacement_evidence_ref,incident_type,severity,status,release_frozen,document_already_released,apostille_already_submitted,client_impact_level,financial_exposure_estimate,summary,internal_notes,client_safe_message,correction_plan,founder_review_status,counsel_review_status,insurance_review_status,opened_by,assigned_to,closed_by,closed_at,created_at,updated_at")
     .order("created_at", { ascending: false })
     .limit(500);
@@ -144,7 +139,6 @@ export async function PATCH(request: Request) {
     update.closed_by = auth.user.id;
   }
 
-  const admin = createAdminClient();
   const { data: prior } = await admin.from("compliance_incidents").select("id, matter_id, status").eq("id", body.id).maybeSingle();
   if (!prior) return NextResponse.json({ error: "INCIDENT_NOT_FOUND" }, { status: 404 });
   // Database enforcement rejects closure without notification/containment/remediation evidence.
