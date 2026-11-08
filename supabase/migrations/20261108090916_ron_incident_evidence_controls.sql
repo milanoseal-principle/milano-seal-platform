@@ -117,6 +117,7 @@ declare
   incident uuid;
   previous_actor text;
   mapped_category text;
+  status_value public.compliance_incidents.status%type;
 begin
   if not exists(
     select 1 from auth.users u
@@ -133,6 +134,8 @@ begin
      or p_detected is null
      or p_status not in ('INCIDENT_OPENED','ROOT_CAUSE_REVIEW','CORRECTION_PLAN_DRAFTED','FINAL_QA_COMPLETED','CLOSED')
   then raise exception 'INVALID_INCIDENT'; end if;
+
+  status_value := p_status;
 
   mapped_category:=case p_evidence->>'category'
     when 'ELECTRONIC_SEAL' then 'ELECTRONIC_SEAL_COMPROMISE'
@@ -159,7 +162,7 @@ begin
     perform set_config('milano.ron_incident_actor',p_actor::text,true);
 
     update public.compliance_incidents
-       set status=p_status::public.incident_status,
+       set status=status_value,
            summary=p_summary,
            incident_category=mapped_category,
            ron_security_evidence=p_evidence,
@@ -178,7 +181,7 @@ begin
       id,matter_id,incident_type,severity,status,summary,release_frozen,opened_by,
       ron_session_id,incident_category,detected_at,ron_security_evidence
     ) values(
-      p_incident,s.matter_id,'RON_SECURITY_COMPROMISE','CRITICAL','INCIDENT_OPENED',
+      p_incident,s.matter_id,'RON_SECURITY_COMPROMISE','CRITICAL',status_value,
       p_summary,true,p_actor,p_session,mapped_category,p_detected,p_evidence
     ) returning id into incident;
   end if;
