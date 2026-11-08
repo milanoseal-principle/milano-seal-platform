@@ -13,11 +13,11 @@ async function authorize() {
 export async function GET() {
   if (!await authorize()) return NextResponse.json({error:'FORBIDDEN'},{status:403});
   const { data,error } = await createAdminClient().from('compliance_incidents')
-    .select('id,ron_session_id,deal_id,status,description,discovered_at,ron_security_evidence')
-    .not('ron_security_evidence','is',null).not('status','in','(CLOSED,RESOLVED)')
-    .order('discovered_at',{ascending:true}).order('id',{ascending:true}).limit(101);
+    .select('id,ron_session_id,matter_id,status,summary,detected_at,ron_security_evidence')
+    .not('ron_security_evidence','is',null).not('status','in','(CLOSED,MATTER_RESTORED_OR_CLOSED)')
+    .order('detected_at',{ascending:true}).order('id',{ascending:true}).limit(101);
   if (error) return NextResponse.json({error:'INCIDENT_READ_FAILED',next_action:'Retry incident retrieval; escalate if the failure persists.'},{status:503});
-  return NextResponse.json({has_more:(data?.length??0)>100,data:(data??[]).slice(0,100).map(row=>({...row,deadline:ronIncidentDeadline(row.discovered_at,row.ron_security_evidence)}))});
+  return NextResponse.json({has_more:(data?.length??0)>100,data:(data??[]).slice(0,100).map(row=>({...row,deadline:ronIncidentDeadline(row.detected_at,row.ron_security_evidence)}))});
 }
 export async function POST(request: Request) {
   const user = await authorize();
