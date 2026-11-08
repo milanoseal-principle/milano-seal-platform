@@ -12,6 +12,6 @@ test("lint gate parses TypeScript/TSX and enforces error-level correctness rules
   assert.ok(errorRules.length >= 20, "lint must enforce a meaningful error-level rule set");
   assert.match(config, /"react-hooks\/rules-of-hooks": "error"/);
   assert.doesNotMatch(config, /"\*\*\/\*\.(ts|tsx)"\s*,?\s*\]\s*,?\s*\n\s*\],?\s*\/\/\s*ignore/);
-  assert.equal(pkg.scripts.lint, "npx --yes eslint@9.39.5 .");
+  assert.equal(pkg.scripts.lint, "node scripts/validate-lint-coverage.mjs && eslint .");
   assert.ok(pkg.devDependencies["typescript-eslint"]);
 });
