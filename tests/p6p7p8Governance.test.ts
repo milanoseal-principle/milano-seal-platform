@@ -5,7 +5,8 @@ import { acceptanceMismatch, missingAcceptances, type PolicyVersionRow } from ".
 
 const read = (path: string) => readFileSync(path, "utf8");
 const p7 = read("supabase/migrations/20261108110000_p7_retention_matrix.sql");
-const p8 = read("supabase/migrations/20261108120000_p8_policy_registry_acceptance.sql");\nconst p8Atomic = read("supabase/migrations/20261108150000_policy_atomic_acceptance_governance.sql");
+const p8 = read("supabase/migrations/20261108120000_p8_policy_registry_acceptance.sql");
+const p8Atomic = read("supabase/migrations/20261108150000_policy_atomic_acceptance_governance.sql");
 const acceptRoute = read("app/api/portal/me/policy-acceptance/route.ts");
 const adminRoute = read("app/api/dashboard/policies/route.ts");
 const payment = read("app/api/portal/me/payment-observation/route.ts");
@@ -16,7 +17,8 @@ test("P6 provider fee evidence never enters Milano quote, Wise amount or revenue
   assert.doesNotMatch(pricing, /EXTERNAL_PROVIDER_NOTARIAL_FEE|provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(read("lib/economics/matterEconomics.ts"), /provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(payment, /provider_fee_evidence/);
-  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\\.test\\.ts/);\n  assert.doesNotMatch(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
+  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\\.test\\.ts/);
+  assert.doesNotMatch(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
 });
 
 // ── P7 retention matrix ───────────────────────────────────────────────────────
