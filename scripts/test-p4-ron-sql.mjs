@@ -18,7 +18,7 @@ await db.query(`insert into ron_sessions(id,matter_id,notarization_id,bn_session
 await db.query(`insert into ron_signers(id,ron_session_id,matter_id) values($1,$2,$3)`,[signer,session,matter]);
 const source=crypto.randomUUID(),qc=crypto.randomUUID();
 await db.query(`insert into execution_qa_reviews(id,deal_id,execution_qa_status,checklist_type,passed_by,passed_at) values($1,$2,'PASSED','RON_QA',$3,now())`,[qc,matter,actor]);
-await db.query(`insert into ron_documents(id,ron_session_id,matter_id,document_name,storage_bucket,storage_path,uploaded_to_bluenotary,submitted_sha256) values($1,$2,$3,'source.pdf','deal-documents','fixture-source.pdf',true,$4)`,[source,session,matter,'c'.repeat(64)]);
+await db.query(`insert into ron_documents(id,ron_session_id,matter_id,document_name,storage_bucket,storage_path,uploaded_to_bluenotary,submitted_sha256,submitted_storage_path) values($1,$2,$3,'source.pdf','deal-documents','fixture-source.pdf',true,$4,$5)`,[source,session,matter,'c'.repeat(64),`ron/${matter}/${session}/source/${'c'.repeat(64)}/source.pdf`]);
 const capture=async(hash='a'.repeat(64))=>(await db.query('select public.capture_ron_executed_document($1,$2,$3,$4,$5,$6) as id',[session,source,'c'.repeat(64),hash,'executed.pdf',`ron/${matter}/${session}/executed/${hash}/executed.pdf`])).rows[0].id;
 const capturedId=await capture();
 assert.equal(await capture(),capturedId);
@@ -60,6 +60,8 @@ await db.query('select public.reopen_ron_statutory_evidence($1,$2,$3,$4)',[sessi
 assert.equal((await db.query('select public.ron_statutory_evidence_verified($1) as verified',[session])).rows[0].verified,false);passed++;
 const correction=await append(evidence,actor,first.evidence_id,crypto.randomUUID(),'Corrected governed evidence reference');
 assert.notEqual(correction.evidence_id,first.evidence_id);assert.equal((await db.query('select supersedes_event_id from ron_audit_events where id=$1',[correction.evidence_id])).rows[0].supersedes_event_id,first.evidence_id);passed++;
+await denied(()=>db.exec("update document_versions set file_hash='rewritten'"),'canonical lineage hash immutable');
+await denied(()=>db.exec("delete from document_versions"),'canonical lineage cannot delete');
 await denied(()=>db.exec("update ron_audit_events set description='rewritten'"),'history immutable');
 await denied(()=>db.exec('delete from ron_audit_events'),'history cannot delete');
 await denied(()=>db.query("update ron_documents set signed_sha256=$1 where id=$2",['b'.repeat(64),capturedId]),'executed hash immutable');

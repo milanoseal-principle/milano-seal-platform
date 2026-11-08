@@ -8,7 +8,8 @@ completion depend on an authorized, operator-verified statutory evidence revisio
 
 - Provider completion records provider truth and leaves Milano evidence pending.
 - Webhook and operator retrieval share content-addressed PDF ingestion. Existing
-  objects are reused only after SHA-256 verification; source bytes are checked
+  objects are reused only after SHA-256 verification. A content-addressed source
+  snapshot is secured before provider upload; source bytes are checked
   against the hash recorded when actually submitted to the provider.
 - A transactional, service-only capture RPC serializes on the existing session,
   creates separate canonical source/executed document versions, and appends a
@@ -61,3 +62,7 @@ paths by default. Their existing explicit phase allowlists now include only the
 paths enumerated in `scripts/governed-production-scope.mjs` for this directive.
 Wise, release, courier, unrelated RLS and unrelated migrations remain protected.
 The checks themselves still run; no gate or behavioral assertion is disabled.
+
+Latest focused database run: **58 checks passed**. Latest full unit suite:
+**1,147 passed**. Controlled rendered panel: **10/10 widths passed**, zero page
+errors. These are local results; the production rollout remains unapplied.

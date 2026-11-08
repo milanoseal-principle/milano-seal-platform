@@ -7,6 +7,7 @@ alter table public.ron_documents add column if not exists signed_sha256 text che
 alter table public.ron_audit_events add column if not exists idempotency_key uuid;
 alter table public.ron_audit_events add column if not exists supersedes_event_id uuid references public.ron_audit_events(id) on delete restrict;
 alter table public.ron_documents add column if not exists source_ron_document_id uuid references public.ron_documents(id) on delete restrict;
+alter table public.ron_documents add column if not exists submitted_storage_path text;
 alter table public.ron_documents add column if not exists submitted_sha256 text check (submitted_sha256 ~ '^[a-f0-9]{64}$');
 alter table public.ron_documents add column if not exists source_version_id uuid references public.document_versions(id) on delete restrict;
 alter table public.ron_documents add column if not exists source_sha256 text check (source_sha256 ~ '^[a-f0-9]{64}$');
@@ -21,7 +22,7 @@ begin
  if not found then raise exception 'SESSION_NOT_FOUND'; end if;
  select * into source from public.ron_documents where id=p_source_id and ron_session_id=s.id and matter_id=s.matter_id and uploaded_to_bluenotary=true and signed_sha256 is null;
  if not found then raise exception 'SOURCE_VERSION_REVIEW_REQUIRED'; end if;
- if source.submitted_sha256 is null or source.submitted_sha256 is distinct from p_source_sha256 then raise exception 'SUBMITTED_SOURCE_HASH_REQUIRED'; end if;
+ if source.submitted_sha256 is null or source.submitted_sha256 is distinct from p_source_sha256 or source.submitted_storage_path is null or source.submitted_storage_path not like 'ron/'||s.matter_id::text||'/'||s.id::text||'/source/'||p_source_sha256||'/%' then raise exception 'SUBMITTED_SOURCE_HASH_REQUIRED'; end if;
  if p_sha256 !~ '^[a-f0-9]{64}$' or p_source_sha256 !~ '^[a-f0-9]{64}$' or p_storage_path not like 'ron/'||s.matter_id::text||'/'||s.id::text||'/executed/'||p_sha256||'/%' then raise exception 'INVALID_EXECUTED_VERSION'; end if;
  select * into prior from public.ron_documents where ron_session_id=s.id and source_ron_document_id=source.id and signed_sha256=p_sha256;
  if found then
@@ -30,7 +31,7 @@ begin
  end if;
  select d.source_version_id into source_version from public.ron_documents d where d.ron_session_id=s.id and d.source_ron_document_id=source.id and d.source_sha256=p_source_sha256 limit 1;
  if source_version is null then
- insert into public.document_versions(matter_id,stage,file_hash,actor,source_file,notes) values(s.matter_id,'ron_ready',p_source_sha256,'ron_document_ingestion',source.storage_path,'Exact source bytes submitted to provider') returning id into source_version;
+ insert into public.document_versions(matter_id,stage,file_hash,actor,source_file,notes) values(s.matter_id,'ron_ready',p_source_sha256,'ron_document_ingestion',source.submitted_storage_path,'Exact source bytes submitted to provider') returning id into source_version;
  end if;
  insert into public.document_versions(matter_id,stage,file_hash,actor,source_file,notes)
  values(s.matter_id,'executed',p_sha256,'bluenotary',p_storage_path,'Source RON document '||source.id::text||'; source SHA256 '||p_source_sha256) returning id into version_id;
@@ -182,12 +183,19 @@ drop trigger if exists ron_evidence_append_only on public.ron_audit_events;
 create trigger ron_evidence_append_only before update or delete on public.ron_audit_events for each row execute function public.guard_ron_evidence_history();
 create or replace function public.guard_ron_document_version() returns trigger language plpgsql set search_path='' as $$
 begin
- if old.submitted_sha256 is not null and (TG_OP='DELETE' or old.submitted_sha256 is distinct from new.submitted_sha256 or old.storage_path is distinct from new.storage_path or old.storage_bucket is distinct from new.storage_bucket or old.uploaded_to_bluenotary is distinct from new.uploaded_to_bluenotary) then raise exception using errcode='42501',message='SUBMITTED_SOURCE_IMMUTABLE'; end if;
+ if old.submitted_sha256 is not null and (TG_OP='DELETE' or old.submitted_sha256 is distinct from new.submitted_sha256 or old.submitted_storage_path is distinct from new.submitted_storage_path or old.storage_path is distinct from new.storage_path or old.storage_bucket is distinct from new.storage_bucket or old.uploaded_to_bluenotary is distinct from new.uploaded_to_bluenotary) then raise exception using errcode='42501',message='SUBMITTED_SOURCE_IMMUTABLE'; end if;
  if old.signed_sha256 is not null and (TG_OP='DELETE' or old.signed_sha256 is distinct from new.signed_sha256 or old.signed_storage_path is distinct from new.signed_storage_path or old.storage_bucket is distinct from new.storage_bucket or old.matter_id is distinct from new.matter_id or old.ron_session_id is distinct from new.ron_session_id or old.id is distinct from new.id or old.source_ron_document_id is distinct from new.source_ron_document_id or old.source_sha256 is distinct from new.source_sha256 or old.executed_version_id is distinct from new.executed_version_id or old.source_version_id is distinct from new.source_version_id) then raise exception using errcode='42501',message='EXECUTED_DOCUMENT_IMMUTABLE'; end if;
  if TG_OP='DELETE' then return old; end if; return new;
 end $$;
 drop trigger if exists ron_executed_version_immutable on public.ron_documents;
 create trigger ron_executed_version_immutable before update or delete on public.ron_documents for each row execute function public.guard_ron_document_version();
+create or replace function public.guard_ron_canonical_version() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ if exists(select 1 from public.ron_documents d where d.executed_version_id=old.id or d.source_version_id=old.id) and
+ (TG_OP='DELETE' or new.id is distinct from old.id or new.matter_id is distinct from old.matter_id or new.file_hash is distinct from old.file_hash or new.source_file is distinct from old.source_file or new.stage is distinct from old.stage) then raise exception using errcode='42501',message='RON_CANONICAL_VERSION_IMMUTABLE'; end if;
+ if TG_OP='DELETE' then return old; end if; return new;
+end $$;
+create trigger ron_canonical_version_immutable before update or delete on public.document_versions for each row execute function public.guard_ron_canonical_version();
 create or replace function public.guard_ron_evidence_completion() returns trigger language plpgsql security definer set search_path='' as $$
 begin
  if new.milano_ron_status in ('RON_COMPLETED','SIGNED_DOCS_RETRIEVED','READY_FOR_APOSTILLE') and not public.ron_statutory_evidence_verified(new.id) then raise exception 'RON_STATUTORY_EVIDENCE_REQUIRED'; end if;
