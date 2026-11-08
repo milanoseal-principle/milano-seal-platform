@@ -38,15 +38,13 @@ export function portalRONProjection(
   signers: RONSigner[],
   signerEmail: string
 ): PortalRONView {
-  const status = ronSession.milano_ron_status;
   const lifecycle = isRonLifecycleState(ronSession.ron_lifecycle_state) ? ronSession.ron_lifecycle_state : 'REQUESTED';
-  const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
-  const sessionActive =
-    ACTIVE_RON_STATUSES.includes(status) && !['FAILED', 'CANCELLED', 'COMPLETED'].includes(lifecycle);
   const terminal = ['RON_COMPLETED','SIGNED_DOCS_RETRIEVED','READY_FOR_APOSTILLE'].includes(ronSession.milano_ron_status);
-  const status = terminal && (!ronSession.statutory_evidence_id || ronSession.statutory_evidence_verified !== true || !!ronSession.evidence_reopened_at) ? 'RON_REVIEW_REQUIRED' : ronSession.milano_ron_status;
+  const status = terminal && (!ronSession.statutory_evidence_id || ronSession.statutory_evidence_verified !== true || !!ronSession.evidence_reopened_at)
+    ? 'RON_REVIEW_REQUIRED'
+    : ronSession.milano_ron_status;
   const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
-  const sessionActive = !ronSession.provider_completed_at && ACTIVE_RON_STATUSES.includes(status);
+  const sessionActive = ACTIVE_RON_STATUSES.includes(status) && !['FAILED', 'CANCELLED', 'COMPLETED'].includes(lifecycle);
 
   const matchingSigner = signers.find(
     (s) => s.email?.toLowerCase() === signerEmail.toLowerCase()

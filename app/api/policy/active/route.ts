@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   let query = admin
     .from("policy_versions")
-    .select("id, policy_type, version, effective_at, content_sha256, content_reference, required_surfaces")
+    .select("id, policy_type, version, effective_at, content_sha256, required_surfaces")
     .eq("status", "active")
     .lte("effective_at", new Date().toISOString())
     .order("policy_type");

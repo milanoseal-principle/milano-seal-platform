@@ -6,6 +6,7 @@ import { acceptanceMismatch, missingAcceptances, type PolicyVersionRow } from ".
 const read = (path: string) => readFileSync(path, "utf8");
 const p7 = read("supabase/migrations/20261108110000_p7_retention_matrix.sql");
 const p8 = read("supabase/migrations/20261108120000_p8_policy_registry_acceptance.sql");
+const p8Atomic = read("supabase/migrations/20261108150000_policy_atomic_acceptance_governance.sql");
 const acceptRoute = read("app/api/portal/me/policy-acceptance/route.ts");
 const adminRoute = read("app/api/dashboard/policies/route.ts");
 const payment = read("app/api/portal/me/payment-observation/route.ts");
@@ -16,7 +17,8 @@ test("P6 provider fee evidence never enters Milano quote, Wise amount or revenue
   assert.doesNotMatch(pricing, /EXTERNAL_PROVIDER_NOTARIAL_FEE|provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(read("lib/economics/matterEconomics.ts"), /provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(payment, /provider_fee_evidence/);
-  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
+  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\\.test\\.ts/);
+  assert.doesNotMatch(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
 });
 
 // ── P7 retention matrix ───────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ test("P8 wrong-version acceptance is rejected", () => {
   assert.equal(acceptanceMismatch({ ...v1, effective_at: "2999-01-01T00:00:00Z" }, v1.content_sha256), "POLICY_VERSION_NOT_ACTIVE");
   assert.equal(acceptanceMismatch(null, v1.content_sha256), "POLICY_VERSION_NOT_FOUND");
   assert.equal(acceptanceMismatch(v1, v1.content_sha256), null);
-  assert.match(p8, /POLICY_ACCEPTANCE_VERSION_MISMATCH/);
+  assert.match(p8Atomic, /POLICY_ACCEPTANCE_VERSION_MISMATCH/);
 });
 
 test("P8 missing required acceptance blocks the governed action server-side", () => {
@@ -84,4 +86,15 @@ test("P8 client cannot forge acceptance for another Matter", () => {
 test("P8 refund/cancellation can reference the governing version", () => {
   assert.match(p8, /governing_policy_version\(p_matter_id uuid, p_policy_type text\)/);
   assert.match(p8, /order by a\.accepted_at asc limit 1/);
+});
+
+
+test("P8 client has an exact-version review surface before Wise submission", () => {
+  const gate = read("components/portal/PolicyAcceptanceGate.tsx");
+  const paymentPage = read("app/portal/payment/page.tsx");
+  const activeDetail = read("app/api/policy/active/[id]/route.ts");
+  assert.match(paymentPage, /PolicyAcceptanceGate matterId=\{deal\.id\}/);
+  assert.match(gate, /I have reviewed and accept this exact version/);
+  assert.match(activeDetail, /POLICY_CONTENT_INTEGRITY_FAILED/);
+  assert.doesNotMatch(read("app/api/policy/active/route.ts"), /content_reference/);
 });

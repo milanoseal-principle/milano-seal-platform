@@ -8,7 +8,6 @@ import { resolvePresetForDocumentType } from '@/lib/bluenotary/tags';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
 import { RONStatutoryEvidencePanel } from '@/components/ron/RONStatutoryEvidencePanel';
 import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel';
-import { RONStatutoryEvidencePanel } from '@/components/ron/RONStatutoryEvidencePanel';
 import { RONGovernancePanel } from '@/components/ron/RONGovernancePanel';
 import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
@@ -102,9 +101,6 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
 
       <RONSessionControlPanel matterId={session.matter_id} sessionId={session.id} currentStatus={ronStatus} documentIds={pendingDocumentIds} gates={{ schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate?.reason ?? 'Scheduling authority unavailable.' }, sessionExists: { met: true }, sessionNotExpired: { met: !isExpired }, signerComplete: { met: signerComplete, reason: 'Signer phone/state or identity fields are incomplete.' }, ronTruthComplete: { met: ronTruthComplete, reason: notarialAct === 'review_required' ? 'Confirm acknowledgment vs jurat.' : 'RON execution truth incomplete.' }, documentReady: { met: documents.length > 0, reason: 'Matter document package missing.' }, sessionCompleted: { met: providerCompleted, reason: 'The provider must report session completion before signed documents can be retrieved.' }, ronCompleted: { met: isCompleted, reason: 'Milano must verify statutory RON evidence, record QC and complete the session first.' } }} />
       <RONStatutoryEvidencePanel sessionId={session.id} providerReference={session.bn_session_id || ''} evidenceId={session.statutory_evidence_id || null} signerIds={signers.map(s=>s.id)} documents={documents.filter(d=>d.signed_document_received)} notarialAct={notarialAct} witnessCount={deal?.witnesses == null ? null : Number(deal.witnesses)} reopened={!!session.evidence_reopened_at}/>
-      <RONSessionControlPanel matterId={session.matter_id} sessionId={session.id} currentStatus={ronStatus} documentIds={pendingDocumentIds} gates={{ schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate?.reason ?? 'Scheduling authority unavailable.' }, sessionExists: { met: true }, sessionNotExpired: { met: !isExpired }, signerComplete: { met: signerComplete, reason: 'Signer phone/state or identity fields are incomplete.' }, ronTruthComplete: { met: ronTruthComplete, reason: notarialAct === 'review_required' ? 'Confirm acknowledgment vs jurat.' : 'RON execution truth incomplete.' }, documentReady: { met: documents.length > 0, reason: 'Matter document package missing.' }, sessionCompleted: { met: isCompleted } }} />
-
-      <RONStatutoryEvidencePanel sessionId={session.id} />
 
       <RONGovernancePanel matterId={session.matter_id} sessionId={session.id} />
 
