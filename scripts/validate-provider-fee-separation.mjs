@@ -23,17 +23,18 @@ for (const file of financial) {
   }
 }
 
-// The controlling engine adds a per-notarized-signature charge into the Milano total and exposes it
-// internally as `ron_cost`. Whether that is a Milano-controlled service charge or the provider's
-// notarial fee folded into Milano's quote/Wise amount is an owner pricing decision.
+// Protect the canonical pricing engine against reintroducing provider-controlled
+// per-signature charges or the retired `ron_cost` financial line. A signature
+// count may remain as nonfinancial execution evidence; never make it money.
 const engine = read('lib/pricing.ts');
-if (/ron_cost:\s*money\(notarizedSigCount \* COMPLEXITY\.notarized_signature\)/.test(engine)) {
-  findings.push('lib/pricing.ts: `notarized_signatures` ($25 x count) is added to the Milano total and labelled internal `ron_cost` — OWNER DECISION REQUIRED: confirm Milano-controlled service charge (rename/classify) or remove as provider-controlled notarial fee');
+if (/ron_cost\\s*:|key\\s*:\\s*['"`]ron_cost['"`]/i.test(engine)) {
+  findings.push('lib/pricing.ts: retired ron_cost financial field reintroduced');
 }
-const legacy = read('lib/config/pricing.ts');
-if (/ronPerSignature:\s*25/.test(legacy)) {
-  findings.push('lib/config/pricing.ts: deprecated config states the $25 RON notarial fee is "included in professional service rates" (only consumer: unused components/conversion/PricingLanes.tsx)');
+if (/notarizedSigCount\\s*\\*\\s*(?:COMPLEXITY\\.[\\w]+|\\d+)|(?:COMPLEXITY\\.[\\w]+|\\d+)\\s*\\*\\s*notarizedSigCount/.test(engine)) {
+  findings.push('lib/pricing.ts: notarized signature count used to calculate a financial charge');
 }
+// The historical lib/config/pricing.ts was deleted. Never read a removed
+// pricing source, which would turn every clean checkout into a false failure.
 
 if (findings.length) {
   console.error('P6 provider fee separation findings:\n- ' + findings.join('\n- '));
