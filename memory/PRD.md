@@ -1,5 +1,18 @@
 # The Milano Seal — P4–P23 Implementation Program (PRD / phase ledger)
 
+## 2026-11-08 continuation checkpoint — reviewable code, NOT production-certified
+
+- Canonical main at latest reviewed reconciliation: `ab170d552277ab21d1ef8e9fc0b548a850a2bd50` after merged #441/#442. Always re-fetch before further commits.
+- #442 merged the immediate P6/merge-gate repairs. Remaining P4B/QA source hardening is under DRAFT PR #443 on `codex/p4b-witness-qa-and-security-hardening-20261108`; it must not be treated as deployed or production-migrated.
+- P4B witness fix: forward SQL `20261108163000_p4b_witness_qa_completion.sql`, a server-only atomic completion RPC with real Matter witness count, matching provider-completed session, recorded witness references, idempotent row lock and append-only Matter evidence. Existing QA UI/API now expose governed completion without manufactured success.
+- P11 dependent QA security fix: forward SQL `20261108163500_p11_execution_qa_client_write_lockdown.sql` revokes legacy blanket authenticated write privileges. Apply only after prior migrations and **before** deploying routes that assume server-only QA writes.
+- RON corrected executed document retrieval now requires actual provider lifecycle or recorded completion evidence; legacy review-required correction needs a recorded reopen. `SESSION_PROCESSING` alone is insufficient.
+- New tests: `tests/p4bWitnessCompletion.test.ts`, `tests/p4bRonRetrievalGuard.test.ts`, `tests/p11QaWriteIsolation.test.ts`, `tests/p6ProviderFeeRegression.test.ts`, plus P6 governance test updates. Source exists, but do NOT label tests passed without execution.
+- Hosted checks on #442/#443 returned FAIL with no executable job steps and their log blobs were unavailable from GitHub when inspected. That is not evidence of a product-code pass or a proven billing cause. The complete final typecheck/lint/unit/build/migration/validator gate is still **NOT VERIFIED**.
+- No production migrations, deployments, Wise/BlueNotary transactions, government/courier actions, destructive recovery, or production certification performed in this continuation.
+- The wider P5–P23 repository-completion program remains open until every required module, end-to-end validator and final-source gate is verified. Do not reuse an old phase-complete label as current certification.
+
+
 ## Source directive
 User's "EXACT P4–P23 PRODUCTION IMPLEMENTATION DIRECTIVE" + EXECUTION OVERRIDE (continue through P23, no per-phase stops).
 Canonical repo milanoseal-principle/milano-seal-platform. Invariants: canonical Matter = public.deals; Wise only (no Stripe);
