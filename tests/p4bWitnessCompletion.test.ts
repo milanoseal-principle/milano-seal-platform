@@ -53,6 +53,7 @@ test('P4B operator UI never displays fake QA success after failed request', () =
 test('P4B corrected provider documents require actual provider completion and governed reopening', () => {
   assert.match(retrievalGuard, /const lifecycleCompleted =/);
   assert.match(retrievalGuard, /const recordedProviderCompletion = Boolean/);
+  assert.match(retrievalGuard, /provider_session_completed_at, blue_notary_status, evidence_reopened_at/);
   assert.match(retrievalGuard, /session\.blue_notary_status === 'COMPLETED'/);
   assert.match(retrievalGuard, /const correctionPermitted =/);
   assert.match(retrievalGuard, /session\.evidence_reopened_at/);
