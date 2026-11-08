@@ -53,3 +53,11 @@ production order, provider session, payment, notification or deletion was execut
 
 P3 remains **P3 DEPLOYED — CONTROLLED LIVE VERIFICATION REMAINS**. This P4B source
 work does not certify completion of P5–P23 or controlled live provider transactions.
+
+## Protected scope review
+
+The historic salvage and canonical-foundation validators reject protected RON
+paths by default. Their existing explicit phase allowlists now include only the
+paths enumerated in `scripts/governed-production-scope.mjs` for this directive.
+Wise, release, courier, unrelated RLS and unrelated migrations remain protected.
+The checks themselves still run; no gate or behavioral assertion is disabled.
