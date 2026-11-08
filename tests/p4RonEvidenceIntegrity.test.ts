@@ -8,7 +8,8 @@ const status = read("lib/bluenotary/status.ts");
 // #437 capture logic now lives in the shared capture module used by both the
 // webhook and the operator retrieval route; the same assertions apply to it.
 const webhookRoute = read("app/api/webhooks/bluenotary/route.ts");
-const webhook = [webhookRoute, read("lib/ron/executedCapture.ts"), read("lib/ron/evidence.ts")].join("\n");
+const webhook = [webhookRoute, read("lib/ron/executedCapture.ts"), read("lib/ron/evidence.ts")].join("
+");
 
 test("P4 provider completion is not authoritative Milano RON completion", () => {
   assert.match(status, /session_completed:\s+'SESSION_PROCESSING'/);
@@ -20,7 +21,8 @@ test("P4 provider completion is not authoritative Milano RON completion", () => 
 });
 
 test("P4 executed artifacts are immutable and content-addressed in shared ingestion", () => {
-  assert.match(webhookRoute, /captureExecutedRonDocuments/);\n  assert.doesNotMatch(webhookRoute, /storeRONExecutedDocuments/);
+  assert.match(webhookRoute, /captureExecutedRonDocuments/);
+  assert.doesNotMatch(webhookRoute, /storeRONExecutedDocuments/);
   assert.match(storage, /createHash\('sha256'\)/);
   assert.match(storage, /\/executed\/\$\{digest\}\//);
   assert.match(storage, /upsert:\s*false/);
