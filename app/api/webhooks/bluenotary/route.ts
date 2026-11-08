@@ -6,7 +6,6 @@ import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
 import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
-import { storeRONExecutedDocuments } from '@/lib/bluenotary/signedDocumentStorage';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -343,7 +342,6 @@ export async function POST(request: NextRequest) {
       const { data: session } = await supabase
         .from('ron_sessions')
         .select('id, bn_session_id, matter_id, ron_lifecycle_state, milano_ron_status')
-        .select('id, bn_session_id, matter_id')
         .eq('id', ronSessionId)
         .single();
 
@@ -355,8 +353,6 @@ export async function POST(request: NextRequest) {
           source: 'bluenotary_webhook',
           providerEvent: payload.event_type,
         });
-
-        const storedIds = await storeRONExecutedDocuments(supabase, session, signedDocs ?? []);
 
         await supabase
           .from('ron_sessions')
