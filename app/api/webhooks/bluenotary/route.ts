@@ -6,6 +6,7 @@ import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
 import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
+import { storeRONExecutedDocuments } from '@/lib/bluenotary/signedDocumentStorage';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -259,6 +260,8 @@ export async function POST(request: NextRequest) {
       // Provider completion is not Milano execution verification. P4 keeps the
       // session pending until executed-document/evidence verification is recorded.
       if (nextLifecycle) sessionUpdate.provider_session_completed_at = new Date().toISOString();
+      sessionUpdate.provider_completed_at = new Date().toISOString();
+      sessionUpdate.blue_notary_status = 'COMPLETED';
       break;
     case 'session_expired':
       if (nextLifecycle) {
@@ -295,9 +298,7 @@ export async function POST(request: NextRequest) {
         case 'leave_session':
           signerUpdate.left_at = new Date().toISOString();
           break;
-        case 'session_completed':
-          signerUpdate.completed_at = new Date().toISOString();
-          break;
+        // Provider completion is retained as provider evidence, not statutory verification.
         case 'photo_id_passed':
           signerUpdate.identity_status = 'PASSED';
           break;
@@ -342,6 +343,7 @@ export async function POST(request: NextRequest) {
       const { data: session } = await supabase
         .from('ron_sessions')
         .select('id, bn_session_id, matter_id, ron_lifecycle_state, milano_ron_status')
+        .select('id, bn_session_id, matter_id')
         .eq('id', ronSessionId)
         .single();
 
@@ -353,6 +355,17 @@ export async function POST(request: NextRequest) {
           source: 'bluenotary_webhook',
           providerEvent: payload.event_type,
         });
+
+        const storedIds = await storeRONExecutedDocuments(supabase, session, signedDocs ?? []);
+
+        await supabase
+          .from('ron_sessions')
+          .update({
+            milano_ron_status: 'SESSION_PROCESSING',
+            final_documents_status: 'AVAILABLE',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', ronSessionId);
 
         await supabase.from('ron_audit_events').insert({
           matter_id: matterId,
@@ -367,6 +380,10 @@ export async function POST(request: NextRequest) {
             duplicates: captured.filter((c) => c.decision === 'duplicate').length,
             conflicts: captured.filter((c) => c.decision === 'conflict').length,
           },
+          description: 'Executed document versions secured; statutory evidence verification is required before execution completion.',
+          actor_role: 'system',
+          source: 'bluenotary_webhook',
+          metadata: { document_count: storedIds.length },
         });
       }
     } catch (docErr) {

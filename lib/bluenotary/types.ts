@@ -117,6 +117,10 @@ export interface BNWebhookPayload {
 // ── Internal RON DB Records ───────────────────────────────────────────────────
 
 export interface RONSession {
+  statutory_evidence_verified?: boolean;
+  evidence_reopened_at?: string | null;
+  statutory_evidence_id?: string | null;
+  provider_completed_at?: string | null;
   id: string;
   matter_id: string;
   notarization_id: string;

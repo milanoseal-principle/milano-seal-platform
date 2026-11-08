@@ -52,6 +52,9 @@ export async function GET() {
     .select('id, email, signing_url_encrypted, signing_url_released, identity_status, kba_status, biometric_status')
     .eq('ron_session_id', session.id);
 
+  const verified = await admin.rpc('ron_statutory_evidence_verified', {p_session:session.id});
+  session.statutory_evidence_verified = !verified.error && verified.data === true;
+
   // Apply portal-safe projection — NEVER exposes raw BN status, base64, or internal fields
   const projection = portalRONProjection(
     session as RONSession,

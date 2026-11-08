@@ -53,11 +53,7 @@ async function verifyPaymentConfirmed(
   }
 }
 
-/**
- * Verify that payment authorizes scheduling. A client's recorded Wise submission
- * is enough to reserve scheduling capacity, but it does not become provider
- * evidence and it never authors paid state.
- */
+/** Verify that confirmed Wise settlement authorizes scheduling. */
 async function verifySchedulingAuthorized(
   supabase: SupabaseClient,
   matterId: string
@@ -81,20 +77,8 @@ async function verifySchedulingAuthorized(
   }
 }
 
-/**
- * Execution authority is intentionally stronger than a client's self-reported
- * payment submission and intentionally weaker than final settlement clearance.
- *
- * - verified/cleared Wise payment: execution may proceed
- * - authorized complimentary Matter: execution may proceed under its own gate
- * - Wise acquiring payment located directly through the Wise API while still
- *   processing: execution may proceed, but paid/cleared state remains false
- * - client-only "I paid" observation with no Wise provider evidence: scheduling
- *   may be reserved, but signer-link release remains blocked
- *
- * Final international release remains governed by the separate cleared-payment
- * release controls and is never authorized by this helper.
- */
+/** Execution uses the same verified-settlement gate as scheduling.
+ * Final international release remains governed by its separate release controls. */
 async function verifyExecutionPaymentAuthorized(
   supabase: SupabaseClient,
   matterId: string
@@ -185,11 +169,7 @@ export async function assertCanCreateRONSession(
   }
 }
 
-/**
- * A provider-evidenced acquiring payment may authorize execution while Wise
- * settles the merchant-side credit. This does not mark the Matter paid and does
- * not weaken final international-release clearance.
- */
+/** Release signing access only through verified-settlement authority. */
 export async function assertCanReleaseSigningURL(
   supabase: SupabaseClient,
   matterId: string,
@@ -269,6 +249,10 @@ export async function assertCanAdvanceToApostille(
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
   if (!['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED'].includes(session.milano_ron_status)) {
+  const statutory = await supabase.rpc('ron_statutory_evidence_verified', {p_session:ronSessionId});
+  if (statutory.error || statutory.data !== true) throw new RONGuardError('STATUTORY_EVIDENCE_REQUIRED','Operator-verified statutory evidence and QC are required before progression');
+
+  if (!['RON_COMPLETED','SIGNED_DOCS_RETRIEVED','READY_FOR_APOSTILLE'].includes(session.milano_ron_status)) {
     throw new RONGuardError('SIGNED_DOCS_NOT_RETRIEVED', 'Signed documents must be retrieved and stored before advancing to Apostille');
   }
 

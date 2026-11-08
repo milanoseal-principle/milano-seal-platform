@@ -129,7 +129,9 @@ export function composeCanonicalPrivateQuote(
   const documentCount = Math.max(1, count(input.documentCount, 1));
   const apostilleCount = Math.min(documentCount, count(input.apostilleCount, 0));
   const signerCount = Math.max(1, count(input.signerCount, 1));
-  const floridaNotarialActCount = count(input.floridaNotarialActCount, 0);
+  // Provider-controlled RON notarial acts are billed externally. Their count
+  // must never enter Milano quote/discount/Wise/revenue totals.
+  const floridaNotarialActCount = executionMethod === "ron" ? 0 : count(input.floridaNotarialActCount, 0);
   const remoteWitnessCount = count(input.remoteWitnessCount, 0);
   const inPersonWitnessCount = count(input.inPersonWitnessCount, 0);
   const internationalSignerCount = count(input.internationalSignerCount, 0);

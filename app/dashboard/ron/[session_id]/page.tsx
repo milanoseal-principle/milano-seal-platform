@@ -6,6 +6,7 @@ import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { getClientStatusLabel } from '@/lib/bluenotary/status';
 import { resolvePresetForDocumentType } from '@/lib/bluenotary/tags';
 import type { MilanoRONStatus } from '@/lib/bluenotary/types';
+import { RONStatutoryEvidencePanel } from '@/components/ron/RONStatutoryEvidencePanel';
 import { RONSessionControlPanel } from '@/components/ron/RONSessionControlPanel';
 import { RONStatutoryEvidencePanel } from '@/components/ron/RONStatutoryEvidencePanel';
 import { RONGovernancePanel } from '@/components/ron/RONGovernancePanel';
@@ -20,9 +21,9 @@ async function getSessionDetail(sessionId: string) {
 
   const [{ data: signers }, { data: documents }, { data: auditEvents }, { data: deal }] = await Promise.all([
     supabase.from('ron_signers').select('id, signer_index, first_name, middle_name, last_name, email, phone, state, authentication_type, signing_url_released, identity_status, kba_status, biometric_status, joined_at, left_at, completed_at').eq('ron_session_id', sessionId).order('signer_index'),
-    supabase.from('ron_documents').select('id, document_name, document_type, storage_bucket, blue_notary_document_name, template_id, smart_tags_applied, uploaded_to_bluenotary, signed_document_received, document_status, created_at').eq('ron_session_id', sessionId),
+    supabase.from('ron_documents').select('id, document_name, document_type, storage_bucket, blue_notary_document_name, template_id, smart_tags_applied, uploaded_to_bluenotary, signed_document_received, signed_sha256, document_status, created_at').eq('ron_session_id', sessionId),
     supabase.from('ron_audit_events').select('id, event_type, description, actor_role, source, created_at, metadata').eq('ron_session_id', sessionId).order('created_at', { ascending: false }).limit(50),
-    supabase.from('deals').select('id, deal_id, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue').eq('id', session.matter_id).single(),
+    supabase.from('deals').select('id, deal_id, witnesses, client_name, email, phone, document_type, destination_country, origin_state, execution_truth, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue').eq('id', session.matter_id).single(),
   ]);
   return { session, signers: signers ?? [], documents: documents ?? [], auditEvents: auditEvents ?? [], deal: deal ?? null };
 }
@@ -47,6 +48,8 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
   if (!data) notFound();
 
   const { session, signers, documents, auditEvents, deal } = data;
+  const verifiedEvidence = await createAdminClient().rpc('ron_statutory_evidence_verified',{p_session:session.id});
+  if (['RON_COMPLETED','SIGNED_DOCS_RETRIEVED','READY_FOR_APOSTILLE'].includes(session.milano_ron_status) && (verifiedEvidence.error || verifiedEvidence.data !== true)) session.milano_ron_status='RON_REVIEW_REQUIRED';
   const ronStatus = session.milano_ron_status as MilanoRONStatus;
   // Provider completion is not Milano completion; only the verified lifecycle is.
   const lifecycle = String(session.ron_lifecycle_state ?? 'REQUESTED');
@@ -98,6 +101,8 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
       <section className="rounded-2xl border border-white/[0.07] bg-[#090909] p-5"><h2 className="mb-4 font-serif text-lg text-white/85">Document Package</h2>{suggestedPreset && <div className="mb-4 rounded-xl border border-[var(--ms-gold)]/25 bg-[var(--ms-gold)]/[0.04] p-3 text-xs"><p className="font-semibold text-[#E8CF8B]">Suggested Preset: {suggestedPreset.preset}</p><p className="mt-1 text-white/42">{suggestedPreset.description}</p>{suggestedPreset.requiresOperatorReview && <p className="mt-1 text-[#E0876E]">Operator review required before provider upload</p>}</div>}{documents.length === 0 ? <p className="text-xs text-white/35">No documents attached</p> : <div className="space-y-2">{documents.map((doc) => <div key={doc.id} className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-2 text-xs"><div><p className="text-white/65">{doc.document_name}</p><p className="font-mono text-[10px] text-white/25">{doc.storage_bucket}</p></div><div className="flex flex-wrap gap-2"><StatusBadge status={doc.document_status} />{doc.uploaded_to_bluenotary && <span className="text-emerald-300">BlueNotary uploaded</span>}{doc.signed_document_received && <span className="text-[#E8CF8B]">Signed</span>}</div></div>)}</div>}</section>
 
       <RONSessionControlPanel matterId={session.matter_id} sessionId={session.id} currentStatus={ronStatus} documentIds={pendingDocumentIds} gates={{ schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate?.reason ?? 'Scheduling authority unavailable.' }, sessionExists: { met: true }, sessionNotExpired: { met: !isExpired }, signerComplete: { met: signerComplete, reason: 'Signer phone/state or identity fields are incomplete.' }, ronTruthComplete: { met: ronTruthComplete, reason: notarialAct === 'review_required' ? 'Confirm acknowledgment vs jurat.' : 'RON execution truth incomplete.' }, documentReady: { met: documents.length > 0, reason: 'Matter document package missing.' }, sessionCompleted: { met: providerCompleted, reason: 'The provider must report session completion before signed documents can be retrieved.' }, ronCompleted: { met: isCompleted, reason: 'Milano must verify statutory RON evidence, record QC and complete the session first.' } }} />
+      <RONStatutoryEvidencePanel sessionId={session.id} providerReference={session.bn_session_id || ''} evidenceId={session.statutory_evidence_id || null} signerIds={signers.map(s=>s.id)} documents={documents.filter(d=>d.signed_document_received)} notarialAct={notarialAct} witnessCount={deal?.witnesses == null ? null : Number(deal.witnesses)} reopened={!!session.evidence_reopened_at}/>
+      <RONSessionControlPanel matterId={session.matter_id} sessionId={session.id} currentStatus={ronStatus} documentIds={pendingDocumentIds} gates={{ schedulingAuthorized: { met: schedulingAuthorized, reason: schedulingGate?.reason ?? 'Scheduling authority unavailable.' }, sessionExists: { met: true }, sessionNotExpired: { met: !isExpired }, signerComplete: { met: signerComplete, reason: 'Signer phone/state or identity fields are incomplete.' }, ronTruthComplete: { met: ronTruthComplete, reason: notarialAct === 'review_required' ? 'Confirm acknowledgment vs jurat.' : 'RON execution truth incomplete.' }, documentReady: { met: documents.length > 0, reason: 'Matter document package missing.' }, sessionCompleted: { met: isCompleted } }} />
 
       <RONStatutoryEvidencePanel sessionId={session.id} />
 

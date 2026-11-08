@@ -12,6 +12,7 @@ const gateMigrations = fs.readdirSync(path.join(process.cwd(), 'supabase/migrati
   .sort()
   .filter((f) => /create or replace function public\.check_payment_gate\(/i.test(read(`supabase/migrations/${f}`)));
 const migration = read(`supabase/migrations/${gateMigrations.at(-1)}`);
+const migration = read('supabase/migrations/089_verified_settlement_scheduling_gate.sql');
 const schedule = read('app/api/deals/[id]/schedule/route.ts');
 const guards = read('lib/bluenotary/guards.ts');
 const sessions = read('app/api/dashboard/ron/sessions/route.ts');
@@ -35,6 +36,12 @@ assert.match(migration, /PAYMENT_REQUIRED/);
 assert.doesNotMatch(migration, /observed_pending/);
 assert.doesNotMatch(migration, /payment_observed_at is not null/i);
 assert.doesNotMatch(migration, /payment_status\s*:=\s*'paid'/i);
+assert.match(migration, /NEW\.payment_confirmed is true/);
+assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
+assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
+assert.match(migration, /scheduling requires payment_confirmed/);
+assert.match(migration, /verified Wise settlement required/);
+assert.doesNotMatch(migration, /payment_observed_at is not null/i);
 
 assert.match(schedule, /evaluateSchedulingGate/);
 assert.match(guards, /assertCanCreateRONSession/);
@@ -45,7 +52,9 @@ assert.match(sessions, /assertCanCreateRONSession/);
 assert.match(webhook, /session_started/);
 assert.match(webhook, /MATTER_EXECUTION_STARTED_FROM_RON/);
 assert.match(webhook, /status:\s*'in_execution'/);
-assert.match(webhook, /SIGNED_DOCS_RETRIEVED/);
+assert.match(webhook, /milano_ron_status:\s*'SESSION_PROCESSING'/);
+assert.match(webhook, /provider_completion_is_authoritative:\s*false/);
+assert.doesNotMatch(webhook, /milano_ron_status:\s*'RON_COMPLETED'/);
 assert.doesNotMatch(webhook, /status:\s*'apostille_processing'/);
 assert.doesNotMatch(webhook, /performFinalRelease/);
 
@@ -59,6 +68,8 @@ assert.match(advance, /RON_APOSTILLE_QA_APPROVED/);
 // in_execution -> apostille_processing transition (asserted on `advance` above).
 assert.match(apostille, /USE_GOVERNED_RON_APOSTILLE_QA/);
 assert.match(apostille, /status: 409/);
+assert.match(apostille, /USE_GOVERNED_RON_APOSTILLE_QA/);
+assert.match(apostille, /status:\s*409/);
 assert.doesNotMatch(apostille, /\.update\(/);
 assert.doesNotMatch(apostille, /status:\s*"apostille"/);
 assert.doesNotMatch(apostille, /requirePaid/);

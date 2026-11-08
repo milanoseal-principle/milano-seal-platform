@@ -30,8 +30,12 @@ export default async function PortalRONPage() {
   const notarialReview = truth.notarial_act === "review_required";
   const { data: session } = await admin.from("ron_sessions").select("*").eq("matter_id", deal.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const { data: signers } = session ? await admin.from("ron_signers").select("id, email, signing_url_encrypted, signing_url_released, identity_status, kba_status, biometric_status").eq("ron_session_id", session.id) : { data: [] };
+  if (session) {
+    const verified = await admin.rpc('ron_statutory_evidence_verified', {p_session:session.id});
+    session.statutory_evidence_verified = !verified.error && verified.data === true;
+  }
   const projection = session ? portalRONProjection(session as RONSession, (signers ?? []) as RONSigner[], email) : null;
-  const ronStatus = session?.milano_ron_status ?? null;
+  const ronStatus = projection?.milano_ron_status ?? null;
   const matterStatus = String(deal.deal_status ?? deal.status ?? "");
   const progressStage =
     ronStatus === "SIGNED_DOCS_RETRIEVED" ||
