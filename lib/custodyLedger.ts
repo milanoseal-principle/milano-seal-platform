@@ -127,7 +127,7 @@ export async function appendLedger(
   // loudly AND the event is durably captured in activity_logs as a fallback so it
   // is never lost (covers schema drift — migration 040 — and exhausted fork retries).
   console.error(
-    `[custody][CRITICAL] ledger write failed for deal=${input.deal_id} event=${input.event} after retries: ${lastErrorMessage}`,
+    `[custody][CRITICAL] ledger write failed for deal=${input.deal_id} event=${input.event} during atomic append: ${lastErrorMessage}`,
   );
   await logActivity({
     deal_id: input.deal_id,

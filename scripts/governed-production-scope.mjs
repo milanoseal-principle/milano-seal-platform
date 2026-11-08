@@ -48,5 +48,7 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261108210000_certification_review_history.sql',
  'supabase/migrations/20261108211000_governance_health_observation.sql',
  'supabase/migrations/20261108212000_canonical_notification_queue.sql',
+ 'supabase/migrations/20261108213000_document_version_binding.sql',
  'scripts/validate-payment-release-gates.mjs',
+ 'scripts/validate-custody-ledger-schema.mjs',
 ];

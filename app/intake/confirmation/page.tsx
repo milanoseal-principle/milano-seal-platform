@@ -143,6 +143,7 @@ function ConfirmationInner() {
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
     >
+      {params.get('upload_pending')==='1'&&<section role="alert" className="mb-6 rounded-xl border border-amber-400/30 p-4 text-sm text-amber-100">Your Matter was received, but some attachments were not confirmed. <a href="/portal/documents" className="underline">Sign in to your secure portal to attach them</a>, or contact your coordinator. Keep this Matter reference; do not submit another Matter.</section>}
       {/* Success seal */}
       <div className="text-center mb-10">
         <div className="relative inline-flex items-center justify-center mb-6">

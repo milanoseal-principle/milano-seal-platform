@@ -1,3 +1,9 @@
+import {createHash} from 'node:crypto';
+import {z} from 'zod';
+import {createAdminClient} from '@/lib/supabase/admin';
+import {governanceActor,governanceResponse,GovernanceHTTPError} from '@/lib/control-plane/governance/server';
+import {documentVersions,persistUploadedVersion,versionBytes} from '@/lib/documents/versions';
+import {inspectDocumentPreflight} from '@/lib/intelligence/execution-brain/documentPreflight';
 import { getLedger } from '@/lib/custodyLedger';
 import { NextResponse } from "next/server";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
@@ -5,11 +11,12 @@ import { requireDashboardAccess } from "@/lib/dashboardAuth";
 export const runtime = "nodejs";
 
 export async function GET(
-  _req: Request,
+  request: Request,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
   await requireDashboardAccess();
   const { matterId } = await params;
+  if(new URL(request.url).searchParams.get('versions')==='1')return NextResponse.json({versions:await documentVersions(createAdminClient(),matterId)},{headers:{'Cache-Control':'private, no-store'}});
   let rows;try{rows=await getLedger(matterId);}catch{return NextResponse.json({error:'CUSTODY_READ_UNAVAILABLE',owner:'MILANO'},{status:503});}
 
   // Never expose: actor_id, label_url, storage_path
@@ -25,4 +32,24 @@ export async function GET(
   }));
 
   return NextResponse.json({ events });
+}
+
+export async function POST(request:Request,{params}:{params:Promise<{matterId:string}>}) {
+ return governanceResponse(async()=>{
+  const actor=await governanceActor();const {matterId}=await params;z.string().uuid().parse(matterId);
+  if(request.headers.get('origin')!==new URL(request.url).origin||request.headers.get('sec-fetch-site')==='cross-site')throw new GovernanceHTTPError('SAME_ORIGIN_REQUIRED',403);
+  const admin=createAdminClient();const matter=await admin.from('deals').select('id').eq('id',matterId).maybeSingle();if(matter.error||!matter.data)throw new GovernanceHTTPError('MATTER_NOT_FOUND',404);
+  if(request.headers.get('content-type')?.startsWith('application/json')){
+   const input=z.object({action:z.literal('approve'),version_id:z.string().uuid(),expected_sha256:z.string().regex(/^[a-f0-9]{64}$/),reason:z.string().trim().min(20).max(1000)}).strict().parse(await request.json());
+   if(!actor.founder)throw new GovernanceHTTPError('FOUNDER_REVIEW_REQUIRED',403);
+   const {version}=await versionBytes(admin,matterId,input.version_id);if(version.file_hash!==input.expected_sha256)throw new GovernanceHTTPError('VERSION_CHANGED',409);
+   const result=await admin.from('document_versions').update({approval_status:version.stage==='final_packet'?'release_ready':'approved',approved_at:new Date().toISOString(),approved_by:actor.id,notes:input.reason}).eq('id',version.id).eq('file_hash',input.expected_sha256).select('id');if(result.error||!result.data?.length)throw Error('VERSION_REVIEW_NOT_CONFIRMED');return {ok:true};
+  }
+  const form=await request.formData();const file=form.get('file');const stage=z.enum(['intake_upload','apostille_packet','apostilled','final_packet']).parse(form.get('stage'));const id=z.string().uuid().parse(form.get('request_id'));const parent=z.string().uuid().nullable().parse(form.get('parent_id')||null);
+  if(!(file instanceof File)||file.size===0||file.size>20*1024*1024)throw new GovernanceHTTPError('SUPPORTED_FILE_UNDER_20MB_REQUIRED',400);
+  if(stage!=='intake_upload'&&!parent)throw new GovernanceHTTPError('PARENT_VERSION_REQUIRED',400);if(parent)await versionBytes(admin,matterId,parent);
+  const bytes=Buffer.from(await file.arrayBuffer());const preflight=await inspectDocumentPreflight({bytes,mimeType:file.type,fileName:file.name});if(preflight.status==='BLOCKED')throw new GovernanceHTTPError('DOCUMENT_PREFLIGHT_BLOCKED',409);
+  const path=`${matterId}/versioned/${id}/${preflight.sha256}`;const saved=await admin.storage.from('documents').upload(path,bytes,{contentType:file.type,upsert:false});if(saved.error){const existing=await admin.storage.from('documents').download(path);if(existing.error||!existing.data||createHash('sha256').update(Buffer.from(await existing.data.arrayBuffer())).digest('hex')!==preflight.sha256)throw Error('VERSION_UPLOAD_NOT_CONFIRMED');}
+  const version_id=await persistUploadedVersion(admin,{matterId,path,bucket:'documents',bytes,mime:file.type,name:file.name,actor:actor.id,stage,parentId:parent,id});return {ok:true,version_id};
+ });
 }

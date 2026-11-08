@@ -548,7 +548,7 @@ export function IntakeWizard({
         const fd = new FormData();
         fd.append("deal_id", dealId);
         for (const f of files) fd.append("files", f);
-        await fetch("/api/intake/upload", { method: "POST", body: fd });
+        try{const upload=await fetch('/api/intake/upload',{method:'POST',body:fd});const receipt=await upload.json().catch(()=>null);json.upload_warning=!upload.ok||Boolean(receipt?.errors?.length)||receipt?.files?.length!==files.length;}catch{json.upload_warning=true;}
       }
 
       if (typeof sessionStorage !== "undefined") {
@@ -563,7 +563,7 @@ export function IntakeWizard({
       }
 
       router.push(
-        `/intake/confirmation?id=${json.deal?.id || json.deal_id || ""}`,
+        `/intake/confirmation?id=${json.deal?.id || json.deal_id || ""}${json.upload_warning?'&upload_pending=1':''}`,
       );
     } catch (e) {
       setSubmitError(

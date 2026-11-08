@@ -1,3 +1,4 @@
+import {persistUploadedVersion} from '@/lib/documents/versions';
 import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -106,8 +107,8 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (row) uploaded.push(row);
+    if(row){try{await persistUploadedVersion(admin,{matterId:resolvedDealId,path:storagePath,bucket:'deal-documents',bytes:new Uint8Array(bytes),mime:file.type,name:file.name,actor:'signed_intake_or_owned_upload',documentId:String(row.id)});uploaded.push(row);}catch{errors.push(file.name+': version evidence was not recorded; contact your coordinator before retrying.');}}
   }
 
-  return NextResponse.json({ files: uploaded, errors });
+  return NextResponse.json({files:uploaded,errors,owner:errors.length?'MILANO':undefined,next_action:errors.length?'Your Matter remains received. Retry the failed attachment in this browser or use your authenticated portal; do not submit another Matter.':undefined},{status:errors.length&&!uploaded.length?503:200});
 }

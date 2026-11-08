@@ -1,3 +1,4 @@
+import {persistUploadedVersion} from '@/lib/documents/versions';
 import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentClientDeal } from "@/lib/portalAuth";
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  try{await persistUploadedVersion(admin,{matterId:ctx.deal.id,path:storagePath,bucket:'documents',bytes:new Uint8Array(buffer),mime:file.type,name:file.name,actor:ctx.email,documentId:docRow?.id});}catch{return NextResponse.json({error:'VERSION_EVIDENCE_NOT_CONFIRMED',next_action:'Contact your coordinator. The file is stored but is not release-ready.'},{status:503});}
   // Chain-of-custody entry
   await appendLedger({
     deal_id: ctx.deal.id,

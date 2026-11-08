@@ -1,3 +1,4 @@
+import {persistUploadedVersion} from '@/lib/documents/versions';
 import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -95,6 +96,8 @@ export async function POST(req: NextRequest) {
       )
       .single();
 
+    if(!fileRecord)return NextResponse.json({error:'UPLOAD_RECORD_NOT_CONFIRMED'},{status:503});
+    await persistUploadedVersion(supabase,{matterId:deal_id,path:path,bucket:'documents',bytes:buffer,mime:file.type,name:file.name,actor:uploaded_by,documentId:String(fileRecord.id)});
     // STORAGE-VAULT-01: return signed URL but never storage_path, file_path or SHA-256.
     return NextResponse.json({
       success: true,
