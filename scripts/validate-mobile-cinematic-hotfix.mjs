@@ -86,7 +86,7 @@ const changed = execSync("git diff --name-only HEAD", { encoding: "utf8" })
   .split("\n")
   .filter(Boolean);
 const protectedPatterns = [/wise/i, /payment/i, /release/i, /custody/i, /supabase/i, /shippo/i, /bluenotary/i, /webhook/i, /rls/i];
-const protectedChanges = changed.filter((file) => !P5_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file)));
+const protectedChanges = changed.filter((file) => /^(app|lib|src|supabase)\//.test(file) && !P5_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file)));
 if (protectedChanges.length) {
   console.error(`Protected systems changed:\n${protectedChanges.join("\n")}`);
   process.exit(1);

@@ -21,7 +21,7 @@ requireFile("app/page.tsx");
 requireFile("docs/sop/MILANO_SEAL_OS_FULL_SYSTEM_FLOW_SOP.md");
 requireFile("src/features/pricing/pricingEngine.ts");
 requireFile("src/features/payments/paymentGateService.ts");
-requireFile("supabase/migrations/034_milano_os_operating_spine.sql");
+requireFile("supabase/migrations/031_milano_os_operating_spine.sql");
 requireFile("docs/architecture/LAYER_MANIFEST.json");
 
 const productionRoots = ["app", "components", "lib", "src"].filter((path) => existsSync(join(root, path))).join(" ");

@@ -89,7 +89,7 @@ export default function ServicesPage() {
           ))}
         </div>
         <div className="mx-auto mt-8 max-w-6xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-6 text-white/55">
-          The Milano Seal is not a law firm and does not provide legal counsel. Execution pathways, RON suitability, apostille/authentication routing, and courier release remain subject to receiving-authority review.
+          The Milano Seal is not a law firm and does not provide legal counsel. Mobile notary availability depends on location, signer readiness and reviewed execution requirements. Witnesses do not provide legal advice. Final acceptance is determined by the receiving authority. Execution pathways, RON suitability, apostille/authentication routing, and courier release remain subject to receiving-authority review.
         </div>
       </section>
       <Footer />
