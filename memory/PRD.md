@@ -21,7 +21,21 @@ Next.js (app router) + Supabase (Postgres/RLS/storage) + BlueNotary RON + Wise. 
   - UI: components/ron/RONStatutoryEvidencePanel.tsx on /dashboard/ron/[session_id]; portal shows completion only on Milano COMPLETED.
   - Tests: tests/p4bRonStatutoryEvidence.test.ts (+ #437 test retargeted to shared module).
 
+## CANONICAL P6 CORRECTION (user, 2026-11-08) — overrides the master directive's $25 fee language
+BlueNotary sets/collects the notarial-act fee directly. Milano must NOT add any $25/notarial fee to its pricing,
+private quote, invoice, Wise expected amount, revenue or discounts, and must NOT enforce a provider fee ceiling
+through Milano's payment engine. P6 = PROVIDER FEE SEPARATION: Milano quote / invoice / Wise expected amount =
+Milano-controlled charges only; BlueNotary fee = external provider charge/evidence only, never Milano revenue.
+Provider-fee metadata may be stored as provider evidence/reference only. Audit and correct any existing inclusion
+without a second pricing engine. P6 tests: provider fee excluded from Wise amount and revenue; provider fee
+metadata cannot alter the canonical quote; Milano service charges independently classified; invoice/Wise reconcile
+Milano-controlled charges only; provider fee evidence recordable without becoming a Milano line item.
+Do NOT build the "Florida $25-per-act ceiling through quote/invoice/Wise" — rejected.
+P4b carry-over to revisit: ron_sessions.notarial_fee_classification (only value 'RON_NOTARIAL_ACT_FEE', required by
+the P4b evidence gate as NOTARIAL_FEE_CLASSIFICATION) should be re-expressed in P6 as a provider-controlled
+fee classification/evidence reference, via an additive migration.
+
 ## Next (after user confirms P4 save)
-P5 RON retention/incidents/records requests → P6 RON fee separation (enforce FL $25/act ceiling on RON_NOTARIAL_ACT_FEE) →
+P5 RON retention/incidents/records requests → P6 provider fee separation (see correction above) →
 P7 … P23 per directive. Known items for later phases: courier skip_release_gate operator bypass (P14), client RLS
 column exposure on ron_sessions (P11), validate-postpayment-ron-matter-progression fails on main (pre-existing), eslint config lints nothing (P12/P18).
