@@ -18,6 +18,7 @@ interface Props {
     ronTruthComplete: GateCondition;
     documentReady: GateCondition;
     sessionCompleted: GateCondition;
+    ronCompleted?: GateCondition;
   };
   onAction?: (action: string) => void;
 }
@@ -83,7 +84,10 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
   const canExpire = gates.sessionExists.met && currentStatus !== 'RON_EXPIRED';
   const canRetrieveDocs = gates.sessionCompleted.met && gates.sessionExists.met;
   const canUploadPackage = gates.sessionExists.met && gates.schedulingAuthorized.met && documentIds.length > 0;
-  const canAdvanceToApostille = gates.sessionExists.met && currentStatus === 'SIGNED_DOCS_RETRIEVED';
+  const canAdvanceToApostille =
+    gates.sessionExists.met &&
+    gates.ronCompleted?.met === true &&
+    (currentStatus === 'SIGNED_DOCS_RETRIEVED' || currentStatus === 'RON_COMPLETED');
 
   async function handleAction(action: string, endpoint: string, method = 'POST', body?: Record<string, unknown>) {
     setLoading(action);
@@ -208,16 +212,16 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
             <ActionButton
               label={loading === 'retrieve-docs' ? 'Retrieving Signed Docs…' : 'Retrieve Signed Docs'}
               disabled={!canRetrieveDocs || loading !== null}
-              disabledReason={!canRetrieveDocs ? 'Session must be completed before signed documents can be retrieved.' : undefined}
+              disabledReason={!canRetrieveDocs ? gates.sessionCompleted.reason ?? 'The provider must report session completion before signed documents can be retrieved.' : undefined}
               variant="primary"
               onClick={() => handleAction('retrieve-docs', `${base}/signed-documents`)}
             />
           )}
-          {base && currentStatus === 'SIGNED_DOCS_RETRIEVED' && (
+          {base && (currentStatus === 'SIGNED_DOCS_RETRIEVED' || currentStatus === 'RON_COMPLETED') && (
             <ActionButton
               label={loading === 'advance-apostille' ? 'Advancing Matter…' : 'Approve Apostille QA & Advance Matter'}
               disabled={!canAdvanceToApostille || loading !== null}
-              disabledReason={!canAdvanceToApostille ? 'Signed documents must be secured before Apostille QA approval.' : undefined}
+              disabledReason={!canAdvanceToApostille ? gates.ronCompleted?.reason ?? 'Milano must verify statutory RON evidence and complete the session first.' : undefined}
               variant="primary"
               onClick={() => handleAction('advance-apostille', `${base}/advance-to-apostille`)}
             />

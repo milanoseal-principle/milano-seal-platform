@@ -42,7 +42,6 @@ test("command-center pricing intelligence derives from the canonical private cat
   assert.equal(INTERNAL_PRICING.matterBase.InternationalPassportExecution, MATTER_BASES.international_passport_execution.amount);
   assert.equal(INTERNAL_PRICING.components.additionalDocument, DOCUMENT_FEES.additional_non_apostille_document);
   assert.equal(INTERNAL_PRICING.components.additionalSigner, NOTARY_SIGNER_FEES.additional_signer);
-  assert.equal(INTERNAL_PRICING.components.notarizedSignature, NOTARY_SIGNER_FEES.additional_notarized_signature_tracking);
   assert.equal(INTERNAL_PRICING.components.floridaNotarialAct, NOTARY_SIGNER_FEES.florida_notarial_act);
   assert.equal(INTERNAL_PRICING.components.internationalSignerCoordination, NOTARY_SIGNER_FEES.international_signer_coordination);
   assert.equal(INTERNAL_PRICING.components.multiJurisdictionHandling, DOCUMENT_FEES.multi_jurisdiction_handling);

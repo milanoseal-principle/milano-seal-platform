@@ -10,6 +10,7 @@ import {
 } from "@/lib/notifications/transactionalEmailAlerts";
 import { reconcileWiseMatter } from "@/lib/wise/reconciliation";
 import { appendMatterEvidence, readMatterEvidence } from "@/lib/matter/evidenceLedger";
+import { requiredPolicyBlockers } from "@/lib/policy/acceptance";
 
 export const runtime = "nodejs";
 
@@ -256,6 +257,18 @@ export async function POST(req: NextRequest) {
   const requestedId = typeof body.deal_id === "string" ? body.deal_id : null;
   const ctx = await getCurrentClientDeal(requestedId);
   if (!ctx?.deal) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
+
+  // P8: policies the owner has published as required for this surface must be accepted server-side first.
+  const policyBlockers = await requiredPolicyBlockers(createAdminClient(), ctx.deal.id, "wise_payment_submission");
+  if (policyBlockers.length > 0) {
+    return NextResponse.json({
+      error: "Please review and accept the current policies before confirming payment.",
+      code: "POLICY_ACCEPTANCE_REQUIRED",
+      policies: policyBlockers,
+      retry_safe: true,
+      next_owner: "CLIENT",
+    }, { status: 409 });
+  }
 
   const { data: current, error: currentError } = await loadMatter(ctx.deal.id);
   if (currentError || !current) {

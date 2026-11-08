@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
 
 const FROM = process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const DEFAULT_OPERATOR_EMAILS = [
@@ -37,59 +38,82 @@ async function alreadySent(matterId: string, recipient: string, type: string) {
   return Boolean(data?.length);
 }
 
-async function record(input: {
+type NotificationInput = {
   matterId: string;
   matterReference: string;
   recipient: string;
   type: string;
   subject: string;
-  status: "sent" | "failed";
-  providerMessageId?: string | null;
-  errorMessage?: string | null;
-}) {
+};
+
+const SETTLED_DELIVERY = new Set(["provider_accepted", "delivered", "bounced", "complained", "suppressed"]);
+
+// Claim one evidence row per (matter, type, recipient) before sending so concurrent retries
+// cannot send twice. A failed claim may be retried; an accepted/delivered one never resends.
+async function claim(input: NotificationInput): Promise<{ id: string; attempts: number } | null> {
   const admin = createAdminClient();
-  await admin.from("notifications").insert({
+  const idempotencyKey = notificationIdempotencyKey(input.matterId, input.type, input.recipient);
+  const now = new Date().toISOString();
+  const { data: created, error } = await admin.from("notifications").insert({
     deal_id: input.matterId,
     recipient_email: input.recipient,
     channel: "email",
     type: input.type,
+    template_id: input.type,
+    template_version: "1",
     subject: input.subject,
     message: `${input.type} for ${input.matterReference}`,
-    status: input.status,
+    status: "pending",
     provider: "resend",
-    provider_message_id: input.providerMessageId ?? null,
-    error_message: input.errorMessage ?? null,
-    delivery_status: input.status === "sent" ? "provider_accepted" : "failed",
-    delivery_attempts: 1,
-    sent_at: input.status === "sent" ? new Date().toISOString() : null,
-    failed_at: input.status === "failed" ? new Date().toISOString() : null,
-    last_provider_event_at: new Date().toISOString(),
-    metadata: {
-      matter_reference: input.matterReference,
-      evidence_scope: "provider_acceptance_only",
-      final_delivery_proven: false,
-    },
-  });
+    delivery_status: "pending",
+    delivery_attempts: 0,
+    idempotency_key: idempotencyKey,
+    correlation_id: input.matterId,
+    queued_at: now,
+    metadata: { matter_reference: input.matterReference, evidence_scope: "provider_acceptance_only", final_delivery_proven: false },
+  }).select("id").single();
+  if (created) return { id: created.id as string, attempts: 0 };
+  if (error?.code !== "23505") return null;
+  const { data: existing } = await admin.from("notifications")
+    .select("id, status, delivery_status, delivery_attempts")
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (!existing || existing.status === "sent" || SETTLED_DELIVERY.has(String(existing.delivery_status))) return null;
+  return { id: existing.id as string, attempts: Number(existing.delivery_attempts ?? 0) };
 }
 
-async function sendOne(input: {
-  matterId: string;
-  matterReference: string;
-  recipient: string;
-  type: string;
-  subject: string;
-  html: string;
+async function record(claimed: { id: string; attempts: number }, input: {
+  status: "sent" | "failed";
+  providerMessageId?: string | null;
+  errorMessage?: string | null;
+  errorClassification?: string;
 }) {
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+  await admin.from("notifications").update({
+    status: input.status,
+    provider_message_id: input.providerMessageId ?? null,
+    error_message: input.errorMessage ?? null,
+    error_classification: input.status === "failed" ? input.errorClassification ?? "provider_rejected" : null,
+    // Provider acceptance (202) is not delivery; delivered requires the provider webhook.
+    delivery_status: input.status === "sent" ? "provider_accepted" : "failed",
+    delivery_attempts: claimed.attempts + 1,
+    attempted_at: now,
+    provider_accepted_at: input.status === "sent" ? now : null,
+    sent_at: input.status === "sent" ? now : null,
+    failed_at: input.status === "failed" ? now : null,
+    last_provider_event_at: now,
+  }).eq("id", claimed.id);
+}
+
+async function sendOne(input: NotificationInput & { html: string }) {
   const recipient = input.recipient.trim().toLowerCase();
   if (!recipient || (await alreadySent(input.matterId, recipient, input.type))) return;
+  const claimed = await claim({ ...input, recipient });
+  if (!claimed) return;
 
   if (!process.env.RESEND_API_KEY) {
-    await record({
-      ...input,
-      recipient,
-      status: "failed",
-      errorMessage: "RESEND_API_KEY_MISSING",
-    });
+    await record(claimed, { status: "failed", errorMessage: "RESEND_API_KEY_MISSING", errorClassification: "configuration" });
     return;
   }
 
@@ -102,26 +126,15 @@ async function sendOne(input: {
       html: input.html,
     });
     if (result.error) {
-      await record({
-        ...input,
-        recipient,
-        status: "failed",
-        errorMessage: result.error.message ?? "Resend rejected email request",
-      });
+      await record(claimed, { status: "failed", errorMessage: result.error.message ?? "Resend rejected email request" });
       return;
     }
-    await record({
-      ...input,
-      recipient,
-      status: "sent",
-      providerMessageId: result.data?.id ?? null,
-    });
+    await record(claimed, { status: "sent", providerMessageId: result.data?.id ?? null });
   } catch (error) {
-    await record({
-      ...input,
-      recipient,
+    await record(claimed, {
       status: "failed",
       errorMessage: error instanceof Error ? error.message : String(error),
+      errorClassification: "transport_error",
     });
   }
 }

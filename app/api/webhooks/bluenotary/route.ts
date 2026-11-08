@@ -4,6 +4,8 @@ import { computeEventHash } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
+import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
+import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
 import { storeRONExecutedDocuments } from '@/lib/bluenotary/signedDocumentStorage';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
@@ -143,30 +145,36 @@ export async function POST(request: NextRequest) {
 
   let ronSessionId: string | null = null;
   let matterId: string | null = null;
+  let lifecycle: RonLifecycleState = 'REQUESTED';
+  let milanoStatus: string | null = null;
 
   if (payload.notarization_id) {
     const { data: session } = await supabase
       .from('ron_sessions')
-      .select('id, matter_id')
+      .select('id, matter_id, ron_lifecycle_state, milano_ron_status')
       .eq('notarization_id', payload.notarization_id)
       .maybeSingle();
 
     if (session) {
       ronSessionId = session.id;
       matterId = session.matter_id;
+      if (isRonLifecycleState(session.ron_lifecycle_state)) lifecycle = session.ron_lifecycle_state;
+      milanoStatus = session.milano_ron_status ?? null;
     }
   }
 
   if (!ronSessionId && payload.bn_session_id) {
     const { data: session } = await supabase
       .from('ron_sessions')
-      .select('id, matter_id')
+      .select('id, matter_id, ron_lifecycle_state, milano_ron_status')
       .eq('bn_session_id', payload.bn_session_id)
       .maybeSingle();
 
     if (session) {
       ronSessionId = session.id;
       matterId = session.matter_id;
+      if (isRonLifecycleState(session.ron_lifecycle_state)) lifecycle = session.ron_lifecycle_state;
+      milanoStatus = session.milano_ron_status ?? null;
     }
   }
 
@@ -207,9 +215,19 @@ export async function POST(request: NextRequest) {
 
   const newStatus = mapBNEventToMilanoStatus(payload.event_type);
   const sessionUpdate: Record<string, unknown> = {
-    milano_ron_status: newStatus,
     updated_at: new Date().toISOString(),
   };
+  // Provider events never regress or overwrite a Milano-governed terminal/verified projection.
+  const projectionLocked =
+    isTerminalRonLifecycle(lifecycle) ||
+    lifecycle === 'EVIDENCE_VERIFIED' ||
+    ['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED'].includes(String(milanoStatus ?? ''));
+  if (!projectionLocked) sessionUpdate.milano_ron_status = newStatus;
+  const nextLifecycle = providerEventLifecycle(lifecycle, payload.event_type);
+  if (nextLifecycle) {
+    sessionUpdate.ron_lifecycle_state = nextLifecycle;
+    lifecycle = nextLifecycle;
+  }
 
   switch (payload.event_type) {
     case 'photo_id_passed':
@@ -232,16 +250,26 @@ export async function POST(request: NextRequest) {
     case 'kba_failed':
       sessionUpdate.kba_status = 'FAILED';
       break;
+    case 'open_call_accepted':
+      if (nextLifecycle) sessionUpdate.provider_accepted_at = new Date().toISOString();
+      break;
     case 'session_started':
       sessionUpdate.started_at = new Date().toISOString();
       break;
     case 'session_completed':
+      // Provider completion is not Milano execution verification. P4 keeps the
+      // session pending until executed-document/evidence verification is recorded.
+      if (nextLifecycle) sessionUpdate.provider_session_completed_at = new Date().toISOString();
       sessionUpdate.provider_completed_at = new Date().toISOString();
       sessionUpdate.blue_notary_status = 'COMPLETED';
       break;
     case 'session_expired':
-      sessionUpdate.expired_at = new Date().toISOString();
-      sessionUpdate.session_url_status = 'BLOCKED';
+      if (nextLifecycle) {
+        sessionUpdate.expired_at = new Date().toISOString();
+        sessionUpdate.session_url_status = 'BLOCKED';
+        sessionUpdate.exception_status = 'open';
+        sessionUpdate.exception_reason = 'provider_session_expired';
+      }
       break;
   }
 
@@ -314,12 +342,19 @@ export async function POST(request: NextRequest) {
     try {
       const { data: session } = await supabase
         .from('ron_sessions')
+        .select('id, bn_session_id, matter_id, ron_lifecycle_state, milano_ron_status')
         .select('id, bn_session_id, matter_id')
         .eq('id', ronSessionId)
         .single();
 
       if (session?.bn_session_id) {
         const signedDocs = await getBlueNotarySignedDocuments(session.bn_session_id);
+        const captured = await captureExecutedRonDocuments(supabase, session, signedDocs ?? [], {
+          actorId: null,
+          actorRole: 'system',
+          source: 'bluenotary_webhook',
+          providerEvent: payload.event_type,
+        });
 
         const storedIds = await storeRONExecutedDocuments(supabase, session, signedDocs ?? []);
 
@@ -336,6 +371,15 @@ export async function POST(request: NextRequest) {
           matter_id: matterId,
           ron_session_id: ronSessionId,
           event_type: 'RON_SIGNED_DOCUMENTS_RETRIEVED',
+          description: 'Signed documents auto-retrieved via webhook. Next action: Milano statutory evidence verification',
+          actor_role: 'system',
+          source: 'bluenotary_webhook',
+          metadata: {
+            document_count: captured.length,
+            captured: captured.filter((c) => c.decision === 'capture').length,
+            duplicates: captured.filter((c) => c.decision === 'duplicate').length,
+            conflicts: captured.filter((c) => c.decision === 'conflict').length,
+          },
           description: 'Executed document versions secured; statutory evidence verification is required before execution completion.',
           actor_role: 'system',
           source: 'bluenotary_webhook',
@@ -360,6 +404,9 @@ export async function POST(request: NextRequest) {
     metadata: {
       bn_event_type: payload.event_type,
       mapped_status: newStatus,
+      projection_locked: projectionLocked,
+      ron_lifecycle_state: lifecycle,
+      provider_event_is_authoritative_completion: false,
     },
   });
 

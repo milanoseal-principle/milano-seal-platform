@@ -172,12 +172,6 @@ export function buildClientInvoiceLineItems(row: PortalInvoiceMatterRow): Client
     remaining = Math.max(0, n(originalTotal - accounted));
   }
 
-  if (remaining > 0 && cents(remaining) % cents(COMPLEXITY.notarized_signature) === 0) {
-    push(lines, { key: "notarial_tracking", label: "Notarial execution tracking", amount: remaining, kind: "notarial", discountable: true });
-    accounted += remaining;
-    remaining = 0;
-  }
-
   if (remaining > 0) {
     push(lines, { key: "other_approved_service", label: "Additional approved execution service", amount: remaining, kind: "other", discountable: true });
   }

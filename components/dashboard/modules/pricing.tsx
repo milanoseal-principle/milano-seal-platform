@@ -3,7 +3,7 @@ import { ModuleWrapper } from "./_module-wrapper";
 
 const SUMMARY = `INTERNAL ONLY — Do not share`;
 const DETAIL = `Signature $750 | Priority $975 | Executive $1,850
-Add-ons: +doc $75 | +signer $150 | +signature $25 | +intl signer $200 | +apostille $250 | Urgent +$400 | Expedited +$200`;
+Add-ons: +doc $75 | +signer $150 | +intl signer $200 | +apostille $250 | Urgent +$400 | Expedited +$200`;
 
 export function PricingModule({ mod, data }: any) {
   return (
