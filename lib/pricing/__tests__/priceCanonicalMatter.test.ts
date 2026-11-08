@@ -33,7 +33,7 @@ test("field-equal Matters priced by different surfaces match on lane/add-ons/tot
   assert.equal(intakeView.total, portalView.total);
   assert.equal(intakeView.manualReviewRequired, portalView.manualReviewRequired);
   assert.equal(intakeView.suggestedLane, "priority");
-  assert.equal(intakeView.total, 1000); // 975 Priority, first apostille included, + 25 tracking
+  assert.equal(intakeView.total, 975); // Priority Milano charge only; external provider/notarial fees are excluded
 });
 
 test("executionTier selects the lane only when execution is independently established", () => {
