@@ -273,7 +273,7 @@ begin
  return result;
 end $$;
 create or replace function public.governance_read_allowed(visibility text) returns boolean language sql stable security definer set search_path='' as $$
- select exists(select 1 from auth.users u where u.id=auth.uid() and coalesce(u.raw_app_meta_data->>'disabled','false')<>'true' and (u.banned_until is null or u.banned_until<=now()) and (u.raw_app_meta_data->>'role' in ('founder','founder_admin') or (visibility='OPERATIONS' and u.raw_app_meta_data->>'role' in ('admin_operator','ops_manager'))))
+ select exists(select 1 from auth.users u where u.id=auth.uid() and coalesce(u.raw_app_meta_data->>'disabled','false')<>'true' and (u.banned_until is null or u.banned_until<=now()) and (u.raw_app_meta_data->>'role' in ('founder','founder_admin') or (visibility='OPERATIONS' and u.raw_app_meta_data->>'role' in ('admin_operator','ops_manager')) or (visibility='AUDIT' and u.raw_app_meta_data->>'role' in ('admin','ops_manager'))))
 $$;
 revoke all on function public.governance_read_allowed(text) from public,anon;
 grant execute on function public.governance_read_allowed(text) to authenticated,service_role;
@@ -314,7 +314,7 @@ create trigger governance_audit_immutable before update or delete on public.audi
 -- No corporate history leaks through the legacy user-writable role fallback.
 drop policy if exists audit_events_admin_read on public.audit_events;
 create policy audit_events_admin_read on public.audit_events for select to authenticated using (
- public.governance_read_allowed(case when event_type like 'AI_GOV_%' then 'FOUNDER' else 'OPERATIONS' end)
+ public.governance_read_allowed(case when event_type like 'AI_GOV_%' then 'FOUNDER' else 'AUDIT' end)
 );
 revoke all on function public.governance_require_actor(uuid,boolean),public.governance_audit(uuid,text,text,jsonb),public.governance_command(uuid,text,jsonb),public.governance_claim(integer),public.governance_finish(uuid,uuid,jsonb,text,integer,jsonb),public.governance_metrics(uuid) from public,anon,authenticated;
 grant execute on function public.governance_command(uuid,text,jsonb),public.governance_claim(integer),public.governance_finish(uuid,uuid,jsonb,text,integer,jsonb),public.governance_metrics(uuid) to service_role;
