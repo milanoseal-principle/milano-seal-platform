@@ -93,15 +93,15 @@
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
     "validate:production-governance": "node scripts/validate-production-governance.mjs",
     "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs",
-    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs"
-    ,"validate:seo-authority": "node scripts/validate-seo-authority-graph.mjs"
-    ,"validate:seo-intent": "node scripts/validate-seo-intent-governance.mjs"
-    ,"validate:seo-indexability": "node scripts/validate-seo-indexability.mjs"
-    ,"validate:seo-evidence": "node scripts/validate-seo-evidence.mjs"
-    ,"validate:seo-links": "node scripts/validate-seo-link-graph.mjs"
-    ,"validate:seo-localization": "node scripts/validate-seo-localization.mjs"
-    ,"validate:seo-sitemaps": "node scripts/validate-seo-sitemaps.mjs"
-    ,"validate:seo-public-claims": "node scripts/validate-seo-public-claims.mjs"
+    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs",
+    "validate:seo-authority": "node scripts/validate-seo-authority-graph.mjs",
+    "validate:seo-intent": "node scripts/validate-seo-intent-governance.mjs",
+    "validate:seo-indexability": "node scripts/validate-seo-indexability.mjs",
+    "validate:seo-evidence": "node scripts/validate-seo-evidence.mjs",
+    "validate:seo-links": "node scripts/validate-seo-link-graph.mjs",
+    "validate:seo-localization": "node scripts/validate-seo-localization.mjs",
+    "validate:seo-sitemaps": "node scripts/validate-seo-sitemaps.mjs",
+    "validate:seo-public-claims": "node scripts/validate-seo-public-claims.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -168,17 +168,20 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",
-    "playwright": "1.65.0",
+    "@next/eslint-plugin-next": "^15.5.29",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/leaflet": "^1.9.14",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "playwright": "1.65.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.23.0",
     "tw-animate-css": "1.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "typescript-eslint": "^8.72.1"
   },
   "packageManager": "npm@11.4.2"
 }

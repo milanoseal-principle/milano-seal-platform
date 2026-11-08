@@ -4,7 +4,14 @@ import path from 'node:path';
 
 const read = (p) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
 
-const migration = read('supabase/migrations/079_wise_observed_scheduling_gate.sql');
+// The scheduling gate is whichever migration last defines public.check_payment_gate.
+// 079 (observed-submission authority) was superseded by 089 (verified settlement only),
+// so validating 079 asserted a retired, weaker gate.
+const gateMigrations = fs.readdirSync(path.join(process.cwd(), 'supabase/migrations'))
+  .filter((f) => f.endsWith('.sql'))
+  .sort()
+  .filter((f) => /create or replace function public\.check_payment_gate\(/i.test(read(`supabase/migrations/${f}`)));
+const migration = read(`supabase/migrations/${gateMigrations.at(-1)}`);
 const schedule = read('app/api/deals/[id]/schedule/route.ts');
 const guards = read('lib/bluenotary/guards.ts');
 const sessions = read('app/api/dashboard/ron/sessions/route.ts');
@@ -15,13 +22,19 @@ const portal = read('app/portal/ron/page.tsx');
 const control = read('components/ron/RONSessionControlPanel.tsx');
 const release = read('lib/release/performFinalRelease.ts');
 
+assert.ok(gateMigrations.includes('089_verified_settlement_scheduling_gate.sql'), 'verified settlement gate must exist');
 assert.match(migration, /NEW\.status = 'scheduled'/);
-assert.match(migration, /payment_observed_at is not null/i);
-assert.match(migration, /observed_pending/);
-assert.match(migration, /payment_observed_amount/);
-assert.match(migration, /payment_observed_currency/);
-assert.match(migration, /payment_observed_reference/);
-assert.doesNotMatch(migration, /payment_status\s*=\s*'paid'[\s\S]*payment_observed_at/i);
+assert.match(migration, /NEW\.payment_confirmed is true/);
+assert.match(migration, /NEW\.payment_status = 'paid'/);
+assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
+assert.match(migration, /NEW\.amount_due > 0 and NEW\.amount_paid > 0/);
+assert.match(migration, /'NaN', 'Infinity', '-Infinity'/);
+assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
+assert.match(migration, /PAYMENT_REQUIRED/);
+// Observation/submission is never payment authority and never manufactures paid truth.
+assert.doesNotMatch(migration, /observed_pending/);
+assert.doesNotMatch(migration, /payment_observed_at is not null/i);
+assert.doesNotMatch(migration, /payment_status\s*:=\s*'paid'/i);
 
 assert.match(schedule, /evaluateSchedulingGate/);
 assert.match(guards, /assertCanCreateRONSession/);
@@ -42,7 +55,11 @@ assert.match(advance, /deal_status:\s*'apostille_processing'/);
 assert.match(advance, /READY_FOR_APOSTILLE/);
 assert.match(advance, /RON_APOSTILLE_QA_APPROVED/);
 
-assert.match(apostille, /status:\s*"apostille_processing"/);
+// The legacy Matter apostille mutation is retired; the governed RON Apostille QA route is the only
+// in_execution -> apostille_processing transition (asserted on `advance` above).
+assert.match(apostille, /USE_GOVERNED_RON_APOSTILLE_QA/);
+assert.match(apostille, /status: 409/);
+assert.doesNotMatch(apostille, /\.update\(/);
 assert.doesNotMatch(apostille, /status:\s*"apostille"/);
 assert.doesNotMatch(apostille, /requirePaid/);
 
