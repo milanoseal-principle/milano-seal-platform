@@ -63,6 +63,8 @@ create or replace function public.ron_statutory_evidence_verified(p_session uuid
  where s.id=p_session and s.evidence_reopened_at is null and e.ron_session_id=s.id and e.matter_id=s.matter_id and e.event_type='RON_STATUTORY_EVIDENCE_VERIFIED'
  and exists(select 1 from public.execution_qa_reviews q where q.id::text=e.metadata->'evidence'->>'qc_reference' and q.deal_id=s.matter_id and q.execution_qa_status='PASSED' and q.passed_at is not null and q.passed_by is not null and coalesce(cardinality(q.blocking_items),0)=0 and coalesce(cardinality(q.missing_items),0)=0)
  and not exists(select 1 from public.compliance_incidents i where i.deal_id=s.matter_id and i.status not in ('RESOLVED','CLOSED') and (i.freeze_triggered or i.severity in ('high','critical')))
+ and upper(trim(m.execution_truth->>'notary_jurisdiction'))=upper(trim(e.metadata->'evidence'->>'commission_jurisdiction'))
+ and e.metadata->'evidence'->'witness_applicability'->>'status'=case when m.witnesses>0 then 'REQUIRED' when m.witnesses=0 then 'NOT_REQUIRED' else 'REVIEW_REQUIRED' end
  and m.witnesses is not null and jsonb_array_length(e.metadata->'evidence'->'witnesses')>=m.witnesses
  and m.execution_truth->>'execution_method'='ron' and m.execution_truth->>'notarial_act'=e.metadata->'evidence'->>'notarial_act'
  and not exists(select 1 from public.ron_signers failed where failed.ron_session_id=s.id and (failed.identity_status='FAILED' or failed.kba_status='FAILED' or failed.biometric_status='FAILED'))
@@ -102,7 +104,7 @@ begin
  if m.execution_truth->>'execution_method' is distinct from 'ron' then raise exception 'NOT_A_RON_MATTER'; end if;
  if s.provider_completed_at is null or s.blue_notary_status is distinct from 'COMPLETED' then raise exception 'PROVIDER_COMPLETION_REQUIRED'; end if;
  if jsonb_typeof(p_evidence) is distinct from 'object' then raise exception 'INVALID_EVIDENCE'; end if;
- if p_evidence - array['provider_reference','provider_evidence_reference','notary_identity_reference','commission_reference','notarial_act','executed_at','certificate_reference','seal_signature_reference','journal_reference','recording_reference','recording_retention_reference','recording_retained_until','custody_reference','qc_reference','signed_document_ids','signers','witnesses','external_provider_fee','commission_jurisdiction','commission_expires_at','act_count','qc_status'] <> '{}'::jsonb then raise exception 'UNSUPPORTED_EVIDENCE_FIELD'; end if;
+ if p_evidence - array['provider_reference','provider_evidence_reference','notary_identity_reference','commission_reference','notarial_act','executed_at','certificate_reference','seal_signature_reference','journal_reference','recording_reference','recording_retention_reference','recording_retained_until','custody_reference','qc_reference','signed_document_ids','signers','witnesses','external_provider_fee','commission_jurisdiction','commission_expires_at','act_count','qc_status','witness_applicability'] <> '{}'::jsonb then raise exception 'UNSUPPORTED_EVIDENCE_FIELD'; end if;
  foreach k in array array['provider_reference','provider_evidence_reference','notary_identity_reference','commission_reference','commission_jurisdiction','certificate_reference','seal_signature_reference','journal_reference','recording_reference','recording_retention_reference','custody_reference','qc_reference'] loop
  if not public.p4_evidence_reference(p_evidence->k) then raise exception 'EVIDENCE_REFERENCE_REQUIRED: %',k; end if;
  end loop;
@@ -136,6 +138,7 @@ begin
  end loop;
  if not public.p4_evidence_proof(signer->'oath',p_evidence->>'notarial_act' in ('jurat','oath_affirmation')) then raise exception 'OATH_PROOF_REQUIRED'; end if;
  end loop;
+ if jsonb_typeof(p_evidence->'witness_applicability') is distinct from 'object' or (p_evidence->'witness_applicability') - array['status','basis_reference'] <> '{}'::jsonb or not public.p4_evidence_reference(p_evidence->'witness_applicability'->'basis_reference') or p_evidence->'witness_applicability'->>'status' is distinct from (case when m.witnesses>0 then 'REQUIRED' when m.witnesses=0 then 'NOT_REQUIRED' else 'REVIEW_REQUIRED' end) then raise exception 'WITNESS_APPLICABILITY_REVIEW_REQUIRED'; end if;
  if m.witnesses is null then raise exception 'WITNESS_APPLICABILITY_REVIEW_REQUIRED'; end if;
  if jsonb_array_length(p_evidence->'witnesses')<m.witnesses then raise exception 'WITNESS_EVIDENCE_REQUIRED'; end if;
  for signer in select * from jsonb_array_elements(p_evidence->'witnesses') loop

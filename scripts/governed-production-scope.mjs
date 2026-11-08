@@ -6,6 +6,7 @@
 export const P4B_PROTECTED_CHANGES = [
   'app/api/webhooks/bluenotary/route.ts',
   'lib/bluenotary/guards.ts',
+  'lib/bluenotary/evidenceFailures.ts',
   'lib/bluenotary/projection.ts',
   'lib/bluenotary/signedDocumentStorage.ts',
   'lib/bluenotary/statutoryEvidence.ts',

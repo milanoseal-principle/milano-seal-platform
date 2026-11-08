@@ -1,3 +1,4 @@
+import { ronEvidenceFailure } from '@/lib/bluenotary/evidenceFailures';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
@@ -19,6 +20,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     p_session_id:id,p_actor_id:user.id,p_expected_evidence_id:parsed.data.expected_evidence_id,
     p_idempotency_key:parsed.data.idempotency_key,p_evidence:parsed.data.evidence,p_reason:parsed.data.reason,
   });
-  if (error || !data || typeof data.evidence_id !== 'string') return NextResponse.json({error:error?.code==='42501'?'FORBIDDEN':'EVIDENCE_NOT_VERIFIED',next_action:'Review provider evidence, document versions and current session; refresh before retrying.'},{status:error?.code==='42501'?403:error?.code==='40001'?409:422});
+  if (error || !data || typeof data.evidence_id !== 'string') return NextResponse.json(ronEvidenceFailure(error),{status:error?.code==='42501'?403:error?.code==='40001'?409:422});
   return NextResponse.json({ok:true,...data});
 }

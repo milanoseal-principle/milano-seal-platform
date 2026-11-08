@@ -23,7 +23,7 @@ const capture=async(hash='a'.repeat(64))=>(await db.query('select public.capture
 const capturedId=await capture();
 assert.equal(await capture(),capturedId);
 const proof={status:'VERIFIED',reference:'fixture:proof'};
-const evidence={provider_reference:'provider-session',provider_evidence_reference:'fixture:provider',notary_identity_reference:'fixture:notary',commission_jurisdiction:'FL',commission_expires_at:'2027-01-01T10:00:00Z',act_count:1,qc_status:'PASSED',commission_reference:'fixture:commission',notarial_act:'jurat',executed_at:'2026-01-01T10:00:00Z',certificate_reference:'fixture:certificate',seal_signature_reference:'fixture:seal',journal_reference:'fixture:journal',recording_reference:'fixture:recording',recording_retention_reference:'fixture:retention-policy',recording_retained_until:'2036-01-01T10:00:00Z',custody_reference:'fixture:custody',qc_reference:qc,signed_document_ids:[capturedId],signers:[{signer_id:signer,location_reference:'fixture:location',identity_proofing:proof,credential_analysis:proof,kba:proof,awareness:proof,willingness:proof,oath:proof}],witnesses:[]};
+const evidence={provider_reference:'provider-session',provider_evidence_reference:'fixture:provider',notary_identity_reference:'fixture:notary',commission_jurisdiction:'FL',commission_expires_at:'2027-01-01T10:00:00Z',act_count:1,qc_status:'PASSED',commission_reference:'fixture:commission',notarial_act:'jurat',executed_at:'2026-01-01T10:00:00Z',certificate_reference:'fixture:certificate',seal_signature_reference:'fixture:seal',journal_reference:'fixture:journal',recording_reference:'fixture:recording',recording_retention_reference:'fixture:retention-policy',recording_retained_until:'2036-01-01T10:00:00Z',custody_reference:'fixture:custody',qc_reference:qc,signed_document_ids:[capturedId],signers:[{signer_id:signer,location_reference:'fixture:location',identity_proofing:proof,credential_analysis:proof,kba:proof,awareness:proof,willingness:proof,oath:proof}],witness_applicability:{status:'NOT_REQUIRED',basis_reference:'fixture:governed-witness-review'},witnesses:[]};
 let passed=0;
 async function denied(fn,label){let error;try{await fn()}catch(e){error=e}assert.ok(error,label);passed++;}
 async function append(body=evidence,actorId=actor,expected=null,key=crypto.randomUUID(),reason='Controlled fixture evidence review'){
@@ -32,7 +32,7 @@ async function append(body=evidence,actorId=actor,expected=null,key=crypto.rando
 await denied(()=>db.query("update ron_sessions set milano_ron_status='RON_COMPLETED' where id=$1",[session]),'generic provider completion cannot complete execution');
 await denied(()=>db.query("update deals set status='in_transit' where id=$1",[matter]),'RON corridor fails closed');
 await denied(()=>append(evidence,client),'client actor rejected');
-for(const field of ['recording_reference','journal_reference','commission_reference','certificate_reference','seal_signature_reference','qc_reference','custody_reference']){
+for(const field of ['recording_reference','journal_reference','commission_reference','certificate_reference','seal_signature_reference','qc_reference','custody_reference','witness_applicability']){
  const value=structuredClone(evidence);delete value[field];await denied(()=>append(value),'missing '+field);
 }
 for(const field of ['identity_proofing','credential_analysis','kba','awareness','willingness','oath']){

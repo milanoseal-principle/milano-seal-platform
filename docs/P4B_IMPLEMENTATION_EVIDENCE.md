@@ -63,6 +63,6 @@ paths enumerated in `scripts/governed-production-scope.mjs` for this directive.
 Wise, release, courier, unrelated RLS and unrelated migrations remain protected.
 The checks themselves still run; no gate or behavioral assertion is disabled.
 
-Latest focused database run: **58 checks passed**. Latest full unit suite:
-**1,147 passed**. Controlled rendered panel: **10/10 widths passed**, zero page
+Focused database run: **59 checks passed**. The full unit suite and required
+merge gate must be read alongside the PR head/check results. Controlled rendered panel: **10/10 widths passed**, zero page
 errors. These are local results; the production rollout remains unapplied.

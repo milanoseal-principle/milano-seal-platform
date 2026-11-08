@@ -21,6 +21,7 @@ try{
   const refs=page.locator('input:not([type="datetime-local"]):not([type="checkbox"]):not([type="number"])');for(let i=0;i<await refs.count();i++)await refs.nth(i).fill('fixture:proof');
   await page.locator('input[name="executed_at"]').fill('2026-01-01T10:00');await page.locator('input[name="recording_retained_until"]').fill('2036-01-01T10:00');
   await page.locator('input[name="commission_expires_at"]').fill('2027-01-01T10:00');await page.locator('input[name="act_count"]').fill('1');
+  await page.locator('select[name="witness_applicability"]').selectOption('NOT_REQUIRED');
   await page.getByRole('checkbox').last().check();await page.getByRole('button',{name:'Verify and append evidence',exact:true}).click();await page.getByRole('status').filter({hasText:'Statutory evidence verified and appended'}).waitFor();
   assert.deepEqual(payload.evidence.signed_document_ids,['00000000-0000-4000-8000-000000000006']);assert.equal(payload.evidence.signers[0].kba.status,'VERIFIED');assert.equal(payload.expected_evidence_id,null);assert.equal('actor_id' in payload,false);
   const png=await page.screenshot({path:`${out}/ron-evidence-${width}.png`,fullPage:true});assert.equal(png.readUInt32BE(16),width,'No clipped horizontal content');assert.deepEqual(errors,[]);

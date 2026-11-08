@@ -29,6 +29,7 @@ export const ronStatutoryEvidenceSchema = z.object({
     identity_proofing: verified, credential_analysis: applicableProof, kba: applicableProof,
     awareness: verified, willingness: verified, oath: applicableProof,
   }).strict()).min(1).max(100),
+  witness_applicability: z.object({status:z.enum(['REQUIRED','NOT_REQUIRED']),basis_reference:evidenceReference}).strict(),
   witnesses: z.array(z.object({ identity_reference: evidenceReference, evidence_reference: evidenceReference }).strict()).max(100),
 }).strict().superRefine((value, ctx) => {
   if (Date.parse(value.commission_expires_at) < Date.parse(value.executed_at)) ctx.addIssue({code:'custom',message:'Commission expired at execution',path:['commission_expires_at']});

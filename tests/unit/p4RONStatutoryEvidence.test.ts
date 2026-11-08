@@ -7,7 +7,7 @@ import { portalRONProjection } from '@/lib/bluenotary/projection';
 import type { RONSession } from '@/lib/bluenotary/types';
 const id='00000000-0000-4000-8000-000000000001';
 const proof={status:'VERIFIED',reference:'provider:proof'};
-const evidence={provider_reference:'provider-session',provider_evidence_reference:'provider:event',notary_identity_reference:'notary:identity',commission_jurisdiction:'FL',commission_expires_at:'2027-01-01T10:00:00Z',act_count:1,qc_status:'PASSED',commission_reference:'commission:record',notarial_act:'jurat',executed_at:'2026-01-01T10:00:00Z',certificate_reference:'provider:certificate',seal_signature_reference:'provider:seal',journal_reference:'provider:journal',recording_reference:'provider:recording',recording_retention_reference:'policy:recording',recording_retained_until:'2036-01-01T10:00:00Z',custody_reference:'custody:event',qc_reference:'qc:record',signed_document_ids:[id],signers:[{signer_id:id,location_reference:'signer:jurisdiction',identity_proofing:proof,credential_analysis:proof,kba:proof,awareness:proof,willingness:proof,oath:proof}],witnesses:[]};
+const evidence={provider_reference:'provider-session',provider_evidence_reference:'provider:event',notary_identity_reference:'notary:identity',commission_jurisdiction:'FL',commission_expires_at:'2027-01-01T10:00:00Z',act_count:1,qc_status:'PASSED',commission_reference:'commission:record',notarial_act:'jurat',executed_at:'2026-01-01T10:00:00Z',certificate_reference:'provider:certificate',seal_signature_reference:'provider:seal',journal_reference:'provider:journal',recording_reference:'provider:recording',recording_retention_reference:'policy:recording',recording_retained_until:'2036-01-01T10:00:00Z',custody_reference:'custody:event',qc_reference:'qc:record',signed_document_ids:[id],signers:[{signer_id:id,location_reference:'signer:jurisdiction',identity_proofing:proof,credential_analysis:proof,kba:proof,awareness:proof,willingness:proof,oath:proof}],witness_applicability:{status:'NOT_REQUIRED',basis_reference:'fixture:governed-witness-review'},witnesses:[]};
 
 test('complete evidence is structured references, not a provider success flag',()=>assert.equal(ronStatutoryEvidenceSchema.safeParse(evidence).success,true));
 for(const field of ['journal_reference','recording_reference','recording_retention_reference','commission_reference','certificate_reference','seal_signature_reference','qc_reference','custody_reference']) test(`missing ${field} cannot verify execution`,()=>{
@@ -52,4 +52,8 @@ test('expired commission, unknown QC and absent act count cannot verify',()=>{
 test('a stored pointer without current server verification cannot project completion',()=>{
  const session={id,milano_ron_status:'RON_COMPLETED',statutory_evidence_id:id} as RONSession;
  assert.equal(portalRONProjection(session,[],'fixture@example.invalid').milano_ron_status,'RON_REVIEW_REQUIRED');
+});
+
+test('witness applicability requires an explicit reviewed answer and basis',()=>{
+ for(const witness_applicability of [undefined,{status:'REVIEW_REQUIRED',basis_reference:'review:pending'},{status:'NOT_REQUIRED'}]) assert.equal(ronStatutoryEvidenceSchema.safeParse({...evidence,witness_applicability}).success,false);
 });
