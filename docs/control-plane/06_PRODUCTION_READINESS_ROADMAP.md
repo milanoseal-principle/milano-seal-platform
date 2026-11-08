@@ -92,3 +92,8 @@ Before merge, every new production capability must pass the System Placement Gat
 If the capability affects international execution, it must additionally identify document-origin, destination, receiving-authority, state/federal, RON/notarial and apostille/authentication dependencies.
 
 No unregistered production module should merge.
+
+
+## 2026-11-08 GitHub Implementation Evidence
+
+The November 8 RON incident reconciliation is a **GATED GitHub implementation change only** until separately authorized production migration/deployment occurs. It aligns the RON security-incident path to the canonical compliance incident model (`matter_id`, `summary`, `release_frozen`, `detected_at`), preserves one incident authority, and keeps controlled live certification separate from repository validation.
