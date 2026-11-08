@@ -22,7 +22,7 @@ test("P6 provider fee evidence never enters Milano quote, Wise amount or revenue
   assert.match(validator, /retired ron_cost financial field reintroduced/);
   assert.doesNotMatch(validator, /read\(['"]lib\/config\/pricing\.ts['"]\)/);
 
-  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\\.test\\.ts/);
+  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\.test\.ts/);
   assert.doesNotMatch(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
 });
 
