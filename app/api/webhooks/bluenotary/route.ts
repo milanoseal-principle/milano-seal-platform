@@ -376,10 +376,6 @@ export async function POST(request: NextRequest) {
             duplicates: captured.filter((c) => c.decision === 'duplicate').length,
             conflicts: captured.filter((c) => c.decision === 'conflict').length,
           },
-          description: 'Executed document versions secured; statutory evidence verification is required before execution completion.',
-          actor_role: 'system',
-          source: 'bluenotary_webhook',
-          metadata: { document_count: storedIds.length },
         });
       }
     } catch (docErr) {
