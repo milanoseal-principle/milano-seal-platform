@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { FinancialArtifactDownloads } from '@/components/portal/FinancialArtifactDownloads';
 import { usePortal } from "@/components/portal/portal-context";
 
 const GOLD = "#C6A55A";
@@ -384,6 +385,7 @@ export default function ClientInvoicePage() {
       <p className="mt-5 text-[11px] leading-5 text-white/30">
         A submitted Wise payment remains processing and never marks a Matter paid. Scheduling stays locked until verified Wise settlement; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
       </p>
+      <FinancialArtifactDownloads matterId={deal.id} />
     </div>
   );
 }

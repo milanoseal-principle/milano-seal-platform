@@ -9,9 +9,10 @@ if(/searchParams.*paid|client.*mark.*paid/i.test(all)) throw new Error('paid byp
 const releaseRoute=readFileSync('app/api/deals/[id]/release/route.ts','utf8');
 for (const k of ['isFounderAdmin','performFinalRelease']) if(!releaseRoute.includes(k)) throw new Error('release route missing '+k);
 const releaseGate=readFileSync('lib/release/performFinalRelease.ts','utf8');
-for (const k of ['payment_settlement_status','fundsCleared','PAYMENT_RELEASE_OVERRIDE_APPROVED','RELEASE_GATE_OVERRIDE','payment_confirmed_at','requiresCodiceFiscaleLockForRelease','DOC_RELEASE_CONFIRMED']) if(!releaseGate.includes(k)) throw new Error('release gate missing '+k);
+for (const k of ['payment_settlement_status','fundsCleared','payment_confirmed_at','requiresCodiceFiscaleLockForRelease','DOC_RELEASE_CONFIRMED']) if(!releaseGate.includes(k)) throw new Error('release gate missing '+k);
 // Confirmation source-of-truth must not be the legacy boolean alone.
-if(!/payment_confirmed_at\s*!=\s*null/.test(releaseGate)) throw new Error('release must accept payment_confirmed_at as confirmation');
+if(!releaseGate.includes("assertPaymentConfirmed(deal,'release')"))throw new Error('release must use canonical exact settlement gate');
+if(/founder_payment_override_at|PAYMENT_RELEASE_OVERRIDE_APPROVED/.test(releaseGate))throw new Error('payment override must not authorize release');
 const migration=readFileSync('supabase/migrations/039_payment_settlement_clearance.sql','utf8');
 for (const k of ['payment_settlement_status','payment_cleared_at','founder_payment_override_reason']) if(!migration.includes(k)) throw new Error('migration 039 missing '+k);
 
@@ -21,8 +22,7 @@ for (const k of ['payment_settlement_status','payment_cleared_at','founder_payme
 const matterDetail=readFileSync('app/api/dashboard/matter-detail/[id]/route.ts','utf8');
 for (const k of ['viewer_role','payment_settlement_status','founder_payment_override_at']) if(!matterDetail.includes(k)) throw new Error('matter-detail API missing '+k);
 const drawer=readFileSync('components/dashboard/MatterDetailDrawer.tsx','utf8');
-for (const k of ['viewer_role','founder_admin','override_reason']) if(!drawer.includes(k)) throw new Error('matter drawer missing '+k);
-if(!/JSON\.stringify\(\{\s*override_reason/.test(drawer)) throw new Error('override must post only override_reason');
+for(const k of ['viewer_role','founder_admin','A founder reason cannot bypass payment'])if(!drawer.includes(k))throw new Error('matter drawer missing safe release review '+k);
 if(/JSON\.stringify\(\{[^}]*\b(role|payment_status|payment_settlement_status)\b/.test(drawer)) throw new Error('override body must not post role/payment fields');
 
 // Authenticated production matter ledger test: founder-only, test-matter-guarded,

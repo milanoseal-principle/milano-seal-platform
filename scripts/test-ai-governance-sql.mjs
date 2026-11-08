@@ -11,6 +11,7 @@ grant usage on schema public,auth to anon,authenticated,service_role;`);
 await db.exec(readFileSync('supabase/migrations/005_audit_events.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/20261108110000_p7_retention_matrix.sql','utf8').split('insert into public.retention_classes')[0]+'commit;');
 await db.exec(readFileSync('supabase/migrations/20261108190000_ai_corporate_governance.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/20261108200000_governance_execution_revalidation.sql','utf8'));
 const founder=crypto.randomUUID(),operator=crypto.randomUUID(),client=crypto.randomUUID();
 await db.query(`insert into auth.users values($1,'{"role":"founder_admin"}',null),($2,'{"role":"admin_operator"}',null),($3,'{"role":"client"}',null)`,[founder,operator,client]);
 let passed=0;const command=async(op,body,actor=founder)=>(await db.query('select public.governance_command($1,$2,$3) result',[actor,op,body])).rows[0].result;
@@ -84,6 +85,15 @@ assert.equal((await db.query('select governance_claim(null) result')).rows[0].re
 const accepted=await command('approve',{task_id:target.id,action_hash:target.action_hash,reason:'Founder approves exact synthetic internal publication',ttl_seconds:600});
 const duplicated=await command('approve',{task_id:target.id,action_hash:target.action_hash,reason:'Founder approves exact synthetic internal publication',ttl_seconds:600});assert.equal(accepted.id,duplicated.id);passed++;
 await denied(()=>db.query('update governance_approvals set action_hash=$1 where id=$2',['forged',accepted.id]),'approval binding immutable');
+// Approval actor must still be a live founder at the moment of consumption.
+const approver=crypto.randomUUID();await db.query(`insert into auth.users values($1,'{"role":"founder_admin"}',null)`,[approver]);
+await db.query('update governance_approvals set revoked_at=now() where id=$1',[accepted.id]);
+const currentApproval=await command('approve',{task_id:target.id,action_hash:target.action_hash,reason:'Fresh independent founder approval fixture',ttl_seconds:600},approver);
+await db.query(`update auth.users set raw_app_meta_data='{"role":"client"}' where id=$1`,[approver]);
+assert.equal((await db.query('select governance_claim(null) result')).rows[0].result.status,'IDLE');passed++;
+assert.equal((await db.query('select consumed_at from governance_approvals where id=$1',[currentApproval.id])).rows[0].consumed_at,null);passed++;
+await db.query(`update auth.users set raw_app_meta_data='{"role":"founder_admin"}' where id=$1`,[approver]);
+accepted.id=currentApproval.id;
 const publishing=(await db.query('select governance_claim(null) result')).rows[0].result;assert.equal(publishing.id,target.id);passed++;
 assert.ok((await db.query('select consumed_at from governance_approvals where id=$1',[accepted.id])).rows[0].consumed_at);passed++;
 assert.equal((await db.query('select governance_claim(null) result')).rows[0].result.status,'IDLE');passed++;
@@ -142,5 +152,9 @@ await denied(()=>db.exec('update governance_attempts set reservation=0'),'spend 
 await denied(()=>command('task',body('W01')),'specialist requires director-scoped parent');
 await denied(()=>command('task',body('E02',{parent_task_id:first.id})),'executive reporting cannot cross governing director');
 assert.equal((await db.query('select originating_director_id from governance_tasks where id=$1',[first.id])).rows[0].originating_director_id,'D01');passed++;
+for(let i=0;i<6;i++)assert.equal((await db.query("select governance_request_limit($1,'run') allowed",[founder])).rows[0].allowed,true);
+assert.equal((await db.query("select governance_request_limit($1,'run') allowed",[founder])).rows[0].allowed,false);passed++;
+await denied(()=>db.query("select governance_request_limit($1,'run')",[operator]),'operator cannot consume founder run control');
+await denied(()=>db.query("select governance_request_limit($1,'forged')",[founder]),'unknown rate category rejected');
 console.log(`PASS ${passed} actual PostgreSQL corporate-governance checks; isolated fixture, no live activation.`);
 await db.close();

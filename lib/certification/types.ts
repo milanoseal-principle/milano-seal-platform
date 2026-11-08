@@ -1,6 +1,6 @@
 export type CertificationResult = "PASS" | "FAIL" | "PENDING";
 export type CertificationRunStatus = "OPEN" | "IN_PROGRESS" | "BLOCKED" | "READY_FOR_FINAL_REVIEW" | "CERTIFIED" | "FAILED";
-export type CertificationPhase = "PHASE_1" | "PHASE_2" | "PHASE_2A" | "PHASE_3" | "PHASE_4" | "PHASE_5";
+export type CertificationPhase = "PHASE_1" | "PHASE_2" | "PHASE_2A" | "PHASE_3" | "PHASE_4" | "PHASE_5" | "P19" | "P20" | "P21" | "P22" | "P23";
 
 export interface CertificationCheck {
   key: string;
@@ -28,7 +28,7 @@ export interface CertificationEvidence {
 export interface CertificationRun {
   id: string;
   production_sha: string;
-  environment: "production";
+  environment: "production" | "preview";
   status: CertificationRunStatus;
   final_decision: "GO" | "NO_GO" | null;
 }

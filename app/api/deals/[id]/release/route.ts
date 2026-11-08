@@ -1,3 +1,4 @@
+import { resolveServerRole } from '@/lib/auth/server-role';
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,10 +13,10 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if(req.headers.get('origin')!==new URL(req.url).origin||req.headers.get('sec-fetch-site')==='cross-site')return NextResponse.json({error:'SAME_ORIGIN_REQUIRED'},{status:403});
   const { id } = await params;
 
-  // Optional founder override for releasing on non-cleared (e.g. pending card
-  // settlement) funds. Requires a written reason; always ledgered below.
+  // A reason is audit context only and never payment/settlement authority.
   const body = (await req.json().catch(() => ({}))) as {
     override_reason?: string;
   };
@@ -39,7 +40,7 @@ export async function POST(
   }
 
   // Release requires founder_admin — not admin_operator
-  const role = user.app_metadata?.role ?? user.app_metadata?.role;
+  const role = await resolveServerRole(user);
   if (!isFounderAdmin(role)) {
     await recordSecurityEvent({
       event_name: "ADMIN_ACTION_DENIED",
@@ -57,7 +58,7 @@ export async function POST(
   // authenticated production test runner.
   const outcome = await performFinalRelease({
     id,
-    actorId: user.email ?? user.id,
+    actorId: user.id,
     overrideReason,
   });
 

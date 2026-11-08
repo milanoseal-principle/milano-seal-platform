@@ -1,3 +1,5 @@
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
+import { readAllKeyset } from '@/lib/data/keyset';
 import { NextResponse } from "next/server";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -27,17 +29,12 @@ export async function GET() {
 
   let deals: Array<Record<string, unknown>> = [];
   try {
-    const { data } = await supabase
-      .from("deals")
-      .select(
-        "id, display_id, deal_status, created_at, destination_country, amount_due, amount_paid, last_contact_at, completed_at, lost_reason"
-      )
-      .order("created_at", { ascending: false })
-      .limit(500);
-    deals = data ?? [];
-  } catch {
-    deals = [];
-  }
+    deals=await readAllKeyset<Record<string,unknown>>(async cursor=>{
+      let query=supabase.from('deals').select('id,display_id,deal_status,created_at,destination_country,amount_due,amount_paid,payment_status,payment_confirmed,payment_settlement_status,currency,last_contact_at,completed_at,lost_reason').order('id').limit(250);
+      if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('REVENUE_READ_UNAVAILABLE');return result.data??[];
+    },row=>String(row.id));
+  } catch {return NextResponse.json({error:'REVENUE_NOT_VERIFIED',owner:'MILANO'},{status:503,headers:{'Cache-Control':'private, no-store'}});}
+  if(new Set(deals.map(row=>row.currency)).size>1)return NextResponse.json({error:'MULTI_CURRENCY_TOTAL_REQUIRES_SCOPED_REPORT'},{status:409});
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -90,7 +87,7 @@ export async function GET() {
       if (["new_intake", "quote_needed", "invoice_sent", "payment_pending"].includes(stage)) {
         pipeline_value += Number(deal.amount_due ?? 0);
       }
-      if (stage === "closed_won") {
+      if (stage === "closed_won" && evaluatePaymentGate({id:String(deal.id),payment_status:String(deal.payment_status??''),payment_confirmed:deal.payment_confirmed===true,payment_settlement_status:String(deal.payment_settlement_status??''),amount_due:deal.amount_due==null?null:Number(deal.amount_due),amount_paid:deal.amount_paid==null?null:Number(deal.amount_paid)})==='PAYMENT_CONFIRMED') {
         collected += Number(deal.amount_paid ?? 0);
         if (deal.completed_at && new Date(deal.completed_at as string) >= startOfMonth) {
           won_this_month += Number(deal.amount_paid ?? 0);

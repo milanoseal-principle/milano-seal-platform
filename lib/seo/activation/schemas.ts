@@ -48,7 +48,7 @@ export const createAuthorityPlacementSchema = z.object({
   anchorText: optionalText(500),
   status: z.enum(AUTHORITY_PLACEMENT_STATUSES).default("PENDING"),
   verificationMethod: z.enum(AUTHORITY_VERIFICATION_METHODS).optional().nullable(),
-  evidenceSnapshot: z.record(z.unknown()).default({}),
+  evidenceSnapshot: z.record(z.string(),z.unknown()).default({}),
 }).superRefine((value, ctx) => {
   if (value.status === "VERIFIED" && !value.verificationMethod) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["verificationMethod"], message: "Verified placement requires a verification method." });
@@ -62,7 +62,7 @@ export const updateAuthorityPlacementSchema = z.object({
   anchorText: optionalText(500),
   status: z.enum(AUTHORITY_PLACEMENT_STATUSES).optional(),
   verificationMethod: z.enum(AUTHORITY_VERIFICATION_METHODS).optional().nullable(),
-  evidenceSnapshot: z.record(z.unknown()).optional(),
+  evidenceSnapshot: z.record(z.string(),z.unknown()).optional(),
 }).refine((value) => Object.keys(value).length > 0, "At least one field is required");
 
 export const updateActivationActionSchema = z.object({

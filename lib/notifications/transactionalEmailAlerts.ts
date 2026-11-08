@@ -25,12 +25,12 @@ function money(value: number | null | undefined, currency = "USD") {
   }).format(Number.isFinite(amount) ? amount : 0);
 }
 
-async function alreadySent(matterId: string, recipient: string, type: string) {
+async function alreadySent(matterId: string|null, recipient: string, type: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("notifications")
     .select("id")
-    .eq("deal_id", matterId)
+    .filter('deal_id',matterId?'eq':'is',matterId)
     .eq("recipient_email", recipient)
     .eq("type", type)
     .eq("status", "sent")
@@ -39,7 +39,7 @@ async function alreadySent(matterId: string, recipient: string, type: string) {
 }
 
 type NotificationInput = {
-  matterId: string;
+  matterId: string|null;
   matterReference: string;
   recipient: string;
   type: string;
@@ -50,39 +50,20 @@ const SETTLED_DELIVERY = new Set(["provider_accepted", "delivered", "bounced", "
 
 // Claim one evidence row per (matter, type, recipient) before sending so concurrent retries
 // cannot send twice. A failed claim may be retried; an accepted/delivered one never resends.
-async function claim(input: NotificationInput): Promise<{ id: string; attempts: number } | null> {
-  const admin = createAdminClient();
-  const idempotencyKey = notificationIdempotencyKey(input.matterId, input.type, input.recipient);
-  const now = new Date().toISOString();
-  const { data: created, error } = await admin.from("notifications").insert({
-    deal_id: input.matterId,
-    recipient_email: input.recipient,
-    channel: "email",
-    type: input.type,
-    template_id: input.type,
-    template_version: "1",
-    subject: input.subject,
-    message: `${input.type} for ${input.matterReference}`,
-    status: "pending",
-    provider: "resend",
-    delivery_status: "pending",
-    delivery_attempts: 0,
-    idempotency_key: idempotencyKey,
-    correlation_id: input.matterId,
-    queued_at: now,
-    metadata: { matter_reference: input.matterReference, evidence_scope: "provider_acceptance_only", final_delivery_proven: false },
-  }).select("id").single();
-  if (created) return { id: created.id as string, attempts: 0 };
-  if (error?.code !== "23505") return null;
-  const { data: existing } = await admin.from("notifications")
-    .select("id, status, delivery_status, delivery_attempts")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-  if (!existing || existing.status === "sent" || SETTLED_DELIVERY.has(String(existing.delivery_status))) return null;
-  return { id: existing.id as string, attempts: Number(existing.delivery_attempts ?? 0) };
+async function claim(input: NotificationInput): Promise<{ id: string; attempts: number; token:string } | null> {
+  const admin=createAdminClient();const idempotencyKey=notificationIdempotencyKey(input.matterId??'corporate',input.type,input.recipient);
+  const {error}=await admin.from('notifications').insert({deal_id:input.matterId,recipient_email:input.recipient,channel:'email',type:input.type,template_id:input.type,template_version:'1',subject:input.subject,
+    message: `${input.type} for ${input.matterReference}`,status:'pending',provider:'resend',delivery_status:'pending',delivery_attempts:0,idempotency_key:idempotencyKey,correlation_id:input.matterId,queued_at:new Date().toISOString(),metadata:{evidence_scope:'provider_acceptance_only',final_delivery_proven:false}});
+  if(error?.code && error?.code !== "23505")return null;
+  const {data:existing,error:lookupError}=await admin.from('notifications').select('id,status,delivery_status,delivery_attempts').eq('idempotency_key',idempotencyKey).maybeSingle();
+  if(lookupError||!existing||existing.status==='sent'||SETTLED_DELIVERY.has(String(existing.delivery_status)))return null;
+  const token=crypto.randomUUID(),attempts=Number(existing.delivery_attempts??0);
+  const claimed=await admin.from('notifications').update({send_claim:token,send_claimed_at:new Date().toISOString(),attempted_at:new Date().toISOString(),delivery_attempts:attempts+1})
+    .eq('id',existing.id).eq('delivery_attempts',attempts).lt('delivery_attempts',3).is('send_claim',null).in('delivery_status',['pending','failed']).lte('next_send_at',new Date().toISOString()).select('id').maybeSingle();
+  return claimed.data?{id:existing.id,attempts,token}:null;
 }
 
-async function record(claimed: { id: string; attempts: number }, input: {
+async function record(claimed: { id: string; attempts: number; token:string }, input: {
   status: "sent" | "failed";
   providerMessageId?: string | null;
   errorMessage?: string | null;
@@ -90,7 +71,7 @@ async function record(claimed: { id: string; attempts: number }, input: {
 }) {
   const admin = createAdminClient();
   const now = new Date().toISOString();
-  await admin.from("notifications").update({
+  const result=await admin.from("notifications").update({
     status: input.status,
     provider_message_id: input.providerMessageId ?? null,
     error_message: input.errorMessage ?? null,
@@ -103,7 +84,11 @@ async function record(claimed: { id: string; attempts: number }, input: {
     sent_at: input.status === "sent" ? now : null,
     failed_at: input.status === "failed" ? now : null,
     last_provider_event_at: now,
-  }).eq("id", claimed.id);
+    send_claim:input.errorClassification==='transport_error'?claimed.token:null,
+    next_send_at:new Date(Date.now()+60000*2**claimed.attempts).toISOString(),
+    ...(input.errorClassification==='transport_error'?{delivery_status:'unknown'}:{}),
+  }).eq("id", claimed.id).eq('send_claim',claimed.token).select('id');
+  if(result.error||!result.data?.length)console.error('[notification] SEND_OUTCOME_RECORD_NOT_CONFIRMED',{notification_id:claimed.id});
 }
 
 async function sendOne(input: NotificationInput & { html: string }) {
@@ -124,9 +109,9 @@ async function sendOne(input: NotificationInput & { html: string }) {
       to: recipient,
       subject: input.subject,
       html: input.html,
-    });
-    if (result.error) {
-      await record(claimed, { status: "failed", errorMessage: result.error.message ?? "Resend rejected email request" });
+    },{idempotencyKey:notificationIdempotencyKey(input.matterId??'corporate',input.type,recipient)});
+    if (result.error || !result.data?.id) {
+      await record(claimed, { status: "failed", errorMessage: result.error?.message ?? "Resend acceptance not observed" });
       return;
     }
     await record(claimed, { status: "sent", providerMessageId: result.data?.id ?? null });
@@ -541,4 +526,11 @@ export async function sendPricingRequestAlerts(reference: string): Promise<strin
     : states.includes("unavailable")
       ? "unavailable"
       : "failed";
+}
+
+/** System monitoring is separate from agent tool authority and opt-in at release. */
+export async function sendGovernanceHealthAlerts(observation:{observation_id?:string;findings?:string[]}) {
+ if(process.env.GOVERNANCE_ALERTS_ENABLED!=='true'||!observation.observation_id||!observation.findings?.length)return;
+ const reference=observation.observation_id;
+ await Promise.all(operatorEmails().map(recipient=>sendOne({matterId:null,matterReference:reference,recipient,type:`operator_governance_alert_${reference}`,subject:'Governance monitoring requires operator review',html:shell('Governance monitoring requires review',`<p>Observation ${reference} has a governed queue, outcome or budget alert. Review the authenticated Board Room security/history and Notification Center. No agent output establishes payment, execution or release authority.</p>`)})));
 }

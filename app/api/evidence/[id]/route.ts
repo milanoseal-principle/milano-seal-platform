@@ -1,3 +1,4 @@
+import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { NextRequest, NextResponse } from "next/server";
 import { generateEvidencePacket } from "@/lib/evidencePacket";
 import { logActivity } from "@/lib/activity";
@@ -8,6 +9,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireDashboardAccess();
   const { id } = await params;
 
   try {
@@ -31,7 +33,7 @@ export async function GET(
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[evidence] error:", msg);
     return NextResponse.json(
-      { error: "Failed to generate evidence packet", details: msg },
+      { error: "Failed to generate evidence packet", owner:"MILANO",next_action:"Review custody integrity and retry from the operator Matter." },
       { status: 500 },
     );
   }

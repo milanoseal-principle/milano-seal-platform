@@ -23,6 +23,7 @@ function fixture(overrides: Partial<User> = {}) {
   const admin = {
     from() {
       queried = true;
+      let cursor:string|undefined;
       return {
         select() {
           return this;
@@ -31,9 +32,8 @@ function fixture(overrides: Partial<User> = {}) {
           pattern = value;
           return this;
         },
-        async order() {
-          return { data: rows };
-        },
+        order(){return this;},limit(){return this;},lt(_field:string,value:string){cursor=value;return this;},
+        then(resolve:(value:unknown)=>unknown){return Promise.resolve({data:rows.filter(row=>!cursor||row.id<cursor).sort((a,b)=>b.id.localeCompare(a.id))}).then(resolve);},
       };
     },
   };

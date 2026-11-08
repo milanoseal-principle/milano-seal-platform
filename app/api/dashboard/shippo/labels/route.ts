@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { roleFromEmail } from "@/lib/rbac";
+import { resolveServerRole } from '@/lib/auth/server-role';
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
 import {
   getShippoShipment,
   purchaseShippoLabel,
@@ -16,7 +17,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, matterId: string) {
-  const fields = "id, deal_id, payment_status, paid_and_released, matter_status, apostille_required, shipping_street1, document_type, client_name, destination_country, country, tier";
+  const fields = "payment_confirmed,payment_settlement_status,amount_due,amount_paid,balance_amount_received,balance_payment_status,balance_paid_at,final_total,is_paid_and_released,status,id, deal_id, payment_status, apostille_required, shipping_street1, document_type, client_name, destination_country, country, tier";
   const byId = await supabase.from("deals").select(fields).eq("id", matterId).maybeSingle();
   if (byId.data) return byId;
   return supabase.from("deals").select(fields).eq("deal_id", matterId).maybeSingle();
@@ -24,11 +25,12 @@ async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, ma
 
 export async function POST(req: NextRequest) {
   try {
+    if(req.headers.get('origin')!==new URL(req.url).origin||req.headers.get('sec-fetch-site')==='cross-site')return NextResponse.json({error:'SAME_ORIGIN_REQUIRED'},{status:403});
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const role = roleFromEmail(user.email);
+    const role = await resolveServerRole(user);
     if (!["founder_admin", "admin_operator"].includes(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -47,11 +49,14 @@ export async function POST(req: NextRequest) {
     const { data: matter, error: mErr } = await loadMatter(supabase, matter_id);
     if (mErr || !matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
 
+    const incidents=await createAdminClient().from('compliance_incidents').select('id').eq('matter_id',matter.id).not('status','in','(CLOSED,MATTER_RESTORED_OR_CLOSED)').or('release_frozen.eq.true,severity.in.(HIGH,CRITICAL)').limit(1);
+    if(incidents.error||incidents.data?.length)return NextResponse.json({error:'RELEASE_INCIDENT_REVIEW_REQUIRED'},{status:409});
+    if(evaluatePaymentGate(matter)!=='PAYMENT_CONFIRMED'||matter.is_paid_and_released!==true||!(Number(matter.final_total)>0&&Number(matter.amount_paid)+(matter.balance_payment_status==='paid'&&matter.balance_paid_at?Number(matter.balance_amount_received??0):0)===Number(matter.final_total)))return NextResponse.json({error:'VERIFIED_PAYMENT_AND_RELEASE_REQUIRED',next_action:'Review the canonical settlement, final release and zero balance before purchasing a client-delivery label.'},{status:409});
     try {
       assertCanCreateLabel({
         payment_status: matter.payment_status,
-        paid_and_released: matter.paid_and_released,
-        matter_status: matter.matter_status,
+        paid_and_released: matter.is_paid_and_released,
+        matter_status: matter.status,
         apostille_required: matter.apostille_required,
         shipping_address: matter.shipping_street1,
       });
@@ -70,6 +75,7 @@ export async function POST(req: NextRequest) {
       .eq("shippo_shipment_id", shipment_id)
       .maybeSingle();
     if (persistedError) return NextResponse.json({ error: "RATE_SNAPSHOT_LOOKUP_FAILED" }, { status: 500 });
+    if(!persistedShipment?.id)return NextResponse.json({error:'PERSISTED_RATE_SNAPSHOT_REQUIRED',next_action:'Load rates and confirm the selected shipment before purchasing.'},{status:409});
     if (persistedShipment?.shippo_transaction_id) {
       return NextResponse.json({
         success: true,
@@ -111,13 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (persistedShipment?.id) {
-      const { data: claimed, error: claimError } = await admin
-        .from("shippo_shipments")
-        .update({ rate_status: "SHIPPING_READY_FOR_LABEL", updated_at: new Date().toISOString() })
-        .eq("id", persistedShipment.id)
-        .eq("rate_status", "SHIPPING_RATE_SELECTED")
-        .select("id")
-        .maybeSingle();
+      const {data:claimed,error:claimError}=await admin.rpc('claim_final_delivery_label',{p_actor:user.id,p_matter:matter.id,p_shipment:persistedShipment.id});
       if (claimError) return NextResponse.json({ error: "SHIPMENT_LABEL_CLAIM_FAILED" }, { status: 500 });
       if (!claimed) return NextResponse.json({ error: "SHIPMENT_LABEL_CREATION_IN_PROGRESS" }, { status: 409 });
     }
@@ -128,16 +128,18 @@ export async function POST(req: NextRequest) {
       transaction = await purchaseShippoLabel(selected.object_id);
     } catch (error) {
       if (persistedShipment?.id) {
-        await admin.from("shippo_shipments").update({ rate_status: "SHIPPING_RATE_SELECTED" }).eq("id", persistedShipment.id);
+        // A transport failure has an unknown purchase outcome. Keep the claim
+        // for provider reconciliation instead of blindly buying another label.
       }
-      throw error;
+      return NextResponse.json({error:'LABEL_PURCHASE_OUTCOME_UNKNOWN',owner:'MILANO',next_action:'Reconcile the provider transaction for this persisted shipment before any retry. The purchase claim remains locked.'},{status:502});
     }
 
     if (transaction.status !== "SUCCESS") {
       if (persistedShipment?.id) {
-        await admin.from("shippo_shipments").update({ rate_status: "SHIPPING_RATE_SELECTED" }).eq("id", persistedShipment.id);
+        // A transport failure has an unknown purchase outcome. Keep the claim
+        // for provider reconciliation instead of blindly buying another label.
       }
-      return NextResponse.json({ error: "Label purchase failed", messages: transaction.messages }, { status: 502 });
+      return NextResponse.json({ error: 'LABEL_PURCHASE_FAILED_OR_PENDING',next_action:'Review the provider transaction. The purchase claim remains locked until its outcome is reconciled.', messages: transaction.messages }, { status: 502 });
     }
 
     const carrier = selected.provider;

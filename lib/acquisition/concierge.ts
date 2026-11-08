@@ -21,7 +21,7 @@ export const conciergeInquirySchema = z.object({
   urgency: z.enum(["routine", "urgent", "time_sensitive"]),
   question: z.string().trim().min(10, "Please add a little more context.").max(1500),
   originating_page: z.string().trim().max(500).default(""),
-  attribution: z.record(z.string().max(500)).default({}),
+  attribution: z.record(z.string(),z.string().max(500)).default({}),
   website: z.string().max(200).default(""),
 });
 

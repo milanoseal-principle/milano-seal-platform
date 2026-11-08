@@ -1,9 +1,8 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { usePortal } from './portal-context';
 export default function ClientNotificationLog() {
-  return (
-    <section className="rounded-3xl border border-amber-400/20 bg-black/70 p-6 text-amber-50 shadow-2xl shadow-amber-950/20">
-      <p className="text-xs uppercase tracking-[0.35em] text-amber-300/70">Milano Seal OS</p>
-      <h2 className="mt-2 text-xl font-semibold text-amber-100">Client Notification Log</h2>
-      <p className="mt-3 text-sm leading-6 text-amber-100/70">Secure International Document Execution & Authentication Infrastructure with receiving-authority review, event ledger control, and client-safe status language.</p>
-    </section>
-  );
+ const {deal}=usePortal();const [rows,setRows]=useState<{id:string;subject:string|null;delivery_status:string}[]>([]);const [error,setError]=useState(false);
+ useEffect(()=>{const controller=new AbortController();setRows([]);setError(false);if(deal?.id)fetch(`/api/portal/me/notifications?deal_id=${encodeURIComponent(deal.id)}`,{cache:'no-store',signal:controller.signal}).then(async response=>{if(!response.ok)throw Error('UNAVAILABLE');const body=await response.json();setRows(body.notifications??[]);}).catch(()=>{if(!controller.signal.aborted)setError(true);});return()=>controller.abort();},[deal?.id]);
+ return <section className="my-6 rounded-2xl border border-[#C6A55A]/20 p-4 text-sm text-white/70"><h2 className="font-serif text-xl text-[#F6F1E6]">Notification delivery</h2><p className="my-2">Provider acceptance is separate from delivery. Your current Matter details remain available in this portal.</p>{error?<p role="alert">Delivery status is unavailable. Contact your coordinator if a message is missing.</p>:rows.length?<ul className="space-y-2">{rows.map(row=><li key={row.id} className="break-words"><span>{row.subject??'Matter notification'}</span>: <strong>{row.delivery_status.replaceAll('_',' ')}</strong>{['failed','bounced','suppressed','unknown'].includes(row.delivery_status)&&<span> — Contact your coordinator; review your Matter here while delivery is investigated.</span>}</li>)}</ul>:<p>No recent email delivery records for this Matter and recipient.</p>}</section>;
 }

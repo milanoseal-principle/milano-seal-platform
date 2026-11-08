@@ -80,7 +80,8 @@ assert.match(adminStatus, /Use the governed RON Apostille QA action/);
 // Final release remains independently settlement-gated.
 assert.match(finalRelease, /payment_settlement_status/);
 assert.match(finalRelease, /fundsCleared/);
-assert.match(finalRelease, /founder_payment_override/);
+assert.match(finalRelease, /assertPaymentConfirmed\(deal,'release'\)/);
+assert.doesNotMatch(finalRelease,/founder_payment_override_at|PAYMENT_RELEASE_OVERRIDE_APPROVED/);
 assert.match(finalRelease, /FINAL_RELEASE_BLOCKED/);
 
 console.log('PASS post-payment Wise → scheduling → BlueNotary → Matter progression → Apostille QA corridor');

@@ -1,3 +1,5 @@
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
+import { readAllKeyset } from '@/lib/data/keyset';
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface CommandCenterLiveMetrics {
@@ -25,10 +27,7 @@ function money(value: unknown): number {
 }
 
 function canonicalCollected(row: Record<string, unknown>): number {
-  const verified = money(row.verified_revenue);
-  if (verified > 0) return verified;
-  if (row.payment_confirmed === true || row.payment_status === "paid") return money(row.amount_paid);
-  return 0;
+  return evaluatePaymentGate({id:String(row.id),payment_status:String(row.payment_status??''),payment_confirmed:row.payment_confirmed===true,payment_settlement_status:String(row.payment_settlement_status??''),amount_due:row.amount_due==null?null:Number(row.amount_due),amount_paid:row.amount_paid==null?null:Number(row.amount_paid)})==='PAYMENT_CONFIRMED'?money(row.amount_paid):0;
 }
 
 export async function getCommandCenterLiveMetrics(): Promise<CommandCenterLiveMetrics> {
@@ -53,14 +52,11 @@ export async function getCommandCenterLiveMetrics(): Promise<CommandCenterLiveMe
 
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("deals")
-      .select(
-        "deal_id,status,deal_status,payment_status,payment_confirmed,payment_confirmed_at,amount_paid,amount_due,verified_revenue,final_total,total_price,currency,destination_country,decline_risk,created_at,completed_at",
-      )
-      .limit(5000);
-
-    if (error || !data) return empty;
+    const data=await readAllKeyset<Record<string,unknown>>(async cursor=>{
+      let query=supabase.from('deals').select('id,deal_id,status,deal_status,payment_status,payment_confirmed,payment_settlement_status,payment_confirmed_at,amount_paid,amount_due,verified_revenue,final_total,total_price,currency,destination_country,decline_risk,created_at,completed_at').order('id').limit(250);
+      if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('METRICS_READ_UNAVAILABLE');return result.data??[];
+    },row=>String(row.id));
+    if(new Set(data.map(row=>row.currency)).size>1)return empty; // No implicit currency conversion.
 
     const rows = data as Array<Record<string, unknown>>;
     const usd = rows.filter((row) => !row.currency || String(row.currency).toUpperCase() === "USD");

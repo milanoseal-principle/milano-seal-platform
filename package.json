@@ -171,7 +171,13 @@
     "test:migration-replay": "node scripts/test-migration-replay.mjs",
     "validate:ai-governance": "node --import tsx scripts/validate-ai-governance.mjs",
     "test:ai-governance-regressions": "node scripts/test-ai-governance-regressions.mjs",
-    "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs"
+    "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs",
+    "test:gap-closure-database": "node --import tsx scripts/test-gap-closure-sql.mjs",
+    "test:upgrade-restore": "node scripts/test-upgrade-restore.mjs",
+    "verify:hosted-release": "node scripts/verify-hosted-release.mjs",
+    "test:production-certification-source": "node scripts/run-production-certification.mjs",
+    "verify:production-certification-hosted": "node scripts/run-production-certification.mjs --hosted-read-only",
+    "verify:hosted-schema": "node scripts/verify-hosted-schema.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -217,7 +223,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.564.0",
     "mammoth": "^1.8.0",
-    "next": "16.2.0",
+    "next": "16.4.5",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.4",
@@ -234,7 +240,7 @@
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.6.2",
     "vaul": "^1.1.2",
-    "zod": "^3.24.1"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",
@@ -247,7 +253,7 @@
     "eslint": "9.39.5",
     "eslint-plugin-react-hooks": "7.0.1",
     "playwright": "1.65.0",
-    "postcss": "^8.5",
+    "postcss": "8.5.32",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.23.0",
     "tw-animate-css": "1.3.3",

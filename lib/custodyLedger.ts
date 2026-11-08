@@ -1,3 +1,4 @@
+import { readAllKeyset } from '@/lib/data/keyset';
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity";
@@ -79,6 +80,7 @@ export interface AppendInput {
   status?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown>;
+  idempotency_key?: string;
 }
 
 export interface LedgerRow {
@@ -95,6 +97,7 @@ export interface LedgerRow {
   prev_hash: string | null;
   hash: string;
   created_at: string;
+  payload_canonical?: string | null;
 }
 
 function sha256(input: string): string {
@@ -113,74 +116,10 @@ export async function appendLedger(
 ): Promise<{ hash: string; prev_hash: string } | null> {
   const supabase = createAdminClient();
 
-  // Read-latest-hash -> insert is not atomic, so two concurrent appends to the same
-  // deal can read the same parent hash and fork the chain. The linear-chain unique
-  // index (migration 041, on deal_id + prev_hash) rejects the loser with a unique
-  // violation (Postgres 23505); we re-read the now-advanced chain head, recompute,
-  // and retry — up to MAX_ATTEMPTS total. Non-throwing; return shape preserved.
-  const MAX_ATTEMPTS = 3;
-  let prev_hash = "GENESIS";
-  let hash = "";
-  let lastErrorMessage = "";
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    // Chain head = latest row that still carries a hash. Skip dedupe-orphaned rows
-    // whose hash was nulled by migration 040/041 so we always chain from a real head.
-    const { data: last } = await supabase
-      .from("custody_ledger")
-      .select("hash")
-      .eq("deal_id", input.deal_id)
-      .not("hash", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    prev_hash = last?.hash || "GENESIS";
-
-    const ts = new Date().toISOString();
-    const payload = canonicalize({
-      deal_id: input.deal_id,
-      event: input.event,
-      actor_type: input.actor_type,
-      actor_id: input.actor_id ?? null,
-      location: input.location ?? null,
-      method: input.method ?? null,
-      status: input.status ?? null,
-      notes: input.notes ?? null,
-      metadata: input.metadata ?? {},
-      prev_hash,
-      ts,
-    });
-    hash = sha256(payload);
-
-    const { error } = await supabase.from("custody_ledger").insert({
-      deal_id: input.deal_id,
-      event: input.event,
-      actor_type: input.actor_type,
-      actor_id: input.actor_id ?? null,
-      location: input.location ?? null,
-      method: input.method ?? null,
-      status: input.status ?? null,
-      notes: input.notes ?? null,
-      metadata: input.metadata ?? {},
-      prev_hash,
-      hash,
-    });
-
-    if (!error) {
-      return { hash, prev_hash };
-    }
-
-    lastErrorMessage = error.message;
-
-    // 23505 = unique_violation: a concurrent writer took this (deal_id, prev_hash)
-    // slot. Re-read the advanced head and retry. Any other error is not a fork race
-    // — stop and fall through to the durable fallback below.
-    const isUniqueViolation = error.code === "23505";
-    if (!isUniqueViolation || attempt === MAX_ATTEMPTS) {
-      break;
-    }
-  }
+  const {data,error}=await supabase.rpc('append_custody_event',{p_input:{deal_id:input.deal_id,event:input.event,actor_type:input.actor_type,actor_id:input.actor_id??null,location:input.location??null,method:input.method??null,status:input.status??null,notes:input.notes??null,metadata:input.metadata??{}},p_idempotency_key:input.idempotency_key??null});
+  if(!error&&data?.hash)return {hash:data.hash,prev_hash:data.prev_hash};
+  const prev_hash='NOT_COMMITTED',hash='NOT_COMMITTED';
+  const lastErrorMessage=error?.message??'APPEND_OUTCOME_UNKNOWN';
 
   // A custody-ledger write must never fail silently in production. The chain-of-
   // custody record is safety-critical (release gates, payment confirmation, QA).
@@ -208,16 +147,17 @@ export async function appendLedger(
 
 export async function getLedger(deal_id: string): Promise<LedgerRow[]> {
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("custody_ledger")
-    .select("*")
-    .eq("deal_id", deal_id)
-    .order("created_at", { ascending: true });
-  if (error) {
-    console.error("[custody] read failed:", error.message);
-    return [];
-  }
-  return (data ?? []) as LedgerRow[];
+  const rows=await readAllKeyset<LedgerRow>(async cursor=>{
+    let query=supabase.from('custody_ledger').select('*').eq('deal_id',deal_id).order('id').limit(250);
+    if(cursor)query=query.gt('id',cursor.id);
+    const result=await query;if(result.error)throw Error('CUSTODY_READ_UNAVAILABLE');return result.data as LedgerRow[]??[];
+  },row=>row.id);
+  // Database timestamp ties never define hash-chain order; parent references do.
+  const byParent=new Map<string,LedgerRow>();
+  for(const row of rows){const parent=row.prev_hash??'GENESIS';if(byParent.has(parent))throw Error('CUSTODY_CHAIN_FORK');byParent.set(parent,row);}
+  const ordered:LedgerRow[]=[];let parent='GENESIS';
+  while(byParent.has(parent)){const row=byParent.get(parent)!;byParent.delete(parent);ordered.push(row);parent=row.hash;}
+  if(byParent.size)throw Error('CUSTODY_CHAIN_DISCONNECTED');return ordered;
 }
 
 export interface VerifyResult {
@@ -225,6 +165,7 @@ export interface VerifyResult {
   total: number;
   brokenAt?: number;
   reason?: string;
+  assurance?: "CONTENT_AND_LINKS" | "LEGACY_LINKS_ONLY";
 }
 
 export function verifyChain(rows: LedgerRow[]): VerifyResult {
@@ -237,6 +178,10 @@ export function verifyChain(rows: LedgerRow[]): VerifyResult {
       reason: "First row prev_hash is not GENESIS",
     };
   }
+  for(const [i,row] of rows.entries())if(row.payload_canonical){
+    let payload:Record<string,unknown>;try{payload=JSON.parse(row.payload_canonical);}catch{return {valid:false,total:rows.length,brokenAt:i,reason:'Invalid custody payload'};}
+    if(sha256(row.payload_canonical)!==row.hash||['deal_id','event','actor_type','actor_id','location','method','status','notes','prev_hash','metadata'].some(k=>canonicalize({value:payload[k]})!==canonicalize({value:(row as unknown as Record<string,unknown>)[k]})))return {valid:false,total:rows.length,brokenAt:i,reason:'Custody content hash mismatch'};
+  }
   for (let i = 1; i < rows.length; i++) {
     if (rows[i].prev_hash !== rows[i - 1].hash) {
       return {
@@ -247,5 +192,5 @@ export function verifyChain(rows: LedgerRow[]): VerifyResult {
       };
     }
   }
-  return { valid: true, total: rows.length };
+  return { valid: true, total: rows.length, assurance:rows.every(row=>Boolean(row.payload_canonical))?"CONTENT_AND_LINKS":"LEGACY_LINKS_ONLY" };
 }

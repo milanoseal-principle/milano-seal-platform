@@ -19,7 +19,7 @@ export const inquirySchema = z
       .min(10, "Please add a little more detail (at least 10 characters).")
       .max(4000),
     attribution: z
-      .record(z.string().max(4000))
+      .record(z.string(),z.string().max(4000))
       .default({})
       .transform(cleanCounselAttribution),
   })

@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
   if (!messageId || !update) return NextResponse.json({ ok: true, ignored: true });
 
   const admin = createAdminClient();
-  const { data: row } = await admin.from("notifications").select("id, provider_event_id, delivery_status").eq("provider_message_id", messageId).maybeSingle();
-  if (!row) return NextResponse.json({ ok: true, unmatched: true });
+  const { data: row,error:lookupError } = await admin.from("notifications").select("id, provider_event_id, delivery_status").eq("provider_message_id", messageId).maybeSingle();
+  if(lookupError||!row)return NextResponse.json({ok:false,code:'DELIVERY_TARGET_NOT_READY_RETRY'},{status:503,headers:{'Retry-After':'60'}});
   if (row.provider_event_id === id) return NextResponse.json({ ok: true, duplicate: true });
 
   const { error } = await admin.from("notifications").update({
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   }).eq("id", row.id);
   if (error?.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
   // Terminal states are immutable; a later contradictory event is acknowledged, not applied.
-  if (error) return NextResponse.json({ ok: true, rejected: error.message === "NOTIFICATION_TERMINAL_STATE_IMMUTABLE" ? "TERMINAL" : "UPDATE_REJECTED" });
+  if(error?.message==='NOTIFICATION_TERMINAL_STATE_IMMUTABLE')return NextResponse.json({ok:true,rejected:'TERMINAL'});
+  if(error)return NextResponse.json({ok:false,code:'DELIVERY_RECORD_NOT_CONFIRMED'},{status:503});
   return NextResponse.json({ ok: true, delivery_status: update.delivery_status });
 }

@@ -1,3 +1,4 @@
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
 import { APOSTILLE_FEES, COMPLEXITY, SHIPPING_FEES, URGENCY_FEES } from "@/lib/pricing";
 import { generateInvoice } from "@/lib/invoice";
 
@@ -189,7 +190,7 @@ export function buildClientInvoiceSnapshot(row: PortalInvoiceMatterRow): ClientI
   const storedRetainer = n(row.invoice_retainer);
   const storedBalance = n(row.invoice_balance);
   const amountDue = n(row.amount_due);
-  const paymentConfirmed = Boolean(row.payment_confirmed) || ["paid", "confirmed", "payment_confirmed"].includes(String(row.payment_status ?? "").toLowerCase());
+  const paymentConfirmed = evaluatePaymentGate({id:String(row.id??''),payment_confirmed:row.payment_confirmed===true,payment_status:String(row.payment_status??''),payment_settlement_status:String(row.payment_settlement_status??''),amount_due:row.amount_due==null?null:Number(row.amount_due),amount_paid:row.amount_paid==null?null:Number(row.amount_paid)})==='PAYMENT_CONFIRMED';
 
   return {
     matterId: String(row.id ?? ""),

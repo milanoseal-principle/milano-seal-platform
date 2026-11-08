@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, MessageCircle, Lock } from "lucide-react";
+import ClientNotificationLog from '@/components/portal/ClientNotificationLog';
 import { usePortal } from "@/components/portal/portal-context";
 
 interface Message {
@@ -232,6 +233,7 @@ export default function PortalMessagesPage() {
           Messages are encrypted and reviewed only by your assigned Milano Seal™ operator.
         </p>
       </div>
+      <ClientNotificationLog />
     </div>
   );
 }

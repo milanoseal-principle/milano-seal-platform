@@ -1,3 +1,5 @@
+import { readAllKeyset } from '@/lib/data/keyset';
+import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLedger, verifyChain } from "@/lib/custodyLedger";
@@ -10,6 +12,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireDashboardAccess();
   const { id } = await params;
   const supabase = createAdminClient();
 
@@ -23,18 +26,9 @@ export async function GET(
 
   const [ledger, deal_events, shipping] = await Promise.all([
     getLedger(deal.id),
-    supabase
-      .from("deal_events")
-      .select("*")
-      .eq("deal_id", deal.id)
-      .order("created_at", { ascending: true })
-      .then((r) => r.data ?? []),
-    supabase
-      .from("shipping_analytics")
-      .select("*")
-      .eq("deal_id", deal.id)
-      .order("created_at", { ascending: true })
-      .then((r) => r.data ?? []),
+    ...['deal_events','shipping_analytics'].map(table=>readAllKeyset<Record<string,unknown>>(async cursor=>{
+      let query=supabase.from(table).select('*').eq('deal_id',deal.id).order('id').limit(250);if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('EXPORT_READ_UNAVAILABLE');return result.data??[];
+    },row=>String(row.id))),
   ]);
 
   const verdict = verifyChain(ledger);

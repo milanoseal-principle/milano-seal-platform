@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   const dealId = req.nextUrl.searchParams.get("deal_id");
-  const deal = (dealId ? ctx.deals.find((d) => d.id === dealId) : null) ?? ctx.deals[0];
+  const deal = dealId ? ctx.deals.find((d) => d.id === dealId) : ctx.deals[0];
 
   if (!deal) {
     return NextResponse.json({ error: "Matter not found" }, { status: 404 });
