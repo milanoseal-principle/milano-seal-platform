@@ -209,7 +209,11 @@ export async function assertCanRetrieveSignedDocuments(
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  const providerCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state) ||\n    ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'].includes(session.milano_ron_status);\n  if (!providerCompleted) {\n    throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);\n  }
+  const providerCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state) ||
+    ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'].includes(session.milano_ron_status);
+  if (!providerCompleted) {
+    throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);
+  }
 }
 
 /** Authoritative Milano completion remains separate from provider retrieval. */
@@ -247,10 +251,13 @@ export async function assertCanAdvanceToApostille(
     throw new RONGuardError('SIGNED_DOCS_NOT_RETRIEVED', 'Signed documents must be retrieved and stored before advancing to Apostille');
   }
 
-  await assertRonExecutionCompleted(supabase, ronSessionId);\n\n  const { data: docs } = await supabase
+  await assertRonExecutionCompleted(supabase, ronSessionId);
+
+  const { data: docs } = await supabase
     .from('ron_documents')
     .select('id, signed_document_received, executed_sha256')
     .eq('ron_session_id', ronSessionId)
-    .eq('signed_document_received', true)\n    .not('executed_sha256', 'is', null);
+    .eq('signed_document_received', true)
+    .not('executed_sha256', 'is', null);
   if (!docs || docs.length === 0) throw new RONGuardError('NO_SIGNED_DOCUMENTS', 'No signed documents have been received for this session');
 }
