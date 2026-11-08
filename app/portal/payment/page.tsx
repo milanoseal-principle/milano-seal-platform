@@ -2,7 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
-import { PolicyAcceptanceGate } from "@/components/portal/PolicyAcceptanceGate";\nimport { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
+import { PolicyAcceptanceGate } from "@/components/portal/PolicyAcceptanceGate";
+import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
 import { ClientMatterQuoteSummary } from "@/components/portal/ClientMatterQuoteSummary";
 import { usePortal } from "@/components/portal/portal-context";
 
