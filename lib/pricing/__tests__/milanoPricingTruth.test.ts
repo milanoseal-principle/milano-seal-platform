@@ -11,26 +11,26 @@ function price(text: string, structured: Parameters<typeof classifyIntake>[0]["s
 
 // ── Locked consumer canon math ──────────────────────────────────────────────
 
-test("Matter B: two signers elevate to Priority with signer + signature tracking", () => {
+test("Matter B: two signers elevate to Priority with Milano additional-signer charge only", () => {
   const r = price("notarize this document for 2 signers", { signerCount: 2, destinationCountry: "United States" }, "signature");
-  assert.equal(r.total, 1175); // 975 Priority + 150 additional signer + 50 internal signature tracking
+  assert.equal(r.total, 1125); // 975 Priority + 150 Milano additional-signer charge
   assert.equal(r.additionalSignerCount, 1);
 });
 
-test("Matter C: Priority + first apostille included + notarized-signature tracking = $1,000", () => {
+test("Matter C: Priority + first apostille included excludes external provider notarial fee", () => {
   const r = price("notarize and apostille for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
-  assert.equal(r.total, 1000); // 975 Priority (first apostille included) + 25 internal signature tracking
+  assert.equal(r.total, 975); // Priority; external provider notarial fee is outside Milano financial truth
 });
 
 test("Matter D: same-day apostille elevates to Executive and adds rush", () => {
   const r = price("notarize, apostille, same day for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
   assert.equal(r.authorizedAddOns.rush, 400);
-  assert.equal(r.total, 2275); // 1850 Executive (first apostille included) + 400 rush + 25 internal signature tracking
+  assert.equal(r.total, 2250); // 1850 Executive + 400 Milano rush
 });
 
-test("Matter E: Executive + apostille + 2 signers includes signature tracking", () => {
+test("Matter E: Executive + apostille + 2 signers excludes external provider fee", () => {
   const r = price("notarize and apostille for Italy, 2 signers", { apostille: true, destinationCountry: "Italy", signerCount: 2 }, "executive");
-  assert.equal(r.total, 2050); // 1850 (first apostille included) + 150 additional signer + 50 internal signature tracking
+  assert.equal(r.total, 2000); // 1850 Executive + 150 Milano additional-signer charge
 });
 
 test("additional signer math: 3 signers => 2 additional => $300", () => {
@@ -86,7 +86,7 @@ test("apostille quantity uses first + additional apostille pricing", () => {
   const r = price("notarize and 3 apostilles for Italy", { apostille: true, destinationCountry: "Italy" }, "signature");
   assert.equal(r.apostilleQuantity, 3);
   assert.equal(r.authorizedAddOns.apostille, 500); // first apostille included + 2 additional apostilled documents at 250 each
-  assert.equal(r.total, 1500); // 975 Priority + 500 + 25 internal signature tracking
+  assert.equal(r.total, 1475); // 975 Priority + 500 additional apostille coordination
 });
 
 test("rush not applied from vague urgency (deadline exists but no same-day/rush word)", () => {
