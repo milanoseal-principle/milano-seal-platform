@@ -1,3 +1,4 @@
+import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "deal_id required" }, { status: 400 });
   }
 
+  if(!await authorizeMatterUpload(req,dealId,true))return NextResponse.json({error:'UPLOAD_NOT_AUTHORIZED',next_action:'Use the same browser immediately after intake, or sign in to the account that owns this Matter.'},{status:403});
   const admin = createAdminClient();
 
   const isUuid =

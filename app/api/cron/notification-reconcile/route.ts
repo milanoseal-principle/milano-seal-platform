@@ -2,6 +2,7 @@ import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  reconcileCanonicalNotifications,
   sendCounselInquiryAlerts,
   sendOperatorIntakeAlerts,
   sendPaymentObservedAlerts,
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let canonical;try{canonical=await reconcileCanonicalNotifications();}catch{return NextResponse.json({error:'CANONICAL_NOTIFICATION_RECONCILIATION_NOT_CONFIRMED',owner:'MILANO'},{status:503});}
   const admin = createAdminClient();
   const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const { data, error } = await admin
@@ -89,7 +91,7 @@ export async function GET(req: NextRequest) {
     try { inquiryNotifications[inquiry.id] = await sendCounselInquiryAlerts(inquiry.id); }
     catch { inquiryNotifications[inquiry.id] = "unavailable"; }
   }
-  return NextResponse.json({ success: true, ...summary, scope:"BOUNDED_RECENT_BATCH",inquiry_scan: inquiryError ? "unavailable" : "BATCH_ONLY", inquiry_notifications: inquiryNotifications });
+  return NextResponse.json({ success: true,canonical, ...summary, scope:"BOUNDED_RECENT_BATCH",inquiry_scan: inquiryError ? "unavailable" : "BATCH_ONLY", inquiry_notifications: inquiryNotifications });
 }
 
 export async function POST(req: NextRequest) {

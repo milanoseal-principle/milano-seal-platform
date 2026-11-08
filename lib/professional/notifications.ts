@@ -9,6 +9,10 @@ import type { NotificationPreference } from "./profile";
 import { RECEIVING_AUTHORITY_DISCLAIMER } from "./matterProjection";
 
 export const PROFESSIONAL_NOTIFICATION_COPY: Record<NotificationEvent, { subject: string; body: string }> = {
+ review_started:{subject:'Matter review started',body:'The Matter is under controlled review.'},
+ execution_started:{subject:'Execution in progress',body:'Execution has started. Governed completion evidence remains separate.'},
+ authentication_processing:{subject:'Authentication processing',body:'The Matter has entered authentication processing; authority receipt and acceptance remain separate.'},
+ matter_paused:{subject:'Matter paused',body:'The Matter is paused pending coordinator review.'},
   intake_received: { subject: "Matter received", body: "Your client's Matter has been received and is in controlled review." },
   quote_ready: { subject: "Quote issued", body: "A Matter-specific execution quote has been issued to your client." },
   payment_instructions_sent: { subject: "Payment instructions sent", body: "Wise payment instructions have been sent to your client." },

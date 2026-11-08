@@ -1,3 +1,4 @@
+import {bindIntakeUploadCapability} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -139,7 +140,7 @@ async function canonicalizeRequest(req: NextRequest): Promise<{
   return { request, sourceChannel, failure: null };
 }
 
-export async function POST(req: NextRequest) {
+async function canonicalPost(req: NextRequest) {
   const normalized = await canonicalizeRequest(req);
   if (normalized.failure) return normalized.failure;
 
@@ -287,3 +288,5 @@ export async function POST(req: NextRequest) {
     headers,
   });
 }
+
+export async function POST(request:NextRequest){return bindIntakeUploadCapability(await canonicalPost(request));}

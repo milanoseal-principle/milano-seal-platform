@@ -1,3 +1,4 @@
+import {NOTIFICATION_COPY,type NotificationEvent} from '@/lib/notifications/orchestrator';
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
@@ -533,4 +534,16 @@ export async function sendGovernanceHealthAlerts(observation:{observation_id?:st
  if(process.env.GOVERNANCE_ALERTS_ENABLED!=='true'||!observation.observation_id||!observation.findings?.length)return;
  const reference=observation.observation_id;
  await Promise.all(operatorEmails().map(recipient=>sendOne({matterId:null,matterReference:reference,recipient,type:`operator_governance_alert_${reference}`,subject:'Governance monitoring requires operator review',html:shell('Governance monitoring requires review',`<p>Observation ${reference} has a governed queue, outcome or budget alert. Review the authenticated Board Room security/history and Notification Center. No agent output establishes payment, execution or release authority.</p>`)})));
+}
+
+/** Bounded replay from actual canonical state events and the existing notification rows. */
+export async function reconcileCanonicalNotifications() {
+ const admin=createAdminClient();const pending=await admin.rpc('pending_matter_notification_events');
+ if(pending.error||!Array.isArray(pending.data))throw Error('NOTIFICATION_EVENT_READ_UNAVAILABLE');
+ for(const entry of pending.data){const copy=NOTIFICATION_COPY[entry.event as NotificationEvent];if(!copy)continue;const queued=await admin.rpc('queue_matter_notification',{p_matter:entry.matter_id,p_event:entry.event,p_subject:copy.subject,p_body:copy.body,p_state_event:entry.id});if(queued.error)throw Error('NOTIFICATION_QUEUE_NOT_CONFIRMED');}
+ const rows=await admin.from('notifications').select('deal_id,recipient_email,type,metadata').eq('template_id','canonical_matter_lifecycle_v1').in('delivery_status',['pending','failed']).is('send_claim',null).lt('delivery_attempts',3).lte('next_send_at',new Date().toISOString()).order('created_at').order('id').limit(50);
+ if(rows.error)throw Error('NOTIFICATION_DELIVERY_QUEUE_UNAVAILABLE');
+ for(const row of rows.data??[]){const event=row.metadata?.event as NotificationEvent;const copy=NOTIFICATION_COPY[event];if(!copy||!row.deal_id)continue;const matter=await admin.from('deals').select('id,email,deal_id').eq('id',row.deal_id).maybeSingle();if(matter.error||!matter.data||matter.data.email?.trim().toLowerCase()!==row.recipient_email)continue;
+ await sendOne({matterId:row.deal_id,matterReference:matter.data.deal_id??row.deal_id,recipient:row.recipient_email,type:row.type,subject:copy.subject,html:shell(copy.subject,`<p>${copy.body}</p><p>Review your current Matter in the secure portal.</p>`)});}
+ return {queued_batch:pending.data.length,delivery_batch:rows.data?.length??0,scope:'BOUNDED_CANONICAL_EVENT_BATCH'};
 }
