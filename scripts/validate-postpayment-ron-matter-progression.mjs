@@ -12,7 +12,7 @@ const gateMigrations = fs.readdirSync(path.join(process.cwd(), 'supabase/migrati
   .sort()
   .filter((f) => /create or replace function public\.check_payment_gate\(/i.test(read(`supabase/migrations/${f}`)));
 const migration = read(`supabase/migrations/${gateMigrations.at(-1)}`);
-const migration = read('supabase/migrations/089_verified_settlement_scheduling_gate.sql');
+assert.ok(gateMigrations.length > 0, 'no payment-gate migration found');
 const schedule = read('app/api/deals/[id]/schedule/route.ts');
 const guards = read('lib/bluenotary/guards.ts');
 const sessions = read('app/api/dashboard/ron/sessions/route.ts');
