@@ -62,7 +62,7 @@ create or replace function public.ron_statutory_evidence_verified(p_session uuid
  select exists(select 1 from public.ron_sessions s join public.deals m on m.id=s.matter_id join public.ron_audit_events e on e.id=s.statutory_evidence_id
  where s.id=p_session and s.evidence_reopened_at is null and e.ron_session_id=s.id and e.matter_id=s.matter_id and e.event_type='RON_STATUTORY_EVIDENCE_VERIFIED'
  and exists(select 1 from public.execution_qa_reviews q where q.id::text=e.metadata->'evidence'->>'qc_reference' and q.deal_id=s.matter_id and q.execution_qa_status='PASSED' and q.passed_at is not null and q.passed_by is not null and coalesce(cardinality(q.blocking_items),0)=0 and coalesce(cardinality(q.missing_items),0)=0)
- and not exists(select 1 from public.compliance_incidents i where i.deal_id=s.matter_id and i.status not in ('RESOLVED','CLOSED') and (i.freeze_triggered or i.severity in ('high','critical')))
+ and not exists(select 1 from public.compliance_incidents i where i.matter_id=s.matter_id and i.status not in ('CLOSED','MATTER_RESTORED_OR_CLOSED') and (i.release_frozen or i.severity in ('HIGH','CRITICAL')))
  and upper(trim(m.execution_truth->>'notary_jurisdiction'))=upper(trim(e.metadata->'evidence'->>'commission_jurisdiction'))
  and e.metadata->'evidence'->'witness_applicability'->>'status'=case when m.witnesses>0 then 'REQUIRED' when m.witnesses=0 then 'NOT_REQUIRED' else 'REVIEW_REQUIRED' end
  and m.witnesses is not null and jsonb_array_length(e.metadata->'evidence'->'witnesses')>=m.witnesses
@@ -110,7 +110,7 @@ begin
  end loop;
  if p_evidence ? 'external_provider_fee' and ((p_evidence->'external_provider_fee') - array['classification','reference'] <> '{}'::jsonb or p_evidence->'external_provider_fee'->>'classification' is distinct from 'EXTERNAL_PROVIDER_NOTARIAL_FEE' or not public.p4_evidence_reference(p_evidence->'external_provider_fee'->'reference')) then raise exception 'INVALID_EXTERNAL_PROVIDER_FEE_REFERENCE'; end if;
  if not exists(select 1 from public.execution_qa_reviews q where q.id::text=p_evidence->>'qc_reference' and q.deal_id=s.matter_id and q.checklist_type='RON_QA' and ((m.witnesses=0 and q.witness_status='NOT_REQUIRED') or (m.witnesses>0 and q.witness_status='COMPLETE')) and q.execution_qa_status='PASSED' and q.passed_by is not null and q.passed_at is not null and coalesce(cardinality(q.blocking_items),0)=0 and coalesce(cardinality(q.missing_items),0)=0) then raise exception 'GOVERNED_RON_QC_REQUIRED'; end if;
- if exists(select 1 from public.compliance_incidents i where i.deal_id=s.matter_id and i.status not in ('RESOLVED','CLOSED') and (i.freeze_triggered or i.severity in ('high','critical'))) then raise exception 'BLOCKING_EXECUTION_EXCEPTION'; end if;
+ if exists(select 1 from public.compliance_incidents i where i.matter_id=s.matter_id and i.status not in ('CLOSED','MATTER_RESTORED_OR_CLOSED') and (i.release_frozen or i.severity in ('HIGH','CRITICAL'))) then raise exception 'BLOCKING_EXECUTION_EXCEPTION'; end if;
  if p_evidence->>'qc_status' is distinct from 'PASSED' then raise exception 'QC_PASS_REQUIRED'; end if;
  if (p_evidence->>'act_count')::integer is null or (p_evidence->>'act_count')::integer not between 1 and 1000 then raise exception 'ACT_COUNT_REQUIRED'; end if;
  if (p_evidence->>'commission_expires_at')::timestamptz is null or (p_evidence->>'commission_expires_at')::timestamptz < (p_evidence->>'executed_at')::timestamptz then raise exception 'COMMISSION_EXPIRED_OR_UNKNOWN'; end if;
