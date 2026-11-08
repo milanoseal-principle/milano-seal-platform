@@ -40,8 +40,8 @@ begin
  insert into public.ron_audit_events(matter_id,ron_session_id,event_type,description,actor_role,source,metadata)
  values(s.matter_id,s.id,'RON_EXECUTED_DOCUMENT_CAPTURED','Executed version secured; provider retrieval does not verify completion.','system','ron_document_ingestion',jsonb_build_object('document_id',document_id,'source_document_id',source.id,'source_sha256',p_source_sha256,'source_version_id',source_version,'document_version_id',version_id,'sha256',p_sha256,'storage_bucket','documents','storage_path',p_storage_path,'immutable',true));
  if exists(select 1 from public.ron_documents d where d.ron_session_id=s.id and d.source_ron_document_id=source.id and d.signed_sha256<>p_sha256) then
-   insert into public.compliance_incidents(deal_id,incident_type,severity,status,title,description,freeze_triggered,discovered_by)
-   values(s.matter_id,'RON_EXECUTED_BYTES_CHANGED','critical','OPEN','Provider returned different executed document bytes','Review preserved immutable versions for RON session '||s.id::text||' and source '||source.id::text,true,'ron_document_ingestion');
+   insert into public.compliance_incidents(matter_id,incident_type,severity,status,summary,release_frozen)
+   values(s.matter_id,'RON_EXECUTED_BYTES_CHANGED','CRITICAL','INCIDENT_OPENED','Provider returned different executed document bytes; preserved immutable versions for RON session '||s.id::text||' and source '||source.id::text,true);
    update public.ron_sessions set milano_ron_status='RON_REVIEW_REQUIRED' where id=s.id;
  end if;
  return document_id;
