@@ -54,7 +54,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       .order('created_at', { ascending: true }),
     supabase
       .from('ron_sessions')
-      .select('id, notarization_id, bn_session_id, milano_ron_status, payment_gate_status, session_timing, expired_at, completed_at, created_at, identity_status, kba_status, biometric_status')
+      .select('id, notarization_id, bn_session_id, milano_ron_status, ron_lifecycle_state, payment_gate_status, session_timing, expired_at, completed_at, created_at, identity_status, kba_status, biometric_status')
       .eq('matter_id', matter.id)
       .order('created_at', { ascending: false })
       .limit(1),
@@ -92,7 +92,8 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const unresolvedPreflight = preflightReadiness.unresolved;
   const sessionExists = Boolean(activeSession && !['RON_EXPIRED', 'RON_COMPLETED'].includes(activeSession.milano_ron_status));
   const sessionNotExpired = Boolean(activeSession && activeSession.milano_ron_status !== 'RON_EXPIRED' && (!activeSession.expired_at || new Date(activeSession.expired_at) > new Date()));
-  const sessionCompleted = Boolean(activeSession && ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE'].includes(activeSession.milano_ron_status));
+  const sessionCompleted = Boolean(activeSession && ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(String(activeSession.ron_lifecycle_state)));
+  const ronCompleted = activeSession?.ron_lifecycle_state === 'COMPLETED';
   const pendingRONDocumentIds = ronDocuments.filter((doc) => !doc.uploaded_to_bluenotary).map((doc) => doc.id);
 
   const blockers = [
@@ -314,7 +315,8 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
                   ? 'Matter package is missing an execution document.'
                   : 'Execution document structural preflight is not READY.',
             },
-            sessionCompleted: { met: sessionCompleted },
+            sessionCompleted: { met: sessionCompleted, reason: 'The provider must report session completion before signed documents can be retrieved.' },
+            ronCompleted: { met: ronCompleted, reason: 'Milano must verify statutory RON evidence and complete the session first.' },
           }}
         />
       </div>

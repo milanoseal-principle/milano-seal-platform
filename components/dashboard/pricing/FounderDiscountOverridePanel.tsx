@@ -33,15 +33,19 @@ type FounderDiscountOverridePanelProps = {
   };
 };
 
-export default function FounderDiscountOverridePanel({
+// Role gate lives outside the stateful form so hooks run in a stable order.
+export default function FounderDiscountOverridePanel(props: FounderDiscountOverridePanelProps) {
+  if (props.role !== "founder_admin") return null;
+  return <FounderDiscountOverrideForm {...props} />;
+}
+
+function FounderDiscountOverrideForm({
   dealId,
   currentAmount,
   currentPaymentStatus,
   role,
   existingDiscount = {},
 }: FounderDiscountOverridePanelProps) {
-  if (role !== "founder_admin") return null;
-
   const isLocked = existingDiscount.price_override_locked ?? false;
   const isPaid = currentPaymentStatus === "paid";
 

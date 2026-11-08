@@ -20,7 +20,9 @@ function StatusRow({ label, detail, state }: { label: string; detail: string; st
 
 export function PortalRONStatusCard({ projection, matterReference }: Props) {
   const showSigningLink = Boolean(projection.signing_url && projection.scheduling_authorized && projection.session_active);
-  const completed = ["RON_COMPLETED", "SIGNED_DOCS_RETRIEVED", "READY_FOR_APOSTILLE"].includes(projection.milano_ron_status);
+  // Provider completion and document retrieval are not Milano completion.
+  const completed = projection.milano_completed === true;
+  const evidenceInReview = ["PROVIDER_SESSION_COMPLETED", "EVIDENCE_PENDING", "EVIDENCE_VERIFIED"].includes(projection.ron_lifecycle_state);
 
   return (
     <section className="rounded-2xl border border-[#C6A65B]/25 bg-black/50 p-5 shadow-2xl backdrop-blur-md sm:p-7" aria-labelledby="signing-readiness">
@@ -34,7 +36,8 @@ export function PortalRONStatusCard({ projection, matterReference }: Props) {
         <StatusRow label="Scheduling authority" detail={projection.scheduling_authorized ? "Authorized. No additional payment is required." : "Awaiting canonical payment or complimentary authority."} state={projection.scheduling_authorized ? "satisfied" : "blocked"} />
         <StatusRow label="Identity verification" detail={projection.identity_status === "PASSED" ? "Provider evidence received." : "Completed securely inside the signing room."} state={projection.identity_status === "PASSED" ? "satisfied" : "processing"} />
         <StatusRow label="Knowledge-based authentication" detail={projection.kba_status === "PASSED" ? "Provider evidence received." : "Required during the provider session."} state={projection.kba_status === "FAILED" ? "review" : projection.kba_status === "PASSED" ? "satisfied" : "processing"} />
-        {completed && <StatusRow label="RON completion" detail="BlueNotary provider evidence has been received by Milano." state="satisfied" />}
+        {evidenceInReview && <StatusRow label="Execution verification" detail="BlueNotary reported the session complete. Milano is verifying the statutory execution record; no action is needed from you." state="processing" />}
+        {completed && <StatusRow label="RON completion" detail="Milano verified the statutory execution record for this session." state="satisfied" />}
       </ul>
 
       {showSigningLink ? (

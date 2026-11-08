@@ -12,7 +12,7 @@ export * from "./pricingSafety";
 /**
  * @deprecated Import the controlling engine directly from "@/lib/pricing" for
  * now; route NEW consumers through canonicalPricingGateway.quoteConsumer.
- * Parallel engines (command-center/pricingIntelligence, config/pricing,
+ * Parallel engines (command-center/pricingIntelligence,
  * pricing/smartIntakePricingEngine) are being migrated behind the gateway and
  * must not add new final-price constants.
  */

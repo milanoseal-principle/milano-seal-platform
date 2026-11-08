@@ -108,7 +108,7 @@ export async function POST(
         updated_at: now,
       })
       .eq('id', session.id)
-      .in('milano_ron_status', ['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE']);
+      .in('milano_ron_status', ['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED']);
 
     await admin.from('ron_audit_events').insert({
       matter_id: matter.id,

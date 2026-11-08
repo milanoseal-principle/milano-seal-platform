@@ -11,7 +11,8 @@ const webhook = read('app/api/webhooks/bluenotary/route.ts');
 const apostilleQa = read('app/api/dashboard/ron/sessions/[id]/apostille-qa/route.ts');
 const legacyApostille = read('app/api/deals/[id]/apostille/route.ts');
 const adminStatus = read('app/api/admin/matters/[id]/status/route.ts');
-const signedDocs = read('app/api/dashboard/ron/sessions/[id]/signed-documents/route.ts');
+// P4b: executed capture is shared by the retrieval route and webhook via lib/ron/executedCapture.ts.
+const signedDocs = read('app/api/dashboard/ron/sessions/[id]/signed-documents/route.ts') + read('lib/ron/executedCapture.ts');
 const finalRelease = read('lib/release/performFinalRelease.ts');
 
 // Scheduling authority is observation-based but non-paid.

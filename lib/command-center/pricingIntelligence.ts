@@ -30,7 +30,6 @@ export const INTERNAL_PRICING = {
   components: {
     additionalDocument: DOCUMENT_FEES.additional_non_apostille_document,
     additionalSigner: NOTARY_SIGNER_FEES.additional_signer,
-    notarizedSignature: NOTARY_SIGNER_FEES.additional_notarized_signature_tracking,
     floridaNotarialAct: NOTARY_SIGNER_FEES.florida_notarial_act,
     remoteWitness: NOTARY_SIGNER_FEES.remote_witness,
     inPersonWitness: NOTARY_SIGNER_FEES.in_person_witness,
@@ -57,7 +56,6 @@ export interface InternalQuoteInput {
   lane: LaneType;
   additionalDocuments?: number;
   additionalSigners?: number;
-  notarizedSignatures?: number;
   needsInternationalSignerCoordination?: boolean;
   multiJurisdiction?: boolean;
   apostilles?: number;
@@ -86,10 +84,6 @@ export function calculateInternalQuote(input: InternalQuoteInput) {
     documentCount: 1 + Math.max(0, input.additionalDocuments ?? 0),
     apostilleCount: Math.max(0, input.apostilles ?? 0),
     signerCount: 1 + Math.max(0, input.additionalSigners ?? 0),
-    additionalNotarizedSignatureTrackingCount: Math.max(
-      0,
-      input.notarizedSignatures ?? 0,
-    ),
     internationalSignerCount: input.needsInternationalSignerCoordination ? 1 : 0,
     jurisdictionCount: input.multiJurisdiction ? 3 : 1,
     executiveInPersonStateHandling: input.executiveInPersonStateHandling,

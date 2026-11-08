@@ -160,10 +160,6 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
       witnessType === "in_person" ? witnessCount : 0,
     internationalSignerCount,
     jurisdictionCount,
-    additionalNotarizedSignatureTrackingCount: Math.max(
-      0,
-      notarizedSignatureCount - 1,
-    ),
     timing: timingWithAfterHours,
     fbiFederalApostille:
       bool(params.fbi_apostille) || bool(params.fbiApostille),
@@ -207,14 +203,6 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     .filter(
       (item) =>
         item.code === "additional_apostilled_documents",
-    )
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  const signatureTrackingTotal = quote.lineItems
-    .filter(
-      (item) =>
-        item.code ===
-        "additional_notarized_signature_tracking",
     )
     .reduce((sum, item) => sum + item.amount, 0);
 
@@ -276,7 +264,6 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
             0,
         ) || 0,
       ),
-      ron_cost: money(signatureTrackingTotal),
       witness_count: witnessCount,
       witness_type: witnessType,
       witness_total: money(witnessTotal),

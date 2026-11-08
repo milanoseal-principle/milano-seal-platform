@@ -30,7 +30,6 @@ export interface CanonicalPrivateQuoteInput {
   remoteWitnessCount?: number;
   inPersonWitnessCount?: number;
   internationalSignerCount?: number;
-  additionalNotarizedSignatureTrackingCount?: number;
   jurisdictionCount?: number;
   mobileMiles?: number;
   timing?: TimingMode[];
@@ -136,7 +135,6 @@ export function composeCanonicalPrivateQuote(
   const remoteWitnessCount = count(input.remoteWitnessCount, 0);
   const inPersonWitnessCount = count(input.inPersonWitnessCount, 0);
   const internationalSignerCount = count(input.internationalSignerCount, 0);
-  const signatureTrackingCount = count(input.additionalNotarizedSignatureTrackingCount, 0);
   const jurisdictionCount = Math.max(1, count(input.jurisdictionCount, 1));
   const mobileMiles = Math.max(0, Number(input.mobileMiles ?? 0) || 0);
   const timing = [...new Set<TimingMode>(input.timing ?? ["standard"])];
@@ -206,13 +204,6 @@ export function composeCanonicalPrivateQuote(
     `International signer coordination (${internationalSignerCount})`,
     internationalSignerCount * NOTARY_SIGNER_FEES.international_signer_coordination,
     "signer",
-  );
-  pushLine(
-    lineItems,
-    "additional_notarized_signature_tracking",
-    `Additional notarized signature tracking (${signatureTrackingCount})`,
-    signatureTrackingCount * NOTARY_SIGNER_FEES.additional_notarized_signature_tracking,
-    "notary",
   );
 
   if (jurisdictionCount >= 3) {

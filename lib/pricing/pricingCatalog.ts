@@ -46,7 +46,6 @@ export const NOTARY_SIGNER_FEES = {
   remote_witness: 50,
   in_person_witness: 75,
   international_signer_coordination: 200,
-  additional_notarized_signature_tracking: 25,
 } as const;
 
 export const MOBILE_TRAVEL_FEES = {

@@ -32,7 +32,7 @@ assert.doesNotMatch(guard, /is_platform_fee_only'/, "RON reads must not query th
 assert.match(sessions, /duplicate: true/);
 assert.match(sessions, /assertCanCreateRONSession/);
 assert.match(returned, /browser return does not establish completion/i);
-assert.match(returned, /VERIFIED\.has\(session\.milano_ron_status\)/);
+assert.match(returned, /session\?\.ron_lifecycle_state === "COMPLETED"/);
 assert.match(webhook, /verifyBNWebhookAuth|BLUENOTARY_WEBHOOK_SECRET/);
 assert.match(webhook, /event_hash/);
 assert.doesNotMatch(webhook, /apostille_status|release_status/);
