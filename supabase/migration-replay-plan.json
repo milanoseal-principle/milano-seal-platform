@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "fresh_database_prerequisites": ["20261108180000_operator_authority_prerequisite.sql"],
+  "historical_dependency": "20261107124012_deals_access_hardening.sql references public.is_operator(), which was absent from repository migrations",
+  "hosted_strategy": "Apply only pending forward migrations after explicit release approval. Do not reset the hosted database or replay historical migrations.",
+  "fresh_strategy": "Apply the idempotent repository prerequisite, then all remaining SQL migrations in filename order; record every file SHA and actual execution result."
+}

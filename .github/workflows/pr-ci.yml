@@ -73,6 +73,18 @@ jobs:
       - name: Migration chain
         run: npm run validate:migration-chain
 
+      - name: AI governance charter and placement boundary
+        run: npm run validate:ai-governance
+
+      - name: AI governance PostgreSQL authorization and concurrency
+        run: npm run test:ai-governance-database
+
+      - name: Tiffany Damiani and global intelligence safe regression suites
+        run: npm run test:ai-governance-regressions
+
+      - name: Clean dependency-aware migration replay
+        run: npm run test:migration-replay
+
       - name: P3 atomic domestic Matter database regression
         run: npm run test:p3-database
 

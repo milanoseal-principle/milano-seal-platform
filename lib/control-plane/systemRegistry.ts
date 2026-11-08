@@ -100,6 +100,14 @@ export const CANONICAL_AUTHORITIES: CanonicalAuthority[] = [
 
 const EXPLICIT_REGISTRY: SystemRegistryEntry[] = [
   {
+    id: "corporate_governance_board_room", name: "Corporate Governance Board Room",parentSystem:"governance_platform",category:"workspace",
+    purpose:"Bounded internal functional agents, corporate evidence, independent review and founder approvals; no client Matter mutation authority.",
+    audiences:["operator","system_only"],authorityIds:["identity","sop","intelligence"],authorityMode:"canonical",mutationPolicy:"governed_write",
+    route:"/dashboard/control-plane/board-room",sourcePaths:["lib/control-plane/governance","app/dashboard/control-plane/board-room/page.tsx","app/api/dashboard/control-plane/governance/route.ts"],
+    dependencies:["system_control_plane","supabase_platform"],validation:["scripts/test-ai-governance-sql.mjs","scripts/test-ai-governance-rendered.mjs","scripts/validate-ai-governance.mjs"],status:"WIRED",owner:"Founder",duplicateKey:"corporate-governance-board-room",
+    notes:"Registered roles are not active agents or legal appointments. Hosted activation requires approved configuration and independent evidence.",
+  },
+  {
     id: "platform_public_demand",
     name: "Public Demand Surface",
     parentSystem: "demand",

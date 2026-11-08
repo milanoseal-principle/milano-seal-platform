@@ -49,13 +49,20 @@ function walk(dir, files = []) {
   return files;
 }
 
+// Governing Markdown may explicitly prohibit an outside architecture. Strip only
+// this exact negative control; all affirmative mentions and all source code remain scanned.
+export function isolationScanText(file,source){
+  if(!file.endsWith('.md'))return source;
+  return source.split('\n').filter(line=>!/^\s*\d+\. Never mix Liaison OS architecture into Milano Seal\.\s*$/.test(line)).join('\n');
+}
+
 const files = ROOTS.flatMap((root) => walk(root));
 const violations = [];
 
 for (const file of files) {
   const source = readFileSync(file, "utf8");
   for (const rule of FOREIGN_PRODUCT_PATTERNS) {
-    if (rule.pattern.test(source)) violations.push(`${file}: ${rule.label}`);
+    if (rule.pattern.test(isolationScanText(file,source))) violations.push(`${file}: ${rule.label}`);
   }
   if (!LEGITIMATE_INSURANCE_MODEL_FILES.has(file)) {
     for (const rule of FOREIGN_INSURANCE_MODEL_PATTERNS) {

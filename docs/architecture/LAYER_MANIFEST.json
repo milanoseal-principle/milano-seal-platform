@@ -98,7 +98,7 @@
       "may_change": "Security/audit/approval evidence and final release only through canonical server authority.",
       "evidence": "Authenticated actor/role, RLS, decision/audit receipts, custody and release evidence.",
       "tests": "RLS/role coverage, service-role-only evidence paths, no client release authority, audit durability.",
-      "anchors": ["lib/security/*", "RLS migrations", "audit/security events", "lib/release/*"]
+      "anchors": ["lib/security/*", "RLS migrations", "audit/security events", "lib/release/*", "lib/control-plane/governance (corporate scope only; no client Matter mutation)"]
     },
     "layer-13-config": {
       "title": "Platform Configuration",

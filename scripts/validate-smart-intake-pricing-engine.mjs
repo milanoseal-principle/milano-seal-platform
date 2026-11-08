@@ -4,7 +4,7 @@
 // pricing hidden, regulated matters gated to manual review, payment gate intact,
 // and no unauthorized Wise / release / custody drift in the current PR delta.
 
-import { P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES } from './governed-production-scope.mjs';
+import { P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES, AI_GOVERNANCE_PROTECTED_CHANGES } from './governed-production-scope.mjs';
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";

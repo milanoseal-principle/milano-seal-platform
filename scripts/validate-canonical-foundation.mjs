@@ -3,7 +3,7 @@
 // Asserts the additive foundation exists, delegates to controlling engines, adds
 // no duplicate pricing constants, deletes nothing, and touches no protected logic.
 
-import { P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES } from './governed-production-scope.mjs';
+import { P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES, AI_GOVERNANCE_PROTECTED_CHANGES } from './governed-production-scope.mjs';
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
@@ -90,6 +90,7 @@ try {
   // path here is itself a visible, reviewable governance change.
   const APPROVED_PROTECTED_CHANGES = new Set([
     ...P4B_PROTECTED_CHANGES,
+    ...AI_GOVERNANCE_PROTECTED_CHANGES,
     ...P5_PROTECTED_CHANGES,
     // Counsel acquisition: completes the existing lead capture contract only.
     // Canonical Matter/payment schemas are unchanged; private grants, RLS,

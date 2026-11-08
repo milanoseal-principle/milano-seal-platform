@@ -22,3 +22,11 @@ export const P5_PROTECTED_CHANGES = [
   'lib/bluenotary/securityIncidents.ts',
   'supabase/migrations/20261108090916_ron_incident_evidence_controls.sql',
 ];
+
+// Exact corporate-governance delta authorized by G1–G5. New roles cannot author
+// client Matter/payment/execution truth; actual SQL/RLS tests enforce the boundary.
+export const AI_GOVERNANCE_PROTECTED_CHANGES = [
+  'supabase/migrations/20261108180000_operator_authority_prerequisite.sql',
+  'supabase/migrations/20261108190000_ai_corporate_governance.sql',
+  'supabase/migration-replay-plan.json',
+];

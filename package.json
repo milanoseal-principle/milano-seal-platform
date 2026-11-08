@@ -165,7 +165,13 @@
     "validate:tiffany-wise-provider-settlement-recovery": "node scripts/validate-tiffany-wise-provider-settlement-recovery.mjs",
     "validate:wise-exception-schema-drift": "node scripts/validate-wise-exception-schema-drift.mjs",
     "validate:wise-only-active-ops-docs": "node scripts/validate-wise-only-active-ops-docs.mjs",
-    "validate:wise-reconciliation-exception-orchestrator": "node scripts/validate-wise-reconciliation-exception-orchestrator.mjs"
+    "validate:wise-reconciliation-exception-orchestrator": "node scripts/validate-wise-reconciliation-exception-orchestrator.mjs",
+    "test:ai-governance-database": "node scripts/test-ai-governance-sql.mjs",
+    "test:ai-governance-rendered": "node scripts/test-ai-governance-rendered.mjs",
+    "test:migration-replay": "node scripts/test-migration-replay.mjs",
+    "validate:ai-governance": "node --import tsx scripts/validate-ai-governance.mjs",
+    "test:ai-governance-regressions": "node scripts/test-ai-governance-regressions.mjs",
+    "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

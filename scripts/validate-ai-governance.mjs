@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+import {AGENTS,DIRECTORS,EXECUTIVES,COMMITTEES,INTELLIGENCE_OFFICER,assertRegistry} from '../lib/control-plane/governance/registry.ts';
+import {governanceAccess} from '../lib/control-plane/governance/access.ts';
+assertRegistry();assert.equal(DIRECTORS.length,12);assert.equal(EXECUTIVES.length,12);assert.equal(COMMITTEES.length,5);assert.equal(INTELLIGENCE_OFFICER.voting,false);
+const migration=readFileSync('supabase/migrations/20261108190000_ai_corporate_governance.sql','utf8');
+for(const agent of AGENTS)assert.ok(migration.includes(JSON.stringify(agent).replaceAll("'","''")),`Charter snapshot drift: ${agent.agent_id}`);
+for(const role of ['client','alliance','va','unknown',''])assert.equal(governanceAccess(role),false);
+for(const action of ['grant update on public.deals','grant all on public.deals','update public.deals','confirm_wise_payment_for_deal'])assert.equal(migration.toLowerCase().includes(action),false,`Corporate migration must not author client truth: ${action}`);
+assert.ok(migration.includes('GOVERNANCE_TASK_IMMUTABLE'));assert.ok(migration.includes('APPROVAL_BINDING_IMMUTABLE'));assert.ok(migration.includes('for update'));assert.ok(migration.includes('skip locked'));
+const ui=readFileSync('components/control-plane/GovernanceBoardRoom.tsx','utf8');assert.doesNotMatch(ui,/dangerouslySetInnerHTML|SUPABASE_SERVICE_ROLE_KEY|ANTHROPIC_API_KEY\s*[:=]/);
+const vercel=JSON.parse(readFileSync('vercel.json','utf8'));assert.ok(vercel.crons.some(c=>c.path==='/api/cron/governance'));
+console.log('PASS governance registry, corporate boundary, exact charter snapshots and private control-plane placement. Behavioral PostgreSQL and rendered suites remain separate required gates.');

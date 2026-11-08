@@ -15,6 +15,8 @@ if (!criticalBlock) failures.push("Cannot resolve CRITICAL_ROUTES from canonical
 const routes = criticalBlock ? [...criticalBlock[1].matchAll(/"([^\"]+)"/g)].map((match) => match[1]) : [];
 
 const productionSurfaceRules = [
+  { prefix: "/api/dashboard/control-plane/governance", authority: "corporate_governance_board_room" },
+  { prefix: "/api/cron/governance", authority: "corporate_governance_board_room" },
   { prefix: "/portal", authority: "workspace_client" },
   { prefix: "/dashboard", authority: "workspace_operator" },
   { prefix: "/workspace/release", authority: "execution_release" },
