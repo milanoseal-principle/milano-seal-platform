@@ -149,7 +149,7 @@ export async function assertCanCreateRONSession(
 
   const { data: existing } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status')
+    .select('id, milano_ron_status, ron_lifecycle_state')
     .eq('matter_id', matterId)
     .not('milano_ron_status', 'in', '("RON_EXPIRED","RON_COMPLETED")')
     .maybeSingle();
@@ -197,7 +197,7 @@ export async function assertCanReleaseSigningURL(
   if (!signer) throw new RONGuardError('SIGNER_NOT_FOUND', 'No signer found for this RON session');
 }
 
-/** Verify that signed documents can be retrieved after provider-reported session completion. */
+/** Retrieve provider artifacts after provider completion, including governed evidence correction. */
 export async function assertCanRetrieveSignedDocuments(
   supabase: SupabaseClient,
   ronSessionId: string
@@ -209,23 +209,19 @@ export async function assertCanRetrieveSignedDocuments(
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  // Retrieval is allowed once the provider reports completion; it never establishes Milano completion.
-  const retrievable = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'];
-  if (!retrievable.includes(session.ron_lifecycle_state)) {
+  const providerCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state) ||
+    ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'].includes(session.milano_ron_status);
+  if (!providerCompleted) {
     throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);
   }
 }
 
-/** Authoritative Milano RON completion: verified statutory evidence, QC and operator actor. */
+/** Authoritative Milano completion remains separate from provider retrieval. */
 export async function assertRonExecutionCompleted(
   supabase: SupabaseClient,
   ronSessionId: string
 ): Promise<void> {
-  const { data: session } = await supabase
-    .from('ron_sessions')
-    .select('id, ron_lifecycle_state')
-    .eq('id', ronSessionId)
-    .single();
+  const { data: session } = await supabase.from('ron_sessions').select('id, ron_lifecycle_state').eq('id', ronSessionId).single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
   if (session.ron_lifecycle_state !== 'COMPLETED') {
     throw new RONGuardError('RON_EVIDENCE_NOT_VERIFIED', 'RON statutory evidence must be verified and the session completed by Milano before the Matter can advance');

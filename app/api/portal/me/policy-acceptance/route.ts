@@ -53,3 +53,16 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ ok: false, code: "POLICY_ACCEPTANCE_REJECTED" }, { status: 409 });
   return NextResponse.json({ ok: true, policy_type: version.policy_type, version: version.version }, { status: 201 });
 }
+
+
+export async function GET(req: NextRequest) {
+  const dealId = req.nextUrl.searchParams.get("deal_id");
+  if (!dealId) return NextResponse.json({ ok: false, code: "MATTER_ID_REQUIRED" }, { status: 422 });
+  const ctx = await getCurrentClientDeal(dealId);
+  if (!ctx?.deal || ctx.deal.id !== dealId) return NextResponse.json({ ok: false, code: "MATTER_NOT_FOUND" }, { status: 404 });
+  const { data, error } = await createAdminClient().from("policy_acceptances")
+    .select("policy_version_id,accepted_at,surface").eq("matter_id", dealId)
+    .order("accepted_at", { ascending: false }).limit(500);
+  if (error) return NextResponse.json({ ok: false, code: "POLICY_ACCEPTANCES_UNAVAILABLE" }, { status: 503 });
+  return NextResponse.json({ ok: true, acceptances: data ?? [] });
+}

@@ -35,6 +35,8 @@ if (/notarizedSigCount\s*\*\s*(?:COMPLEXITY\.[\w]+|\d+)|(?:COMPLEXITY\.[\w]+|\d+
 }
 // The historical lib/config/pricing.ts was deleted. Never read a removed
 // pricing source, which would turn every clean checkout into a false failure.
+// Canonical regression coverage must exist and prove signature counts/provider aliases cannot alter Milano financial truth.
+if (!fs.existsSync(path.join(root, 'tests/providerFeeSeparation.test.ts'))) findings.push('tests/providerFeeSeparation.test.ts: missing canonical P6 regression coverage');
 
 if (findings.length) {
   console.error('P6 provider fee separation findings:\n- ' + findings.join('\n- '));
