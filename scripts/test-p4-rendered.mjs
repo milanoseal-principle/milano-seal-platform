@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync,readFileSync,writeFileSync,rmSync,existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const route='app/p4-local-proof',out='artifacts/proof/p4-controlled',base='http://127.0.0.1:3174';
+if(existsSync('.next/lock')||existsSync('.next/dev/lock'))throw Error('A Next build/dev server is active; run this fixture in isolation');
 if(existsSync(route))throw Error('Refusing to overwrite an existing route');
 mkdirSync(route,{recursive:true});mkdirSync(out,{recursive:true});writeFileSync(`${route}/page.tsx`,readFileSync('tests/fixtures/P4RONEvidenceProof.tsx'));
 const server=spawn(process.execPath,['node_modules/next/dist/bin/next','dev','--hostname','127.0.0.1','--port','3174'],{env:{...process.env,NEXT_TELEMETRY_DISABLED:'1'},stdio:['ignore','pipe','pipe']});
@@ -27,5 +28,5 @@ try{
  }
  writeFileSync(`${out}/rendered.json`,JSON.stringify({live_certification:false,transport:'mocked',results},null,2));console.log(JSON.stringify(results));
 }finally{
- await browser?.close();server.kill('SIGTERM');if(server.exitCode===null)await new Promise(resolve=>{const timer=setTimeout(()=>{server.kill('SIGKILL');resolve()},8000);server.once('exit',()=>{clearTimeout(timer);resolve()})});rmSync(route,{recursive:true,force:true});writeFileSync(`${out}/server.log`,log);
+ await browser?.close();server.kill('SIGTERM');if(server.exitCode===null)await new Promise(resolve=>{const timer=setTimeout(()=>{server.kill('SIGKILL');resolve()},8000);server.once('exit',()=>{clearTimeout(timer);resolve()})});rmSync(route,{recursive:true,force:true});rmSync('.next/dev/types',{recursive:true,force:true});writeFileSync(`${out}/server.log`,log);
 }
