@@ -29,6 +29,7 @@ const SESSION_FIELDS: Array<[string, string, string?]> = [
   ['execution_completed_at', 'Execution timestamp (ISO 8601)'],
   ['journal_reference', 'Journal reference'],
   ['av_recording_reference', 'A/V recording reference'],
+  ['provider_fee_evidence_reference', 'Provider fee evidence reference (optional; external provider charge, not Milano)'],
 ];
 const SIGNER_FIELDS: Array<[string, string]> = [
   ['signer_reference', 'Signer reference'],
@@ -131,7 +132,7 @@ export function RONStatutoryEvidencePanel({ sessionId }: { sessionId: string }) 
       <div className="mt-4 rounded-xl border border-white/[0.06] p-3 text-xs" aria-live="polite">
         <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/30">{missing.length ? `${missing.length} item(s) block the next step` : 'No evidence blockers for the next step'}</p>
         {missing.length > 0 && <ul className="mt-2 flex flex-wrap gap-1.5">{missing.map((code) => <li key={code} className="rounded-full border border-[#E0876E]/25 px-2 py-0.5 font-mono text-[10px] text-[#E0876E]">{code}</li>)}</ul>}
-        <p className="mt-2 text-white/35">Retention: {text(s.retention_rule) || 'set at verification'} {s.retention_until ? `until ${new Date(String(s.retention_until)).toLocaleDateString()}` : ''} · Fee class: {text(s.notarial_fee_classification) || 'unclassified'} · QC: {text(s.qc_status)} · Exception: {text(s.exception_status)}</p>
+        <p className="mt-2 text-white/35">Retention: {text(s.retention_rule) || 'set at verification'} {s.retention_until ? `until ${new Date(String(s.retention_until)).toLocaleDateString()}` : ''} · Notarial fee: {s.provider_fee_evidence_classification === 'EXTERNAL_PROVIDER_NOTARIAL_FEE' ? 'external provider-controlled (not a Milano charge)' : 'not recorded'} · QC: {text(s.qc_status)} · Exception: {text(s.exception_status)}</p>
       </div>
 
       <fieldset disabled={frozen || busy !== null} className="mt-4 grid gap-3 sm:grid-cols-2">

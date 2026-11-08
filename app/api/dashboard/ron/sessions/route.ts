@@ -154,7 +154,8 @@ export async function POST(request: NextRequest) {
           typeof executionTruth.notarial_act === 'string' && executionTruth.notarial_act !== 'review_required'
             ? executionTruth.notarial_act
             : null,
-        notarial_fee_classification: 'RON_NOTARIAL_ACT_FEE',
+        // BlueNotary sets and collects the notarial fee itself; recorded as external evidence only.
+        provider_fee_evidence_classification: 'EXTERNAL_PROVIDER_NOTARIAL_FEE',
         payment_gate_status: 'UNLOCKED',
         created_by: userId,
         raw_session: {},

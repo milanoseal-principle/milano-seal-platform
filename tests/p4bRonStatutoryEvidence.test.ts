@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import test from "node:test";
 import {
   RON_EVIDENCE_CODES,
@@ -15,6 +16,7 @@ import {
   sanitizeEvidencePatch,
   SESSION_EVIDENCE_FIELDS,
   SIGNER_EVIDENCE_FIELDS,
+  EXTERNAL_PROVIDER_NOTARIAL_FEE,
   type RonEvidenceInput,
 } from "../lib/ron/evidence";
 
@@ -48,7 +50,7 @@ function completeInput(): RonEvidenceInput {
       execution_completed_at: "2026-11-08T12:00:00.000Z",
       journal_reference: "journal-ref",
       av_recording_reference: "av-ref",
-      notarial_fee_classification: "RON_NOTARIAL_ACT_FEE",
+      provider_fee_evidence_classification: "EXTERNAL_PROVIDER_NOTARIAL_FEE",
       retention_class: "RON_STATUTORY_EVIDENCE",
       retention_rule: "FL_RON_10Y",
       retention_start_at: "2026-11-08T12:00:00.000Z",
@@ -153,7 +155,6 @@ test("P4b required evidence fails closed", () => {
     ["seal", (i) => { i.session.electronic_seal_reference = null; }, "ELECTRONIC_SEAL"],
     ["signature", (i) => { i.session.electronic_signature_reference = null; }, "ELECTRONIC_SIGNATURE"],
     ["certificate", (i) => { i.session.certificate_completion_reference = null; }, "CERTIFICATE_COMPLETION"],
-    ["fee", (i) => { i.session.notarial_fee_classification = "MILANO_SERVICE"; }, "NOTARIAL_FEE_CLASSIFICATION"],
     ["kba", (i) => { i.signers[0].kba_result = "failed"; }, "KBA"],
     ["credential analysis", (i) => { i.signers[0].credential_analysis_reference = null; }, "CREDENTIAL_ANALYSIS"],
     ["identity", (i) => { i.signers[0].identity_proofing_result = null; }, "IDENTITY_PROOFING"],
@@ -243,4 +244,47 @@ test("P4b retention metadata and verification snapshot", () => {
 test("P4b migration is additive and forward-only", () => {
   assert.doesNotMatch(migration, /\bdrop table\b|\btruncate\b|\bdrop column\b|delete from public\./i);
   assert.doesNotMatch(migration, /stripe/i);
+});
+
+function readTree(path: string): string {
+  if (statSync(path).isFile()) return readFileSync(path, "utf8");
+  return readdirSync(path).map((entry) => readTree(join(path, entry))).join("\n");
+}
+const financialTruth = ["lib/pricing.ts", "lib/pricing", "lib/wise.ts", "lib/wise", "lib/payments", "lib/scheduling", "lib/safety/payment-integrity.ts"]
+  .map(readTree)
+  .join("\n");
+
+test("P4b external provider notarial fee is evidence only, never Milano financial truth", () => {
+  assert.equal(EXTERNAL_PROVIDER_NOTARIAL_FEE, "EXTERNAL_PROVIDER_NOTARIAL_FEE");
+  // Not Milano revenue / quote / Wise expected amount / payment authority.
+  assert.doesNotMatch(financialTruth, /EXTERNAL_PROVIDER_NOTARIAL_FEE|provider_fee_evidence/);
+  assert.doesNotMatch(guards, /provider_fee_evidence/);
+  assert.doesNotMatch(read("lib/scheduling/complimentarySchedulingGate.ts"), /provider_fee_evidence/);
+  // No dollar amount is invented anywhere in the P4b fee evidence model.
+  assert.doesNotMatch(migration, /provider_fee[a-z_]*\s+(numeric|integer|bigint|money|decimal)/i);
+  assert.doesNotMatch(migration, /2500|25\.00|\$25/);
+  assert.doesNotMatch(read("lib/ron/evidence.ts"), /2500|25\.00|\$25|fee_cents|fee_amount/);
+  assert.doesNotMatch(sessionsRoute, /provider_fee[a-z_]*_(amount|cents)/);
+  assert.match(sessionsRoute, /provider_fee_evidence_classification:\s*'EXTERNAL_PROVIDER_NOTARIAL_FEE'/);
+  assert.match(migration, /NOT a Milano charge/);
+  // The removed Milano-looking classification no longer exists.
+  for (const source of [migration, read("lib/ron/evidence.ts"), sessionsRoute, capture, evidenceRoute, verifyRoute]) {
+    assert.doesNotMatch(source, /RON_NOTARIAL_ACT_FEE|notarial_fee_classification|NOTARIAL_FEE_CLASSIFICATION/);
+  }
+});
+
+test("P4b RON completion does not depend on a Milano-controlled notarial fee", () => {
+  const withoutFeeEvidence = completeInput();
+  withoutFeeEvidence.session.provider_fee_evidence_classification = null;
+  withoutFeeEvidence.session.provider_fee_evidence_reference = null;
+  assert.deepEqual(evaluateRonStatutoryEvidence(withoutFeeEvidence, "verify"), []);
+  assert.deepEqual(
+    evaluateRonStatutoryEvidence(withoutFeeEvidence, "complete").sort(),
+    ["OPERATOR_VERIFICATION", "QC_EVIDENCE"],
+  );
+  assert.doesNotMatch(migration, /missing := missing \|\| '[A-Z_]*FEE[A-Z_]*'/);
+  const recorded = sanitizeEvidencePatch({ provider_fee_evidence_reference: "bluenotary:invoice:evt_42" }, [...SESSION_EVIDENCE_FIELDS]);
+  assert.equal(recorded.ok, true);
+  const classificationForge = sanitizeEvidencePatch({ provider_fee_evidence_classification: "MILANO_CHARGE" }, [...SESSION_EVIDENCE_FIELDS]);
+  assert.equal(classificationForge.ok, false);
 });

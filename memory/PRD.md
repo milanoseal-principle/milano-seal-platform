@@ -31,9 +31,11 @@ without a second pricing engine. P6 tests: provider fee excluded from Wise amoun
 metadata cannot alter the canonical quote; Milano service charges independently classified; invoice/Wise reconcile
 Milano-controlled charges only; provider fee evidence recordable without becoming a Milano line item.
 Do NOT build the "Florida $25-per-act ceiling through quote/invoice/Wise" — rejected.
-P4b carry-over to revisit: ron_sessions.notarial_fee_classification (only value 'RON_NOTARIAL_ACT_FEE', required by
-the P4b evidence gate as NOTARIAL_FEE_CLASSIFICATION) should be re-expressed in P6 as a provider-controlled
-fee classification/evidence reference, via an additive migration.
+P4b fee-label correction DONE in P4b before push (2026-11-08): the unshipped P4b migration was corrected in place.
+`notarial_fee_classification`/'RON_NOTARIAL_ACT_FEE' was removed and replaced by
+`provider_fee_evidence_classification` (only 'EXTERNAL_PROVIDER_NOTARIAL_FEE') + optional `provider_fee_evidence_reference`.
+No amount, not mandatory for RON completion, not in any pricing/Wise/payment/scheduling code. P6 no longer needs to
+repair P4b naming; P6 must still run the full repository provider-fee-separation audit.
 
 ## Next (after user confirms P4 save)
 P5 RON retention/incidents/records requests → P6 provider fee separation (see correction above) →

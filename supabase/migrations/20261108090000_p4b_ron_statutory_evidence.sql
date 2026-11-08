@@ -26,7 +26,10 @@ alter table public.ron_sessions
   add column if not exists journal_reference text,
   add column if not exists av_recording_reference text,
   add column if not exists provider_evidence_references jsonb not null default '[]'::jsonb,
-  add column if not exists notarial_fee_classification text,
+  -- External provider-controlled fee evidence only. NOT a Milano charge: never priced, quoted,
+  -- invoiced, reconciled through Wise, discounted or recognised as Milano revenue. No amount stored.
+  add column if not exists provider_fee_evidence_classification text,
+  add column if not exists provider_fee_evidence_reference text,
   add column if not exists retention_class text,
   add column if not exists retention_rule text,
   add column if not exists retention_start_at timestamptz,
@@ -77,9 +80,10 @@ begin
     alter table public.ron_sessions add constraint ron_sessions_exception_status_check check (
       exception_status in ('none','open','resolved'));
   end if;
-  if not exists (select 1 from pg_constraint where conname = 'ron_sessions_fee_classification_check') then
-    alter table public.ron_sessions add constraint ron_sessions_fee_classification_check check (
-      notarial_fee_classification is null or notarial_fee_classification = 'RON_NOTARIAL_ACT_FEE');
+  if not exists (select 1 from pg_constraint where conname = 'ron_sessions_provider_fee_evidence_check') then
+    alter table public.ron_sessions add constraint ron_sessions_provider_fee_evidence_check check (
+      provider_fee_evidence_classification is null
+      or provider_fee_evidence_classification = 'EXTERNAL_PROVIDER_NOTARIAL_FEE');
   end if;
   if not exists (select 1 from pg_constraint where conname = 'ron_sessions_act_count_check') then
     alter table public.ron_sessions add constraint ron_sessions_act_count_check check (
@@ -274,7 +278,6 @@ begin
   if s.execution_completed_at is null then missing := missing || 'EXECUTION_TIMESTAMP'::text; end if;
   if nullif(btrim(s.journal_reference), '') is null then missing := missing || 'JOURNAL_REFERENCE'::text; end if;
   if nullif(btrim(s.av_recording_reference), '') is null then missing := missing || 'AV_RECORDING_REFERENCE'::text; end if;
-  if s.notarial_fee_classification is distinct from 'RON_NOTARIAL_ACT_FEE' then missing := missing || 'NOTARIAL_FEE_CLASSIFICATION'::text; end if;
   if s.retention_class is null or s.retention_rule is null or s.retention_start_at is null then missing := missing || 'RETENTION_METADATA'::text; end if;
   if jsonb_typeof(s.provider_evidence_references) <> 'array' or jsonb_array_length(s.provider_evidence_references) < 1 then
     missing := missing || 'PROVIDER_EVIDENCE_REFERENCES'::text;
@@ -371,7 +374,8 @@ begin
           NEW.notary_commission_expires_on, NEW.notary_ron_registration_reference, NEW.notarial_act_type,
           NEW.notarial_act_count, NEW.certificate_completion_reference, NEW.electronic_signature_reference,
           NEW.electronic_seal_reference, NEW.witness_requirement, NEW.journal_reference,
-          NEW.av_recording_reference, NEW.provider_evidence_references, NEW.notarial_fee_classification,
+          NEW.av_recording_reference, NEW.provider_evidence_references, NEW.provider_fee_evidence_classification,
+          NEW.provider_fee_evidence_reference,
           NEW.retention_class, NEW.retention_rule, NEW.retention_start_at, NEW.evidence_verified_at,
           NEW.evidence_verified_by, NEW.evidence_verification_hash)
      is distinct from
@@ -380,7 +384,8 @@ begin
           OLD.notary_commission_expires_on, OLD.notary_ron_registration_reference, OLD.notarial_act_type,
           OLD.notarial_act_count, OLD.certificate_completion_reference, OLD.electronic_signature_reference,
           OLD.electronic_seal_reference, OLD.witness_requirement, OLD.journal_reference,
-          OLD.av_recording_reference, OLD.provider_evidence_references, OLD.notarial_fee_classification,
+          OLD.av_recording_reference, OLD.provider_evidence_references, OLD.provider_fee_evidence_classification,
+          OLD.provider_fee_evidence_reference,
           OLD.retention_class, OLD.retention_rule, OLD.retention_start_at, OLD.evidence_verified_at,
           OLD.evidence_verified_by, OLD.evidence_verification_hash) then
     raise exception using errcode = '42501', message = 'RON_EVIDENCE_FROZEN';
@@ -560,6 +565,8 @@ comment on column public.ron_sessions.ron_lifecycle_state is
   'Canonical RON lifecycle. Provider acceptance/completion are non-authoritative; COMPLETED requires verified statutory evidence, QC and an operator actor.';
 comment on column public.ron_sessions.provider_session_completed_at is
   'Provider-reported completion timestamp. Never authoritative Milano completion.';
+comment on column public.ron_sessions.provider_fee_evidence_classification is
+  'EXTERNAL_PROVIDER_NOTARIAL_FEE: the notarial fee is set and collected by the RON provider outside Milano. Evidence only; not a Milano charge, quote/invoice line, Wise amount, discount input or Milano revenue. Not required for Milano RON completion.';
 comment on column public.ron_sessions.retention_rule is
   'FL_RON_10Y when the commissioning jurisdiction is Florida; REVIEW_REQUIRED otherwise until governed retention (P5/P7) resolves it.';
 

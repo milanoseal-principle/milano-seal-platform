@@ -77,7 +77,6 @@ export const RON_EVIDENCE_CODES = [
   "EXECUTION_TIMESTAMP",
   "JOURNAL_REFERENCE",
   "AV_RECORDING_REFERENCE",
-  "NOTARIAL_FEE_CLASSIFICATION",
   "RETENTION_METADATA",
   "PROVIDER_EVIDENCE_REFERENCES",
   "EXCEPTION_OPEN",
@@ -99,7 +98,9 @@ export const RON_EVIDENCE_CODES = [
 ] as const;
 export type RonEvidenceCode = (typeof RON_EVIDENCE_CODES)[number];
 
-export const RON_NOTARIAL_ACT_FEE = "RON_NOTARIAL_ACT_FEE" as const;
+// External provider-controlled fee evidence — NOT a Milano charge. It carries no amount, never enters
+// Milano pricing/quote/invoice/Wise/discount/revenue truth, and grants no payment authority.
+export const EXTERNAL_PROVIDER_NOTARIAL_FEE = "EXTERNAL_PROVIDER_NOTARIAL_FEE" as const;
 export const RON_STATUTORY_RETENTION_CLASS = "RON_STATUTORY_EVIDENCE" as const;
 
 export interface RonSessionEvidence {
@@ -117,7 +118,8 @@ export interface RonSessionEvidence {
   execution_completed_at?: string | null;
   journal_reference?: string | null;
   av_recording_reference?: string | null;
-  notarial_fee_classification?: string | null;
+  provider_fee_evidence_classification?: string | null;
+  provider_fee_evidence_reference?: string | null;
   retention_class?: string | null;
   retention_rule?: string | null;
   retention_start_at?: string | null;
@@ -197,7 +199,6 @@ export function evaluateRonStatutoryEvidence(
   if (!present(s.execution_completed_at)) missing.add("EXECUTION_TIMESTAMP");
   if (!present(s.journal_reference)) missing.add("JOURNAL_REFERENCE");
   if (!present(s.av_recording_reference)) missing.add("AV_RECORDING_REFERENCE");
-  if (s.notarial_fee_classification !== RON_NOTARIAL_ACT_FEE) missing.add("NOTARIAL_FEE_CLASSIFICATION");
   if (!present(s.retention_class) || !present(s.retention_rule) || !present(s.retention_start_at)) missing.add("RETENTION_METADATA");
   if (!Array.isArray(s.provider_evidence_references) || s.provider_evidence_references.length < 1) missing.add("PROVIDER_EVIDENCE_REFERENCES");
   if (s.exception_status === "open") missing.add("EXCEPTION_OPEN");
@@ -276,6 +277,7 @@ export const SESSION_EVIDENCE_FIELDS = [
   "journal_reference",
   "av_recording_reference",
   "provider_evidence_references",
+  "provider_fee_evidence_reference",
 ] as const;
 export const SESSION_REVIEW_FIELDS = ["qc_status", "qc_review_reference", "exception_status", "exception_reason"] as const;
 export const SIGNER_EVIDENCE_FIELDS = [
