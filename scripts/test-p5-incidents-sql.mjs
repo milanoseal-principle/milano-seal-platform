@@ -14,7 +14,10 @@ for(const name of ['025_execution_qa_and_witness_network.sql','034_compliance_in
 await db.exec(`alter table public.compliance_incidents
   add column if not exists matter_id uuid,
   add column if not exists release_frozen boolean not null default true,
-  add column if not exists summary text;
+  add column if not exists summary text,
+  add column if not exists opened_by uuid,
+  add column if not exists closed_by uuid,
+  add column if not exists closed_at timestamptz;
 alter table public.compliance_incidents alter column title drop not null;
 alter table public.incident_audit_log alter column actor drop not null;
 alter table public.incident_audit_log
