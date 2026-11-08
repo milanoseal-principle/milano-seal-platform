@@ -248,7 +248,6 @@ export async function assertCanAdvanceToApostille(
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  if (!['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED'].includes(session.milano_ron_status)) {
   const statutory = await supabase.rpc('ron_statutory_evidence_verified', {p_session:ronSessionId});
   if (statutory.error || statutory.data !== true) throw new RONGuardError('STATUTORY_EVIDENCE_REQUIRED','Operator-verified statutory evidence and QC are required before progression');
 
