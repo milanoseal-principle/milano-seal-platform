@@ -27,10 +27,10 @@ for (const file of financial) {
 // per-signature charges or the retired `ron_cost` financial line. A signature
 // count may remain as nonfinancial execution evidence; never make it money.
 const engine = read('lib/pricing.ts');
-if (/ron_cost\\s*:|key\\s*:\\s*['"`]ron_cost['"`]/i.test(engine)) {
+if (/ron_cost\s*:|key\s*:\s*['"`]ron_cost['"`]/i.test(engine)) {
   findings.push('lib/pricing.ts: retired ron_cost financial field reintroduced');
 }
-if (/notarizedSigCount\\s*\\*\\s*(?:COMPLEXITY\\.[\\w]+|\\d+)|(?:COMPLEXITY\\.[\\w]+|\\d+)\\s*\\*\\s*notarizedSigCount/.test(engine)) {
+if (/notarizedSigCount\s*\*\s*(?:COMPLEXITY\.[\w]+|\d+)|(?:COMPLEXITY\.[\w]+|\d+)\s*\*\s*notarizedSigCount/.test(engine)) {
   findings.push('lib/pricing.ts: notarized signature count used to calculate a financial charge');
 }
 // The historical lib/config/pricing.ts was deleted. Never read a removed
