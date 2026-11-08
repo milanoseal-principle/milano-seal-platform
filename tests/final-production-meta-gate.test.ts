@@ -60,11 +60,11 @@ test("release-critical validators all exist and are separate from advisory", () 
   assert.equal(advisory.length, collectValidators(pkg).length - REQUIRED_VALIDATORS.length);
 });
 
-test("advisory validators are reported, NOT blocking (surfaced honestly)", () => {
-  // The advisory loop must not call stopWith with a failure code.
-  const advisoryBlock = SOURCE.slice(SOURCE.indexOf("5. Advisory"));
-  assert.ok(/does not block/.test(advisoryBlock));
-  assert.ok(!/stopWith\(results, 1\)/.test(advisoryBlock), "advisory must not hard-fail the gate");
+test("remaining validators block final certification on failure", () => {
+  const remainingBlock = SOURCE.slice(SOURCE.indexOf("5. Remaining"));
+  assert.match(remainingBlock, /results\.push\(r\)/);
+  assert.match(remainingBlock, /if \(!r\.ok\) stopWith\(results, 1\)/);
+  assert.doesNotMatch(remainingBlock, /does not block|non-blocking/);
 });
 
 test("meta-gate makes NO live provider / infra calls and prints no env values", () => {

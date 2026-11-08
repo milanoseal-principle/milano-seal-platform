@@ -100,7 +100,7 @@ export function CountryDocumentAuthorityPage({
             <p className="mt-2 leading-7 text-zinc-300">
               Instrument drafting, legal advice, substantive sufficiency,
               destination-law analysis, and final receiving-authority
-              requirements.
+              requirements. The Milano Seal does not provide legal advice.
             </p>
           </div>
         </div>

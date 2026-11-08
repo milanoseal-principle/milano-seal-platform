@@ -34,7 +34,7 @@ export async function generateMetadata({
 
   return {
     title: `${doc.name} Notarization & Apostille Services | The Milano Seal™`,
-    description: `Professional ${doc.name.toLowerCase()} notarization and apostille services. Remote Online Notarization and international authentication. Executed properly the first time.`,
+    description: `Professional ${doc.name.toLowerCase()} notarization and apostille services. Remote Online Notarization and international authentication. Execution requirements reviewed before scheduling.`,
     keywords: [
       `${doc.name.toLowerCase()} notarization`,
       `${doc.name.toLowerCase()} apostille`,

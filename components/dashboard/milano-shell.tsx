@@ -83,6 +83,10 @@ const NAV_GROUPS: {
   {
     group: "Revenue Operations",
     items: [
+      { href: "/dashboard/command-center", label: "Command Center", icon: LayoutDashboard },
+      { href: "/dashboard/seo-authority", label: "SEO Authority", icon: SearchCheck },
+      { href: "/dashboard/compliance-atlas", label: "Compliance Atlas", icon: Globe2 },
+      { href: "/dashboard/operator-terminal", label: "Execution Terminal", icon: Terminal },
       { href: "/dashboard/conversion", label: "Conversion Recovery", icon: TrendingUp },
       { href: "/dashboard/seo-revenue", label: "SEO Revenue", icon: SearchCheck },
       { href: "/dashboard/matter-ops", label: "Matter Ops QA", icon: ClipboardList },

@@ -89,7 +89,7 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-[10px] leading-5 text-white/25">Milano Counsel Intelligence™ is a professional information and execution-access layer. It does not create an attorney-client relationship with The Milano Seal, legal representation by Milano, or any claim that Milano personnel are attorneys.</p>
+            <p className="mt-4 text-[10px] leading-5 text-white/25">Milano Counsel Intelligence™ is a professional information and execution-access layer. The Milano Seal does not provide legal advice. It does not create an attorney-client relationship with The Milano Seal, legal representation by Milano, or any claim that Milano personnel are attorneys.</p>
           </section>
 
           <section id="execution-intelligence-report" className="mt-10 overflow-hidden rounded-3xl border border-[var(--ms-gold)]/30 bg-[#0A0A0C] shadow-[0_35px_120px_rgba(0,0,0,0.55)]">

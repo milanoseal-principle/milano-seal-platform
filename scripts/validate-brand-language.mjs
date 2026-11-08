@@ -38,7 +38,11 @@ if (!page.includes("International Document Execution, Apostille Coordination, Re
   failures += 1;
 }
 
-const hero = read("components/landing/hero.tsx");
+const heroSource = read("components/landing/hero.tsx");
+if (!heroSource.includes("t.hero.benefits") || !heroSource.includes("t.hero.ronCompliance")) {
+  console.error("✗ hero must render translated RON benefits and eligibility boundary"); failures += 1;
+}
+const hero = read("lib/i18n/public-dictionary.ts");
 if (!hero.includes("Remote Online\\nNotarization")) {
   console.error("✗ hero RON label missing eligible RON language");
   failures += 1;
@@ -50,8 +54,9 @@ if (!hero.includes("RON availability depends on document type, signer location, 
 
 const trust = read("components/landing/milano-trust-core.tsx");
 const trustCoreCount = (trust.match(/Milano Trust Core/g) ?? []).length;
-if (trustCoreCount !== 1) {
-  console.error(`✗ expected one Milano Trust Core label, found ${trustCoreCount}`);
+// Mobile and desktop each render one heading in mutually exclusive layouts.
+if (trustCoreCount !== 2 || !trust.includes('className="lg:hidden"') || !trust.includes('className="hidden lg:block"')) {
+  console.error(`✗ expected one Milano Trust Core heading per responsive layout, found ${trustCoreCount}`);
   failures += 1;
 }
 if (/font-serif[^>]*>\s*M\s*</s.test(trust) || />\s*M\s*</.test(trust)) {

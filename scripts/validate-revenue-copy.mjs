@@ -30,12 +30,12 @@ const PUBLIC_PAGES = [
 // every audience page into identical copy. Counsel may say "Start Counsel Matter"
 // while client routes may say "Start Controlled Intake" or "Begin Secure Intake".
 const REQUIRED_SEMANTICS = [
-  { label: "Milano execution proposition", re: /The Milano Seal helps|execution infrastructure|route the execution/i },
-  { label: "controlled intake CTA", re: /Start Controlled Intake|Start Counsel Matter|Begin Secure Intake/i },
+  { label: "Milano execution proposition", re: /The Milano Seal helps|execution infrastructure|route the execution|coordinates the execution pathway/i },
+  { label: "controlled intake CTA", re: /Start Controlled Intake|Start Counsel Matter|Begin Secure Intake|Send a U.S. Matter/i },
   { label: "receiving-authority boundary", re: /receiving-authority review|receiving authority/i },
 ];
 
-const CTA_ANYWHERE = ["Request Lawyer Access", "Apply for Alliance Access"];
+const CTA_ANYWHERE = ["Send a U.S. Matter", "Apply for Alliance Access"];
 
 // Reject affirmative claims. Safety boundaries such as
 // "does not provide legal advice" must remain allowed and visible.

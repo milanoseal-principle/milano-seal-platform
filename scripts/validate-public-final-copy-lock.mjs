@@ -65,11 +65,11 @@ for (const file of collectFiles(publicTargets)) {
 
 const pricing = read("app/pricing/page.tsx");
 if (/\$\s?(750|975|1850|150|250|400|500)\b|priceLabel/i.test(pricing)) failures.push("/pricing exposes exact internal price menu");
-if (!pricing.includes('href="/intake"')) failures.push("/pricing does not link to /intake");
+if (!/href="\/intake(?:\?[^"<>]*)?"/.test(pricing)) failures.push("/pricing does not link to /intake");
 if (!pricing.includes('href="/secure-portal"')) failures.push("/pricing does not link to /secure-portal");
 
 const shareCard = `${read("app/opengraph-image.tsx")}\n${read("app/twitter-image.tsx")}`;
-for (const phrase of ["Gold M Orb share card", "#15120A", "THE MILANO SEAL™", "U.S. Document Execution for International Use", "THEMILANOSEAL.COM"]) {
+for (const phrase of ["Gold M Orb share card", "#16130B", "THE MILANO SEAL™", "U.S. Document Execution for International Use", "THEMILANOSEAL.COM"]) {
   if (!shareCard.includes(phrase)) failures.push(`Share card missing: ${phrase}`);
 }
 
