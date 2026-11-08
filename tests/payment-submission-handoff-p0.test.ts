@@ -51,10 +51,10 @@ test("payment card does not ask for duplicate payment and keeps scheduling settl
   assert.doesNotMatch(paymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 
-test("payment page describes submission and settlement as separate authorities", () => {
-  assert.match(paymentPage, /governed Wise submission is recorded/);
-  assert.match(paymentPage, /payment portion of scheduling is satisfied/);
-  assert.doesNotMatch(paymentPage, /Scheduling remains locked until verified Wise reconciliation/);
+test("payment page keeps Wise submission distinct from scheduling authority", () => {
+  assert.match(paymentPage, /Scheduling stays locked until the exact Milano payment is verified as settled/);
+  assert.match(paymentPage, /A submitted or pending payment does not authorize scheduling/);
+  assert.match(paymentPage, /PolicyAcceptanceGate matterId=\{deal\.id\}/);
 });
 
 test("invoice settlement check performs live server-side Wise reconciliation", () => {
@@ -70,8 +70,9 @@ test("invoice settlement check performs live server-side Wise reconciliation", (
 test("canonical scheduler rejects submission without ever authoring paid state", () => {
   assert.match(schedulingGate, /classifyObservedSubmission/);
   assert.match(schedulingGate, /observed_pending/);
-  assert.match(schedulingGate, /schedulingEligible:\s*true/);
-  assert.match(schedulingGate, /paymentRequirementSatisfied:\s*true/);
+  assert.match(schedulingGate, /submission === "observed"/);
+  assert.match(schedulingGate, /schedulingEligible:\s*false/);
+  assert.match(schedulingGate, /paymentRequirementSatisfied:\s*false/);
   assert.match(schedulingGate, /scheduling remains locked until verified Wise settlement/);
   assert.doesNotMatch(schedulingGate, /payment_status\s*[:=]\s*["']paid["']/);
   assert.doesNotMatch(schedulingGate, /payment_confirmed\s*[:=]\s*true/);

@@ -29,7 +29,7 @@ const review = () =>
 test("client projection shows approved amount from canonical result (not hard-coded)", () => {
   const p = projectClientPricing(approved());
   assert.equal(p.mode, "approved_price");
-  assert.equal(p.amount, 1000); // 975 Priority, first apostille included, + 25 tracking
+  assert.equal(p.amount, approved().total);
   assert.equal(p.paymentGateRequired, true);
 });
 

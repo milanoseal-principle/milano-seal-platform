@@ -22,7 +22,7 @@ test("P6 provider fee evidence never enters Milano quote, Wise amount or revenue
   assert.match(validator, /retired ron_cost financial field reintroduced/);
   assert.doesNotMatch(validator, /read\(['"]lib\/config\/pricing\.ts['"]\)/);
 
-  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\\.test\\.ts/);
+  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /providerFeeSeparation\.test\.ts/);
   assert.doesNotMatch(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
 });
 
@@ -53,7 +53,8 @@ test("P8 policy versions are immutable and supersession preserves history", () =
   assert.match(p8, /POLICY_VERSION_IMMUTABLE/);
   assert.match(p8, /INVALID_POLICY_STATUS_TRANSITION/);
   assert.match(p8, /policy_versions_one_active_per_type/);
-  assert.match(adminRoute, /update\(\{ status: "superseded" \}\)/);
+  assert.match(p8Atomic, /transition_policy_version/);
+  assert.match(adminRoute, /rpc\("transition_policy_version"/);
   assert.doesNotMatch(adminRoute, /from\("policy_acceptances"\)\.(update|delete)/);
 });
 
