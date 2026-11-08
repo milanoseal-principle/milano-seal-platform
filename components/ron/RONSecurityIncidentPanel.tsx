@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 type Incident = {
-  id: string; ron_session_id: string; discovered_at: string; description: string; status: string;
+  id: string; ron_session_id: string; detected_at: string; summary: string; status: string;
   ron_security_evidence: {
     category: string; containment: string; authority_basis_reference: string; responsible_operator: string; required_authorities: string[];
     notifications: Record<string,{ reference: string; sent_at: string }>;
@@ -50,7 +50,7 @@ export function RONSecurityIncidentPanel() {
         notifications[authority] = {reference,sent_at:new Date(sent).toISOString()};
       }
     }
-    const detected = selected?.discovered_at ?? String(form.get('detected_at'));
+    const detected = selected?.detected_at ?? String(form.get('detected_at'));
     if (!Number.isFinite(Date.parse(detected))) {setMessage('Enter the actual detection time.');return;}
     const evidence = {
       category: selected?.ron_security_evidence.category ?? form.get('category'),
@@ -82,17 +82,17 @@ export function RONSecurityIncidentPanel() {
     <ul className="my-4 space-y-2">{incidents.map(incident=><li key={incident.id} className="rounded border border-white/15 p-3">
       <p>{label(incident.ron_security_evidence.category)} · {label(incident.status)} · {label(incident.deadline.state)}</p>
       <p className="text-sm text-white/70">Authority deadline: {new Date(incident.deadline.due_at).toLocaleString()}</p>
-      {!['CLOSED','RESOLVED'].includes(incident.status)&&<button type="button" className="min-h-11 underline" onClick={()=>setSelected(incident)}>Review incident {incident.id.slice(0,8)}</button>}
+      {!['CLOSED','MATTER_RESTORED_OR_CLOSED'].includes(incident.status)&&<button type="button" className="min-h-11 underline" onClick={()=>setSelected(incident)}>Review incident {incident.id.slice(0,8)}</button>}
     </li>)}</ul>
     <form key={selected?.id??`new-${revision}`} onSubmit={save} className="grid gap-4 sm:grid-cols-2">
       <h3 className="sm:col-span-2 font-semibold">{selected?'Update incident evidence':'Record a new compromise'}</h3>
       <label className="text-sm">RON session ID<input name="session_id" className={input} required readOnly={!!selected} defaultValue={selected?.ron_session_id}/></label>
-      <label className="text-sm">Detected at {selected?'(fixed)':''}<input name="detected_at" className={input} required readOnly={!!selected} type={selected?'text':'datetime-local'} defaultValue={selected?.discovered_at}/></label>
+      <label className="text-sm">Detected at {selected?'(fixed)':''}<input name="detected_at" className={input} required readOnly={!!selected} type={selected?'text':'datetime-local'} defaultValue={selected?.detected_at}/></label>
       <label className="text-sm">Affected category<select name="category" className={input} defaultValue={selected?.ron_security_evidence.category} disabled={!!selected}>{['ELECTRONIC_SEAL','ELECTRONIC_SIGNATURE','RON_CREDENTIALS','JOURNAL','RECORDING','PROVIDER_CREDENTIALS'].map(value=><option key={value} value={value}>{label(value)}</option>)}</select></label>
       <label className="text-sm">Responsible operator ID<input name="responsible_operator" className={input} required defaultValue={selected?.ron_security_evidence.responsible_operator}/></label>
       <label className="text-sm sm:col-span-2">Authority requirement review reference<input name="authority_basis_reference" className={input} required defaultValue={selected?.ron_security_evidence.authority_basis_reference}/></label>
-      <label className="text-sm sm:col-span-2">Incident description<textarea name="summary" className={input} required minLength={10} maxLength={2000} defaultValue={selected?.description}/></label>
-      <label className="text-sm">Incident state<select name="status" className={input} defaultValue={selected?.status??'OPEN'}>{(selected?['OPEN','INVESTIGATING','REMEDIATION_IN_PROGRESS','RESOLVED','CLOSED']:['OPEN']).map(value=><option key={value}>{value}</option>)}</select></label>
+      <label className="text-sm sm:col-span-2">Incident description<textarea name="summary" className={input} required minLength={10} maxLength={2000} defaultValue={selected?.summary}/></label>
+      <label className="text-sm">Incident state<select name="status" className={input} defaultValue={selected?.status??'INCIDENT_OPENED'}>{(selected?['INCIDENT_OPENED','ROOT_CAUSE_REVIEW','CORRECTION_PLAN_DRAFTED','FINAL_QA_COMPLETED','CLOSED']:['INCIDENT_OPENED']).map(value=><option key={value} value={value}>{label(value)}</option>)}</select></label>
       <label className="text-sm">Containment<select name="containment" className={input} defaultValue={selected?.ron_security_evidence.containment}>{['OPEN','CONTAINED','REMEDIATED'].map(value=><option key={value}>{value}</option>)}</select></label>
       {authorities.map(authority=><fieldset key={authority} className="rounded border border-white/15 p-3">
         <legend>{label(authority)}</legend>

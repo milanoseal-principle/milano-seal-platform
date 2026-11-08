@@ -92,7 +92,7 @@ begin
     end if;
   end if;
   if exists (select 1 from public.compliance_incidents i where i.matter_id = r.matter_id
-             and i.status not in ('CLOSED','RESOLVED','MATTER_RESTORED_OR_CLOSED')) then
+             and i.status not in ('CLOSED','MATTER_RESTORED_OR_CLOSED')) then
     blockers := blockers || 'INCIDENT_OPEN'::text;
   end if;
   return blockers;
@@ -247,7 +247,7 @@ create or replace function public.enforce_ron_incident()
 returns trigger language plpgsql set search_path = '' as $$
 begin
   if NEW.incident_category is not null then
-    NEW.detected_at := coalesce(NEW.detected_at, NEW.discovered_at, now());
+    NEW.detected_at := coalesce(NEW.detected_at, NEW.created_at, now());
     if NEW.state_notification in ('required','completed') and NEW.notification_deadline_at is null then
       NEW.notification_deadline_at := NEW.detected_at + interval '7 days';
     end if;
