@@ -49,7 +49,7 @@ test("P8 policy versions are immutable and supersession preserves history", () =
   assert.match(p8, /INVALID_POLICY_STATUS_TRANSITION/);
   assert.match(p8, /policy_versions_one_active_per_type/);
   assert.match(p8Atomic, /transition_policy_version/);
-  assert.match(adminRoute, /rpc\\("transition_policy_version"/);
+  assert.ok(adminRoute.includes('rpc("transition_policy_version"'));
   assert.doesNotMatch(adminRoute, /from\("policy_acceptances"\)\.(update|delete)/);
 });
 
