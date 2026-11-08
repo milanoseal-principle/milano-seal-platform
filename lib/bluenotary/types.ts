@@ -1,5 +1,6 @@
 // BlueNotary RON — TypeScript types
 // NEVER expose signing URLs, base64 content, or credentials client-side.
+import type { RonLifecycleState } from '@/lib/ron/evidence';
 
 export type MilanoRONStatus =
   | 'RON_DRAFT'
@@ -126,6 +127,7 @@ export interface RONSession {
   session_timing?: string | null;
   blue_notary_status: string;
   milano_ron_status: MilanoRONStatus;
+  ron_lifecycle_state?: RonLifecycleState | null;
   identity_status: string;
   kba_status: string;
   biometric_status: string;
@@ -186,6 +188,8 @@ export interface RONDocument {
 export interface PortalRONView {
   session_id: string;
   milano_ron_status: MilanoRONStatus;
+  ron_lifecycle_state: RonLifecycleState;
+  milano_completed: boolean;
   client_label: string;
   scheduling_authorized: boolean;
   session_active: boolean;

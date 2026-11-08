@@ -4,6 +4,7 @@
 
 import type { RONSession, RONSigner, PortalRONView, MilanoRONStatus } from './types';
 import { getClientStatusLabel } from './status';
+import { clientRonLifecycleLabel, isRonLifecycleState } from '@/lib/ron/evidence';
 
 const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
   'RON_SESSION_CREATED',
@@ -38,8 +39,10 @@ export function portalRONProjection(
   signerEmail: string
 ): PortalRONView {
   const status = ronSession.milano_ron_status;
+  const lifecycle = isRonLifecycleState(ronSession.ron_lifecycle_state) ? ronSession.ron_lifecycle_state : 'REQUESTED';
   const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
-  const sessionActive = ACTIVE_RON_STATUSES.includes(status);
+  const sessionActive =
+    ACTIVE_RON_STATUSES.includes(status) && !['FAILED', 'CANCELLED', 'COMPLETED'].includes(lifecycle);
 
   const matchingSigner = signers.find(
     (s) => s.email?.toLowerCase() === signerEmail.toLowerCase()
@@ -62,7 +65,12 @@ export function portalRONProjection(
   return {
     session_id: ronSession.id,
     milano_ron_status: status,
-    client_label: getClientStatusLabel(status),
+    ron_lifecycle_state: lifecycle,
+    // Only verified Milano completion is presented as completion to the client.
+    milano_completed: lifecycle === 'COMPLETED',
+    client_label: ['REQUESTED', 'STARTED', 'PROVIDER_ACCEPTED'].includes(lifecycle)
+      ? getClientStatusLabel(status)
+      : clientRonLifecycleLabel(lifecycle),
     scheduling_authorized: schedulingAuthorized,
     session_active: sessionActive,
     signing_url: signingUrl ?? null,

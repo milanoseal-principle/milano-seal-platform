@@ -147,6 +147,14 @@ export async function POST(request: NextRequest) {
         session_timing: session_timing ?? null,
         blue_notary_status: bnSession.status ?? 'DRAFT',
         milano_ron_status: 'RON_SESSION_CREATED',
+        // Provider URL/session creation is a request, never execution or completion.
+        ron_lifecycle_state: 'REQUESTED',
+        provider_name: 'bluenotary',
+        notarial_act_type:
+          typeof executionTruth.notarial_act === 'string' && executionTruth.notarial_act !== 'review_required'
+            ? executionTruth.notarial_act
+            : null,
+        notarial_fee_classification: 'RON_NOTARIAL_ACT_FEE',
         payment_gate_status: 'UNLOCKED',
         created_by: userId,
         raw_session: {},
@@ -170,6 +178,7 @@ export async function POST(request: NextRequest) {
       phone: s.phone ?? null,
       state: s.state ?? signerState ?? null,
       authentication_type: s.authentication_type ?? 'kba',
+      party_role: 'principal',
     }));
     await supabase.from('ron_signers').insert(signerInserts);
 
@@ -255,6 +264,8 @@ export async function GET() {
         matter_id,
         notarization_id,
         milano_ron_status,
+        ron_lifecycle_state,
+        exception_status,
         identity_status,
         kba_status,
         biometric_status,

@@ -53,7 +53,7 @@ export async function loadAuthorityPacket(
       .eq("is_internal", false),
     supabase
       .from("ron_sessions")
-      .select("milano_ron_status, created_at")
+      .select("milano_ron_status, ron_lifecycle_state, created_at")
       .eq("matter_id", matter.id)
       .order("created_at", { ascending: false })
       .limit(1),
@@ -83,7 +83,8 @@ export async function loadAuthorityPacket(
         documentType: matter.document_type ?? null,
         executionTruth,
         files: (files ?? []) as PacketFileRow[],
-        ronSessionStatus: sessions?.[0]?.milano_ron_status ?? null,
+        // Only Milano-verified RON completion counts as executed; provider completion does not.
+        ronSessionStatus: sessions?.[0]?.ron_lifecycle_state === "COMPLETED" ? sessions[0].milano_ron_status ?? "RON_COMPLETED" : null,
         authority: authorityRecord,
         assets: (assets ?? []) as AuthoritySourceAsset[],
         custodyEvents: (custody ?? []) as CustodyEvidenceRow[],

@@ -41,7 +41,7 @@ test("BlueNotary creation stays canonical and idempotent", () => {
 
 test("browser return cannot fabricate provider completion or downstream authority", () => {
   assert.match(returned, /browser return does not establish completion/i);
-  assert.match(returned, /VERIFIED\.has\(session\.milano_ron_status\)/);
+  assert.match(returned, /session\?\.ron_lifecycle_state === "COMPLETED"/);
   assert.doesNotMatch(returned, /\.update\(|\.insert\(|apostille_status|release_status/);
 });
 

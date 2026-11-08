@@ -1,11 +1,11 @@
-import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { computeEventHash } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
-import { sanitizeDocumentName } from '@/lib/bluenotary/documents';
+import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
+import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -144,30 +144,36 @@ export async function POST(request: NextRequest) {
 
   let ronSessionId: string | null = null;
   let matterId: string | null = null;
+  let lifecycle: RonLifecycleState = 'REQUESTED';
+  let milanoStatus: string | null = null;
 
   if (payload.notarization_id) {
     const { data: session } = await supabase
       .from('ron_sessions')
-      .select('id, matter_id')
+      .select('id, matter_id, ron_lifecycle_state, milano_ron_status')
       .eq('notarization_id', payload.notarization_id)
       .maybeSingle();
 
     if (session) {
       ronSessionId = session.id;
       matterId = session.matter_id;
+      if (isRonLifecycleState(session.ron_lifecycle_state)) lifecycle = session.ron_lifecycle_state;
+      milanoStatus = session.milano_ron_status ?? null;
     }
   }
 
   if (!ronSessionId && payload.bn_session_id) {
     const { data: session } = await supabase
       .from('ron_sessions')
-      .select('id, matter_id')
+      .select('id, matter_id, ron_lifecycle_state, milano_ron_status')
       .eq('bn_session_id', payload.bn_session_id)
       .maybeSingle();
 
     if (session) {
       ronSessionId = session.id;
       matterId = session.matter_id;
+      if (isRonLifecycleState(session.ron_lifecycle_state)) lifecycle = session.ron_lifecycle_state;
+      milanoStatus = session.milano_ron_status ?? null;
     }
   }
 
@@ -208,9 +214,19 @@ export async function POST(request: NextRequest) {
 
   const newStatus = mapBNEventToMilanoStatus(payload.event_type);
   const sessionUpdate: Record<string, unknown> = {
-    milano_ron_status: newStatus,
     updated_at: new Date().toISOString(),
   };
+  // Provider events never regress or overwrite a Milano-governed terminal/verified projection.
+  const projectionLocked =
+    isTerminalRonLifecycle(lifecycle) ||
+    lifecycle === 'EVIDENCE_VERIFIED' ||
+    ['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED'].includes(String(milanoStatus ?? ''));
+  if (!projectionLocked) sessionUpdate.milano_ron_status = newStatus;
+  const nextLifecycle = providerEventLifecycle(lifecycle, payload.event_type);
+  if (nextLifecycle) {
+    sessionUpdate.ron_lifecycle_state = nextLifecycle;
+    lifecycle = nextLifecycle;
+  }
 
   switch (payload.event_type) {
     case 'photo_id_passed':
@@ -233,16 +249,24 @@ export async function POST(request: NextRequest) {
     case 'kba_failed':
       sessionUpdate.kba_status = 'FAILED';
       break;
+    case 'open_call_accepted':
+      if (nextLifecycle) sessionUpdate.provider_accepted_at = new Date().toISOString();
+      break;
     case 'session_started':
       sessionUpdate.started_at = new Date().toISOString();
       break;
     case 'session_completed':
       // Provider completion is not Milano execution verification. P4 keeps the
       // session pending until executed-document/evidence verification is recorded.
+      if (nextLifecycle) sessionUpdate.provider_session_completed_at = new Date().toISOString();
       break;
     case 'session_expired':
-      sessionUpdate.expired_at = new Date().toISOString();
-      sessionUpdate.session_url_status = 'BLOCKED';
+      if (nextLifecycle) {
+        sessionUpdate.expired_at = new Date().toISOString();
+        sessionUpdate.session_url_status = 'BLOCKED';
+        sessionUpdate.exception_status = 'open';
+        sessionUpdate.exception_reason = 'provider_session_expired';
+      }
       break;
   }
 
@@ -317,103 +341,32 @@ export async function POST(request: NextRequest) {
     try {
       const { data: session } = await supabase
         .from('ron_sessions')
-        .select('bn_session_id, matter_id')
+        .select('id, bn_session_id, matter_id, ron_lifecycle_state, milano_ron_status')
         .eq('id', ronSessionId)
         .single();
 
       if (session?.bn_session_id) {
         const signedDocs = await getBlueNotarySignedDocuments(session.bn_session_id);
-
-        for (const doc of signedDocs ?? []) {
-          const buffer = Buffer.from(doc.base64_content, 'base64');
-          const sha256 = createHash('sha256').update(buffer).digest('hex');
-          const safeName = sanitizeDocumentName(doc.document_name ?? 'signed_document.pdf');
-          const storagePath = `ron/${session.matter_id}/${ronSessionId}/executed/${sha256}/${safeName}`;
-
-          const { data: existingDoc } = await supabase
-            .from('ron_documents')
-            .select('id, signed_document_received, signed_storage_path')
-            .eq('ron_session_id', ronSessionId)
-            .eq('document_name', safeName)
-            .maybeSingle();
-
-          if (!existingDoc?.signed_document_received) {
-            const { error: uploadError } = await supabase.storage
-              .from('documents')
-              .upload(storagePath, buffer, {
-                contentType: doc.content_type ?? 'application/pdf',
-                upsert: false,
-              });
-
-            if (uploadError && !/already exists|duplicate/i.test(uploadError.message)) {
-              throw uploadError;
-            }
-
-            if (existingDoc?.id) {
-              await supabase
-                .from('ron_documents')
-                .update({
-                  blue_notary_document_name: doc.document_name,
-                  storage_bucket: 'documents',
-                  signed_storage_path: storagePath,
-                  signed_document_received: true,
-                  document_status: 'SIGNED',
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', existingDoc.id)
-                .eq('signed_document_received', false);
-            } else {
-              await supabase.from('ron_documents').insert({
-                ron_session_id: ronSessionId,
-                matter_id: session.matter_id,
-                document_name: safeName,
-                blue_notary_document_name: doc.document_name,
-                storage_bucket: 'documents',
-                signed_storage_path: storagePath,
-                signed_document_received: true,
-                document_status: 'SIGNED',
-                updated_at: new Date().toISOString(),
-              });
-            }
-          }
-
-          await supabase.from('ron_audit_events').insert({
-            matter_id: session.matter_id,
-            ron_session_id: ronSessionId,
-            event_type: 'RON_EXECUTED_DOCUMENT_CAPTURED',
-            description: 'Executed RON artifact captured as an immutable content-addressed version.',
-            actor_role: 'system',
-            source: 'bluenotary_webhook',
-            metadata: {
-              document_name: safeName,
-              sha256,
-              storage_bucket: 'documents',
-              storage_path: storagePath,
-              immutable: true,
-              provider_event: payload.event_type,
-            },
-          });
-
-          (doc as { base64_content?: string }).base64_content = '';
-        }
-
-        await supabase
-          .from('ron_sessions')
-          .update({
-            milano_ron_status: 'SIGNED_DOCS_RETRIEVED',
-            final_documents_status: 'AVAILABLE',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', ronSessionId);
+        const captured = await captureExecutedRonDocuments(supabase, session, signedDocs ?? [], {
+          actorId: null,
+          actorRole: 'system',
+          source: 'bluenotary_webhook',
+          providerEvent: payload.event_type,
+        });
 
         await supabase.from('ron_audit_events').insert({
           matter_id: matterId,
           ron_session_id: ronSessionId,
           event_type: 'RON_SIGNED_DOCUMENTS_RETRIEVED',
-          description: 'Signed documents auto-retrieved via webhook. Next action: Apostille QA Review',
+          description: 'Signed documents auto-retrieved via webhook. Next action: Milano statutory evidence verification',
           actor_role: 'system',
           source: 'bluenotary_webhook',
-          metadata: { document_count: signedDocs?.length ?? 0 },
+          metadata: {
+            document_count: captured.length,
+            captured: captured.filter((c) => c.decision === 'capture').length,
+            duplicates: captured.filter((c) => c.decision === 'duplicate').length,
+            conflicts: captured.filter((c) => c.decision === 'conflict').length,
+          },
         });
       }
     } catch (docErr) {
@@ -434,6 +387,9 @@ export async function POST(request: NextRequest) {
     metadata: {
       bn_event_type: payload.event_type,
       mapped_status: newStatus,
+      projection_locked: projectionLocked,
+      ron_lifecycle_state: lifecycle,
+      provider_event_is_authoritative_completion: false,
     },
   });
 
