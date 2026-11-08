@@ -94,12 +94,6 @@ export async function POST(
       metadata: { document_count: storedIds.length },
     });
 
-    return NextResponse.json({
-      success: true,
-      documents_stored: storedIds.length,
-      next_action: verified.data === true ? 'APOSTILLE_QA_REVIEW' : 'STATUTORY_EVIDENCE_REVIEW',
-      message: 'Executed document versions secured. Verify statutory evidence before execution completion or Apostille QA.',
-    });
   } catch (err) {
     if (err instanceof RONGuardError) {
       return NextResponse.json({ error: err.message, code: err.code }, { status: err.code === 'SESSION_NOT_FOUND' ? 404 : 409 });

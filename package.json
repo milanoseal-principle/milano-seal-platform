@@ -237,6 +237,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "9.39.5",
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint": "9.39.5",
     "playwright": "1.65.0",
