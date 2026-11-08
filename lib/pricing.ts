@@ -31,7 +31,6 @@ export const TIERS = {
 export const COMPLEXITY = {
   additional_document: 75,
   additional_signer: 150,
-  notarized_signature: 25,
   international_signer: 200,
   multi_jurisdiction: 300,
 } as const;
@@ -155,7 +154,6 @@ export interface PriceResult {
     urgency: UrgencyKey;
     shipping: ShippingKey;
     manual_adjustment: number;
-    ron_cost: number;
     witness_count: number;
     witness_type: "ron" | "in_person";
     witness_total: number;
@@ -299,17 +297,6 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
     total += amount;
   }
 
-  if (notarizedSigCount > 0) {
-    const amount = notarizedSigCount * COMPLEXITY.notarized_signature;
-    breakdown.push({
-      key: "notarized_signatures",
-      label: `Notarized signature tracking (${notarizedSigCount})`,
-      amount,
-      internal_only: true,
-    });
-    total += amount;
-  }
-
   if (intlSignerCount > 0) {
     const amount = intlSignerCount * COMPLEXITY.international_signer;
     breakdown.push({
@@ -423,7 +410,6 @@ export function calculatePrice(params: PriceInput = {}): PriceResult {
       urgency,
       shipping,
       manual_adjustment: money(manualAdj),
-      ron_cost: money(notarizedSigCount * COMPLEXITY.notarized_signature),
       witness_count: witnessCount,
       witness_type: witnessType,
       witness_total: money(witnessTotal),
