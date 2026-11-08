@@ -40,6 +40,7 @@ export default function PaymentStatusPage() {
 
       <ClientMatterQuoteSummary matterId={deal.id} />
 
+      <PolicyAcceptanceGate matterId={deal.id}>
       <SecurePaymentCard
         deal={{
           id: deal.id,
@@ -62,6 +63,7 @@ export default function PaymentStatusPage() {
         }}
         onRefresh={() => void refresh()}
       />
+      </PolicyAcceptanceGate>
     </div>
   );
 }
