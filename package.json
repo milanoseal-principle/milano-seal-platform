@@ -239,7 +239,6 @@
     "@types/react-dom": "^19",
     "eslint": "9.39.5",
     "eslint-plugin-react-hooks": "7.0.1",
-    "eslint": "9.39.5",
     "playwright": "1.65.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
