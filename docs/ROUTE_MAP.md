@@ -23,6 +23,11 @@ This document does not replace role authorization, the canonical Matter state ma
 | `/today` | PAGE | `app/today/page.tsx` |
 | `/dashboard` | PAGE | `app/dashboard/page.tsx` |
 | `/dashboard/control-plane` | PAGE | `app/dashboard/control-plane/page.tsx` |
+| `/dashboard/control-plane/board-room` | PAGE | `app/dashboard/control-plane/board-room/page.tsx` |
+| `/api/dashboard/control-plane/governance` | API | `app/api/dashboard/control-plane/governance/route.ts` |
+| `/api/dashboard/control-plane/governance/run` | API | `app/api/dashboard/control-plane/governance/run/route.ts` |
+| `/api/dashboard/control-plane/governance/metrics` | API | `app/api/dashboard/control-plane/governance/metrics/route.ts` |
+| `/api/cron/governance` | API | `app/api/cron/governance/route.ts` |
 | `/dashboard/reconciliation` | PAGE | `app/dashboard/reconciliation/page.tsx` |
 | `/dashboard/matters/[matterId]/truth` | PAGE | `app/dashboard/matters/[matterId]/truth/page.tsx` |
 | `/dashboard/pipeline` | PAGE | `app/dashboard/pipeline/page.tsx` |
