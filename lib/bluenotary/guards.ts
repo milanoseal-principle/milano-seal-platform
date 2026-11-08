@@ -204,7 +204,7 @@ export async function assertCanRetrieveSignedDocuments(
 ): Promise<void> {
   const { data: session } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status')
+    .select('id, milano_ron_status, ron_lifecycle_state')
     .eq('id', ronSessionId)
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
