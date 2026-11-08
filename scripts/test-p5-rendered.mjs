@@ -16,7 +16,11 @@ try{
  for(const width of [320,360,375,390,412,430,768,1024,1280,1440]){
   const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));const payloads=[];
   await page.route('**/api/dashboard/ron/security-incidents',async route=>{
-   if(route.request().method()==='GET')return route.fulfill({json:{data:[],has_more:false}});
+   if(route.request().method()==='GET'){
+    const last=payloads[1];
+    const data=last?[{id:last.id,ron_session_id:last.session_id,discovered_at:last.detected_at,description:last.summary,status:'OPEN',ron_security_evidence:{...last.evidence,notifications:{LAW_ENFORCEMENT:{reference:'fixture:police',sent_at:'2026-01-01T11:00:00+00:00'}}},deadline:{due_at:'2026-01-08T10:00:00Z',state:'OVERDUE'}}]:[];
+    return route.fulfill({json:{data,has_more:false}});
+   }
    payloads.push(route.request().postDataJSON());
    return route.fulfill(payloads.length===1?{status:422,json:{error:'INCIDENT_NOT_RECORDED',next_action:'Review evidence before retrying.'}}:{json:{id:payloads.at(-1).id,deadline:{state:'PENDING'}}});
   });
@@ -35,6 +39,11 @@ try{
   assert.equal(payloads.length,2);assert.equal(payloads[0].id,payloads[1].id,'Retry preserves incident identity');
   assert.equal(payloads[0].detected_at,payloads[1].detected_at,'Retry preserves detection time');
   assert.equal(payloads[1].evidence.authority_basis_reference,'fixture:authority-review');
+  await page.getByRole('button',{name:`Review incident ${payloads[1].id.slice(0,8)}`}).click();
+  await page.getByRole('button',{name:'Record incident evidence',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Incident and audit evidence recorded.'}).waitFor();
+  assert.equal(payloads.length,3);
+  assert.equal(payloads[2].evidence.notifications.LAW_ENFORCEMENT.sent_at,'2026-01-01T11:00:00+00:00','Historical notification offset is immutable');
   const png=await page.screenshot({path:`${out}/ron-incident-${width}.png`,fullPage:true});assert.equal(png.readUInt32BE(16),width,'No clipped horizontal content');assert.deepEqual(errors,[]);
   results.push({width,status:'PASS',runtime_errors:errors});await page.close();
  }

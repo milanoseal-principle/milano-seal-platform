@@ -41,6 +41,8 @@ export function RONSecurityIncidentPanel() {
     const form = new FormData(event.currentTarget);
     const notifications: Record<string,{reference:string;sent_at:string}> = {...selected?.ron_security_evidence.notifications};
     for (const authority of authorities) {
+      // Preserve the exact immutable stored value, including its original offset.
+      if (selected?.ron_security_evidence.notifications[authority]) continue;
       const reference = String(form.get(`${authority}_reference`)??'').trim();
       const sent = String(form.get(`${authority}_sent_at`)??'').trim();
       if (reference || sent) {
