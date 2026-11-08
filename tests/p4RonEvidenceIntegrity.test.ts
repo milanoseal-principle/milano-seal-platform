@@ -8,8 +8,7 @@ const status = read("lib/bluenotary/status.ts");
 // #437 capture logic now lives in the shared capture module used by both the
 // webhook and the operator retrieval route; the same assertions apply to it.
 const webhookRoute = read("app/api/webhooks/bluenotary/route.ts");
-const webhook = [webhookRoute, read("lib/ron/executedCapture.ts"), read("lib/ron/evidence.ts")].join("
-");
+const webhook = [webhookRoute, read("lib/ron/executedCapture.ts"), read("lib/ron/evidence.ts")].join("\n");
 
 test("P4 provider completion is not authoritative Milano RON completion", () => {
   assert.match(status, /session_completed:\s+'SESSION_PROCESSING'/);
