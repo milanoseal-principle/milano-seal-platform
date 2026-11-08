@@ -8,7 +8,7 @@ export const ronIncidentSchema = z.object({
   session_id: z.string().uuid(),
   detected_at: z.string().datetime({offset:true}),
   summary: z.string().trim().min(10).max(2000),
-  status: z.enum(['OPEN','INVESTIGATING','REMEDIATION_IN_PROGRESS','RESOLVED','CLOSED']),
+  status: z.enum(['INCIDENT_OPENED','ROOT_CAUSE_REVIEW','CORRECTION_PLAN_DRAFTED','FINAL_QA_COMPLETED','CLOSED']),
   evidence: z.object({
     category: z.enum(['ELECTRONIC_SEAL','ELECTRONIC_SIGNATURE','RON_CREDENTIALS','JOURNAL','RECORDING','PROVIDER_CREDENTIALS']),
     containment: z.enum(['OPEN','CONTAINED','REMEDIATED']),
