@@ -56,17 +56,19 @@ export async function POST(request: NextRequest) {
     const { data: version } = await admin.from("policy_versions").select("id, policy_type, status").eq("id", id).maybeSingle();
     if (!version) return NextResponse.json({ ok: false, code: "POLICY_VERSION_NOT_FOUND" }, { status: 404 });
 
-    if (action === "activate") {
-      if (version.status !== "draft") return NextResponse.json({ ok: false, code: "INVALID_POLICY_STATUS_TRANSITION" }, { status: 409 });
-      await admin.from("policy_versions").update({ status: "superseded" }).eq("policy_type", version.policy_type).eq("status", "active");
-      const { error } = await admin.from("policy_versions").update({ status: "active", activated_at: new Date().toISOString() }).eq("id", id).eq("status", "draft");
-      if (error) return NextResponse.json({ ok: false, code: "POLICY_ACTIVATION_REJECTED" }, { status: 409 });
-      return NextResponse.json({ ok: true, status: "active" });
-    }
-    if (action === "retire") {
-      const { error } = await admin.from("policy_versions").update({ status: "retired" }).eq("id", id).in("status", ["draft", "active"]);
-      if (error) return NextResponse.json({ ok: false, code: "INVALID_POLICY_STATUS_TRANSITION" }, { status: 409 });
-      return NextResponse.json({ ok: true, status: "retired" });
+    if (action === "activate" || action === "retire") {
+      const { data, error } = await admin.rpc("transition_policy_version", {
+        p_id: id,
+        p_actor: userId,
+        p_action: action,
+      });
+      if (error || !data) {
+        return NextResponse.json(
+          { ok: false, code: "POLICY_TRANSITION_REJECTED" },
+          { status: error?.code === "42501" ? 403 : 409 },
+        );
+      }
+      return NextResponse.json({ ok: true, id: data, status: action === "activate" ? "active" : "retired" });
     }
     return NextResponse.json({ ok: false, code: "INVALID_ACTION" }, { status: 422 });
   } catch (error) {
