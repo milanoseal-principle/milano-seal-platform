@@ -17,6 +17,7 @@ export interface InternalModule {
 const SOURCE_STANDARD = "Final SOP / Command Center Runbook + Layer 1.8 Phase-Lock SOP + legacy Trust Engine extraction rules";
 
 export const INTERNAL_MODULES: InternalModule[] = [
+  {id:"corporate_governance_board_room",label:"Corporate Board Room",href:"/dashboard/control-plane/board-room",section:"System",description:"Founder-controlled internal functional agents, evidence and approvals.",status:"staged",visibility:"founder",riskLevel:"high",sourceStandard:"G1–G5 governance implementation directive; same System Control Plane"},
   {
     id: "command_center",
     label: "Command Center",

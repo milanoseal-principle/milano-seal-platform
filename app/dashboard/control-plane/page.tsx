@@ -1,3 +1,6 @@
+import { requireDashboardAccess } from '@/lib/dashboardAuth';
+import { governanceAccess } from '@/lib/control-plane/governance/access';
+import Link from 'next/link';
 import { SystemControlPlaneModes } from "@/components/control-plane/SystemControlPlaneModes";
 import { InternationalExecutionControlPanel } from "@/components/control-plane/InternationalExecutionControlPanel";
 import { assertSystemRegistryIntegrity } from "@/lib/control-plane/placementGate";
@@ -8,7 +11,8 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function SystemControlPlanePage() {
+export default async function SystemControlPlanePage() {
+  const actor=await requireDashboardAccess();
   const registry = assertSystemRegistryIntegrity();
   const architecture = validateArchitectureGovernance();
 
@@ -21,6 +25,7 @@ export default function SystemControlPlanePage() {
 
   return (
     <>
+      {governanceAccess(actor.role)&&<div className="px-6 pt-6"><Link href="/dashboard/control-plane/board-room" className="inline-flex min-h-11 items-center rounded-lg border border-[#C6A55A]/40 px-5 py-3 text-sm text-[#D9BC74]">Corporate Board Room · governed AI roles and approvals</Link></div>}
       <SystemControlPlaneModes
         runtimeSha={process.env.VERCEL_GIT_COMMIT_SHA ?? "Runtime SHA unavailable"}
         environment={process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown"}
