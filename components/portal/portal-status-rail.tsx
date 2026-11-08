@@ -7,12 +7,12 @@ export interface StatusStep { keys: string[]; label: string; desc: string }
 
 export const MATTER_STEPS: StatusStep[] = [
   { keys: ['new','intake_received'], label: 'Intake Received', desc: 'Your Matter has been received and is being structured for review.' },
-  { keys: ['under_review','compliance_review','needs_info','compliance_blocked'], label: 'Under Review', desc: 'Your document path is being reviewed for execution readiness and international use.' },
+  { keys: ['under_review','compliance_review','needs_info','compliance_blocked'], label: 'Under Review', desc: 'Your document path is being reviewed for execution readiness and its intended use.' },
   { keys: ['quoted','awaiting_payment'], label: 'Invoice Issued', desc: 'Your execution proposal is ready. Payment is required before scheduling can begin.' },
   { keys: ['payment_confirmed'], label: 'Payment Confirmed', desc: 'Verified payment has unlocked the next governed execution step.' },
   { keys: ['scheduled','in_execution'], label: 'In Execution', desc: 'Your execution session or document handling step is in progress.' },
   { keys: ['apostille_processing','courier_ready'], label: 'Apostille & Packaging', desc: 'Your document is in apostille/authentication processing or secure release preparation.' },
-  { keys: ['shipped','delivered'], label: 'Delivery', desc: 'Your document has been released into governed courier delivery.' },
+  { keys: ['in_transit','shipped','delivered'], label: 'Delivery', desc: 'Your document is in the governed delivery or handoff stage.' },
   { keys: ['completed','closed'], label: 'Matter Closed', desc: 'Your Matter has been completed and release evidence recorded.' },
 ];
 
@@ -37,7 +37,7 @@ export function resolvePortalLifecycleSummary(status: string | null | undefined,
     new: 'Matter review', intake_received: 'Matter review', under_review: 'Validation or execution proposal', compliance_review: 'Compliance review decision',
     needs_info: 'Requested information received', compliance_blocked: 'Operator review decision', quoted: 'Wise payment submission', awaiting_payment: 'Verified payment or scheduling authority',
     payment_confirmed: 'Execution scheduling', scheduled: 'Execution', in_execution: authenticationRequirement === 'not_required' ? 'Execution QC and release review' : 'Apostille or authentication processing', apostille_processing: 'Custody and release preparation',
-    courier_ready: 'Courier release', shipped: 'Delivery confirmation', delivered: 'Matter close', completed: 'No further event expected', closed: 'No further event expected',
+    courier_ready: 'Courier release', in_transit: 'Delivery confirmation', shipped: 'Delivery confirmation', delivered: 'Matter close', completed: 'No further event expected', closed: 'No further event expected',
   };
   return { currentStage: step?.label ?? 'Matter Review', actionRequired, nextExpectedEvent: nextExpectedEvent[normalized] ?? 'Operator review' };
 }

@@ -32,6 +32,10 @@ try {
     await page.goto(base+'/p3-local-proof',{waitUntil:'networkidle'});
     await page.getByRole('button',{name:'Confirm execution review',exact:true}).waitFor();
     assert.ok((await page.getByText('Apostille / authentication: Not required following Milano review.',{exact:true}).count())>=1);
+    const transit=page.getByRole('region',{name:'Canonical transit status',exact:true});
+    await transit.getByText('CURRENT STAGE',{exact:true}).locator('..').getByText('Delivery',{exact:true}).waitFor();
+    await transit.getByText('Delivery confirmation',{exact:true}).waitFor();
+    assert.doesNotMatch(await transit.innerText(),/courier|international|has been completed/i,'Domestic transit must not invent courier/international/completion facts');
     await page.getByLabel('I have reviewed these facts and resolved the execution blockers.').check();
     await page.getByLabel('Review evidence / instruction reference').fill('Controlled fixture document and eligibility review');
     await page.getByRole('button',{name:'Confirm execution review',exact:true}).click();
