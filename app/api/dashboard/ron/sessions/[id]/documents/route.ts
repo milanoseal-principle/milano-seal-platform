@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
@@ -53,9 +54,10 @@ export async function POST(
     await addBlueNotaryDocuments(session.bn_session_id, [docPayload]);
     (docPayload as { base64_content?: string }).base64_content = '';
 
-    await supabase
+    const { error: sourceUpdateError } = await supabase
       .from('ron_documents')
       .update({
+        submitted_sha256: createHash('sha256').update(Buffer.from(arrayBuffer)).digest('hex'),
         blue_notary_document_name: bnDocName,
         uploaded_to_bluenotary: true,
         smart_tags_applied: !!smart_tags?.length,
@@ -63,6 +65,7 @@ export async function POST(
         updated_at: new Date().toISOString(),
       })
       .eq('id', document_id);
+    if (sourceUpdateError) return NextResponse.json({error:'Provider upload may have completed; source evidence was not saved. Operator reconciliation is required before retrying.'},{status:502});
 
     await supabase.from('ron_audit_events').insert({
       matter_id: session.matter_id,

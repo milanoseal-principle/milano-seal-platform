@@ -1,11 +1,10 @@
-import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { computeEventHash } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
-import { sanitizeDocumentName } from '@/lib/bluenotary/documents';
+import { storeRONExecutedDocuments } from '@/lib/bluenotary/signedDocumentStorage';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -237,8 +236,8 @@ export async function POST(request: NextRequest) {
       sessionUpdate.started_at = new Date().toISOString();
       break;
     case 'session_completed':
-      // Provider completion is not Milano execution verification. P4 keeps the
-      // session pending until executed-document/evidence verification is recorded.
+      sessionUpdate.provider_completed_at = new Date().toISOString();
+      sessionUpdate.blue_notary_status = 'COMPLETED';
       break;
     case 'session_expired':
       sessionUpdate.expired_at = new Date().toISOString();
@@ -271,9 +270,7 @@ export async function POST(request: NextRequest) {
         case 'leave_session':
           signerUpdate.left_at = new Date().toISOString();
           break;
-        case 'session_completed':
-          signerUpdate.completed_at = new Date().toISOString();
-          break;
+        // Provider completion is retained as provider evidence, not statutory verification.
         case 'photo_id_passed':
           signerUpdate.identity_status = 'PASSED';
           break;
@@ -317,90 +314,19 @@ export async function POST(request: NextRequest) {
     try {
       const { data: session } = await supabase
         .from('ron_sessions')
-        .select('bn_session_id, matter_id')
+        .select('id, bn_session_id, matter_id')
         .eq('id', ronSessionId)
         .single();
 
       if (session?.bn_session_id) {
         const signedDocs = await getBlueNotarySignedDocuments(session.bn_session_id);
 
-        for (const doc of signedDocs ?? []) {
-          const buffer = Buffer.from(doc.base64_content, 'base64');
-          const sha256 = createHash('sha256').update(buffer).digest('hex');
-          const safeName = sanitizeDocumentName(doc.document_name ?? 'signed_document.pdf');
-          const storagePath = `ron/${session.matter_id}/${ronSessionId}/executed/${sha256}/${safeName}`;
-
-          const { data: existingDoc } = await supabase
-            .from('ron_documents')
-            .select('id, signed_document_received, signed_storage_path')
-            .eq('ron_session_id', ronSessionId)
-            .eq('document_name', safeName)
-            .maybeSingle();
-
-          if (!existingDoc?.signed_document_received) {
-            const { error: uploadError } = await supabase.storage
-              .from('documents')
-              .upload(storagePath, buffer, {
-                contentType: doc.content_type ?? 'application/pdf',
-                upsert: false,
-              });
-
-            if (uploadError && !/already exists|duplicate/i.test(uploadError.message)) {
-              throw uploadError;
-            }
-
-            if (existingDoc?.id) {
-              await supabase
-                .from('ron_documents')
-                .update({
-                  blue_notary_document_name: doc.document_name,
-                  storage_bucket: 'documents',
-                  signed_storage_path: storagePath,
-                  signed_document_received: true,
-                  document_status: 'SIGNED',
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', existingDoc.id)
-                .eq('signed_document_received', false);
-            } else {
-              await supabase.from('ron_documents').insert({
-                ron_session_id: ronSessionId,
-                matter_id: session.matter_id,
-                document_name: safeName,
-                blue_notary_document_name: doc.document_name,
-                storage_bucket: 'documents',
-                signed_storage_path: storagePath,
-                signed_document_received: true,
-                document_status: 'SIGNED',
-                updated_at: new Date().toISOString(),
-              });
-            }
-          }
-
-          await supabase.from('ron_audit_events').insert({
-            matter_id: session.matter_id,
-            ron_session_id: ronSessionId,
-            event_type: 'RON_EXECUTED_DOCUMENT_CAPTURED',
-            description: 'Executed RON artifact captured as an immutable content-addressed version.',
-            actor_role: 'system',
-            source: 'bluenotary_webhook',
-            metadata: {
-              document_name: safeName,
-              sha256,
-              storage_bucket: 'documents',
-              storage_path: storagePath,
-              immutable: true,
-              provider_event: payload.event_type,
-            },
-          });
-
-          (doc as { base64_content?: string }).base64_content = '';
-        }
+        const storedIds = await storeRONExecutedDocuments(supabase, session, signedDocs ?? []);
 
         await supabase
           .from('ron_sessions')
           .update({
-            milano_ron_status: 'SIGNED_DOCS_RETRIEVED',
+            milano_ron_status: 'SESSION_PROCESSING',
             final_documents_status: 'AVAILABLE',
             updated_at: new Date().toISOString(),
           })
@@ -410,10 +336,10 @@ export async function POST(request: NextRequest) {
           matter_id: matterId,
           ron_session_id: ronSessionId,
           event_type: 'RON_SIGNED_DOCUMENTS_RETRIEVED',
-          description: 'Signed documents auto-retrieved via webhook. Next action: Apostille QA Review',
+          description: 'Executed document versions secured; statutory evidence verification is required before execution completion.',
           actor_role: 'system',
           source: 'bluenotary_webhook',
-          metadata: { document_count: signedDocs?.length ?? 0 },
+          metadata: { document_count: storedIds.length },
         });
       }
     } catch (docErr) {
