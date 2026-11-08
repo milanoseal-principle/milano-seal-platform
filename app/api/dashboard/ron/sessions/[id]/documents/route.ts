@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { storeImmutableRONPDF } from '@/lib/bluenotary/signedDocumentStorage';
+import { sanitizeDocumentName } from '@/lib/bluenotary/documents';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
@@ -50,12 +53,18 @@ export async function POST(
     const bnDocName = deriveBlueNotaryDocumentName(docRecord.document_name ?? docRecord.storage_path, docRecord.document_type);
     const docPayload = buildDocumentPayload(bnDocName, base64Content, docRecord.template_id ?? undefined, smart_tags);
 
+    const sourceBytes=Buffer.from(arrayBuffer);
+    const sourceHash=createHash('sha256').update(sourceBytes).digest('hex');
+    const sourceSnapshot=`ron/${session.matter_id}/${sessionId}/source/${sourceHash}/${sanitizeDocumentName(bnDocName)}`;
+    await storeImmutableRONPDF(supabase,sourceSnapshot,sourceBytes);
     await addBlueNotaryDocuments(session.bn_session_id, [docPayload]);
     (docPayload as { base64_content?: string }).base64_content = '';
 
-    await supabase
+    const { error: sourceUpdateError } = await supabase
       .from('ron_documents')
       .update({
+        submitted_sha256: sourceHash,
+        submitted_storage_path: sourceSnapshot,
         blue_notary_document_name: bnDocName,
         uploaded_to_bluenotary: true,
         smart_tags_applied: !!smart_tags?.length,
@@ -63,6 +72,7 @@ export async function POST(
         updated_at: new Date().toISOString(),
       })
       .eq('id', document_id);
+    if (sourceUpdateError) return NextResponse.json({error:'Provider upload may have completed; source evidence was not saved. Operator reconciliation is required before retrying.'},{status:502});
 
     await supabase.from('ron_audit_events').insert({
       matter_id: session.matter_id,

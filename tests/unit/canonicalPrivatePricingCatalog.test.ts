@@ -108,3 +108,13 @@ test("quote-review-only consular work never receives an invented fixed fee", () 
   assert.equal(q.reviewRequired, true);
   assert.ok(q.reviewOnlyItems.includes("consular_legalization"));
 });
+
+test("external RON notarial acts cannot enter Milano financial totals", () => {
+  const base = { matterBase: "signature" as const, executionMethod: "ron" as const, documentCount: 1, apostilleCount: 1 };
+  const normal=composeCanonicalPrivateQuote(base);
+  const withProviderActs=composeCanonicalPrivateQuote({...base,floridaNotarialActCount:100});
+  assert.equal(withProviderActs.total,normal.total);
+  assert.equal(withProviderActs.depositAmount,normal.depositAmount);
+  assert.equal(withProviderActs.balanceDue,normal.balanceDue);
+  assert.equal(withProviderActs.lineItems.some(line=>line.code==='florida_notarial_acts'),false);
+});

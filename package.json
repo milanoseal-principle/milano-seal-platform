@@ -8,7 +8,7 @@
     "prebuild": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "npx --yes eslint@9.39.5 .",
+    "lint": "node scripts/validate-lint-coverage.mjs && eslint .",
     "pretypecheck": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "typecheck": "tsc --noEmit",
     "pretest": "node scripts/generate-command-center-workbook-intelligence.mjs",
@@ -87,21 +87,22 @@
     "test:milano-pre-execution": "node --import tsx --test lib/pre-execution/__tests__/*.test.ts",
     "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
     "test:p3-database": "node scripts/test-p3-domestic-sql.mjs",
+    "test:p4-database": "node scripts/test-p4-ron-sql.mjs",
     "test:p3-rendered": "node scripts/test-p3-rendered.mjs",
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",
     "validate:smart-intake-sop": "node scripts/validate-smart-intake-sop.mjs",
     "validate:production-governance": "node scripts/validate-production-governance.mjs",
     "validate:damiani-production-wiring": "node scripts/validate-damiani-production-wiring.mjs",
-    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs"
-    ,"validate:seo-authority": "node scripts/validate-seo-authority-graph.mjs"
-    ,"validate:seo-intent": "node scripts/validate-seo-intent-governance.mjs"
-    ,"validate:seo-indexability": "node scripts/validate-seo-indexability.mjs"
-    ,"validate:seo-evidence": "node scripts/validate-seo-evidence.mjs"
-    ,"validate:seo-links": "node scripts/validate-seo-link-graph.mjs"
-    ,"validate:seo-localization": "node scripts/validate-seo-localization.mjs"
-    ,"validate:seo-sitemaps": "node scripts/validate-seo-sitemaps.mjs"
-    ,"validate:seo-public-claims": "node scripts/validate-seo-public-claims.mjs"
+    "validate:tiff-15-step-production-certification": "node scripts/validate-tiff-15-step-production-certification.mjs",
+    "validate:seo-authority": "node scripts/validate-seo-authority-graph.mjs",
+    "validate:seo-intent": "node scripts/validate-seo-intent-governance.mjs",
+    "validate:seo-indexability": "node scripts/validate-seo-indexability.mjs",
+    "validate:seo-evidence": "node scripts/validate-seo-evidence.mjs",
+    "validate:seo-links": "node scripts/validate-seo-link-graph.mjs",
+    "validate:seo-localization": "node scripts/validate-seo-localization.mjs",
+    "validate:seo-sitemaps": "node scripts/validate-seo-sitemaps.mjs",
+    "validate:seo-public-claims": "node scripts/validate-seo-public-claims.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
@@ -168,17 +169,21 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",
-    "playwright": "1.65.0",
+    "@next/eslint-plugin-next": "16.2.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/leaflet": "^1.9.14",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "9.39.5",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "playwright": "1.65.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.23.0",
     "tw-animate-css": "1.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.56.1"
   },
   "packageManager": "npm@11.4.2"
 }

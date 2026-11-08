@@ -4,6 +4,7 @@ import path from "node:path";
 const dir = path.join(process.cwd(), "supabase", "migrations");
 const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
 const required = [
+  "20261108042000_p4_ron_statutory_evidence.sql",
   "001_initial_schema.sql",
   "002_rls_storage_policies.sql",
   "044_production_deals_payment_gate_compatibility.sql",
@@ -177,4 +178,9 @@ for (const invariant of ["payment_settlement_status = 'cleared'", "NEW.payment_c
 }
 if (/observed_submission_valid|provider_payment_valid|comp_authorized/.test(settlementGate)) {
   throw new Error("089 must not permit observation/provider-processing/complimentary scheduling bypasses");
+}
+
+const ronStatutoryGate = fs.readFileSync(path.join(dir, "20261108042000_p4_ron_statutory_evidence.sql"), "utf8");
+for (const invariant of ["RON_STATUTORY_EVIDENCE_REQUIRED", "RON_EVIDENCE_APPEND_ONLY", "EXECUTED_DOCUMENT_IMMUTABLE", "append_ron_statutory_evidence", "STALE_EVIDENCE", "provider_completed_at", "set search_path=''", "supersedes_event_id"]) {
+  if (!ronStatutoryGate.includes(invariant)) throw new Error(`P4 RON evidence migration missing ${invariant}`);
 }

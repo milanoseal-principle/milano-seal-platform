@@ -77,6 +77,7 @@ const gates = [
   ["node", ["scripts/validate-immediate-scheduling-after-wise-submission.mjs"]],
   ["node", ["scripts/validate-wise-reconciliation-exception-orchestrator.mjs"]],
   ["npm", ["run", "validate:migration-chain"]],
+  ["npm", ["run", "test:p4-database"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],
   ["npm", ["run", "validate:cinematic-route-coverage"]],
   ["npm", ["run", "validate:responsive-safety"]],
