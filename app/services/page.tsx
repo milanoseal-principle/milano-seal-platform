@@ -40,7 +40,7 @@ export default function ServicesPage() {
   return (
     <main className="min-h-screen bg-[#050507] text-white">
       <Header />
-      <section className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-28 sm:px-6 lg:px-8">
+      <section className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--ms-gold)]/70">
             Secure International Document Execution & Authentication Infrastructure
@@ -89,7 +89,7 @@ export default function ServicesPage() {
           ))}
         </div>
         <div className="mx-auto mt-8 max-w-6xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-6 text-white/55">
-          The Milano Seal is not a law firm and does not provide legal counsel. Execution pathways, RON suitability, apostille/authentication routing, and courier release remain subject to receiving-authority review.
+          The Milano Seal is not a law firm and does not provide legal counsel. Mobile notary availability depends on location, signer readiness and reviewed execution requirements. Witnesses do not provide legal advice. Final acceptance is determined by the receiving authority. Execution pathways, RON suitability, apostille/authentication routing, and courier release remain subject to receiving-authority review.
         </div>
       </section>
       <Footer />

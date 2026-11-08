@@ -5,7 +5,7 @@ function read(path) {
   return fs.readFileSync(path, 'utf8');
 }
 
-const migration = read('supabase/migrations/079_wise_observed_scheduling_gate.sql');
+const migration = read('supabase/migrations/089_verified_settlement_scheduling_gate.sql');
 const guards = read('lib/bluenotary/guards.ts');
 const webhook = read('app/api/webhooks/bluenotary/route.ts');
 const apostilleQa = read('app/api/dashboard/ron/sessions/[id]/apostille-qa/route.ts');
@@ -15,20 +15,13 @@ const adminStatus = read('app/api/admin/matters/[id]/status/route.ts');
 const signedDocs = read('app/api/dashboard/ron/sessions/[id]/signed-documents/route.ts') + read('lib/ron/executedCapture.ts');
 const finalRelease = read('lib/release/performFinalRelease.ts');
 
-// Scheduling authority is observation-based but non-paid.
-assert.match(migration, /NEW\.status\s*=\s*'scheduled'/);
-assert.match(migration, /observed_submission_valid/);
-assert.match(migration, /payment_observed_at/);
-assert.match(migration, /payment_observed_amount/);
-assert.match(migration, /payment_observed_currency/);
-assert.match(migration, /payment_observed_reference/);
-assert.doesNotMatch(migration, /payment_status\s*:=?=\s*'paid'/i);
-
-// Later execution progression requires stronger provider-side Wise evidence.
-assert.match(migration, /wise_transaction_reference/);
-assert.match(migration, /payment_funding_method/);
-assert.match(migration, /wise_acquiring_payment/);
-assert.match(migration, /provider_payment_valid/);
+// Observation alone cannot authorize scheduling or execution. The current
+// migration and shared gate require exact, verified Wise settlement.
+assert.match(migration, /NEW\.payment_confirmed is true/);
+assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
+assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
+assert.match(migration, /verified Wise settlement required/);
+assert.doesNotMatch(migration, /observed_submission_valid|payment_observed_at/);
 assert.match(guards, /verifyExecutionPaymentAuthorized/);
 assert.match(guards, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 
@@ -51,11 +44,18 @@ assert.match(webhook, /MATTER_EXECUTION_TRANSITION_REVIEW_REQUIRED/);
 assert.match(webhook, /MATTER_EXECUTION_STARTED_FROM_RON/);
 
 // Signed documents stay private/provider-backed and do not auto-advance Matter.
-assert.match(signedDocs, /\.from\('documents'\)/);
-assert.match(signedDocs, /storage_bucket:\s*'documents'/);
-assert.match(signedDocs, /signed_document_received:\s*true/);
+const storage = read('lib/bluenotary/signedDocumentStorage.ts');
+const evidenceMigration = read('supabase/migrations/20261108042000_p4_ron_statutory_evidence.sql');
+assert.match(signedDocs, /storeRONExecutedDocuments/);
+assert.match(signedDocs, /ron_statutory_evidence_verified/);
 assert.match(signedDocs, /SIGNED_DOCS_RETRIEVED/);
-assert.match(signedDocs, /base64_content\?: string \}\)\.base64_content = ''/);
+assert.match(storage, /storage\.from\('documents'\)\.upload/);
+assert.match(storage, /upsert:false/);
+assert.match(storage, /createHash\('sha256'\)/);
+assert.match(storage, /capture_ron_executed_document/);
+assert.match(evidenceMigration, /signed_document_received[\s\S]*true/);
+assert.match(evidenceMigration, /source_sha256,executed_version_id,source_version_id/);
+assert.doesNotMatch(signedDocs, /base64_content/);
 assert.doesNotMatch(signedDocs, /status:\s*['\"]apostille_processing['\"]/);
 
 // Apostille advancement is a dedicated governed operator QA transition.

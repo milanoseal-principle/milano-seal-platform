@@ -84,8 +84,7 @@ export function ClientMatterQuoteSummary({ matterId }: { matterId: string }) {
           Scope, execution and payment
         </h2>
         <p className="mt-2 max-w-2xl text-xs leading-5 text-white/45">
-          This is the reviewed scope for your Matter. It is not a public rate card and does not
-          replace legal advice from your attorney or the acceptance rules of the receiving authority.
+          This is the reviewed scope for your Matter. It is not a public rate card. The Milano Seal does not provide legal advice. Your attorney and the receiving authority retain their respective review responsibilities.
         </p>
       </header>
 

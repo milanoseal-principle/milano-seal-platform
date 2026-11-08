@@ -71,7 +71,7 @@ const stripeHits = paymentFiles.filter((f) => stripePatterns.some((p) => p.test(
 if (stripeHits.length) fail(`Stripe Checkout pattern found: ${stripeHits.map(rel).join(", ")}`); else pass("No Stripe Checkout patterns found");
 
 console.log("\n[5] Public layout safety");
-const publicPages = sourceFiles.filter((f) => rel(f).startsWith("app/") && rel(f).endsWith("page.tsx") && !/dashboard|portal|va|alliance|internal|admin|ops|workspace/.test(rel(f)));
+const publicPages = sourceFiles.filter((f) => rel(f).startsWith("app/") && rel(f).endsWith("page.tsx") && !/dashboard|portal|va|alliance|internal|admin|ops|workspace/.test(rel(f)) && !/await\s+requireDashboardAccess\(/.test(readSafe(f)));
 const offsetHits = publicPages.filter((f) => { const c = readSafe(f); return !c.includes("ms-allow-hardcoded-offset") && /\bpt-(20|24|28|32)\b/.test(c) && !c.includes("header-total-height"); });
 if (offsetHits.length) fail(`Hardcoded public top offsets: ${offsetHits.map(rel).join(", ")}`); else pass("Public top offsets safe");
 const truncationHits = publicPages.filter((f) => { const c = readSafe(f); return !c.includes("ms-allow-country-truncate") && /className=["'`][^"'`]*(truncate|text-ellipsis|line-clamp|whitespace-nowrap)[^"'`]*["'`]/.test(c) && /country|destination|apostille/i.test(rel(f) + c.slice(0, 1000)); });

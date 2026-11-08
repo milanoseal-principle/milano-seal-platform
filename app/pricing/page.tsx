@@ -391,7 +391,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
                 href="/intake?source=pricing-final"
                 className="group inline-flex min-h-12 items-center justify-center gap-2 text-sm font-medium text-white/66 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C6A65B]"
               >
-                Prefer to start the full secure intake now?
+                See your exact Matter path before you pay.
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
@@ -402,7 +402,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
               </Link>
             </div>
             <p className="mt-6 text-center text-xs leading-5 text-white/28">
-              Requesting pricing does not create a Matter, appointment, or payment. Final acceptance and route remain subject to Milano review and the receiving authority. The Milano Seal does not provide legal advice.
+              Requesting pricing does not create a Matter, appointment, or payment. Final acceptance remains subject to the receiving authority. The execution route requires Milano review. The Milano Seal does not provide legal advice.
             </p>
           </div>
         </section>

@@ -79,6 +79,9 @@ jobs:
       - name: P4 RON evidence database regression
         run: npm run test:p4-database
 
+      - name: P5 RON security incident database regression
+        run: npm run test:p5-database
+
       - name: Wise-only active operations
         run: node scripts/validate-wise-only-active-ops-docs.mjs
 

@@ -43,7 +43,7 @@ export default function HnwiDocumentExecutionPage() {
       />
       <main className="min-h-screen bg-[#0A0A0A]">
         <Header />
-        <section className="pt-32 pb-16 px-6">
+        <section className="pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)] pb-16 px-6">
           <div className="max-w-3xl mx-auto">
             <h1 className="font-serif text-3xl md:text-4xl font-medium text-white mb-6">
               HNWI Document Execution Support

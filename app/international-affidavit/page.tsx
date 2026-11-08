@@ -38,7 +38,7 @@ export default function InternationalAffidavitPage() {
       <Header />
       <main className="bg-[#0A0A0A] min-h-screen">
         {/* Hero */}
-        <section className="max-w-4xl mx-auto px-6 pt-32 pb-16">
+        <section className="max-w-4xl mx-auto px-6 pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)] pb-16">
           <p className="text-[#C6A55A] text-[10px] tracking-[0.3em] uppercase font-semibold mb-4">
             Authority Document Services
           </p>

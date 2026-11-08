@@ -70,7 +70,7 @@ export default function PowerOfAttorneyInternationalPage() {
       />
       <Header />
       <main className="bg-[#0A0A0A] min-h-screen">
-        <section className="max-w-4xl mx-auto px-6 pt-32 pb-16">
+        <section className="max-w-4xl mx-auto px-6 pt-[calc(var(--header-total-height)+var(--sa-top)+2rem)] pb-16">
           <p className="text-[#C6A55A] text-[10px] tracking-[0.3em] uppercase font-semibold mb-4">International Authority Documents</p>
           <h1 className="font-serif text-4xl md:text-5xl text-white leading-tight mb-6">International Power<br />of Attorney</h1>
           <p className="text-[#8A8A8A] text-lg leading-relaxed font-light max-w-2xl">A power of attorney for international use must meet the authentication requirements of both the executing jurisdiction and the receiving country. The Milano Seal™ handles the complete execution and authentication chain — from notarization through the competent apostille/authentication authority and international delivery.</p>

@@ -14,7 +14,7 @@ function walkTests(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const absolute = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...walkTests(absolute));
-    else if (entry.isFile() && entry.name.endsWith(".test.ts")) out.push(absolute);
+    else if (entry.isFile() && /\.test\.(?:ts|tsx|js|mjs|mts)$/.test(entry.name)) out.push(absolute);
   }
   return out;
 }

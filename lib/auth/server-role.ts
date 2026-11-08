@@ -30,19 +30,21 @@ export function readAppRole(user: User | null | undefined): string {
  * The authenticated session remains the identity source; the service-role
  * lookup is used only to read authoritative app_metadata for that user.
  */
-export async function resolveServerRole(user: User): Promise<string> {
+export async function resolveServerRole(
+  user: User,
+  lookup: (id: string) => Promise<{ data: { user: User | null }; error: unknown }> =
+    (id) => createAdminClient().auth.admin.getUserById(id),
+): Promise<string> {
+  if (isAccountDisabled(user)) return "";
   try {
-    const admin = createAdminClient();
-    const { data, error } = await admin.auth.admin.getUserById(user.id);
-
-    if (!error) {
-      const authoritativeRole = metadataRole(data.user);
-      if (authoritativeRole) return authoritativeRole;
-    }
+    const { data, error } = await lookup(user.id);
+    if (error || !data.user || data.user.id !== user.id) return "";
+    const bannedUntil = (data.user as User & { banned_until?: string }).banned_until;
+    if (bannedUntil && (!Number.isFinite(Date.parse(bannedUntil)) || Date.parse(bannedUntil) > Date.now())) return "";
+    return metadataRole(data.user);
   } catch {
-    // Preserve access through the verified server session if the admin lookup
-    // is temporarily unavailable or not configured in a local environment.
+    // A stale session cannot restore a revoked role or bypass a disabled account.
+    // Protected operations can retry when authoritative identity is available.
+    return "";
   }
-
-  return metadataRole(user);
 }

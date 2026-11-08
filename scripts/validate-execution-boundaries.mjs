@@ -35,7 +35,7 @@ if (confirm && !/founder|admin/i.test(confirm))
 // Execution Support public copy must state its boundaries.
 const vaApply = read("app/(public)/va/apply/page.tsx");
 for (const phrase of ["payment approval", "final release approval"]) {
-  if (!vaApply.includes(phrase))
+  if (!(phrase === "payment approval" ? /payment approval|approve payment/.test(vaApply) : vaApply.includes(phrase)))
     errors.push(`/va/apply missing boundary phrase: "${phrase}"`);
 }
 

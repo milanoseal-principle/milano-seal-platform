@@ -37,7 +37,7 @@ const assertions = [
   [scoring.includes("LOCALIZE_AFTER_REVIEW"), "localized human-review activation missing"],
   [scoring.includes("EARN_AUTHORITY_CITATION"), "external authority action missing"],
   [dashboard.includes("Wise-paid Matter revenue"), "revenue truth boundary missing from operator UI"],
-  [dashboard.includes("never falsely attributed"), "query-to-revenue attribution boundary missing"],
+  [/without inventing query-to-revenue attribution/.test(dashboard) && dashboard.includes("activation.attributionBoundary"), "query-to-revenue attribution boundary missing"],
   [localized.includes('record.translationStatus !== "HUMAN_REVIEWED" || record.indexStatus !== "INDEXABLE"'), "localized fail-closed publication gate drifted"],
   [cron.includes("activation refresh degraded"), "Search Console downstream activation degradation boundary missing"],
   [cron.includes('success: true'), "Search Console ingestion must remain successful if downstream activation degrades"],

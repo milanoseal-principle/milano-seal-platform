@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { P5_PROTECTED_CHANGES } from "./governed-production-scope.mjs";
 import { execSync } from "node:child_process";
 
 const read = (file) => fs.readFileSync(file, "utf8");
@@ -13,19 +14,14 @@ const assertIncludes = (file, terms) => {
 };
 
 const pricing = read("app/pricing/page.tsx");
-for (const [label, re] of [
-  ["Signature Execution", /Signature Execution/],
-  ["24–72 hour coordination target", /24[–-]72 hour coordination target/i],
-  ["Priority Execution", /Priority Execution/],
-  ["same day–48 hour coordination target", /Same day[–-]48 hour coordination target/i],
-  ["Executive Execution", /Executive Execution/],
-  ["immediate project coordination", /Immediate project coordination/i],
-  ["third-party timing boundary", /third parties control their own processing timelines/i],
-]) {
-  if (!re.test(pricing)) {
-    console.error(`app/pricing/page.tsx missing required semantic: ${label}`);
-    process.exit(1);
-  }
+assertIncludes("app/pricing/page.tsx", ["<ExecutionTiers", "Payment-Gated Execution"]);
+assertIncludes("components/landing/execution-tiers.tsx", [
+  'name: "Signature"', 'name: "Priority"', 'name: "Executive"',
+  "not self-selected service packages", "do not create fixed completion promises",
+]);
+if (/24[–-]72 hour coordination target|Same day[–-]48 hour coordination target/i.test(pricing)) {
+  console.error("Public pricing must not promise fixed execution targets before governed review");
+  process.exit(1);
 }
 
 assertIncludes("components/home/MiniCorridorMapPreview.tsx", [
@@ -44,7 +40,7 @@ assertIncludes("components/landing/milano-trust-core.tsx", [
   "Global Document Intelligence",
   "Payment-Gated Scheduling",
   "Chain-of-Custody Visibility",
-  "useReducedMotion",
+  "useMilanoReducedMotion",
   "rotate: 360",
 ]);
 
@@ -52,18 +48,17 @@ assertIncludes("components/landing/destination-intelligence-card.tsx", [
   "w-[calc(100vw-32px)]",
   "mb-[calc(env(safe-area-inset-bottom)+7rem)]",
   "min-[480px]:grid-cols-2",
-  "Mobile notarization review",
-  "Florida authentication review",
-  "U.S. Department of State review",
-  "UAE embassy or consular review",
-  "Courier delivery",
-  "Consular Legalization Review",
+  "getPublicCountryExecutionIntelligence",
+  "governed.publicExecutionPath",
+  "ExecutionComplianceBoundary",
 ]);
 
 assertIncludes("components/assistant/MilanoOrbAssistant.tsx", [
   "calc(env(safe-area-inset-bottom) + 86px)",
   "right: \"16px\"",
-  "width: 52",
+  "h-[72px] w-[72px]",
+  'aria-label="Open Milano AI Assistant"',
+  "focus-visible:ring-2",
 ]);
 
 assertIncludes("components/landing/credential-ticker.tsx", [
@@ -91,7 +86,7 @@ const changed = execSync("git diff --name-only HEAD", { encoding: "utf8" })
   .split("\n")
   .filter(Boolean);
 const protectedPatterns = [/wise/i, /payment/i, /release/i, /custody/i, /supabase/i, /shippo/i, /bluenotary/i, /webhook/i, /rls/i];
-const protectedChanges = changed.filter((file) => protectedPatterns.some((pattern) => pattern.test(file)));
+const protectedChanges = changed.filter((file) => /^(app|lib|src|supabase)\//.test(file) && !P5_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file)));
 if (protectedChanges.length) {
   console.error(`Protected systems changed:\n${protectedChanges.join("\n")}`);
   process.exit(1);

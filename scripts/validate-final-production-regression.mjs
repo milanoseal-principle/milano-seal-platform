@@ -178,9 +178,13 @@ async function main() {
   // final gate remains deterministic/offline and cannot drift by downloading a
   // different tool version from the network during release validation.
   for (const [label, cmd, args] of [
+    ["project structure", "npm", ["run", "--silent", "validate:project"]],
     ["typecheck", "npm", ["run", "--silent", "typecheck"]],
     ["lint", "npm", ["run", "--silent", "lint"]],
     ["test", "npm", ["test", "--silent"]],
+    ["P3 database", "npm", ["run", "--silent", "test:p3-database"]],
+    ["P4 database", "npm", ["run", "--silent", "test:p4-database"]],
+    ["P5 database", "npm", ["run", "--silent", "test:p5-database"]],
     ["build", "npm", ["run", "--silent", "build"]],
   ]) {
     const r = runStep(label, cmd, args);
@@ -188,19 +192,11 @@ async function main() {
     if (!r.ok) stopWith(results, 1);
   }
 
-  // 5. Advisory validators are reported for release visibility. A failure here
-  // does not block the required production gate above.
-  const advisory = [];
+  // 5. Remaining repository validators are mandatory under the continuation directive.
   for (const name of collectAdvisory(pkg)) {
     const r = runStep(name, "npm", ["run", "--silent", name]);
-    advisory.push(r);
-  }
-  const advisoryFail = advisory.filter((r) => !r.ok);
-  console.log("\nAdvisory validators (non-blocking):");
-  console.log(`  ${advisory.length - advisoryFail.length}/${advisory.length} passed`);
-  if (advisoryFail.length) {
-    console.log("  Reporting (does not block release):");
-    for (const r of advisoryFail) console.log(`    REPORT ${r.label}`);
+    results.push(r);
+    if (!r.ok) stopWith(results, 1);
   }
 
   stopWith(results, results.every((r) => r.ok) ? 0 : 1);

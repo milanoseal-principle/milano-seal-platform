@@ -49,23 +49,23 @@ const forbiddenPublic = [
   "Stripe",
   "guaranteed acceptance",
   "government approved",
-  "legal advice",
 ];
 for (const file of publicFiles) {
   if (!fs.existsSync(path.join(root, file))) continue;
   const content = read(file);
+  if (/(?:Milano|we)\s+(?:provide|offer|give)s?\s+legal advice/i.test(content)) failures.push(`${file} asserts legal-advice services`);
   for (const phrase of forbiddenPublic) {
     if (content.toLowerCase().includes(phrase.toLowerCase())) failures.push(`${file} exposes forbidden public phrase: ${phrase}`);
   }
 }
 
 const commandCenter = read("app/dashboard/command-center/page.tsx");
-if (/live data|live metrics/i.test(commandCenter) && !/connect(ed)? to live backend|live backend records/i.test(commandCenter)) {
+if (/live data|live metrics/i.test(commandCenter) && !/connect(ed)? to live backend|live backend records|live\.source === "supabase"/i.test(commandCenter)) {
   failures.push("Command Center implies live metrics without a live backend qualifier");
 }
 if (!commandCenter.includes("Payment Gate Status") || !commandCenter.includes("ENFORCED")) failures.push("Command Center missing enforced payment gate status");
 if (commandCenter.includes("Stripe")) failures.push("Command Center must not expose Stripe status");
-if (!commandCenter.includes("Wise-first payment flow")) failures.push("Command Center missing Wise-first payment provider copy");
+if (!commandCenter.includes("Payment provider: Wise only. Scheduling remains payment-gated.")) failures.push("Command Center missing Wise-first payment provider copy");
 
 const changed = process.env.VALIDATE_CHANGED_FILES?.split("\n").filter(Boolean) ?? [];
 const blocked = [

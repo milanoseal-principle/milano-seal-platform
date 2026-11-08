@@ -4,7 +4,7 @@
 // pricing hidden, regulated matters gated to manual review, payment gate intact,
 // and no unauthorized Wise / release / custody drift in the current PR delta.
 
-import { P4B_PROTECTED_CHANGES } from './governed-production-scope.mjs';
+import { P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES } from './governed-production-scope.mjs';
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
@@ -101,7 +101,7 @@ try {
   execSync("git rev-parse --verify origin/main", { cwd: repoRoot, stdio: "ignore" });
   const diff = execSync("git diff --name-only origin/main HEAD", { cwd: repoRoot, encoding: "utf8" });
   const sensitive = /wise|webhook|release-?gate|releaseGate|performFinalRelease|custody|payment-?confirm|paymentConfirm/i;
-  const touched = diff.split("\n").filter((f) => f && sensitive.test(f) && !P4B_PROTECTED_CHANGES.includes(f));
+  const touched = diff.split("\n").filter((f) => f && sensitive.test(f) && ![...P4B_PROTECTED_CHANGES, ...P5_PROTECTED_CHANGES].includes(f));
   if (touched.length) fail(`Current PR delta touches protected files: ${touched.join(", ")}`);
   else ok("No Wise / release gate / custody / payment-confirmation drift in current PR delta");
 } catch (e) {
