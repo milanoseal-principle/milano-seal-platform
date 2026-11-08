@@ -88,6 +88,8 @@
     "validate:final-production-regression": "node scripts/validate-final-production-regression.mjs",
     "test:p3-database": "node scripts/test-p3-domestic-sql.mjs",
     "test:p4-database": "node scripts/test-p4-ron-sql.mjs",
+    "test:p5-database": "node scripts/test-p5-incidents-sql.mjs",
+    "test:p5-rendered": "node scripts/test-p5-rendered.mjs",
     "test:p3-rendered": "node scripts/test-p3-rendered.mjs",
     "test:unit": "node --import tsx --test 'tests/**/*.test.ts' 'lib/**/__tests__/*.test.ts' 'components/**/__tests__/*.test.ts'",
     "validate:migration-chain": "node scripts/validate-migration-chain.mjs",

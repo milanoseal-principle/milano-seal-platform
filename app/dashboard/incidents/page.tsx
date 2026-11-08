@@ -1,5 +1,7 @@
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { ComplianceIncidentCenter } from "@/components/dashboard/ComplianceIncidentCenter";
+import { RONSecurityIncidentPanel } from "@/components/ron/RONSecurityIncidentPanel";
+import { RON_INCIDENT_ROLES } from "@/lib/bluenotary/securityIncidents";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +11,13 @@ export const metadata = {
 };
 
 export default async function IncidentsPage() {
-  await requireDashboardAccess();
+  const { role } = await requireDashboardAccess();
 
   return (
     <main className="ms-os-page ms-safe-bottom min-h-screen bg-[#080808] px-4 py-6 text-white sm:px-6 sm:py-8">
       <div className="ms-os-atmosphere" aria-hidden="true" />
       <ComplianceIncidentCenter />
+      {RON_INCIDENT_ROLES.has(role) && <RONSecurityIncidentPanel />}
     </main>
   );
 }

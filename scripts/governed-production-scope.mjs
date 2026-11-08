@@ -14,3 +14,11 @@ export const P4B_PROTECTED_CHANGES = [
   'lib/bluenotary/webhook.ts',
   'supabase/migrations/20261108042000_p4_ron_statutory_evidence.sql',
 ];
+
+// Exact P5 incident delta authorized by the continuation directive. Guards and
+// behavior remain exercised by test:p5-database and the role/incident unit tests.
+export const P5_PROTECTED_CHANGES = [
+  'app/api/dashboard/ron/security-incidents/route.ts',
+  'lib/bluenotary/securityIncidents.ts',
+  'supabase/migrations/20261108090916_ron_incident_evidence_controls.sql',
+];

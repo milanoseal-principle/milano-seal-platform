@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { RON_INCIDENT_ROLES } from "@/lib/bluenotary/securityIncidents";
 
 export const runtime = "nodejs";
 
@@ -8,10 +10,8 @@ async function requireDashboardRole() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const role = ((user.app_metadata?.role ?? user.app_metadata?.role) as string) ?? "";
-  const allowed = new Set(["founder", "founder_admin", "admin", "admin_operator", "ops_manager",
-    "finance", "execution_coordinator", "client_support"]);
-  return allowed.has(role) ? { user, role } : null;
+  const role = await resolveServerRole(user);
+  return RON_INCIDENT_ROLES.has(role) ? { user, role } : null;
 }
 
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
   const { data, error } = await admin
     .from("compliance_incidents")
     .select("id,matter_id,incident_type,severity,status,release_frozen,document_already_released,apostille_already_submitted,client_impact_level,financial_exposure_estimate,summary,internal_notes,client_safe_message,correction_plan,founder_review_status,counsel_review_status,insurance_review_status,opened_by,assigned_to,closed_by,closed_at,created_at,updated_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).limit(100);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data });
 }
@@ -69,6 +69,16 @@ export async function PATCH(request: Request) {
   };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  const admin = createAdminClient();
+  const { data: incident, error: incidentError } = await admin.from("compliance_incidents")
+    .select("id,incident_type").eq("id",body.id).maybeSingle();
+  if (incidentError) return NextResponse.json({error:"INCIDENT_READ_FAILED"},{status:503});
+  if (!incident) return NextResponse.json({error:"INCIDENT_NOT_FOUND"},{status:404});
+  if (incident.incident_type === "RON_SECURITY_COMPROMISE") return NextResponse.json({
+    error:"USE_GOVERNED_RON_INCIDENT_WORKFLOW",
+    next_action:"Use the Florida RON security compromise review on the incident dashboard.",
+  },{status:409});
+
   const update: Record<string, unknown> = {};
   if (body.status !== undefined) update.status = body.status;
   if (body.release_frozen !== undefined) update.release_frozen = body.release_frozen;
@@ -83,7 +93,6 @@ export async function PATCH(request: Request) {
     update.closed_by = auth.user.id;
   }
 
-  const admin = createAdminClient();
   const { error } = await admin.from("compliance_incidents").update(update).eq("id", body.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
