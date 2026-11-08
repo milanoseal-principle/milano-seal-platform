@@ -52,7 +52,7 @@ export async function governanceMutation(request:Request) {
  if(command.operation==='task'){
   const body=command.body;let parent;
   if(body.parent_task_id){const result=await admin.from('governance_tasks').select('permission,depth,source_ids,visibility').eq('id',body.parent_task_id).single();if(result.error||!result.data||(!actor.founder&&result.data.visibility!=='OPERATIONS'))throw new GovernanceHTTPError('PARENT_NOT_AUTHORIZED',403);parent=result.data;}
-  validateTask(body,parent);
+  try{validateTask(body,parent);}catch(error){if(error instanceof z.ZodError)throw error;throw new GovernanceHTTPError(error instanceof Error&&['TOOL_NOT_AUTHORIZED','DELEGATION_CEILING','PARENT_REQUIRED','BUDGET_EXCEEDED','SENSITIVE_INPUT_REJECTED'].includes(error.message)?error.message:'INVALID_TASK_CONTRACT',400);}
  }
  const result=await admin.rpc('governance_command',{p_actor:actor.id,p_operation:command.operation,p_body:command.body});
  if(result.error){const code=result.error.message?.split(':')[0];throw new GovernanceHTTPError(result.error.code==='42501'?'GOVERNANCE_FORBIDDEN':safeCodes.has(code)?code:'GOVERNANCE_ACTION_NOT_CONFIRMED',result.error.code==='42501'?403:409);}
@@ -63,7 +63,7 @@ export async function governanceSnapshot(request:Request) {
  const actor=await governanceActor();const url=new URL(request.url);
  if(url.searchParams.has('collection'))return governanceCollection(request,actor);const raw=url.searchParams.get('cursor');
  const cursor=raw?cursorSchema.parse(JSON.parse(Buffer.from(raw,'base64url').toString())):null;
- const admin=createAdminClient();let tasks=admin.from('governance_tasks').select('id,agent_id,charter_version,payload,action_hash,permission,parent_task_id,depth,dependency_ids,decision_id,source_ids,visibility,status,attempt_count,max_attempts,cost_limit,cost_reserved,cost_actual,output,output_hash,error_code,created_at,completed_at,verified_by').order('created_at',{ascending:false}).order('id',{ascending:false}).limit(26);
+ const admin=createAdminClient();let tasks=admin.from('governance_tasks').select('id,agent_id,originating_director_id,committee_id,charter_version,payload,action_hash,permission,parent_task_id,depth,dependency_ids,decision_id,source_ids,visibility,status,attempt_count,max_attempts,cost_limit,cost_reserved,cost_actual,output,output_hash,error_code,created_at,completed_at,verified_by').order('created_at',{ascending:false}).order('id',{ascending:false}).limit(26);
  if(!actor.founder)tasks=tasks.eq('visibility','OPERATIONS');
  if(cursor)tasks=tasks.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
  const agentQuery=readGovernanceAgents(admin);

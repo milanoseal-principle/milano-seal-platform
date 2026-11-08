@@ -11,6 +11,7 @@ export function validateTask(input:TaskRequest,parent?:{permission:number;depth:
  const task=taskRequestSchema.parse(input);const agent=AGENTS.find(a=>a.agent_id===task.agent_id);const tool=TOOLS[task.tool_id];
  if(!agent || !agent.allowed_tool_ids.includes(task.tool_id as ToolId) || tool.level>agent.maximum_permission_level || agent.denied_tool_ids.includes(task.tool_id))throw Error('TOOL_NOT_AUTHORIZED');
  if(parent && (parent.depth>=2 || tool.level>parent.permission || task.source_ids.some(s=>!parent.source_ids.includes(s))))throw Error('DELEGATION_CEILING');
+ if(agent.kind==='worker'&&!task.parent_task_id)throw Error('PARENT_REQUIRED');
  if(task.parent_task_id && !parent)throw Error('PARENT_REQUIRED');
  if(task.cost_limit>agent.cost_budget)throw Error('BUDGET_EXCEEDED');
  if(/(sk-[A-Za-z0-9_-]{12,}|Bearer\s+\S+|-----BEGIN|password\s*[:=]|api[_-]?key\s*[:=])/i.test(task.title))throw Error('SENSITIVE_INPUT_REJECTED');

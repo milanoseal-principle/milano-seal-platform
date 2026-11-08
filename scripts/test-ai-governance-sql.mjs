@@ -130,7 +130,7 @@ await denied(()=>command('retry',{task_id:interrupted.id,reason:'Unknown result 
 await command('pause',{paused:false,mode:'SHADOW',reason:'Controlled daily-budget fixture'});
 await draft('D04');await command('agent',{agent_id:'D11',enabled:true});
 const historicBody=body('D11',{tool_id:'draft_report',title:'Historic queued corporate task fixture'});
-await db.query(`insert into governance_tasks(agent_id,charter_version,payload,action_hash,permission,source_ids,visibility,created_by,idempotency_key,max_attempts,cost_limit,created_at) values('D11',1,$1,encode(sha256(convert_to($1::jsonb::text,'utf8')),'hex'),1,array['fixture:approved'],'FOUNDER',$2,$3,2,1000,now()-interval '2 days')`,[historicBody,founder,historicBody.idempotency_key]);
+await db.query(`insert into governance_tasks(agent_id,originating_director_id,charter_version,payload,action_hash,permission,source_ids,visibility,created_by,idempotency_key,max_attempts,cost_limit,created_at) values('D11','D11',1,$1,encode(sha256(convert_to($1::jsonb::text,'utf8')),'hex'),1,array['fixture:approved'],'FOUNDER',$2,$3,2,1000,now()-interval '2 days')`,[historicBody,founder,historicBody.idempotency_key]);
 const todayReserved=(await db.query("select sum(reservation)::int n from governance_attempts where created_at>=date_trunc('day',now())")).rows[0].n;
 await db.query('update governance_settings set daily_budget=$1',[todayReserved+100]);
 const historicClaim=(await db.query('select governance_claim(100) result')).rows[0].result;assert.equal(historicClaim.agent_id,'D11');passed++;
@@ -139,5 +139,8 @@ assert.equal((await db.query('select governance_claim(100) result')).rows[0].res
 await denied(()=>db.query("update governance_tasks set created_at=now() where id=$1",[historicClaim.id]),'task timestamps cannot rewrite cost history');
 await denied(()=>db.query('update governance_approvals set consumed_at=null where id=$1',[accepted.id]),'consumed approval cannot be replayed');
 await denied(()=>db.exec('update governance_attempts set reservation=0'),'spend reservation evidence immutable');
+await denied(()=>command('task',body('W01')),'specialist requires director-scoped parent');
+await denied(()=>command('task',body('E02',{parent_task_id:first.id})),'executive reporting cannot cross governing director');
+assert.equal((await db.query('select originating_director_id from governance_tasks where id=$1',[first.id])).rows[0].originating_director_id,'D01');passed++;
 console.log(`PASS ${passed} actual PostgreSQL corporate-governance checks; isolated fixture, no live activation.`);
 await db.close();

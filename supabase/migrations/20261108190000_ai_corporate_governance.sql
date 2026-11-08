@@ -26,6 +26,7 @@ create table public.governance_decisions (
 );
 create table public.governance_tasks (
  id uuid primary key default gen_random_uuid(), agent_id text not null references public.governance_agents(agent_id),
+ originating_director_id text not null references public.governance_agents(agent_id) check(originating_director_id ~ '^D(0[1-9]|1[0-2])$'),committee_id text check(committee_id in ('A','B','C','D','E')),
  charter_version integer not null, payload jsonb not null, action_hash text not null, permission integer not null check(permission between 0 and 2),
  parent_task_id uuid references public.governance_tasks(id), depth integer not null default 0 check(depth between 0 and 2), dependency_ids uuid[] not null default '{}',
  decision_id uuid references public.governance_decisions(id), source_ids text[] not null default '{}',
@@ -109,11 +110,15 @@ begin
      select * into parent from public.governance_tasks where id=(p_body->>'parent_task_id')::uuid;
      if not found or parent.depth>=2 or lvl>parent.permission or not refs<@parent.source_ids or (parent.visibility='FOUNDER' and p_body->>'visibility'='OPERATIONS') or (r not in ('founder','founder_admin') and parent.visibility<>'OPERATIONS') then raise exception 'DELEGATION_CEILING';end if;
    end if;
+   if agent.charter->>'kind'='worker' and parent.id is null then raise exception 'PARENT_REQUIRED';end if;
+   h:=coalesce(parent.originating_director_id,case when agent.charter->>'kind'='director' then agent.agent_id else agent.charter->>'reports_to' end);
+   if agent.charter->>'kind'='executive' and h is distinct from agent.charter->>'reports_to' then raise exception 'EXECUTIVE_REPORTING_MISMATCH';end if;
+   if p_body->>'decision_id' is not null then select committee_id into committee from public.governance_decisions where id=(p_body->>'decision_id')::uuid;if not found then raise exception 'DECISION_NOT_FOUND';end if;end if;
    select * into t from public.governance_tasks where created_by=p_actor and idempotency_key=(p_body->>'idempotency_key')::uuid;
    if found then if t.payload<>p_body then raise exception 'IDEMPOTENCY_CONFLICT';end if;return to_jsonb(t);end if;
    if lvl=2 and p_body->>'decision_id' is null then raise exception 'MATERIAL_DECISION_REQUIRED';end if;
-   insert into public.governance_tasks(agent_id,charter_version,payload,action_hash,permission,parent_task_id,depth,dependency_ids,decision_id,source_ids,visibility,created_by,idempotency_key,max_attempts,cost_limit)
-   values(agent.agent_id,(agent.charter->>'charter_version')::int,p_body,encode(sha256(convert_to(p_body::text,'utf8')),'hex'),lvl,parent.id,coalesce(parent.depth+1,0),deps,(p_body->>'decision_id')::uuid,refs,p_body->>'visibility',p_actor,(p_body->>'idempotency_key')::uuid,(agent.charter->>'max_retries')::int+1,(p_body->>'cost_limit')::int) returning id into result_id;
+   insert into public.governance_tasks(agent_id,originating_director_id,committee_id,charter_version,payload,action_hash,permission,parent_task_id,depth,dependency_ids,decision_id,source_ids,visibility,created_by,idempotency_key,max_attempts,cost_limit)
+   values(agent.agent_id,h,committee,(agent.charter->>'charter_version')::int,p_body,encode(sha256(convert_to(p_body::text,'utf8')),'hex'),lvl,parent.id,coalesce(parent.depth+1,0),deps,(p_body->>'decision_id')::uuid,refs,p_body->>'visibility',p_actor,(p_body->>'idempotency_key')::uuid,(agent.charter->>'max_retries')::int+1,(p_body->>'cost_limit')::int) returning id into result_id;
  elsif p_operation='decision' then
    category:=p_body->>'category';committee:=case when category in ('finance','capital') then 'A' when category in ('technology','security') then 'B' when category in ('legal','governance') then 'C' when category in ('product','revenue','global') then 'D' when category='strategy' then 'E' end;
    if committee is null or coalesce(p_body->>'risk','') not in ('LOW','MATERIAL','CRITICAL') or jsonb_typeof(p_body->'evidence_missing') is distinct from 'array' or p_body->>'responsible_director_id' !~ '^D(0[1-9]|1[0-2])$' then raise exception 'INVALID_DECISION';end if;
@@ -263,8 +268,9 @@ begin
  select coalesce(currency,'USD') currency,count(*) matters,sum(amount_paid) amount from public.deals
  where payment_confirmed is true and payment_status='paid' and payment_settlement_status='cleared'
  and amount_due>0 and amount_paid>0 and amount_due::text not in ('NaN','Infinity','-Infinity') and amount_paid::text not in ('NaN','Infinity','-Infinity')
- and round(amount_paid*100)=round(amount_due*100) group by currency order by currency limit 100) x),'[]'::jsonb),
+ and round(amount_paid*100)=round(amount_due*100) group by currency order by currency limit 201) x),'[]'::jsonb),
  'cash_balance',null,'recognized_revenue',null,'runway',null,'financial_status','BALANCE_AND_RECOGNIZED_REVENUE_NOT_VERIFIED') into result;
+ if jsonb_array_length(result->'settled_collections')>200 then raise exception 'FINANCIAL_SCOPE_REVIEW_REQUIRED';end if;
  for rec in select * from jsonb_to_recordset(result->'settled_collections') as x(currency text,matters bigint,amount numeric) loop
   ref:='metric:wise_collections:'||rec.currency||':'||gen_random_uuid()::text;
   insert into public.governance_sources(source_id,sha256,observed_at,expires_at,classification,basis,value,unit,approved_by) values(ref,encode(sha256(convert_to(jsonb_build_object('currency',rec.currency,'amount',rec.amount,'observed_at',observed)::text,'utf8')),'hex'),observed,observed+interval '2 hours','CORPORATE','VERIFIED_CANONICAL_METRIC',rec.amount,rec.currency,p_actor);
@@ -298,7 +304,7 @@ create trigger governance_packet_immutable before update or delete on public.gov
 create trigger governance_outcome_immutable before update or delete on public.governance_outcomes for each row execute function public.governance_immutable();
 create or replace function public.governance_task_guard() returns trigger language plpgsql set search_path='' as $$
 begin
- if TG_OP='DELETE' or new.payload is distinct from old.payload or new.action_hash is distinct from old.action_hash or new.agent_id is distinct from old.agent_id or new.source_ids is distinct from old.source_ids or new.dependency_ids is distinct from old.dependency_ids or new.parent_task_id is distinct from old.parent_task_id or new.permission is distinct from old.permission or new.visibility is distinct from old.visibility or new.created_at is distinct from old.created_at or new.created_by is distinct from old.created_by or new.idempotency_key is distinct from old.idempotency_key or new.charter_version is distinct from old.charter_version or new.decision_id is distinct from old.decision_id or new.cost_limit is distinct from old.cost_limit or new.max_attempts is distinct from old.max_attempts or new.depth is distinct from old.depth then raise exception 'GOVERNANCE_TASK_IMMUTABLE';end if;
+ if TG_OP='DELETE' or new.payload is distinct from old.payload or new.action_hash is distinct from old.action_hash or new.agent_id is distinct from old.agent_id or new.source_ids is distinct from old.source_ids or new.dependency_ids is distinct from old.dependency_ids or new.parent_task_id is distinct from old.parent_task_id or new.permission is distinct from old.permission or new.visibility is distinct from old.visibility or new.created_at is distinct from old.created_at or new.created_by is distinct from old.created_by or new.idempotency_key is distinct from old.idempotency_key or new.charter_version is distinct from old.charter_version or new.originating_director_id is distinct from old.originating_director_id or new.committee_id is distinct from old.committee_id or new.decision_id is distinct from old.decision_id or new.cost_limit is distinct from old.cost_limit or new.max_attempts is distinct from old.max_attempts or new.depth is distinct from old.depth then raise exception 'GOVERNANCE_TASK_IMMUTABLE';end if;
  if old.output is not null and (new.output is distinct from old.output or new.output_hash is distinct from old.output_hash) then raise exception 'GOVERNANCE_REPORT_IMMUTABLE';end if;return new;
 end $$;
 create trigger governance_task_immutable before update or delete on public.governance_tasks for each row execute function public.governance_task_guard();
