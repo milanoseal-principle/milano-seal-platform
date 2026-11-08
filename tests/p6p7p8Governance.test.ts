@@ -16,7 +16,11 @@ test("P6 provider fee evidence never enters Milano quote, Wise amount or revenue
   assert.doesNotMatch(pricing, /EXTERNAL_PROVIDER_NOTARIAL_FEE|provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(read("lib/economics/matterEconomics.ts"), /provider_fee_evidence|bluenotary/i);
   assert.doesNotMatch(payment, /provider_fee_evidence/);
-  assert.match(read("scripts/validate-provider-fee-separation.mjs"), /OWNER DECISION REQUIRED/);
+  const validator = read("scripts/validate-provider-fee-separation.mjs");
+  assert.match(validator, /notarizedSigCount/);
+  assert.match(validator, /retired ron_cost financial field reintroduced/);
+  assert.doesNotMatch(validator, /read\(['"]lib\/config\/pricing\.ts['"]\)/);
+
 });
 
 // ── P7 retention matrix ───────────────────────────────────────────────────────
