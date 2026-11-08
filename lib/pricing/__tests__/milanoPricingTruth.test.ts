@@ -17,9 +17,9 @@ test("Matter B: two signers elevate to Priority with signer + signature tracking
   assert.equal(r.additionalSignerCount, 1);
 });
 
-test("Matter C: Priority + first apostille included + notarized-signature tracking = $1,000", () => {
+test("Matter C: Priority + first apostille included excludes provider-controlled notarial fees", () => {
   const r = price("notarize and apostille for Italy", { apostille: true, destinationCountry: "Italy" }, "priority");
-  assert.equal(r.total, 1000); // 975 Priority (first apostille included) + 25 internal signature tracking
+  assert.equal(r.total, 975); // Priority Milano charge only; external provider/notarial fees are excluded
 });
 
 test("Matter D: same-day apostille elevates to Executive and adds rush", () => {
