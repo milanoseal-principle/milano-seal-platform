@@ -293,6 +293,9 @@ function PreflightSelect({
 
 export function MilanoExecutionCopilot() {
   const pathname = usePathname();
+  // The corporate Board Room has its own scoped workflow; a public intake
+  // launcher must not cover private governance controls or mix its context.
+  if (pathname?.startsWith("/dashboard/control-plane/board-room")) return null;
   // Counsel has a focused inquiry and mobile action; the global launcher must
   // not cover its controls or introduce another first-contact workflow.
   return pathname?.startsWith("/counsel") ? null : <ExecutionCopilotContent />;
