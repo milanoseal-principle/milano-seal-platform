@@ -20,7 +20,7 @@ test("P4 provider completion is not authoritative Milano RON completion", () => 
 });
 
 test("P4 executed artifacts are immutable and content-addressed in shared ingestion", () => {
-  assert.match(webhook, /storeRONExecutedDocuments/);
+  assert.match(webhookRoute, /captureExecutedRonDocuments/);\n  assert.doesNotMatch(webhookRoute, /storeRONExecutedDocuments/);
   assert.match(storage, /createHash\('sha256'\)/);
   assert.match(storage, /\/executed\/\$\{digest\}\//);
   assert.match(storage, /upsert:\s*false/);
