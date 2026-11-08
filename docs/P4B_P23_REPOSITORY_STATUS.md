@@ -21,9 +21,9 @@ The requested final verdict is not established.
 | P4 | Existing merged #437 baseline preserved |
 | P4B | Implemented for review in #438; local database, unit and rendered checks; hosted migration/rollout unverified |
 | P5 | Incomplete: full governed retention, RON incident notification and records-request workflows remain |
-| P6 | Partial: optional fixed-classified provider evidence and canonical RON notarial-act exclusion implemented; full financial-surface certification remains |
-| P7 | Incomplete: canonical retention matrix and authorized deletion lifecycle remain |
-| P8 | Incomplete: immutable policy registry and server-enforced versioned acceptance remain |
+| P6 | Merged implementation: BlueNotary provider-fee separation validator and regression coverage are present; hosted financial-surface certification remains |
+| P7 | Retention matrix implementation merged; all applicable retention/deletion duties and hosted evidence still require certification |
+| P8 | Versioned policy registry and server-side payment acceptance gate exist; client-facing exact-version acceptance and publication need verified certification |
 | P9 | Partial: RON source/executed hashes, canonical versions, atomic capture and changed-byte incidents implemented; full release/custody certification remains |
 | P10 | Not certified: complete immutable financial artifact snapshots/supersession remain |
 | P11 | Partial: new evidence/reopen RPC authorization, private grants and negative fixtures; system-wide RLS/security closeout remains |
@@ -31,7 +31,7 @@ The requested final verdict is not established.
 | P13 | Not certified: system-wide bounded pagination/index evidence remains |
 | P14 | Partial: RON evidence/reopen operator controls; full operator lifecycle remains |
 | P15 | Partial: RON blockers provide safe actionable failures; system-wide retry/recovery remains |
-| P16 | Not certified: complete notification state/evidence certification remains |
+| P16 | Partial: notification delivery-truth evidence, idempotent send claim and signed provider webhook exist; full event coverage and client/operator failure surfacing remain |
 | P17 | Not certified: complete acquisition/revenue provenance certification remains |
 | P18 | Partial: actual evidence panel rendered at all ten requested widths; broader public/private accessibility and performance certification remains |
 | P19 | Incomplete: full hosted transaction harness implementation/certification remains |
@@ -42,6 +42,10 @@ The requested final verdict is not established.
 
 Missing source implementation above is not attributed to absent customer credentials
 or a supplied live Matter. Those are not prerequisites for implementing the phases.
+
+## Current-main reconciliation — 2026-11-08
+
+This status file originally described the earlier P4B review branch and must not be interpreted as the state of current `main`. At base commit `3f9b58a2058a3fa81792d28be7be525c68b2f323`, P6 provider fee code/validator and regression coverage exist, P7 retention matrix exists, P8 server-side policy registry and acceptance gate exist, and P16 delivery truth primitives exist. None of those source observations alone certifies hosted production. P9–P15, P17–P18 and P19–P23 still require their specified outstanding phase work; P19–P23 additionally require full controlled live/recovery certification. The historical PR and CI details below refer to an earlier review and are not current build results.
 
 ## Schema/provenance evidence
 
