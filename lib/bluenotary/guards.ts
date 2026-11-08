@@ -149,7 +149,7 @@ export async function assertCanCreateRONSession(
 
   const { data: existing } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status')
+    .select('id, milano_ron_status, ron_lifecycle_state')
     .eq('matter_id', matterId)
     .not('milano_ron_status', 'in', '("RON_EXPIRED","RON_COMPLETED")')
     .maybeSingle();
@@ -197,35 +197,27 @@ export async function assertCanReleaseSigningURL(
   if (!signer) throw new RONGuardError('SIGNER_NOT_FOUND', 'No signer found for this RON session');
 }
 
-/** Verify that signed documents can be retrieved after provider-reported session completion. */
+/** Retrieve provider artifacts after provider completion, including governed evidence correction. */
 export async function assertCanRetrieveSignedDocuments(
   supabase: SupabaseClient,
   ronSessionId: string
 ): Promise<void> {
   const { data: session } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, ron_lifecycle_state')
+    .select('id, milano_ron_status')
     .eq('id', ronSessionId)
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  // Retrieval is allowed once the provider reports completion; it never establishes Milano completion.
-  const retrievable = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'];
-  if (!retrievable.includes(session.ron_lifecycle_state)) {
-    throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);
-  }
+  const providerCompleted = ['PROVIDER_SESSION_COMPLETED', 'EVIDENCE_PENDING'].includes(session.ron_lifecycle_state) ||\n    ['RON_COMPLETED', 'SESSION_PROCESSING', 'SIGNED_DOCS_RETRIEVED', 'RON_REVIEW_REQUIRED'].includes(session.milano_ron_status);\n  if (!providerCompleted) {\n    throw new RONGuardError('SESSION_NOT_COMPLETED', `Provider session completion is required before retrieving signed documents (current: ${session.ron_lifecycle_state ?? session.milano_ron_status})`);\n  }
 }
 
-/** Authoritative Milano RON completion: verified statutory evidence, QC and operator actor. */
+/** Authoritative Milano completion remains separate from provider retrieval. */
 export async function assertRonExecutionCompleted(
   supabase: SupabaseClient,
   ronSessionId: string
 ): Promise<void> {
-  const { data: session } = await supabase
-    .from('ron_sessions')
-    .select('id, ron_lifecycle_state')
-    .eq('id', ronSessionId)
-    .single();
+  const { data: session } = await supabase.from('ron_sessions').select('id, ron_lifecycle_state').eq('id', ronSessionId).single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
   if (session.ron_lifecycle_state !== 'COMPLETED') {
     throw new RONGuardError('RON_EVIDENCE_NOT_VERIFIED', 'RON statutory evidence must be verified and the session completed by Milano before the Matter can advance');
@@ -248,7 +240,6 @@ export async function assertCanAdvanceToApostille(
     .single();
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
 
-  if (!['SIGNED_DOCS_RETRIEVED', 'READY_FOR_APOSTILLE', 'RON_COMPLETED'].includes(session.milano_ron_status)) {
   const statutory = await supabase.rpc('ron_statutory_evidence_verified', {p_session:ronSessionId});
   if (statutory.error || statutory.data !== true) throw new RONGuardError('STATUTORY_EVIDENCE_REQUIRED','Operator-verified statutory evidence and QC are required before progression');
 
@@ -256,13 +247,10 @@ export async function assertCanAdvanceToApostille(
     throw new RONGuardError('SIGNED_DOCS_NOT_RETRIEVED', 'Signed documents must be retrieved and stored before advancing to Apostille');
   }
 
-  await assertRonExecutionCompleted(supabase, ronSessionId);
-
-  const { data: docs } = await supabase
+  await assertRonExecutionCompleted(supabase, ronSessionId);\n\n  const { data: docs } = await supabase
     .from('ron_documents')
     .select('id, signed_document_received, executed_sha256')
     .eq('ron_session_id', ronSessionId)
-    .eq('signed_document_received', true)
-    .not('executed_sha256', 'is', null);
+    .eq('signed_document_received', true)\n    .not('executed_sha256', 'is', null);
   if (!docs || docs.length === 0) throw new RONGuardError('NO_SIGNED_DOCUMENTS', 'No signed documents have been received for this session');
 }
