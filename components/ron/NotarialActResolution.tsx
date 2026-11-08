@@ -46,7 +46,7 @@ const OPTIONS: Array<{
 
 function authorityMessage(method: string | null | undefined) {
   if (method === "wise_submission_observed") {
-    return "A governed Wise submission already satisfies the payment portion of scheduling. Wise settlement continues separately in the background.";
+    return "Wise submission is recorded, but scheduling remains locked until the exact Milano payment is verified as settled.";
   }
   if (method === "verified_payment") {
     return "Wise payment is verified and the payment portion of scheduling is satisfied.";
