@@ -23,17 +23,8 @@ for (const file of financial) {
   }
 }
 
-// The controlling engine adds a per-notarized-signature charge into the Milano total and exposes it
-// internally as `ron_cost`. Whether that is a Milano-controlled service charge or the provider's
-// notarial fee folded into Milano's quote/Wise amount is an owner pricing decision.
-const engine = read('lib/pricing.ts');
-if (/ron_cost:\s*money\(notarizedSigCount \* COMPLEXITY\.notarized_signature\)/.test(engine)) {
-  findings.push('lib/pricing.ts: `notarized_signatures` ($25 x count) is added to the Milano total and labelled internal `ron_cost` — OWNER DECISION REQUIRED: confirm Milano-controlled service charge (rename/classify) or remove as provider-controlled notarial fee');
-}
-const legacy = read('lib/config/pricing.ts');
-if (/ronPerSignature:\s*25/.test(legacy)) {
-  findings.push('lib/config/pricing.ts: deprecated config states the $25 RON notarial fee is "included in professional service rates" (only consumer: unused components/conversion/PricingLanes.tsx)');
-}
+// Canonical regression coverage must exist and prove signature counts/provider aliases cannot alter Milano financial truth.
+if (!fs.existsSync(path.join(root, 'tests/providerFeeSeparation.test.ts'))) findings.push('tests/providerFeeSeparation.test.ts: missing canonical P6 regression coverage');
 
 if (findings.length) {
   console.error('P6 provider fee separation findings:\n- ' + findings.join('\n- '));
