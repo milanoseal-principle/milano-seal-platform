@@ -75,6 +75,7 @@ const gates = [
   ["node", ["scripts/validate-matter-execution-corridor-spine.mjs"]],
   ["node", ["scripts/validate-production-closeout-invariants.mjs"]],
   ["node", ["scripts/validate-verified-settlement-before-scheduling.mjs"]],
+  ["node", ["scripts/validate-intake-pricing-privacy.mjs"]],
   ["node", ["scripts/validate-wise-reconciliation-exception-orchestrator.mjs"]],
   ["npm", ["run", "validate:migration-chain"]],
   ["npm", ["run", "validate:ai-governance"]],
