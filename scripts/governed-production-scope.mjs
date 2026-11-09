@@ -35,6 +35,11 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // User-authorized current-truth exception resolution and private operational evidence.
+ 'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
+ 'app/api/admin/wise/health/route.ts',
+ 'docs/production/P24_P30_EXISTING_SOURCE_MAP_2026-11-09.md',
+
  // User-authorized P7 retention continuation; real SQL claim/hold/role tests.
  'supabase/migrations/20261109061000_retention_claim_and_hold_authority.sql',
 

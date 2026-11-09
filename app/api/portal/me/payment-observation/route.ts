@@ -12,7 +12,7 @@ import { reconcileWiseMatter } from "@/lib/wise/reconciliation";
 import { appendMatterEvidence, readMatterEvidence } from "@/lib/matter/evidenceLedger";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
-import { hasCurrentWiseProviderEvidence } from "@/lib/wise/attemptEvidence";
+import { hasCurrentWiseProviderEvidence, isInvalidWiseStatus } from "@/lib/wise/attemptEvidence";
 import { requiredPolicyBlockers } from "@/lib/policy/acceptance";
 
 export const runtime = "nodejs";
@@ -42,6 +42,8 @@ function payload(row: Record<string, unknown>) {
     amountDue: Number(row.amount_due ?? 0),
     amountPaid: Number(row.amount_paid ?? 0),
     currency: String(row.currency ?? "USD").toUpperCase(),
+    wiseReference: String(row.wise_reference ?? row.deal_id ?? "").trim(),
+    submissionCurrent: evaluateSchedulingGate({ matter: row as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).paymentRequirementMethod === 'wise_submission_observed',
     providerEvidence: hasCurrentWiseProviderEvidence({ ...row, id: String(row.id) } as Parameters<typeof hasCurrentWiseProviderEvidence>[0]),
   };
 }
@@ -208,7 +210,9 @@ export async function PUT(req: NextRequest) {
 
     const message = state.paymentConfirmed
       ? "Wise settlement verified. Paid state is confirmed."
-      : reconciliation.providerEvidence
+      : isInvalidWiseStatus(state.settlementStatus) || isInvalidWiseStatus(state.paymentStatus)
+        ? "The prior Wise attempt is invalidated. Review the payment with your coordinator; a fresh governed handoff is required before any new submission."
+        : reconciliation.providerEvidence
         ? reconciliation.providerStatus === "CANCELLED"
           ? "Wise reports this payment as cancelled. Please review the payment before continuing."
           : reconciliation.providerStatus === "REQUIRES_ATTENTION"

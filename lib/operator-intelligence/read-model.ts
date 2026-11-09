@@ -414,3 +414,51 @@ export async function loadOperatorIntelligence(options: { limit?: number; now?: 
 export function isCanonicalMatterState(value: string): boolean {
   return CANONICAL_STATE_SET.has(value);
 }
+
+export interface OperationalHealthObservation {
+  id: string;
+  label: string;
+  category: string;
+  state: 'Operational' | 'Unknown' | 'Degraded';
+  note: string;
+  observedAt: string | null;
+}
+
+/** Counts describe canonical operational evidence, never external-provider uptime. */
+export async function loadOperationalHealth(role: string, suppliedAdmin?: ReturnType<typeof createAdminClient>): Promise<OperationalHealthObservation[]> {
+  const definitions = [
+    { id: 'database', label: 'Canonical database read', category: 'Database' },
+    { id: 'wise', label: 'Wise reconciliation exceptions', category: 'Payment' },
+    { id: 'notifications', label: 'Notification delivery failures', category: 'Communication' },
+    { id: 'ron', label: 'RON evidence review', category: 'Execution' },
+    { id: 'courier', label: 'Courier exceptions', category: 'Courier' },
+    { id: 'security', label: 'Open compliance incidents', category: 'Security' },
+    { id: 'retention', label: 'Retention destruction review', category: 'Preservation' },
+    { id: 'governance', label: 'Agent outcome review', category: 'Governance' },
+  ];
+  const unknown = (definition: typeof definitions[number]): OperationalHealthObservation => ({ ...definition, state: 'Unknown', note: 'NOT VERIFIED: canonical observation unavailable. No zero or healthy state is inferred.', observedAt: null });
+  let admin: ReturnType<typeof createAdminClient>;
+  try { admin = suppliedAdmin ?? createAdminClient({ timeoutMs: 10_000 }); }
+  catch { return definitions.map(unknown); }
+  const responses = await Promise.allSettled([
+    admin.from('deals').select('id').limit(1),
+    admin.from('wise_reconciliation_exceptions').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    admin.from('notifications').select('id', { count: 'exact', head: true }).in('delivery_status', ['failed', 'bounced', 'suppressed']),
+    admin.from('ron_sessions').select('id', { count: 'exact', head: true }).eq('milano_ron_status', 'RON_REVIEW_REQUIRED'),
+    admin.from('matter_shipment_legs').select('id', { count: 'exact', head: true }).eq('custody_status', 'exception'),
+    admin.from('compliance_incidents').select('id', { count: 'exact', head: true }).not('status', 'in', '(CLOSED,RESOLVED,MATTER_RESTORED_OR_CLOSED)'),
+    admin.from('retention_records').select('id', { count: 'exact', head: true }).in('deletion_claim_outcome', ['pending', 'unknown']),
+    ['founder', 'founder_admin', 'admin_operator', 'ops_manager'].includes(role)
+      ? admin.from('governance_tasks').select('id', { count: 'exact', head: true }).in('status', ['UNKNOWN', 'DEAD_LETTER'])
+      : Promise.resolve({ error: { code: 'ROLE_SCOPED' }, count: null }),
+  ]);
+  return definitions.map((definition, index) => {
+    const response = responses[index];
+    if (response.status !== 'fulfilled' || response.value.error) return unknown(definition);
+    const observedAt = new Date().toISOString();
+    if (index === 0) return { ...definition, state: 'Operational', observedAt, note: 'Canonical database read succeeded. This observation does not certify provider availability, write access, backups or recovery.' };
+    const count = response.value.count;
+    if (count == null || !Number.isSafeInteger(count) || count < 0) return unknown(definition);
+    return { ...definition, state: count > 0 ? 'Degraded' : 'Unknown', observedAt, note: `${count} recorded items require review. External provider health and delivery remain NOT VERIFIED by this count.` };
+  });
+}

@@ -1,7 +1,12 @@
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
+  try { await requireDashboardAccess(); }
+  catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'Cache-Control': 'private, no-store' } }); }
   const t0 = Date.now();
   try {
     const supabase = await createClient();
@@ -12,18 +17,17 @@ export async function GET() {
       service: "storage",
       latency_ms: Date.now() - t0,
       timestamp: new Date().toISOString(),
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "unknown";
+    }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch {
     return NextResponse.json(
       {
         status: "degraded",
         service: "storage",
-        error: message,
+        error: "DEPENDENCY_OBSERVATION_UNAVAILABLE",
         latency_ms: Date.now() - t0,
         timestamp: new Date().toISOString(),
       },
-      { status: 503 },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 }

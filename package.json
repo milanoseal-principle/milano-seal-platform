@@ -173,6 +173,8 @@
     "validate:ai-governance": "node --import tsx scripts/validate-ai-governance.mjs",
     "test:ai-governance-regressions": "node scripts/test-ai-governance-regressions.mjs",
     "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs",
+    "test:operational-health-http": "node scripts/test-operational-health-http.mjs",
+    "test:operational-evidence-database": "node scripts/test-operational-evidence-sql.mjs",
     "test:retention-rendered": "node scripts/test-retention-rendered.mjs",
     "test:retention-authority-database": "node scripts/test-retention-authority-sql.mjs",
     "test:wise-attempt-database": "node --import tsx scripts/test-wise-attempt-sql.mjs",

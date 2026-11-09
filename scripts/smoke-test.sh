@@ -211,29 +211,11 @@ check_status "GET /api/debug/supabase → 404" "$BASE_URL/api/debug/supabase" "4
 check_status "GET /api/debug/supabase-env → 404" "$BASE_URL/api/debug/supabase-env" "404"
 check_status "GET /api/debug/session → 404" "$BASE_URL/api/debug/session" "404"
 
-# ── ROUTE 13: Database Health ────────────────────────────────
-echo "── Route 13 — Database Health"
-check_body_contains "GET /api/health/database → status:ok" \
-  "$BASE_URL/api/health/database" "200" '"status":"ok"'
-# Latency guard: check latency_ms exists (numeric validation requires jq)
-if command -v jq &>/dev/null; then
-  latency=$(curl -s --max-time 10 "$BASE_URL/api/health/database" 2>/dev/null \
-    | jq -r '.latency_ms // empty' 2>/dev/null || echo "")
-  if [[ -n "$latency" && "$latency" -lt 2000 ]]; then
-    pass "[latency=${latency}ms < 2000ms] /api/health/database latency acceptable"
-  else
-    fail "[latency=${latency}ms] /api/health/database latency exceeds 2000ms threshold"
-  fi
-else
-  skip "/api/health/database latency check (jq not available)"
-fi
-
-# ── SUPPLEMENTAL HEALTH ROUTES ───────────────────────────────
-echo "── Supplemental Health Routes"
-check_status "GET /api/health/storage" "$BASE_URL/api/health/storage" "200"
-check_status "GET /api/health/webhooks" "$BASE_URL/api/health/webhooks" "200"
-check_status "GET /api/health/payment" "$BASE_URL/api/health/payment" "200"
-check_status "GET /api/health/dispatch" "$BASE_URL/api/health/dispatch" "200"
+# Detailed dependency observations are private. Public liveness is /api/health.
+echo "── Protected dependency diagnostics"
+for dependency in database storage webhooks payment dispatch assistant; do
+  check_status "GET /api/health/$dependency requires authentication" "$BASE_URL/api/health/$dependency" "401"
+done
 
 # ── SECURITY: no example.com or TEST MODE in any health response ──
 echo "── Security: forbidden strings in health responses"
@@ -242,7 +224,7 @@ check_body_not_contains "No 'example.com' in /api/health" \
 check_body_not_contains "No 'TEST MODE' in /api/health" \
   "$BASE_URL/api/health" "200" "TEST MODE"
 check_body_not_contains "No 'example.com' in /api/health/webhooks" \
-  "$BASE_URL/api/health/webhooks" "200" "example.com"
+  "$BASE_URL/api/health/webhooks" "401" "example.com"
 
 # ── SUMMARY ──────────────────────────────────────────────────
 echo ""

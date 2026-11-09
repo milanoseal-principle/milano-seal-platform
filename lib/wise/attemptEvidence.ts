@@ -49,3 +49,14 @@ export function activityMatchesAttempt(activity: Record<string, unknown>, matter
   const due = Number(matter.amount_due);
   return Number.isFinite(value) && value > 0 && value === due && currency !== '' && currency === String(matter.currency ?? '').trim().toUpperCase();
 }
+
+/** Presentation only; canonical execution/settlement gates remain server-side. */
+export function paymentObservationPresentation(payment: { paymentConfirmed: boolean; settlementStatus: string; paymentObservedAt: unknown; submissionCurrent?: boolean } | null): 'unverified' | 'settled' | 'pending' | 'review' | 'invalidated' | 'not_submitted' {
+  if (!payment) return 'unverified';
+  if (isInvalidWiseStatus(payment.settlementStatus)) return 'invalidated';
+  if (payment.paymentConfirmed && payment.settlementStatus === 'cleared') return 'settled';
+  if (payment.settlementStatus === 'mismatch_review') return 'review';
+  if (payment.paymentObservedAt && payment.settlementStatus === 'observed_available') return 'pending';
+  if (payment.paymentObservedAt && payment.submissionCurrent !== false && ['observed_pending','observed_available'].includes(payment.settlementStatus)) return 'pending';
+  return 'not_submitted';
+}
