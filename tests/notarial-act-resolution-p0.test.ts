@@ -63,9 +63,10 @@ test("notarial resolution never authors payment truth", () => {
 });
 
 test("RON UX distinguishes Wise submission verified payment and complimentary authority", () => {
-  assert.match(readiness, /wise_submission_observed/);
+  assert.doesNotMatch(readiness, /wise_submission_observed/);
   assert.match(readiness, /verified_payment/);
-  assert.match(readiness, /complimentary_authorization/);
+  assert.match(readiness, /wiseSubmission === 'processing'/);
+  assert.match(readiness, /Courtesy authorization or a payment flag alone cannot unlock scheduling/);
   assert.match(readiness, /Payment is not the blocker/);
   assert.match(readiness, /BlueNotary is waiting on execution truth—not another payment/);
   assert.match(readiness, /NotarialActResolution/);

@@ -76,7 +76,29 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'lib/stateMachine.ts','lib/scheduling/complimentarySchedulingGate.ts','lib/pipelineEngine.ts','lib/platform/matterStateAdapters.ts',
  'app/api/deals/[id]/schedule/route.ts','app/api/deals/[id]/execute/route.ts','app/api/admin/matters/[id]/status/route.ts',
  'scripts/validate-postpayment-ron-corridor.mjs','scripts/validate-tiffany-post-test-final-audit.mjs',
- 'scripts/validate-immediate-scheduling-after-wise-submission.mjs','scripts/validate-postpayment-ron-matter-progression.mjs',
+ 'scripts/validate-verified-settlement-before-scheduling.mjs','scripts/validate-postpayment-ron-matter-progression.mjs',
  'scripts/validate-payment-release-gates.mjs',
  'scripts/validate-custody-ledger-schema.mjs',
+];
+
+// 2026-11-09 founder decision: NO VERIFIED WISE SETTLEMENT -> NO SCHEDULING.
+// User-authorized exact paths only; proven by validate-verified-settlement-before-scheduling,
+// test:gap-closure-database and test:wise-attempt-database. No other protected path is opened.
+export const SETTLEMENT_SCHEDULING_PROTECTED_CHANGES = [
+ 'supabase/migrations/20261109090000_verified_settlement_before_scheduling.sql',
+ 'lib/bluenotary/guards.ts',
+ 'components/payments/SecurePaymentCard.tsx',
+ 'app/api/portal/me/payment-observation/route.ts',
+ 'app/dashboard/payments/reconciliation/page.tsx',
+ 'app/portal/payment/page.tsx',
+ 'scripts/test-gap-closure-sql.mjs',
+ 'scripts/validate-wise-reconciliation-exception-orchestrator.mjs',
+ 'scripts/validate-final-branch-salvage-audit.mjs',
+ 'scripts/validate-immediate-scheduling-after-wise-submission.mjs',
+ 'tests/payment-submission-handoff-p0.test.ts',
+ 'tests/payment-submission-immediate-scheduling-p0.test.ts',
+ 'tests/portal-payment-truth-projection.test.ts',
+ 'tests/unit/paymentAuthorityRegression.test.ts',
+ 'tests/unit/schedulingPaymentGate.test.ts',
+ 'docs/control-plane/VERIFIED_SETTLEMENT_P0_HOTFIX.md',
 ];

@@ -23,7 +23,7 @@ const checks = [
   ["recovery route never directly writes paid fields", !/payment_confirmed\s*:/.test(recoveryApi) && !/payment_status\s*:/.test(recoveryApi)],
   ["minute reconciliation cron runs exception scanner", /scanWiseReconciliationExceptions/.test(cron)],
   ["operator has Wise recovery command surface", /Settlement Recovery Command/.test(recoveryPage) && /\/api\/admin\/wise\/reconciliation-exceptions/.test(recoveryPage)],
-  ["operator UI states scheduling separate from settlement", /Scheduling authority stays separate from settlement truth/.test(recoveryPage) && /Final settlement-dependent release remains locked/.test(recoveryPage)],
+  ["operator UI states scheduling waits for verified settlement", /scheduling unlocks only after verified settlement/.test(recoveryPage) && /final settlement-dependent release also remains locked/.test(recoveryPage)],
   ["Finance navigation exposes Wise Recovery", /\/dashboard\/payments\/reconciliation/.test(operatorShell) && /Wise Recovery/.test(operatorShell)],
   ["Wise only", !/stripe/i.test(migration + orchestrator + recoveryApi + recoveryPage + cron)],
 ];

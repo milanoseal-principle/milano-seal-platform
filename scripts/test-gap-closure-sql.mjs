@@ -103,25 +103,38 @@ for(const change of [{payment_observed_at:null},{payment_observed_amount:null},{
  await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'missing stale partial failed or cross-Matter observation cannot schedule');
 }
 await db.query("update deals set payment_status='unpaid',amount_paid=0 where id=$1",[observedMatter]);await applyObservation();
-await db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]);
+// Founder decision 2026-11-09: an integrity-matched submission alone never schedules.
+await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'integrity-matched Wise submission alone cannot schedule',/verified Wise settlement required before scheduling/);
 const observedRow=(await db.query('select * from deals where id=$1',[observedMatter])).rows[0];
-ok(observedRow.payment_confirmed===false&&observedRow.payment_status==='unpaid'&&Number(observedRow.amount_paid)===0,'scheduling does not manufacture paid truth');
+ok(observedRow.status==='awaiting_payment'&&observedRow.payment_settlement_status==='observed_pending','submission remains recordable as processing without advancing the Matter');
+ok(observedRow.payment_confirmed===false&&observedRow.payment_status==='unpaid'&&Number(observedRow.amount_paid)===0,'submission does not manufacture paid truth');
 ok(Boolean((await db.query("select issue_financial_artifact($1,$2,'INVOICE') result",[founder,observedMatter])).rows[0].result.id),'observed Matter has valid approved financial snapshot');
 await denied(()=>db.query("select issue_financial_artifact($1,$2,'RECEIPT')",[founder,observedMatter]),'observation does not issue a paid receipt',/VERIFIED_SETTLEMENT_REQUIRED/);
-await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'client observation cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
-await db.query("update deals set wise_transaction_reference='CONTROLLED-PROVIDER',payment_funding_method='wrong-provider' where id=$1",[observedMatter]);
-await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'wrong funding source cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
+await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'client observation cannot authorize execution',/verified Wise settlement required/);
+await db.query("update deals set payment_confirmed=true where id=$1",[observedMatter]);
+await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'payment_confirmed flag alone without exact settlement cannot schedule',/verified Wise settlement required/);
+await db.query("update deals set payment_confirmed=false where id=$1",[observedMatter]);
+await db.query("update deals set payment_status='paid' where id=$1",[observedMatter]);
+await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'payment_status=paid alone without exact settlement cannot schedule',/verified Wise settlement required/);
+await db.query("update deals set payment_status='unpaid' where id=$1",[observedMatter]);
 const currentAttempt=randomUUID(),attemptStarted=new Date(Date.now()-60000).toISOString();
 await db.query("update deals set payment_attempt_id=$1,payment_attempt_started_at=$2,payment_funding_method='wise_acquiring_payment' where id=$3",[currentAttempt,attemptStarted,observedMatter]);
 await db.query("select record_wise_attempt_evidence($1,$2,'CONTROLLED-PROVIDER','IN_PROGRESS',now(),100,'USD','OBSERVED-QA')",[observedMatter,currentAttempt]);
+await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'provider-processing attempt evidence cannot schedule',/verified Wise settlement required before scheduling/);
+await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'provider-processing attempt evidence cannot authorize execution',/verified Wise settlement required/);
+await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,observedMatter,[]]),'unsettled, unexecuted Matter cannot be released',/VERIFIED_SETTLEMENT_AND_ZERO_BALANCE_REQUIRED|EXECUTION_AND_AUTHENTICATION_REVIEW_REQUIRED/);
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=50 where id=$1",[observedMatter]);
+await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'partial settlement cannot schedule',/verified Wise settlement required/);
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[observedMatter]);
+const settledRow=(await db.query('select status,payment_confirmed,payment_status from deals where id=$1',[observedMatter])).rows[0];
+ok(settledRow.status==='payment_confirmed','exact verified settlement advances awaiting_payment to payment_confirmed');
+await db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]);
+await db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]);
 await db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]);
 await db.query("update deals set status='apostille_processing',deal_status='apostille_processing' where id=$1",[observedMatter]);
-await denied(()=>db.query("update deals set status='in_transit',deal_status='in_transit' where id=$1",[observedMatter]),'provider evidence without settlement never authorizes final transit',/verified Wise settlement required/);
-await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,observedMatter,[]]),'observed provider execution does not authorize final release',/VERIFIED_SETTLEMENT_AND_ZERO_BALANCE_REQUIRED/);
 await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[observedMatter]);
-ok((await db.query('select status from deals where id=$1',[observedMatter])).rows[0].status==='apostille_processing','later settlement never regresses progressed Matter');
-await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[observedMatter]);
-ok((await db.query("select count(*)::int n from matter_state_events where matter_id=$1 and new_state='scheduled'",[observedMatter])).rows[0].n===1,'observation and settlement replay do not duplicate scheduling');
+ok((await db.query('select status from deals where id=$1',[observedMatter])).rows[0].status==='apostille_processing','later settlement replay never regresses progressed Matter');
+ok((await db.query("select count(*)::int n from matter_state_events where matter_id=$1 and new_state='scheduled'",[observedMatter])).rows[0].n===1,'settlement replay and repeated scheduling do not duplicate scheduling');
 // Actual 1000+ PostgreSQL rows through the production pager with an adapter cap
 // below the requested page size. This is not a hosted PostgREST observation.
 await db.exec(`insert into public.deals(deal_id,status) select 'SCALE-GAP-'||n,'intake_received' from generate_series(1,1017) n;analyze public.deals;`);

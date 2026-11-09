@@ -400,7 +400,7 @@ export default function ClientInvoicePage() {
       </div>
 
       <p className="mt-5 text-[11px] leading-5 text-white/30">
-        A submitted Wise payment remains processing and never marks a Matter paid. An integrity-matched submission authorizes scheduling only; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
+        A submitted Wise payment remains processing and never marks a Matter paid. Scheduling unlocks only after exact verified Wise settlement; verified Wise settlement remains the authority for paid state and final settlement-dependent release.
       </p>
       <FinancialArtifactDownloads matterId={deal.id} />
     </div>

@@ -42,6 +42,7 @@ function deriveNextAction(params: {
   matterStatus: string | null;
   settlementVerified: boolean;
   schedulingEligible: boolean;
+  paymentSubmitted: boolean;
   isPaidAndReleased: boolean;
 }): string {
   if (params.isPaidAndReleased) {
@@ -57,8 +58,8 @@ function deriveNextAction(params: {
     return "Procedural review is in progress.";
   }
   if (status === "quoted" || status === "awaiting_payment") {
-    if (params.schedulingEligible && !params.settlementVerified) {
-      return "Payment submission is recorded and scheduling authority is available. Verified Wise settlement is still pending.";
+    if (params.paymentSubmitted && !params.settlementVerified) {
+      return "Your Wise payment is submitted and processing. Scheduling unlocks automatically once Wise settlement is verified.";
     }
     if (params.settlementVerified) {
       return "Verified Wise settlement is recorded and scheduling authority is available.";
@@ -147,7 +148,7 @@ export async function GET(req: NextRequest) {
   const scheduling = evaluateSchedulingGate({ matter: paymentGateMatter(d, deal.id) });
   const settlementVerified = scheduling.paymentRequirementMethod === "verified_payment";
   const paymentSubmitted =
-    scheduling.paymentRequirementMethod === "wise_submission_observed" ||
+    scheduling.wiseSubmission === "processing" ||
     Boolean(d.payment_observed_at);
 
   const paymentGate = {
@@ -198,6 +199,7 @@ export async function GET(req: NextRequest) {
         matterStatus,
         settlementVerified,
         schedulingEligible: scheduling.schedulingEligible,
+        paymentSubmitted,
         isPaidAndReleased,
       }),
       milestones,

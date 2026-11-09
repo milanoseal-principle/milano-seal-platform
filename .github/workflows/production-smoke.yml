@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
           node scripts/validate-global-pricing-courier.mjs
           node scripts/validate-wise-only-active-ops-docs.mjs
-          node scripts/validate-immediate-scheduling-after-wise-submission.mjs
+          node scripts/validate-verified-settlement-before-scheduling.mjs
           node scripts/validate-wise-reconciliation-exception-orchestrator.mjs
           node scripts/validate-matter-execution-corridor-spine.mjs
           node scripts/validate-production-transaction-10of10.mjs

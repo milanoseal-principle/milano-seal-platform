@@ -20,6 +20,12 @@ The repository's Vercel preview policy requires `[validate-preview]` on the exac
 
 Behavioral regression coverage checks pending observations, legacy null snapshots, incomplete flags, failed/refunded/missing settlement, amount mismatch, nonfinite amounts, zero-value courtesy, operational blocks and the canonical lifecycle path. The database guard was exercised in an isolated PostgreSQL WASM instance, including migration repeatability, both lifecycle columns, settlement-triggered lifecycle projection, replay non-regression, financial revocation and protected transitions. This does not establish production schema compatibility or real Wise settlement.
 
-The historical validator entry point `validate-immediate-scheduling-after-wise-submission.mjs` remains wired for compatibility, but now enforces the stricter policy and executes the behavioral scheduling/lifecycle tests. No validator or assertion is disabled. Portal/RON copy, notification copy and the controlled TIFF runbook now require settlement before scheduling.
+The retired `validate-immediate-scheduling-after-wise-submission.mjs` entry point was replaced on 2026-11-09 by `validate-verified-settlement-before-scheduling.mjs` (`npm run validate:verified-settlement-before-scheduling`), which proves the stricter policy at source, database-trigger and behavioral layers. No validator or assertion is disabled. Portal/RON copy, notification copy and the controlled TIFF runbook now require settlement before scheduling.
 
 Live Gate 38 settlement, Gate 39 replay, role sessions, recipient receipt, physical hardware and receiving-authority evidence remain required. No source test, migration test or preview may replace them. The controlled Matter remains `MS-2026-4887`; do not create a duplicate or manually alter its financial truth.
+
+## 2026-11-09 founder decision: NO VERIFIED WISE SETTLEMENT -> NO SCHEDULING
+
+- `lib/scheduling/complimentarySchedulingGate.ts` exposes one predicate, `hasExactVerifiedSettlement`. Scheduling and execution (`evaluateExecutionGate`) both delegate to it.
+- A Wise submission is reported only as `wiseSubmission: "processing"`. That state blocks duplicate payment attempts in the UI and is never scheduling, execution or release authority.
+- Forward migration `20261109090000_verified_settlement_before_scheduling.sql` replaces `check_payment_gate` so `scheduled`, `in_execution` and `apostille_processing` require exact cleared settlement. Historical migrations are unchanged. It has **not** been applied to hosted production.

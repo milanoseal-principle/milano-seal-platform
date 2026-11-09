@@ -33,11 +33,10 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full border px-2 py-0.5 font-mono text-xs ${good ? 'border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-300' : bad ? 'border-[#E0876E]/30 bg-[#C0563E]/[0.06] text-[#E0876E]' : 'border-white/[0.08] bg-white/[0.025] text-white/45'}`}>{status}</span>;
 }
 
-function authorityLabel(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
-  if (method === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (method === 'complimentary_authorization') return 'Complimentary authorization · scheduling authorized';
-  return 'Scheduling payment authority not satisfied';
+function authorityLabel(gate: ReturnType<typeof evaluateSchedulingGate>) {
+  if (gate.paymentRequirementMethod === 'verified_payment') return 'Wise verified · scheduling authorized';
+  if (gate.wiseSubmission === 'processing') return 'Wise processing · scheduling locked until verified settlement';
+  return 'Verified Wise settlement required before scheduling';
 }
 
 export default async function RONSessionDetailPage({ params }: { params: Promise<{ session_id: string }> }) {
@@ -58,7 +57,7 @@ export default async function RONSessionDetailPage({ params }: { params: Promise
   const paymentConfirmed = deal?.payment_confirmed === true;
   const schedulingGate = deal ? evaluateSchedulingGate({ matter: deal }) : null;
   const schedulingAuthorized = schedulingGate?.schedulingEligible === true;
-  const paymentAuthority = schedulingGate ? authorityLabel(schedulingGate.paymentRequirementMethod) : 'Scheduling authority unavailable';
+  const paymentAuthority = schedulingGate ? authorityLabel(schedulingGate) : 'Scheduling authority unavailable';
   const truth = (deal?.execution_truth ?? {}) as Record<string, unknown>;
   const notarialAct = String(truth.notarial_act ?? 'review_required');
   const signerComplete = signers.length > 0 && signers.every((signer) => Boolean(signer.first_name && signer.last_name && signer.email && signer.phone && signer.state));

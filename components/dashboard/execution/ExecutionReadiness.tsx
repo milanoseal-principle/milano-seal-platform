@@ -33,7 +33,7 @@ const STATUS_LABEL: Record<GateStatus, string> = {
 const GATE_GUIDANCE: Record<ExecutionGateId, { why: string; what: string; who: string; next: string }> = {
   payment: {
     why: "Execution scheduling requires canonical payment or complimentary scheduling authority.",
-    what: "Confirm the canonical scheduling gate reflects verified Wise settlement, governed Wise submission, or active complimentary authorization.",
+    what: "Confirm the canonical scheduling gate reflects exact verified Wise settlement.",
     who: "Milano operator / canonical payment system",
     next: "Open payment and scheduling authority review.",
   },

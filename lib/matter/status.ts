@@ -170,7 +170,7 @@ export function blockedReason(
     case "awaiting_payment":
       return gates.paymentCleared
         ? null
-        : "Payment must be observed/cleared before scheduling";
+        : "Verified Wise settlement is required before scheduling";
     case "payment_review":
       return "Payment mismatch is under review";
     case "ready_for_release":

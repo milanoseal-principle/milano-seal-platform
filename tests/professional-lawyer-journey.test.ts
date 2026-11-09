@@ -36,7 +36,8 @@ test("public payment UX matches the governed 50/50 Matter gates", () => {
   const machine = read("data/matter-state-machine.ts");
   const matterService = read("src/features/matters/matterService.ts");
 
-  assert.match(portal, /An integrity-matched submission authorizes scheduling only/);
+  assert.match(portal, /Scheduling unlocks only after exact verified Wise settlement/);
+  assert.doesNotMatch(portal, /submission authorizes scheduling/);
   assert.match(pricing, /50% Wise deposit unlocks scheduling and eligible RON\/execution/);
   assert.match(pricing, /final 50% must be verified before the completed document packet is released for international shipping/);
   assert.match(revenue, /verified 50% Wise deposit unlocks scheduling and eligible RON\/execution/);

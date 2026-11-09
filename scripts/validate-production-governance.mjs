@@ -284,7 +284,7 @@ check(
 );
 
 check(
-  "portal invoice separates Wise processing scheduling authority from verified paid truth",
+  "portal invoice keeps Wise processing separate from settlement-gated scheduling and paid truth",
   containsAll(portalInvoice, [
     "Complimentary Service Authorization",
     "No payment is due for this Matter",
@@ -292,7 +292,7 @@ check(
     "Wise reference:",
     "Check Wise settlement now",
     "This performs a live server-side Wise reconciliation",
-    "An integrity-matched submission authorizes scheduling only",
+    "Scheduling unlocks only after exact verified Wise settlement",
     "verified Wise settlement remains the authority for paid state",
     "final settlement-dependent release",
   ]) &&

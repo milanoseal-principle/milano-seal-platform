@@ -157,7 +157,7 @@ export function RONSessionControlPanel({ sessionId, matterId, gates, currentStat
           <div>
             <p className="text-[10px] uppercase tracking-[0.18em] text-amber-500/80">BlueNotary · Operator Control</p>
             <h3 className="mt-1 text-base font-semibold text-white">RON Session Readiness</h3>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">Same Matter · Wise submission may reserve scheduling · provider evidence governs signing-link release · final release remains separately settlement-gated.</p>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">Same Matter · scheduling, signing-link release and execution require verified Wise settlement · final release remains separately settlement-gated.</p>
           </div>
           <span className={`w-fit rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wide ${canCreateSession ? 'border-emerald-600/50 bg-emerald-950/40 text-emerald-300' : 'border-amber-600/40 bg-amber-950/30 text-amber-300'}`}>
             {gates.sessionExists.met ? 'SESSION EXISTS' : canCreateSession ? 'READY TO CREATE' : `${blockers.length} BLOCKER${blockers.length === 1 ? '' : 'S'}`}

@@ -57,8 +57,8 @@ const CANONICAL_TO_LEGACY: Partial<Record<CanonicalMatterState, string>> = {
 };
 
 // Canonical-only supplemental transitions (states the legacy machine lacks).
-// Structural scheduling may follow an observed submission while settlement is pending.
-// The mutation endpoint and database independently require canonical Wise authority.
+// Scheduling requires exact verified Wise settlement (founder decision 2026-11-09).
+// The mutation endpoint and database independently enforce that settlement predicate.
 const CANONICAL_SUPPLEMENT: Partial<Record<CanonicalMatterState, CanonicalMatterState[]>> = {
   quote_ready: ["quoted", "on_hold", "cancelled"],
   awaiting_payment: ["payment_confirmed", "on_hold", "cancelled"],
