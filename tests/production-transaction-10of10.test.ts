@@ -21,7 +21,7 @@ test("certification cannot infer live production completion from source checks",
 test("source gate locks scheduling, RON, provider evidence, and release boundaries", () => {
   const validator = read("scripts/validate-production-transaction-10of10.mjs");
   for (const invariant of [
-    "wise_submission_observed",
+    "verified_payment",
     "schedulingAuthorized",
     "NOTARIAL_ACT_REVIEW_REQUIRED",
     "BLUENOTARY_WEBHOOK_SECRET",

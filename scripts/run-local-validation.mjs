@@ -37,6 +37,7 @@ try{
  await run('visual-system',process.execPath,['scripts/validate-final-visual-system-hardening.mjs']);
  await run('vercel-merge-gate',process.execPath,['scripts/run-vercel-merge-gate.mjs']);
  await run('production-build','npm',['run','build']);
+ await run('intake-private-bundle',process.execPath,['scripts/validate-intake-private-bundle.mjs']);
  await run('p3-database','npm',['run','test:p3-database']);
  await run('p5-database','npm',['run','test:p5-database']);
  await run('governance-regressions','npm',['run','test:ai-governance-regressions']);
