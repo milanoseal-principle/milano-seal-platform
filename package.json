@@ -186,7 +186,13 @@
     "test:production-certification-source": "node scripts/run-production-certification.mjs",
     "verify:production-certification-hosted": "node scripts/run-production-certification.mjs --hosted-read-only",
     "verify:hosted-schema": "node scripts/verify-hosted-schema.mjs",
-    "certify:p20": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p20-wise.mjs"
+    "certify:p20": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p20-wise.mjs",
+    "certify:p21": "node --import tsx scripts/certification/p21-ron.mjs",
+    "certify:p22": "node --import tsx scripts/certification/p22-authentication.mjs",
+    "certify:p23": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p23-recovery.mjs",
+    "certify:p12": "node scripts/certification/p12-provenance.mjs",
+    "certify:source": "node scripts/certification/run-source.mjs",
+    "validate:certification-source": "node scripts/certification/validate-source.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

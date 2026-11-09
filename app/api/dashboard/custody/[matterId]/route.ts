@@ -54,6 +54,6 @@ export async function POST(request:Request,{params}:{params:Promise<{matterId:st
   if(stage!=='intake_upload'&&!parent)throw new GovernanceHTTPError('PARENT_VERSION_REQUIRED',400);if(parent)await versionBytes(admin,matterId,parent);
   const bytes=Buffer.from(await file.arrayBuffer());const preflight=await inspectDocumentPreflight({bytes,mimeType:file.type,fileName:file.name});if(preflight.status==='BLOCKED')throw new GovernanceHTTPError('DOCUMENT_PREFLIGHT_BLOCKED',409);
   const path=`${matterId}/versioned/${id}/${preflight.sha256}`;const saved=await admin.storage.from('documents').upload(path,bytes,{contentType:file.type,upsert:false});if(saved.error){const existing=await admin.storage.from('documents').download(path);if(existing.error||!existing.data||createHash('sha256').update(Buffer.from(await existing.data.arrayBuffer())).digest('hex')!==preflight.sha256)throw Error('VERSION_UPLOAD_NOT_CONFIRMED');}
-  const version_id=await persistUploadedVersion(admin,{matterId,path,bucket:'documents',bytes,mime:file.type,name:file.name,actor:actor.id,stage,parentId:parent,id});return {ok:true,version_id};
+  const version_id=await persistUploadedVersion(admin,{matterId,path,bucket:'documents',bytes,mime:file.type,name:file.name,actor:actor.id,stage,parentId:parent,id,submissionReference:z.string().trim().max(200).parse(form.get('submission_reference')??'')});return {ok:true,version_id};
  });
 }
