@@ -21,3 +21,7 @@ Release: review the target ledger and function/grant/index/RLS provenance, verif
 No production storage deletion, hold mutation, policy publication, provider operation, deployment, migration or agent activation was performed.
 
 Focused local evidence: 35 actual PostgreSQL checks, complete unit suite, TypeScript, lint, upgrade/physical restore and controlled browser proof at 320/1440 passed before the final aggregate gate. The rendered proof intercepts synthetic transport and tests rejected authorization, uncertain destruction, blocked retry and evidence-bound reconciliation. It does not certify hosted authentication or external destruction. A worktree dependency symlink initially prevented Turbopack resolution; an isolated local dependency copy corrected that fixture setup.
+
+## Final local evidence
+
+All 15 isolated local validation stages passed at source `7dad5ec7da4c607a2f4dd471874aa236e58f2a91`. The later merge reconciles the externally merged Wise source and adds evidence only; it introduces no new retention runtime behavior. See `evidence/RETENTION_AUTHORITY_LOCAL_2026-11-09.json`. Hosted schema alignment remains blocked; no hosted migration or destructive storage action was executed.
