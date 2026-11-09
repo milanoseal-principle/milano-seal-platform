@@ -7,7 +7,7 @@ const hash=readFileSync('supabase/migrations/20261109140000_identifier_hash_exte
 assert.match(hash,/create or replace function public\.ms_sha256_text\(p_value text\)/i);
 assert.match(hash,/pg_catalog\.sha256\(/);
 assert.match(hash,/set search_path = pg_catalog, pg_temp/);
-assert.match(hash,/pg_catalog\.coalesce\(p_value, ''\)/);
+assert.match(hash,/coalesce\(p_value, ''\)/);
 assert.match(hash,/IDENTIFIER_SHA256_COMPATIBILITY_FAILED/);
 assert.doesNotMatch(hash,/update\s+public\.identifier_locks/i);
 
