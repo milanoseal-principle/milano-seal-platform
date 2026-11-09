@@ -35,6 +35,15 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
+ // Positive/negative authority tests run in test:wise-attempt-database and the
+ // existing full release gate. All other protected-path restrictions remain.
+ 'app/api/webhooks/wise/route.ts',
+ 'lib/wise/attemptEvidence.ts','lib/wise/reconciliation.ts','lib/wise/reconciliation-exceptions.ts',
+ 'supabase/migrations/20261109060000_wise_attempt_authority.sql',
+ 'scripts/test-wise-attempt-sql.mjs','tests/wise-attempt-authority.test.ts',
+ 'tests/wise-acquiring-reconciliation-p0.test.ts',
+ 'docs/production/WISE_ATTEMPT_SECURITY_2026-11-09.md',
  'app/api/courier/labels/route.ts','app/api/shipping/create-label/[id]/route.ts',
  'app/api/dashboard/shippo/labels/route.ts','app/api/dashboard/shippo/rates/route.ts','lib/shippo/address.ts','app/api/webhooks/resend/route.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
