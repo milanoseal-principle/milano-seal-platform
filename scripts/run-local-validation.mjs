@@ -45,6 +45,7 @@ try{
  // Dev fixture suites are sequential; both restore Next's generated type reference.
  await run('governance-rendered','npm',['run','test:ai-governance-rendered']);
  await run('p3-rendered','npm',['run','test:p3-rendered']);
+ await run('retention-rendered','npm',['run','test:retention-rendered']);
  await run('map-rendered',process.execPath,['scripts/run-rendered-map-proof.mjs']);
  // Pin BOTH targets to localhost: no production portal fallback or live writes.
  const base='http://127.0.0.1:3191';

@@ -9,6 +9,7 @@ import { getWorkflowOrDerive } from "@/data/intelligence";
 import type { Workflow } from "@/data/intelligence";
 import { PaymentIntegrityPanel } from "@/components/dashboard/PaymentIntegrityPanel";
 import { FinalSealReviewPanel } from "@/components/dashboard/FinalSealReviewPanel";
+import { RONGovernancePanel } from "@/components/ron/RONGovernancePanel";
 import { ExecutionQAMatrix } from "@/components/dashboard/ExecutionQAMatrix";
 
 interface MatterDetail {
@@ -436,6 +437,7 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
         </div>
 
         <FounderReleaseOverridePanel matter={matter} />
+        <RONGovernancePanel matterId={matter.id} canAuthorizeRetention={["founder", "founder_admin", "admin"].includes(matter.viewer_role ?? "")} />
 
         <div>
           <p style={{ color: goldMuted, fontSize: 9, fontFamily: "monospace", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
