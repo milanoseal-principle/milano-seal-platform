@@ -31,3 +31,6 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Local validation evidence (may include screenshots and authenticated browser state)
+artifacts/
