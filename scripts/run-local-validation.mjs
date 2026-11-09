@@ -15,8 +15,8 @@ const out=resolve(root,new Date().toISOString().replace(/[:.]/g,'-')+'-'+sha.sli
 const env={};
 // Local suites need no provider or database credentials. Do not pass them through.
 for(const [name,value] of Object.entries(process.env))if(/^(PATH|HOME|USER|TMPDIR|TEMP|TMP|LANG|LC_.*|SHELL|TERM|HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|http_proxy|https_proxy|all_proxy|no_proxy|NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|SSL_CERT_DIR|NPM_CONFIG_CACHE|npm_config_cache|CHROMIUM_PATH|PLAYWRIGHT_BROWSERS_PATH|CI)$/.test(name))env[name]=value;
-Object.assign(env,{NEXT_TELEMETRY_DISABLED:'1',NODE_OPTIONS:'--max-old-space-size=6144',PLAYWRIGHT_EXECUTABLE_PATH:env.CHROMIUM_PATH??''});
-const report={source_sha:sha,source_tree:tree,lockfile_sha256:createHash('sha256').update(readFileSync('package-lock.json')).digest('hex'),node:process.version,started_at:new Date().toISOString(),scope:'ISOLATED_LOCAL_SOURCE_ONLY',steps:[],status:'RUNNING',github_statuses_modified:false,hosted_preview:'NOT_RUN',production_deployment:'NOT_RUN',agents_activated:false};
+Object.assign(env,{NEXT_TELEMETRY_DISABLED:'1',NEXT_PUBLIC_SUPABASE_URL:'http://127.0.0.1:9',NEXT_PUBLIC_SUPABASE_ANON_KEY:'local-render-only-not-a-credential',NODE_OPTIONS:'--max-old-space-size=6144',PLAYWRIGHT_EXECUTABLE_PATH:env.CHROMIUM_PATH??''});
+const report={source_sha:sha,source_tree:tree,lockfile_sha256:createHash('sha256').update(readFileSync('package-lock.json')).digest('hex'),node:process.version,started_at:new Date().toISOString(),scope:'ISOLATED_LOCAL_SOURCE_ONLY',public_auth_configuration:'INERT_LOOPBACK_NO_SESSION',steps:[],status:'RUNNING',github_statuses_modified:false,hosted_preview:'NOT_RUN',production_deployment:'NOT_RUN',agents_activated:false};
 let active,server,serverFd,stopping=false;
 const save=()=>writeFileSync(resolve(out,'summary.json'),JSON.stringify(report,null,2)+'\n');
 async function run(label,command,args,extra={}){
@@ -52,7 +52,7 @@ try{
  for(let attempt=0;attempt<60&&!stopping;attempt++){if(serverError||server.exitCode!==null)throw Error('Local production server failed');try{if((await fetch(base,{signal:AbortSignal.timeout(1000)})).ok){ready=true;break;}}catch{}await new Promise(accept=>setTimeout(accept,500));}
  if(!ready)throw Error('Local production server did not become ready');
  await run('public-production-rendered',process.execPath,['scripts/run-rendered-production-acceptance.mjs'],{MILANO_RENDERED_BASE_URL:base,MILANO_PRODUCTION_BASE_URL:base});
- if(stopping||git('rev-parse','HEAD')!==sha||git('diff','HEAD','--name-only'))throw Error('Source changed during validation; results cannot certify this checkout');
+ if(stopping||git('rev-parse','HEAD')!==sha||git('diff','HEAD','--name-only')||git('ls-files','--others','--exclude-standard'))throw Error('Source changed during validation; results cannot certify this checkout');
  report.status='PASS';
 }catch(error){report.status='FAIL';report.failure=error.message;console.error(error.message);process.exitCode=1;}
 finally{if(server){server.kill('SIGTERM');await new Promise(accept=>{if(server.exitCode!==null)return accept();server.once('close',accept);});}if(serverFd!==undefined)closeSync(serverFd);report.finished_at=new Date().toISOString();save();rmSync(lock,{recursive:true});console.log('Evidence: '+resolve(out,'summary.json'));}
