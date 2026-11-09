@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 const STAGE_MAP: Record<string, string> = {
   intake_received: "new_intake",
   intake_review: "new_intake",
+  under_review:"quote_needed",
+  quoted:"payment_pending",
   reviewed: "quote_needed",
   quote_pending: "quote_needed",
   invoice_sent: "invoice_sent",
@@ -30,9 +32,10 @@ export async function GET() {
   let deals: Array<Record<string, unknown>> = [];
   try {
     deals=await readAllKeyset<Record<string,unknown>>(async cursor=>{
-      let query=supabase.from('deals').select('id,display_id,deal_status,created_at,destination_country,amount_due,amount_paid,payment_status,payment_confirmed,payment_settlement_status,currency,last_contact_at,completed_at,lost_reason').order('id').limit(250);
+      let query=supabase.from('deals').select('id,deal_id,status,deal_status,created_at,destination_country,amount_due,amount_paid,payment_status,payment_confirmed,payment_settlement_status,currency,last_activity,completed_at,loss_reason').order('id').limit(250);
       if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('REVENUE_READ_UNAVAILABLE');return result.data??[];
     },row=>String(row.id));
+    deals=deals.map(row=>({...row,display_id:row.deal_id??row.id,last_contact_at:row.last_activity,lost_reason:row.loss_reason}));
   } catch {return NextResponse.json({error:'REVENUE_NOT_VERIFIED',owner:'MILANO'},{status:503,headers:{'Cache-Control':'private, no-store'}});}
   if(new Set(deals.map(row=>row.currency)).size>1)return NextResponse.json({error:'MULTI_CURRENCY_TOTAL_REQUIRES_SCOPED_REPORT'},{status:409});
 
@@ -56,7 +59,7 @@ export async function GET() {
   let lost_this_month = 0;
 
   for (const deal of deals) {
-    const status = (deal.deal_status as string) ?? "";
+    const status = String(deal.status??deal.deal_status??'');
     const stage = STAGE_MAP[status];
 
     if (stage) {
@@ -88,7 +91,7 @@ export async function GET() {
         pipeline_value += Number(deal.amount_due ?? 0);
       }
       if (stage === "closed_won" && evaluatePaymentGate({id:String(deal.id),payment_status:String(deal.payment_status??''),payment_confirmed:deal.payment_confirmed===true,payment_settlement_status:String(deal.payment_settlement_status??''),amount_due:deal.amount_due==null?null:Number(deal.amount_due),amount_paid:deal.amount_paid==null?null:Number(deal.amount_paid)})==='PAYMENT_CONFIRMED') {
-        collected += Number(deal.amount_paid ?? 0);
+
         if (deal.completed_at && new Date(deal.completed_at as string) >= startOfMonth) {
           won_this_month += Number(deal.amount_paid ?? 0);
         }
@@ -99,6 +102,8 @@ export async function GET() {
         }
       }
     }
+
+    if(evaluatePaymentGate({id:String(deal.id),payment_status:String(deal.payment_status??''),payment_confirmed:deal.payment_confirmed===true,payment_settlement_status:String(deal.payment_settlement_status??''),amount_due:deal.amount_due==null?null:Number(deal.amount_due),amount_paid:deal.amount_paid==null?null:Number(deal.amount_paid)})==='PAYMENT_CONFIRMED')collected+=Number(deal.amount_paid??0);
 
     // Follow-up due: active matters with no update in 3+ days
     const activeStages = ["new_intake", "quote_needed", "invoice_sent", "payment_pending"];

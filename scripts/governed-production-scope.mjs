@@ -36,7 +36,7 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'app/api/courier/labels/route.ts','app/api/shipping/create-label/[id]/route.ts',
- 'app/api/dashboard/shippo/labels/route.ts','app/api/webhooks/resend/route.ts',
+ 'app/api/dashboard/shippo/labels/route.ts','app/api/dashboard/shippo/rates/route.ts','lib/shippo/address.ts','app/api/webhooks/resend/route.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',
@@ -49,6 +49,7 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261108211000_governance_health_observation.sql',
  'supabase/migrations/20261108212000_canonical_notification_queue.sql',
  'supabase/migrations/20261108213000_document_version_binding.sql',
+ 'supabase/migrations/20261108214000_canonical_projection_columns.sql',
  'scripts/validate-payment-release-gates.mjs',
  'scripts/validate-custody-ledger-schema.mjs',
 ];

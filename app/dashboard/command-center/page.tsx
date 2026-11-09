@@ -146,7 +146,7 @@ export default async function CommandCenterPage() {
 
   const executionCards = [
     ["Completed Deals", hasLive ? String(live.completedDeals) : undefined],
-    ["High Risk Deals", hasLive ? String(live.highRiskDeals) : undefined],
+    ["High Risk Deals", hasLive&&live.highRiskDeals!==null ? String(live.highRiskDeals) : undefined],
   ] as const;
 
   return (

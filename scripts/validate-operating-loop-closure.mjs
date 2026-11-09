@@ -44,7 +44,7 @@ check('lifecycle certification spans the full canonical Matter chain', hasAll(li
 ]));
 check('lifecycle certification checks cross-system same-Matter continuity', hasAll(lifecycle, ['apiMatterId','portalMatterId','operatorMatterId','wiseMatterReference','eventMatterIds','releaseMatterId','trackingMatterId','identityContinuity']));
 check('lifecycle certification is read-only and does not create another state engine', !/\.from\(|\.insert\(|\.update\(|\.delete\(/.test(lifecycle));
-check('Wise processing cannot certify as verified settlement', lifecycle.includes("['settled', 'confirmed', 'paid']") && !lifecycle.includes('observed_pending'));
+check('Wise processing cannot certify as verified settlement', hasAll(lifecycle,['evaluatePaymentGate','PAYMENT_CONFIRMED','payment_settlement_status','amount_due','amount_paid']) && !lifecycle.includes("['settled', 'confirmed', 'paid']"));
 
 check('human review schema is persisted and governed', hasAll(reviewMigration, ['create table if not exists public.review_requests','REQUESTED','ACKNOWLEDGED','IN_REVIEW','RESOLVED','CLOSED','enable row level security','revoke all']));
 check('review creation links a Matter only through authorized client ownership', hasAll(reviewApi, ['getAllClientDeals','clientCtx?.deals.some','matter_id: matterId','status: \'REQUESTED\'']));

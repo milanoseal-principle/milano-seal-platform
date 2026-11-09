@@ -1,9 +1,16 @@
+import {readAllKeyset} from '../lib/data/keyset.ts';
 import {PRODUCTION_CERTIFICATION_CHECKS} from '../lib/certification/checks.ts';
 import {migrationFixture} from './lib/migration-fixture.mjs';
 import {readFileSync,readdirSync,mkdirSync,writeFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';import assert from 'node:assert/strict';
 const db=await migrationFixture();const files=readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort();const plan=JSON.parse(readFileSync('supabase/migration-replay-plan.json','utf8'));
 for(const file of [...plan.fresh_database_prerequisites,...files.filter(f=>!plan.fresh_database_prerequisites.includes(f))])await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
+mkdirSync('artifacts/gap-closure',{recursive:true});writeFileSync('artifacts/gap-closure/local-deals-columns.json',JSON.stringify((await db.query("select column_name,data_type from information_schema.columns where table_schema='public' and table_name='deals' order by ordinal_position")).rows,null,2));
 let checks=0;const ok=(value,label)=>{assert.ok(value,label);checks++;};const denied=async(fn,label)=>{await assert.rejects(fn,undefined,label);checks++;};
+// Exercise actual repository-selected columns against the complete schema, not a fabricated projection.
+for(const file of ['app/api/dashboard/revenue/route.ts','lib/command-center/liveMetrics.ts']){const columns=readFileSync(file,'utf8').match(/\.select\('([^']+)'\)/)?.[1];assert.ok(columns&&/^[a-z0-9_, ]+$/.test(columns));await db.query('select '+columns+' from public.deals limit 0');checks++;}
+const portalFields=readFileSync('lib/portalAuth.ts','utf8').match(/\.select\(\s*"([^"]+)"/)?.[1];assert.ok(portalFields&&/^[a-z0-9_,: ]+$/.test(portalFields));const portalSql=portalFields.split(',').map(field=>{const [alias,physical]=field.trim().split(':');return physical?physical+' as '+alias:alias;}).join(',');await db.query('select '+portalSql+' from public.deals limit 0');checks++;
+const invoiceFields=readFileSync('app/api/portal/me/invoice/route.ts','utf8').match(/const INVOICE_SELECT = \[([\s\S]+?)\]\.join/)?.[1];const invoiceColumns=[...invoiceFields.matchAll(/"([a-z_]+)"/g)].map(match=>match[1]);await db.query('select '+invoiceColumns.join(',')+' from public.deals limit 0');checks++;
+const labelColumns=readFileSync('app/api/dashboard/shippo/labels/route.ts','utf8').match(/const fields = "([^"]+)"/)?.[1];assert.ok(labelColumns&&/^[a-z0-9_, ]+$/.test(labelColumns));await db.query('select '+labelColumns+' from public.deals limit 0');checks++;
 const founder=randomUUID(),client=randomUUID(),foreign=randomUUID(),matter=randomUUID();
 await db.exec('alter table auth.users add column if not exists email_confirmed_at timestamptz');
 await db.query(`insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data) values($1,'founder@example.invalid',now(),'{"role":"founder_admin"}'),($2,'owner@example.invalid',now(),'{"role":"client"}'),($3,'foreign@example.invalid',now(),'{"role":"client"}')`,[founder,client,foreign]);
@@ -16,6 +23,13 @@ await denied(()=>db.query('select queue_matter_notification($1,$2,$3,$4,$5)',[ma
 const sendToken=randomUUID();ok((await db.query('update notifications set send_claim=$1,delivery_attempts=1 where id=$2 and send_claim is null returning id',[sendToken,queuedNotification.id])).rows.length===1,'one sender obtains persisted claim');
 ok((await db.query('update notifications set send_claim=$1 where id=$2 and send_claim is null returning id',[randomUUID(),queuedNotification.id])).rows.length===0,'concurrent or unknown send cannot be reclaimed');
 const health=(await db.query('select governance_health_observation() result')).rows[0].result;ok(health.paused===true&&health.mode==='DISABLED','observed health retains truthful default-off governance state');
+// Invoke the real P3 quote RPC on the full migrated schema (the old slice fixture
+// alone could not reveal missing application columns).
+const quoteMatter=randomUUID(),truth={execution_method:'in_person',review_confirmed_by:founder,review_confirmed_at:new Date().toISOString()};
+await db.query(`insert into deals(id,status,payment_status,execution_truth) values($1,'intake_received','unpaid',$2)`,[quoteMatter,truth]);
+const beforeQuote=(await db.query('select updated_at from deals where id=$1',[quoteMatter])).rows[0];
+const quoteUpdates={execution_truth:truth,lane:'Priority',execution_tier:'priority',base_price:1000,witness_total:0,total_price:1100,original_total:1100,final_total:1100,eligible_subtotal:1000,non_discountable_total:100,invoice_subtotal:1100,invoice_retainer:550,invoice_balance:550,amount_due:550,currency:'USD',quote_approved_by:founder,quote_breakdown:[{category:'base',amount:1000},{category:'courier',amount:100}],pricing_version:'controlled-fixture'};
+const approvedQuote=await db.query('select * from approve_reviewed_matter_quote($1,$2,$3,$4,$5)',[quoteMatter,beforeQuote.updated_at,quoteUpdates,founder,{}]);ok(approvedQuote.rows[0].matter.status==='awaiting_payment','full-schema real quote RPC advances the canonical graph');
 const issue=async(kind,actor=client)=>(await db.query('select issue_financial_artifact($1,$2,$3) result',[actor,matter,kind])).rows[0].result;
 await denied(()=>issue('RECEIPT'),'unpaid cannot issue receipt');await denied(()=>issue('PAID_AND_RELEASED'),'unpaid cannot issue released artifact');await denied(()=>issue('INVOICE',foreign),'cross-Matter artifact denied');
 const invoice=await issue('INVOICE');ok(invoice.snapshot.final_total===600&&invoice.snapshot.non_discountable_total===100&&invoice.snapshot.discount_amount===500,'canonical totals preserve eligible-only discount');
@@ -77,4 +91,11 @@ await denied(()=>db.query("update production_certification_evidence set result='
 await denied(()=>db.query("update production_certification_runs set production_sha=$1 where id=$2",['b'.repeat(40),runId]),'certification cannot move to another deployment');
 await denied(()=>finalize(founder,sha,'NO_GO'),'final decision cannot be swapped');
 await denied(()=>db.exec("update audit_events set metadata='{}' where event_type like 'CERTIFICATION_%'"),'certification audit cannot be rewritten');
+// Actual 1000+ PostgreSQL rows through the production pager with an adapter cap
+// below the requested page size. This is not a hosted PostgREST observation.
+await db.exec(`insert into public.deals(deal_id,status) select 'SCALE-GAP-'||n,'intake_received' from generate_series(1,1017) n;analyze public.deals;`);
+const started=performance.now();const scaleRows=await readAllKeyset(async cursor=>(await db.query("select id from public.deals where deal_id like 'SCALE-GAP-%' and ($1::uuid is null or id>$1::uuid) order by id limit 17",[cursor?.id??null])).rows,row=>row.id);
+ok(scaleRows.length===1017,'full-schema canonical pager does not truncate at a cap below 1000');
+const paginationPlan=(await db.query('explain (format json) select id from public.deals where id>$1 order by id limit 17',[scaleRows.at(-20).id])).rows;
+writeFileSync('artifacts/gap-closure/pagination-plan.json',JSON.stringify({environment:'ISOLATED_POSTGRESQL',rows:scaleRows.length,adapter_cap:17,elapsed_ms:performance.now()-started,plan:paginationPlan,hosted_query_plan:'NOT_RUN'},null,2));
 mkdirSync('artifacts/gap-closure',{recursive:true});writeFileSync('artifacts/gap-closure/database.json',JSON.stringify({checks,status:'PASS',environment:'ISOLATED_POSTGRESQL',real_migrations:files.length,hosted_certification:false},null,2));console.log(`PASS ${checks} actual PostgreSQL financial, custody, release and authorization checks.`);await db.close();

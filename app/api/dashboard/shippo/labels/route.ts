@@ -1,3 +1,4 @@
+import {projectShippingMatter} from '@/lib/shippo/address';
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveServerRole } from '@/lib/auth/server-role';
@@ -17,10 +18,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, matterId: string) {
-  const fields = "payment_confirmed,payment_settlement_status,amount_due,amount_paid,balance_amount_received,balance_payment_status,balance_paid_at,final_total,is_paid_and_released,status,id, deal_id, payment_status, apostille_required, shipping_street1, document_type, client_name, destination_country, country, tier";
+  const fields = "payment_confirmed,payment_settlement_status,amount_due,amount_paid,balance_amount_received,balance_payment_status,balance_paid_at,final_total,is_paid_and_released,status,id, deal_id, payment_status, apostille_required, ship_to,document_type,client_name,destination_country,execution_tier,lane";
   const byId = await supabase.from("deals").select(fields).eq("id", matterId).maybeSingle();
-  if (byId.data) return byId;
-  return supabase.from("deals").select(fields).eq("deal_id", matterId).maybeSingle();
+  if (byId.data) return {...byId,data:projectShippingMatter(byId.data)};
+  const result=await supabase.from("deals").select(fields).eq("deal_id",matterId).maybeSingle();return {...result,data:result.data?projectShippingMatter(result.data):null};
 }
 
 export async function POST(req: NextRequest) {
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "NO_APPROVED_CARRIER_RATE" }, { status: 422 });
     }
 
-    const destinationCountry = matter.destination_country ?? matter.country ?? "US";
+    const destinationCountry = matter.shipping_country ?? matter.destination_country ?? matter.country ?? "US";
     const recommended = selectRecommendedRate({
       rates: approvedRates,
       lane: matter.tier,

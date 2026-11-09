@@ -17,7 +17,7 @@ export interface CommandCenterLiveMetrics {
   inExecution: number;
   apostilleProcessing: number;
   completedDeals: number;
-  highRiskDeals: number;
+  highRiskDeals: number|null;
   source: "supabase" | "unavailable";
 }
 
@@ -46,14 +46,14 @@ export async function getCommandCenterLiveMetrics(): Promise<CommandCenterLiveMe
     inExecution: 0,
     apostilleProcessing: 0,
     completedDeals: 0,
-    highRiskDeals: 0,
+    highRiskDeals: null,
     source: "unavailable",
   };
 
   try {
     const supabase = createAdminClient();
     const data=await readAllKeyset<Record<string,unknown>>(async cursor=>{
-      let query=supabase.from('deals').select('id,deal_id,status,deal_status,payment_status,payment_confirmed,payment_settlement_status,payment_confirmed_at,amount_paid,amount_due,verified_revenue,final_total,total_price,currency,destination_country,decline_risk,created_at,completed_at').order('id').limit(250);
+      let query=supabase.from('deals').select('id,deal_id,status,deal_status,payment_status,payment_confirmed,payment_settlement_status,payment_confirmed_at,amount_paid,amount_due,verified_revenue,final_total,total_price,currency,destination_country,created_at,completed_at').order('id').limit(250);
       if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('METRICS_READ_UNAVAILABLE');return result.data??[];
     },row=>String(row.id));
     if(new Set(data.map(row=>row.currency)).size>1)return empty; // No implicit currency conversion.
@@ -100,7 +100,7 @@ export async function getCommandCenterLiveMetrics(): Promise<CommandCenterLiveMe
       inExecution: rows.filter((row) => state(row) === "in_execution").length,
       apostilleProcessing: rows.filter((row) => ["apostille", "apostille_processing"].includes(state(row))).length,
       completedDeals: rows.filter((row) => state(row) === "completed").length,
-      highRiskDeals: rows.filter((row) => Number(row.decline_risk ?? 0) >= 70).length,
+      highRiskDeals: null, // No canonical persisted decline-risk source is registered.
       source: "supabase",
     };
   } catch {
