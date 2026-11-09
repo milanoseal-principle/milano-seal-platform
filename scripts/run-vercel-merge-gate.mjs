@@ -31,6 +31,7 @@ console.log("PASS dual CI governance");
 // history is available. Do not perform network git fetches from the Vercel build.
 
 const gates = [
+  ["node", ["scripts/validate-production-recovery-compatibility.mjs"]],
   ["npm", ["run", "validate:certification-source"]],
   ["npm", ["run", "validate:duplicate-source"]],
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
