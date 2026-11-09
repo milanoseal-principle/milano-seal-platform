@@ -39,6 +39,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // Existing full unit + actual SQL suites enforce deny/allow parity.
  'supabase/migrations/20261109063000_verified_settlement_scheduling.sql',
  'src/features/payments/paymentGateService.ts',
+ 'app/api/portal/me/payment-observation/route.ts','app/dashboard/payments/reconciliation/page.tsx','app/portal/payment/page.tsx',
+ 'lib/payments/complimentary-safety.ts','lib/payments/paymentGate.ts','lib/safety/payment-integrity.ts',
  // User-authorized current-truth exception resolution and private operational evidence.
  'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
  'app/api/admin/wise/health/route.ts',

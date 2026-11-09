@@ -96,6 +96,8 @@ async function IntakeWizardWrapper({
 }) {
   const params = await searchParams;
   const serviceIntent = normalizeServiceIntent(params.service_intent || params.intent || (params.lane === "professional" ? "foreign_counsel" : undefined));
+  const rawIntent = params.service_intent || params.intent;
+  const intentSource = params.lane === "professional" || (typeof rawIntent === "string" && (serviceIntent !== "unsure" || rawIntent.trim().toLowerCase() === "unsure")) ? "link" : "default";
   const isProfessional = params.lane === "professional" || serviceIntent === "foreign_counsel";
   const country = params.country || params.destination || "";
   const document = params.document || params.document_type?.replace(/_/g, "-") || "";
@@ -141,6 +143,7 @@ async function IntakeWizardWrapper({
       ) : null}
       <SmartIntakeSOPWizard
         initialServiceIntent={serviceIntent}
+        initialServiceIntentSource={intentSource}
         initialTier={validTier}
         prefill={prefill}
         courtesyCode={courtesyCode}

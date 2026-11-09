@@ -35,6 +35,7 @@ interface IntakePrefill {
 
 interface Props {
   initialServiceIntent?: ConciergeServiceIntent;
+  initialServiceIntentSource?: "link" | "default";
   initialTier?: "signature" | "priority" | "executive";
   prefill?: IntakePrefill;
   courtesyCode?: string;
@@ -95,12 +96,12 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
+export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialServiceIntentSource = "default", initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
     ...INITIAL,
-    serviceIntent: initialServiceIntent, serviceIntentSource: "link", detailStep: 0,
+    serviceIntent: initialServiceIntent, serviceIntentSource: initialServiceIntentSource, detailStep: 0,
     destinationCountry: prefill?.country || "",
     documentType: prefill?.document?.replace(/-/g, " ") || "",
     description: prefill?.matter ? prefill.matter.replace(/_/g, " ") : "",
@@ -257,7 +258,7 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialT
   useEffect(() => {
     if (!draftReady || intentTrackedRef.current) return;
     intentTrackedRef.current = true;
-    track("service_intent_selected", {serviceIntent: form.serviceIntent ?? initialServiceIntent});
+    if (form.serviceIntentSource === "link") track("service_intent_selected", {serviceIntent: form.serviceIntent ?? initialServiceIntent});
   }, [draftReady]);
 
   const markStarted = () => {
@@ -359,7 +360,7 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialT
     const payload = {
       source_channel: "Website Form",
       service_intent: form.serviceIntent ?? initialServiceIntent,
-      service_intent_source: form.serviceIntentSource ?? "link",
+      service_intent_source: form.serviceIntentSource ?? initialServiceIntentSource,
       service_intent_selected_at: form.serviceIntentSelectedAt,
       witness_context: form.witnessContext,
       requested_service_location: form.mobileAddress,

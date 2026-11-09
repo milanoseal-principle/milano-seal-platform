@@ -91,7 +91,7 @@ export function captureCustomerServiceContext(raw:Record<string,unknown>,receive
  const text=(key:string,max:number)=>typeof raw[key]==='string'?(raw[key] as string).trim().slice(0,max):null;
  return {
   service_intent: normalizeServiceIntent(raw.service_intent),
-  service_intent_source: raw.service_intent_source==='intake'?'intake':'link',
+  service_intent_source: raw.service_intent_source==='intake'?'intake':raw.service_intent_source==='link'?'link':'default',
   service_intent_selected_at: text('service_intent_selected_at',50), received_at:receivedAt,
   witness_context:text('witness_context',3000), document_description:text('document_description',12000),
   receiving_authority:text('receiving_authority',1000), deadline:text('deadline_date',120),

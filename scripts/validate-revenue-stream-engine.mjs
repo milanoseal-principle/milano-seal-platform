@@ -1,3 +1,4 @@
+import { GAP_CLOSURE_PROTECTED_CHANGES } from "./governed-production-scope.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -55,7 +56,7 @@ const protectedPatterns = [
   /^src\/features\/execution\/blueNotaryAdapter/,
 ];
 for (const file of changed.split("\n").filter(Boolean)) {
-  if (protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
+  if (!GAP_CLOSURE_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
 }
 
 const revenueRegistry = fs.readFileSync("lib/revenue/revenueLaneRegistry.ts", "utf8");

@@ -50,7 +50,7 @@ P6 remains unchanged: provider-controlled notarial fees are absent from Milano s
 
 ## Analytics and attribution
 
-The existing intake UX event pipeline now records `service_intent_selected` and adds normalized service intent to subsequent wizard events. Free-text instructions, witness text and documents are excluded from analytics metadata. Existing source/referral capture remains in place; this change does not reset attribution.
+The existing intake UX event pipeline now records `service_intent_selected` for actual service links or customer selections (generic default discovery is not a fabricated selection) and adds normalized service intent to subsequent wizard events. Free-text instructions, witness text and documents are excluded from analytics metadata. Existing source/referral capture remains in place; this change does not reset attribution.
 
 | Requested observation | Existing canonical evidence reused |
 |---|---|
