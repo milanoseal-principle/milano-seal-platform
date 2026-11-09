@@ -57,6 +57,21 @@ export function paymentObservationPresentation(payment: { paymentConfirmed: bool
   if (payment.paymentConfirmed && payment.settlementStatus === 'cleared') return 'settled';
   if (payment.settlementStatus === 'mismatch_review') return 'review';
   if (payment.paymentObservedAt && payment.settlementStatus === 'observed_available') return 'pending';
+  if (payment.paymentObservedAt && payment.settlementStatus === 'observed_pending' && payment.submissionCurrent === false) return 'review';
   if (payment.paymentObservedAt && payment.submissionCurrent !== false && ['observed_pending','observed_available'].includes(payment.settlementStatus)) return 'pending';
   return 'not_submitted';
+}
+
+/** Submission diagnostics/idempotency only; never a scheduling or execution grant. */
+export function hasCurrentWiseSubmissionSnapshot(matter:WiseAttemptMatter & {
+ payment_status?:string|null;payment_confirmed?:boolean|null;payment_settlement_status?:string|null;
+ payment_observed_at?:string|null;payment_observed_amount?:number|null;payment_observed_currency?:string|null;payment_observed_reference?:string|null;amount_paid?:number|null;
+}):boolean {
+ const due=Number(matter.amount_due),started=Date.parse(matter.payment_attempt_started_at??''),observed=Date.parse(matter.payment_observed_at??'');
+ const reference=String(matter.wise_reference??matter.deal_id??'').trim(),currency=String(matter.currency??'').trim().toUpperCase();
+ return Boolean(matter.payment_attempt_id)&&Number.isFinite(started)&&Number.isFinite(observed)&&observed>=started&&
+ matter.payment_confirmed===false&&['unpaid','pending'].includes(String(matter.payment_status))&&Number(matter.amount_paid??0)===0&&
+ ['observed_pending','observed_available'].includes(String(matter.payment_settlement_status))&&
+ Number.isFinite(due)&&due>0&&matter.payment_observed_amount!=null&&Number(matter.payment_observed_amount)===due&&
+ currency!==''&&String(matter.payment_observed_currency??'').trim().toUpperCase()===currency&&reference!==''&&matter.payment_observed_reference===reference;
 }

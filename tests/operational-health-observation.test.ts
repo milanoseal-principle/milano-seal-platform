@@ -38,7 +38,7 @@ import { paymentObservationPresentation } from '@/lib/wise/attemptEvidence';
 test('cancelled invoice observation is not perpetual processing and missing state is unverified', () => {
   const submission = { paymentConfirmed: false, settlementStatus: 'observed_pending', paymentObservedAt: '2026-11-09T00:00:00Z' };
   assert.equal(paymentObservationPresentation(submission), 'pending');
-  assert.equal(paymentObservationPresentation({ ...submission, submissionCurrent: false }), 'not_submitted');
+  assert.equal(paymentObservationPresentation({ ...submission, submissionCurrent: false }), 'review');
   assert.equal(paymentObservationPresentation({ ...submission, settlementStatus: 'observed_available', submissionCurrent: false }), 'pending');
   for (const settlementStatus of ['failed','cancelled','expired','reversed','refunded']) assert.equal(paymentObservationPresentation({ ...submission, settlementStatus }), 'invalidated');
   assert.equal(paymentObservationPresentation(null), 'unverified');

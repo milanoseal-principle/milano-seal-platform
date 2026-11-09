@@ -69,6 +69,8 @@ Sequence: **Private Quote → Wise Submission → Settlement Verification → Pa
 
 Forward migration `20261109063000_verified_settlement_scheduling.sql` replaces the canonical SQL transition/payment/execution predicates. It removes the awaiting-payment → scheduled structural shortcut and requires exact cleared/confirmed payment before scheduling or execution. Existing attempt binding, invalidation, immutable evidence, official recovery and final-release safeguards are retained. Financial failure/refund updates remain recordable without rewriting historical stages. Current RON projections recheck authority, so cached link flags cannot substitute for current settlement. No existing customer stage was bulk rewritten and no provider session was canceled.
 
+Submission snapshot diagnostics/idempotency are evaluated separately from scheduling permission. A legitimate pending submission remains processing without scheduling authority; a stale pending snapshot requires review and cannot invite a duplicate payment.
+
 Customer/operator payment, RON, invoice, notification and status copy now distinguishes submission from verification and keeps scheduling locked during processing. Former regression expectations that intentionally allowed submission-only scheduling have been replaced under the founder's explicit instruction, with runtime deny/allow and actual SQL checks. Historical entry-point names are retained so release wiring still runs them. Scope guards permit only the exact authorized paths; they remain active.
 
 ## Requirement traceability

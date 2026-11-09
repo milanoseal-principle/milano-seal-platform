@@ -59,3 +59,11 @@ test('private handoff retains all customer statements and discards injected auth
 });
 
 test('already-issued apostille review does not force a signer section',()=>{assert.deepEqual(plan('apostille').detailSteps,['use','contact']);assert.deepEqual(plan('authentication').detailSteps,['use','contact']);});
+
+import {hasCurrentWiseSubmissionSnapshot} from '@/lib/wise/attemptEvidence';
+import {evaluateSchedulingGate} from '@/lib/scheduling/complimentarySchedulingGate';
+test('pending submission stays current for idempotency while scheduling remains locked',()=>{
+ const matter={id:'synthetic',deal_id:'MS-SYNTHETIC',payment_attempt_id:'current',payment_attempt_started_at:'2026-11-09T00:00:00Z',payment_observed_at:'2026-11-09T00:00:01Z',payment_status:'unpaid',payment_confirmed:false,payment_settlement_status:'observed_pending',amount_due:100,amount_paid:0,currency:'USD',payment_observed_amount:100,payment_observed_currency:'USD',payment_observed_reference:'MS-SYNTHETIC'};
+ assert.equal(hasCurrentWiseSubmissionSnapshot(matter),true);assert.equal(evaluateSchedulingGate({matter}).schedulingEligible,false);
+ for(const change of [{amount_due:101},{currency:'EUR'},{payment_attempt_id:null},{payment_observed_at:'2026-11-08T00:00:00Z'},{payment_observed_reference:'FOREIGN'},{amount_paid:1},{payment_settlement_status:'failed'}])assert.equal(hasCurrentWiseSubmissionSnapshot({...matter,...change}),false);
+});

@@ -10,9 +10,8 @@ import {
 } from "@/lib/notifications/transactionalEmailAlerts";
 import { reconcileWiseMatter } from "@/lib/wise/reconciliation";
 import { appendMatterEvidence, readMatterEvidence } from "@/lib/matter/evidenceLedger";
-import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
-import { hasCurrentWiseProviderEvidence, isInvalidWiseStatus } from "@/lib/wise/attemptEvidence";
+import { hasCurrentWiseProviderEvidence, hasCurrentWiseSubmissionSnapshot, isInvalidWiseStatus } from "@/lib/wise/attemptEvidence";
 import { requiredPolicyBlockers } from "@/lib/policy/acceptance";
 
 export const runtime = "nodejs";
@@ -43,7 +42,7 @@ function payload(row: Record<string, unknown>) {
     amountPaid: Number(row.amount_paid ?? 0),
     currency: String(row.currency ?? "USD").toUpperCase(),
     wiseReference: String(row.wise_reference ?? row.deal_id ?? "").trim(),
-    submissionCurrent: evaluateSchedulingGate({ matter: row as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).paymentRequirementMethod === 'wise_submission_observed',
+    submissionCurrent: hasCurrentWiseSubmissionSnapshot(row as unknown as Parameters<typeof hasCurrentWiseSubmissionSnapshot>[0]),
     providerEvidence: hasCurrentWiseProviderEvidence({ ...row, id: String(row.id) } as Parameters<typeof hasCurrentWiseProviderEvidence>[0]),
   };
 }
@@ -293,7 +292,7 @@ export async function POST(req: NextRequest) {
   // Preserve already-observed Matters (including pre-hardening production data)
   // without forcing clients to manufacture a second payment handoff.
   if (currentState.paymentObservedAt && ["observed_pending", "observed_available"].includes(currentState.settlementStatus) &&
-      evaluateSchedulingGate({ matter: currentRow as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).schedulingEligible) {
+      hasCurrentWiseSubmissionSnapshot(currentRow as unknown as Parameters<typeof hasCurrentWiseSubmissionSnapshot>[0])) {
     return NextResponse.json({
       success: true,
       payment: currentState,
