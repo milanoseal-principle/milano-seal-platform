@@ -3,11 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireDashboardAccess } from '@/lib/dashboardAuth';
 import { appendMatterEvidence } from '@/lib/matter/evidenceLedger';
 import {
-  evaluateRonStatutoryEvidence,
+  buildRonEvidenceCommand,
   isValidRonLifecycleTransition,
-  resolveRonRetention,
-  ronEvidenceSnapshotHash,
-  RON_STATUTORY_RETENTION_CLASS,
   type RonLifecycleState,
 } from '@/lib/ron/evidence';
 import { loadRonEvidence, ronRouteError } from '@/lib/ron/evidenceServer';
@@ -52,30 +49,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { ron_lifecycle_state: target, updated_at: now };
 
-    if (action === 'verify') {
-      const retention = resolveRonRetention(session.notary_commission_jurisdiction, session.execution_completed_at);
-      Object.assign(update, {
-        retention_class: RON_STATUTORY_RETENTION_CLASS,
-        retention_rule: retention.retention_rule,
-        retention_start_at: session.execution_completed_at,
-        retention_until: retention.retention_until,
-      });
-      const candidate = { ...input, session: { ...input.session, ...update } };
-      const missing = evaluateRonStatutoryEvidence(candidate, 'verify');
-      if (missing.length > 0) return NextResponse.json({ ok: false, code: 'RON_EVIDENCE_INCOMPLETE', missing }, { status: 409 });
-      Object.assign(update, {
-        evidence_verified_at: now,
-        evidence_verified_by: userId,
-        evidence_verification_hash: ronEvidenceSnapshotHash(candidate),
-      });
-    }
-
-    if (action === 'complete') {
-      const missing = evaluateRonStatutoryEvidence(input, 'complete');
-      if (missing.length > 0) return NextResponse.json({ ok: false, code: 'RON_EVIDENCE_INCOMPLETE', missing }, { status: 409 });
-      update.completed_at = now;
-      update.milano_completed_by = userId;
-      if (session.milano_ron_status === 'SIGNED_DOCS_RETRIEVED') update.milano_ron_status = 'RON_COMPLETED';
+    if (action === 'verify' || action === 'complete') {
+      const command = buildRonEvidenceCommand(input, action, userId, now);
+      if (command.missing.length > 0) return NextResponse.json({ ok: false, code: 'RON_EVIDENCE_INCOMPLETE', missing: command.missing }, { status: 409 });
+      Object.assign(update, command.update);
     }
 
     if (action === 'fail') {

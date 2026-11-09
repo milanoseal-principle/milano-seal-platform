@@ -258,6 +258,41 @@ export function ronEvidenceSnapshotHash(input: RonEvidenceInput) {
   return createHash("sha256").update(canonical).digest("hex");
 }
 
+// Shared by the operator handler and isolated certification; this composes
+// commands only. Route authority and database evidence guards still apply.
+export function buildRonEvidenceCommand(input: RonEvidenceInput, action: "verify" | "complete", actorId: string, now: string) {
+  const session = input.session;
+  const update: Record<string, unknown> = {
+    ron_lifecycle_state: action === "verify" ? "EVIDENCE_VERIFIED" : "COMPLETED",
+    updated_at: now,
+  };
+  if (action === "verify") {
+    const retention = resolveRonRetention(session.notary_commission_jurisdiction, session.execution_completed_at);
+    Object.assign(update, {
+      retention_class: RON_STATUTORY_RETENTION_CLASS,
+      retention_rule: retention.retention_rule,
+      retention_start_at: session.execution_completed_at,
+      retention_until: retention.retention_until,
+    });
+    const candidate = { ...input, session: { ...session, ...update } };
+    const missing = evaluateRonStatutoryEvidence(candidate, "verify");
+    if (missing.length) return { update, missing };
+    Object.assign(update, {
+      evidence_verified_at: now,
+      evidence_verified_by: actorId,
+      evidence_verification_hash: ronEvidenceSnapshotHash(candidate),
+    });
+  } else {
+    const missing = evaluateRonStatutoryEvidence(input, "complete");
+    if (missing.length) return { update, missing };
+    // A correction creates new verification/audit evidence, not a new historic act.
+    update.completed_at = session.completed_at ?? now;
+    update.milano_completed_by = session.milano_completed_by ?? actorId;
+    update.milano_ron_status = "RON_COMPLETED";
+  }
+  return { update, missing: [] };
+}
+
 // Operator-writable evidence fields. Everything else on the RON tables is
 // provider- or system-authored and cannot be written through the evidence API.
 export const SESSION_EVIDENCE_FIELDS = [

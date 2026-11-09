@@ -1,5 +1,5 @@
 import {randomUUID,createHash} from 'node:crypto';
-import {evaluateRonStatutoryEvidence} from '../../lib/ron/evidence.ts';
+import {buildRonEvidenceCommand,evaluateRonStatutoryEvidence} from '../../lib/ron/evidence.ts';
 // Synthetic provider/actor/reference fixtures only. Canonical statutory and
 // lifecycle SQL validates every transition; no provider/network calls occur.
 export async function certifyRonOnMatter(db,matter,actor,run,sourceHash,executedBytes) {
@@ -14,7 +14,8 @@ export async function certifyRonOnMatter(db,matter,actor,run,sourceHash,executed
  report.lifecycle_trace=['REQUESTED'];
  for(const state of ['PROVIDER_ACCEPTED','PROVIDER_SESSION_COMPLETED','EVIDENCE_PENDING']){await update('ron_sessions',session,{ron_lifecycle_state:state});report.lifecycle_trace.push(state);}
  const snapshot=async()=>JSON.parse(JSON.stringify({matterFound:true,executionTruth:{execution_method:'ron',notarial_act:'acknowledgment',ron_kba_status:'required'},session:(await db.query('select * from ron_sessions where id=$1',[session])).rows[0],signers:(await db.query('select * from ron_signers where ron_session_id=$1',[session])).rows,documents:(await db.query('select * from ron_documents where ron_session_id=$1',[session])).rows}));
- const verify=()=>update('ron_sessions',session,{ron_lifecycle_state:'EVIDENCE_VERIFIED',evidence_verified_at:'2026-11-09T00:00:00Z',evidence_verified_by:actor,evidence_verification_hash:sha});
+ const command=async action=>{const result=buildRonEvidenceCommand(await snapshot(),action,actor,new Date().toISOString());if(result.missing.length)throw Error('RON_EVIDENCE_INCOMPLETE: '+result.missing.join(','));return update('ron_sessions',session,result.update);};
+ const verify=()=>command('verify');
 
  await check('RON_MISSING_EVIDENCE','provider completion cannot establish Milano completion',async()=>{
   await assert.rejects(()=>update('ron_sessions',session,{ron_lifecycle_state:'COMPLETED'}),/INVALID_RON_LIFECYCLE_TRANSITION/);
@@ -36,7 +37,7 @@ const evidence={provider_reference:'SIM-'+session,provider_evidence_reference:'f
  await check('RON_FROZEN','statutory evidence cannot be silently overwritten',async()=>{
   await assert.rejects(()=>db.query("update ron_audit_events set description='overwrite' where id=$1",[statutory.evidence_id]),/IMMUTABLE|APPEND|immutable/i);
  });
- const complete=async()=>{assert.deepEqual(evaluateRonStatutoryEvidence(await snapshot()),[]);await verify();await update('ron_sessions',session,{ron_lifecycle_state:'COMPLETED',completed_at:'2026-11-09T00:00:00Z',milano_completed_by:actor,milano_ron_status:'RON_COMPLETED'});};
+ const complete=async()=>{assert.deepEqual(evaluateRonStatutoryEvidence(await snapshot()),[]);await verify();await command('complete');};
  await check('RON_COMPLETE','verified exact statutory evidence permits Milano completion',complete);
  await check('RON_CORRECTION','reopened evidence blocks progression despite historical completion',async()=>{
   await db.query('select reopen_ron_statutory_evidence($1,$2,$3,$4)',[session,actor,statutory.evidence_id,'Synthetic correction preserving historical evidence']);
