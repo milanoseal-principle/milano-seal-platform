@@ -102,6 +102,11 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'scripts/validate-custody-ledger-schema.mjs',
 ];
 
+// P1 narrow release deadlock repair; only the new forward owner is allowed.
+export const NO_AUTH_RELEASE_PROTECTED_CHANGES = [
+ 'supabase/migrations/20261109200000_no_authentication_release_deadlock.sql',
+];
+
 // Explicitly reviewed Nov 9 hosted recovery defects. Both additions are
 // forward-only; neither changes a payment authority, Matter row or RLS grant.
 export const HOSTED_RECOVERY_PROTECTED_CHANGES = [

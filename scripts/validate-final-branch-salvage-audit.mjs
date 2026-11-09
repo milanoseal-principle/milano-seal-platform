@@ -4,7 +4,7 @@
 // no Wise / payment / release / custody / Supabase RLS / Shippo / BlueNotary
 // changes, no PIP/Liaison OS, and no protected files touched.
 
-import { GAP_CLOSURE_PROTECTED_CHANGES, P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES, AI_GOVERNANCE_PROTECTED_CHANGES, SETTLEMENT_SCHEDULING_PROTECTED_CHANGES, HOSTED_RECOVERY_PROTECTED_CHANGES } from './governed-production-scope.mjs';
+import { GAP_CLOSURE_PROTECTED_CHANGES, P4B_PROTECTED_CHANGES, P5_PROTECTED_CHANGES, AI_GOVERNANCE_PROTECTED_CHANGES, SETTLEMENT_SCHEDULING_PROTECTED_CHANGES, HOSTED_RECOVERY_PROTECTED_CHANGES, NO_AUTH_RELEASE_PROTECTED_CHANGES } from './governed-production-scope.mjs';
 import fs from "fs";
 import path from "path";
 import { spawnSync } from "child_process";
@@ -30,7 +30,7 @@ const APPROVED_ADDITIVE_MIGRATIONS = new Set([
     ...GAP_CLOSURE_PROTECTED_CHANGES, ...P4B_PROTECTED_CHANGES,
     ...AI_GOVERNANCE_PROTECTED_CHANGES,
     ...P5_PROTECTED_CHANGES,
-    ...SETTLEMENT_SCHEDULING_PROTECTED_CHANGES, ...HOSTED_RECOVERY_PROTECTED_CHANGES,
+    ...SETTLEMENT_SCHEDULING_PROTECTED_CHANGES, ...HOSTED_RECOVERY_PROTECTED_CHANGES, ...NO_AUTH_RELEASE_PROTECTED_CHANGES,
   "supabase/migrations/20261107094755_counsel_inquiry_capture.sql",
 ]);
 const PROTECTED = /wise|webhook|payment-?confirm|paymentConfirm|release-?gate|releaseGate|performFinalRelease|custody|supabase\/(migrations|rls)|rls|serviceRole|service-role|shippo|bluenotary|pip-intel|liaison/i;

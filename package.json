@@ -196,7 +196,8 @@
     "validate:certification-manifest": "node scripts/certification/validate-manifest.mjs",
     "rehearse:production-upgrade": "node scripts/rehearse-production-upgrade.mjs",
     "validate:production-recovery-plan": "node scripts/validate-production-recovery-plan.mjs",
-    "certify:p19": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p19-e2e.mjs"
+    "certify:p19": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p19-e2e.mjs",
+    "certify:p19-no-auth": "node scripts/certification/p19-no-auth-release.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
