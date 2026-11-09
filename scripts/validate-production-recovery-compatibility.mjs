@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 
 const hash=readFileSync('supabase/migrations/20261109140000_identifier_hash_extension_compatibility.sql','utf8');
 assert.match(hash,/create or replace function public\.ms_sha256_text\(p_value text\)/i);
-assert.match(hash,/extensions\.digest\(/);
+assert.match(hash,/pg_catalog\.sha256\(/);
 assert.match(hash,/set search_path = pg_catalog, pg_temp/);
 assert.match(hash,/pg_catalog\.coalesce\(p_value, ''\)/);
 assert.match(hash,/IDENTIFIER_SHA256_COMPATIBILITY_FAILED/);
