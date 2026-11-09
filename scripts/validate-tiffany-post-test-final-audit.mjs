@@ -57,7 +57,7 @@ check("RON dashboard consumes canonical scheduling gate and shows pre-session Ma
   "preSessionMatters",
   "getRONBlockers",
   "Open RON Readiness",
-  "Wise submitted · scheduling authorized",
+  "Wise verified · scheduling authorized",
   "Ready for BlueNotary",
 ]));
 check("RON creation is Matter-scoped and delegates to canonical scheduling guard", hasAll(ronCreate, [
