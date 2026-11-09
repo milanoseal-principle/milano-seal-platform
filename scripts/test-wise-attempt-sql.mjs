@@ -94,6 +94,14 @@ await denied(()=>db.query('update ron_signers set signing_url_released=true wher
 await denied(()=>db.query('insert into ron_signers(ron_session_id,matter_id,signing_url_released) values($1,$2,true)',[failedSession,id]),'signer access cannot cross Matter scope',/RON_SESSION_ACCESS_INVALID/);
 ok((await load(id)).wise_transaction_reference===null,'legacy failure writers also invalidate atomically');
 await denied(()=>observe(id,hid,resource),'direct writer invalidation is sticky',/INVALIDATED/);
+// Preserve the existing exact-evidence operator recovery for a fresh attempt.
+const recovered=await fixture(),recoveryHandoff=await handoff(recovered);await begin(recovered,recoveryHandoff);
+const recoveryResource=randomUUID(),settledAt=(await db.query('select clock_timestamp()::text at')).rows[0].at;
+const recover=async(locator='synthetic:official-provider-proof',gross=100,net=97,fee=3)=>db.query("select confirm_wise_payment_from_provider_notification($1,$2,$3,$4,$5,$6,'USD',$7,$8,'isolated-controlled-operator') result",[recovered,(await load(recovered)).wise_reference,recoveryResource,gross,net,fee,settledAt,locator]);
+await recover();const evidence=(await db.query('select * from wise_provider_settlement_evidence where provider_resource_id=$1',[recoveryResource])).rows[0];await recover();
+ok((await load(recovered)).payment_settlement_status==='cleared','fresh attempt can still use existing governed provider recovery');
+ok((await db.query('select confirmed_at from wise_provider_settlement_evidence where id=$1',[evidence.id])).rows[0].confirmed_at.getTime()===evidence.confirmed_at.getTime(),'recovery replay preserves original confirmation timestamp');
+await denied(()=>recover('synthetic:swapped-evidence'),'provider recovery evidence cannot silently mutate',/IMMUTABLE/);
 await db.exec('set role authenticated');
 await denied(()=>db.query('select begin_wise_payment_attempt($1,$2,$3)',[id,hid,client]),'browser cannot call service attempt RPC',/permission denied/);
 await denied(()=>db.query("select record_wise_attempt_evidence($1,$2,$3,'IN_PROGRESS',now(),100,'USD','SYNTHETIC')",[other,otherH,randomUUID()]),'browser cannot create provider evidence',/permission denied/);await db.exec('reset role');
