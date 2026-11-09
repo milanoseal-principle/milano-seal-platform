@@ -126,7 +126,7 @@ begin
  or nullif(btrim(p_reference),'') is null or p_reference is distinct from coalesce(nullif(btrim(d.wise_reference),''),d.deal_id)
  then raise exception 'PROVIDER_SCOPE_MISMATCH';end if;
  if p_status is null or p_source is null or p_status not in ('IN_PROGRESS','UPCOMING','COMPLETED','SETTLED','REQUIRES_ATTENTION','UNKNOWN','CANCELLED','FAILED','VOIDED','EXPIRED','REVERSED','REFUNDED','REJECTED','REVOKED','SUPERSEDED')
- or p_source not in ('wise-activity','wise-statement','wise-webhook')
+ or p_source not in ('wise-activity','wise-statement','wise-webhook','wise-provider-notification')
  or (p_status='SETTLED' and p_source='wise-activity') then raise exception 'INVALID_PROVIDER_STATUS_OR_SOURCE';end if;
  terminal:=p_status in ('CANCELLED','FAILED','VOIDED','EXPIRED','REVERSED','REFUNDED','REJECTED','REVOKED','SUPERSEDED');
  if exists(select 1 from public.matter_evidence_ledger l where l.source='wise-attempt-authority' and l.source_reference=p_resource_id
@@ -353,5 +353,157 @@ end;$$;
 revoke all on function public.revoke_ron_signing_authority() from public,anon,authenticated;
 create trigger revoke_ron_signing_on_payment after update on public.deals for each row execute function public.revoke_ron_signing_authority();
 create trigger revoke_ron_signing_on_session after update of ron_lifecycle_state,milano_ron_status,expired_at on public.ron_sessions for each row execute function public.revoke_ron_signing_authority();
+
+create or replace function public.confirm_wise_payment_from_provider_notification(
+  p_deal_id uuid,
+  p_payment_reference text,
+  p_provider_resource_id text,
+  p_gross_amount numeric,
+  p_net_amount numeric,
+  p_fee_amount numeric,
+  p_currency text,
+  p_settled_at timestamptz,
+  p_evidence_locator text,
+  p_actor text default 'wise-provider-notification-recovery'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_deal public.deals%rowtype;
+  v_existing public.wise_provider_settlement_evidence%rowtype;
+  v_evidence public.wise_provider_settlement_evidence%rowtype;
+  v_reference text;
+  v_currency text;
+  v_result jsonb;
+  v_attempt_result jsonb;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('wise-resource:'||p_provider_resource_id,0));
+  select * into v_deal
+  from public.deals
+  where id = p_deal_id
+  for update;
+
+  if not found then
+    raise exception 'MATTER_NOT_FOUND';
+  end if;
+
+  v_reference := trim(coalesce(v_deal.wise_reference, v_deal.deal_id, ''));
+  v_currency := upper(trim(coalesce(v_deal.currency, 'USD')));
+
+  if v_reference = '' or trim(coalesce(p_payment_reference, '')) <> v_reference then
+    raise exception 'WISE_REFERENCE_MISMATCH';
+  end if;
+
+  if upper(trim(coalesce(p_currency, ''))) <> v_currency then
+    raise exception 'WISE_CURRENCY_MISMATCH';
+  end if;
+
+  if round(coalesce(p_gross_amount, 0)::numeric, 2) <> round(coalesce(v_deal.amount_due, 0)::numeric, 2) then
+    raise exception 'WISE_AMOUNT_MISMATCH';
+  end if;
+
+  if abs(round((coalesce(p_net_amount, 0) + coalesce(p_fee_amount, 0))::numeric, 2) - round(coalesce(p_gross_amount, 0)::numeric, 2)) > 0.01 then
+    raise exception 'WISE_PROVIDER_AMOUNT_MATH_MISMATCH';
+  end if;
+
+  if coalesce(p_provider_resource_id, '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+    raise exception 'WISE_PROVIDER_RESOURCE_INVALID';
+  end if;
+
+  if p_settled_at is null or p_settled_at > clock_timestamp() then
+    raise exception 'WISE_SETTLEMENT_TIMESTAMP_INVALID';
+  end if;
+
+  if v_deal.payment_observed_at is null then
+    raise exception 'WISE_SUBMISSION_NOT_OBSERVED';
+  end if;
+
+  if p_settled_at < v_deal.payment_observed_at - interval '15 minutes' then
+    raise exception 'WISE_SETTLEMENT_PRECEDES_SUBMISSION';
+  end if;
+
+  select * into v_existing
+  from public.wise_provider_settlement_evidence
+  where provider_resource_id = p_provider_resource_id;
+
+  if found and v_existing.deal_id <> p_deal_id then
+    raise exception 'WISE_PROVIDER_RESOURCE_ALREADY_BOUND';
+  end if;
+
+  if v_existing.id is not null and (
+    v_existing.payment_reference is distinct from v_reference or v_existing.currency is distinct from v_currency
+    or v_existing.gross_amount is distinct from round(p_gross_amount,2)
+    or v_existing.net_amount is distinct from round(p_net_amount,2)
+    or v_existing.fee_amount is distinct from round(p_fee_amount,2)
+    or v_existing.settled_at is distinct from p_settled_at
+    or v_existing.evidence_locator is distinct from left(btrim(p_evidence_locator),500)) then raise exception 'WISE_SETTLEMENT_EVIDENCE_IMMUTABLE';end if;
+  if v_deal.payment_attempt_id is not null then
+    v_attempt_result:=public.record_wise_attempt_evidence(p_deal_id,v_deal.payment_attempt_id,p_provider_resource_id,'SETTLED',p_settled_at,round(p_gross_amount,2),v_currency,v_reference,'wise-provider-notification',null);
+    if not coalesce((v_attempt_result->>'accepted')::boolean,false) then raise exception 'CURRENT_ATTEMPT_SETTLEMENT_REQUIRED';end if;
+  end if;
+
+  insert into public.wise_provider_settlement_evidence (
+    deal_id,
+    payment_reference,
+    provider_resource_id,
+    gross_amount,
+    net_amount,
+    fee_amount,
+    currency,
+    settled_at,
+    evidence_source,
+    evidence_locator,
+    recorded_by
+  ) values (
+    p_deal_id,
+    v_reference,
+    p_provider_resource_id,
+    round(p_gross_amount::numeric, 2),
+    round(p_net_amount::numeric, 2),
+    round(p_fee_amount::numeric, 2),
+    v_currency,
+    p_settled_at,
+    'wise_provider_notification',
+    left(trim(coalesce(p_evidence_locator, '')), 500),
+    left(trim(coalesce(nullif(p_actor, ''), 'wise-provider-notification-recovery')), 200)
+  )
+  on conflict (provider_resource_id) do nothing
+  returning * into v_evidence;
+  if not found then v_evidence:=v_existing;end if;
+
+  -- Canonical authority remains here. This recovery function never writes
+  -- payment_status/payment_confirmed/amount_paid itself.
+  v_result := public.confirm_wise_payment_for_deal(
+    p_deal_id,
+    v_reference,
+    p_provider_resource_id,
+    round(p_gross_amount::numeric, 2),
+    v_currency,
+    left(trim(coalesce(nullif(p_actor, ''), 'wise-provider-notification-recovery')), 200)
+  );
+
+  update public.wise_provider_settlement_evidence
+  set confirmation_result = v_result,
+      confirmed_at = now()
+  where id = v_evidence.id and confirmed_at is null;
+
+  return jsonb_build_object(
+    'ok', true,
+    'deal_id', p_deal_id,
+    'payment_reference', v_reference,
+    'provider_resource_id', p_provider_resource_id,
+    'evidence_id', v_evidence.id,
+    'canonical_confirmation', v_result
+  );
+end;
+$$;
+
+revoke all on function public.confirm_wise_payment_from_provider_notification(uuid,text,text,numeric,numeric,numeric,text,timestamptz,text,text)
+  from public, anon, authenticated;
+grant execute on function public.confirm_wise_payment_from_provider_notification(uuid,text,text,numeric,numeric,numeric,text,timestamptz,text,text)
+  to service_role;
 
 commit;
