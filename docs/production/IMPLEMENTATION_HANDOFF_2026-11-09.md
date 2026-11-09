@@ -2,7 +2,7 @@
 
 ## Review outcome
 
-The cancellation defect and verified retention/operational gaps have source implementations and local evidence. This is not a P7–P30 completion certificate. Unexamined requirements and hosted/provider acceptance remain unverified. Existing canonical Matter, Wise, governance, custody, RON and intelligence modules were extended; no parallel lifecycle or Liaison OS was introduced.
+The cancellation defect and verified retention/operational gaps have source implementations and local evidence. This is not a P7–P30 completion certificate. Unexamined requirements and hosted/provider acceptance remain unverified. Existing canonical Matter, Wise, governance, custody, RON and intelligence modules were extended; no parallel lifecycle or separate product was introduced.
 
 ## Review history and source
 
