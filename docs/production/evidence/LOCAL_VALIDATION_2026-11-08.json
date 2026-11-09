@@ -1,0 +1,949 @@
+{
+  "source_sha": "aff2b08d9d3db031ec2c01b0145ae7343d4ebf4a",
+  "source_tree": "d9ad4194619b83d59bfcca229debb3a8d1a61fe5",
+  "lockfile_sha256": "b04a1b3fd413705a7bc9a418529102342f8a021b74ea9b81693e6ee3fc934371",
+  "node": "v24.19.0",
+  "started_at": "2026-11-09T00:56:36.783Z",
+  "scope": "ISOLATED_LOCAL_SOURCE_ONLY",
+  "public_auth_configuration": "INERT_LOOPBACK_NO_SESSION",
+  "steps": [
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started_at": "2026-11-09T00:56:36.783Z",
+      "log": "01-diff-check.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T00:56:36.789Z",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "route-types",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "node_modules/next/dist/bin/next",
+        "typegen"
+      ],
+      "started_at": "2026-11-09T00:56:37.046Z",
+      "log": "02-route-types.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T00:56:37.359Z",
+      "log_sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "name": "visual-system",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/validate-final-visual-system-hardening.mjs"
+      ],
+      "started_at": "2026-11-09T00:56:37.360Z",
+      "log": "03-visual-system.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T00:56:37.390Z",
+      "log_sha256": "449e3b1c85158df5d974adbfc2570575d7ff2bac8ef9b38ff59e8e155d59db4f"
+    },
+    {
+      "name": "vercel-merge-gate",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-vercel-merge-gate.mjs"
+      ],
+      "started_at": "2026-11-09T00:56:37.391Z",
+      "log": "04-vercel-merge-gate.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T00:59:57.950Z",
+      "log_sha256": "8d0d80a6eb2e57b96ce79a01e7b9749d8e0fbfddd10568f633a1c38f492049d8"
+    },
+    {
+      "name": "production-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "started_at": "2026-11-09T00:59:57.950Z",
+      "log": "05-production-build.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:11.705Z",
+      "log_sha256": "d6f398ee612a7f28e5fd83db287145514b70737916002dffd8d2a92e3ad92032"
+    },
+    {
+      "name": "p3-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-database"
+      ],
+      "started_at": "2026-11-09T01:00:11.705Z",
+      "log": "06-p3-database.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:13.535Z",
+      "log_sha256": "f28443e52445da879c2743fbc1304663d4681ad5e3e16bf70597c6f2c4b1d157"
+    },
+    {
+      "name": "p5-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p5-database"
+      ],
+      "started_at": "2026-11-09T01:00:13.536Z",
+      "log": "07-p5-database.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:15.186Z",
+      "log_sha256": "4c8acd26da957cefa7673cf0310d4e13d7f6bf0d06891b968be46b63d952f8a4"
+    },
+    {
+      "name": "governance-regressions",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-regressions"
+      ],
+      "started_at": "2026-11-09T01:00:15.186Z",
+      "log": "08-governance-regressions.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:19.762Z",
+      "log_sha256": "b4e21f21b812b4647d2639ca8cd345e9270f1bf62a3167524609f5582d3f640b"
+    },
+    {
+      "name": "source-certification",
+      "command": [
+        "npm",
+        "run",
+        "test:production-certification-source"
+      ],
+      "started_at": "2026-11-09T01:00:19.762Z",
+      "log": "09-source-certification.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:30.698Z",
+      "log_sha256": "72fe5ec4095b33e895a0138c2fc6a0d2f88ae3939bdcee88a679b912a17d884f"
+    },
+    {
+      "name": "dependency-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=moderate"
+      ],
+      "started_at": "2026-11-09T01:00:30.698Z",
+      "log": "10-dependency-audit.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:00:31.281Z",
+      "log_sha256": "6d8c5c8f3d7684adb070417bd608d01ae90aa3dc26a65af03ffda4955f38d9a3"
+    },
+    {
+      "name": "governance-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-rendered"
+      ],
+      "started_at": "2026-11-09T01:00:31.281Z",
+      "log": "11-governance-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:01:38.478Z",
+      "log_sha256": "8b3492b9944ecb587e2b648933201cb33e4817cde517374c8808270cce464585"
+    },
+    {
+      "name": "p3-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-rendered"
+      ],
+      "started_at": "2026-11-09T01:01:38.478Z",
+      "log": "12-p3-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:01:50.082Z",
+      "log_sha256": "5fcdef430fa9be849a88050803a86dc3a185cb11f773f75bca595fc7b69ce218"
+    },
+    {
+      "name": "map-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-map-proof.mjs"
+      ],
+      "started_at": "2026-11-09T01:01:50.082Z",
+      "log": "13-map-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:02:09.281Z",
+      "log_sha256": "02725633afd11063a59c3861c9ae772f5ec45b0df6a4aa891c5b0059a73f9819"
+    },
+    {
+      "name": "public-production-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-production-acceptance.mjs"
+      ],
+      "started_at": "2026-11-09T01:02:10.565Z",
+      "log": "14-public-production-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:04:01.589Z",
+      "log_sha256": "81b72bec60fd444e5d384d7551ba5370eabb9e9e8220e8d6ed136dbf7f19581e"
+    }
+  ],
+  "status": "PASS",
+  "github_statuses_modified": false,
+  "hosted_preview": "NOT_RUN",
+  "production_deployment": "NOT_RUN",
+  "agents_activated": false,
+  "finished_at": "2026-11-09T01:04:01.627Z",
+  "browser_matrix": {
+    "baseUrl": "http://127.0.0.1:3191",
+    "productionBaseUrl": "http://127.0.0.1:3191",
+    "expectedChecks": 70,
+    "passedChecks": 70,
+    "results": [
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      }
+    ]
+  },
+  "superseded_bringup_runs": [
+    {
+      "source_sha": "2856ef3d77ce287dfce679152547e5b2d7e0e8a0",
+      "status": "FAIL",
+      "failure": "Validation failed: vercel-merge-gate"
+    },
+    {
+      "source_sha": "f25bd8994030640a332da259701a0a29b6555e2c",
+      "status": "FAIL",
+      "failure": "Validation failed: public-production-rendered"
+    },
+    {
+      "source_sha": "570a93cdefcf2cda906b9f8b8e5a18c2912d8a70",
+      "status": "FAIL",
+      "failure": "Validation failed: vercel-merge-gate"
+    }
+  ]
+}

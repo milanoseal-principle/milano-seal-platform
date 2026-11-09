@@ -55,7 +55,7 @@ try {
     await waitForServer(`${BASE_URL}${ROUTE}`);
   }
 
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
   const results = [];
   let failures = 0;
 

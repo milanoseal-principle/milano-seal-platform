@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "node scripts/validate-lint-coverage.mjs && eslint .",
+    "check:local": "node scripts/run-local-validation.mjs",
     "validate:provider-fee-separation": "node scripts/validate-provider-fee-separation.mjs",
     "pretypecheck": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "typecheck": "tsc --noEmit",

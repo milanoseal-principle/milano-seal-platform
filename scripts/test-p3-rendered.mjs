@@ -10,6 +10,7 @@ const base='http://127.0.0.1:3173';
 if(existsSync(route)) throw Error('Refusing to overwrite an existing proof route');
 mkdirSync(route,{recursive:true});mkdirSync(out,{recursive:true});
 writeFileSync(`${route}/page.tsx`,readFileSync('tests/fixtures/P3DomesticProof.tsx'));
+const originalNextEnv=readFileSync('next-env.d.ts','utf8');
 const server=spawn(process.execPath,['node_modules/next/dist/bin/next','dev','--hostname','127.0.0.1','--port','3173'],{env:{...process.env,NEXT_TELEMETRY_DISABLED:'1'},stdio:['ignore','pipe','pipe']});
 let log='';server.stdout.on('data',d=>{log+=d});server.stderr.on('data',d=>{log+=d});
 let browser;
@@ -21,7 +22,7 @@ try {
     await new Promise(r=>setTimeout(r,1000));
   }
   assert.ok(ready,'Proof server did not become ready');
-  browser=await chromium.launch({headless:true});
+  browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
   const results=[];
   for(const width of [320,390,768,1440]) {
     const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
@@ -55,5 +56,5 @@ try {
   console.log(JSON.stringify(results));
 } finally {
   await browser?.close();server.kill('SIGTERM');rmSync(route,{recursive:true,force:true});
-  writeFileSync(`${out}/render-server.log`,log);
+  writeFileSync(`${out}/render-server.log`,log);writeFileSync('next-env.d.ts',originalNextEnv);
 }
