@@ -41,7 +41,7 @@ try{
  await run('p5-database','npm',['run','test:p5-database']);
  await run('governance-regressions','npm',['run','test:ai-governance-regressions']);
  await run('source-certification','npm',['run','test:production-certification-source']);
- await run('p20-p23-certification','npm',['run','certify:source']);
+ await run('p19-p23-certification','npm',['run','certify:source']);
  await run('dependency-audit','npm',['audit','--omit=dev','--audit-level=moderate']);
  // Dev fixture suites are sequential; both restore Next's generated type reference.
  await run('governance-rendered','npm',['run','test:ai-governance-rendered']);
@@ -61,7 +61,7 @@ try{
  if(stopping||git('rev-parse','HEAD')!==sha||git('diff','HEAD','--name-only')||git('ls-files','--others','--exclude-standard'))throw Error('Source changed during validation; results cannot certify this checkout');
  const certificationPath=resolve('artifacts/certification/source-manifest.json');
  const certification=JSON.parse(readFileSync(certificationPath,'utf8'));
- if(certification.source_sha!==sha||certification.status!=='AVAILABLE_SCOPE_SIMULATION_PASS_P19_SKIPPED')throw Error('Certification manifest does not match the validated checkout');
+ if(certification.source_sha!==sha||certification.status!=='P19_P23_SOURCE_SIMULATION_PASS')throw Error('Certification manifest does not match the validated checkout');
  for(let phase=7;phase<=18;phase++)if(phase!==12)certification['p'+phase+'_status']='EXISTING_SOURCE_FULL_REGRESSION_PASS_HOSTED_UNVERIFIED';
  certification.local_validation={source_sha:sha,source_tree:tree,evidence_path:resolve(out,'summary.json'),all_steps_passed:report.steps.every(step=>step.status==='PASS'),scope:'SOURCE_ONLY'};
  certification.generated_at=new Date().toISOString();writeFileSync(certificationPath,JSON.stringify(certification,null,2)+'\n');

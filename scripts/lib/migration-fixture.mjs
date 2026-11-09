@@ -1,6 +1,6 @@
 import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
-export async function migrationFixture(){const db=new PGlite({extensions:{pgcrypto}});
+export async function migrationFixture(additionalExtensions={}){const db=new PGlite({extensions:{pgcrypto,...additionalExtensions}});
 await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role authenticator;create role supabase_admin superuser;
 create schema auth;create schema storage;create schema extensions;
 create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',raw_app_meta_data jsonb default '{}',banned_until timestamptz,created_at timestamptz default now());

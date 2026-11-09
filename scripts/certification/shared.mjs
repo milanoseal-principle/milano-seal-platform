@@ -6,12 +6,12 @@ import {migrationFixture} from '../lib/migration-fixture.mjs';
 export function certificationRun(phase){
  const argument=process.argv.find(a=>a.startsWith('--mode='));const mode=(argument?.slice(7)??'SIMULATION').toUpperCase();
  const files=readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort();
- const report={phase,run_id:randomUUID(),source_sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),migration_head:files.at(-1),mode,live_certification:false,environment:'ISOLATED_PGLITE',checks:[],failures:[]};
+ const report={phase,run_id:randomUUID(),source_sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),source_tree:execFileSync('git',['rev-parse','HEAD^{tree}'],{encoding:'utf8'}).trim(),migration_head:files.at(-1),mode,live_certification:false,environment:'ISOLATED_PGLITE',checks:[],failures:[]};
  const save=()=>{mkdirSync('artifacts/certification',{recursive:true});writeFileSync(`artifacts/certification/${phase.toLowerCase()}-${mode === 'SIMULATION' ? 'simulation' : 'refused'}.json`,JSON.stringify(report,null,2)+'\n');};
  const check=async(id,label,fn)=>{try{await fn();report.checks.push({id,label,status:'PASS'});}catch(error){report.checks.push({id,label,status:'FAIL'});report.failures.push({id,message:String(error?.message??'CHECK_FAILED').slice(0,240)});throw error;}};
  const guard=()=>{if(process.argv.slice(2).length>1||process.argv.slice(2).some(arg=>!arg.startsWith('--mode=')))throw Error('CERTIFICATION_ARGUMENT_INVALID');if(mode!=='SIMULATION'){
   if(mode!=='CONTROLLED_LIVE')throw Error('CERTIFICATION_MODE_INVALID');
-  if(process.env[`ALLOW_LIVE_${phase==='P20'?'WISE':phase==='P21'?'RON':phase==='P22'?'AUTHENTICATION':'RECOVERY'}_CERTIFICATION`]!=='true')throw Error('EXPLICIT_LIVE_AUTHORIZATION_REQUIRED');
+  if(process.env[`ALLOW_LIVE_${phase==='P19'?'E2E':phase==='P20'?'WISE':phase==='P21'?'RON':phase==='P22'?'AUTHENTICATION':'RECOVERY'}_CERTIFICATION`]!=='true')throw Error('EXPLICIT_LIVE_AUTHORIZATION_REQUIRED');
   throw Error('CONTROLLED_LIVE_DISABLED_IN_SOURCE_PASS: provider/project/hostname binding and separate founder release are required');
  }};
  return {report,files,check,guard,save,assert};

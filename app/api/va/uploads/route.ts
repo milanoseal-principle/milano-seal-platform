@@ -17,19 +17,19 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  // Return pending/processing client-portal uploads — no storage_path, no signed URLs
+  // Return pending-review client-portal versions — no storage_path, no signed URLs
   const { data, error } = await admin
-    .from("documents")
-    .select("id, matter_id, document_label, source, uploaded_by, uploaded_at, verification_status")
-    .in("verification_status", ["pending", "processing"])
-    .eq("source", "client_portal")
-    .order("uploaded_at", { ascending: false })
+    .from("document_versions")
+    .select("id,matter_id,file_name,actor,created_at,metadata")
+    .eq("approval_status", "pending_review")
+    .eq("stage", "intake_upload")
+    .eq("metadata->>source", "client_portal")
+    .order("created_at", { ascending: false })
     .limit(100);
 
   if (error) {
-    if (error.code === "42P01") return NextResponse.json({ documents: [] });
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
 
-  return NextResponse.json({ documents: data ?? [] });
+  return NextResponse.json({ documents: (data ?? []).map(row => ({id:row.metadata?.document_id ?? row.id,matter_id:row.matter_id,document_label:row.file_name,source:"client_portal",uploaded_by:row.actor,uploaded_at:row.created_at,verification_status:"pending"})) });
 }
