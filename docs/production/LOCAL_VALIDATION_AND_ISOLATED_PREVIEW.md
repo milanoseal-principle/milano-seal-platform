@@ -9,13 +9,13 @@ Use a trusted disposable checkout with no `.env`/environment-specific files or p
 Commit the proposed changes, then run:
 
 ```sh
-npm run validate:local
+npm run check:local
 ```
 
 For this managed environment, the installed system Chromium and writable npm cache are selected without changing assertions:
 
 ```sh
-CHROMIUM_PATH=/usr/bin/chromium npm_config_cache=/workspace/.npm-cache npm run validate:local
+CHROMIUM_PATH=/usr/bin/chromium npm_config_cache=/workspace/.npm-cache npm run check:local
 ```
 
 The runner refuses tracked edits, untracked source and environment files, prevents overlapping runs, strips provider credentials from child environments, and never runs deployment commands or writes GitHub check statuses. It calls the existing Vercel merge gate, production build, supplementary PR checks/database suites, G5 regressions, safe source-certification harness, production dependency audit and existing rendered suites sequentially. Typecheck, lint, all unit tests, migration chain/replay/upgrade/restore and validators remain inside the existing merge gate. It stops at the first failure and preserves that failure.
@@ -50,4 +50,4 @@ At implementation, repository privacy was confirmed via GitHub API; main `e9064b
 
 GitHub's job-startup billing/spend-limit error remains separate from local application results. Preserve failing remote conclusions and report them as billing-blocked; do not write successful replacement statuses, disable required checks, make the repository public, or repeatedly dispatch hosted jobs. Normal PR pushes still trigger the existing workflows; they may consume included minutes if billing resumes. This workflow does not change Actions budgets or claim no other platform usage cost.
 
-Restore independently verified required hosted CI and complete preview/hosted/live gates before production certification. Founder approval remains mandatory for production deployment, hosted production migrations, agent activation and real provider actions. No merge/deployment/activation is performed by `validate:local`.
+Restore independently verified required hosted CI and complete preview/hosted/live gates before production certification. Founder approval remains mandatory for production deployment, hosted production migrations, agent activation and real provider actions. No merge/deployment/activation is performed by `check:local`.

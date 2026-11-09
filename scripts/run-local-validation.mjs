@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,openSync,closeSync,rmSync} from 'node:fs';
 import {resolve} from 'node:path';
 const git=(...args)=>{const r=spawnSync('git',args,{encoding:'utf8'});if(r.status!==0)throw Error('Git inspection failed');return r.stdout.trim();};
-if(process.argv.length>2)throw Error('No skip or deployment flags are supported. Use npm run validate:local.');
+if(process.argv.length>2)throw Error('No skip or deployment flags are supported. Use npm run check:local.');
 if(git('ls-files','--others','--exclude-standard'))throw Error('Untracked source files must be committed or removed before validation.');
 if(git('diff','HEAD','--name-only'))throw Error('Commit tracked changes before validation so evidence binds to an exact source SHA.');
 for(const file of ['.env','.env.local','.env.production','.env.production.local','.env.development','.env.development.local'])if(existsSync(file))throw Error(`Remove ${file} from this isolated validation checkout; use a separate preview workspace for authenticated hosted tests.`);
