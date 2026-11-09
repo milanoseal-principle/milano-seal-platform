@@ -40,6 +40,7 @@ import { CertificatePanel } from "@/components/dashboard/CertificatePanel";
 import { ShippoCustodyPanel } from "@/components/dashboard/ShippoCustodyPanel";
 import { MatterRiskBadge } from "@/components/dashboard/MatterRiskBadge";
 import { OperatorQuoteBuilder } from "@/components/dashboard/OperatorQuoteBuilder";
+import { RequestedVsConfirmedRoute } from "@/components/dashboard/RequestedVsConfirmedRoute";
 import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
 import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
@@ -726,6 +727,8 @@ export default function DealDetail() {
           </div>
         </div>
       </div>
+
+      <RequestedVsConfirmedRoute notes={deal.notes} executionTruth={deal.execution_truth ?? null} witnesses={deal.witnesses} />
 
       <OperatorQuoteBuilder
         matterId={deal.id}
