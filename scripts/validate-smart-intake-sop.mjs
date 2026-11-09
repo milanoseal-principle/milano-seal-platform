@@ -68,8 +68,11 @@ const page = read("app/intake/page.tsx");
 const wizard = read("components/intake/smart-intake-sop-wizard.tsx");
 /buildIntakeClarifications/.test(wizard) ? ok("live Step 2 consumes buildIntakeClarifications") : fail("live Step 2 does not consume dynamic clarifications");
 /clarifications\.questions\.map/.test(wizard) ? ok("live Step 2 renders canonical questions only") : fail("live Step 2 does not render canonical question list");
-/projectClientPricing/.test(wizard) ? ok("live Step 3 consumes projectClientPricing") : fail("live Step 3 does not consume projectClientPricing");
-/priceSmartIntake/.test(wizard) ? ok("live intake prices via canonical engine") : fail("live intake does not call canonical pricing engine");
+// Pricing privacy: the canonical engine runs server-side behind
+// /api/intake/quote-preview; the browser receives only the client projection.
+const quoteBoundary = read("lib/pricing/intakeQuotePreview.ts");
+/\/api\/intake\/quote-preview/.test(wizard) && /projectClientPricing/.test(quoteBoundary) ? ok("live Step 3 consumes the server-side client pricing projection") : fail("live Step 3 does not consume the server-side client pricing projection");
+/priceSmartIntake/.test(quoteBoundary) && !/priceSmartIntake|projectClientPricing/.test(wizard) ? ok("live intake prices via canonical engine on the server only") : fail("live intake must price via the canonical engine on the server only");
 /Tell Us What You Need/.test(wizard) && /We Understand/.test(wizard) ? ok("Matter-first Step 1 + WE UNDERSTAND present") : fail("Matter-first Step 1 or WE UNDERSTAND missing");
 /Retry Upload/.test(wizard) && /retryFailedUploads/.test(wizard) ? ok("same-Matter retry UX present") : fail("upload retry UX missing");
 

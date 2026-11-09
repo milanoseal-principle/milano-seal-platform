@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "node scripts/generate-command-center-workbook-intelligence.mjs",
     "dev": "next dev",
+    "postbuild": "node scripts/validate-intake-pricing-privacy.mjs",
     "prebuild": "node scripts/verify-production-schema-capabilities.mjs && node scripts/generate-command-center-workbook-intelligence.mjs",
     "build": "next build",
     "start": "next start",
@@ -125,6 +126,7 @@
     "validate:global-corridor-cinematic-upgrade": "node scripts/validate-global-corridor-cinematic-upgrade.mjs",
     "validate:global-pricing-courier": "node scripts/validate-global-pricing-courier.mjs",
     "validate:identifier-schemas": "node scripts/validate-identifier-schemas.mjs",
+    "validate:intake-pricing-privacy": "node scripts/validate-intake-pricing-privacy.mjs",
     "validate:verified-settlement-before-scheduling": "node scripts/validate-verified-settlement-before-scheduling.mjs",
     "validate:institutional-expansion": "node scripts/validate-institutional-expansion.mjs",
     "validate:intake-confirmation": "node scripts/validate-intake-confirmation.mjs",

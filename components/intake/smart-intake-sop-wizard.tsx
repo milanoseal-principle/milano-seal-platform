@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import { FileUploadZone } from "@/components/intake/FileUploadZone";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
-import { classifyIntake, type AiExtraction } from "@/lib/intake/smartClassification";
+import { classifyIntake, type AiExtraction, type ClassificationInput } from "@/lib/intake/smartClassification";
 import { buildIntakeClarifications, type IntakeQuestion } from "@/lib/intake/intakeClarifications";
-import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
-import { projectClientPricing } from "@/lib/pricing/pricingProjections";
+import { QUOTE_AFTER_REVIEW_PREVIEW, type IntakeQuotePreview } from "@/lib/pricing/intakeQuotePreviewTypes";
 import { buildIntakeAnalyticsPayload, type IntakeAnalyticsEvent } from "@/lib/intake/intakeAnalytics";
 import {
   documentIdentityLabel,
@@ -196,7 +195,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     setSaveNotice("Execution preference saved. Document review will confirm the authorized route and final quote.");
   };
 
-  const classification = useMemo(() => classifyIntake({
+  const classificationInput = useMemo((): ClassificationInput => ({
     text: form.description,
     structured: {
       documentType: form.documentType || undefined,
@@ -205,7 +204,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       originState: form.originState || undefined,
       signerLocation: form.signerLocation || undefined,
       destinationCountry: form.destinationCountry || undefined,
-      notarization: form.notarizationChoice === "already" ? "already_completed" : form.notarizationChoice === "yes" ? true : form.notarizationChoice === "no" ? false : undefined,
+      notarization: form.notarizationChoice === "already" ? "already_completed" as const : form.notarizationChoice === "yes" ? true : form.notarizationChoice === "no" ? false : undefined,
       ron: form.executionType === "RON" ? true : form.executionType ? false : undefined,
       mobile: form.executionType ? false : undefined,
       apostille: form.apostilleChoice === "yes" ? true : form.apostilleChoice === "no" ? false : undefined,
@@ -221,10 +220,28 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       translationNeeded: analysis.translationNeeded,
     } : undefined,
   }), [form, analysis]);
+  const classification = useMemo(() => classifyIntake(classificationInput), [classificationInput]);
 
   const clarifications = useMemo(() => buildIntakeClarifications(classification), [classification]);
-  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer", timeline: form.timelineChoice, delivery: form.deliveryChoice }), [classification, initialTier, form.timelineChoice, form.deliveryChoice]);
-  const clientPricing = useMemo(() => projectClientPricing(pricing), [pricing]);
+  // Pricing runs server-side only (/api/intake/quote-preview). The browser gets
+  // a client-safe projection; until it arrives the quote stays after-review.
+  const [clientPricing, setClientPricing] = useState<IntakeQuotePreview>(QUOTE_AFTER_REVIEW_PREVIEW);
+  useEffect(() => {
+    if (step !== 3) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetch("/api/intake/quote-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...classificationInput, selectedLane: initialTier, timeline: form.timelineChoice, delivery: form.deliveryChoice }),
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((preview: IntakeQuotePreview | null) => setClientPricing(preview?.mode ? preview : QUOTE_AFTER_REVIEW_PREVIEW))
+        .catch(() => { if (!controller.signal.aborted) setClientPricing(QUOTE_AFTER_REVIEW_PREVIEW); });
+    }, 250);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [step, classificationInput, initialTier, form.timelineChoice, form.deliveryChoice]);
 
   const outstanding = useMemo(
     () =>
@@ -742,7 +759,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                   </div>
                   <div className="mt-5 border-t border-[rgba(198,165,90,0.14)] pt-4">
                     <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Quote Breakdown</div>
-                    <div className="space-y-2">{pricing.clientLineItems.map((item) => (
+                    <div className="space-y-2">{clientPricing.lineItems.map((item) => (
                       <div key={item.key} className="flex items-start justify-between gap-4 text-[12px] font-light text-[#E8DCC0]"><span>{item.label}</span><span className="shrink-0">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(item.amount)}</span></div>
                     ))}</div>
                   </div>
