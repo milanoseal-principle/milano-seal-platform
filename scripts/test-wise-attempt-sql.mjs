@@ -71,6 +71,9 @@ const id=await fixture(),hid=await handoff(id);await denied(()=>begin(id,hid,for
 for(const mismatch of [{amount:99},{amount:101},{currency:'EUR'},{reference:'FOREIGN'},{time:'2020-01-01T00:00:00Z'},{time:'2099-01-01T00:00:00Z'}]) {
  await denied(()=>observe(id,hid,randomUUID(),'IN_PROGRESS',mismatch),'provider scope/time mismatch denied',/MISMATCH|STALE/);
 }
+await denied(()=>observe(id,hid,randomUUID(),null),'null provider status denied',/INVALID_PROVIDER/);
+await denied(()=>observe(id,hid,randomUUID(),'SETTLED',{source:null}),'null settlement source denied',/INVALID_PROVIDER/);
+await denied(()=>observe(id,hid,randomUUID(),'IN_PROGRESS',{currency:null}),'null currency denied',/MISMATCH/);
 await denied(()=>observe(id,hid,randomUUID(),'SETTLED'),'activity completion cannot claim settlement',/INVALID_PROVIDER/);
 const resource=randomUUID();await observe(id,hid,resource);
 const other=await fixture(),otherH=await handoff(other);await begin(other,otherH);

@@ -80,6 +80,7 @@ begin
  if d.payment_attempt_id is not null and d.payment_settlement_status='observed_pending'
    and d.payment_observed_amount=d.amount_due and upper(d.payment_observed_currency)=upper(d.currency)
    and d.payment_observed_reference=coalesce(nullif(btrim(d.wise_reference),''),d.deal_id) then return to_jsonb(d);end if;
+ if d.payment_link is null or d.payment_link !~ '^https://([A-Za-z0-9-]+\.)*(wise\.com|transferwise\.com)/' then raise exception 'SECURE_WISE_LINK_REQUIRED';end if;
  if d.amount_due is null or d.amount_due<=0 or d.amount_due::text in ('NaN','Infinity','-Infinity')
  or (h.metadata->>'amountDue')::numeric is distinct from d.amount_due
  or upper(h.metadata->>'currency') is distinct from upper(btrim(d.currency))
@@ -121,10 +122,10 @@ begin
  if not found or p_attempt_id is null or d.payment_attempt_id is distinct from p_attempt_id then raise exception 'CURRENT_ATTEMPT_REQUIRED';end if;
  if p_occurred_at is null or p_occurred_at<d.payment_attempt_started_at or p_occurred_at>clock_timestamp() then raise exception 'STALE_PROVIDER_EVENT';end if;
  if p_amount is null or p_amount<=0 or p_amount::text in ('NaN','Infinity','-Infinity') or p_amount is distinct from d.amount_due
- or upper(btrim(p_currency)) is distinct from upper(btrim(d.currency))
+ or nullif(btrim(p_currency),'') is null or upper(btrim(p_currency)) is distinct from upper(btrim(d.currency))
  or nullif(btrim(p_reference),'') is null or p_reference is distinct from coalesce(nullif(btrim(d.wise_reference),''),d.deal_id)
  then raise exception 'PROVIDER_SCOPE_MISMATCH';end if;
- if p_status not in ('IN_PROGRESS','UPCOMING','COMPLETED','SETTLED','REQUIRES_ATTENTION','UNKNOWN','CANCELLED','FAILED','VOIDED','EXPIRED','REVERSED','REFUNDED','REJECTED','REVOKED','SUPERSEDED')
+ if p_status is null or p_source is null or p_status not in ('IN_PROGRESS','UPCOMING','COMPLETED','SETTLED','REQUIRES_ATTENTION','UNKNOWN','CANCELLED','FAILED','VOIDED','EXPIRED','REVERSED','REFUNDED','REJECTED','REVOKED','SUPERSEDED')
  or p_source not in ('wise-activity','wise-statement','wise-webhook')
  or (p_status='SETTLED' and p_source='wise-activity') then raise exception 'INVALID_PROVIDER_STATUS_OR_SOURCE';end if;
  terminal:=p_status in ('CANCELLED','FAILED','VOIDED','EXPIRED','REVERSED','REFUNDED','REJECTED','REVOKED','SUPERSEDED');
