@@ -35,6 +35,8 @@ async function verifyPaymentConfirmed(
     payment_confirmed: data.payment_confirmed === true,
     is_platform_fee_only: Number(data.amount_due ?? 0) === 0,
     payment_status: data.payment_status,
+    payment_settlement_status: data.payment_settlement_status,
+    amount_due: Number(data.amount_due), amount_paid: Number(data.amount_paid),
   });
 
   if (!integrity.schedulingAllowed) {

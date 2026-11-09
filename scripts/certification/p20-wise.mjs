@@ -1,4 +1,7 @@
 #!/usr/bin/env -S node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx
+import {evaluatePaymentIntegrity} from '../../lib/safety/payment-integrity.ts';
+import {evaluateComplimentarySchedulingRequirement} from '../../lib/payments/complimentary-safety.ts';
+import {evaluatePaymentGates} from '../../src/features/payments/paymentGateService.ts';
 import {reconcileLoadedDeal} from '../../lib/wise/reconciliation.ts';
 import {randomUUID,webcrypto} from 'node:crypto';
 import {certificationRun,isolatedCanonicalDatabase,wiseFixtures} from './shared.mjs';
@@ -55,6 +58,12 @@ try{
   const io={admin,getStandardBalance:async()=>({id:'simulation-balance'}),getBalanceStatement:async()=>({transactions:[{type:'CREDIT',date:new Date().toISOString(),amount:{value:amount,currency:'USD'},referenceNumber:item.resource,details:{reference:(await f.load(item.id)).wise_reference}}]})};
   const rejected=await reconcileLoadedDeal(await f.load(item.id),[],io);assert.equal(rejected.settlementConfirmed,false);await blocked(item.id);
   amount=100;const accepted=await reconcileLoadedDeal(await f.load(item.id),[],io);assert.equal(accepted.settlementConfirmed,true);assert.equal((await f.load(item.id)).payment_confirmed,true);
+ });
+ await check('LEGACY_GATES','legacy flag, courtesy and received-total projections cannot bypass settlement',async()=>{
+  const flagOnly={payment_confirmed:true,is_platform_fee_only:false,payment_status:'paid'};assert.equal(evaluatePaymentIntegrity(flagOnly).schedulingAllowed,false);
+  assert.equal(evaluatePaymentGates({payment_status:'paid',amount_received:100,final_total:100,deposit_paid_amount:100,release_status:'released'}).scheduling_unlocked,false);
+  assert.equal(evaluateComplimentarySchedulingRequirement({quote:{},authorization:null,verifiedPaymentConfirmed:true,allOperationalRequirementsPassed:true}).paymentRequirementSatisfied,false);
+  const verified=f.js(await f.load(exact.id));assert.equal(evaluatePaymentIntegrity({...verified,is_platform_fee_only:false}).schedulingAllowed,true);assert.equal(evaluatePaymentGates(verified).scheduling_unlocked,true);
  });
  const final=f.js(await f.load(exact.id));Object.assign(report,{matter_id:exact.id,payment_attempt_id:exact.attempt,expected_amount:100,received_amount:final.amount_paid,expected_currency:'USD',received_currency:final.currency,wise_reference:final.wise_reference,provider_reference:exact.resource,submission_state:'SIMULATED_SUBMISSION_RECORDED',settlement_state:final.payment_settlement_status,payment_verified:final.payment_confirmed,scheduling_authorized:evaluateSchedulingGate({matter:final}).schedulingEligible,execution_authorized:evaluateExecutionGate(final).schedulingEligible});
  for(let n=1;n<=17;n++)assert.ok(report.checks.some(c=>c.id==='CASE_'+String(n).padStart(2,'0')&&c.status==='PASS'));

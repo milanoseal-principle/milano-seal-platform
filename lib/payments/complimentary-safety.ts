@@ -1,3 +1,5 @@
+import { evaluatePaymentGate } from "@/lib/safety/payment-integrity";
+import type { PaymentGateMatter } from "@/lib/payments/paymentGate";
 import type { ComplimentaryAuthorization, ComplimentaryQuoteSnapshot } from "./complimentary-authorization";
 import { isAuthorizationValidForQuote } from "./complimentary-authorization";
 
@@ -6,7 +8,7 @@ export const COMPLIMENTARY_SAFETY_RULES = [
   "Complimentary matters never set paymentConfirmed to true.",
   "Complimentary matters never create Wise webhook, transfer, settlement, or payment reference records.",
   "Complimentary matters preserve original commercial value while verified revenue remains zero.",
-  "Ordinary unpaid matters remain locked unless a same-matter active authorization satisfies the scheduling gate.",
+  "All unpaid matters remain scheduling-locked; a complimentary authorization is not verified Wise settlement.",
   "Authorization is quote-version specific and must be reissued if scope or price changes.",
 ] as const;
 
@@ -19,19 +21,20 @@ export interface ComplimentarySchedulingEvaluation {
 export function evaluateComplimentarySchedulingRequirement(params: {
   quote: ComplimentaryQuoteSnapshot;
   authorization: ComplimentaryAuthorization | null;
-  verifiedPaymentConfirmed: boolean;
+  verifiedPaymentConfirmed: boolean; // Legacy display hint; never authority.
+  verifiedPayment?: PaymentGateMatter;
   allOperationalRequirementsPassed: boolean;
 }): ComplimentarySchedulingEvaluation {
   if (!params.allOperationalRequirementsPassed) {
     return { paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Operational requirements remain open." };
   }
-  if (params.verifiedPaymentConfirmed) {
+  if (params.verifiedPayment && evaluatePaymentGate(params.verifiedPayment) === "PAYMENT_CONFIRMED") {
     return { paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Satisfied by verified payment." };
   }
   if (params.authorization && isAuthorizationValidForQuote(params.authorization, params.quote)) {
-    return { paymentRequirementSatisfied: true, paymentRequirementMethod: "complimentary_authorization", reason: "Satisfied by Complimentary Authorization." };
+    return { paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Complimentary authorization remains non-revenue context; verified Wise settlement is required for scheduling." };
   }
-  return { paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Payment or valid complimentary authorization required." };
+  return { paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified Wise settlement required." };
 }
 
 export function assertNoFakePaymentFields(snapshot: {

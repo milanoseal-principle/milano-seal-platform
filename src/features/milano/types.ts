@@ -74,6 +74,10 @@ export type EventType =
   | "FOLLOWUP_STOPPED";
 
 export interface MilanoMatterLike {
+  payment_confirmed?: boolean;
+  payment_settlement_status?: string | null;
+  amount_due?: number;
+  amount_paid?: number;
   id?: string;
   matter_reference?: string;
   portal_token?: string;
