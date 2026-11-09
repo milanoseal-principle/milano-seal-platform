@@ -57,6 +57,14 @@ try {
     await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}','\"review_required\"'::jsonb) where id=$1",[matter]);
     return release(operator,[final]);
  },/NO_AUTHENTICATION_ROUTE_REQUIRED/);
+ await rejected('LEGALIZATION_RETURN','legalization requires returned authority lineage even when apostille flag is false',async()=>{
+    await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}','\"authentication_legalization\"'::jsonb) where id=$1",[matter]);
+    await state('apostille_processing');return release(operator,[final]);
+ },/APPROVED_AUTHENTICATION_VERSION_REQUIRED|VERIFIED_AUTHORITY_RETURN_LINEAGE_REQUIRED/);
+ await rejected('UNKNOWN_POST_EXECUTION','unknown route cannot release after entering processing either',async()=>{
+    await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}','\"review_required\"'::jsonb) where id=$1",[matter]);
+    await state('apostille_processing');return release(operator,[final]);
+ },/AUTHENTICATION_ROUTE_REVIEW_REQUIRED/);
  await rejected('BAD_ACTOR','unprivileged actor cannot release',()=>release(randomUUID(),[final]),/ACTOR|AUTH|OPERATOR|ROLE|GOVERNANCE/i);
  await rejected('WRONG_VERSION','wrong final version cannot release',()=>release(operator,[executed]),/COMPLETE_RELEASE_VERSION_SET_REQUIRED|RELEASE_VERSION_NOT_APPROVED/);
  await rejected('MISSING_VERSION','unknown final version cannot release',()=>release(operator,[randomUUID()]),/RELEASE_VERSION_NOT_APPROVED|COMPLETE_RELEASE_VERSION_SET_REQUIRED/);
