@@ -53,7 +53,10 @@ ok((await db.query('select count(*)::int n from custody_ledger where deal_id=$1'
 ok((await db.query("select hash=encode(sha256(convert_to(payload_canonical,'utf8')),'hex') valid from custody_ledger where hash=$1",[first.hash])).rows[0].valid,'stored exact content hashes recompute');
 await denied(()=>db.query("update custody_ledger set notes='tampered' where hash=$1",[first.hash]),'custody event cannot mutate silently');
 await denied(()=>db.query('delete from custody_ledger where hash=$1',[first.hash]),'custody history cannot be deleted');
-const version=randomUUID();await db.query(`insert into document_versions(id,matter_id,stage,file_hash,actor,source_file,storage_path,approval_status) values($1,$2,'final_packet',$3,'operator','private/fixture.pdf','private/fixture.pdf','release_ready')`,[version,matter,'c'.repeat(64)]);
+const executedVersion=randomUUID();await db.query("insert into document_versions(id,matter_id,stage,file_hash,actor,source_file,storage_path) values($1,$2,'executed',$3,$4,'private/executed.pdf','private/executed.pdf')",[executedVersion,matter,'b'.repeat(64),founder]);
+await db.query('select approve_document_version($1,$2,$3,$4)',[founder,executedVersion,'b'.repeat(64),'Controlled synthetic executed artifact QC']);
+const version=randomUUID();await db.query(`insert into document_versions(id,matter_id,stage,file_hash,actor,source_file,storage_path,parent_version_id) values($1,$2,'final_packet',$3,$4,'private/fixture.pdf','private/fixture.pdf',$5)`,[version,matter,'c'.repeat(64),founder,executedVersion]);
+await db.query('select approve_document_version($1,$2,$3,$4)',[founder,version,'c'.repeat(64),'Controlled synthetic final artifact QC']);
 ok((await db.query("select document_object_mutation_allowed('documents','private/fixture.pdf') allowed")).rows[0].allowed===false,'versioned private object cannot be overwritten or deleted by authenticated storage policy');
 await denied(()=>db.query("update document_versions set file_hash=$1 where id=$2",['d'.repeat(64),version]),'version bytes immutable');
 const otherMatter=randomUUID();await db.query("insert into deals(id,status) values($1,'intake_received')",[otherMatter]);
@@ -62,7 +65,8 @@ await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,ma
 await db.query("update deals set balance_payment_status='paid',balance_paid_at=now(),balance_amount_received=300 where id=$1",[matter]);
 await denied(()=>db.query('select record_document_release($1,$2,$3)',[client,matter,[version]]),'client cannot release even paid');
 await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'release cannot skip execution corridor');
-for(const status of ['scheduled','in_execution','apostille_processing'])await db.query('update deals set status=$1 where id=$2',[status,matter]);
+await db.query('update deals set execution_truth=$1,apostille_required=false where id=$2',[{notarization_requirement:'required',execution_method:'in_person',authentication_requirement:'not_required',review_confirmed_by:founder},matter]);
+for(const status of ['scheduled','in_execution'])await db.query('update deals set status=$1 where id=$2',[status,matter]);
 await db.query('update deals set apostille_required=true where id=$1',[matter]);await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'authentication requirement cannot be skipped by a final-packet label');await db.query('update deals set apostille_required=false where id=$1',[matter]);
 const release=(await db.query('select record_document_release($1,$2,$3) result',[founder,matter,[version]])).rows[0].result;
 ok((await db.query('select is_paid_and_released flag from deals where id=$1',[matter])).rows[0].flag===true,'actual release projects its canonical flag atomically');
