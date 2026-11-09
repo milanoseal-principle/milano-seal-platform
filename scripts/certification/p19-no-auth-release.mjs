@@ -61,6 +61,14 @@ try {
  await rejected('WRONG_VERSION','wrong final version cannot release',()=>release(operator,[executed]),/COMPLETE_RELEASE_VERSION_SET_REQUIRED|RELEASE_VERSION_NOT_APPROVED/);
  await rejected('MISSING_VERSION','unknown final version cannot release',()=>release(operator,[randomUUID()]),/RELEASE_VERSION_NOT_APPROVED|COMPLETE_RELEASE_VERSION_SET_REQUIRED/);
  await rejected('INTEGRITY','version file hashes are immutable and cannot be forged',()=>db.query("update document_versions set file_hash=$1 where id=$2",['a'.repeat(64),final]),/IMMUTABLE/);
+ await rejected('MISSING_QC','unreviewed final packet cannot release',async()=>{
+   await db.query("update document_versions set approval_status='pending_review',approved_at=null,approved_by=null where id=$1",[final]);
+   return release(operator,[final]);
+ },/COMPLETE_RELEASE_VERSION_SET_REQUIRED|RELEASE_VERSION_NOT_APPROVED/);
+ await rejected('UNPAID','attempting to remove verified payment authority cannot release',async()=>{
+   await db.query("update deals set payment_confirmed=false,payment_status='unpaid',payment_settlement_status='pending' where id=$1",[matter]);
+   return release(operator,[final]);
+ },/SETTLEMENT|PAYMENT|PAID|AUTHORITY/i);
  await rejected('HOLD','open high severity incident freezes release',async()=>{
    await db.query("insert into compliance_incidents(matter_id,incident_type,severity,status,summary,release_frozen) values($1,'DOCUMENT_INTEGRITY','HIGH','OPEN','Synthetic blocker',true)",[matter]);
    return release(operator,[final]);
