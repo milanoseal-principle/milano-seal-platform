@@ -19,7 +19,8 @@ import {
   type TimelineChoice,
 } from "@/lib/intake/reviewReadiness";
 
-import { getSmartIntakeQuestionPlan, normalizeSmartIntakeIntent, type TriState } from "@/lib/intake/serviceIntent";
+import { getSmartIntakeQuestionPlan, normalizeSmartIntakeIntent, toConciergeServiceIntent, type TriState } from "@/lib/intake/serviceIntent";
+import { commercialHref } from "@/lib/conversion/commercialCta";
 import { INTAKE_DRAFT_KEY, intakeFormSchema, intakeAnalysisSchema, restoreIntakeDraft, type IntakeFormState as FormState } from "@/lib/intake/intakeDraft";
 
 interface IntakePrefill {
@@ -290,7 +291,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
   const track = (event: IntakeAnalyticsEvent, metadata: Record<string, unknown> = {}, id?: string) => {
     try {
-      const payload = buildIntakeAnalyticsPayload(event, metadata, id || matterId || undefined);
+      // Every intake event carries the non-authoritative service intent for attribution.
+      const payload = buildIntakeAnalyticsPayload(event, { intent, ...metadata }, id || matterId || undefined);
       void fetch("/api/intake/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -301,6 +303,18 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       // Observational only. Never block intake.
     }
   };
+
+  const intentTrackedRef = useRef(false);
+  useEffect(() => {
+    if (intentTrackedRef.current || intent === "unsure") return;
+    intentTrackedRef.current = true;
+    track("service_intent_selected", { journeySurface: "intake" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent]);
+
+  // Lightweight fallback: the existing governed Get Pricing request (sales_leads),
+  // carrying the same non-authoritative service intent. No second CRM.
+  const leadFallbackHref = commercialHref("get_pricing", { serviceIntent: toConciergeServiceIntent(intent), source: `intake-${intent}` });
 
   const markStarted = () => {
     if (startedRef.current) return;
@@ -625,6 +639,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
               {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
               <button type="button" onClick={continueFromStep1} className={`${primaryCls} mt-7`}>Continue <ArrowRight className="ml-2 inline h-4 w-4" /></button>
+              <p className="mt-4 text-[12px] leading-5 text-[#9A9488]">
+                Not ready for the full intake?{" "}
+                <a href={leadFallbackHref} data-testid="intake-lead-fallback" onClick={() => track("lead_fallback_opened", { journeySurface: "intake" })} className="text-[var(--ms-gold)] underline-offset-4 hover:underline">Request pricing with just your contact details</a>
+                {" "}and Milano will follow up.
+              </p>
             </>
           )}
 

@@ -1,6 +1,7 @@
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { AcquisitionCommandCenter } from "@/components/acquisition/AcquisitionCommandCenter";
 import { ClientReturnIntelligence } from "@/components/acquisition/ClientReturnIntelligence";
+import { ServiceIntentAttribution } from "@/components/acquisition/ServiceIntentAttribution";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Acquisition — The Milano Seal™", robots: { index: false } };
@@ -12,6 +13,7 @@ export default async function AcquisitionPage() {
       <div className="mx-auto max-w-7xl">
         <AcquisitionCommandCenter />
         <ClientReturnIntelligence />
+        <ServiceIntentAttribution />
       </div>
     </main>
   );

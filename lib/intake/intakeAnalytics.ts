@@ -7,6 +7,8 @@ export const INTAKE_ANALYTICS_EVENTS = [
   "counsel_submission_failed",
   "review_clicked",
 
+  "service_intent_selected",
+  "lead_fallback_opened",
   "intake_started",
   "description_completed",
   "document_uploaded",
