@@ -101,4 +101,5 @@ export const SETTLEMENT_SCHEDULING_PROTECTED_CHANGES = [
  'tests/unit/paymentAuthorityRegression.test.ts',
  'tests/unit/schedulingPaymentGate.test.ts',
  'docs/control-plane/VERIFIED_SETTLEMENT_P0_HOTFIX.md',
+ 'scripts/validate-complimentary-matter-flow.mjs',
 ];
