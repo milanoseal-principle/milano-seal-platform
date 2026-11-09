@@ -3,6 +3,7 @@ import { canTransition } from "@/lib/stateMachine";
 import { createWisePaymentRequest } from "@/lib/wise";
 import { logActivity } from "@/lib/activity";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
+import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 
 const VALID_STAGES = [
@@ -33,7 +34,7 @@ export async function moveDeal(
   const { data: deal, error: fetchErr } = await supabase
     .from("deals")
     .select(
-      "id, deal_id, status, payment_status, payment_confirmed, payment_settlement_status, amount_due, amount_paid, verified_revenue, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, execution_truth, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country, amount",
+      "id, deal_id, status, payment_status, payment_confirmed, payment_settlement_status, amount_due, amount_paid, verified_revenue, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, execution_truth, invoice_balance, balance_payment_link, balance_payment_status, client_name, email, document_type, country:destination_country, amount:total_price, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference",
     )
     .eq("deal_id", deal_id)
     .single();
@@ -77,7 +78,7 @@ export async function moveDeal(
     }
 
     const schedulingGate = evaluateSchedulingGate({ matter: deal });
-    if (!schedulingGate.schedulingEligible) {
+    if (stage === "scheduled" ? !schedulingGate.schedulingEligible : evaluatePaymentGate(deal) !== "PAYMENT_CONFIRMED") {
       return {
         ok: false,
         error:

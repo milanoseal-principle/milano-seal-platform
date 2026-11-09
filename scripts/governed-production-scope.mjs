@@ -50,6 +50,13 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261108212000_canonical_notification_queue.sql',
  'supabase/migrations/20261108213000_document_version_binding.sql',
  'supabase/migrations/20261108214000_canonical_projection_columns.sql',
+ // Residual directive #454: restore the canonical authority split, with real SQL negatives.
+ 'supabase/migrations/20261108220000_wise_authority_separation.sql',
+ 'tests/bluenotary-production-reconciliation.test.ts','tests/wise-payment-observation-notifications.test.ts',
+ 'lib/stateMachine.ts','lib/scheduling/complimentarySchedulingGate.ts','lib/pipelineEngine.ts','lib/platform/matterStateAdapters.ts',
+ 'app/api/deals/[id]/schedule/route.ts','app/api/deals/[id]/execute/route.ts','app/api/admin/matters/[id]/status/route.ts',
+ 'scripts/validate-postpayment-ron-corridor.mjs','scripts/validate-tiffany-post-test-final-audit.mjs',
+ 'scripts/validate-immediate-scheduling-after-wise-submission.mjs','scripts/validate-postpayment-ron-matter-progression.mjs',
  'scripts/validate-payment-release-gates.mjs',
  'scripts/validate-custody-ledger-schema.mjs',
 ];

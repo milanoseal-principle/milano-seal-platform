@@ -1,0 +1,2173 @@
+{
+  "source_sha": "49a659778aeb1450c25cc6a4d070d9e00126fc98",
+  "source_tree": "dd42b06830826966a32a83a545105e2383363c4b",
+  "lockfile_sha256": "b04a1b3fd413705a7bc9a418529102342f8a021b74ea9b81693e6ee3fc934371",
+  "node": "v24.19.0",
+  "started_at": "2026-11-09T01:52:09.347Z",
+  "scope": "ISOLATED_LOCAL_SOURCE_ONLY",
+  "public_auth_configuration": "INERT_LOOPBACK_NO_SESSION",
+  "steps": [
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started_at": "2026-11-09T01:52:09.347Z",
+      "log": "01-diff-check.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:52:09.353Z",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "route-types",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "node_modules/next/dist/bin/next",
+        "typegen"
+      ],
+      "started_at": "2026-11-09T01:52:09.534Z",
+      "log": "02-route-types.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:52:09.835Z",
+      "log_sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "name": "visual-system",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/validate-final-visual-system-hardening.mjs"
+      ],
+      "started_at": "2026-11-09T01:52:09.836Z",
+      "log": "03-visual-system.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:52:09.866Z",
+      "log_sha256": "449e3b1c85158df5d974adbfc2570575d7ff2bac8ef9b38ff59e8e155d59db4f"
+    },
+    {
+      "name": "vercel-merge-gate",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-vercel-merge-gate.mjs"
+      ],
+      "started_at": "2026-11-09T01:52:09.866Z",
+      "log": "04-vercel-merge-gate.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:54:55.066Z",
+      "log_sha256": "3fa14efbcd865afa2ee9aa74e2d065383705f71f5fc1b45c66c3b81d7f33b03e"
+    },
+    {
+      "name": "production-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "started_at": "2026-11-09T01:54:55.066Z",
+      "log": "05-production-build.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:08.994Z",
+      "log_sha256": "5b66a5b96c3148795159d0485736aa5f4e64c2041c1e78d5da68d86683f5288b"
+    },
+    {
+      "name": "p3-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-database"
+      ],
+      "started_at": "2026-11-09T01:55:08.994Z",
+      "log": "06-p3-database.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:10.884Z",
+      "log_sha256": "f28443e52445da879c2743fbc1304663d4681ad5e3e16bf70597c6f2c4b1d157"
+    },
+    {
+      "name": "p5-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p5-database"
+      ],
+      "started_at": "2026-11-09T01:55:10.885Z",
+      "log": "07-p5-database.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:12.541Z",
+      "log_sha256": "4c8acd26da957cefa7673cf0310d4e13d7f6bf0d06891b968be46b63d952f8a4"
+    },
+    {
+      "name": "governance-regressions",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-regressions"
+      ],
+      "started_at": "2026-11-09T01:55:12.541Z",
+      "log": "08-governance-regressions.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:16.812Z",
+      "log_sha256": "b4e21f21b812b4647d2639ca8cd345e9270f1bf62a3167524609f5582d3f640b"
+    },
+    {
+      "name": "source-certification",
+      "command": [
+        "npm",
+        "run",
+        "test:production-certification-source"
+      ],
+      "started_at": "2026-11-09T01:55:16.813Z",
+      "log": "09-source-certification.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:27.848Z",
+      "log_sha256": "72fe5ec4095b33e895a0138c2fc6a0d2f88ae3939bdcee88a679b912a17d884f"
+    },
+    {
+      "name": "dependency-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=moderate"
+      ],
+      "started_at": "2026-11-09T01:55:27.848Z",
+      "log": "10-dependency-audit.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:55:28.421Z",
+      "log_sha256": "6d8c5c8f3d7684adb070417bd608d01ae90aa3dc26a65af03ffda4955f38d9a3"
+    },
+    {
+      "name": "governance-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-rendered"
+      ],
+      "started_at": "2026-11-09T01:55:28.422Z",
+      "log": "11-governance-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:56:36.212Z",
+      "log_sha256": "8b3492b9944ecb587e2b648933201cb33e4817cde517374c8808270cce464585"
+    },
+    {
+      "name": "p3-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-rendered"
+      ],
+      "started_at": "2026-11-09T01:56:36.212Z",
+      "log": "12-p3-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:56:48.084Z",
+      "log_sha256": "5fcdef430fa9be849a88050803a86dc3a185cb11f773f75bca595fc7b69ce218"
+    },
+    {
+      "name": "map-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-map-proof.mjs"
+      ],
+      "started_at": "2026-11-09T01:56:48.084Z",
+      "log": "13-map-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:57:07.534Z",
+      "log_sha256": "5c463bb2d6656186dc6875afb00910adf9add308b2a7d2f90a2cfd0153e439c8"
+    },
+    {
+      "name": "public-production-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-production-acceptance.mjs"
+      ],
+      "started_at": "2026-11-09T01:57:08.840Z",
+      "log": "14-public-production-rendered.log",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T01:58:57.597Z",
+      "log_sha256": "81b72bec60fd444e5d384d7551ba5370eabb9e9e8220e8d6ed136dbf7f19581e"
+    }
+  ],
+  "status": "PASS",
+  "github_statuses_modified": false,
+  "hosted_preview": "NOT_RUN",
+  "production_deployment": "NOT_RUN",
+  "agents_activated": false,
+  "finished_at": "2026-11-09T01:58:57.651Z",
+  "browser_matrix": {
+    "baseUrl": "http://127.0.0.1:3191",
+    "productionBaseUrl": "http://127.0.0.1:3191",
+    "expectedChecks": 70,
+    "passedChecks": 70,
+    "results": [
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 47.299999952316284,
+          "dom_content_loaded_ms": 286.80000001192093,
+          "load_event_ms": 287.5,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 13.900000035762787,
+          "dom_content_loaded_ms": 181,
+          "load_event_ms": 182.80000001192093,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 58.89999997615814,
+          "dom_content_loaded_ms": 219.10000002384186,
+          "load_event_ms": 232.30000001192093,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 55.700000047683716,
+          "dom_content_loaded_ms": 239.5,
+          "load_event_ms": 239.79999995231628,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 24.600000023841858,
+          "dom_content_loaded_ms": 198.5,
+          "load_event_ms": 199,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 24.400000035762787,
+          "dom_content_loaded_ms": 147,
+          "load_event_ms": 170.80000001192093,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 37.89999997615814,
+          "dom_content_loaded_ms": 210.39999997615814,
+          "load_event_ms": 210.69999998807907,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-320",
+        "width": 320,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 74.19999998807907,
+          "dom_content_loaded_ms": 280.39999997615814,
+          "load_event_ms": 280.89999997615814,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 23.19999998807907,
+          "dom_content_loaded_ms": 189.89999997615814,
+          "load_event_ms": 202.80000001192093,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 28,
+          "dom_content_loaded_ms": 178.4000000357628,
+          "load_event_ms": 180.10000002384186,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 17.5,
+          "dom_content_loaded_ms": 146.20000004768372,
+          "load_event_ms": 186.30000001192093,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 10.700000047683716,
+          "dom_content_loaded_ms": 181.5999999642372,
+          "load_event_ms": 182.0999999642372,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 9.300000011920929,
+          "dom_content_loaded_ms": 114.70000004768372,
+          "load_event_ms": 134.30000001192093,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 24.5,
+          "dom_content_loaded_ms": 182.5,
+          "load_event_ms": 193.30000001192093,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-360",
+        "width": 360,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 41.90000003576279,
+          "dom_content_loaded_ms": 271.4000000357628,
+          "load_event_ms": 272,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 24.099999964237213,
+          "dom_content_loaded_ms": 207.89999997615814,
+          "load_event_ms": 216.19999998807907,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 26.900000035762787,
+          "dom_content_loaded_ms": 219.80000001192093,
+          "load_event_ms": 233.60000002384186,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 13.699999988079071,
+          "dom_content_loaded_ms": 167.5,
+          "load_event_ms": 208.39999997615814,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 17.19999998807907,
+          "dom_content_loaded_ms": 199.9000000357628,
+          "load_event_ms": 200.4000000357628,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 7.800000011920929,
+          "dom_content_loaded_ms": 136.69999998807907,
+          "load_event_ms": 160.5,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 16.899999976158142,
+          "dom_content_loaded_ms": 196.5,
+          "load_event_ms": 202.39999997615814,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-375",
+        "width": 375,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 45.89999997615814,
+          "dom_content_loaded_ms": 264.69999998807907,
+          "load_event_ms": 265.39999997615814,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 15.300000011920929,
+          "dom_content_loaded_ms": 182,
+          "load_event_ms": 189.19999998807907,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 10.5,
+          "dom_content_loaded_ms": 185.80000001192093,
+          "load_event_ms": 198.19999998807907,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 15.400000035762787,
+          "dom_content_loaded_ms": 179.5,
+          "load_event_ms": 191.19999998807907,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 11.100000023841858,
+          "dom_content_loaded_ms": 184,
+          "load_event_ms": 196.30000001192093,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 14.099999964237213,
+          "dom_content_loaded_ms": 154.89999997615814,
+          "load_event_ms": 156.5,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.699999988079071,
+          "dom_content_loaded_ms": 203.69999998807907,
+          "load_event_ms": 217.79999995231628,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-390",
+        "width": 390,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 38.5,
+          "dom_content_loaded_ms": 210.4000000357628,
+          "load_event_ms": 211,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 17.69999998807907,
+          "dom_content_loaded_ms": 161.69999998807907,
+          "load_event_ms": 217.10000002384186,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 22.19999998807907,
+          "dom_content_loaded_ms": 218,
+          "load_event_ms": 239.9000000357628,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 18.30000001192093,
+          "dom_content_loaded_ms": 184.5,
+          "load_event_ms": 195.80000001192093,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 10,
+          "dom_content_loaded_ms": 166.69999998807907,
+          "load_event_ms": 177.5,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 7.5,
+          "dom_content_loaded_ms": 116.90000003576279,
+          "load_event_ms": 140.20000004768372,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.199999988079071,
+          "dom_content_loaded_ms": 180.10000002384186,
+          "load_event_ms": 180.39999997615814,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-412",
+        "width": 412,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 47.80000001192093,
+          "dom_content_loaded_ms": 261.4000000357628,
+          "load_event_ms": 261.9000000357628,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 21.5,
+          "dom_content_loaded_ms": 196,
+          "load_event_ms": 209.30000001192093,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.699999988079071,
+          "dom_content_loaded_ms": 137.5999999642372,
+          "load_event_ms": 182,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 22.30000001192093,
+          "dom_content_loaded_ms": 179.60000002384186,
+          "load_event_ms": 193.19999998807907,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 14.5,
+          "dom_content_loaded_ms": 196.19999998807907,
+          "load_event_ms": 203,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 10.100000023841858,
+          "dom_content_loaded_ms": 105.89999997615814,
+          "load_event_ms": 126.80000001192093,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 10.899999976158142,
+          "dom_content_loaded_ms": 139.80000001192093,
+          "load_event_ms": 183.20000004768372,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "iphone-430",
+        "width": 430,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 39.30000001192093,
+          "dom_content_loaded_ms": 256.9000000357628,
+          "load_event_ms": 257.4000000357628,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12,
+          "dom_content_loaded_ms": 128,
+          "load_event_ms": 169.39999997615814,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 9.399999976158142,
+          "dom_content_loaded_ms": 204.5999999642372,
+          "load_event_ms": 206.19999998807907,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 14.399999976158142,
+          "dom_content_loaded_ms": 186.9000000357628,
+          "load_event_ms": 187.10000002384186,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.800000011920929,
+          "dom_content_loaded_ms": 210.39999997615814,
+          "load_event_ms": 210.5999999642372,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 7.100000023841858,
+          "dom_content_loaded_ms": 99.90000003576279,
+          "load_event_ms": 120.10000002384186,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 19.19999998807907,
+          "dom_content_loaded_ms": 258.5,
+          "load_event_ms": 258.7000000476837,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "tablet-768",
+        "width": 768,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 44.60000002384186,
+          "dom_content_loaded_ms": 196,
+          "load_event_ms": 240.80000001192093,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 18.80000001192093,
+          "dom_content_loaded_ms": 168.39999997615814,
+          "load_event_ms": 181.39999997615814,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 16,
+          "dom_content_loaded_ms": 212.19999998807907,
+          "load_event_ms": 213.5,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 23.600000023841858,
+          "dom_content_loaded_ms": 235.5,
+          "load_event_ms": 235.69999998807907,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.5,
+          "dom_content_loaded_ms": 235.60000002384186,
+          "load_event_ms": 248.30000001192093,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 9.100000023841858,
+          "dom_content_loaded_ms": 114.10000002384186,
+          "load_event_ms": 140.69999998807907,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.400000035762787,
+          "dom_content_loaded_ms": 193.60000002384186,
+          "load_event_ms": 239.69999998807907,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1024",
+        "width": 1024,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 37.19999998807907,
+          "dom_content_loaded_ms": 235.70000004768372,
+          "load_event_ms": 236.4000000357628,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 14.699999988079071,
+          "dom_content_loaded_ms": 198,
+          "load_event_ms": 205.29999995231628,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 16.899999976158142,
+          "dom_content_loaded_ms": 234.5,
+          "load_event_ms": 235.79999995231628,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 8.899999976158142,
+          "dom_content_loaded_ms": 177.10000002384186,
+          "load_event_ms": 228.19999998807907,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 14.299999952316284,
+          "dom_content_loaded_ms": 139,
+          "load_event_ms": 185.9000000357628,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 6.900000035762787,
+          "dom_content_loaded_ms": 103.30000001192093,
+          "load_event_ms": 123.80000001192093,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 32.80000001192093,
+          "dom_content_loaded_ms": 225.89999997615814,
+          "load_event_ms": 241.39999997615814,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1280",
+        "width": 1280,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 45,
+          "dom_content_loaded_ms": 263.30000001192093,
+          "load_event_ms": 263.80000001192093,
+          "transfer_bytes": 90496
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/",
+        "finalUrl": "http://127.0.0.1:3191/",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 15,
+          "dom_content_loaded_ms": 173.80000001192093,
+          "load_event_ms": 189.60000002384186,
+          "transfer_bytes": 14339
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/speak-with-nicholas",
+        "finalUrl": "http://127.0.0.1:3191/speak-with-nicholas?service_intent=apostille&destination=Italy&audience=professional&urgency=urgent&source=search&medium=organic&campaign=rendered-test&content=hero&originating_page=%2Fservices%2Fapostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": true,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 19.600000023841858,
+          "dom_content_loaded_ms": 183.60000002384186,
+          "load_event_ms": 185.4000000357628,
+          "transfer_bytes": 16408
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/intake",
+        "finalUrl": "http://127.0.0.1:3191/intake",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 13.600000023841858,
+          "dom_content_loaded_ms": 286.69999998807907,
+          "load_event_ms": 286.89999997615814,
+          "transfer_bytes": 18475
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/global-document-intelligence",
+        "finalUrl": "http://127.0.0.1:3191/global-document-intelligence",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 12.600000023841858,
+          "dom_content_loaded_ms": 221.19999998807907,
+          "load_event_ms": 221.5,
+          "transfer_bytes": 13565
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/professional/damiani",
+        "finalUrl": "http://127.0.0.1:3191/professional/damiani",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 6.800000011920929,
+          "dom_content_loaded_ms": 119.80000001192093,
+          "load_event_ms": 141.5,
+          "transfer_bytes": 9291
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/secure-portal",
+        "finalUrl": "http://127.0.0.1:3191/login?next=%2Fportal",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": true
+      },
+      {
+        "performanceMeasurement": {
+          "ttfb_ms": 18.399999976158142,
+          "dom_content_loaded_ms": 166.80000001192093,
+          "load_event_ms": 179.69999998807907,
+          "transfer_bytes": 18742
+        },
+        "performanceScope": "LOCAL_LAB_NOT_FIELD_CERTIFICATION",
+        "profile": "desktop-1440",
+        "width": 1440,
+        "route": "/services/apostille",
+        "finalUrl": "http://127.0.0.1:3191/services/apostille",
+        "status": 200,
+        "consolePageNetworkErrors": [],
+        "conciergeMock": false,
+        "hosted": false
+      }
+    ]
+  },
+  "hosted_read_only": {
+    "observed_at": "2026-11-09T01:38:06.428Z",
+    "origin": "https://www.themilanoseal.com",
+    "method": "UNAUTHENTICATED_GET_ONLY",
+    "results": [
+      {
+        "path": "/api/health",
+        "status": 200,
+        "expected_statuses": [
+          200
+        ],
+        "verdict": "PASS",
+        "body_sha256": "54cc7fe04d938b3c2972c49e96ed303f0e4819e9b194e2ec82b2bd8d07da9255",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "no-store, max-age=0"
+      },
+      {
+        "path": "/professional/damiani",
+        "status": 200,
+        "expected_statuses": [
+          200
+        ],
+        "verdict": "PASS",
+        "body_sha256": "c9dbe90dbfae1d49b5d1598b0be2832a0fa0ca803f980ab6b968261302dad734",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/api/dashboard/control-plane/governance",
+        "status": 401,
+        "expected_statuses": [
+          401,
+          403
+        ],
+        "verdict": "PASS",
+        "body_sha256": "3be5b8e53fdc8b0a2996590589456db33504977f3d1ce9bb75016c8a707e1a71",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/api/portal/me/invoice",
+        "status": 401,
+        "expected_statuses": [
+          401,
+          403
+        ],
+        "verdict": "PASS",
+        "body_sha256": "3be5b8e53fdc8b0a2996590589456db33504977f3d1ce9bb75016c8a707e1a71",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/api/export/00000000-0000-4000-8000-000000000000",
+        "status": 307,
+        "expected_statuses": [
+          401,
+          403,
+          307
+        ],
+        "verdict": "PASS",
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/api/evidence/00000000-0000-4000-8000-000000000000",
+        "status": 307,
+        "expected_statuses": [
+          401,
+          403,
+          307
+        ],
+        "verdict": "PASS",
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/api/deals/00000000-0000-4000-8000-000000000000/custody",
+        "status": 307,
+        "expected_statuses": [
+          401,
+          403,
+          307
+        ],
+        "verdict": "PASS",
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_sha": null,
+        "expected_sha": null,
+        "sha_match": "NOT_VERIFIABLE",
+        "cache_control": "public, max-age=0, must-revalidate"
+      }
+    ],
+    "vercel_ready_alias_and_sha": "NOT_VERIFIED",
+    "hosted_migration": "NOT_VERIFIED",
+    "authenticated_browser": "NOT_RUN",
+    "live_certification": "NOT_CERTIFIED"
+  },
+  "source_validators": [
+    {
+      "name": "validate:provider-fee-separation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:duplicate-source",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:execution-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:intelligence-safety",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:sales-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:revenue-copy",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:brand-language",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:service-positioning",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:command-center-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:internal-module-registry",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:public-final-copy-lock",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:route-registry",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:canonical-locks",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:referral-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-phase-authority",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:pricing-luxury-canon",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:smart-intake-pricing-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:motion-system",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:responsive-safety",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-branch-salvage-audit",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:data-intel-compliance-ui",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-mobile-cosmetic-pass",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-wiring-confirmation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:touchpoint-registry",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:client-touchpoint-wiring",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:alliance-touchpoint-wiring",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:va-operator-touchpoint-wiring",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:cross-system-gates",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:global-acceptance-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-execution-routing-upgrade",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:operator-intelligence-spine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-intelligence-operator-os",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:public-copy-safety",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-public-polish",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:public-i18n-runtime",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:execution-scope-dashboard-discovery",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:fingerprint-apostille-expansion",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:fingerprint-routing-rules",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:apostille-authentication-rules",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:translation-coordination",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:booking-intake-gates",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:regulated-public-claims",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:revenue-stream-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:trust-network-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:next-five-production-builds",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:next-three-revenue-ops",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:mobile-cinematic-hotfix",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:complimentary-matter-flow",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:cinematic-ui-system",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:cinematic-route-coverage",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:trust-alliance-platform",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:government-public-sector",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:canonical-foundation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:mini-atlas-intelligence-flow",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:trust-core-intelligence-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:universal-procurement-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:maritime-logistics-execution",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:high-value-assets",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:unified-revenue-stack",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:topical-authority-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:vertical-intelligence-commercial-os",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:relationship-intelligence-layer",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:trusted-integration-command",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-pre-execution",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:migration-chain",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:smart-intake-sop",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:production-governance",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:damiani-production-wiring",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:tiff-15-step-production-certification",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-authority",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-intent",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-indexability",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-evidence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-links",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-localization",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-sitemaps",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-public-claims",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:500k-intelligence-command",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:admin-discount-alliance-benefits",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:apostille-packet",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:architecture-control-plane",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:banned-phrases",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:control-plane-module-coverage",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:control-plane-route-coverage",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:custody-ledger-schema",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:dashboard-command-center",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:data-integrity",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:discount-engine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:execution-boundaries",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:final-visual-system-hardening",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:full-system-hardening",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:global-compliance-atlas",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:global-corridor-cinematic-upgrade",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:global-pricing-courier",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:identifier-schemas",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:immediate-scheduling-after-wise-submission",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:institutional-expansion",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:intake-confirmation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:lint-coverage",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:live-quote-matter-carryover",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:live-review-search-hardening",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:matter-execution-corridor-spine",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:matter-status",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-brand-throughout",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-operator-intelligence",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-os-isolation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:milano-os-surface-unification",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:nonhuman-production-hardening",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:notification-safety",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:operating-loop-closure",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:operating-spines",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:payment-release-gates",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:portal-prelogin",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:postpayment-ron-corridor",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:postpayment-ron-matter-progression",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:production-closeout-invariants",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:production-transaction-10of10",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:project-structure",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:public-surface-guards",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:receiving-authority-language",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:receiving-authority-rules",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:ron-alliance-network",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:ron-bluenotary-client-journey",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:ron-compatibility",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:ron-signing-room-ux",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:sales-intelligence-lab",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:sensitive-identity-helper-grants",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-authority-activation",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:seo-client-profiles",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:shipping-tracking",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:source-database-wiring",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:system-control-plane",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:tiffany-post-test-final-audit",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:tiffany-wise-provider-settlement-recovery",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:wise-exception-schema-drift",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:wise-only-active-ops-docs",
+      "exit_code": 0
+    },
+    {
+      "name": "validate:wise-reconciliation-exception-orchestrator",
+      "exit_code": 0
+    }
+  ],
+  "advisories": [
+    {
+      "validator": "project",
+      "exit": 0
+    },
+    {
+      "validator": "revenue-copy",
+      "exit": 0
+    },
+    {
+      "validator": "brand-language",
+      "exit": 0
+    },
+    {
+      "validator": "command-center-intelligence",
+      "exit": 0
+    },
+    {
+      "validator": "internal-module-registry",
+      "exit": 0
+    },
+    {
+      "validator": "public-final-copy-lock",
+      "exit": 0
+    },
+    {
+      "validator": "seo-phase-authority",
+      "exit": 0
+    },
+    {
+      "validator": "public-copy-safety",
+      "exit": 0
+    },
+    {
+      "validator": "next-five-production-builds",
+      "exit": 0
+    },
+    {
+      "validator": "mobile-cinematic-hotfix",
+      "exit": 0
+    }
+  ],
+  "hosted_schema": {
+    "status": "BLOCKED",
+    "exit_code": 2,
+    "missing_names": [
+      "SUPABASE_ACCESS_TOKEN",
+      "SUPABASE_QA_PROJECT_REF"
+    ]
+  },
+  "authenticated_observer": {
+    "status": "BLOCKED",
+    "exit_code": 2
+  },
+  "superseded_gate_failures": [
+    {
+      "source_sha": "bfa00f50130c605b875b11c87fc92fbb59cdf18d",
+      "status": "FAIL",
+      "failure": "Validation failed: vercel-merge-gate"
+    },
+    {
+      "source_sha": "dce4c0a2d49cb729499814c45f0fd7a498495c01",
+      "status": "FAIL",
+      "failure": "Validation failed: vercel-merge-gate"
+    }
+  ],
+  "local_lab_navigation_measurements": {
+    "ttfb_ms": {
+      "samples": 70,
+      "median": 16.45,
+      "p95": 47.8,
+      "maximum": 74.2
+    },
+    "dom_content_loaded_ms": {
+      "samples": 70,
+      "median": 188.4,
+      "p95": 271.4,
+      "maximum": 286.8
+    },
+    "load_event_ms": {
+      "samples": 70,
+      "median": 202.6,
+      "p95": 272,
+      "maximum": 287.5
+    }
+  },
+  "performance_limit": "Local lab only, no field Core Web Vitals, network throttling or hosted authentication certification."
+}

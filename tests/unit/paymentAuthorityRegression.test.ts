@@ -93,7 +93,7 @@ test("schedule route requires canonical state, execution truth, and payment auth
   assert.match(scheduleRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
   assert.match(scheduleRoute, /!schedulingGate\.schedulingEligible/);
   assert.match(scheduleRoute, /PAYMENT_REQUIRED/);
-  assert.match(scheduleRoute, /Verified Wise settlement is required/);
+  assert.match(scheduleRoute, /Verified Wise settlement or an integrity-matched Wise submission is required/);
   assert.doesNotMatch(scheduleRoute, /payment_confirmed\s*:\s*true/);
 });
 
@@ -174,7 +174,7 @@ test("operator detail delegates Wise-only payment UX to SecurePaymentCard", () =
   assert.match(securePaymentCard, /Powered by Wise Business/);
   assert.match(securePaymentCard, /Wise verified only/);
   assert.match(securePaymentCard, /Payment Submitted/);
-  assert.match(securePaymentCard, /Scheduling stays locked until verified Wise settlement and the remaining Matter requirements are ready/);
+  assert.match(securePaymentCard, /Scheduling may proceed only after the recorded submission passes canonical integrity checks and the remaining Matter requirements are ready/);
   assert.doesNotMatch(securePaymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 

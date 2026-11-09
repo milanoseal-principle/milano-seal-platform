@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canPerformProtectedMatterTransition } from "@/lib/auth/protectedMatterTransitions";
 import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
-import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { evaluateExecutionGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
 
@@ -79,7 +79,7 @@ export async function POST(
       );
     }
 
-    const executionGate = evaluateSchedulingGate({ matter: deal });
+    const executionGate = evaluateExecutionGate(deal);
     if (!executionGate.schedulingEligible) {
       return NextResponse.json(
         {
@@ -88,7 +88,7 @@ export async function POST(
             executionGate.paymentRequirementSatisfied,
           paymentRequirementMethod: executionGate.paymentRequirementMethod,
           message:
-            "Verified payment or an active Complimentary Authorization is required before execution can begin.",
+            "Verified settlement or integrity-matched server-side Wise provider evidence is required before execution can begin.",
         },
         { status: 402 },
       );

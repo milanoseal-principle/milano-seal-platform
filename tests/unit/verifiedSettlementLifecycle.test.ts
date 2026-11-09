@@ -12,8 +12,8 @@ test("locked Matter vocabulary includes payment confirmation and dormancy", () =
   assert.equal(normalizeMatterStatus("dormant"), "dormant");
 });
 
-test("scheduling cannot skip the payment-confirmed lifecycle step", () => {
-  assert.equal(canTransition("awaiting_payment", "scheduled"), false);
+test("scheduling has an observed-submission path without inventing payment confirmation", () => {
+  assert.equal(canTransition("awaiting_payment", "scheduled"), true);
   assert.equal(canTransition("awaiting_payment", "payment_confirmed"), true);
   assert.equal(canTransition("payment_confirmed", "scheduled"), true);
   assert.equal(canTransition("payment_confirmed", "in_execution"), false);

@@ -292,7 +292,7 @@ check(
     "Wise reference:",
     "Check Wise settlement now",
     "This performs a live server-side Wise reconciliation",
-    "Scheduling stays locked until verified Wise settlement",
+    "An integrity-matched submission authorizes scheduling only",
     "verified Wise settlement remains the authority for paid state",
     "final settlement-dependent release",
   ]) &&

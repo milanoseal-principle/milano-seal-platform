@@ -26,6 +26,8 @@ export interface ComplimentaryGateMatter extends PaymentGateMatter {
   amount_due?: number | null;
   amount_paid?: number | null;
   verified_revenue?: number | null;
+  wise_transaction_reference?: string | null;
+  payment_funding_method?: string | null;
   currency?: string | null;
   wise_reference?: string | null;
   payment_observed_amount?: number | null;
@@ -63,13 +65,14 @@ function classifyObservedSubmission(matter: ComplimentaryGateMatter): Submission
   const snapshotAmount = matter.payment_observed_amount;
   const snapshotCurrency = matter.payment_observed_currency;
   const snapshotReference = matter.payment_observed_reference;
-  const hasSnapshot =
-    snapshotAmount != null || (snapshotCurrency ?? "") !== "" || (snapshotReference ?? "") !== "";
-  if (!hasSnapshot) return "observed";
-
-  const amountMatches = snapshotAmount == null || Number(snapshotAmount) === Number(matter.amount_due ?? 0);
-  const currencyMatches = !snapshotCurrency || snapshotCurrency.toUpperCase() === String(matter.currency ?? "USD").toUpperCase();
-  const referenceMatches = !snapshotReference || snapshotReference === currentReference(matter);
+  const due = Number(matter.amount_due);
+  const complete = snapshotAmount != null && Number.isFinite(Number(snapshotAmount)) &&
+    Number.isFinite(due) && due > 0 && Boolean(String(matter.currency ?? '').trim()) &&
+    Boolean(snapshotCurrency?.trim()) && Boolean(snapshotReference?.trim()) && Boolean(currentReference(matter));
+  if (!complete) return "projection_incomplete";
+  const amountMatches = Number(snapshotAmount) === due;
+  const currencyMatches = snapshotCurrency!.trim().toUpperCase() === String(matter.currency).trim().toUpperCase();
+  const referenceMatches = snapshotReference!.trim() === currentReference(matter);
   return amountMatches && currencyMatches && referenceMatches ? "observed" : "superseded";
 }
 
@@ -92,9 +95,12 @@ export function evaluateSchedulingGate(params: {
     return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified Wise settlement satisfies scheduling gate." };
   }
 
-  const submission = classifyObservedSubmission(params.matter);
+  const observationFinanciallyValid = params.matter.payment_confirmed === false &&
+    ['unpaid', 'pending'].includes(String(params.matter.payment_status ?? '')) &&
+    Number(params.matter.amount_paid ?? 0) === 0;
+  const submission = observationFinanciallyValid ? classifyObservedSubmission(params.matter) : "none";
   if (submission === "observed") {
-    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Wise submission is observed, but scheduling remains locked until verified Wise settlement." };
+    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Integrity-matched Wise submission authorizes scheduling only; payment remains unverified and execution requires stronger provider evidence." };
   }
   if (submission === "projection_incomplete") {
     return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path." };
@@ -104,5 +110,13 @@ export function evaluateSchedulingGate(params: {
   }
 
   // Neither courtesy authorization nor a paid flag substitutes for settlement.
-  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified Wise settlement is required before scheduling." };
+  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified Wise settlement or an integrity-matched Wise submission is required before scheduling." };
+}
+
+/** Scheduling observation alone never authorizes execution or signer-link release. */
+export function evaluateExecutionGate(matter: ComplimentaryGateMatter): SchedulingGateResult {
+  const gate = evaluateSchedulingGate({ matter });
+  if (!gate.schedulingEligible || gate.paymentRequirementMethod === 'verified_payment') return gate;
+  const providerEvidence = Boolean(matter.wise_transaction_reference?.trim()) && matter.payment_funding_method === 'wise_acquiring_payment';
+  return providerEvidence ? gate : { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: 'not_satisfied', reason: 'WISE_PROVIDER_EVIDENCE_REQUIRED: server-side Wise evidence is required before execution or signer-link release.' };
 }

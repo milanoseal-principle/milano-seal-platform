@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
-import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
@@ -148,13 +148,13 @@ export async function POST(
       );
     }
 
-    const paymentGate = evaluateSchedulingGate({ matter });
-    if (!paymentGate.schedulingEligible) {
+    const paymentGate = evaluatePaymentGate(matter);
+    if (paymentGate !== "PAYMENT_CONFIRMED") {
       return NextResponse.json(
         {
           ok: false,
           code: "PAYMENT_REQUIRED",
-          paymentRequirementMethod: paymentGate.paymentRequirementMethod,
+          paymentRequirementMethod: paymentGate,
         },
         { status: 402 },
       );

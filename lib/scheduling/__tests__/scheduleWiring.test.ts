@@ -38,7 +38,7 @@ test("canonical schedule endpoint enforces every protected scheduling invariant"
   assert.match(scheduleRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
   assert.match(scheduleRoute, /!schedulingGate\.schedulingEligible/);
   assert.match(scheduleRoute, /PAYMENT_REQUIRED/);
-  assert.match(scheduleRoute, /normalizedCurrent !== "payment_confirmed"/);
+  assert.match(scheduleRoute, /\["awaiting_payment", "payment_confirmed"\]\.includes/);
   assert.match(scheduleRoute, /UNAUTHENTICATED/);
   assert.match(scheduleRoute, /FORBIDDEN/);
   assert.match(scheduleRoute, /INVALID_STATE_TRANSITION/);
@@ -72,7 +72,7 @@ test("canonical execute endpoint enforces every protected execution invariant", 
   assert.match(executeRoute, /validateExecutionTruth\(executionTruth\)/);
   assert.match(executeRoute, /!executionValidation\.valid \|\| executionValidation\.reviewRequired/);
   assert.match(executeRoute, /EXECUTION_REVIEW_REQUIRED/);
-  assert.match(executeRoute, /evaluateSchedulingGate\(\{ matter: deal \}\)/);
+  assert.match(executeRoute, /evaluateExecutionGate\(deal\)/);
   assert.match(executeRoute, /!executionGate\.schedulingEligible/);
   assert.match(executeRoute, /PAYMENT_REQUIRED/);
   assert.match(executeRoute, /normalizedCurrent !== "scheduled"/);
@@ -100,7 +100,7 @@ test("founder generic status route cannot bypass dedicated scheduling or executi
   assert.match(founderStatusRoute, /DEDICATED_TRANSITIONS/);
   assert.match(founderStatusRoute, /USE_GOVERNED_TRANSITION_ENDPOINT/);
   assert.match(founderStatusRoute, /canTransition\(currentRaw, status\)/);
-  assert.match(founderStatusRoute, /evaluateSchedulingGate/);
+  assert.match(founderStatusRoute, /evaluatePaymentGate/);
   assert.match(founderStatusRoute, /STALE_MATTER_STATE/);
   assert.match(founderStatusRoute, /resolveServerRole\(user\)/);
 });
