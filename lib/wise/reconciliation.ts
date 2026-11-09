@@ -1,5 +1,7 @@
 import "server-only";
 
+import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
+import { activityMatchesAttempt, isInvalidWiseStatus } from "@/lib/wise/attemptEvidence";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WISE_API_BASE = "https://api.wise.com";
@@ -13,7 +15,8 @@ export type WiseProviderStatus =
   | "UPCOMING"
   | "COMPLETED"
   | "CANCELLED"
-  | "UNKNOWN";
+  | "UNKNOWN"
+  | "FAILED" | "EXPIRED" | "REVERSED" | "VOIDED" | "REFUNDED" | "REJECTED" | "REVOKED";
 
 export type WiseReconciliationResult = {
   ok: boolean;
@@ -43,6 +46,8 @@ type DealPaymentRow = {
   amount_paid: number | string | null;
   currency: string | null;
   updated_at: string | null;
+  payment_attempt_id: string | null;
+  payment_attempt_started_at: string | null;
 };
 
 type WiseActivity = {
@@ -156,6 +161,7 @@ function activityResourceId(activity: WiseActivity): string | null {
 
 function providerStatus(activity: WiseActivity): WiseProviderStatus {
   const status = String(activity.status ?? "UNKNOWN").trim().toUpperCase();
+  if (isInvalidWiseStatus(status)) return status as WiseProviderStatus;
   if (
     status === "REQUIRES_ATTENTION" ||
     status === "IN_PROGRESS" ||
@@ -184,16 +190,20 @@ function statementTransactionMatches(params: {
   providerResourceId: string | null;
   amountDue: number;
   currency: string;
+  attemptStartedAt?: string | null;
 }): boolean {
   const { transaction, matterReference, providerResourceId, amountDue, currency } = params;
-  if (String(transaction.type ?? "").toUpperCase() !== "CREDIT") return false;
-  if (canonicalCurrency(transaction.amount?.currency) !== currency) return false;
+  if (params.attemptStartedAt) {
+    const occurred = Date.parse(transaction.date ?? '');
+    if (!Number.isFinite(occurred) || occurred < Date.parse(params.attemptStartedAt)) return false;
+  }
+  if (String(transaction.type ?? "").toUpperCase() !== "CREDIT" || money(transaction.amount?.value) <= 0) return false;
+  if (String(transaction.amount?.currency ?? '').trim().toUpperCase() !== currency) return false;
+  if (money(transaction.totalFees?.value) !== 0 && String(transaction.totalFees?.currency ?? '').trim().toUpperCase() !== currency) return false;
   if (!sameMoney(statementGrossAmount(transaction), amountDue)) return false;
 
-  return (
-    exactReferencePresent(transaction, matterReference) ||
-    Boolean(providerResourceId && exactReferencePresent(transaction, providerResourceId))
-  );
+  return exactReferencePresent(transaction, matterReference) &&
+    (!providerResourceId || exactReferencePresent(transaction, providerResourceId));
 }
 
 function correlationId(): string {
@@ -213,13 +223,14 @@ async function wiseGetJson<T>(url: string, token: string): Promise<T> {
       Accept: "application/json",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => "");
+    await response.body?.cancel();
     const scaRequired = response.status === 403 && Boolean(response.headers.get("x-2fa-approval"));
     throw new WiseApiError(
-      `Wise API ${response.status}: ${body.slice(0, 240) || response.statusText}`,
+      `Wise API ${response.status}: request rejected`,
       response.status,
       scaRequired,
     );
@@ -368,7 +379,7 @@ async function loadDeal(matterId: string): Promise<DealPaymentRow> {
   const { data, error } = await admin
     .from("deals")
     .select(
-      "id, deal_id, wise_reference, wise_transaction_reference, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_confirmed_at, amount_due, amount_paid, currency, updated_at",
+      "id, deal_id, wise_reference, wise_transaction_reference, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_confirmed_at, amount_due, amount_paid, currency, updated_at, payment_attempt_id, payment_attempt_started_at",
     )
     .eq("id", matterId)
     .single();
@@ -382,49 +393,29 @@ async function recordProviderObservation(params: {
   status: WiseProviderStatus;
   providerResourceId: string | null;
 }): Promise<void> {
-  const admin = createAdminClient();
-  const now = new Date().toISOString();
-
-  if (params.status === "CANCELLED") {
-    await admin
-      .from("deals")
-      .update({
-        payment_settlement_status: "failed",
-        payment_funding_method: "wise_acquiring_payment",
-        wise_transaction_reference: params.providerResourceId,
-        updated_at: now,
-      })
-      .eq("id", params.deal.id)
-      .eq("payment_confirmed", false);
+  // Legacy observations gain no execution authority from a bare resource ID.
+  if (!params.deal.payment_attempt_id) {
+    if (isInvalidWiseStatus(params.status)) {
+      const { error } = await createAdminClient().from("deals").update({
+        payment_settlement_status: "failed", payment_status: "failed",
+      }).eq("id", params.deal.id).is("payment_attempt_id", null);
+      if (error) throw new Error(`Wise legacy invalidation failed (${error.code ?? "unknown"})`);
+    }
     return;
   }
-
-  if (params.status === "REQUIRES_ATTENTION") {
-    await admin
-      .from("deals")
-      .update({
-        payment_settlement_status: "mismatch_review",
-        payment_funding_method: "wise_acquiring_payment",
-        wise_transaction_reference: params.providerResourceId,
-        payment_observed_at: params.deal.payment_observed_at ?? activityTimestamp(params.activity) ?? now,
-        updated_at: now,
-      })
-      .eq("id", params.deal.id)
-      .eq("payment_confirmed", false);
-    return;
-  }
-
-  await admin
-    .from("deals")
-    .update({
-      payment_settlement_status: "observed_pending",
-      payment_funding_method: "wise_acquiring_payment",
-      wise_transaction_reference: params.providerResourceId,
-      payment_observed_at: params.deal.payment_observed_at ?? activityTimestamp(params.activity) ?? now,
-      updated_at: now,
-    })
-    .eq("id", params.deal.id)
-    .eq("payment_confirmed", false);
+  const { error } = await createAdminClient().rpc("record_wise_attempt_evidence", {
+    p_deal_id: params.deal.id,
+    p_attempt_id: params.deal.payment_attempt_id,
+    p_resource_id: params.providerResourceId,
+    p_status: params.status,
+    p_occurred_at: activityTimestamp(params.activity),
+    p_amount: money(params.deal.amount_due),
+    p_currency: canonicalCurrency(params.deal.currency),
+    p_reference: String(params.deal.wise_reference ?? params.deal.deal_id ?? "").trim(),
+    p_source: "wise-activity",
+    p_event_id: params.activity.id ?? null,
+  });
+  if (error) throw new Error(`Wise attempt observation rejected (${error.code ?? "unknown"})`);
 }
 
 async function confirmFromStatement(params: {
@@ -458,6 +449,7 @@ async function confirmFromStatement(params: {
         providerResourceId: params.providerResourceId,
         amountDue,
         currency,
+        attemptStartedAt: params.deal.payment_attempt_started_at,
       }),
     );
     if (!match) {
@@ -465,8 +457,19 @@ async function confirmFromStatement(params: {
     }
 
     const transactionReference =
-      match.referenceNumber?.trim() || params.providerResourceId || `wise-statement-${params.deal.id}`;
+      match.referenceNumber?.trim() || params.providerResourceId;
     const admin = createAdminClient();
+    if (!transactionReference) return { confirmed: false, scaRequired: false, checked: true, transactionReference: null };
+    if (params.deal.payment_attempt_id) {
+      const evidence = await admin.rpc("record_wise_attempt_evidence", {
+        p_deal_id: params.deal.id, p_attempt_id: params.deal.payment_attempt_id,
+        p_resource_id: transactionReference, p_status: "SETTLED",
+        p_occurred_at: match.date, p_amount: amountDue, p_currency: currency,
+        p_reference: reference, p_source: "wise-statement",
+      });
+      if (evidence.error) throw new Error(`Wise settlement attempt rejected (${evidence.error.code ?? "unknown"})`);
+      if (!evidence.data?.accepted) return { confirmed: false, scaRequired: false, checked: true, transactionReference: null };
+    }
     const { error } = await admin.rpc("confirm_wise_payment_for_deal", {
       p_deal_id: params.deal.id,
       p_payment_reference: reference,
@@ -512,7 +515,25 @@ async function reconcileLoadedDeal(
   const reference = String(deal.wise_reference ?? deal.deal_id ?? "").trim();
   if (!reference) return noReferenceResult(deal);
 
-  if (deal.payment_confirmed === true || String(deal.payment_status).toLowerCase() === "paid") {
+
+  if (isInvalidWiseStatus(deal.payment_settlement_status) || isInvalidWiseStatus(deal.payment_status)) {
+    return { ...noReferenceResult(deal), reference, reason: "Invalidated Wise attempt requires a fresh governed submission" };
+  }
+
+  const activity = activities
+    .filter((candidate) => exactReferencePresent(candidate, reference) && (activityMatchesAttempt(candidate, deal) ||
+      (!deal.payment_attempt_id && isInvalidWiseStatus(providerStatus(candidate)) &&
+        activityResourceId(candidate) === deal.wise_transaction_reference)))
+    .sort((a, b) => {
+      const aTime = Date.parse(activityTimestamp(a) ?? "") || 0;
+      const bTime = Date.parse(activityTimestamp(b) ?? "") || 0;
+      return bTime - aTime;
+    })[0];
+
+  const status = activity ? providerStatus(activity) : null;
+  const activityResource = activity ? activityResourceId(activity) : null;
+
+  if (!isInvalidWiseStatus(status) && status !== "REQUIRES_ATTENTION" && evaluatePaymentGate({ ...deal, amount_due: money(deal.amount_due), amount_paid: money(deal.amount_paid) }) === "PAYMENT_CONFIRMED") {
     return {
       ok: true,
       matterId: deal.id,
@@ -528,25 +549,14 @@ async function reconcileLoadedDeal(
     };
   }
 
-  const activity = activities
-    .filter((candidate) => exactReferencePresent(candidate, reference))
-    .sort((a, b) => {
-      const aTime = Date.parse(activityTimestamp(a) ?? "") || 0;
-      const bTime = Date.parse(activityTimestamp(b) ?? "") || 0;
-      return bTime - aTime;
-    })[0];
-
-  const status = activity ? providerStatus(activity) : null;
-  const activityResource = activity ? activityResourceId(activity) : null;
-
   if (activity && status) {
     await recordProviderObservation({ deal, activity, status, providerResourceId: activityResource });
-    if (status === "CANCELLED" || status === "REQUIRES_ATTENTION") {
+    if (isInvalidWiseStatus(status) || status === "REQUIRES_ATTENTION" || status === "UNKNOWN") {
       return {
         ok: true,
         matterId: deal.id,
         reference,
-        providerEvidence: true,
+        providerEvidence: !isInvalidWiseStatus(status) && status !== "UNKNOWN" && status !== "REQUIRES_ATTENTION",
         providerStatus: status,
         providerResourceId: activityResource,
         settlementConfirmed: false,
@@ -554,7 +564,7 @@ async function reconcileLoadedDeal(
         statementChecked: false,
         statementScaRequired: false,
         reason:
-          status === "CANCELLED"
+          isInvalidWiseStatus(status)
             ? "Wise reports the acquiring payment as cancelled"
             : "Wise reports that the acquiring payment requires attention",
       };
@@ -653,7 +663,7 @@ export async function reconcileObservedWisePayments(): Promise<{
   const { data, error } = await admin
     .from("deals")
     .select(
-      "id, deal_id, wise_reference, wise_transaction_reference, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_confirmed_at, amount_due, amount_paid, currency, updated_at",
+      "id, deal_id, wise_reference, wise_transaction_reference, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_confirmed_at, amount_due, amount_paid, currency, updated_at, payment_attempt_id, payment_attempt_started_at",
     )
     .eq("payment_confirmed", false)
     .in("payment_settlement_status", ["observed_pending", "mismatch_review"])

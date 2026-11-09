@@ -22,7 +22,7 @@ test("portal distinguishes submitted payment, scheduling authority, and verified
 });
 
 test("client observation never authors paid state", () => {
-  assert.match(observation, /payment_settlement_status:\s*"observed_pending"/);
+  assert.match(observation, /begin_wise_payment_attempt/);
   assert.doesNotMatch(observation, /payment_status:\s*"paid"/);
   assert.doesNotMatch(observation, /payment_confirmed:\s*true/);
 });

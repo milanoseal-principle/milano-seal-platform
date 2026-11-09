@@ -173,6 +173,7 @@
     "validate:ai-governance": "node --import tsx scripts/validate-ai-governance.mjs",
     "test:ai-governance-regressions": "node scripts/test-ai-governance-regressions.mjs",
     "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs",
+    "test:wise-attempt-database": "node --import tsx scripts/test-wise-attempt-sql.mjs",
     "test:gap-closure-database": "node --import tsx scripts/test-gap-closure-sql.mjs",
     "test:upgrade-restore": "node scripts/test-upgrade-restore.mjs",
     "verify:hosted-release": "node scripts/verify-hosted-release.mjs",

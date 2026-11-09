@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
+const attemptMigration = fs.readFileSync("supabase/migrations/20261109060000_wise_attempt_authority.sql", "utf8");
 const observation = fs.readFileSync("app/api/portal/me/payment-observation/route.ts", "utf8");
 const invoice = fs.readFileSync("app/portal/invoice/page.tsx", "utf8");
 const paymentCard = fs.readFileSync("components/payments/SecurePaymentCard.tsx", "utf8");
@@ -26,7 +27,8 @@ test("client cannot author financial truth from the payment-submission request",
   assert.doesNotMatch(post, /payment_status:\s*"paid"/);
   assert.doesNotMatch(post, /payment_confirmed:\s*true/);
   assert.doesNotMatch(post, /amount_paid:/);
-  assert.match(post, /payment_settlement_status:\s*"observed_pending"/);
+  assert.match(post, /rpc\("begin_wise_payment_attempt"/);
+  assert.match(attemptMigration, /payment_settlement_status='observed_pending'/);
 });
 
 test("already-observed production Matters remain idempotent without requiring a fabricated second handoff", () => {
@@ -86,9 +88,10 @@ test("scheduling authority fails closed when the payable scope is mutated after 
   assert.match(schedulingGate, /projection_incomplete/);
   assert.match(schedulingGate, /superseded/);
   const post = observation.slice(observation.indexOf("export async function POST"));
-  assert.match(post, /payment_observed_amount:\s*snapshot\.amountDue/);
-  assert.match(post, /payment_observed_currency:\s*snapshot\.currency/);
-  assert.match(post, /payment_observed_reference:\s*snapshot\.wiseReference/);
+  assert.match(post, /begin_wise_payment_attempt/);
+  assert.match(attemptMigration, /payment_observed_amount=d\.amount_due/);
+  assert.match(attemptMigration, /payment_observed_currency=d\.currency/);
+  assert.match(attemptMigration, /payment_observed_reference=coalesce/);
 });
 
 test("RON continues to consume the canonical scheduling gate and keeps notarial readiness independent", () => {

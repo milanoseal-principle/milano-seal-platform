@@ -111,7 +111,9 @@ await denied(()=>db.query("select issue_financial_artifact($1,$2,'RECEIPT')",[fo
 await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'client observation cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
 await db.query("update deals set wise_transaction_reference='CONTROLLED-PROVIDER',payment_funding_method='wrong-provider' where id=$1",[observedMatter]);
 await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'wrong funding source cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
-await db.query("update deals set payment_funding_method='wise_acquiring_payment' where id=$1",[observedMatter]);
+const currentAttempt=randomUUID(),attemptStarted=new Date(Date.now()-60000).toISOString();
+await db.query("update deals set payment_attempt_id=$1,payment_attempt_started_at=$2,payment_funding_method='wise_acquiring_payment' where id=$3",[currentAttempt,attemptStarted,observedMatter]);
+await db.query("select record_wise_attempt_evidence($1,$2,'CONTROLLED-PROVIDER','IN_PROGRESS',now(),100,'USD','OBSERVED-QA')",[observedMatter,currentAttempt]);
 await db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]);
 await db.query("update deals set status='apostille_processing',deal_status='apostille_processing' where id=$1",[observedMatter]);
 await denied(()=>db.query("update deals set status='in_transit',deal_status='in_transit' where id=$1",[observedMatter]),'provider evidence without settlement never authorizes final transit',/verified Wise settlement required/);

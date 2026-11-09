@@ -1,5 +1,6 @@
 import "server-only";
 
+import { hasCurrentWiseProviderEvidence } from "@/lib/wise/attemptEvidence";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 
@@ -12,6 +13,9 @@ export type WiseExceptionScanResult = {
 };
 
 type PendingMatter = {
+  payment_attempt_id: string | null;
+  payment_attempt_started_at: string | null;
+  wise_provider_evidence: unknown;
   id: string;
   deal_id: string | null;
   wise_reference: string | null;
@@ -67,8 +71,7 @@ function classifyException(matter: PendingMatter): {
   }
 
   const providerEvidence =
-    String(matter.payment_funding_method ?? "") === "wise_acquiring_payment" &&
-    Boolean(String(matter.wise_transaction_reference ?? "").trim());
+hasCurrentWiseProviderEvidence(matter);
 
   if (providerEvidence) {
     return {
@@ -94,7 +97,7 @@ export async function scanWiseReconciliationExceptions(): Promise<WiseExceptionS
   const { data, error } = await admin
     .from("deals")
     .select(
-      "id,deal_id,wise_reference,wise_transaction_reference,payment_funding_method,payment_confirmed,payment_status,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,payment_disposition,comp_authorized,comp_authorization_id,comp_authorized_at,comp_revoked_at,verified_revenue",
+      "id,deal_id,payment_attempt_id,payment_attempt_started_at,wise_provider_evidence,wise_reference,wise_transaction_reference,payment_funding_method,payment_confirmed,payment_status,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,payment_disposition,comp_authorized,comp_authorization_id,comp_authorized_at,comp_revoked_at,verified_revenue",
     )
     .eq("payment_confirmed", false)
     .not("payment_observed_at", "is", null)

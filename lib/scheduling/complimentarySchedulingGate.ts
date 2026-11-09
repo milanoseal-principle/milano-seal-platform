@@ -1,3 +1,4 @@
+import { hasCurrentWiseProviderEvidence, type WiseAttemptMatter } from "@/lib/wise/attemptEvidence";
 import type { PaymentGateMatter } from "@/lib/payments/paymentGate";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 
@@ -14,7 +15,7 @@ export interface SchedulingGateResult {
   reason: string;
 }
 
-export interface ComplimentaryGateMatter extends PaymentGateMatter {
+export interface ComplimentaryGateMatter extends PaymentGateMatter, WiseAttemptMatter {
   payment_confirmed?: boolean | null;
   payment_disposition?: string | null;
   payment_settlement_status?: string | null;
@@ -117,6 +118,6 @@ export function evaluateSchedulingGate(params: {
 export function evaluateExecutionGate(matter: ComplimentaryGateMatter): SchedulingGateResult {
   const gate = evaluateSchedulingGate({ matter });
   if (!gate.schedulingEligible || gate.paymentRequirementMethod === 'verified_payment') return gate;
-  const providerEvidence = Boolean(matter.wise_transaction_reference?.trim()) && matter.payment_funding_method === 'wise_acquiring_payment';
+  const providerEvidence = hasCurrentWiseProviderEvidence(matter);
   return providerEvidence ? gate : { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: 'not_satisfied', reason: 'WISE_PROVIDER_EVIDENCE_REQUIRED: server-side Wise evidence is required before execution or signer-link release.' };
 }
