@@ -32,7 +32,7 @@ try{
   await page.getByRole('button',{name:'Back',exact:true}).click();await page.getByText('synthetic-affidavit.pdf',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Continue',exact:true}).click();assert.equal(await page.locator('#intake-signers').inputValue(),'1');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
-  await page.getByRole('button',{name:'Review request',exact:true}).click();await page.getByText('Your name is required.',{exact:true}).waitFor();assert.equal(await page.locator('#intake-name').evaluate(e=>document.activeElement===e),true);
+  await page.getByRole('button',{name:'Review request',exact:true}).click();await page.getByText('Your name is required.',{exact:true}).waitFor();await page.waitForFunction(()=>document.activeElement?.id==='intake-name');assert.equal(await page.locator('#intake-name').evaluate(e=>document.activeElement===e),true);
   await page.locator('#intake-name').fill('Synthetic Person');await page.locator('#intake-email').fill('synthetic@example.invalid');await page.locator('#intake-timeline').selectOption('standard');await page.locator('#intake-witness-context').fill('I am not sure; please review the document.');
   await page.getByRole('button',{name:'Review request',exact:true}).click();
   assert.equal(await page.locator('[role=progressbar]').getAttribute('aria-valuenow'),'4');assert.equal(await page.locator('[role=progressbar]').getAttribute('aria-valuemax'),'4');
