@@ -15,6 +15,10 @@ begin
      or d.apostille_required is distinct from false
      or coalesce(d.execution_truth->>'execution_method','review_required')='review_required'
   then raise exception 'NO_AUTHENTICATION_ROUTE_REQUIRED';end if;
+ end if;
+ -- Operational state cannot substitute for no-auth execution/version evidence.
+ if d.execution_truth->>'authentication_requirement'='not_required' then
+  if d.apostille_required is distinct from false or coalesce(d.execution_truth->>'execution_method','review_required')='review_required' then raise exception 'NO_AUTHENTICATION_ROUTE_REQUIRED';end if;
   -- The final artifact must descend from an approved, current executed version.
   -- Explicit review + DOC_CREATED custody evidence prevents invented release bytes.
   if exists(

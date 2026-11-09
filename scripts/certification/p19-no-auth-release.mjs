@@ -65,6 +65,11 @@ try {
     await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}','\"review_required\"'::jsonb) where id=$1",[matter]);
     await state('apostille_processing');return release(operator,[final]);
  },/AUTHENTICATION_ROUTE_REVIEW_REQUIRED/);
+ await rejected('PROCESSING_STATE_NO_EXECUTION','processing state cannot substitute for executed no-auth version evidence',async()=>{
+    await state('apostille_processing');
+    const parentless=await insert('final_packet');await approve(parentless);
+    return release(operator,[final,parentless]);
+ },/VERIFIED_EXECUTED_VERSION_REQUIRED/);
  await rejected('BAD_ACTOR','unprivileged actor cannot release',()=>release(randomUUID(),[final]),/ACTOR|AUTH|OPERATOR|ROLE|GOVERNANCE/i);
  await rejected('WRONG_VERSION','wrong final version cannot release',()=>release(operator,[executed]),/COMPLETE_RELEASE_VERSION_SET_REQUIRED|RELEASE_VERSION_NOT_APPROVED/);
  await rejected('MISSING_VERSION','unknown final version cannot release',()=>release(operator,[randomUUID()]),/RELEASE_VERSION_NOT_APPROVED|COMPLETE_RELEASE_VERSION_SET_REQUIRED/);
