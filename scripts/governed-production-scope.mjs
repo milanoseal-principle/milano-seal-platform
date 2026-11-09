@@ -35,6 +35,8 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ 'supabase/migrations/20261109211027_release_identifier_matter_type_compatibility.sql',
+ 'scripts/certification/p19-no-auth-release.mjs',
  'lib/ron/evidence.ts','app/api/dashboard/ron/sessions/[id]/evidence/verify/route.ts',
  // Current-main P19 restoration and verified canonical defects (scope record).
  'app/api/deals/[id]/pay/route.ts','lib/payments/instruction.ts',

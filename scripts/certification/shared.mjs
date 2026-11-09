@@ -11,7 +11,7 @@ export function certificationRun(phase){
  const check=async(id,label,fn)=>{try{await fn();report.checks.push({id,label,status:'PASS'});}catch(error){report.checks.push({id,label,status:'FAIL'});report.failures.push({id,message:String(error?.message??'CHECK_FAILED').slice(0,240)});throw error;}};
  const guard=()=>{if(process.argv.slice(2).length>1||process.argv.slice(2).some(arg=>!arg.startsWith('--mode=')))throw Error('CERTIFICATION_ARGUMENT_INVALID');if(mode!=='SIMULATION'){
   if(mode!=='CONTROLLED_LIVE')throw Error('CERTIFICATION_MODE_INVALID');
-  if(process.env[`ALLOW_LIVE_${phase==='P19'?'E2E':phase==='P20'?'WISE':phase==='P21'?'RON':phase==='P22'?'AUTHENTICATION':'RECOVERY'}_CERTIFICATION`]!=='true')throw Error('EXPLICIT_LIVE_AUTHORIZATION_REQUIRED');
+  if(process.env[`ALLOW_LIVE_${phase.startsWith('P19')?'E2E':phase==='P20'?'WISE':phase==='P21'?'RON':phase==='P22'?'AUTHENTICATION':'RECOVERY'}_CERTIFICATION`]!=='true')throw Error('EXPLICIT_LIVE_AUTHORIZATION_REQUIRED');
   throw Error('CONTROLLED_LIVE_DISABLED_IN_SOURCE_PASS: provider/project/hostname binding and separate founder release are required');
  }};
  return {report,files,check,guard,save,assert};
@@ -30,4 +30,12 @@ export async function wiseFixtures(db){
  const schedule=id=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[id]);
  const ledgerCount=async id=>Number((await db.query('select count(*) n from matter_evidence_ledger where matter_id=$1',[id])).rows[0].n);
  return {actor,load,js,create,begin,observe,confirm,schedule,ledgerCount};
+}
+
+// Synthetic reference fixture compatible with both pre-038 and canonical schemas.
+export async function syntheticIdentifierLock(db,matterId,actor,status='confirmed') {
+ const present=new Set((await db.query("select column_name from information_schema.columns where table_schema='public' and table_name='identifier_locks'")).rows.map(r=>r.column_name));
+ const values={matter_id:matterId,locked_at:new Date().toISOString(),field_id:'codice_fiscale',locked_value:'SYNTHETIC-IDENTIFIER-NOT-LEGAL',confirmed_by:actor,status,identifier_type:'codice_fiscale',source_value:'SYNTHETIC-IDENTIFIER-NOT-LEGAL',match_status:'confirmed'};
+ const keys=Object.keys(values).filter(k=>present.has(k));
+ return (await db.query(`insert into identifier_locks(${keys.join(',')}) values(${keys.map((_,i)=>'$'+(i+1)).join(',')}) returning id`,keys.map(k=>values[k]))).rows[0].id;
 }

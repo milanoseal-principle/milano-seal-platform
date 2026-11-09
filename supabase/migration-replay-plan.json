@@ -61,7 +61,9 @@
       "20261109150000_private_evidence_table_privileges.sql",
       "20261109193307_canonical_wise_instruction_columns.sql",
       "20261109193443_ron_governed_correction_reverification.sql",
-      "20261109193825_matter_delivery_close_release_evidence.sql"
+      "20261109193825_matter_delivery_close_release_evidence.sql",
+      "20261109200000_no_authentication_release_deadlock.sql",
+      "20261109211027_release_identifier_matter_type_compatibility.sql"
     ],
     "file_sha256": {
       "054_notification_delivery_audit.sql": "2d463f8304a8e4311034a282acacb3e10bad5b5f10b4433742dd3f851e767e46",
@@ -101,7 +103,9 @@
       "20261109150000_private_evidence_table_privileges.sql": "4c8f418f0f8e113002bd6c1ea4304321261052d62546afe06c1da3ff06356305",
       "20261109193307_canonical_wise_instruction_columns.sql": "1bb3c1a07f00052357a34da600394ca19a984c27e239d0cfea75a1ef4c10b0b1",
       "20261109193443_ron_governed_correction_reverification.sql": "968568c6b33d5ac9bfe188939b54ec33f3de28e67273eee98c466234e04e210d",
-      "20261109193825_matter_delivery_close_release_evidence.sql": "6c93650299e7451e52f6d2f4a7471c0258102b43e652cc7929c592e37441300e"
+      "20261109193825_matter_delivery_close_release_evidence.sql": "6c93650299e7451e52f6d2f4a7471c0258102b43e652cc7929c592e37441300e",
+      "20261109200000_no_authentication_release_deadlock.sql": "7045db2274916888e8ec24e06296969f20b5f582df621b911c8d438d0e275faf",
+      "20261109211027_release_identifier_matter_type_compatibility.sql": "080e14308f8dab3a897a9ab252cb1544d13529d7a84448d9751b3e546e7e905d"
     },
     "preconditions": [
       "Re-read exact target and schema fingerprint; stop on drift",

@@ -3,7 +3,7 @@
 // deadlock. Synthetic Matter and no external provider/network operations.
 // Executes canonical migrations and canonical Wise/release RPCs.
 import {randomUUID,createHash} from 'node:crypto';
-import {certificationRun,isolatedCanonicalDatabase,wiseFixtures} from './shared.mjs';
+import {certificationRun,isolatedCanonicalDatabase,wiseFixtures,syntheticIdentifierLock} from './shared.mjs';
 
 const run=certificationRun('P19_NO_AUTH');
 const {report,check,assert}=run;
@@ -65,6 +65,10 @@ try {
    await db.query("update document_versions set approval_status='pending_review',approved_at=null,approved_by=null where id=$1",[final]);
    return release(operator,[final]);
  },/COMPLETE_RELEASE_VERSION_SET_REQUIRED|RELEASE_VERSION_NOT_APPROVED/);
+ await rejected('EXECUTED_QC','unreviewed executed ancestor cannot release',async()=>{
+   await db.query("update document_versions set approval_status='pending_review' where id=$1",[executed]);return release(operator,[final]);
+ },/VERIFIED_EXECUTED_VERSION_REQUIRED/);
+ await rejected('CUSTODY_IMMUTABLE','required executed-version custody cannot be removed',()=>db.query("delete from custody_ledger where deal_id=$1 and event='DOC_CREATED' and metadata->>'document_version_id'=$2",[matter,executed]),/IMMUTABLE/);
  await rejected('UNPAID','attempting to remove verified payment authority cannot release',async()=>{
    await db.query("update deals set payment_confirmed=false,payment_status='unpaid',payment_settlement_status='pending' where id=$1",[matter]);
    return release(operator,[final]);
@@ -73,15 +77,51 @@ try {
    await db.query("insert into compliance_incidents(matter_id,incident_type,severity,status,summary,release_frozen) values($1,'DOCUMENT_INTEGRITY','HIGH','OPEN','Synthetic blocker',true)",[matter]);
    return release(operator,[final]);
  },/RELEASE_FROZEN/);
+ await rejected('IDENTIFIER_BINDING','Italy release still requires the exact Matter identifier lock',async()=>{
+   await db.query("update deals set destination_country='Italy' where id=$1",[matter]);return release(operator,[final]);
+ },/IDENTIFIER_LOCK_REQUIRED/);
+ await check('CANONICAL_IDENTIFIER','only confirmed current exact-Matter canonical lock authorizes Italy release',async()=>{
+   const deny=async()=>{await db.exec('savepoint denied_release');try{await assert.rejects(()=>release(operator,[final]),/IDENTIFIER_LOCK_REQUIRED/);}finally{await db.exec('rollback to denied_release;release savepoint denied_release');}};
+   await db.exec('begin');try{
+    await db.query("update deals set destination_country='Italy' where id=$1",[matter]);
+    await syntheticIdentifierLock(db,await f.create(),operator);
+    await deny();
+    const id=await syntheticIdentifierLock(db,matter,operator,'needs_review');
+    await deny();
+    await db.query("update identifier_locks set status='confirmed' where id=$1",[id]);
+    assert.ok((await release(operator,[final])).rows[0].receipt.hash);
+    await db.query("update identifier_locks set status='mismatch' where id=$1",[id]);
+    await deny();
+   }finally{await db.exec('rollback');}
+ });
  await check('PRE_RELEASE','transport cannot start before governed release evidence',async()=>{
    await assert.rejects(()=>state('in_transit'),/CURRENT_EXACT_DOCUMENT_RELEASE_REQUIRED/);
  });
  await check('EXACT_RELEASE','no-auth route can release approved executed/final lineage from in_execution',async()=>{
    const before=await load();assert.equal(before.status,'in_execution');assert.equal(before.apostille_required,false);
+   const ledger=async()=> (await db.query('select * from custody_ledger where deal_id=$1 order by id',[matter])).rows;
+   const beforeLedger=await ledger();
    const first=(await release(operator,[final])).rows[0].receipt;
-   assert.ok(first);
+   assert.ok(first?.hash);assert.notEqual(first.duplicate,true);
+   const createdLedger=await ledger();
+   assert.equal(createdLedger.length,beforeLedger.length+1);
+   const events=createdLedger.filter(row=>row.event==='DOC_RELEASE_CONFIRMED');
+   assert.equal(events.length,1);
+   const event=events[0],version=(await db.query('select file_hash from document_versions where id=$1',[final])).rows[0];
+   assert.equal(first.id,event.id);assert.equal(event.deal_id,matter);
+   assert.equal(event.hash,first.hash);assert.equal(event.prev_hash,first.prev_hash);
+   assert.deepEqual(event.metadata.document_versions,[{version_id:final,sha256:version.file_hash}]);
+   assert.ok(event.idempotency_key);
+   const releasedMatter=await load();
    const second=(await release(operator,[final])).rows[0].receipt;
-   assert.deepEqual(first,second);
+   assert.equal(second.duplicate,true);
+   assert.deepEqual({hash:first.hash,prev_hash:first.prev_hash},{hash:second.hash,prev_hash:second.prev_hash});
+   assert.deepEqual(await ledger(),createdLedger,'Replay must retain the same event, idempotency key and entire ledger state');
+   const stableMatter=({updated_at: _maintenanceTimestamp,...state})=>state;
+   assert.deepEqual(stableMatter(await load()),stableMatter(releasedMatter),'Replay must preserve canonical Matter/release state; updated_at is trigger-maintained');
+   const paymentTruth=row=>Object.fromEntries(Object.entries(row).filter(([key])=>/^(payment_|wise_|balance_)/.test(key)||['amount_paid','amount_due','currency'].includes(key)));
+   assert.deepEqual(paymentTruth(releasedMatter),paymentTruth(before),'Release must not author payment truth');
+   report.release_receipt={matter_id:matter,version_id:final,sha256:version.file_hash,event_id:event.id,hash:event.hash,prev_hash:event.prev_hash,idempotency_key:event.idempotency_key,replay_duplicate:second.duplicate,ledger_count_before:beforeLedger.length,ledger_count_after:createdLedger.length};
    assert.equal((await load()).status,'in_execution');
    assert.equal((await load()).payment_status,'paid');
    assert.equal((await load()).payment_settlement_status,'cleared');
