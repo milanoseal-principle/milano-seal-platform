@@ -5,7 +5,7 @@ import {readFileSync,readdirSync,mkdirSync,writeFileSync} from 'node:fs';import 
 const db=await migrationFixture();const files=readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort();const plan=JSON.parse(readFileSync('supabase/migration-replay-plan.json','utf8'));
 for(const file of [...plan.fresh_database_prerequisites,...files.filter(f=>!plan.fresh_database_prerequisites.includes(f))])await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
 mkdirSync('artifacts/gap-closure',{recursive:true});writeFileSync('artifacts/gap-closure/local-deals-columns.json',JSON.stringify((await db.query("select column_name,data_type from information_schema.columns where table_schema='public' and table_name='deals' order by ordinal_position")).rows,null,2));
-let checks=0;const ok=(value,label)=>{assert.ok(value,label);checks++;};const denied=async(fn,label)=>{await assert.rejects(fn,undefined,label);checks++;};
+let checks=0;const ok=(value,label)=>{assert.ok(value,label);checks++;};const denied=async(fn,label,pattern)=>{await assert.rejects(fn,pattern,label);checks++;};
 // Exercise actual repository-selected columns against the complete schema, not a fabricated projection.
 for(const file of ['app/api/dashboard/revenue/route.ts','lib/command-center/liveMetrics.ts']){const columns=readFileSync(file,'utf8').match(/\.select\('([^']+)'\)/)?.[1];assert.ok(columns&&/^[a-z0-9_, ]+$/.test(columns));await db.query('select '+columns+' from public.deals limit 0');checks++;}
 const portalFields=readFileSync('lib/portalAuth.ts','utf8').match(/\.select\(\s*"([^"]+)"/)?.[1];assert.ok(portalFields&&/^[a-z0-9_,: ]+$/.test(portalFields));const portalSql=portalFields.split(',').map(field=>{const [alias,physical]=field.trim().split(':');return physical?physical+' as '+alias:alias;}).join(',');await db.query('select '+portalSql+' from public.deals limit 0');checks++;
@@ -91,6 +91,35 @@ await denied(()=>db.query("update production_certification_evidence set result='
 await denied(()=>db.query("update production_certification_runs set production_sha=$1 where id=$2",['b'.repeat(40),runId]),'certification cannot move to another deployment');
 await denied(()=>finalize(founder,sha,'NO_GO'),'final decision cannot be swapped');
 await denied(()=>db.exec("update audit_events set metadata='{}' where event_type like 'CERTIFICATION_%'"),'certification audit cannot be rewritten');
+// Full-schema proof of the canonical observation / provider / settlement split.
+const observedMatter=randomUUID();
+await db.query("insert into deals(id,deal_id,status,payment_status,payment_confirmed,amount_due,amount_paid,currency,wise_reference) values($1,'OBSERVED-QA','intake_received','unpaid',false,100,0,'USD','OBSERVED-QA')",[observedMatter]);
+await db.query("update deals set quote_approved_at=now(),quote_review_required=false,pricing_version='controlled-observation',quote_breakdown='[{\"category\":\"base\",\"amount\":200}]',original_total=200,eligible_subtotal=200,non_discountable_total=0,discount_amount=0,final_total=200 where id=$1",[observedMatter]);
+for(const stage of ['under_review','quoted','awaiting_payment'])await db.query('update deals set status=$1,deal_status=$1 where id=$2',[stage,observedMatter]);
+const observedUpdate={payment_observed_at:new Date().toISOString(),payment_settlement_status:'observed_pending',payment_observed_amount:100,payment_observed_currency:'USD',payment_observed_reference:'OBSERVED-QA'};
+const applyObservation=async(change={})=>{const fields={...observedUpdate,...change},keys=Object.keys(fields);await db.query('update deals set '+keys.map((key,index)=>key+'=$'+(index+1)).join(',')+' where id=$'+(keys.length+1),[...Object.values(fields),observedMatter]);};
+for(const change of [{payment_observed_at:null},{payment_observed_amount:null},{payment_observed_currency:null},{payment_observed_reference:null},{payment_observed_amount:99},{payment_observed_currency:'EUR'},{payment_observed_reference:'FOREIGN-MATTER'},{payment_status:'failed'},{amount_paid:50}]){
+ await db.query("update deals set payment_status='unpaid',amount_paid=0 where id=$1",[observedMatter]);await applyObservation(change);
+ await denied(()=>db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]),'missing stale partial failed or cross-Matter observation cannot schedule');
+}
+await db.query("update deals set payment_status='unpaid',amount_paid=0 where id=$1",[observedMatter]);await applyObservation();
+await db.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[observedMatter]);
+const observedRow=(await db.query('select * from deals where id=$1',[observedMatter])).rows[0];
+ok(observedRow.payment_confirmed===false&&observedRow.payment_status==='unpaid'&&Number(observedRow.amount_paid)===0,'scheduling does not manufacture paid truth');
+ok(Boolean((await db.query("select issue_financial_artifact($1,$2,'INVOICE') result",[founder,observedMatter])).rows[0].result.id),'observed Matter has valid approved financial snapshot');
+await denied(()=>db.query("select issue_financial_artifact($1,$2,'RECEIPT')",[founder,observedMatter]),'observation does not issue a paid receipt',/VERIFIED_SETTLEMENT_REQUIRED/);
+await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'client observation cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
+await db.query("update deals set wise_transaction_reference='CONTROLLED-PROVIDER',payment_funding_method='wrong-provider' where id=$1",[observedMatter]);
+await denied(()=>db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]),'wrong funding source cannot authorize execution',/WISE_PROVIDER_EVIDENCE_REQUIRED/);
+await db.query("update deals set payment_funding_method='wise_acquiring_payment' where id=$1",[observedMatter]);
+await db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[observedMatter]);
+await db.query("update deals set status='apostille_processing',deal_status='apostille_processing' where id=$1",[observedMatter]);
+await denied(()=>db.query("update deals set status='in_transit',deal_status='in_transit' where id=$1",[observedMatter]),'provider evidence without settlement never authorizes final transit',/verified Wise settlement required/);
+await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,observedMatter,[]]),'observed provider execution does not authorize final release',/VERIFIED_SETTLEMENT_AND_ZERO_BALANCE_REQUIRED/);
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[observedMatter]);
+ok((await db.query('select status from deals where id=$1',[observedMatter])).rows[0].status==='apostille_processing','later settlement never regresses progressed Matter');
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[observedMatter]);
+ok((await db.query("select count(*)::int n from matter_state_events where matter_id=$1 and new_state='scheduled'",[observedMatter])).rows[0].n===1,'observation and settlement replay do not duplicate scheduling');
 // Actual 1000+ PostgreSQL rows through the production pager with an adapter cap
 // below the requested page size. This is not a hosted PostgREST observation.
 await db.exec(`insert into public.deals(deal_id,status) select 'SCALE-GAP-'||n,'intake_received' from generate_series(1,1017) n;analyze public.deals;`);

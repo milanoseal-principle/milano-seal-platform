@@ -5,8 +5,8 @@ import path from 'node:path';
 const read = (p) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
 
 // The scheduling gate is whichever migration last defines public.check_payment_gate.
-// 079 (observed-submission authority) was superseded by 089 (verified settlement only),
-// so validating 079 asserted a retired, weaker gate.
+// Inspect the latest forward definition: historical gates alone cannot prove
+// the current scheduling / provider-execution / settled-release separation.
 const gateMigrations = fs.readdirSync(path.join(process.cwd(), 'supabase/migrations'))
   .filter((f) => f.endsWith('.sql'))
   .sort()
@@ -24,24 +24,17 @@ const control = read('components/ron/RONSessionControlPanel.tsx');
 const release = read('lib/release/performFinalRelease.ts');
 
 assert.ok(gateMigrations.includes('089_verified_settlement_scheduling_gate.sql'), 'verified settlement gate must exist');
-assert.match(migration, /NEW\.status = 'scheduled'/);
 assert.match(migration, /NEW\.payment_confirmed is true/);
 assert.match(migration, /NEW\.payment_status = 'paid'/);
 assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
-assert.match(migration, /NEW\.amount_due > 0 and NEW\.amount_paid > 0/);
-assert.match(migration, /'NaN', 'Infinity', '-Infinity'/);
-assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
-assert.match(migration, /PAYMENT_REQUIRED/);
-// Observation/submission is never payment authority and never manufactures paid truth.
-assert.doesNotMatch(migration, /observed_pending/);
-assert.doesNotMatch(migration, /payment_observed_at is not null/i);
+assert.match(migration, /NEW\.payment_observed_amount is not null/);
+assert.match(migration, /NEW\.payment_observed_amount=NEW\.amount_due/);
+assert.match(migration, /observed_pending/);
+assert.match(migration, /target='scheduled'/);
+assert.match(migration, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
+assert.match(migration, /'payment_confirmed','in_transit','delivered','completed'/);
+assert.match(migration, /PAYMENT_REQUIRED: verified Wise settlement required/);
 assert.doesNotMatch(migration, /payment_status\s*:=\s*'paid'/i);
-assert.match(migration, /NEW\.payment_confirmed is true/);
-assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
-assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
-assert.match(migration, /scheduling requires payment_confirmed/);
-assert.match(migration, /verified Wise settlement required/);
-assert.doesNotMatch(migration, /payment_observed_at is not null/i);
 
 assert.match(schedule, /evaluateSchedulingGate/);
 assert.match(guards, /assertCanCreateRONSession/);

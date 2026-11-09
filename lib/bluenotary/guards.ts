@@ -53,7 +53,7 @@ async function verifyPaymentConfirmed(
   }
 }
 
-/** Verify that confirmed Wise settlement authorizes scheduling. */
+/** Verify canonical Wise scheduling authority without manufacturing paid truth. */
 async function verifySchedulingAuthorized(
   supabase: SupabaseClient,
   matterId: string
@@ -77,7 +77,7 @@ async function verifySchedulingAuthorized(
   }
 }
 
-/** Execution uses the same verified-settlement gate as scheduling.
+/** Execution additionally requires server-side provider evidence for observed submissions.
  * Final international release remains governed by its separate release controls. */
 async function verifyExecutionPaymentAuthorized(
   supabase: SupabaseClient,

@@ -37,7 +37,7 @@ export const ALLOWED_TRANSITIONS: Record<MatterStatus, MatterStatus[]> = {
   intake_received: ["under_review"],
   under_review: ["quoted"],
   quoted: ["awaiting_payment"],
-  awaiting_payment: ["payment_confirmed"],
+  awaiting_payment: ["payment_confirmed", "scheduled"],
   payment_confirmed: ["scheduled"],
   scheduled: ["in_execution"],
   in_execution: ["apostille_processing", "in_transit"],

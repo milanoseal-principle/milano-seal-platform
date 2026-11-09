@@ -57,8 +57,8 @@ const CANONICAL_TO_LEGACY: Partial<Record<CanonicalMatterState, string>> = {
 };
 
 // Canonical-only supplemental transitions (states the legacy machine lacks).
-// Crucially: awaiting_payment does NOT go directly to scheduled — it must pass
-// through payment_confirmed, which itself never bypasses the real payment gate.
+// Structural scheduling may follow an observed submission while settlement is pending.
+// The mutation endpoint and database independently require canonical Wise authority.
 const CANONICAL_SUPPLEMENT: Partial<Record<CanonicalMatterState, CanonicalMatterState[]>> = {
   quote_ready: ["quoted", "on_hold", "cancelled"],
   awaiting_payment: ["payment_confirmed", "on_hold", "cancelled"],
@@ -132,9 +132,9 @@ export function canTransitionMatterState(
   const t = normalizeMatterState(to);
   if (f === t) return { allowed: false, reason: "no-op transition" };
 
-  // Guard: never allow scheduling before payment is confirmed.
-  if (t === "scheduled" && f !== "payment_confirmed") {
-    return { allowed: false, reason: "scheduling requires payment_confirmed (payment gate)" };
+  // Structural predecessor validation is separate from canonical Wise authority.
+  if (t === "scheduled" && !["awaiting_payment", "payment_confirmed"].includes(f)) {
+    return { allowed: false, reason: "scheduling requires an authorized awaiting-payment or payment-confirmed predecessor" };
   }
 
   const supplement = CANONICAL_SUPPLEMENT[f];

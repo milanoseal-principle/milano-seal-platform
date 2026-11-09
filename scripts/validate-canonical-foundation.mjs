@@ -49,7 +49,7 @@ if (!exists("lib/stateMachine.ts")) fail("Controlling lib/stateMachine.ts missin
 const sa = read("lib/platform/matterStateAdapters.ts") ?? "";
 if (!/from "\.\.\/stateMachine"/.test(sa)) fail("State adapter must delegate to lib/stateMachine (no duplicate engine)");
 else ok("State adapters delegate to the controlling state machine");
-if (!/scheduling requires payment_confirmed/.test(sa)) fail("State adapter must enforce payment gate on → scheduled");
+if (!/scheduling requires an authorized awaiting-payment or payment-confirmed predecessor/.test(sa)) fail("State adapter must enforce payment gate on → scheduled");
 else ok("State adapter enforces payment-before-scheduling");
 
 // 4. Pricing gateway delegates; adds no duplicate price constants.

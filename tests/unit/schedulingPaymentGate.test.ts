@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { evaluateSchedulingGate, evaluateExecutionGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 
 const unpaidDiscountedMatter = {
@@ -69,11 +69,11 @@ const observedSubmission = {
   payment_observed_reference: "MS-2026-4887",
 };
 
-test("governed Wise submission stays locked while unpaid (Tiffany MS-2026-4887)", () => {
+test("integrity-matched Wise submission authorizes scheduling without paid truth (Tiffany MS-2026-4887)", () => {
   const gate = evaluateSchedulingGate({ matter: observedSubmission });
-  assert.equal(gate.schedulingEligible, false);
-  assert.equal(gate.paymentRequirementSatisfied, false);
-  assert.equal(gate.paymentRequirementMethod, "not_satisfied");
+  assert.equal(gate.schedulingEligible, true);
+  assert.equal(gate.paymentRequirementSatisfied, true);
+  assert.equal(gate.paymentRequirementMethod, "wise_submission_observed");
   assert.equal(evaluatePaymentGate(observedSubmission), "PAYMENT_REQUIRED");
 });
 
@@ -125,7 +125,7 @@ test("open operational requirements block scheduling even when paid", () => {
   assert.equal(evaluateSchedulingGate({ matter: paid, allOperationalRequirementsPassed: false }).schedulingEligible, false);
 });
 
-test("only verified exact settlement can unlock scheduling", () => {
+test("verified-payment authority requires exact settlement", () => {
   const settled = {
     ...observedSubmission,
     payment_status: "paid",
@@ -138,7 +138,7 @@ test("only verified exact settlement can unlock scheduling", () => {
     { payment_confirmed: false },
     { payment_confirmed: null },
     { payment_status: "unpaid" },
-    { payment_settlement_status: "observed_pending" },
+    { payment_settlement_status: "observed_pending", payment_observed_at: null },
     { payment_settlement_status: "failed" },
     { payment_settlement_status: "refunded" },
     { payment_settlement_status: null },
@@ -167,4 +167,18 @@ test("zero-value courtesy authorization never substitutes for Wise settlement", 
   } });
   assert.equal(result.schedulingEligible, false);
   assert.equal(result.paymentRequirementMethod, "not_satisfied");
+});
+
+test('observed scheduling, provider execution and settlement authority remain distinct', () => {
+  assert.equal(evaluateSchedulingGate({matter:observedSubmission}).schedulingEligible,true);
+  assert.equal(evaluateExecutionGate(observedSubmission).schedulingEligible,false);
+  const provider={...observedSubmission,wise_transaction_reference:'controlled-provider-reference',payment_funding_method:'wise_acquiring_payment'};
+  assert.equal(evaluateExecutionGate(provider).schedulingEligible,true);
+  assert.equal(evaluatePaymentGate(provider),'PAYMENT_REQUIRED');
+  for(const change of [{payment_observed_amount:null},{payment_observed_currency:null},{payment_observed_reference:null},{amount_due:0},{amount_due:NaN},{amount_paid:1},{payment_status:'failed'},{payment_status:'refunded'},{payment_confirmed:true}]){
+    assert.equal(evaluateSchedulingGate({matter:{...observedSubmission,...change}}).schedulingEligible,false,JSON.stringify(change));
+    assert.equal(evaluateExecutionGate({...provider,...change}).schedulingEligible,false,JSON.stringify(change));
+  }
+  assert.equal(observedSubmission.payment_confirmed,false);
+  assert.equal(observedSubmission.amount_paid,0);
 });

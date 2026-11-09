@@ -198,7 +198,11 @@ try {
         fullPage: true,
       });
 
-      results.push({ profile: profile.name, width: profile.width, route: route.path, finalUrl: page.url(), status: response.status(), consolePageNetworkErrors: errors, conciergeMock: Boolean(route.concierge), hosted: Boolean(route.hosted) });
+      const performanceMeasurement = await page.evaluate(() => {
+        const navigation = performance.getEntriesByType('navigation')[0];
+        return navigation ? {ttfb_ms:navigation.responseStart-navigation.requestStart,dom_content_loaded_ms:navigation.domContentLoadedEventEnd,load_event_ms:navigation.loadEventEnd,transfer_bytes:navigation.transferSize} : null;
+      });
+      results.push({ performanceMeasurement, performanceScope: localRun ? 'LOCAL_LAB_NOT_FIELD_CERTIFICATION' : 'HOSTED_LAB_NOT_FIELD_CERTIFICATION', profile: profile.name, width: profile.width, route: route.path, finalUrl: page.url(), status: response.status(), consolePageNetworkErrors: errors, conciergeMock: Boolean(route.concierge), hosted: Boolean(route.hosted) });
       console.log(`PASS ${profile.name} ${route.path}`);
       await page.close();
     }

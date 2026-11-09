@@ -43,7 +43,7 @@ export async function POST(
     const currentStatus = String(deal.deal_status ?? deal.status ?? "");
     const normalizedCurrent = normalizeMatterStatus(currentStatus);
     if (
-      normalizedCurrent !== "payment_confirmed" ||
+      !["awaiting_payment", "payment_confirmed"].includes(normalizedCurrent ?? "") ||
       !canTransition(currentStatus, "scheduled")
     ) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function POST(
           error: "INVALID_STATE_TRANSITION",
           message: `Matter cannot transition from ${currentStatus || "unknown"} to scheduled.`,
           current_status: currentStatus || null,
-          required_status: "payment_confirmed",
+          required_status: ["awaiting_payment", "payment_confirmed"],
         },
         { status: 409 },
       );
@@ -88,7 +88,7 @@ export async function POST(
             schedulingGate.paymentRequirementSatisfied,
           paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
           message:
-            "Verified Wise settlement is required before scheduling can begin.",
+            "Verified Wise settlement or an integrity-matched Wise submission is required before scheduling can begin.",
         },
         { status: 402 },
       );

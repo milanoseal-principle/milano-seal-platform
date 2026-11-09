@@ -167,11 +167,11 @@ export async function sendPaymentObservedAlerts(input: {
   const subject = `Wise Payment Processing — ${input.matterReference}`;
   const clientHtml = shell(
     "Wise payment submitted",
-    `<p>Your payment of <strong>${money(input.amountDue, currency)}</strong> has been recorded for Matter <strong>${input.matterReference}</strong>.</p><p>Scheduling remains locked until verified Wise settlement. Submission is not payment confirmation.</p><p>This submission is not yet a verified paid/settled state, and any settlement-dependent final release remains protected until Wise settlement is verified.</p>`,
+    `<p>Your payment of <strong>${money(input.amountDue, currency)}</strong> has been recorded for Matter <strong>${input.matterReference}</strong>.</p><p>An integrity-matched submission can authorize scheduling. Submission is not payment confirmation.</p><p>This submission is not yet a verified paid/settled state, and any settlement-dependent final release remains protected until Wise settlement is verified.</p>`,
   );
   const operatorHtml = shell(
-    "Internal · Wise processing / scheduling locked",
-    `<p>Client payment submission of <strong>${money(input.amountDue, currency)}</strong> is recorded for Matter <strong>${input.matterReference}</strong>.</p><p><strong>Scheduling will unlock only after verified settlement.</strong> Do not schedule or begin BlueNotary execution before verified Wise settlement and the remaining execution gates.</p><p>Internal payment state remains <strong>Wise processing / settlement pending</strong>. Do not represent the Matter as paid or settled until canonical Wise verification completes. Settlement-dependent final release remains locked.</p>`,
+    "Internal · Wise processing / scheduling review",
+    `<p>Client payment submission of <strong>${money(input.amountDue, currency)}</strong> is recorded for Matter <strong>${input.matterReference}</strong>.</p><p><strong>Confirm the canonical scheduling gate before scheduling.</strong> Integrity-matched submission may authorize scheduling; BlueNotary execution requires server-side Wise provider evidence and the remaining execution gates.</p><p>Internal payment state remains <strong>Wise processing / settlement pending</strong>. Do not represent the Matter as paid or settled until canonical Wise verification completes. Settlement-dependent final release remains locked.</p>`,
   );
 
   const clientRecipient = input.clientEmail?.trim().toLowerCase() || null;
