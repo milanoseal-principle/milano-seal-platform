@@ -63,7 +63,8 @@
       "20261109193443_ron_governed_correction_reverification.sql",
       "20261109193825_matter_delivery_close_release_evidence.sql",
       "20261109200000_no_authentication_release_deadlock.sql",
-      "20261109211027_release_identifier_matter_type_compatibility.sql"
+      "20261109211027_release_identifier_matter_type_compatibility.sql",
+      "20261109215307_no_auth_execution_proof_all_release_states.sql"
     ],
     "file_sha256": {
       "054_notification_delivery_audit.sql": "2d463f8304a8e4311034a282acacb3e10bad5b5f10b4433742dd3f851e767e46",
@@ -105,7 +106,8 @@
       "20261109193443_ron_governed_correction_reverification.sql": "968568c6b33d5ac9bfe188939b54ec33f3de28e67273eee98c466234e04e210d",
       "20261109193825_matter_delivery_close_release_evidence.sql": "6c93650299e7451e52f6d2f4a7471c0258102b43e652cc7929c592e37441300e",
       "20261109200000_no_authentication_release_deadlock.sql": "7045db2274916888e8ec24e06296969f20b5f582df621b911c8d438d0e275faf",
-      "20261109211027_release_identifier_matter_type_compatibility.sql": "6f54d63b40594705396bacd8af9ce4b7bea9e4c82c35033b698fdf69be785bcf"
+      "20261109211027_release_identifier_matter_type_compatibility.sql": "6f54d63b40594705396bacd8af9ce4b7bea9e4c82c35033b698fdf69be785bcf",
+      "20261109215307_no_auth_execution_proof_all_release_states.sql": "4c16cd3149fb1692bb2d7c35367e7bc049bc079dd2dfa5a6b2e54f91449aea87"
     },
     "preconditions": [
       "Re-read exact target and schema fingerprint; stop on drift",
