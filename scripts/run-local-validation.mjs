@@ -10,6 +10,7 @@ if(git('diff','HEAD','--name-only'))throw Error('Commit tracked changes before v
 for(const file of ['.env','.env.local','.env.production','.env.production.local','.env.development','.env.development.local'])if(existsSync(file))throw Error(`Remove ${file} from this isolated validation checkout; use a separate preview workspace for authenticated hosted tests.`);
 const sha=git('rev-parse','HEAD'),tree=git('rev-parse','HEAD^{tree}');
 const root=resolve('artifacts/local-validation');mkdirSync(root,{recursive:true});
+if(existsSync('.next/lock')||existsSync('.next/dev/lock'))throw Error('Stop the active Next process before isolated validation.');
 const lock=resolve(root,'.lock');mkdirSync(lock); // Fail closed on an overlapping run.
 const out=resolve(root,new Date().toISOString().replace(/[:.]/g,'-')+'-'+sha.slice(0,12));mkdirSync(out);
 const env={};
@@ -31,6 +32,8 @@ async function run(label,command,args,extra={}){
 for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{stopping=true;active?.kill('SIGTERM');server?.kill('SIGTERM');});
 try{
  await run('diff-check','git',['diff','--check']);
+ rmSync('.next',{recursive:true,force:true});
+ await run('route-types',process.execPath,['node_modules/next/dist/bin/next','typegen']);
  await run('visual-system',process.execPath,['scripts/validate-final-visual-system-hardening.mjs']);
  await run('vercel-merge-gate',process.execPath,['scripts/run-vercel-merge-gate.mjs']);
  await run('production-build','npm',['run','build']);
