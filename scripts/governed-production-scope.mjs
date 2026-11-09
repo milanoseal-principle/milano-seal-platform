@@ -35,6 +35,9 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // User-authorized P7 retention continuation; real SQL claim/hold/role tests.
+ 'supabase/migrations/20261109061000_retention_claim_and_hold_authority.sql',
+
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
  // Positive/negative authority tests run in test:wise-attempt-database and the
