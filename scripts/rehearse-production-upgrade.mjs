@@ -58,6 +58,13 @@ try{
   const deny=async()=>{await db.exec('savepoint denied_release');try{await assert.rejects(release,/IDENTIFIER_LOCK_REQUIRED/);}finally{await db.exec('rollback to denied_release;release savepoint denied_release');}};
   await db.exec('begin');try{await db.query("update deals set destination_country='Italy' where id=$1",[id]);await deny();const lock=await syntheticIdentifierLock(db,id,actor,'needs_review');await deny();await db.query("update identifier_locks set status='confirmed' where id=$1",[lock]);assert.ok((await release()).hash);}finally{await db.exec('rollback');}
   for(const requirement of ['authentication_legalization','review_required']){await db.exec('begin');try{await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}',to_jsonb($1::text)),status='apostille_processing',deal_status='apostille_processing' where id=$2",[requirement,id]);await assert.rejects(release,requirement==='review_required'?/AUTHENTICATION_ROUTE_REVIEW_REQUIRED/:/APPROVED_AUTHENTICATION_VERSION_REQUIRED|VERIFIED_AUTHORITY_RETURN_LINEAGE_REQUIRED/);}finally{await db.exec('rollback');}}
+  await db.exec('begin');try{
+   await db.query("update deals set status='apostille_processing',deal_status='apostille_processing' where id=$1",[id]);
+   const orphan=randomUUID(),hash=sha('Synthetic unexecuted final packet');
+   await db.query("insert into document_versions(id,matter_id,stage,file_hash,actor,source_file) values($1,$2,'final_packet',$3,$4,'simulation/unexecuted.pdf')",[orphan,id,hash,actor]);
+   await db.query('select approve_document_version($1,$2,$3,$4)',[actor,orphan,hash,'Synthetic negative exact-final QC']);
+   await assert.rejects(()=>db.query('select record_document_release($1,$2,$3)',[actor,id,[final,orphan]]),/VERIFIED_EXECUTED_VERSION_REQUIRED/);
+  }finally{await db.exec('rollback');}
   const first=await release(),second=await release();assert.equal(first.hash,second.hash);assert.equal(second.duplicate,true);
   assert.equal((await fixture.load(id)).status,'in_execution');
   assert.equal((await db.query("select count(*)::int n from custody_ledger where deal_id=$1 and event='DOC_RELEASE_CONFIRMED'",[id])).rows[0].n,1);
