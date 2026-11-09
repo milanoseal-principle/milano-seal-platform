@@ -1,3 +1,5 @@
+import { evaluatePaymentGate } from "@/lib/safety/payment-integrity";
+export { evaluatePaymentGate } from "@/lib/safety/payment-integrity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity";
 
@@ -28,24 +30,6 @@ export interface PaymentGateMatter {
   amount_paid?: number | null;
   payment_confirmed?: boolean | null;
   payment_settlement_status?: string | null;
-}
-
-export function evaluatePaymentGate(matter: PaymentGateMatter): PaymentGateResult {
-  const status = matter.payment_status ?? "unpaid";
-  const due = Number(matter.amount_due ?? 0);
-  const paid = Number(matter.amount_paid ?? 0);
-
-  const settlementVerified = matter.payment_confirmed === true &&
-    status === "paid" &&
-    matter.payment_settlement_status === "cleared" &&
-    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
-    Math.round(paid * 100) === Math.round(due * 100);
-
-  if (settlementVerified) return "PAYMENT_CONFIRMED";
-  if (paid > 0 && paid < due) return "PARTIAL_PAYMENT";
-  if (status === "failed") return "PAYMENT_FAILED";
-  if (status === "refunded") return "PAYMENT_REFUNDED";
-  return "PAYMENT_REQUIRED";
 }
 
 export function assertPaymentConfirmed(matter: PaymentGateMatter, attemptedAction: string): void {

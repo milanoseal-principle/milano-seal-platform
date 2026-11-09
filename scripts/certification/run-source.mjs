@@ -1,0 +1,9 @@
+import {spawnSync,execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();mkdirSync('artifacts/certification',{recursive:true});
+const manifest={source_sha:sha,generated_at:new Date().toISOString(),mode:'SIMULATION',live_certification:false,production_aligned:false,p19_status:'SKIPPED_UNAVAILABLE_USER_DIRECTED',p19_unavailable_commit:'15be07d1',p19_scope:'Not recreated; no E2E P19 pass claimed',hosted_ci:'BLOCKED_BILLING_LAST_OBSERVED',independent_review_required:true,destructive_or_live_actions:'NONE',phases:{},blockers:['P19 unavailable and explicitly skipped','Hosted schema reconciliation and reviewed rollout required','Hosted CI billing/spend-limit failure requires account owner','No live/provider/production certification performed']};
+try{
+ for(const command of ['validate:certification-source','certify:p20','certify:p23','certify:p12']){const result=spawnSync('npm',['run',command],{stdio:'inherit',env:process.env});if(result.status!==0)throw Error(command+' failed');}
+ for(const phase of ['p20','p21','p22','p23']){const evidence=JSON.parse(readFileSync(`artifacts/certification/${phase}-simulation.json`));if(evidence.status!=='PASS'||evidence.source_sha!==sha||evidence.live_certification!==false)throw Error(phase+' evidence mismatch');manifest.phases[phase]={status:'SIMULATION_PASS',checks:evidence.checks.length,evidence_path:`artifacts/certification/${phase}-simulation.json`};}
+ manifest.p12_status='HOSTED_SCHEMA_RECONCILIATION_REQUIRED';manifest.status='AVAILABLE_SCOPE_SIMULATION_PASS_P19_SKIPPED';
+}catch(error){manifest.status='FAIL';manifest.blockers.push(error.message);process.exitCode=1;}finally{writeFileSync('artifacts/certification/source-manifest.json',JSON.stringify(manifest,null,2)+'\n');console.log(manifest.status);}

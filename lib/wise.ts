@@ -109,22 +109,16 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
-export async function verifyWiseSignature(
-  rawBody: string,
-  signatureHeader: string | null,
-): Promise<boolean> {
+/** Shared cryptographic operation; callers cannot change the production wrapper's key. */
+export async function verifyWiseSignatureWithKey(rawBody: string, signatureHeader: string | null, key: CryptoKey): Promise<boolean> {
   if (!signatureHeader) return false;
   try {
-    const key = await getWisePublicKey();
-    const sigBytes = base64ToBytes(signatureHeader);
-    return await crypto.subtle.verify(
-      "RSASSA-PKCS1-v1_5",
-      key,
-      sigBytes,
-      new TextEncoder().encode(rawBody),
-    );
-  } catch (err) {
-    console.error("[wise] signature verification error:", err);
-    return false;
-  }
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, base64ToBytes(signatureHeader), new TextEncoder().encode(rawBody));
+  } catch { return false; }
+}
+
+export async function verifyWiseSignature(rawBody: string, signatureHeader: string | null): Promise<boolean> {
+  if (!signatureHeader) return false;
+  try { return await verifyWiseSignatureWithKey(rawBody, signatureHeader, await getWisePublicKey()); }
+  catch { return false; }
 }

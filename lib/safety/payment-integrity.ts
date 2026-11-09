@@ -1,5 +1,6 @@
+import type { PaymentGateMatter, PaymentGateResult } from "@/lib/payments/paymentGate";
 // Payment Integrity Gate
-// Hard rules: no scheduling or execution without payment_confirmed = true.
+// Hard rule: no scheduling or execution without exact, confirmed, cleared Wise settlement.
 // platform_fee_only matters must suppress Wise.
 // All confirmation events are idempotent and write to ledger.
 
@@ -23,54 +24,37 @@ export type PaymentLedgerEvent =
   | "PAYMENT_CONFIRMED_MANUAL"
   | "PAYMENT_INTEGRITY_REVIEWED";
 
-// Core gate check — deterministic, no DB calls.
-// Call this before unlocking scheduling or execution on any matter.
-export function evaluatePaymentIntegrity(matter: {
-  payment_confirmed: boolean;
-  is_platform_fee_only: boolean;
-  payment_status?: string | null;
-}): PaymentIntegrityResult {
-  const { payment_confirmed, is_platform_fee_only } = matter;
+// One client-safe settlement predicate, shared with the server audit wrapper.
+export function evaluatePaymentGate(matter: PaymentGateMatter): PaymentGateResult {
+  const status = matter.payment_status ?? "unpaid";
+  const due = Number(matter.amount_due ?? 0);
+  const paid = Number(matter.amount_paid ?? 0);
 
-  if (is_platform_fee_only) {
-    return {
-      schedulingAllowed: payment_confirmed,
-      executionAllowed: payment_confirmed,
-      showWise: false,          // Wise always suppressed for platform-fee-only
-      statusLabel: payment_confirmed ? "Scheduling Unlocked" : "Platform Fee Only",
-      operatorNote: "Platform fee only — Wise suppressed. External platform fee required.",
-    };
-  }
+  const settlementVerified = matter.payment_confirmed === true &&
+    status === "paid" &&
+    matter.payment_settlement_status === "cleared" &&
+    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
+    Math.round(paid * 100) === Math.round(due * 100);
 
-  if (!payment_confirmed) {
-    return {
-      schedulingAllowed: false,
-      executionAllowed: false,
-      showWise: true,
-      statusLabel: "Awaiting Payment",
-      operatorNote: "Payment not yet confirmed. Scheduling and execution locked.",
-    };
-  }
-
-  return {
-    schedulingAllowed: true,
-    executionAllowed: true,
-    showWise: false,            // Wise link no longer needed once confirmed
-    statusLabel: "Payment Confirmed",
-    operatorNote: null,
-  };
+  if (settlementVerified) return "PAYMENT_CONFIRMED";
+  if (paid > 0 && paid < due) return "PARTIAL_PAYMENT";
+  if (status === "failed") return "PAYMENT_FAILED";
+  if (status === "refunded") return "PAYMENT_REFUNDED";
+  return "PAYMENT_REQUIRED";
 }
 
-// Returns the client-safe payment status label.
-export function getClientPaymentStatusLabel(matter: {
-  payment_confirmed: boolean;
-  is_platform_fee_only: boolean;
-}): string {
-  if (matter.is_platform_fee_only)
-    return matter.payment_confirmed ? "Scheduling Unlocked" : "Platform Fee Only";
-  if (!matter.payment_confirmed) return "Awaiting Payment";
-  return "Payment Confirmed";
+
+export interface PaymentIntegrityMatter {
+ id?:string;payment_confirmed:boolean;is_platform_fee_only:boolean;payment_status?:string|null;
+ payment_settlement_status?:string|null;amount_due?:number|null;amount_paid?:number|null;
 }
+export function evaluatePaymentIntegrity(matter:PaymentIntegrityMatter):PaymentIntegrityResult {
+ const verified=evaluatePaymentGate({...matter,id:matter.id??'projection'})==='PAYMENT_CONFIRMED';
+ return {schedulingAllowed:verified,executionAllowed:verified,showWise:!verified&&!matter.is_platform_fee_only,
+ statusLabel:verified?'Payment Confirmed':matter.is_platform_fee_only?'Platform Fee Only':'Awaiting Payment',
+ operatorNote:verified?null:'Verified Wise settlement is required. A flag, submission or courtesy authorization does not unlock scheduling or execution.'};
+}
+export function getClientPaymentStatusLabel(matter:PaymentIntegrityMatter):string{return evaluatePaymentIntegrity(matter).statusLabel;}
 
 // Validates that a manual payment confirmation record has all required fields.
 export function validatePaymentRecord(record: {

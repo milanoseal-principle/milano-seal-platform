@@ -35,6 +35,18 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // User-authorized P20–P23 simulations and verified canonical evidence defects.
+ // Exact boundaries exercised by certify:source; no live/hosted authority.
+ 'lib/wise.ts','lib/documents/versions.ts',
+ 'components/dashboard/MatterDetailDrawer.tsx',
+ 'lib/safety/payment-integrity.ts','lib/payments/paymentGate.ts','lib/payments/complimentary-safety.ts',
+ 'src/features/payments/paymentGateService.ts','src/features/milano/types.ts',
+ 'scripts/certification/p20-wise.mjs','scripts/certification/p21-ron.mjs',
+ 'scripts/certification/p22-authentication.mjs','scripts/certification/p23-recovery.mjs',
+ 'app/api/dashboard/custody/[matterId]/route.ts',
+ 'supabase/migrations/20261109110000_ron_statutory_lifecycle_boundary.sql',
+ 'supabase/migrations/20261109120000_authority_return_release_evidence.sql',
+
  // User-authorized current-truth exception resolution and private operational evidence.
  'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
  'app/api/admin/wise/health/route.ts',

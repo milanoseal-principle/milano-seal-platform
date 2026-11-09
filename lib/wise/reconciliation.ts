@@ -387,23 +387,29 @@ async function loadDeal(matterId: string): Promise<DealPaymentRow> {
   return data as DealPaymentRow;
 }
 
+type ReconciliationIO = {
+  admin?: ReturnType<typeof createAdminClient>;
+  getStandardBalance?: typeof getStandardBalance;
+  getBalanceStatement?: typeof getBalanceStatement;
+};
+
 async function recordProviderObservation(params: {
   deal: DealPaymentRow;
   activity: WiseActivity;
   status: WiseProviderStatus;
   providerResourceId: string | null;
-}): Promise<void> {
+}, io: ReconciliationIO = {}): Promise<void> {
   // Legacy observations gain no execution authority from a bare resource ID.
   if (!params.deal.payment_attempt_id) {
     if (isInvalidWiseStatus(params.status)) {
-      const { error } = await createAdminClient().from("deals").update({
+      const { error } = await (io.admin ?? createAdminClient()).from("deals").update({
         payment_settlement_status: "failed", payment_status: "failed",
       }).eq("id", params.deal.id).is("payment_attempt_id", null);
       if (error) throw new Error(`Wise legacy invalidation failed (${error.code ?? "unknown"})`);
     }
     return;
   }
-  const { error } = await createAdminClient().rpc("record_wise_attempt_evidence", {
+  const { error } = await (io.admin ?? createAdminClient()).rpc("record_wise_attempt_evidence", {
     p_deal_id: params.deal.id,
     p_attempt_id: params.deal.payment_attempt_id,
     p_resource_id: params.providerResourceId,
@@ -422,7 +428,7 @@ async function confirmFromStatement(params: {
   deal: DealPaymentRow;
   providerResourceId: string | null;
   since: string;
-}): Promise<StatementConfirmation> {
+}, io: ReconciliationIO = {}): Promise<StatementConfirmation> {
   const currency = canonicalCurrency(params.deal.currency);
   const amountDue = money(params.deal.amount_due);
   if (amountDue <= 0) {
@@ -430,12 +436,12 @@ async function confirmFromStatement(params: {
   }
 
   try {
-    const balance = await getStandardBalance(currency);
+    const balance = await (io.getStandardBalance ?? getStandardBalance)(currency);
     if (!balance?.id) {
       return { confirmed: false, scaRequired: false, checked: true, transactionReference: null };
     }
 
-    const statement = await getBalanceStatement({
+    const statement = await (io.getBalanceStatement ?? getBalanceStatement)({
       balanceId: String(balance.id),
       currency,
       since: params.since,
@@ -458,7 +464,7 @@ async function confirmFromStatement(params: {
 
     const transactionReference =
       match.referenceNumber?.trim() || params.providerResourceId;
-    const admin = createAdminClient();
+    const admin = io.admin ?? createAdminClient();
     if (!transactionReference) return { confirmed: false, scaRequired: false, checked: true, transactionReference: null };
     if (params.deal.payment_attempt_id) {
       const evidence = await admin.rpc("record_wise_attempt_evidence", {
@@ -508,9 +514,10 @@ function noReferenceResult(deal: DealPaymentRow): WiseReconciliationResult {
   };
 }
 
-async function reconcileLoadedDeal(
+export async function reconcileLoadedDeal(
   deal: DealPaymentRow,
   activities: WiseActivity[],
+  io: ReconciliationIO = {},
 ): Promise<WiseReconciliationResult> {
   const reference = String(deal.wise_reference ?? deal.deal_id ?? "").trim();
   if (!reference) return noReferenceResult(deal);
@@ -550,7 +557,7 @@ async function reconcileLoadedDeal(
   }
 
   if (activity && status) {
-    await recordProviderObservation({ deal, activity, status, providerResourceId: activityResource });
+    await recordProviderObservation({ deal, activity, status, providerResourceId: activityResource }, io);
     if (isInvalidWiseStatus(status) || status === "REQUIRES_ATTENTION" || status === "UNKNOWN") {
       return {
         ok: true,
@@ -575,7 +582,7 @@ async function reconcileLoadedDeal(
     deal,
     providerResourceId: activityResource ?? deal.wise_transaction_reference,
     since: searchStart(deal),
-  });
+  }, io);
 
   if (settlement.confirmed) {
     return {
