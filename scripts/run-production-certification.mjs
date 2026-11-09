@@ -4,7 +4,7 @@ const hosted=process.argv.includes('--hosted-read-only');const suites=hosted?[
  ['P19-P23_HOSTED_OBSERVER',['scripts/observe-governance-hosted-certification.mjs']],
  ['HOSTED_UNAUTHENTICATED_SMOKE',['scripts/verify-hosted-release.mjs']],
 ]:[
- ['P19_ISOLATED_CANONICAL_MATTER',['scripts/test-p3-domestic-sql.mjs']],
+ ['P3_CANONICAL_MATTER_REGRESSION',['scripts/test-p3-domestic-sql.mjs']],
  ['P20_WISE_NEGATIVES',['scripts/run-tests.mjs','tests/wise-acquiring-reconciliation-p0.test.ts','tests/wise-provider-settlement-recovery-p0.test.ts','tests/wise-reconciliation-exception-orchestrator-p0.test.ts']],
  ['P21_RON_STATUTORY',['scripts/test-p4-ron-sql.mjs']],
  ['P22_AUTHORITY_AND_COURIER_GATES',['scripts/run-tests.mjs','tests/unit/authorityPacketComposer.test.ts','tests/unit/authorityShipmentLegs.test.ts','tests/unit/authorityProcessingIntelligence.test.ts']],

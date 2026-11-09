@@ -1,3 +1,4 @@
+import {inspectDocumentPreflight,preflightColumns} from '@/lib/intelligence/execution-brain/documentPreflight';
 import {persistUploadedVersion} from '@/lib/documents/versions';
 import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
@@ -86,16 +87,23 @@ export async function POST(req: NextRequest) {
 
   const documentLabel = label || `Client Upload — ${new Date().toLocaleDateString("en-US")}`;
 
-  // Record in documents table (pending verification status)
+  const preflight = await inspectDocumentPreflight({bytes:new Uint8Array(buffer),mimeType:file.type,fileName:file.name});
+  // Canonical file metadata; review/release authority stays in document_versions.
   const { data: docRow, error: dbError } = await admin
-    .from("documents")
+    .from("files")
     .insert({
-      matter_id: ctx.deal.id,
-      document_label: documentLabel,
+      deal_id: ctx.deal.id,
+      filename: file.name,
+      name: documentLabel,
       storage_path: storagePath,
-      source: "client_portal",
-      verification_status: "pending",
+      file_path: storagePath,
+      file_type: file.type,
+      mime_type: file.type,
+      file_size: file.size,
+      size_bytes: file.size,
+      category: "client-upload",
       uploaded_by: ctx.email,
+      ...preflightColumns(preflight),
     })
     .select("id")
     .single();
@@ -109,9 +117,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  try{await persistUploadedVersion(admin,{matterId:ctx.deal.id,path:storagePath,bucket:'documents',bytes:new Uint8Array(buffer),mime:file.type,name:file.name,actor:ctx.email,documentId:docRow?.id});}catch{return NextResponse.json({error:'VERSION_EVIDENCE_NOT_CONFIRMED',next_action:'Contact your coordinator. The file is stored but is not release-ready.'},{status:503});}
+  try{await persistUploadedVersion(admin,{matterId:ctx.deal.id,path:storagePath,bucket:'documents',bytes:new Uint8Array(buffer),mime:file.type,name:documentLabel,actor:ctx.email,documentId:docRow?.id,source:'client_portal'});}catch{return NextResponse.json({error:'VERSION_EVIDENCE_NOT_CONFIRMED',next_action:'Contact your coordinator. The file is stored but is not release-ready.'},{status:503});}
   // Chain-of-custody entry
-  await appendLedger({
+  const custody = await appendLedger({
     deal_id: ctx.deal.id,
     event: "DOC_RECEIVED",
     actor_type: "client",
@@ -125,5 +133,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  if (!custody) return NextResponse.json({error:'UPLOAD_CUSTODY_NOT_CONFIRMED'},{status:503});
   return NextResponse.json({ success: true, document_id: docRow?.id });
 }

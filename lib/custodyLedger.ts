@@ -145,8 +145,7 @@ export async function appendLedger(
   return null;
 }
 
-export async function getLedger(deal_id: string): Promise<LedgerRow[]> {
-  const supabase = createAdminClient();
+export async function getLedger(deal_id: string, supabase = createAdminClient()): Promise<LedgerRow[]> {
   const rows=await readAllKeyset<LedgerRow>(async cursor=>{
     let query=supabase.from('custody_ledger').select('*').eq('deal_id',deal_id).order('id').limit(250);
     if(cursor)query=query.gt('id',cursor.id);

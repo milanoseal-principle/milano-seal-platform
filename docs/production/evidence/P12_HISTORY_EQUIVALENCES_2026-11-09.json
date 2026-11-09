@@ -1,0 +1,167 @@
+{
+  "project_ref": "ehqdzfopsrbwewtddiwq",
+  "inspection": "READ_ONLY_MIGRATION_STATEMENT_HASHES_NO_STATEMENT_EXPORT",
+  "matches": [
+    {
+      "hosted": "20260926043329_080_canonical_pricing_quote_truth",
+      "repository": [
+        "080_canonical_pricing_quote_truth.sql"
+      ],
+      "hosted_statements_md5": "ce351e7e12e4b2e41b991c8250840c7e",
+      "repository_sql_md5": {
+        "080_canonical_pricing_quote_truth.sql": "ce351e7e12e4b2e41b991c8250840c7e"
+      }
+    },
+    {
+      "hosted": "20260926043331_081_document_structural_preflight",
+      "repository": [
+        "081_document_structural_preflight.sql"
+      ],
+      "hosted_statements_md5": "0ac663be7ab324c0dd2df072ab630ed9",
+      "repository_sql_md5": {
+        "081_document_structural_preflight.sql": "0ac663be7ab324c0dd2df072ab630ed9"
+      }
+    },
+    {
+      "hosted": "20260926043333_082_professional_referral_engine",
+      "repository": [
+        "082_professional_referral_engine.sql"
+      ],
+      "hosted_statements_md5": "5309c891331f0785eed5af9fb81dc065",
+      "repository_sql_md5": {
+        "082_professional_referral_engine.sql": "5309c891331f0785eed5af9fb81dc065"
+      }
+    },
+    {
+      "hosted": "20260926043335_083_ron_provider_capability_evidence",
+      "repository": [
+        "083_ron_provider_capability_evidence.sql"
+      ],
+      "hosted_statements_md5": "c90cff9012697895f5d1d0ce454faba7",
+      "repository_sql_md5": {
+        "083_ron_provider_capability_evidence.sql": "c90cff9012697895f5d1d0ce454faba7"
+      }
+    },
+    {
+      "hosted": "20260926043337_084_state_authority_provenance",
+      "repository": [
+        "084_state_authority_provenance.sql"
+      ],
+      "hosted_statements_md5": "6d3b3840b14171e1076cfb0fd86ae13b",
+      "repository_sql_md5": {
+        "084_state_authority_provenance.sql": "6d3b3840b14171e1076cfb0fd86ae13b"
+      }
+    },
+    {
+      "hosted": "20260926043339_085_authority_packet_composer",
+      "repository": [
+        "085_authority_packet_composer.sql"
+      ],
+      "hosted_statements_md5": "eff4cfabfbf79827c8890f569496f6e4",
+      "repository_sql_md5": {
+        "085_authority_packet_composer.sql": "eff4cfabfbf79827c8890f569496f6e4"
+      }
+    },
+    {
+      "hosted": "20260926043342_086_matter_shipment_legs",
+      "repository": [
+        "086_matter_shipment_legs.sql"
+      ],
+      "hosted_statements_md5": "d9fb0ef0685a7a289207f65e6200e1e1",
+      "repository_sql_md5": {
+        "086_matter_shipment_legs.sql": "d9fb0ef0685a7a289207f65e6200e1e1"
+      }
+    },
+    {
+      "hosted": "20260926043343_087_authority_processing_intelligence",
+      "repository": [
+        "087_authority_processing_intelligence.sql"
+      ],
+      "hosted_statements_md5": "e8ac0d215153e8188cd9526efab0b65c",
+      "repository_sql_md5": {
+        "087_authority_processing_intelligence.sql": "e8ac0d215153e8188cd9526efab0b65c"
+      }
+    },
+    {
+      "hosted": "20260926043345_202609250001_translation_entries",
+      "repository": [
+        "202609250001_translation_entries.sql"
+      ],
+      "hosted_statements_md5": "3ba2f33b0a791663685000716a203999",
+      "repository_sql_md5": {
+        "202609250001_translation_entries.sql": "3ba2f33b0a791663685000716a203999"
+      }
+    },
+    {
+      "hosted": "20260926043347_202609260001_translation_entry_rls_hardening",
+      "repository": [
+        "202609260001_translation_entry_rls_hardening.sql"
+      ],
+      "hosted_statements_md5": "83dde684727150c45fcbdeb813110c12",
+      "repository_sql_md5": {
+        "202609260001_translation_entry_rls_hardening.sql": "83dde684727150c45fcbdeb813110c12"
+      }
+    },
+    {
+      "hosted": "20261107223527_p3_domestic_execution",
+      "repository": [
+        "20261107215959_p3_domestic_execution.sql"
+      ],
+      "hosted_statements_md5": "e7ab7011cb618ce502a72e2a4fed8f47",
+      "repository_sql_md5": {
+        "20261107215959_p3_domestic_execution.sql": "e7ab7011cb618ce502a72e2a4fed8f47"
+      }
+    },
+    {
+      "hosted": "20261108002559_p3_canonical_lifecycle_reconciliation",
+      "repository": [
+        "20261107234218_p3_canonical_lifecycle_reconciliation.sql"
+      ],
+      "hosted_statements_md5": "d79bedbfb1145ea857fc09751abe57f1",
+      "repository_sql_md5": {
+        "20261107234218_p3_canonical_lifecycle_reconciliation.sql": "d79bedbfb1145ea857fc09751abe57f1"
+      }
+    }
+  ],
+  "limitations": [
+    "Exact SQL-statement hash match proves a history relationship; current catalog capabilities remain authoritative.",
+    "Unmatched history is not a pending migration instruction."
+  ],
+  "unmatched_exact_sql_hash_records": [
+    "20260412205911_01_schema_core",
+    "20260412210003_02_schema_rls",
+    "20260412210311_03_seed_data",
+    "20260418013613_add_anon_insert_policy",
+    "20260810164122_live_intake_execution_truth_reconciliation",
+    "20260813091841_damiani50_governed_scope",
+    "20260815013821_messages_sender_identity_reconciliation",
+    "20260827175657_matter_evidence_ledger",
+    "20260827175714_matter_truth_snapshot_archive",
+    "20260827175942_revoke_matter_append_only_trigger_rpc",
+    "20260827180306_harden_legacy_security_definer_views",
+    "20260828063355_block_test_matter_data_in_production",
+    "20260829193828_discount_codes_updated_by",
+    "20260829201003_notification_delivery_evidence_columns",
+    "20260829204637_bluenotary_ron_production_reconciliation",
+    "20260829204906_ron_document_storage_bucket",
+    "20260830072454_milano_review_requests",
+    "20260830072505_search_console_revenue_feedback",
+    "20260830081707_review_request_events",
+    "20260830081719_search_console_sync_runs",
+    "20260830124434_production_certification_runs",
+    "20260830124444_seo_editorial_reviews",
+    "20260830124459_security_advisor_hardening",
+    "20260830124533_revoke_sensitive_identity_helpers_from_public",
+    "20260831200104_payment_observation_snapshot",
+    "20260901035836_atomic_execution_courier_alliance",
+    "20260902160302_governed_dispatch_and_alliance_webhooks",
+    "20260906224323_wise_provider_settlement_evidence_recovery",
+    "20260906232759_wise_reconciliation_exception_orchestrator",
+    "20260907190939_shippo_prepayment_rate_continuity",
+    "20260907190956_wise_observed_scheduling_gate",
+    "20260926133333_088_payment_gate_search_path_hardening",
+    "20261107122554_verified_settlement_scheduling_gate",
+    "20261107122556_counsel_inquiry_capture",
+    "20261107124012_deals_access_hardening"
+  ]
+}
