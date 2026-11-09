@@ -46,6 +46,7 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'app/api/dashboard/custody/[matterId]/route.ts',
  'supabase/migrations/20261109110000_ron_statutory_lifecycle_boundary.sql',
  'supabase/migrations/20261109120000_authority_return_release_evidence.sql',
+ 'supabase/migrations/20261109130000_ron_correction_progression_guard.sql',
 
  // User-authorized current-truth exception resolution and private operational evidence.
  'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
