@@ -93,6 +93,7 @@ export function captureCustomerServiceContext(raw:Record<string,unknown>,receive
   service_intent: normalizeServiceIntent(raw.service_intent),
   service_intent_source: raw.service_intent_source==='intake'?'intake':raw.service_intent_source==='link'?'link':'default',
   service_intent_selected_at: text('service_intent_selected_at',50), received_at:receivedAt,
+  international_use:typeof raw.international_use==='boolean'?raw.international_use:null,
   witness_context:text('witness_context',3000), document_description:text('document_description',12000),
   receiving_authority:text('receiving_authority',1000), deadline:text('deadline_date',120),
   timeline_preference:text('timeline_preference',50), delivery_preference:text('delivery_method',50),

@@ -33,6 +33,7 @@ await db.exec(readFileSync('supabase/migrations/073_payment_observation_snapshot
 await db.exec('alter table public.deals add column wise_reference text,add column wise_transaction_reference text,add column payment_funding_method text;');
 await db.exec(readFileSync('supabase/migrations/20261108220000_wise_authority_separation.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/20261107215959_p3_domestic_execution.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/20261109063000_verified_settlement_scheduling.sql','utf8'));
 const first=(await db.query(`select * from convert_sales_lead_to_matter('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001')`)).rows[0];
 const repeat=(await db.query(`select * from convert_sales_lead_to_matter('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001')`)).rows[0];
 if(first.matter_id!==repeat.matter_id || !repeat.duplicate) throw Error('Conversion not idempotent');
