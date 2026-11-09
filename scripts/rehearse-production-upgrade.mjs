@@ -9,7 +9,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
 import {uuid_ossp} from '@electric-sql/pglite/contrib/uuid_ossp';
 import {hostedSchemaFixture,applicationCatalog,readCatalog,baselineMetadata} from './lib/hosted-schema-fixture.mjs';
-import {wiseFixtures} from './certification/shared.mjs';
+import {wiseFixtures,syntheticIdentifierLock} from './certification/shared.mjs';
 import {REQUIRED_SCHEMA,REQUIRED_RPCS} from './verify-production-schema-capabilities.mjs';
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const plan=JSON.parse(readFileSync('supabase/migration-replay-plan.json')).hosted_recovery;
@@ -43,6 +43,26 @@ try{
  await check('PRIVATE_HISTORY','deny inherited maintenance privileges without changing record history',async()=>{for(const role of ['anon','authenticated'])for(const table of privateTables)for(const privilege of ['TRUNCATE','REFERENCES','TRIGGER'])assert.equal((await db.query('select has_table_privilege($1,$2,$3) allowed',[role,'public.'+table,privilege])).rows[0].allowed,false,role+' '+table+' '+privilege);await db.exec('set role authenticated');try{await assert.rejects(()=>db.exec('truncate public.custody_ledger'),/permission denied/);}finally{await db.exec('reset role');}for(const id of custody)preserve(preserved.find(r=>r.id===id).before,await row(db,'custody_ledger',id));});
  await check('CAPABILITIES','actual migrated columns/RPCs satisfy original build capability contract',async()=>{const catalog=await readCatalog(db);for(const [table,columns] of Object.entries(REQUIRED_SCHEMA))for(const column of columns)assert.ok(catalog.columns.some(c=>c.key==='public.'+table+'.'+column),table+'.'+column);for(const rpc of REQUIRED_RPCS)assert.ok(catalog.functions.some(f=>f.key.startsWith('public.'+rpc+'(')),rpc);});
  await check('WISE_AUTHORITY','real upgraded attempt RPC blocks submission and unlocks only exact settlement',async()=>{const attempt=await fixture.begin(pending),resource=randomUUID();await assert.rejects(()=>fixture.schedule(pending),/SETTLEMENT|PAYMENT|TRANSITION/i);await fixture.observe(pending,attempt,resource,'IN_PROGRESS');await assert.rejects(()=>fixture.schedule(pending),/SETTLEMENT|PAYMENT|TRANSITION/i);await fixture.observe(pending,attempt,resource,'SETTLED');await fixture.confirm(pending,resource);await fixture.schedule(pending);assert.equal((await fixture.load(pending)).payment_confirmed,true);});
+ await check('NO_AUTH_RELEASE','upgraded canonical RPC permits only exact no-auth release and idempotent replay',async()=>{
+  const id=await fixture.create(),actor=randomUUID();
+  await db.query("insert into auth.users(id,raw_app_meta_data) values($1,'{\"role\":\"founder_admin\"}')",[actor]);
+  await db.query("update deals set final_total=100,apostille_required=false,execution_truth=$1 where id=$2",[{notarization_requirement:'required',execution_method:'in_person',authentication_requirement:'not_required',review_confirmed_by:actor},id]);
+  const attempt=await fixture.begin(id),resource=randomUUID();await fixture.observe(id,attempt,resource,'SETTLED');await fixture.confirm(id,resource);await fixture.schedule(id);await db.query("update deals set status='in_execution',deal_status='in_execution' where id=$1",[id]);
+  const executed=randomUUID(),final=randomUUID();
+  for(const [version,stage,parent] of [[executed,'executed',null],[final,'final_packet',executed]]){
+   const hash=sha('Synthetic upgraded '+version);
+   await db.query("insert into document_versions(id,matter_id,stage,parent_version_id,file_hash,actor,source_file,storage_path) values($1,$2,$3,$4,$5,$6,$7,$7)",[version,id,stage,parent,hash,actor,'simulation/'+version+'.pdf']);
+   await db.query('select approve_document_version($1,$2,$3,$4)',[actor,version,hash,'Synthetic exact-version upgraded release review']);
+  }
+  const release=async()=>(await db.query('select record_document_release($1,$2,$3) result',[actor,id,[final]])).rows[0].result;
+  const deny=async()=>{await db.exec('savepoint denied_release');try{await assert.rejects(release,/IDENTIFIER_LOCK_REQUIRED/);}finally{await db.exec('rollback to denied_release;release savepoint denied_release');}};
+  await db.exec('begin');try{await db.query("update deals set destination_country='Italy' where id=$1",[id]);await deny();const lock=await syntheticIdentifierLock(db,id,actor,'needs_review');await deny();await db.query("update identifier_locks set status='confirmed' where id=$1",[lock]);assert.ok((await release()).hash);}finally{await db.exec('rollback');}
+  for(const requirement of ['authentication_legalization','review_required']){await db.exec('begin');try{await db.query("update deals set execution_truth=jsonb_set(execution_truth,'{authentication_requirement}',to_jsonb($1::text)),status='apostille_processing',deal_status='apostille_processing' where id=$2",[requirement,id]);await assert.rejects(release,requirement==='review_required'?/AUTHENTICATION_ROUTE_REVIEW_REQUIRED/:/APPROVED_AUTHENTICATION_VERSION_REQUIRED|VERIFIED_AUTHORITY_RETURN_LINEAGE_REQUIRED/);}finally{await db.exec('rollback');}}
+  const first=await release(),second=await release();assert.equal(first.hash,second.hash);assert.equal(second.duplicate,true);
+  assert.equal((await fixture.load(id)).status,'in_execution');
+  assert.equal((await db.query("select count(*)::int n from custody_ledger where deal_id=$1 and event='DOC_RELEASE_CONFIRMED'",[id])).rows[0].n,1);
+  await db.query("update deals set status='in_transit',deal_status='in_transit' where id=$1",[id]);
+ });
  await check('GOVERNANCE_PAUSED','installation never activates agents or corporate execution',async()=>{const settings=(await db.query('select * from governance_settings')).rows[0];assert.equal(settings.paused,true);assert.equal(settings.mode,'DISABLED');assert.equal(Number((await db.query('select count(*) n from governance_agents where enabled')).rows[0].n),0);});
  await check('PHYSICAL_RESTORE','physical restore returns original schema and all non-customer history',async()=>{restored=new PGlite({loadDataDir:backup,extensions:{pgcrypto,uuid_ossp}});await restored.waitReady;for(const record of preserved)assert.deepEqual(await row(restored,record.table,record.id),record.before);assert.equal((await restored.query("select to_regclass('public.governance_settings') value")).rows[0].value,null);await revokedAuthority(restored);assert.deepEqual(applicationCatalog(await readCatalog(restored)),applicationCatalog(snapshot.catalog));});
  report.status='PASS';report.migration_count=report.migrations.length;report.production_schema_aligned=false;report.production_backup_recoverability_verified=false;
