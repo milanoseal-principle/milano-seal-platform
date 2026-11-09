@@ -346,7 +346,7 @@ export default function ClientInvoicePage() {
             {paymentPresentation === 'invalidated' && <p role="status" className="mt-3 text-xs text-amber-100/70">The prior payment attempt is invalidated. {paymentReentryAllowed ? 'Use a fresh secure Wise handoff before submitting again.' : 'Ask your coordinator to reconcile the recorded payment before making another payment.'}</p>}
             {paymentProcessing && (
               <div className="mt-3 text-xs leading-5 text-amber-100/60">
-                Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling may proceed only after the recorded submission passes canonical integrity checks and the remaining Matter requirements are ready.
+                Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling remains locked until Wise settlement is verified and the remaining Matter requirements are ready.
               </div>
             )}
           </div>

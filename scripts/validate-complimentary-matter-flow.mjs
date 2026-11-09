@@ -47,8 +47,9 @@ for (const token of ["createAdminClient", "canonicalQuoteFromDeal", "amount_due:
 if (/payment_status\s*:\s*["']paid["']|payment_confirmed\s*:\s*true/.test(server)) failures.push("Server flow mutates paid/payment_confirmed for complimentary Matter.");
 
 const gate = read("lib/scheduling/complimentarySchedulingGate.ts");
-for (const token of ["verified_payment", "complimentary_authorization", "not_satisfied", "evaluatePaymentGate", "comp_authorized", "verified_revenue"]) if (!gate.includes(token)) failures.push(`Scheduling gate missing ${token}`);
+for (const token of ["verified_payment", "not_satisfied", "evaluatePaymentGate", "comp_authorized", "verified_revenue"]) if (!gate.includes(token)) failures.push(`Scheduling gate missing ${token}`);
 
+if (/paymentRequirementMethod:\s*["']complimentary_authorization["']/.test(gate)) failures.push("Complimentary authority cannot satisfy settlement-only scheduling.");
 const scheduleRoute = read("app/api/deals/[id]/schedule/route.ts");
 if (!scheduleRoute.includes("evaluateSchedulingGate")) failures.push("Scheduling route does not use canonical complimentary scheduling gate.");
 if (!scheduleRoute.includes("paymentRequirementMethod")) failures.push("Scheduling route does not return paymentRequirementMethod.");

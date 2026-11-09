@@ -1,13 +1,9 @@
 "use client";
 
-import { evaluatePaymentIntegrity } from "@/lib/safety/payment-integrity";
+import { evaluatePaymentIntegrity, type PaymentIntegrityMatter } from "@/lib/safety/payment-integrity";
 
 interface PaymentIntegrityPanelProps {
-  matter: {
-    payment_confirmed: boolean;
-    is_platform_fee_only: boolean;
-    payment_status?: string | null;
-  };
+  matter: PaymentIntegrityMatter;
 }
 
 const STATUS_COLOR: Record<string, string> = {

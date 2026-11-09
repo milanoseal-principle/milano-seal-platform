@@ -143,7 +143,7 @@ export default function WiseReconciliationCommandPage() {
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">Finance · Wise Control</p>
             <h1 className="mt-2 font-serif text-3xl text-white sm:text-4xl">Settlement Recovery Command</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-white/52">
-              Automatic exception detection for governed Wise submissions. Scheduling authority stays separate from settlement truth. Paid state is never inferred from amount, timing, or client assertion.
+              Automatic exception detection for governed Wise submissions. Scheduling remains locked until Wise settlement is verified. Paid state is never inferred from amount, timing, or client assertion.
             </p>
           </div>
           <button onClick={() => void load()} className="rounded-xl border border-white/10 px-4 py-2 text-xs text-white/65 hover:border-[var(--ms-gold)]/35 hover:text-white">

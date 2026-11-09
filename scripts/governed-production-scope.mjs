@@ -38,6 +38,7 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // Founder explicitly replaced submission scheduling with verified-settlement-only authority.
  // Existing full unit + actual SQL suites enforce deny/allow parity.
  'supabase/migrations/20261109063000_verified_settlement_scheduling.sql',
+ 'src/features/payments/paymentGateService.ts',
  // User-authorized current-truth exception resolution and private operational evidence.
  'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
  'app/api/admin/wise/health/route.ts',

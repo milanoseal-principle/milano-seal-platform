@@ -439,6 +439,8 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
               payment_confirmed: matter.payment_confirmed === true,
               is_platform_fee_only: matter.is_platform_fee_only === true,
               payment_status: matter.payment_status,
+              payment_settlement_status: matter.payment_settlement_status,
+              amount_due: matter.amount_due, amount_paid: matter.amount_paid,
             }}
           />
         </div>

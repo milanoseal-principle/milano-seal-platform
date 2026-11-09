@@ -74,7 +74,7 @@ function buildProfessionalMatter(params: IntakeSearchParams) {
     authority ? `Receiving authority: ${authority}.` : "",
   ].filter(Boolean);
 
-  return params.matter || params.useCase || `Professional Matter pre-flight carried forward. ${facts.join(" ")}`;
+  return params.matter || params.useCase || (facts.length ? `Professional Matter pre-flight carried forward. ${facts.join(" ")}` : "");
 }
 
 function IntakeContent({
@@ -124,7 +124,7 @@ async function IntakeWizardWrapper({
 
   return (
     <>
-      {isProfessional ? (
+      {isProfessional && Boolean(country || document || professionalMatter) ? (
         <div className="mx-auto mb-5 w-full max-w-2xl rounded-2xl border border-[var(--ms-gold)]/24 bg-[var(--ms-gold)]/[0.045] px-5 py-4 text-left sm:px-6">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--ms-gold)]/25 bg-black/20">

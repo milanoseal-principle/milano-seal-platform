@@ -67,3 +67,22 @@ test('pending submission stays current for idempotency while scheduling remains 
  assert.equal(hasCurrentWiseSubmissionSnapshot(matter),true);assert.equal(evaluateSchedulingGate({matter}).schedulingEligible,false);
  for(const change of [{amount_due:101},{currency:'EUR'},{payment_attempt_id:null},{payment_observed_at:'2026-11-08T00:00:00Z'},{payment_observed_reference:'FOREIGN'},{amount_paid:1},{payment_settlement_status:'failed'}])assert.equal(hasCurrentWiseSubmissionSnapshot({...matter,...change}),false);
 });
+
+import {evaluatePaymentIntegrity,getClientPaymentStatusLabel} from '@/lib/safety/payment-integrity';
+import {evaluatePaymentGates} from '@/src/features/payments/paymentGateService';
+import {evaluateComplimentarySchedulingRequirement} from '@/lib/payments/complimentary-safety';
+import {createComplimentaryAuthorization} from '@/lib/payments/complimentary-authorization';
+test('legacy integrity panel never grants scheduling from a confirmed flag or platform-fee flag alone',()=>{
+ for(const is_platform_fee_only of [false,true]){const row={id:'synthetic',payment_confirmed:true,is_platform_fee_only,payment_status:'paid'};assert.equal(evaluatePaymentIntegrity(row).schedulingAllowed,false);assert.equal(evaluatePaymentIntegrity(row).executionAllowed,false);assert.notEqual(getClientPaymentStatusLabel(row),'Scheduling Unlocked');}
+ const row={payment_confirmed:true,is_platform_fee_only:false,payment_status:'paid',payment_settlement_status:'cleared',amount_due:100,amount_paid:100};assert.equal(evaluatePaymentIntegrity(row).schedulingAllowed,true);
+ for(const change of [{amount_paid:99},{amount_paid:101},{amount_paid:NaN},{payment_settlement_status:'observed_pending'}])assert.equal(evaluatePaymentIntegrity({...row,...change}).schedulingAllowed,false);
+});
+test('legacy domain totals and release labels cannot unlock scheduling or release',()=>{
+ const row={id:'synthetic',final_total:200,deposit_required:true,deposit_amount:100,deposit_paid_amount:100,amount_received:200,balance_due:0,payment_status:'paid',release_status:'released'};assert.equal(evaluatePaymentGates(row).scheduling_unlocked,false);assert.equal(evaluatePaymentGates(row).release_unlocked,false);
+ const verified={...row,payment_confirmed:true,payment_settlement_status:'cleared',amount_due:100,amount_paid:100};assert.equal(evaluatePaymentGates(verified).scheduling_unlocked,true);assert.equal(evaluatePaymentGates(verified).release_unlocked,true);assert.equal(evaluatePaymentGates({...verified,balance_due:100}).release_unlocked,false);
+});
+test('courtesy scheduling helper rejects a verified boolean without the canonical payment record',()=>{
+ const params={quote:{quoteId:null,matterId:'synthetic',subtotal:100,addOns:0,total:100,currency:'USD',quoteVersion:'v1'},authorization:null,verifiedPaymentConfirmed:true,allOperationalRequirementsPassed:true};assert.equal(evaluateComplimentarySchedulingRequirement(params).paymentRequirementSatisfied,false);
+ const authorization=createComplimentaryAuthorization({quote:params.quote,reasonCode:'founder_authorized',reasonDetail:'Synthetic authorized courtesy for regression only',authorizedByUserId:'synthetic-founder',authorizedByRole:'founder_admin'});assert.equal(evaluateComplimentarySchedulingRequirement({...params,authorization}).paymentRequirementSatisfied,false);
+ assert.equal(evaluateComplimentarySchedulingRequirement({...params,verifiedPayment:{id:'synthetic',payment_confirmed:true,payment_status:'paid',payment_settlement_status:'cleared',amount_due:100,amount_paid:100}}).paymentRequirementSatisfied,true);
+});
