@@ -54,3 +54,26 @@ test('activity enrichment requires current creation time and explicit matching a
     { createdOn: activity.createdOn, primaryAmount: '$100' },
   ]) assert.equal(activityMatchesAttempt(a, matter), false);
 });
+
+import { portalRONProjection, isRonSigningSessionActive } from '@/lib/bluenotary/projection';
+import type { RONSession, RONSigner } from '@/lib/bluenotary/types';
+const activeSession = { id: 'session-a', milano_ron_status: 'SIGNER_INVITED', ron_lifecycle_state: 'REQUESTED', expired_at: null, payment_gate_status: 'UNLOCKED' } as RONSession;
+const releasedSigner = { email: 'owner@example.invalid', signing_url_released: true, signing_url_encrypted: 'https://provider.example.invalid/sign/synthetic' } as RONSigner;
+
+test('cached released signer URL requires current execution authority on every read', () => {
+  assert.equal(portalRONProjection(activeSession, [releasedSigner], releasedSigner.email!).signing_url, null);
+  const schedulingOnly = { schedulingAuthorized: true, executionAuthorized: false };
+  assert.equal(portalRONProjection(activeSession, [releasedSigner], releasedSigner.email!, schedulingOnly).signing_url, null);
+  const currentAuthority = { schedulingAuthorized: true, executionAuthorized: true };
+  assert.equal(portalRONProjection(activeSession, [releasedSigner], releasedSigner.email!, currentAuthority).signing_url, releasedSigner.signing_url_encrypted);
+  assert.equal(portalRONProjection(activeSession, [releasedSigner], 'foreign@example.invalid', currentAuthority).signing_url, null);
+  for (const change of [
+    { ron_lifecycle_state: 'FAILED' }, { ron_lifecycle_state: 'CANCELLED' }, { ron_lifecycle_state: 'COMPLETED' },
+    { ron_lifecycle_state: 'PROVIDER_SESSION_COMPLETED' }, { ron_lifecycle_state: undefined },
+    { expired_at: '2020-01-01T00:00:00Z' }, { expired_at: 'malformed' }, { milano_ron_status: 'RON_EXPIRED' },
+  ]) {
+    const session = { ...activeSession, ...change } as RONSession;
+    assert.equal(isRonSigningSessionActive(session), false);
+    assert.equal(portalRONProjection(session, [releasedSigner], releasedSigner.email!, currentAuthority).signing_url, null);
+  }
+});

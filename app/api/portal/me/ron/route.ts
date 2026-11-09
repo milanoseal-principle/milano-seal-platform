@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { evaluateExecutionGate, evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 import { portalRONProjection } from '@/lib/bluenotary/projection';
 import type { RONSession, RONSigner } from '@/lib/bluenotary/types';
 import { emailsMatch, normalizeEmail } from '@/lib/auth/clientAccount';
@@ -22,7 +23,7 @@ export async function GET() {
   // Find the matter linked to this portal user
   const { data: deal } = await admin
     .from('deals')
-    .select('id, email, payment_status')
+    .select('id,deal_id,email,payment_status,payment_confirmed,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,wise_reference,wise_transaction_reference,payment_funding_method,payment_attempt_id,payment_attempt_started_at,wise_provider_evidence')
     .eq('email', email)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -59,8 +60,9 @@ export async function GET() {
   const projection = portalRONProjection(
     session as RONSession,
     (signers ?? []) as RONSigner[],
-    email
+    email,
+    { schedulingAuthorized: evaluateSchedulingGate({ matter: deal }).schedulingEligible, executionAuthorized: evaluateExecutionGate(deal).schedulingEligible },
   );
 
-  return NextResponse.json({ ron_session: projection });
+  return NextResponse.json({ ron_session: projection }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

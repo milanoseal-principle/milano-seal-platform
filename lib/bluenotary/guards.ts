@@ -2,6 +2,7 @@
 // All guards throw on failure; callers must catch and return 403/400.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isRonSigningSessionActive } from '@/lib/bluenotary/projection';
 import { evaluatePaymentIntegrity } from '@/lib/safety/payment-integrity';
 import { evaluateExecutionGate, evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
@@ -165,13 +166,13 @@ export async function assertCanReleaseSigningURL(
 
   const { data: session } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, expired_at')
+    .select('id, milano_ron_status, ron_lifecycle_state, expired_at')
     .eq('id', ronSessionId)
     .eq('matter_id', matterId)
     .single();
 
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
-  if (session.milano_ron_status === 'RON_EXPIRED' || (session.expired_at && new Date(session.expired_at) < new Date())) {
+  if (!isRonSigningSessionActive(session)) {
     throw new RONGuardError('SESSION_EXPIRED', 'This RON session has expired');
   }
 

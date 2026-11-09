@@ -35,6 +35,7 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ 'app/api/portal/me/ron/route.ts',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
  // Positive/negative authority tests run in test:wise-attempt-database and the
  // existing full release gate. All other protected-path restrictions remain.

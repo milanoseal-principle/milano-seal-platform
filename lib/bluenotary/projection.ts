@@ -21,6 +21,15 @@ const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
   'SESSION_PROCESSING',
 ];
 
+/** Signing access ends on provider completion, cancellation, failure or expiry. */
+export function isRonSigningSessionActive(session: Pick<RONSession, 'milano_ron_status' | 'ron_lifecycle_state' | 'expired_at'>, now = Date.now()): boolean {
+  const lifecycle = session.ron_lifecycle_state;
+  const expiry = session.expired_at == null ? null : Date.parse(session.expired_at);
+  return ACTIVE_RON_STATUSES.includes(session.milano_ron_status) &&
+    ['REQUESTED', 'STARTED', 'PROVIDER_ACCEPTED'].includes(String(lifecycle)) &&
+    (expiry === null || (Number.isFinite(expiry) && expiry > now));
+}
+
 /**
  * Project a RON session + signer list to a client-safe portal view.
  *
@@ -28,7 +37,7 @@ const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
  *   1. signing_url_released = true on the matching signer record
  *   2. Session is in an active status (not expired/completed)
  *   3. Signer email matches the requesting user's email
- *   4. payment_gate_status = 'UNLOCKED' (canonical scheduling authority)
+ *   4. Current canonical execution authority was re-evaluated by the server
  *
  * IMPORTANT: payment_gate_status is scheduling authority only. This projection
  * never authors or infers verified Wise settlement truth.
@@ -36,15 +45,16 @@ const ACTIVE_RON_STATUSES: MilanoRONStatus[] = [
 export function portalRONProjection(
   ronSession: RONSession,
   signers: RONSigner[],
-  signerEmail: string
+  signerEmail: string,
+  authority: { schedulingAuthorized: boolean; executionAuthorized: boolean } = { schedulingAuthorized: false, executionAuthorized: false },
 ): PortalRONView {
   const lifecycle = isRonLifecycleState(ronSession.ron_lifecycle_state) ? ronSession.ron_lifecycle_state : 'REQUESTED';
   const terminal = ['RON_COMPLETED','SIGNED_DOCS_RETRIEVED','READY_FOR_APOSTILLE'].includes(ronSession.milano_ron_status);
   const status = terminal && (!ronSession.statutory_evidence_id || ronSession.statutory_evidence_verified !== true || !!ronSession.evidence_reopened_at)
     ? 'RON_REVIEW_REQUIRED'
     : ronSession.milano_ron_status;
-  const schedulingAuthorized = ronSession.payment_gate_status === 'UNLOCKED';
-  const sessionActive = ACTIVE_RON_STATUSES.includes(status) && !['FAILED', 'CANCELLED', 'COMPLETED'].includes(lifecycle);
+  const schedulingAuthorized = authority.schedulingAuthorized;
+  const sessionActive = isRonSigningSessionActive({ ...ronSession, milano_ron_status: status });
 
   const matchingSigner = signers.find(
     (s) => s.email?.toLowerCase() === signerEmail.toLowerCase()
@@ -55,7 +65,7 @@ export function portalRONProjection(
   if (
     matchingSigner &&
     matchingSigner.signing_url_released === true &&
-    schedulingAuthorized &&
+    authority.executionAuthorized &&
     sessionActive &&
     matchingSigner.signing_url_encrypted
   ) {
