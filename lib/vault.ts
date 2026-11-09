@@ -1,3 +1,6 @@
+import {emailsMatch} from '@/lib/auth/clientAccount';
+import {evaluatePaymentGate} from '@/lib/payments/paymentGate';
+import {readAllKeyset} from '@/lib/data/keyset';
 // STORAGE-VAULT-01: Signed document URL generation
 // Service-role only. Never called from client. Never returns storage paths.
 
@@ -30,13 +33,11 @@ export async function getVaultDocumentsForMatter(
 ): Promise<VaultDocument[]> {
   const admin = createAdminClient();
 
-  const { data: rows } = await admin
-    .from("client_safe_documents_view")
-    .select("document_id, matter_id, document_label, storage_path, uploaded_at, verification_status")
-    .eq("matter_id", matterId)
-    .order("uploaded_at", { ascending: false });
-
-  if (!rows?.length) return [];
+  const owner=await admin.from('deals').select('id,email,is_paid_and_released,payment_confirmed,payment_status,payment_settlement_status,amount_due,amount_paid').eq('id',matterId).maybeSingle();
+  if(owner.error||!owner.data||!emailsMatch(owner.data.email,actorEmail))throw Error('VAULT_MATTER_NOT_AUTHORIZED');
+  const rows=await readAllKeyset<Record<string,unknown>>(async cursor=>{
+   let query=admin.from('client_safe_documents_view').select('document_id,matter_id,document_label,storage_path,uploaded_at,verification_status').eq('matter_id',matterId).order('document_id').limit(100);if(cursor)query=query.gt('document_id',String(cursor.document_id));const result=await query;if(result.error)throw Error('VAULT_READ_UNAVAILABLE');return result.data??[];
+  },row=>String(row.document_id));
 
   const documents = await Promise.all(
     rows.map(async (row) => {
@@ -45,7 +46,7 @@ export async function getVaultDocumentsForMatter(
       if (row.storage_path) {
         const { data: signed } = await admin.storage
           .from(VAULT_BUCKET)
-          .createSignedUrl(row.storage_path, PORTAL_URL_EXPIRY_SECONDS);
+          .createSignedUrl(String(row.storage_path), PORTAL_URL_EXPIRY_SECONDS);
         signedUrl = signed?.signedUrl ?? null;
       }
 
@@ -60,6 +61,16 @@ export async function getVaultDocumentsForMatter(
     }),
   );
 
+  const versions=await readAllKeyset<Record<string,unknown>>(async cursor=>{let query=admin.from('document_versions').select('id,stage,file_name,file_hash,storage_path,source_file,metadata,approval_status,created_at').eq('matter_id',matterId).in('stage',['intake_upload','final_packet']).order('id').limit(100);if(cursor)query=query.gt('id',String(cursor.id));const result=await query;if(result.error)throw Error('VAULT_VERSION_READ_UNAVAILABLE');return result.data??[];},row=>String(row.id));
+  for(const row of versions){
+   const sourceId=(row.metadata as {document_id?:string}|null)?.document_id;
+   if(documents.some(document=>document.document_id===row.id||(row.stage==='intake_upload'&&document.document_id===sourceId)))continue;
+   if(row.stage==='final_packet'){
+    if(owner.data.is_paid_and_released!==true||evaluatePaymentGate(owner.data)!=='PAYMENT_CONFIRMED'||row.approval_status!=='release_ready')continue;
+    const evidence=await admin.from('custody_ledger').select('id').eq('deal_id',matterId).eq('event','DOC_RELEASE_CONFIRMED').contains('metadata',{document_versions:[{version_id:row.id,sha256:row.file_hash}]}).limit(1);if(evidence.error||!evidence.data?.length)continue;
+   }
+   documents.push({document_id:String(row.id),matter_id:matterId,document_label:String(row.file_name??'Document'),uploaded_at:String(row.created_at),verification_status:row.stage==='final_packet'?'released':'pending',signed_url:`/api/portal/me/documents?deal_id=${encodeURIComponent(matterId)}&version_id=${row.id}`});
+  }
   await audit({
     event: "portal.document_list.accessed",
     actor: actorEmail,

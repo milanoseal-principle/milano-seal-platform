@@ -46,7 +46,7 @@ export async function POST(request:Request,{params}:{params:Promise<{matterId:st
    const input=z.object({action:z.literal('approve'),version_id:z.string().uuid(),expected_sha256:z.string().regex(/^[a-f0-9]{64}$/),reason:z.string().trim().min(20).max(1000)}).strict().parse(await request.json());
    if(!actor.founder)throw new GovernanceHTTPError('FOUNDER_REVIEW_REQUIRED',403);
    const {version}=await versionBytes(admin,matterId,input.version_id);if(version.file_hash!==input.expected_sha256)throw new GovernanceHTTPError('VERSION_CHANGED',409);
-   const result=await admin.from('document_versions').update({approval_status:version.stage==='final_packet'?'release_ready':'approved',approved_at:new Date().toISOString(),approved_by:actor.id,notes:input.reason}).eq('id',version.id).eq('file_hash',input.expected_sha256).select('id');if(result.error||!result.data?.length)throw Error('VERSION_REVIEW_NOT_CONFIRMED');return {ok:true};
+   const result=await admin.rpc('approve_document_version',{p_actor:actor.id,p_version:version.id,p_expected_hash:input.expected_sha256,p_reason:input.reason});if(result.error)throw Error('VERSION_REVIEW_NOT_CONFIRMED');return {ok:true};
   }
   const form=await request.formData();const file=form.get('file');const stage=z.enum(['intake_upload','executed','apostille_packet','apostilled','final_packet']).parse(form.get('stage'));const id=z.string().uuid().parse(form.get('request_id'));const parent=z.string().uuid().nullable().parse(form.get('parent_id')||null);
   if(!(file instanceof File)||file.size===0||file.size>20*1024*1024)throw new GovernanceHTTPError('SUPPORTED_FILE_UNDER_20MB_REQUIRED',400);

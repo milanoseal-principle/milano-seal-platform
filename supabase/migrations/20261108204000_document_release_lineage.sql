@@ -15,6 +15,7 @@ begin
  perform public.governance_require_actor(p_actor,true);
  select * into d from public.deals where id=p_matter for update;
  if not found then raise exception 'MATTER_NOT_FOUND';end if;
+ if d.status not in ('apostille_processing','in_transit','delivered','completed') then raise exception 'EXECUTION_AND_AUTHENTICATION_REVIEW_REQUIRED';end if;
  if d.payment_confirmed is distinct from true or d.payment_status is distinct from 'paid' or d.payment_settlement_status is distinct from 'cleared' or d.amount_due is null or d.amount_due<=0 or d.amount_paid is null or round(d.amount_paid*100)<>round(d.amount_due*100) or (d.final_total is not null and d.final_total>0 and d.amount_paid+case when d.balance_payment_status='paid' and d.balance_paid_at is not null then coalesce(d.balance_amount_received,0) else 0 end=d.final_total) is distinct from true then raise exception 'VERIFIED_SETTLEMENT_AND_ZERO_BALANCE_REQUIRED';end if;
  if exists(select 1 from public.compliance_incidents where matter_id=p_matter and status not in ('CLOSED','MATTER_RESTORED_OR_CLOSED') and (release_frozen or severity in ('HIGH','CRITICAL'))) then raise exception 'RELEASE_FROZEN';end if;
  if p_versions is null or cardinality(p_versions)=0 or cardinality(p_versions)>100 then raise exception 'EXACT_RELEASE_VERSIONS_REQUIRED';end if;
@@ -22,8 +23,15 @@ begin
  if (select count(*) from public.document_versions where matter_id=p_matter and stage='final_packet' and approval_status='release_ready')<>cardinality(p_versions) then raise exception 'COMPLETE_RELEASE_VERSION_SET_REQUIRED';end if;
  if (select count(*) from public.document_versions where id=any(p_versions) and matter_id=p_matter and stage='final_packet' and approval_status='release_ready' and file_hash ~ '^[a-f0-9]{64}$' and nullif(coalesce(storage_path,source_file),'') is not null)<>cardinality(p_versions) then raise exception 'RELEASE_VERSION_NOT_APPROVED';end if;
  if lower(coalesce(d.destination_country,'')) like '%italy%' and not exists(select 1 from public.identifier_locks where matter_id=p_matter::text and identifier_type='codice_fiscale' and match_status in ('confirmed','exact_match')) then raise exception 'IDENTIFIER_LOCK_REQUIRED';end if;
+ if d.apostille_required is true and exists(
+  with recursive lineage(root,id,parent_version_id,stage,approval_status,depth) as (
+   select v.id,v.id,v.parent_version_id,v.stage,v.approval_status,0 from public.document_versions v where v.id=any(p_versions)
+   union all select child.root,parent.id,parent.parent_version_id,parent.stage,parent.approval_status,child.depth+1 from lineage child join public.document_versions parent on parent.id=child.parent_version_id and parent.matter_id=p_matter where child.depth<50
+  ) select 1 from unnest(p_versions) root_id where not exists(select 1 from lineage where root=root_id and stage='apostilled' and approval_status='approved')
+ ) then raise exception 'APPROVED_AUTHENTICATION_VERSION_REQUIRED';end if;
  select jsonb_agg(jsonb_build_object('version_id',id,'sha256',file_hash) order by id) into version_hashes from public.document_versions where id=any(p_versions);
  result:=public.append_custody_event(jsonb_build_object('deal_id',p_matter,'event','DOC_RELEASE_CONFIRMED','actor_type','operator','actor_id',p_actor::text,'location',null,'method',null,'status','release_authorized','notes','Exact approved document versions released after canonical gates','metadata',jsonb_build_object('document_versions',version_hashes)),encode(sha256(convert_to(p_matter::text||version_hashes::text,'utf8')),'hex'));
+ update public.deals set is_paid_and_released=true where id=p_matter;
  return result;
 end $$;
 revoke all on function public.record_document_release(uuid,uuid,uuid[]) from public,anon,authenticated;

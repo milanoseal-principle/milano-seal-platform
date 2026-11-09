@@ -40,13 +40,18 @@ ok((await db.query("select hash=encode(sha256(convert_to(payload_canonical,'utf8
 await denied(()=>db.query("update custody_ledger set notes='tampered' where hash=$1",[first.hash]),'custody event cannot mutate silently');
 await denied(()=>db.query('delete from custody_ledger where hash=$1',[first.hash]),'custody history cannot be deleted');
 const version=randomUUID();await db.query(`insert into document_versions(id,matter_id,stage,file_hash,actor,source_file,storage_path,approval_status) values($1,$2,'final_packet',$3,'operator','private/fixture.pdf','private/fixture.pdf','release_ready')`,[version,matter,'c'.repeat(64)]);
+ok((await db.query("select document_object_mutation_allowed('documents','private/fixture.pdf') allowed")).rows[0].allowed===false,'versioned private object cannot be overwritten or deleted by authenticated storage policy');
 await denied(()=>db.query("update document_versions set file_hash=$1 where id=$2",['d'.repeat(64),version]),'version bytes immutable');
 const otherMatter=randomUUID();await db.query("insert into deals(id,status) values($1,'intake_received')",[otherMatter]);
 await denied(()=>db.query(`insert into document_versions(matter_id,stage,file_hash,actor,source_file,parent_version_id) values($1,'apostilled',$2,'operator','private/other.pdf',$3)`,[otherMatter,'e'.repeat(64),version]),'cross-Matter lineage denied');
 await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'balance due blocks release');
 await db.query("update deals set balance_payment_status='paid',balance_paid_at=now(),balance_amount_received=300 where id=$1",[matter]);
 await denied(()=>db.query('select record_document_release($1,$2,$3)',[client,matter,[version]]),'client cannot release even paid');
+await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'release cannot skip execution corridor');
+for(const status of ['scheduled','in_execution','apostille_processing'])await db.query('update deals set status=$1 where id=$2',[status,matter]);
+await db.query('update deals set apostille_required=true where id=$1',[matter]);await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'authentication requirement cannot be skipped by a final-packet label');await db.query('update deals set apostille_required=false where id=$1',[matter]);
 const release=(await db.query('select record_document_release($1,$2,$3) result',[founder,matter,[version]])).rows[0].result;
+ok((await db.query('select is_paid_and_released flag from deals where id=$1',[matter])).rows[0].flag===true,'actual release projects its canonical flag atomically');
 ok(Boolean(release.hash),'founder releases exact approved version only after settlement and zero balance');
 ok((await db.query('select record_document_release($1,$2,$3) result',[founder,matter,[version]])).rows[0].result.hash===release.hash,'release retry does not duplicate custody');
 const shipment=randomUUID();await db.query(`insert into shippo_shipments(id,matter_id,shippo_rate_id,rate_status) values($1,$2,'controlled-provider-rate','SHIPPING_RATE_SELECTED')`,[shipment,matter]);
@@ -55,6 +60,9 @@ ok((await db.query('select claim_final_delivery_label($1,$2,$3) id',[founder,mat
 await denied(()=>db.query('select claim_final_delivery_label($1,$2,$3)',[founder,matter,shipment]),'courier purchase claim cannot replay');
 await db.query("insert into compliance_incidents(matter_id,incident_type,severity,status,summary,release_frozen) values($1,'DOCUMENT_INTEGRITY','HIGH','OPEN','Controlled synthetic hold',true)",[matter]);await denied(()=>db.query('select record_document_release($1,$2,$3)',[founder,matter,[version]]),'freeze checked on replay');
 await db.exec('set role authenticated');await denied(()=>db.query('select issue_financial_artifact($1,$2,\'INVOICE\')',[client,matter]),'authenticated cannot spoof service RPC actor');await denied(()=>db.query('select append_custody_event($1,null)',[input]),'direct custody mutation denied');await denied(()=>db.query('select * from matter_financial_artifacts'),'raw financial evidence private');await db.exec('reset role');
+const replacement=randomUUID();await db.query(`insert into document_versions(id,matter_id,stage,file_hash,actor,source_file,parent_version_id) values($1,$2,'final_packet',$3,$4,'private/replacement.pdf',$5)`,[replacement,matter,'d'.repeat(64),founder,version]);
+await denied(()=>db.query('select approve_document_version($1,$2,$3,$4)',[client,replacement,'d'.repeat(64),'Controlled synthetic review evidence']),'client cannot approve document versions');
+await db.query('select approve_document_version($1,$2,$3,$4)',[founder,replacement,'d'.repeat(64),'Controlled synthetic review evidence']);ok((await db.query('select superseded_by from document_versions where id=$1',[version])).rows[0].superseded_by===replacement,'reviewed replacement retains explicit supersession history');
 // Existing certification tables gain a real founder-bound immutable closeout.
 const runId=randomUUID(),sha='a'.repeat(40),checkContract=PRODUCTION_CERTIFICATION_CHECKS.map(check=>({key:check.key,matter_continuity:check.matterContinuity===true}));
 await db.query(`insert into production_certification_runs(id,production_sha,environment,created_by) values($1,$2,'preview',$3)`,[runId,sha,founder]);
