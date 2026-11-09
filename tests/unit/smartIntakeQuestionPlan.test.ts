@@ -44,6 +44,7 @@ test("international questions appear only when answers make them relevant", () =
   const expanded = getSmartIntakeQuestionPlan({ intent: "ron", answers: { internationalUse: "yes" } });
   for (const q of INTERNATIONAL_QUESTIONS) assert.ok(expanded.visible.includes(q), q);
   assert.ok(expanded.required.includes("delivery"));
+  assert.ok(expanded.visible.includes("internationalUse"), "the answer that expanded the plan stays editable");
 });
 
 test("witness lane captures witness context and the in-person location", () => {

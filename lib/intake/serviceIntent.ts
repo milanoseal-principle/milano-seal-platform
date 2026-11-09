@@ -167,8 +167,8 @@ export function getSmartIntakeQuestionPlan(context: { intent?: string | null; an
 
   const internationalSignal =
     a.internationalUse === "yes" || isForeignDestination(a.destinationCountry) || a.apostilleChoice === "yes";
-  const international =
-    intent === "apostille" || intent === "international" || intent === "counsel" || internationalSignal;
+  const internationalLane = intent === "apostille" || intent === "international" || intent === "counsel";
+  const international = internationalLane || internationalSignal;
 
   // Execution questions are hidden only when the visitor says the document is
   // already executed AND no new execution was requested via a domestic lane.
@@ -181,7 +181,8 @@ export function getSmartIntakeQuestionPlan(context: { intent?: string | null; an
   if (intent === "notary" || intent === "witness") visible.push("inPersonLocation");
   visible.push("timeline");
   if (executionLane || intent === "unsure" || a.witnessMentioned === "yes") visible.push("witnessContext");
-  if (!international) visible.push("internationalUse");
+  // Stays visible once answered so the visitor can always change it back.
+  if (!internationalLane) visible.push("internationalUse");
   if (international) visible.push("destinationCountry", "originState", "apostilleRequest", "translationRequest", "delivery");
   visible.push("documentDetails", "contact");
 
