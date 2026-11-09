@@ -33,6 +33,7 @@ console.log("PASS dual CI governance");
 const gates = [
   ["node", ["scripts/validate-production-recovery-compatibility.mjs"]],
   ["node", ["scripts/test-production-recovery-compatibility-sql.mjs"]],
+  ["npm", ["run", "certify:p19-no-auth"]],
   ["npm", ["run", "validate:certification-source"]],
   ["npm", ["run", "validate:duplicate-source"]],
   ["node", ["scripts/generate-route-map.mjs", "--check"]],
