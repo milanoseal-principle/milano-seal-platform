@@ -20,7 +20,7 @@ set search_path = pg_catalog, pg_temp
 as $$
   select pg_catalog.encode(
     extensions.digest(
-      pg_catalog.convert_to(pg_catalog.coalesce(p_value, ''), 'UTF8'),
+      pg_catalog.convert_to(coalesce(p_value, ''), 'UTF8'),
       'sha256'
     ),
     'hex'
