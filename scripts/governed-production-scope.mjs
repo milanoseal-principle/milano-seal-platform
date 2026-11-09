@@ -94,6 +94,13 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'scripts/validate-custody-ledger-schema.mjs',
 ];
 
+// Explicitly reviewed Nov 9 hosted recovery defects. Both additions are
+// forward-only; neither changes a payment authority, Matter row or RLS grant.
+export const HOSTED_RECOVERY_PROTECTED_CHANGES = [
+ 'supabase/migrations/20261109140000_identifier_hash_extension_compatibility.sql',
+ 'supabase/migrations/20261109150000_private_evidence_table_privileges.sql',
+];
+
 // 2026-11-09 founder decision: NO VERIFIED WISE SETTLEMENT -> NO SCHEDULING.
 // User-authorized exact paths only; proven by validate-verified-settlement-before-scheduling,
 // test:gap-closure-database and test:wise-attempt-database. No other protected path is opened.
