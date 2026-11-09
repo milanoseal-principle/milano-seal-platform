@@ -3,6 +3,7 @@ import {
   commercialHref,
   COMMERCIAL_CTA_LABELS,
   COMMERCIAL_CTA_DISCLOSURE,
+  primaryServiceCta,
   type CommercialAction,
   type CommercialContext,
 } from "@/lib/conversion/commercialCta";
@@ -19,6 +20,7 @@ export function CommercialCtaRow({
   disclosure = true,
   className = "",
   ariaLabel = "Commercial next steps",
+  serviceStart = true,
 }: {
   context?: CommercialContext;
   actions?: CommercialAction[];
@@ -26,13 +28,19 @@ export function CommercialCtaRow({
   disclosure?: boolean;
   className?: string;
   ariaLabel?: string;
+  /** Lead with the page's contextual service CTA (e.g. Start Online Notary). */
+  serviceStart?: boolean;
 }) {
-  const resolved = actions.length ? actions : (["get_pricing"] as CommercialAction[]);
+  const base = actions.length ? actions : (["get_pricing"] as CommercialAction[]);
+  const start = primaryServiceCta(context.serviceIntent);
+  const leadsWithService = serviceStart && !base.includes(start.action);
+  const resolved: CommercialAction[] = leadsWithService ? [start.action, ...base] : base;
+  const contextualLabels: Partial<Record<CommercialAction, string>> = leadsWithService ? { [start.action]: start.label } : {};
   return (
     <section aria-label={ariaLabel} className={className} data-commercial-cta="">
       <div className="flex flex-wrap gap-3">
         {resolved.map((action, index) => {
-          const label = labels?.[action] ?? COMMERCIAL_CTA_LABELS[action];
+          const label = labels?.[action] ?? contextualLabels[action] ?? COMMERCIAL_CTA_LABELS[action];
           const primary = index === 0;
           return (
             <Link

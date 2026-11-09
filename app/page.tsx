@@ -13,6 +13,7 @@ import { CinematicStage } from "@/components/landing/cinematic-stage";
 import { IntelligenceRail } from "@/components/landing/IntelligenceRail";
 import { HomepageRoutingPreview } from "@/components/landing/homepage-routing-preview";
 import { PersonaRouting } from "@/components/landing/persona-routing";
+import { ServiceRouter } from "@/components/landing/service-router";
 import { GlobeCountryNodePopover } from "@/components/landing/GlobeCountryNodePopover";
 import type { Metadata } from "next";
 import { HowItWorks } from "@/components/landing/how-it-works";
@@ -48,6 +49,7 @@ export default function HomePage() {
       <GlobeCountryNodePopover />
       <CinematicStage>
         <Hero />
+        <ServiceRouter />
         <section className="border-y border-[#C6A65B]/25 bg-[#10120F] px-6 py-12 text-white"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 md:flex-row md:items-center"><div><p className="text-xs uppercase tracking-[.2em] text-[#C6A65B]">Foreign counsel</p><h2 className="mt-3 font-serif text-3xl">Need something executed in the United States?</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">Your client is here. Their document needs to work abroad. The Milano Seal coordinates the U.S. execution side.</p><p className="mt-2 text-sm text-white/75">You retain the legal work. We coordinate execution.</p></div><Link href="/counsel" className="inline-flex min-h-12 shrink-0 items-center justify-center border border-[#C6A65B] px-6 py-3 text-sm text-[#E1C78F] focus-visible:outline-2 focus-visible:outline-offset-4">Send a U.S. Matter ↗︎</Link></div></section>
         <SectionReveal><TrustStrip /></SectionReveal>
         <SectionReveal><PersonaRouting /></SectionReveal>

@@ -47,7 +47,9 @@ for (const token of ["createAdminClient", "canonicalQuoteFromDeal", "amount_due:
 if (/payment_status\s*:\s*["']paid["']|payment_confirmed\s*:\s*true/.test(server)) failures.push("Server flow mutates paid/payment_confirmed for complimentary Matter.");
 
 const gate = read("lib/scheduling/complimentarySchedulingGate.ts");
-for (const token of ["verified_payment", "complimentary_authorization", "not_satisfied", "evaluatePaymentGate", "comp_authorized", "verified_revenue"]) if (!gate.includes(token)) failures.push(`Scheduling gate missing ${token}`);
+for (const token of ["verified_payment", "not_satisfied", "evaluatePaymentGate", "comp_authorized", "verified_revenue", "hasExactVerifiedSettlement"]) if (!gate.includes(token)) failures.push(`Scheduling gate missing ${token}`);
+// Founder decision 2026-11-09: courtesy authorization is never a scheduling method.
+if (gate.includes('"complimentary_authorization"')) failures.push("Scheduling gate must not accept complimentary_authorization as a scheduling method");
 
 const scheduleRoute = read("app/api/deals/[id]/schedule/route.ts");
 if (!scheduleRoute.includes("evaluateSchedulingGate")) failures.push("Scheduling route does not use canonical complimentary scheduling gate.");

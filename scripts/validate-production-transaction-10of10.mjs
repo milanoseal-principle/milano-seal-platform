@@ -12,11 +12,11 @@ const release = read("lib/release/performFinalRelease.ts");
 const genericDeal = read("app/api/deals/[id]/route.ts");
 const portalRON = read("app/portal/ron/page.tsx");
 
-assert.match(scheduling, /wise_submission_observed/);
-assert.match(scheduling, /Integrity-matched Wise submission authorizes scheduling only/);
+assert.doesNotMatch(scheduling, /wise_submission_observed/);
+assert.match(scheduling, /hasExactVerifiedSettlement/);
+assert.match(scheduling, /Scheduling unlocks only after exact verified Wise settlement/);
 assert.match(scheduling, /snapshotAmount != null/);
 assert.match(scheduling, /evaluateExecutionGate/);
-assert.match(scheduling, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 assert.match(ronGuard, /evaluateSchedulingGate/);
 assert.match(ronGuard, /NOTARIAL_ACT_REVIEW_REQUIRED/);
 assert.doesNotMatch(ronGuard, /is_platform_fee_only'/);

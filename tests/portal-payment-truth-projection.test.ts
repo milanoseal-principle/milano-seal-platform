@@ -7,7 +7,8 @@ const source = readFileSync("app/api/portal/me/matter-intelligence/route.ts", "u
 test("portal matter intelligence delegates scheduling authority to canonical scheduling gate", () => {
   assert.match(source, /evaluateSchedulingGate/);
   assert.match(source, /paymentRequirementMethod === "verified_payment"/);
-  assert.match(source, /paymentRequirementMethod === "wise_submission_observed"/);
+  assert.match(source, /wiseSubmission === "processing"/);
+  assert.doesNotMatch(source, /wise_submission_observed/);
   assert.match(source, /schedulingUnlocked: scheduling\.schedulingEligible/);
 });
 

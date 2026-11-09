@@ -39,12 +39,12 @@ check("automatic Wise observation polls every 10 seconds with cleanup", hasAll(i
   "window.removeEventListener(\"focus\", onFocus)",
 ]));
 check("client observation cannot author paid state", !/payment_confirmed\s*:\s*true/.test(observation) && !/payment_status\s*:\s*["']paid["']/.test(observation));
-check("canonical scheduling gate separates observed Wise submission from verified settlement", hasAll(scheduling, [
+check("canonical scheduling gate requires verified settlement; Wise submission is processing only", hasAll(scheduling, [
   "verified_payment",
-  "wise_submission_observed",
-  "Integrity-matched Wise submission authorizes scheduling only",
+  "hasExactVerifiedSettlement",
+  "Scheduling unlocks only after exact verified Wise settlement",
   "evaluatePaymentGate",
-]));
+]) && !scheduling.includes("wise_submission_observed"));
 check("schedule API consumes the canonical scheduling gate", hasAll(scheduleRoute, [
   "evaluateSchedulingGate",
   "PAYMENT_REQUIRED",
@@ -57,7 +57,7 @@ check("RON dashboard consumes canonical scheduling gate and shows pre-session Ma
   "preSessionMatters",
   "getRONBlockers",
   "Open RON Readiness",
-  "Wise submitted · scheduling authorized",
+  "Wise processing · scheduling locked until verified settlement",
   "Ready for BlueNotary",
 ]));
 check("RON creation is Matter-scoped and delegates to canonical scheduling guard", hasAll(ronCreate, [

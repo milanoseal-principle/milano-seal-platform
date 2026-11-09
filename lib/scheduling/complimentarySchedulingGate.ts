@@ -1,17 +1,26 @@
-import { hasCurrentWiseProviderEvidence, type WiseAttemptMatter } from "@/lib/wise/attemptEvidence";
+import type { WiseAttemptMatter } from "@/lib/wise/attemptEvidence";
 import type { PaymentGateMatter } from "@/lib/payments/paymentGate";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 
+/**
+ * Founder decision (2026-11-09): NO VERIFIED WISE SETTLEMENT -> NO SCHEDULING.
+ * Exact verified cleared settlement is the only payment method that satisfies
+ * the scheduling gate. A Wise submission (observed / processing) is reported
+ * separately as `wiseSubmission` so surfaces can show "processing" and block
+ * duplicate payment attempts, but it never authorizes scheduling or execution.
+ */
 export type SchedulingPaymentRequirementMethod =
   | "verified_payment"
-  | "wise_submission_observed"
-  | "complimentary_authorization"
   | "not_satisfied";
+
+/** Display-only Wise submission state. Never a scheduling or execution authority. */
+export type WiseSubmissionState = "none" | "processing" | "superseded" | "projection_incomplete";
 
 export interface SchedulingGateResult {
   schedulingEligible: boolean;
   paymentRequirementSatisfied: boolean;
   paymentRequirementMethod: SchedulingPaymentRequirementMethod;
+  wiseSubmission: WiseSubmissionState;
   reason: string;
 }
 
@@ -36,7 +45,6 @@ export interface ComplimentaryGateMatter extends PaymentGateMatter, WiseAttemptM
   payment_observed_reference?: string | null;
 }
 
-type SubmissionState = "none" | "observed" | "superseded" | "projection_incomplete";
 
 const OBSERVATION_INTEGRITY_FIELDS = [
   "amount_due",
@@ -57,7 +65,7 @@ function hasCompleteObservationProjection(matter: ComplimentaryGateMatter): bool
   );
 }
 
-function classifyObservedSubmission(matter: ComplimentaryGateMatter): SubmissionState {
+function classifyObservedSubmission(matter: ComplimentaryGateMatter): WiseSubmissionState {
   const settlement = String(matter.payment_settlement_status ?? "").trim().toLowerCase();
   const observed = Boolean(matter.payment_observed_at) && settlement === "observed_pending";
   if (!observed) return "none";
@@ -74,50 +82,64 @@ function classifyObservedSubmission(matter: ComplimentaryGateMatter): Submission
   const amountMatches = Number(snapshotAmount) === due;
   const currencyMatches = snapshotCurrency!.trim().toUpperCase() === String(matter.currency).trim().toUpperCase();
   const referenceMatches = snapshotReference!.trim() === currentReference(matter);
-  return amountMatches && currencyMatches && referenceMatches ? "observed" : "superseded";
+  return amountMatches && currencyMatches && referenceMatches ? "processing" : "superseded";
+}
+
+/**
+ * Display-only classification of a recorded Wise payment submission. A
+ * "processing" submission blocks duplicate payment requests in the UI; it is
+ * never scheduling, execution or release authority.
+ */
+export function evaluateWiseSubmissionState(matter: ComplimentaryGateMatter): WiseSubmissionState {
+  const financiallyUnsettled = matter.payment_confirmed === false &&
+    ["unpaid", "pending"].includes(String(matter.payment_status ?? "")) &&
+    Number(matter.amount_paid ?? 0) === 0;
+  return financiallyUnsettled ? classifyObservedSubmission(matter) : "none";
+}
+
+/** The one canonical exact-settlement predicate shared by scheduling and execution. */
+export function hasExactVerifiedSettlement(matter: ComplimentaryGateMatter): boolean {
+  const due = Number(matter.amount_due);
+  const paid = Number(matter.amount_paid);
+  return matter.payment_confirmed === true &&
+    matter.payment_settlement_status === "cleared" &&
+    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
+    Math.round(paid * 100) === Math.round(due * 100) &&
+    evaluatePaymentGate(matter) === "PAYMENT_CONFIRMED";
+}
+
+function denied(wiseSubmission: WiseSubmissionState, reason: string): SchedulingGateResult {
+  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", wiseSubmission, reason };
 }
 
 export function evaluateSchedulingGate(params: {
   matter: ComplimentaryGateMatter;
   allOperationalRequirementsPassed?: boolean;
 }): SchedulingGateResult {
+  const wiseSubmission = evaluateWiseSubmissionState(params.matter);
   const operational = params.allOperationalRequirementsPassed ?? true;
-  if (!operational) {
-    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Operational requirements remain open." };
-  }
+  if (!operational) return denied(wiseSubmission, "Operational requirements remain open.");
 
-  const due = Number(params.matter.amount_due);
-  const paid = Number(params.matter.amount_paid);
-  const settlementVerified = params.matter.payment_confirmed === true &&
-    params.matter.payment_settlement_status === "cleared" &&
-    Number.isFinite(due) && Number.isFinite(paid) && due > 0 &&
-    Math.round(paid * 100) === Math.round(due * 100);
-  if (settlementVerified && evaluatePaymentGate(params.matter) === "PAYMENT_CONFIRMED") {
-    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", reason: "Verified Wise settlement satisfies scheduling gate." };
+  if (hasExactVerifiedSettlement(params.matter)) {
+    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "verified_payment", wiseSubmission: "none", reason: "Verified Wise settlement satisfies scheduling gate." };
   }
-
-  const observationFinanciallyValid = params.matter.payment_confirmed === false &&
-    ['unpaid', 'pending'].includes(String(params.matter.payment_status ?? '')) &&
-    Number(params.matter.amount_paid ?? 0) === 0;
-  const submission = observationFinanciallyValid ? classifyObservedSubmission(params.matter) : "none";
-  if (submission === "observed") {
-    return { schedulingEligible: true, paymentRequirementSatisfied: true, paymentRequirementMethod: "wise_submission_observed", reason: "Integrity-matched Wise submission authorizes scheduling only; payment remains unverified and execution requires stronger provider evidence." };
+  if (wiseSubmission === "processing") {
+    return denied(wiseSubmission, "Wise payment submitted and processing. Scheduling unlocks only after exact verified Wise settlement.");
   }
-  if (submission === "projection_incomplete") {
-    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Scheduling authority cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path." };
+  if (wiseSubmission === "projection_incomplete") {
+    return denied(wiseSubmission, "Payment state cannot be evaluated because the payment-observation integrity fields are missing from this Matter projection. Refresh through the canonical Matter read path.");
   }
-  if (submission === "superseded") {
-    return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "The Matter's payable amount, currency or reference changed after the recorded submission. A new governed payment submission is required before scheduling." };
+  if (wiseSubmission === "superseded") {
+    return denied(wiseSubmission, "The Matter's payable amount, currency or reference changed after the recorded submission. A new governed payment submission and verified settlement are required before scheduling.");
   }
-
-  // Neither courtesy authorization nor a paid flag substitutes for settlement.
-  return { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: "not_satisfied", reason: "Verified Wise settlement or an integrity-matched Wise submission is required before scheduling." };
+  // Neither courtesy authorization, a submission nor a paid flag substitutes for settlement.
+  return denied(wiseSubmission, "Verified Wise settlement is required before scheduling.");
 }
 
-/** Scheduling observation alone never authorizes execution or signer-link release. */
+/**
+ * Execution and signer-link release follow scheduling and therefore require the
+ * same exact verified settlement. There is no submission-based execution path.
+ */
 export function evaluateExecutionGate(matter: ComplimentaryGateMatter): SchedulingGateResult {
-  const gate = evaluateSchedulingGate({ matter });
-  if (!gate.schedulingEligible || gate.paymentRequirementMethod === 'verified_payment') return gate;
-  const providerEvidence = hasCurrentWiseProviderEvidence(matter);
-  return providerEvidence ? gate : { schedulingEligible: false, paymentRequirementSatisfied: false, paymentRequirementMethod: 'not_satisfied', reason: 'WISE_PROVIDER_EVIDENCE_REQUIRED: server-side Wise evidence is required before execution or signer-link release.' };
+  return evaluateSchedulingGate({ matter });
 }

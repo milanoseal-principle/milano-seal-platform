@@ -78,8 +78,9 @@ async function verifySchedulingAuthorized(
   }
 }
 
-/** Execution additionally requires server-side provider evidence for observed submissions.
- * Final international release remains governed by its separate release controls. */
+/** Execution and signer-link release require the same exact verified Wise settlement as
+ * scheduling (founder decision 2026-11-09). Final international release remains governed
+ * by its separate release controls. */
 async function verifyExecutionPaymentAuthorized(
   supabase: SupabaseClient,
   matterId: string
@@ -96,7 +97,7 @@ async function verifyExecutionPaymentAuthorized(
 
   const gate = evaluateExecutionGate(data);
   if (!gate.schedulingEligible) {
-    throw new RONGuardError('WISE_PROVIDER_EVIDENCE_REQUIRED', gate.reason);
+    throw new RONGuardError('PAYMENT_REQUIRED', gate.reason);
   }
 }
 

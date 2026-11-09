@@ -10,6 +10,12 @@ export const intakeFormSchema = z.object({
   deadline: z.string().max(100), courierRequired: z.boolean(),
   timelineChoice: z.enum(["", "standard", "expedited", "urgent"]),
   deliveryChoice: z.enum(["", "digital", "domestic_courier", "international_courier"]),
+  // Progressive Smart Intake context answers (non-authoritative). Defaults keep
+  // older saved drafts restorable.
+  internationalUse: z.enum(["yes", "no", "unsure", ""]).default(""),
+  alreadyExecuted: z.enum(["yes", "no", "unsure", ""]).default(""),
+  witnessMentioned: z.enum(["yes", "no", "unsure", ""]).default(""),
+  witnessWording: z.string().max(2000).default(""),
 });
 export type IntakeFormState = z.infer<typeof intakeFormSchema>;
 export const intakeAnalysisSchema = z.object({

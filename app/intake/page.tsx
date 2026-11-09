@@ -31,6 +31,9 @@ type IntakeSearchParams = {
   utm_campaign?: string;
   pro?: string;
   ref?: string;
+  /** Non-authoritative entry-lane intent, e.g. /intake?intent=ron. */
+  intent?: string;
+  service_intent?: string;
 };
 
 // Governed professional handoff link fields. These are routing hints only; the
@@ -140,6 +143,7 @@ async function IntakeWizardWrapper({
         prefill={prefill}
         courtesyCode={courtesyCode}
         professionalReferral={professionalReferralFromParams(params)}
+        serviceIntent={params.intent || params.service_intent || (isProfessional ? "counsel" : undefined)}
       />
     </>
   );

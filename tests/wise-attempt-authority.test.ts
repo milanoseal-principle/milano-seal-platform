@@ -16,9 +16,10 @@ const matter = {
   },
 };
 
-test('current provider attempt permits execution but never creates settlement', () => {
+test('current provider attempt is processing evidence only: no scheduling, no execution, no settlement', () => {
   assert.equal(hasCurrentWiseProviderEvidence(matter), true);
-  assert.equal(evaluateExecutionGate(matter).schedulingEligible, true);
+  assert.equal(evaluateSchedulingGate({ matter }).schedulingEligible, false);
+  assert.equal(evaluateExecutionGate(matter).schedulingEligible, false);
   assert.equal(matter.payment_confirmed, false);
 });
 
@@ -29,7 +30,7 @@ test('client resubmission cannot revive a cancelled/failed/expired/reversed atte
     assert.equal(evaluateExecutionGate(invalid).schedulingEligible, false, status);
     assert.equal(evaluateExecutionGate({ ...invalid, payment_attempt_id: 'new-attempt' }).schedulingEligible, false, status);
   }
-  assert.equal(evaluateSchedulingGate({ matter: { ...matter, wise_provider_evidence: null } }).schedulingEligible, true);
+  assert.equal(evaluateSchedulingGate({ matter: { ...matter, wise_provider_evidence: null } }).schedulingEligible, false);
 });
 
 test('missing, stale, unknown and mismatched evidence fails closed', () => {

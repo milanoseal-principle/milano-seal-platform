@@ -1,3 +1,4 @@
+import { normalizeSmartIntakeIntent } from "@/lib/intake/serviceIntent";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { resolveServerRole } from "@/lib/auth/server-role";
@@ -407,6 +408,8 @@ export async function POST(req: NextRequest) {
 
       const reviewMetadata = {
         source,
+        // Non-authoritative acquisition context; never overwritten by review.
+        client_requested_service: normalizeSmartIntakeIntent(typeof raw.service_intent === "string" ? raw.service_intent : null),
         companyName,
         customer_execution_request: customerExecutionRequest,
         execution_truth: executionTruth,
@@ -844,6 +847,8 @@ export async function POST(req: NextRequest) {
 
     const intakeMetadata = {
       source,
+      // Non-authoritative acquisition context; never overwritten by review.
+      client_requested_service: normalizeSmartIntakeIntent(typeof raw.service_intent === "string" ? raw.service_intent : null),
       companyName,
       customer_execution_request: customerExecutionRequest,
       execution_truth: executionTruth,

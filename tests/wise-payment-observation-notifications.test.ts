@@ -15,7 +15,8 @@ test("portal distinguishes submitted payment, scheduling authority, and verified
   assert.match(invoice, /window\.setInterval\(\(\) => void loadPaymentFlow\(\), 10_000\)/);
   assert.match(invoice, /Check Wise settlement now/);
   assert.match(invoice, /method:\s*"PUT"/);
-  assert.match(invoice, /An integrity-matched submission authorizes scheduling only/i);
+  assert.match(invoice, /Scheduling unlocks only after exact verified Wise settlement/i);
+  assert.doesNotMatch(invoice, /submission authorizes scheduling/i);
   assert.match(invoice, /verified Wise settlement remains the authority for paid state/i);
   assert.doesNotMatch(invoice, /Wise payment processing/);
   assert.doesNotMatch(invoice, /Refresh Wise payment status/);

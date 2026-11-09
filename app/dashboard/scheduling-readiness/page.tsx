@@ -76,11 +76,10 @@ function operationalBlockers(matter: SchedulingMatter) {
   return Array.from(new Set(blockers));
 }
 
-function paymentMethodLabel(method: ReturnType<typeof evaluateSchedulingGate>["paymentRequirementMethod"]) {
-  if (method === "verified_payment") return "Wise verified";
-  if (method === "wise_submission_observed") return "Wise processing · scheduling authorized";
-  if (method === "complimentary_authorization") return "Complimentary authorization";
-  return "Payment requirement open";
+function paymentMethodLabel(gate: ReturnType<typeof evaluateSchedulingGate>) {
+  if (gate.paymentRequirementMethod === "verified_payment") return "Wise verified";
+  if (gate.wiseSubmission === "processing") return "Wise processing · scheduling locked until verified settlement";
+  return "Verified Wise settlement required";
 }
 
 function nextEvent(matter: SchedulingMatter, ready: boolean) {
@@ -115,7 +114,7 @@ export default async function SchedulingReadinessPage({ searchParams }: PageProp
 
   const readyCount = projections.filter((item) => item.ready).length;
   const blockedCount = projections.length - readyCount;
-  const processingCount = projections.filter((item) => item.gate.paymentRequirementMethod === "wise_submission_observed").length;
+  const processingCount = projections.filter((item) => item.gate.wiseSubmission === "processing").length;
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:p-6 lg:p-8">
@@ -124,7 +123,7 @@ export default async function SchedulingReadinessPage({ searchParams }: PageProp
           <div>
             <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A65B]/60">Execution / Scheduling Authority</p>
             <h1 className="mt-2 font-serif text-3xl text-[#F6F1E6]">Scheduling Readiness Console</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">One read-only view of the canonical Matter gate. Wise processing may authorize scheduling when recorded by the existing gate, while verified settlement remains separate paid truth.</p>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">One read-only view of the canonical Matter gate. Scheduling unlocks only after exact verified Wise settlement; a processing Wise submission is shown but never authorizes scheduling.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[390px]">
             {[["Ready", readyCount, "text-emerald-300"], ["Blocked", blockedCount, "text-amber-300"], ["Wise Processing", processingCount, "text-[#E4CA8C]"]].map(([label, value, tone]) => (
@@ -168,7 +167,7 @@ export default async function SchedulingReadinessPage({ searchParams }: PageProp
                     </div>
                     <div className="rounded-xl border border-white/[0.05] bg-white/[0.015] p-3 sm:col-span-2">
                       <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-white/30">Payment Authority</p>
-                      <p className={`mt-1 text-xs ${gate.paymentRequirementSatisfied ? "text-emerald-300" : "text-amber-200"}`}>{paymentMethodLabel(gate.paymentRequirementMethod)}</p>
+                      <p className={`mt-1 text-xs ${gate.paymentRequirementSatisfied ? "text-emerald-300" : "text-amber-200"}`}>{paymentMethodLabel(gate)}</p>
                     </div>
                   </div>
 

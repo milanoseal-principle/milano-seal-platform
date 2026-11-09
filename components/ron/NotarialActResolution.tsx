@@ -45,16 +45,10 @@ const OPTIONS: Array<{
 ];
 
 function authorityMessage(method: string | null | undefined) {
-  if (method === "wise_submission_observed") {
-    return "A governed Wise submission already satisfies the payment portion of scheduling. Wise settlement continues separately in the background.";
-  }
   if (method === "verified_payment") {
     return "Wise payment is verified and the payment portion of scheduling is satisfied.";
   }
-  if (method === "complimentary_authorization") {
-    return "An active Complimentary Authorization satisfies the payment portion of scheduling without fabricating paid revenue.";
-  }
-  return "The canonical scheduling authority is satisfied. No additional payment action is required to resolve this execution fact.";
+  return "Scheduling remains locked until exact verified Wise settlement. Execution facts can still be confirmed now.";
 }
 
 export function NotarialActResolution({

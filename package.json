@@ -125,7 +125,7 @@
     "validate:global-corridor-cinematic-upgrade": "node scripts/validate-global-corridor-cinematic-upgrade.mjs",
     "validate:global-pricing-courier": "node scripts/validate-global-pricing-courier.mjs",
     "validate:identifier-schemas": "node scripts/validate-identifier-schemas.mjs",
-    "validate:immediate-scheduling-after-wise-submission": "node scripts/validate-immediate-scheduling-after-wise-submission.mjs",
+    "validate:verified-settlement-before-scheduling": "node scripts/validate-verified-settlement-before-scheduling.mjs",
     "validate:institutional-expansion": "node scripts/validate-institutional-expansion.mjs",
     "validate:intake-confirmation": "node scripts/validate-intake-confirmation.mjs",
     "validate:lint-coverage": "node scripts/validate-lint-coverage.mjs",

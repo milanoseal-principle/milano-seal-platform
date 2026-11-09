@@ -64,7 +64,7 @@ function nextAction(row: NotificationRow) {
   const type = row.type.toLowerCase();
   const severity = severityFor(row);
   if (severity === "exception") return "Review the provider/audit failure before the Matter advances.";
-  if (type.includes("payment_observed")) return "Wise submission is recorded. Verify settlement separately while scheduling authority follows the canonical gate.";
+  if (type.includes("payment_observed")) return "Wise submission is recorded and processing. Scheduling stays locked until settlement is verified.";
   if (type.includes("payment_confirmed")) return "Verified settlement is available to downstream execution and release gates.";
   if (type.includes("ron")) return "Open the Signing Room and follow the current Matter readiness gate.";
   if (type.includes("apostille")) return "Open Apostille Desk and review the canonical submission state.";

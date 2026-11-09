@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const config = readFileSync("eslint.config.js", "utf8");
+const config = readFileSync("eslint.config.mjs", "utf8");
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 
 test("lint gate parses TypeScript/TSX and enforces error-level correctness rules", () => {

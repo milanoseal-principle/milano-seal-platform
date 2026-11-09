@@ -143,7 +143,7 @@ export default function WiseReconciliationCommandPage() {
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--ms-gold)]/70">Finance · Wise Control</p>
             <h1 className="mt-2 font-serif text-3xl text-white sm:text-4xl">Settlement Recovery Command</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-white/52">
-              Automatic exception detection for governed Wise submissions. Scheduling authority stays separate from settlement truth. Paid state is never inferred from amount, timing, or client assertion.
+              Automatic exception detection for governed Wise submissions. A submission never authorizes scheduling; scheduling unlocks only after verified settlement. Paid state is never inferred from amount, timing, or client assertion.
             </p>
           </div>
           <button onClick={() => void load()} className="rounded-xl border border-white/10 px-4 py-2 text-xs text-white/65 hover:border-[var(--ms-gold)]/35 hover:text-white">
@@ -161,7 +161,7 @@ export default function WiseReconciliationCommandPage() {
         </div>
 
         <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 text-sm leading-6 text-white/58">
-          <strong className="text-emerald-200">Scheduling rule:</strong> a governed Wise submission may authorize scheduling and BlueNotary readiness immediately while Wise settlement continues in the background. Final settlement-dependent release remains locked until verified paid truth exists.
+          <strong className="text-emerald-200">Scheduling rule:</strong> a Wise submission is shown as processing and never authorizes scheduling, BlueNotary sessions or execution. Scheduling unlocks only after exact verified Wise settlement; final settlement-dependent release also remains locked until verified paid truth exists.
         </div>
 
         {notice && <div className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-3 text-sm text-emerald-100">{notice}</div>}

@@ -18,18 +18,16 @@ function badge(ok: boolean) {
     : 'border-[#E0876E]/35 bg-[#C0563E]/[0.08] text-[#E0876E]';
 }
 
-function schedulingAuthorityLabel(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
-  if (method === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (method === 'complimentary_authorization') return 'Complimentary authorization · settlement still required';
-  return 'Scheduling payment authority not satisfied';
+function schedulingAuthorityLabel(gate: ReturnType<typeof evaluateSchedulingGate>) {
+  if (gate.paymentRequirementMethod === 'verified_payment') return 'Wise verified · scheduling authorized';
+  if (gate.wiseSubmission === 'processing') return 'Wise processing · scheduling locked until verified settlement';
+  return 'Verified Wise settlement required before scheduling';
 }
 
-function schedulingAuthorityDetail(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
-  if (method === 'verified_payment') return 'Payment is verified. BlueNotary readiness now depends only on the remaining execution facts.';
-  if (method === 'wise_submission_observed') return 'Scheduling is authorized; signer-link release still requires server-side Wise provider evidence, and final release requires verified settlement.';
-  if (method === 'complimentary_authorization') return 'Courtesy authorization is not verified settlement and cannot unlock scheduling.';
-  return 'Resolve the canonical scheduling payment requirement before creating the provider session.';
+function schedulingAuthorityDetail(gate: ReturnType<typeof evaluateSchedulingGate>) {
+  if (gate.paymentRequirementMethod === 'verified_payment') return 'Payment is verified. BlueNotary readiness now depends only on the remaining execution facts.';
+  if (gate.wiseSubmission === 'processing') return 'The Wise payment is submitted and processing. Scheduling, the BlueNotary session and signer-link release unlock only after exact verified Wise settlement.';
+  return 'Verified Wise settlement is required before the provider session can be created. Courtesy authorization or a payment flag alone cannot unlock scheduling.';
 }
 
 export async function MatterRONReadiness({ matterId }: { matterId: string }) {
@@ -77,7 +75,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
   const schedulingGate = evaluateSchedulingGate({ matter });
   const schedulingAuthorized = schedulingGate.schedulingEligible;
   const paymentRequirementMethod = schedulingGate.paymentRequirementMethod;
-  const paymentLabel = schedulingAuthorityLabel(paymentRequirementMethod);
+  const paymentLabel = schedulingAuthorityLabel(schedulingGate);
   const signerComplete = Boolean(matter.client_name && matter.email && matter.phone && signerState);
   const ronTruthComplete =
     truth.notarization_requirement === 'required' &&
@@ -171,7 +169,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       {schedulingAuthorized && notarialActNeedsReview && !activeSession && (
         <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.045] px-4 py-3 text-xs leading-5 text-white/58">
           <strong className="text-emerald-200">Scheduling authority is already satisfied.</strong>{' '}
-          {schedulingAuthorityDetail(paymentRequirementMethod)} BlueNotary is waiting on execution truth—not another payment.
+          {schedulingAuthorityDetail(schedulingGate)}{schedulingAuthorized ? ' BlueNotary is waiting on execution truth—not another payment.' : ''}
         </div>
       )}
 

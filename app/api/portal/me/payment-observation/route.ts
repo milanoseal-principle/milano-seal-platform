@@ -43,7 +43,7 @@ function payload(row: Record<string, unknown>) {
     amountPaid: Number(row.amount_paid ?? 0),
     currency: String(row.currency ?? "USD").toUpperCase(),
     wiseReference: String(row.wise_reference ?? row.deal_id ?? "").trim(),
-    submissionCurrent: evaluateSchedulingGate({ matter: row as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).paymentRequirementMethod === 'wise_submission_observed',
+    submissionCurrent: evaluateSchedulingGate({ matter: row as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).wiseSubmission === 'processing',
     providerEvidence: hasCurrentWiseProviderEvidence({ ...row, id: String(row.id) } as Parameters<typeof hasCurrentWiseProviderEvidence>[0]),
   };
 }
@@ -217,9 +217,9 @@ export async function PUT(req: NextRequest) {
           ? "Wise reports this payment as cancelled. Please review the payment before continuing."
           : reconciliation.providerStatus === "REQUIRES_ATTENTION"
             ? "Wise reports that the payment requires attention. Your Matter remains preserved while it is reviewed."
-            : "Payment submission is recorded. Scheduling requires a matching current submission; execution requires current Wise provider evidence."
+            : "Payment submission is recorded and processing. Scheduling unlocks only after exact verified Wise settlement."
         : state.paymentObservedAt
-          ? "Payment submission is recorded. Your Matter remains active while settlement completes in the background."
+          ? "Payment submission is recorded. Your Matter remains active; scheduling unlocks once Wise settlement is verified."
           : "No payment submission has been recorded yet.";
 
     return NextResponse.json({
