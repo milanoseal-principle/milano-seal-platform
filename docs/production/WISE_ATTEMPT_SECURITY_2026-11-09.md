@@ -29,3 +29,7 @@ Results are recorded only after execution in the PR and final handoff. These tes
 ## Executed local evidence
 
 Exact tested source `a464e50a72f6` (full SHA in the evidence JSON): all 14 `check:local` stages PASS. The canonical merge gate includes 1,277/1,277 unit tests, 194 Wise attempt SQL checks, the existing 79 financial/custody/release checks, migration replay and physical upgrade/restore. Production build, dependency audit, governance/P3/map/public rendered suites all passed. Sanitized command/exit evidence and log hashes: [local validation](evidence/ATTEMPT_AUTHORITY_LOCAL_2026-11-09.json). This subsequent evidence-only commit changes no tested application or migration bytes. Hosted CI, deployment, migrations and real-provider certification remain separate and NOT VERIFIED.
+
+## Previously released signing access
+
+A further consumer still relied on the RON session's cached UNLOCKED scheduling flag. Both the API and server-rendered portal now evaluate the current Matter's execution authority on every signing-link projection. The shared session predicate denies failed, cancelled, expired, unknown and provider-completed sessions. SQL guards signer-link releases and atomically revokes prior released flags when current payment/session authority becomes invalid; revocations append immutable Matter evidence. Scheduling flags remain distinct from execution authority. A URL already copied outside Milano may additionally require provider-side cancellation; no external revocation or live session action was performed.

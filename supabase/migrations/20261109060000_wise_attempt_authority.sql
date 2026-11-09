@@ -297,4 +297,61 @@ revoke all on function public.confirm_wise_payment_for_deal(uuid,text,text,numer
 grant execute on function public.confirm_wise_payment_for_deal(uuid,text,text,numeric,text,text) to service_role;
 
 
+create index if not exists ron_signers_released_matter_idx on public.ron_signers(matter_id) where signing_url_released is true;
+
+-- Current Wise authority, never the cached RON payment_gate_status, controls links.
+create or replace function public.wise_execution_authorized(d public.deals)
+returns boolean language sql stable set search_path='' as $$
+ select coalesce((d.payment_confirmed is true and d.payment_status='paid' and d.payment_settlement_status='cleared'
+   and d.amount_due>0 and d.amount_paid>0 and d.amount_due::text not in ('NaN','Infinity','-Infinity')
+   and d.amount_paid::text not in ('NaN','Infinity','-Infinity') and round(d.amount_paid*100)=round(d.amount_due*100))
+ or (d.payment_confirmed is false and d.payment_status in ('unpaid','pending') and coalesce(d.amount_paid,0)=0
+   and d.payment_settlement_status='observed_pending' and d.payment_observed_at is not null
+   and d.payment_observed_amount=d.amount_due
+   and upper(btrim(d.payment_observed_currency))=upper(btrim(d.currency))
+   and d.payment_observed_reference=coalesce(nullif(btrim(d.wise_reference),''),d.deal_id)
+   and public.current_wise_attempt_evidence(d)),false);
+$$;
+revoke all on function public.wise_execution_authorized(public.deals) from public,anon,authenticated;
+grant execute on function public.wise_execution_authorized(public.deals) to service_role;
+create or replace function public.guard_ron_signing_authority()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare s public.ron_sessions%rowtype;d public.deals%rowtype;
+begin
+ if NEW.signing_url_released is not true then return NEW;end if;
+ select * into s from public.ron_sessions where id=NEW.ron_session_id;
+ if not found or s.matter_id is distinct from NEW.matter_id
+   or not coalesce(s.ron_lifecycle_state in ('REQUESTED','STARTED','PROVIDER_ACCEPTED'),false)
+   or not coalesce(s.milano_ron_status in ('RON_SESSION_CREATED','SIGNER_INVITED','SIGNING_LINK_RELEASED','IDENTITY_STARTED','PHOTO_ID_PASSED','BIOMETRICS_PASSED','KBA_STARTED','KBA_PASSED','NOTARY_ACCEPTED','SESSION_JOINED','SESSION_STARTED','SESSION_PROCESSING'),false)
+   or (s.expired_at is not null and s.expired_at<=clock_timestamp()) then raise exception 'RON_SESSION_ACCESS_INVALID';end if;
+ select * into d from public.deals where id=s.matter_id;
+ if not found or not public.wise_execution_authorized(d) then raise exception 'WISE_PROVIDER_EVIDENCE_REQUIRED';end if;
+ return NEW;
+end;$$;
+revoke all on function public.guard_ron_signing_authority() from public,anon,authenticated;
+create trigger guard_ron_signing_authority before insert or update of signing_url_released,signing_url_encrypted on public.ron_signers
+ for each row execute function public.guard_ron_signing_authority();
+create or replace function public.revoke_ron_signing_authority()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+ if TG_TABLE_NAME='deals' then
+   if not public.wise_execution_authorized(NEW) then
+     with revoked as (update public.ron_signers set signing_url_released=false where matter_id=NEW.id and signing_url_released is true returning id,ron_session_id,matter_id)
+     insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,source,source_reference,metadata)
+     select matter_id,'RON_SIGNING_ACCESS_REVOKED','ron','system','wise-ron-authority',ron_session_id::text,jsonb_build_object('signer_id',id,'cause','current_payment_authority_invalid') from revoked;
+   end if;
+ else
+   if not coalesce(NEW.ron_lifecycle_state in ('REQUESTED','STARTED','PROVIDER_ACCEPTED'),false) or NEW.milano_ron_status='RON_EXPIRED'
+     or (NEW.expired_at is not null and NEW.expired_at<=clock_timestamp()) then
+     with revoked as (update public.ron_signers set signing_url_released=false where ron_session_id=NEW.id and signing_url_released is true returning id,ron_session_id,matter_id)
+     insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,source,source_reference,metadata)
+     select matter_id,'RON_SIGNING_ACCESS_REVOKED','ron','system','wise-ron-authority',ron_session_id::text,jsonb_build_object('signer_id',id,'cause','session_authority_invalid') from revoked;
+   end if;
+ end if;
+ return NEW;
+end;$$;
+revoke all on function public.revoke_ron_signing_authority() from public,anon,authenticated;
+create trigger revoke_ron_signing_on_payment after update on public.deals for each row execute function public.revoke_ron_signing_authority();
+create trigger revoke_ron_signing_on_session after update of ron_lifecycle_state,milano_ron_status,expired_at on public.ron_sessions for each row execute function public.revoke_ron_signing_authority();
+
 commit;
