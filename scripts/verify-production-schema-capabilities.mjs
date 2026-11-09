@@ -19,7 +19,7 @@ export async function verifyProductionSchemaCapabilities(env=process.env,fetcher
   const base=new URL(env.NEXT_PUBLIC_SUPABASE_URL);
   if(base.protocol!=='https:'||!base.hostname.endsWith('.supabase.co')||base.username||base.password||base.search||base.hash||(base.pathname!=='/'&&base.pathname!==''))throw Error('PRODUCTION_SCHEMA_PREFLIGHT_TARGET_INVALID');
   let response;
-  try{response=await fetcher(new URL('/rest/v1/',base),{method:'GET',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,Accept:'application/openapi+json'},cache:'no-store',signal:AbortSignal.timeout(15000)});}
+  try{response=await fetcher(new URL('/rest/v1/',base),{method:'GET',redirect:'error',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,Accept:'application/openapi+json'},cache:'no-store',signal:AbortSignal.timeout(15000)});}
   catch{throw Error('PRODUCTION_SCHEMA_PREFLIGHT_UNAVAILABLE');}
   if(!response.ok)throw Error('PRODUCTION_SCHEMA_PREFLIGHT_UNAVAILABLE');
   let spec;try{spec=await response.json();}catch{throw Error('PRODUCTION_SCHEMA_PREFLIGHT_INVALID_METADATA');}

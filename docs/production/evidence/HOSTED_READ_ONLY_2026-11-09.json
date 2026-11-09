@@ -1,0 +1,300 @@
+{
+  "observed_at": "2026-11-09T07:04:31Z",
+  "production": {
+    "id": "dpl_Dzgk59WrK6Je2doSgXsdtFkFDZ5i",
+    "url": "milano-seal-platform-ko8hoij98-themilanoseal-7008s-projects.vercel.app",
+    "state": "READY",
+    "readyState": "READY",
+    "target": "production",
+    "projectId": "prj_9Y44NuEstxoyrMm6eRwApkI1GCUs",
+    "projectName": "milano-seal-platform",
+    "meta": {
+      "githubCommitSha": "f18a49c2b515c6e1007b64c21736bfd256c92774",
+      "githubCommitRef": "main",
+      "githubRepo": "milano-seal-platform",
+      "githubOrg": "milanoseal-principle"
+    },
+    "aliases": [
+      "www.themilanoseal.com",
+      "milano-seal-platform.vercel.app",
+      "themilanoseal.com",
+      "milano-seal-platform-themilanoseal-7008s-projects.vercel.app",
+      "milano-seal-platform-git-main-themilanoseal-7008s-projects.vercel.app"
+    ]
+  },
+  "supabase": {
+    "project_id": "ehqdzfopsrbwewtddiwq",
+    "project_status": "ACTIVE_HEALTHY",
+    "migrations": [
+      {
+        "version": "20260412205911",
+        "name": "01_schema_core"
+      },
+      {
+        "version": "20260412210003",
+        "name": "02_schema_rls"
+      },
+      {
+        "version": "20260412210311",
+        "name": "03_seed_data"
+      },
+      {
+        "version": "20260418013613",
+        "name": "add_anon_insert_policy"
+      },
+      {
+        "version": "20260810164122",
+        "name": "live_intake_execution_truth_reconciliation"
+      },
+      {
+        "version": "20260813091841",
+        "name": "damiani50_governed_scope"
+      },
+      {
+        "version": "20260815013821",
+        "name": "messages_sender_identity_reconciliation"
+      },
+      {
+        "version": "20260827175657",
+        "name": "matter_evidence_ledger"
+      },
+      {
+        "version": "20260827175714",
+        "name": "matter_truth_snapshot_archive"
+      },
+      {
+        "version": "20260827175942",
+        "name": "revoke_matter_append_only_trigger_rpc"
+      },
+      {
+        "version": "20260827180306",
+        "name": "harden_legacy_security_definer_views"
+      },
+      {
+        "version": "20260828063355",
+        "name": "block_test_matter_data_in_production"
+      },
+      {
+        "version": "20260829193828",
+        "name": "discount_codes_updated_by"
+      },
+      {
+        "version": "20260829201003",
+        "name": "notification_delivery_evidence_columns"
+      },
+      {
+        "version": "20260829204637",
+        "name": "bluenotary_ron_production_reconciliation"
+      },
+      {
+        "version": "20260829204906",
+        "name": "ron_document_storage_bucket"
+      },
+      {
+        "version": "20260830072454",
+        "name": "milano_review_requests"
+      },
+      {
+        "version": "20260830072505",
+        "name": "search_console_revenue_feedback"
+      },
+      {
+        "version": "20260830081707",
+        "name": "review_request_events"
+      },
+      {
+        "version": "20260830081719",
+        "name": "search_console_sync_runs"
+      },
+      {
+        "version": "20260830124434",
+        "name": "production_certification_runs"
+      },
+      {
+        "version": "20260830124444",
+        "name": "seo_editorial_reviews"
+      },
+      {
+        "version": "20260830124459",
+        "name": "security_advisor_hardening"
+      },
+      {
+        "version": "20260830124533",
+        "name": "revoke_sensitive_identity_helpers_from_public"
+      },
+      {
+        "version": "20260831200104",
+        "name": "payment_observation_snapshot"
+      },
+      {
+        "version": "20260901035836",
+        "name": "atomic_execution_courier_alliance"
+      },
+      {
+        "version": "20260902160302",
+        "name": "governed_dispatch_and_alliance_webhooks"
+      },
+      {
+        "version": "20260906224323",
+        "name": "wise_provider_settlement_evidence_recovery"
+      },
+      {
+        "version": "20260906232759",
+        "name": "wise_reconciliation_exception_orchestrator"
+      },
+      {
+        "version": "20260907190939",
+        "name": "shippo_prepayment_rate_continuity"
+      },
+      {
+        "version": "20260907190956",
+        "name": "wise_observed_scheduling_gate"
+      },
+      {
+        "version": "20260926043329",
+        "name": "080_canonical_pricing_quote_truth"
+      },
+      {
+        "version": "20260926043331",
+        "name": "081_document_structural_preflight"
+      },
+      {
+        "version": "20260926043333",
+        "name": "082_professional_referral_engine"
+      },
+      {
+        "version": "20260926043335",
+        "name": "083_ron_provider_capability_evidence"
+      },
+      {
+        "version": "20260926043337",
+        "name": "084_state_authority_provenance"
+      },
+      {
+        "version": "20260926043339",
+        "name": "085_authority_packet_composer"
+      },
+      {
+        "version": "20260926043342",
+        "name": "086_matter_shipment_legs"
+      },
+      {
+        "version": "20260926043343",
+        "name": "087_authority_processing_intelligence"
+      },
+      {
+        "version": "20260926043345",
+        "name": "202609250001_translation_entries"
+      },
+      {
+        "version": "20260926043347",
+        "name": "202609260001_translation_entry_rls_hardening"
+      },
+      {
+        "version": "20260926133333",
+        "name": "088_payment_gate_search_path_hardening"
+      },
+      {
+        "version": "20261107122554",
+        "name": "verified_settlement_scheduling_gate"
+      },
+      {
+        "version": "20261107122556",
+        "name": "counsel_inquiry_capture"
+      },
+      {
+        "version": "20261107124012",
+        "name": "deals_access_hardening"
+      },
+      {
+        "version": "20261107223527",
+        "name": "p3_domestic_execution"
+      },
+      {
+        "version": "20261108002559",
+        "name": "p3_canonical_lifecycle_reconciliation"
+      }
+    ],
+    "schema": {
+      "tables": [
+        "deals",
+        "document_versions",
+        "notifications",
+        "ron_sessions",
+        "wise_reconciliation_exceptions"
+      ],
+      "functions": [
+        {
+          "name": "check_payment_gate",
+          "arguments": "",
+          "security_definer": false,
+          "definition_sha256": "6562f8e55143004047bfc3bda95913b8d5126364747539dbe0c7e72346278397"
+        },
+        {
+          "name": "confirm_wise_payment_for_deal",
+          "arguments": "p_deal_id uuid, p_payment_reference text, p_wise_transaction_reference text, p_amount numeric, p_currency text, p_actor text",
+          "security_definer": true,
+          "definition_sha256": "53f8cf0f8cee64de8d1a54eb75128ace80ab71c22fbf94284a88fcada7bbc196"
+        },
+        {
+          "name": "confirm_wise_payment_from_provider_notification",
+          "arguments": "p_deal_id uuid, p_payment_reference text, p_provider_resource_id text, p_gross_amount numeric, p_net_amount numeric, p_fee_amount numeric, p_currency text, p_settled_at timestamp with time zone, p_evidence_locator text, p_actor text",
+          "security_definer": true,
+          "definition_sha256": "fe3bc1897930baf1479089d88b13f921814b000f5e361cfa9290c621b7e9fdf8"
+        },
+        {
+          "name": "is_admin",
+          "arguments": "",
+          "security_definer": true,
+          "definition_sha256": "6a190f189bcbdb0ff48af34096c70c75020642427425e4c9c386feff0cb2375b"
+        },
+        {
+          "name": "is_operator",
+          "arguments": "",
+          "security_definer": true,
+          "definition_sha256": "ad58e3a0f160dfd7faa4dd3c4a5fbd75c506811d902d1f40a50fbac51ad33852"
+        }
+      ],
+      "observed_at": "2026-11-09T07:04:31.637193+00:00",
+      "database_name": "postgres",
+      "deals_projection_columns": [
+        "payment_observed_amount",
+        "payment_observed_currency",
+        "payment_observed_reference"
+      ]
+    },
+    "security_advisories": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "count": 27,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "extension_in_public",
+        "level": "WARN",
+        "count": 1,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "count": 2,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN",
+        "count": 1,
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ],
+    "full_private_role_function_definitions": "AUTO_REVIEW_REJECTED_PENDING_USER_AUTHORIZATION"
+  },
+  "actions": {
+    "deployed": false,
+    "applied_migrations": false,
+    "activated_agents": false,
+    "production_data_mutated": false
+  }
+}
