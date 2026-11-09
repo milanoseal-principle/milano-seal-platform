@@ -1,3 +1,4 @@
+import { normalizeSmartIntakeIntent, serviceLane } from "@/lib/intake/serviceIntent";
 import {
   CONCIERGE_SERVICE_INTENTS,
   type ConciergeServiceIntent,
@@ -93,6 +94,8 @@ export function commercialHref(action: CommercialAction, ctx: CommercialContext 
       if (ctx.documentType) params.set("document_type", ctx.documentType);
       const intent = normalizeServiceIntent(ctx.serviceIntent);
       if (intent !== "unsure") params.set("service_intent", intent);
+      // Progressive Smart Intake entry lane (context only, never authority).
+      params.set("intent", normalizeSmartIntakeIntent(ctx.serviceIntent));
       const s = params.toString();
       return `/intake${s ? `?${s}` : ""}`;
     }
@@ -110,3 +113,15 @@ export const COMMERCIAL_CTA_LABELS: Record<CommercialAction, string> = {
 // a click or a pricing request confirms a route, price, payment, or Matter.
 export const COMMERCIAL_CTA_DISCLOSURE =
   "Requesting pricing or review does not create a Matter, appointment, or payment. The Milano Seal coordinates U.S. document execution and is not a law firm; your route and private quote are confirmed after review.";
+
+/**
+ * Contextual primary service CTA for a page's service intent. RON pages say
+ * "Start Online Notary", notary pages "Request a Notary", apostille pages
+ * "Start Apostille Review", international pages "Begin Matter Review",
+ * counsel pages "Send a Matter", and unknown/unsure pages "Tell Us What You Need".
+ */
+export function primaryServiceCta(serviceIntent?: string | null): { action: CommercialAction; label: string } {
+  const intent = normalizeSmartIntakeIntent(serviceIntent);
+  const lane = serviceLane(intent);
+  return { action: intent === "counsel" ? "counsel" : "intake", label: lane.cta };
+}

@@ -20,6 +20,7 @@ import {
   type TimelineChoice,
 } from "@/lib/intake/reviewReadiness";
 
+import { getSmartIntakeQuestionPlan, normalizeSmartIntakeIntent, type TriState } from "@/lib/intake/serviceIntent";
 import { INTAKE_DRAFT_KEY, intakeFormSchema, intakeAnalysisSchema, restoreIntakeDraft, type IntakeFormState as FormState } from "@/lib/intake/intakeDraft";
 
 interface IntakePrefill {
@@ -35,6 +36,8 @@ interface Props {
   courtesyCode?: string;
   /** Governed professional handoff (verified server-side, never trusted here). */
   professionalReferral?: { profileId: string; reference: string };
+  /** Non-authoritative service intent from the entry lane (e.g. /intake?intent=ron). */
+  serviceIntent?: string;
 }
 
 type UploadState = "pending" | "uploading" | "uploaded" | "failed";
@@ -59,6 +62,10 @@ const INITIAL: FormState = {
   courierRequired: false,
   timelineChoice: "",
   deliveryChoice: "",
+  internationalUse: "",
+  alreadyExecuted: "",
+  witnessMentioned: "",
+  witnessWording: "",
 };
 
 const COUNTRIES = [
@@ -78,6 +85,23 @@ function fileKey(file: File) {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
+function TriChoice({ id, label, value, onChange }: { id: string; label: string; value: TriState; onChange: (value: Exclude<TriState, "">) => void }) {
+  const options: Array<[Exclude<TriState, "">, string]> = [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]];
+  return (
+    <div role="radiogroup" aria-labelledby={`${id}-label`}>
+      <p id={`${id}-label`} className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ms-gold)]/70">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map(([option, text]) => (
+          <button key={option} type="button" role="radio" aria-checked={value === option} id={`${id}-${option}`} onClick={() => onChange(option)}
+            className={`min-h-11 min-w-[5.5rem] rounded-sm border px-4 text-[11px] font-semibold uppercase tracking-[0.12em] focus-visible:outline-2 focus-visible:outline-offset-2 ${value === option ? "border-[var(--ms-gold)] bg-[var(--ms-gold)]/15 text-[#E8DCC0]" : "border-[rgba(198,165,90,0.22)] text-[#9A9488]"}`}>
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ReviewRow({ label, value, onEdit }: { label: string; value: string; onEdit?: () => void }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-[rgba(198,165,90,0.08)] px-4 py-3 last:border-0">
@@ -90,7 +114,8 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
+export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode, professionalReferral, serviceIntent }: Props) {
+  const intent = normalizeSmartIntakeIntent(serviceIntent);
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
@@ -121,6 +146,19 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     setForm((prev) => ({ ...prev, [key]: value }));
     setError(null);
   };
+
+  // One central question plan decides visibility only; never legal/execution truth.
+  const plan = useMemo(() => getSmartIntakeQuestionPlan({
+    intent,
+    answers: {
+      internationalUse: form.internationalUse,
+      alreadyExecuted: form.alreadyExecuted,
+      witnessMentioned: form.witnessMentioned,
+      destinationCountry: form.destinationCountry,
+      apostilleChoice: form.apostilleChoice,
+    },
+  }), [intent, form.internationalUse, form.alreadyExecuted, form.witnessMentioned, form.destinationCountry, form.apostilleChoice]);
+  const shows = (question: Parameters<typeof plan.visible.includes>[0]) => plan.visible.includes(question);
 
   useEffect(() => {
     try {
@@ -407,7 +445,14 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       timeline_preference: form.timelineChoice || undefined,
       delivery_method: form.deliveryChoice || undefined,
       deadline_date: form.deadline,
-      notes: form.executionType === "InPerson" && form.mobileAddress ? `Requested in-person location: ${form.mobileAddress}` : "",
+      notes: [
+        form.executionType === "InPerson" && form.mobileAddress ? `Requested in-person location: ${form.mobileAddress}` : "",
+        `[client_requested_service] ${intent} (context only; Milano review confirms execution, witness, apostille and route)`,
+        form.witnessMentioned ? `[client_witness_context] mentions witnesses: ${form.witnessMentioned}${form.witnessWording ? ` — ${form.witnessWording}` : ""} (context only)` : "",
+        form.internationalUse ? `[client_international_use] ${form.internationalUse} (context only)` : "",
+        form.alreadyExecuted ? `[client_already_executed] ${form.alreadyExecuted} (context only)` : "",
+      ].filter(Boolean).join("\n"),
+      service_intent: intent,
       courier_required: form.courierRequired ? "yes" : undefined,
       name_match: true,
       files_uploaded: files.length > 0,
@@ -499,6 +544,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
   const progress = step === 1 ? 0 : step === 2 ? 50 : 100;
 
+
   return (
     <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <div className="mb-8">
@@ -512,13 +558,14 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         <div className="px-5 py-7 sm:px-10 sm:py-10">
           {step === 1 && (
             <>
-              <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">Tell Us What You Need</h2>
-              <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Start with the Matter. We will structure it before asking for anything unnecessary.</p>
+              <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">{intent === "unsure" ? "Tell Us What You Need" : plan.heading}</h2>
+              <p className="mb-3 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Start with the Matter. We will structure it before asking for anything unnecessary.</p>
+              <p data-testid="intake-intent-notice" className="mb-7 text-[11px] leading-5 text-[#9A9488]">{plan.authorityNotice}</p>
 
               <SmartMatterIntake onAnalysisReady={handleAnalysisReady} onFilesPicked={(picked) => { markStarted(); setFiles((prev) => [...prev, ...picked.filter((file) => !prev.some((existing) => fileKey(existing) === fileKey(file)))].slice(0, 10)); }} initialMessage={form.description} />
 
               <div className="mt-6">
-                <label htmlFor="intake-description" className={labelCls}>Describe your matter <span className="text-[var(--ms-gold)]">*</span></label>
+                <label htmlFor="intake-description" className={labelCls}>{plan.descriptionPrompt} <span className="text-[var(--ms-gold)]">*</span></label>
                 <textarea id="intake-description" value={form.description} onFocus={markStarted} onChange={(e) => setField("description", e.target.value)} rows={4} placeholder="I need a power of attorney notarized for use in Italy." className={`${inputCls} min-h-28 resize-none`} />
               </div>
 
@@ -540,6 +587,15 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                   <ReviewRow label="Potential requirements" value={classification.manualReviewReasons.length ? "Additional route review may be required" : "No additional requirements confirmed yet"} />
                 </div>
               )}
+
+              <fieldset className="mt-6 space-y-5" aria-label="A few context questions">
+                {shows("alreadyExecuted") && <TriChoice id="intake-already-executed" label="Has the document already been signed or notarized?" value={form.alreadyExecuted} onChange={(v) => setField("alreadyExecuted", v)} />}
+                {shows("witnessContext") && <TriChoice id="intake-witness" label="Does the document mention witnesses?" value={form.witnessMentioned} onChange={(v) => setField("witnessMentioned", v)} />}
+                {shows("witnessContext") && form.witnessMentioned === "yes" && (
+                  <div><label htmlFor="intake-witness-wording" className={labelCls}>What does it say about witnesses? <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label><input id="intake-witness-wording" value={form.witnessWording} onChange={(e) => setField("witnessWording", e.target.value)} className={inputCls} placeholder="e.g. Signed in the presence of two witnesses" /></div>
+                )}
+                {shows("internationalUse") && <TriChoice id="intake-international-use" label="Will this document be used outside the United States?" value={form.internationalUse} onChange={(v) => setField("internationalUse", v)} />}
+              </fieldset>
 
               <div className="mt-7 border-t border-[rgba(198,165,90,0.1)] pt-6">
                 <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ms-gold)]/70">Your contact</div>
@@ -626,11 +682,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 <div className="mt-3 grid min-w-0 gap-4">
                   <div><label htmlFor="review-document-title" className={labelCls}>Exact document title</label><input id="review-document-title" className={inputCls} value={form.documentType || classification.documentType || ""} onChange={(e) => setField("documentType", e.target.value)} /></div>
                   <div><label htmlFor="review-document-count" className={labelCls}>Number of documents</label><input id="review-document-count" type="number" min="1" className={inputCls} value={form.documentCount || classification.documentCount} onChange={(e) => setField("documentCount", Math.max(1, Number(e.target.value)))} /></div>
-                  <div><label htmlFor="review-origin" className={labelCls}>Issuing state / authority</label><input id="review-origin" className={inputCls} value={form.originState} onChange={(e) => setField("originState", e.target.value)} /></div>
-                  <div><label htmlFor="review-signer-location" className={labelCls}>Signer physical location</label><input id="review-signer-location" className={inputCls} value={form.signerLocation} onChange={(e) => setField("signerLocation", e.target.value)} placeholder="City, state and country" /></div>
-                  <div><label htmlFor="review-destination" className={labelCls}>Destination country</label><select id="review-destination" className={inputCls} value={form.destinationCountry} onChange={(e) => setField("destinationCountry", e.target.value)}><option value="">Select destination</option>{Array.from(new Set([...COUNTRIES, ...(form.destinationCountry ? [form.destinationCountry] : [])])).map((country) => <option key={country}>{country}</option>)}</select></div>
-                  <div><label htmlFor="review-apostille" className={labelCls}>Apostille / authentication request</label><select id="review-apostille" className={inputCls} value={form.apostilleChoice} onChange={(e) => setField("apostilleChoice", e.target.value as FormState["apostilleChoice"])}><option value="">Confirm during review</option><option value="yes">Apostille requested — subject to authority review</option><option value="no">No apostille requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
-                  <div><label htmlFor="review-translation" className={labelCls}>Translation request</label><select id="review-translation" className={inputCls} value={form.translationChoice} onChange={(e) => setField("translationChoice", e.target.value as FormState["translationChoice"])}><option value="">Confirm during review</option><option value="yes">Translation requested</option><option value="no">No translation requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
+                  {plan.international && (<div><label htmlFor="review-origin" className={labelCls}>Issuing state / authority</label><input id="review-origin" className={inputCls} value={form.originState} onChange={(e) => setField("originState", e.target.value)} /></div>)}
+                  {plan.execution && (<div><label htmlFor="review-signer-location" className={labelCls}>Signer physical location</label><input id="review-signer-location" className={inputCls} value={form.signerLocation} onChange={(e) => setField("signerLocation", e.target.value)} placeholder="City, state and country" /></div>)}
+                  {plan.international && (<div><label htmlFor="review-destination" className={labelCls}>Destination country</label><select id="review-destination" className={inputCls} value={form.destinationCountry} onChange={(e) => setField("destinationCountry", e.target.value)}><option value="">Select destination</option>{Array.from(new Set([...COUNTRIES, ...(form.destinationCountry ? [form.destinationCountry] : [])])).map((country) => <option key={country}>{country}</option>)}</select></div>)}
+                  {plan.international && (<div><label htmlFor="review-apostille" className={labelCls}>Apostille / authentication request</label><select id="review-apostille" className={inputCls} value={form.apostilleChoice} onChange={(e) => setField("apostilleChoice", e.target.value as FormState["apostilleChoice"])}><option value="">Confirm during review</option><option value="yes">Apostille requested — subject to authority review</option><option value="no">No apostille requested</option><option value="unsure">Not sure — confirm during review</option></select></div>)}
+                  {plan.international && (<div><label htmlFor="review-translation" className={labelCls}>Translation request</label><select id="review-translation" className={inputCls} value={form.translationChoice} onChange={(e) => setField("translationChoice", e.target.value as FormState["translationChoice"])}><option value="">Confirm during review</option><option value="yes">Translation requested</option><option value="no">No translation requested</option><option value="unsure">Not sure — confirm during review</option></select></div>)}
                 </div>
               </details>
 

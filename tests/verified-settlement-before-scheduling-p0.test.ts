@@ -18,7 +18,8 @@ const submitted = { ...base, payment_settlement_status: "observed_pending", paym
   payment_observed_amount: 500, payment_observed_currency: "USD", payment_observed_reference: "MS-1" };
 const settled = { ...submitted, payment_status: "paid", payment_confirmed: true, payment_settlement_status: "cleared", amount_paid: 500 };
 
-const DENIED: Array<[string, Record<string, unknown>]> = [
+type GateMatter = Parameters<typeof evaluateExecutionGate>[0];
+const DENIED: Array<[string, GateMatter]> = [
   ["submission only", submitted],
   ["observed only (projection incomplete)", { ...base, payment_settlement_status: "observed_pending", payment_observed_at: "2026-11-09T00:00:00Z" }],
   ["processing", { ...submitted, wise_provider_evidence: { status: "IN_PROGRESS" }, wise_transaction_reference: "r", payment_funding_method: "wise_acquiring_payment" }],
