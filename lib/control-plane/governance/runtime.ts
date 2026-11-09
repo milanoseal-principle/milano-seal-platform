@@ -63,5 +63,6 @@ export async function runGovernanceJob(admin:SupabaseClient,adapter:ModelAdapter
  finally{clearTimeout(timeout);}
  const finished=await admin.rpc('governance_finish',{p_task:task.id,p_claim:task.claim_id,p_output:output??null,p_error:error,p_cost:cost,p_usage:usage});
  if(finished.error)throw Error('GOVERNANCE_FINISH_OUTCOME_UNKNOWN');
- return {status:error?'NOT_COMPLETED':'COMPLETED_NOT_VERIFIED',task_id:task.id,error_code:error};
+ const persisted=z.object({recorded:z.literal(true),status:z.enum(['COMPLETED','FAILED','UNKNOWN','DEAD_LETTER']),error_code:z.string().nullable()}).parse(finished.data);
+ return {status:persisted.status==='COMPLETED'?'COMPLETED_NOT_VERIFIED':'NOT_COMPLETED',task_id:task.id,error_code:persisted.error_code};
 }

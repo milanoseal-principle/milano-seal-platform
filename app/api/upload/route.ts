@@ -1,3 +1,5 @@
+import {persistUploadedVersion} from '@/lib/documents/versions';
+import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -12,7 +14,7 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file") as File;
     const deal_id = form.get("deal_id") as string;
-    const uploaded_by = form.get("uploaded_by") as string | null;
+
 
     if (!file || !deal_id) {
       return NextResponse.json(
@@ -33,6 +35,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+  const uploadAuthority=await authorizeMatterUpload(req,deal_id,false);
+  if(!uploadAuthority)return NextResponse.json({error:'UPLOAD_NOT_AUTHORIZED',next_action:'Use the same browser immediately after intake, or sign in to the account that owns this Matter.'},{status:403});
+    const uploaded_by=uploadAuthority.actorId;
     const supabase = createAdminClient();
 
     // Verify deal exists
@@ -91,6 +96,8 @@ export async function POST(req: NextRequest) {
       )
       .single();
 
+    if(!fileRecord)return NextResponse.json({error:'UPLOAD_RECORD_NOT_CONFIRMED'},{status:503});
+    await persistUploadedVersion(supabase,{matterId:deal_id,path:path,bucket:'documents',bytes:buffer,mime:file.type,name:file.name,actor:uploaded_by,documentId:String(fileRecord.id)});
     // STORAGE-VAULT-01: return signed URL but never storage_path, file_path or SHA-256.
     return NextResponse.json({
       success: true,

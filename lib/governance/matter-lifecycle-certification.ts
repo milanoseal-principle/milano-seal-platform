@@ -1,3 +1,4 @@
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
 export const CANONICAL_LIFECYCLE_CHECKPOINTS = [
   'MATTER_CREATED',
   'VALIDATED',
@@ -19,6 +20,9 @@ export interface MatterLifecycleEvidence {
   matterId: string;
   canonicalStatus?: string | null;
   paymentConfirmed?: boolean | null;
+  paymentStatus?: string | null;
+  amountDue?: number | null;
+  amountPaid?: number | null;
   paymentSettlementStatus?: string | null;
   executionTruth?: Record<string, unknown> | null;
   executedAt?: string | null;
@@ -66,8 +70,8 @@ export function certifyMatterLifecycle(evidence: MatterLifecycleEvidence): Lifec
 
   const truth = evidence.executionTruth ?? {};
   const status = String(evidence.canonicalStatus ?? '').toLowerCase();
-  const paymentVerified = evidence.paymentConfirmed === true && ['settled', 'confirmed', 'paid'].includes(String(evidence.paymentSettlementStatus ?? '').toLowerCase());
-  const executionUnlocked = paymentVerified || truth.payment_gate_satisfied === true || truth.scheduling_authorized === true;
+  const paymentVerified = evaluatePaymentGate({id:evidence.matterId,payment_confirmed:evidence.paymentConfirmed,payment_status:evidence.paymentStatus,payment_settlement_status:evidence.paymentSettlementStatus,amount_due:evidence.amountDue,amount_paid:evidence.amountPaid}) === 'PAYMENT_CONFIRMED';
+  const executionUnlocked = paymentVerified;
   const checkpoints: LifecycleCertificationResult['checkpoints'] = [
     { checkpoint: 'MATTER_CREATED', state: evidence.matterId ? 'PASS' : 'FAIL', reason: evidence.matterId ? 'Canonical Matter ID present' : 'Matter ID missing' },
     { checkpoint: 'VALIDATED', state: truth.validation_complete === true || !['', 'intake_received'].includes(status) ? 'PASS' : 'UNVERIFIED', reason: 'Derived from canonical validation/status truth' },
@@ -82,6 +86,7 @@ export function certifyMatterLifecycle(evidence: MatterLifecycleEvidence): Lifec
     { checkpoint: 'MATTER_CLOSED', state: evidence.closedAt || status === 'completed' ? 'PASS' : 'UNVERIFIED', reason: 'Requires canonical closed/completed truth' },
   ];
 
+  if(identityCandidates.slice(0,6).some(id=>!id)||!evidence.trackingMatterId||!evidence.eventMatterIds?.length)conflicts.push('Required cross-system Matter identity evidence missing');
   const identityContinuity = conflicts.length === 0;
   const certified = identityContinuity && checkpoints.every((item) => item.state === 'PASS' || item.state === 'NOT_APPLICABLE');
   return { matterId: evidence.matterId, certified, identityContinuity, checkpoints, conflicts };

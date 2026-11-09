@@ -1,3 +1,4 @@
+import {DocumentVersionCapture} from '@/components/dashboard/DocumentVersionCapture';
 export const dynamic = "force-dynamic";
 
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
@@ -31,6 +32,7 @@ export default async function MatterExecutionPage({
       />
       <MatterExecutionIntelligencePanel matterId={matterId} />
       <DocumentPreflightPanel matterId={matterId} />
+      <DocumentVersionCapture matterId={matterId} />
       <DynamicSessionPlaybook matterId={matterId} />
       <MatterRONReadiness matterId={matterId} />
       <AuthorityRoutePanel matterId={matterId} />

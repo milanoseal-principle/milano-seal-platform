@@ -1,6 +1,7 @@
+import {projectShippingMatter} from '@/lib/shippo/address';
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { roleFromEmail } from "@/lib/rbac";
+import {resolveServerRole} from '@/lib/auth/server-role';
 import {
   createShippoCustomsDeclaration,
   createShippoCustomsItem,
@@ -27,12 +28,12 @@ import { createHash } from "node:crypto";
 export const dynamic = "force-dynamic";
 
 async function loadMatter(supabase: Awaited<ReturnType<typeof createClient>>, matterId: string) {
-  const fields = "id, deal_id, client_name, email, phone, document_type, document_count, destination_country, country, shipping_street1, shipping_city, shipping_state, shipping_zip, apostille_required, payment_status, payment_observed_at, amount_due, amount_paid, tier, status";
+  const fields = "id, deal_id, client_name, email, phone, document_type, docs_count,ship_to,destination_country,execution_tier,lane, apostille_required, payment_status, payment_observed_at, amount_due, amount_paid,status";
 
   const byId = await supabase.from("deals").select(fields).eq("id", matterId).maybeSingle();
-  if (byId.data) return byId;
+  if (byId.data) return {...byId,data:projectShippingMatter(byId.data)};
 
-  return supabase.from("deals").select(fields).eq("deal_id", matterId).maybeSingle();
+  const result=await supabase.from("deals").select(fields).eq("deal_id",matterId).maybeSingle();return {...result,data:result.data?projectShippingMatter(result.data):null};
 }
 
 export async function POST(req: NextRequest) {
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const role = roleFromEmail(user.email);
+    const role = await resolveServerRole(user);
     if (!["founder_admin", "admin_operator"].includes(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     });
 
     const parcel = parcel_override ?? buildDocumentParcel({ templateId: packageTemplate.id });
-    const destCountry = matter.destination_country ?? matter.country ?? "US";
+    const destCountry = matter.shipping_country ?? matter.destination_country ?? matter.country ?? "US";
 
     let customsDeclarationId: string | undefined;
     const needsCustoms = requiresCustoms(destCountry);
@@ -144,7 +145,7 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const role = roleFromEmail(user.email);
+    const role = await resolveServerRole(user);
     if (!["founder_admin", "admin_operator"].includes(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -212,7 +213,7 @@ export async function PATCH(req: NextRequest) {
     const selected = approved.find((rate) => rate.object_id === selected_rate_id);
     if (!selected) return NextResponse.json({ error: "SHIPPO_RATE_UNAVAILABLE" }, { status: 422 });
 
-    const destinationCountry = matter.destination_country ?? matter.country ?? "US";
+    const destinationCountry = matter.shipping_country ?? matter.destination_country ?? matter.country ?? "US";
     const ranked = rankApprovedRates({ rates: approved, lane: matter.tier, destinationCountry });
     const rankedSelection = ranked.find(({ rate }) => rate.object_id === selected_rate_id);
     const pricing = calculateCourierCharge({ providerRateAmount: selected.amount, currency: selected.currency, tier: matter.tier });

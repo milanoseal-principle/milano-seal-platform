@@ -1,3 +1,5 @@
+import {sendGovernanceHealthAlerts} from '@/lib/notifications/transactionalEmailAlerts';
+import {recordSecurityEvent} from '@/lib/security/security-events';
 import {timingSafeEqual} from 'node:crypto';
 import {NextResponse} from 'next/server';
 import {createAdminClient} from '@/lib/supabase/admin';
@@ -8,5 +10,5 @@ export async function GET(request:Request){
  const actual=Buffer.from(request.headers.get('authorization')??''),expected=Buffer.from(`Bearer ${secret}`);
  if(actual.length!==expected.length||!timingSafeEqual(actual,expected))return NextResponse.json({error:'UNAUTHORIZED'},{status:401});
  if(!governanceRuntimeStatus().execution_available)return NextResponse.json({status:'NOT_ACTIVATED'});
- try{const admin=createAdminClient();const queued=await admin.rpc('governance_enqueue_briefs');if(queued.error)throw Error('SCHEDULER_FAILED');return NextResponse.json({...await runGovernanceJob(admin),scheduled:queued.data});}catch{return NextResponse.json({error:'GOVERNANCE_JOB_NOT_CONFIRMED',owner:'MILANO'},{status:503});}
+ try{const admin=createAdminClient();const queued=await admin.rpc('governance_enqueue_briefs');if(queued.error)throw Error('SCHEDULER_FAILED');const outcome=await runGovernanceJob(admin);const health=await admin.rpc('governance_health_observation');if(health.error)throw Error('MONITOR_OBSERVATION_FAILED');if(health.data?.notify)await sendGovernanceHealthAlerts(health.data);return NextResponse.json({...outcome,scheduled:queued.data,health:health.data},{headers:{'Cache-Control':'private, no-store'}});}catch{await recordSecurityEvent({event_name:'GOVERNANCE_SCHEDULER_FAILURE',severity:'high',route:'/api/cron/governance',client_safe:false});return NextResponse.json({error:'GOVERNANCE_JOB_NOT_CONFIRMED',owner:'MILANO'},{status:503});}
 }

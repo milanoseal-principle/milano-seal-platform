@@ -17,6 +17,7 @@ interface NotificationRow {
   subject: string | null;
   message: string;
   status: string;
+  delivery_status:string;
   provider: string | null;
   error_message: string | null;
   metadata: Record<string, unknown> | null;
@@ -34,10 +35,10 @@ function timeLabel(value: string) {
 
 function severityFor(row: NotificationRow) {
   const type = row.type.toLowerCase();
-  const status = row.status.toLowerCase();
-  if (status === "failed" || status === "bounced" || status === "complained" || status === "suppressed" || type.includes("exception") || type.includes("failed")) return "exception" as const;
+  const status = (row.delivery_status??row.status).toLowerCase();
+  if (status === "failed" || status === "bounced" || status === "complained" || status === "suppressed" || type.includes("exception") || type.includes("failed") || status==='unknown') return "exception" as const;
   if (type.includes("observed") || type.includes("review") || type.includes("required") || status === "pending") return "action" as const;
-  if (type.includes("confirmed") || type.includes("delivered") || status === "delivered" || status === "sent") return "verified" as const;
+  if (type.includes("confirmed") || type.includes("delivered") || status === "delivered") return "verified" as const;
   return "info" as const;
 }
 
@@ -76,7 +77,7 @@ export default async function OperatorNotificationsPage() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, deal_id, channel, type, subject, message, status, provider, error_message, metadata, created_at, sent_at, read_at, deals:deal_id(id, deal_id, client_name, status, deal_status)")
+    .select("id, deal_id, channel, type, subject, message, status, delivery_status, provider, error_message, metadata, created_at, sent_at, read_at, deals:deal_id(id, deal_id, client_name, status, deal_status)")
     .order("created_at", { ascending: false })
     .limit(150);
 
@@ -91,7 +92,7 @@ export default async function OperatorNotificationsPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A65B]/60">Operator Command / Notification Truth</p>
-            <h1 className="mt-2 font-serif text-3xl text-[#F6F1E6]">Notification Center</h1>
+            <h1 className="mt-2 font-serif text-3xl text-[#F6F1E6]">Notification Center</h1><p className="mt-2 text-xs text-white/50">Recent batch of up to 150 records. Provider accepted does not mean delivered.</p>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">A command view over the existing transactional notification audit log. Delivery evidence remains provider-backed; this surface does not fabricate acknowledgement or execution state.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">

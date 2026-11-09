@@ -19,7 +19,8 @@ export type SecurityEventName =
   | "AI_INTAKE_PARSED"
   | "AI_RECOMMENDATION_REVIEW_REQUIRED"
   | "AI_IDENTIFIER_CHANGE_BLOCKED"
-  | "AI_FINAL_RELEASE_DENIED";
+  | "AI_FINAL_RELEASE_DENIED"
+  | "GOVERNANCE_SCHEDULER_FAILURE";
 
 export type SecurityEventSeverity = "info" | "warning" | "high" | "critical";
 
@@ -55,22 +56,17 @@ export async function recordSecurityEvent(
       return;
     }
 
-    // In production: write to Supabase custody_ledger if available.
-    // Imported lazily to avoid bundling server deps into client.
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    await supabase.from("custody_ledger").insert({
-      event_name:  payload.event_name,
-      severity:    payload.severity,
-      actor:       payload.actor ?? "system",
-      matter_id:   payload.matter_id ?? null,
-      route:       payload.route ?? null,
-      client_safe: payload.client_safe,
-      metadata:    safeMetadata ?? {},
-      created_at:  new Date().toISOString(),
+    // Reuse the actual security audit schema; custody rows require a Matter,
+    // event and cryptographic linkage and cannot serve as a loose logging sink.
+    const {createAdminClient}=await import('@/lib/supabase/admin');
+    const result=await createAdminClient().from('audit_events').insert({
+      actor_id:payload.actor&&/^[a-f0-9-]{36}$/i.test(payload.actor)?payload.actor:null,
+      event_type:`SECURITY_${payload.event_name}`,route:payload.route??null,
+      metadata:{visibility:'AUDIT',severity:payload.severity,matter_id:payload.matter_id??null,client_safe:payload.client_safe,...safeMetadata},
     });
+    if(result.error)console.error('[security] AUDIT_EVENT_RECORD_NOT_CONFIRMED',{code:result.error.code});
   } catch {
-    // Fail silently — security event logging must never crash the app
+    console.error('[security] AUDIT_EVENT_RECORD_NOT_CONFIRMED'); // Logging cannot authorize or block the transaction.
   }
 }
 

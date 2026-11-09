@@ -82,8 +82,20 @@ jobs:
       - name: Tiffany Damiani and global intelligence safe regression suites
         run: npm run test:ai-governance-regressions
 
+      - name: Production dependency security audit
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: P19 through P23 safe source certification suites
+        run: npm run test:production-certification-source
+
       - name: Clean dependency-aware migration replay
         run: npm run test:migration-replay
+
+      - name: Upgrade and isolated physical restore
+        run: npm run test:upgrade-restore
+
+      - name: Financial custody release authorization regressions
+        run: npm run test:gap-closure-database
 
       - name: P3 atomic domestic Matter database regression
         run: npm run test:p3-database
@@ -129,6 +141,9 @@ jobs:
       - name: Install browser for P3 controlled rendered acceptance
         run: npx playwright install --with-deps chromium
 
+      - name: AI governance controlled rendered acceptance
+        run: npm run test:ai-governance-rendered
+
       - name: P3 controlled rendered acceptance
         run: npm run test:p3-rendered
 
@@ -139,3 +154,13 @@ jobs:
           name: p3-controlled-ui-evidence
           path: artifacts/proof/p3-controlled/
           if-no-files-found: ignore
+
+      - name: Upload governance and source certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-and-gap-closure-evidence
+          path: |
+            artifacts/governance/
+            artifacts/gap-closure/
+          if-no-files-found: warn

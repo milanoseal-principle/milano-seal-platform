@@ -15,6 +15,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { queueProfessionalNotification } from "@/lib/professional/notifications";
 
 export type NotificationEvent =
+  | "review_started"
+  | "execution_started"
+  | "authentication_processing"
+  | "matter_paused"
   | "intake_received"
   | "quote_ready"
   | "payment_instructions_sent"
@@ -41,6 +45,10 @@ export interface NotificationCopy {
 }
 
 export const NOTIFICATION_COPY: Record<NotificationEvent, NotificationCopy> = {
+  review_started:{subject:'Matter review started',body:'Your coordinator is reviewing the information and execution requirements for your Matter.'},
+  execution_started:{subject:'Execution in progress',body:'Your Matter has entered execution. Completion requires the separate governed evidence and review controls.'},
+  authentication_processing:{subject:'Authentication processing',body:'Your Matter has entered authentication processing. Government submission, receipts and acceptance are recorded separately by your coordinator.'},
+  matter_paused:{subject:'Matter paused',body:'Your Matter is paused. Contact your coordinator through the secure portal to review the next permitted step.'},
   intake_received: {
     subject: "Matter received",
     body: "We have received your matter and started controlled intake review. You will be notified as each step is completed.",
@@ -123,15 +131,7 @@ export async function notifyClient(
   }
   try {
     const admin = createAdminClient();
-    const { error } = await admin.from("messages").insert({
-      deal_id: dealId,
-      direction: "outbound",
-      channel: "portal",
-      content: copy.body,
-      sender_role: "system",
-      sender_name: "The Milano Seal",
-      status: "sent",
-    });
+    const {error}=await admin.rpc('queue_matter_notification',{p_matter:dealId,p_event:event,p_subject:copy.subject,p_body:copy.body,p_state_event:null});
     if (error) {
       console.error(`[notify] log write failed (${event}): ${error.message}`);
       return { ok: false };

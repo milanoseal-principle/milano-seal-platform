@@ -338,7 +338,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         body.append("deal_id", id);
         body.append("files", file);
         const response = await fetch("/api/intake/upload", { method: "POST", body });
-        if (!response.ok) throw new Error("Upload failed");
+        const received=await response.json().catch(()=>null);
+        if (!response.ok||received?.errors?.length||!received?.files?.length) throw new Error('Upload was not confirmed');
         next[key] = "uploaded";
         track("document_uploaded", { uploadCount: 1 }, id);
       } catch {

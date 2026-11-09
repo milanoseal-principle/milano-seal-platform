@@ -293,9 +293,9 @@ export async function generateEvidencePacket(
   cursor = { ...cursor, y: cursor.y - 4 };
   cursor = drawText(
     cursor,
-    verdict.valid
+    verdict.valid&&verdict.assurance==='CONTENT_AND_LINKS'
       ? `VERIFIED — ${verdict.total} immutable entries, hash chain intact.`
-      : `BROKEN at row ${verdict.brokenAt} — ${verdict.reason}`,
+      : verdict.valid ? `LEGACY LINKS ONLY — ${verdict.total} entries; historical content hashes cannot be independently recomputed.` : `BROKEN at row ${verdict.brokenAt} — ${verdict.reason}`,
     { size: 10, color: verdict.valid ? GOLD : rgb(0.75, 0.31, 0.31) },
   );
 

@@ -1,6 +1,8 @@
+import { evaluatePaymentGate } from '@/lib/payments/paymentGate';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  reconcileCanonicalNotifications,
   sendCounselInquiryAlerts,
   sendOperatorIntakeAlerts,
   sendPaymentObservedAlerts,
@@ -23,11 +25,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let canonical;try{canonical=await reconcileCanonicalNotifications();}catch{return NextResponse.json({error:'CANONICAL_NOTIFICATION_RECONCILIATION_NOT_CONFIRMED',owner:'MILANO'},{status:503});}
   const admin = createAdminClient();
   const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const { data, error } = await admin
     .from("deals")
-    .select("id,deal_id,client_name,email,document_type,destination_country,final_total,amount_due,amount_paid,currency,payment_status,payment_confirmed,payment_observed_at,payment_confirmed_at,created_at")
+    .select("id,deal_id,client_name,email,document_type,destination_country,final_total,amount_due,amount_paid,currency,payment_status,payment_confirmed,payment_settlement_status,payment_observed_at,payment_confirmed_at,created_at")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -69,7 +72,7 @@ export async function GET(req: NextRequest) {
       summary.observed += 1;
     }
 
-    const paid = Boolean(row.payment_confirmed) || String(row.payment_status ?? "").toLowerCase() === "paid";
+    const paid=evaluatePaymentGate({...row,id:String(row.id)})==='PAYMENT_CONFIRMED';
     if (paid) {
       await sendPaymentClearedAlerts({
         matterId,
@@ -88,7 +91,7 @@ export async function GET(req: NextRequest) {
     try { inquiryNotifications[inquiry.id] = await sendCounselInquiryAlerts(inquiry.id); }
     catch { inquiryNotifications[inquiry.id] = "unavailable"; }
   }
-  return NextResponse.json({ success: true, ...summary, inquiry_scan: inquiryError ? "unavailable" : "complete", inquiry_notifications: inquiryNotifications });
+  return NextResponse.json({ success: true,canonical, ...summary, scope:"BOUNDED_RECENT_BATCH",inquiry_scan: inquiryError ? "unavailable" : "BATCH_ONLY", inquiry_notifications: inquiryNotifications });
 }
 
 export async function POST(req: NextRequest) {

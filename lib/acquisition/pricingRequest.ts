@@ -39,7 +39,7 @@ export const pricingRequestSchema = z.object({
   delivery_preference: z.string().trim().max(200).default(""),
   description: z.string().trim().min(10, "Please add a little more context.").max(2000),
   originating_page: z.string().trim().max(500).default(""),
-  attribution: z.record(z.string().max(500)).default({}),
+  attribution: z.record(z.string(),z.string().max(500)).default({}),
   website: z.string().max(200).default(""),
 });
 

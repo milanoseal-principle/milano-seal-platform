@@ -1,3 +1,4 @@
+import { readAllKeyset } from '@/lib/data/keyset';
 import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 import { readAppRole } from "@/lib/auth/server-role";
 import { isRouteAllowedForRole } from "@/lib/auth/roleRedirect";
@@ -63,13 +64,15 @@ export async function getAllClientDeals(
   const email = normalizeEmail(user.email);
   const emailPattern = email.replace(/[\\%_]/g, "\\$&");
   const admin = dependencies.admin();
-  const { data } = await admin
-    .from("deals")
+  const data=await readAllKeyset<PortalDeal>(async cursor=>{
+  let query=admin.from("deals")
     .select(
-      "id, execution_truth, client_name, email, phone, document_type, destination_country, country, status, payment_status, payment_confirmed, amount, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
+      "id, execution_truth, client_name, email, phone, document_type, destination_country, country:destination_country, status, payment_status, payment_confirmed, amount:total_price, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
     )
     .ilike("email", emailPattern)
-    .order("created_at", { ascending: false });
+    .order('id',{ascending:false}).limit(250);
+  if(cursor)query=query.lt('id',cursor.id);const result=await query;if(result.error)throw Error('CLIENT_MATTER_READ_UNAVAILABLE');return result.data as PortalDeal[]??[];
+  },row=>row.id);
 
   // Pattern matching is a query optimization, never ownership authority.
   // Exact normalized comparison also rejects PostgREST wildcard aliases and
@@ -77,6 +80,7 @@ export async function getAllClientDeals(
   const deals = ((data as PortalDeal[]) ?? []).filter((deal) =>
     emailsMatch(deal.email, email),
   );
+  deals.sort((a,b)=>String(b.created_at??'').localeCompare(String(a.created_at??''))||b.id.localeCompare(a.id));
   return { email, deals };
 }
 

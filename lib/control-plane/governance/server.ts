@@ -21,10 +21,10 @@ export function sameOrigin(request:Request) {
  if(request.headers.get('origin')!==new URL(request.url).origin || request.headers.get('sec-fetch-site')==='cross-site' || !request.headers.get('content-type')?.startsWith('application/json'))throw new GovernanceHTTPError('SAME_ORIGIN_JSON_REQUIRED',403);
 }
 export async function governanceResponse(action:()=>Promise<unknown>) {
- const correlation_id=randomUUID();try{return NextResponse.json(await action());}catch(error){
+ const correlation_id=randomUUID();try{const result=await action();if(result instanceof Response){result.headers.set('Cache-Control','private, no-store');return result;}return NextResponse.json(result,{headers:{'Cache-Control':'private, no-store'}});}catch(error){
  const code=error instanceof GovernanceHTTPError?error.code:error instanceof z.ZodError?'INVALID_GOVERNANCE_INPUT':'GOVERNANCE_STORAGE_OR_RUNTIME_UNAVAILABLE';
  const status=error instanceof GovernanceHTTPError?error.status:error instanceof z.ZodError?400:503;
- console.error('[governance]',{code,correlation_id});return NextResponse.json({error:code,...(error instanceof z.ZodError?{fields:error.issues.map(issue=>issue.path.join('.'))}:{}),correlation_id,owner:'MILANO',persisted_state:'NOT_CONFIRMED',next_action:status===401?'Sign in again.':'Refresh persisted governance state. Review configuration, migration readiness or the indicated blocker before retrying.'},{status});
+ console.error('[governance]',{code,correlation_id});return NextResponse.json({error:code,...(error instanceof z.ZodError?{fields:error.issues.map(issue=>issue.path.join('.'))}:{}),correlation_id,owner:'MILANO',persisted_state:'NOT_CONFIRMED',next_action:status===401?'Sign in again.':'Refresh persisted governance state. Review configuration, migration readiness or the indicated blocker before retrying.'},{status,headers:{'Cache-Control':'private, no-store',...(status===429?{'Retry-After':'60'}:{})}});
  }
 }
 const reason=z.string().trim().min(10).max(500),uuid=z.string().uuid(),hash=z.string().regex(/^[a-f0-9]{64}$/);
@@ -45,10 +45,12 @@ const operationSchema=z.discriminatedUnion('operation',[
 ]);
 const safeCodes=new Set(['TOOL_NOT_AUTHORIZED','IDEMPOTENCY_CONFLICT','SOURCE_MISSING_STALE_OR_FORBIDDEN','DELEGATION_CEILING','APPROVAL_TARGET_MISMATCH','APPROVAL_REASON_OR_TTL_REQUIRED','CRITICAL_HOLD','MISSING_DECISION_EVIDENCE','COMMITTEE_CONSULTATION_REQUIRED','INDEPENDENT_VERIFIER_REQUIRED','VERIFICATION_TARGET_MISMATCH','INDEPENDENT_AUDIT_REQUIRED','RETRY_NOT_SAFE','APPROVAL_ALREADY_CONSUMED_OR_REVOKED','CLOSED_ACTUAL_EVIDENCE_REQUIRED']);
 export async function governanceMutation(request:Request) {
- sameOrigin(request);const actor=await governanceActor();const command=operationSchema.parse(await request.json());
+ sameOrigin(request);const actor=await governanceActor();const command=operationSchema.parse(await readGovernanceJson(request));
  if(!actor.founder && !['task','pause','hold'].includes(command.operation))throw new GovernanceHTTPError('FOUNDER_REQUIRED',403);
  if(command.operation==='pause'&&!command.body.paused&&!governanceRuntimeStatus().execution_available)throw new GovernanceHTTPError('RUNTIME_UNCONFIGURED',409);
  const admin=createAdminClient();
+ // Safety stops remain available even if ordinary mutation allowance is exhausted.
+ if(!(command.operation==='hold'||(command.operation==='pause'&&command.body.paused)))await governanceRateLimit(actor.id,'write',admin);
  if(command.operation==='task'){
   const body=command.body;let parent;
   if(body.parent_task_id){const result=await admin.from('governance_tasks').select('permission,depth,source_ids,visibility').eq('id',body.parent_task_id).single();if(result.error||!result.data||(!actor.founder&&result.data.visibility!=='OPERATIONS'))throw new GovernanceHTTPError('PARENT_NOT_AUTHORIZED',403);parent=result.data;}
@@ -60,7 +62,7 @@ export async function governanceMutation(request:Request) {
 }
 export const cursorSchema=z.object({created_at:z.string().datetime({offset:true}),id:uuid}).strict();
 export async function governanceSnapshot(request:Request) {
- const actor=await governanceActor();const url=new URL(request.url);
+ const actor=await governanceActor();await governanceRateLimit(actor.id,'read');const url=new URL(request.url);
  if(url.searchParams.has('collection'))return governanceCollection(request,actor);const raw=url.searchParams.get('cursor');
  const cursor=raw?cursorSchema.parse(JSON.parse(Buffer.from(raw,'base64url').toString())):null;
  const admin=createAdminClient();let tasks=admin.from('governance_tasks').select('id,agent_id,originating_director_id,committee_id,charter_version,payload,action_hash,permission,parent_task_id,depth,dependency_ids,decision_id,source_ids,visibility,status,attempt_count,max_attempts,cost_limit,cost_reserved,cost_actual,output,output_hash,error_code,created_at,completed_at,verified_by').order('created_at',{ascending:false}).order('id',{ascending:false}).limit(26);
@@ -108,4 +110,18 @@ function outcomeWithScore(row:Record<string,unknown>){
  const prediction=task?.output?.forecasts?.find(f=>f.forecast_id===row.forecast_id)?.prediction;
  const score=scoreForecast(prediction??Number.NaN,Number(row.actual),prediction!==undefined);
  const {governance_tasks:_,...safe}=row;return {...safe,prediction:prediction??null,calibration:score};
+}
+
+export async function governanceRateLimit(actorId:string,bucket:'read'|'write'|'run'|'metrics',admin=createAdminClient()) {
+ const result=await admin.rpc('governance_request_limit',{p_actor:actorId,p_bucket:bucket});
+ if(result.error)throw new GovernanceHTTPError('GOVERNANCE_RATE_CONTROL_UNAVAILABLE',503);
+ if(result.data!==true)throw new GovernanceHTTPError('GOVERNANCE_RATE_LIMIT',429);
+}
+
+export async function readGovernanceJson(request:Request) {
+ const reader=request.body?.getReader();if(!reader)throw new GovernanceHTTPError('INVALID_GOVERNANCE_INPUT',400);
+ const chunks:Uint8Array[]=[];let size=0;
+ try{for(;;){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>65536){await reader.cancel();throw new GovernanceHTTPError('GOVERNANCE_BODY_TOO_LARGE',413);}chunks.push(part.value);}}
+ finally{reader.releaseLock();}
+ try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw new GovernanceHTTPError('INVALID_GOVERNANCE_INPUT',400);}
 }

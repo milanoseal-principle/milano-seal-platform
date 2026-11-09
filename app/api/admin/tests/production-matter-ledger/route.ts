@@ -23,6 +23,7 @@ function fail(step: string, details: string, evidence: Record<string, unknown> =
 }
 
 export async function POST(req: Request) {
+  if(process.env.VERCEL_ENV==='production'||process.env.NODE_ENV==='production')return NextResponse.json({ok:false,code:'ISOLATED_CERTIFICATION_REQUIRED',next_action:'Use an approved isolated test database. Simulations must never credit production settlements.'},{status:403});
   // 1. Auth — founder_admin session OR server secret header. Role never from body.
   const secret = process.env.PRODUCTION_TEST_SECRET;
   const providedSecret = req.headers.get("x-test-runner-secret");

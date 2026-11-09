@@ -21,16 +21,15 @@ const mig041 = readFileSync(
   "supabase/migrations/041_custody_ledger_linear_chain.sql",
   "utf8",
 );
-const migrations = mig040 + "\n" + mig041;
+const atomic=readFileSync('supabase/migrations/20261108201000_custody_atomic_content_evidence.sql','utf8');
+const migrations=mig040+'\n'+mig041+'\n'+atomic;
 
 const errors = [];
 
 // 1. Inserted columns are all backed by a migration.
-const insertMatch = code.match(
-  /\.from\("custody_ledger"\)\s*\.insert\(\{([\s\S]*?)\}\)/,
-);
-if (!insertMatch) throw new Error("could not find custody_ledger insert block");
-const insertedCols = [...insertMatch[1].matchAll(/^\s*(\w+):/gm)].map((x) => x[1]);
+const insertMatch=atomic.match(/insert into public\.custody_ledger\(([^)]+)\)/i);
+if(!insertMatch)throw Error('Atomic custody insert contract missing');
+const insertedCols=insertMatch[1].split(',').map(value=>value.trim());
 const base = [
   "id", "deal_id", "event", "actor_type", "actor_name",
   "location", "notes", "metadata", "created_at",
@@ -77,13 +76,10 @@ if (!linear) {
   }
 }
 
-// 6. appendLedger retries on unique violation.
-if (!/23505/.test(code)) {
-  errors.push("appendLedger does not handle unique violation (23505) retry");
-}
-if (!/MAX_ATTEMPTS|attempt\s*<=|for\s*\(/.test(code)) {
-  errors.push("appendLedger has no retry loop");
-}
+// 6. One row lock + transaction replaces the application read/insert race.
+if(!code.includes("rpc('append_custody_event'"))errors.push('appendLedger must delegate to the atomic RPC');
+if(!/from public\.deals where id=[\s\S]*?for update/i.test(atomic))errors.push('Atomic custody append must serialize on canonical Matter');
+for(const control of ['CUSTODY_IDEMPOTENCY_CONFLICT','CUSTODY_CHAIN_FORK','CUSTODY_HISTORY_IMMUTABLE','payload_canonical'])if(!atomic.includes(control))errors.push('Missing atomic custody control '+control);
 
 if (errors.length) {
   console.error("validate:custody-ledger-schema FAILED:");
@@ -91,5 +87,5 @@ if (errors.length) {
   throw new Error(`${errors.length} custody-ledger schema error(s)`);
 }
 console.log(
-  `validate:custody-ledger-schema passed (${insertedCols.length} cols backed; actor_id text; hash + linear-chain unique indexes; fork retry present)`,
+  `validate:custody-ledger-schema passed (${insertedCols.length} cols backed; actor_id text; hash + linear-chain unique indexes; atomic Matter serialization and immutable payload present)`,
 );
