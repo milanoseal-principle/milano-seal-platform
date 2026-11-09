@@ -1,5 +1,6 @@
 "use client";
 
+import { paymentObservationPresentation } from "@/lib/wise/attemptEvidence";
 import { useEffect, useMemo, useState } from "react";
 import { FinancialArtifactDownloads } from '@/components/portal/FinancialArtifactDownloads';
 import { usePortal } from "@/components/portal/portal-context";
@@ -41,6 +42,8 @@ interface PaymentObservation {
   displayId: string;
   paymentStatus: string;
   settlementStatus: string;
+  wiseReference: string;
+  submissionCurrent: boolean;
   paymentConfirmed: boolean;
   paymentObservedAt: string | null;
   paymentConfirmedAt: string | null;
@@ -80,6 +83,7 @@ export default function ClientInvoicePage() {
   const { deal, isLoading, refresh } = usePortal();
   const [invoice, setInvoice] = useState<InvoiceSnapshot | null>(null);
   const [paymentFlow, setPaymentFlow] = useState<PaymentObservation | null>(null);
+  const [paymentStateAvailable, setPaymentStateAvailable] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [discountBusy, setDiscountBusy] = useState(false);
@@ -109,7 +113,8 @@ export default function ClientInvoicePage() {
     try {
       const response = await fetch(`/api/portal/me/payment-observation?deal_id=${encodeURIComponent(deal.id)}`, { cache: "no-store" });
       const body = (await response.json()) as { payment?: PaymentObservation; error?: string };
-      if (!response.ok || !body.payment) return null;
+      if (!response.ok || !body.payment) { setPaymentStateAvailable(false); return null; }
+      setPaymentStateAvailable(true);
       setPaymentFlow((previous) => {
         if (!previous?.paymentConfirmed && body.payment?.paymentConfirmed) {
           void loadInvoice();
@@ -119,7 +124,8 @@ export default function ClientInvoicePage() {
       });
       return body.payment;
     } catch {
-      // Polling is best-effort. The payment gate itself remains server authoritative.
+      setPaymentStateAvailable(false);
+      // An unavailable current observation cannot invite another payment.
       return null;
     }
   };
@@ -180,6 +186,7 @@ export default function ClientInvoicePage() {
       const body = (await response.json()) as { payment?: PaymentObservation; message?: string; error?: string };
       if (!response.ok || !body.payment) throw new Error(body.error || "Payment submission could not be recorded.");
       setPaymentFlow(body.payment);
+      setPaymentStateAvailable(true);
       setPaymentMessage(body.message || "Payment submitted successfully. Settlement verification continues in the background.");
       await refresh();
     } catch (err) {
@@ -205,6 +212,7 @@ export default function ClientInvoicePage() {
         return;
       }
       setPaymentFlow(body.payment);
+      setPaymentStateAvailable(true);
       setPaymentMessage(body.message || (body.payment.paymentConfirmed
         ? "Wise settlement verified. Paid state is confirmed."
         : "Payment submission remains recorded. Settlement continues in the background."));
@@ -219,13 +227,19 @@ export default function ClientInvoicePage() {
     return <div className="text-sm text-white/40">Verifying invoice state…</div>;
   }
 
-  if (!deal || !invoice) {
+  if (!deal || !invoice || invoice.matterId !== deal.id) {
     return <div className="text-sm text-white/50">No invoice is available for this account.</div>;
   }
 
   const currency = invoice.currency || "USD";
-  const paymentConfirmed = invoice.paymentConfirmed || Boolean(paymentFlow?.paymentConfirmed);
-  const paymentProcessing = !paymentConfirmed && Boolean(paymentFlow?.paymentObservedAt);
+  const currentPaymentFlow = paymentStateAvailable && paymentFlow?.matterId === deal.id ? paymentFlow : null;
+  const paymentPresentation = paymentObservationPresentation(currentPaymentFlow);
+  const paymentConfirmed = paymentPresentation === 'settled';
+  const paymentProcessing = paymentPresentation === 'pending' || paymentPresentation === 'review';
+  const invoiceMatchesCurrentPayment = currentPaymentFlow !== null &&
+    Math.round(currentPaymentFlow.amountDue * 100) === Math.round(invoice.amountDueNow * 100) &&
+    currentPaymentFlow.currency.toUpperCase() === currency.toUpperCase() && currentPaymentFlow.wiseReference === invoice.wiseReference;
+  const paymentReentryAllowed = invoiceMatchesCurrentPayment && currentPaymentFlow?.amountPaid === 0;
 
   if (complimentaryAuthorized) {
     return (
@@ -324,9 +338,12 @@ export default function ClientInvoicePage() {
               {paymentConfirmed ? "Verified Wise payment" : paymentProcessing ? "Payment submitted" : "Amount due before scheduling"}
             </div>
             <div className="mt-1 font-serif text-3xl text-white">
-              {paymentConfirmed ? money(paymentFlow?.amountPaid || invoice.retainer, currency) : money(invoice.amountDueNow, currency)}
+              {paymentConfirmed ? money(currentPaymentFlow?.amountPaid || invoice.retainer, currency) : money(invoice.amountDueNow, currency)}
             </div>
             <div className="mt-2 text-[11px] leading-5 text-white/38">Wise reference: <span className="font-mono text-[#C6A55A]/75">{invoice.wiseReference}</span></div>
+            {currentPaymentFlow && !invoiceMatchesCurrentPayment && !paymentConfirmed && <div role="status" className="mt-3 text-xs text-amber-100/70">Current payment instructions differ from the displayed invoice. Review the current invoice before continuing.<button type="button" className="mt-2 block min-h-11 rounded border border-white/20 px-3" onClick={() => void loadInvoice()}>Refresh current invoice</button></div>}
+            {paymentPresentation === 'unverified' && <p role="status" className="mt-3 text-xs text-amber-100/70">Current payment status is NOT VERIFIED. Payment controls remain unavailable until the current Matter observation can be refreshed.</p>}
+            {paymentPresentation === 'invalidated' && <p role="status" className="mt-3 text-xs text-amber-100/70">The prior payment attempt is invalidated. {paymentReentryAllowed ? 'Use a fresh secure Wise handoff before submitting again.' : 'Ask your coordinator to reconcile the recorded payment before making another payment.'}</p>}
             {paymentProcessing && (
               <div className="mt-3 text-xs leading-5 text-amber-100/60">
                 Your payment submission is recorded. Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again. Scheduling may proceed only after the recorded submission passes canonical integrity checks and the remaining Matter requirements are ready.
@@ -334,7 +351,7 @@ export default function ClientInvoicePage() {
             )}
           </div>
 
-          {!paymentConfirmed && !paymentProcessing && invoice.amountDueNow > 0 && (
+          {!paymentConfirmed && !paymentProcessing && paymentReentryAllowed && invoice.amountDueNow > 0 && (
             <div className="mt-5 space-y-3">
               {invoice.wisePaymentUrl ? (
                 <a
