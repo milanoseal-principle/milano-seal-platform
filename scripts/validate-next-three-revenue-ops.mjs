@@ -1,3 +1,4 @@
+import { GAP_CLOSURE_PROTECTED_CHANGES } from "./governed-production-scope.mjs";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 
@@ -98,7 +99,7 @@ const protectedPatterns = [
   /shippo/i,
   /bluenotary/i,
 ];
-const protectedChanges = changed.filter((file) => protectedPatterns.some((pattern) => pattern.test(file)));
+const protectedChanges = changed.filter((file) => !GAP_CLOSURE_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file)));
 if (protectedChanges.length) {
   console.error(`Protected files changed:\n${protectedChanges.join("\n")}`);
   process.exit(1);

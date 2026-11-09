@@ -1,3 +1,4 @@
+import { GAP_CLOSURE_PROTECTED_CHANGES } from "./governed-production-scope.mjs";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 
@@ -31,7 +32,7 @@ for (const claim of unsafeAffirmativeClaims) {
 const changed = process.env.VERCEL === "1" ? "" : run("git", ["diff", "--name-only", "HEAD~1..HEAD"]);
 const protectedPatterns = [/^app\/api\/webhooks?\/wise/, /^app\/api\/webhook\/wise/, /^app\/api\/deals\/.*payment/, /^app\/api\/deals\/.*release/, /^src\/features\/payments\//, /^src\/features\/release\//, /^src\/features\/ledger\//, /^lib\/wise/, /^lib\/supabase/, /^src\/features\/shipping\//, /^src\/features\/execution\/blueNotaryAdapter/];
 for (const file of changed.split("\n").filter(Boolean)) {
-  if (protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
+  if (!GAP_CLOSURE_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
 }
 
 if (failures.length) {

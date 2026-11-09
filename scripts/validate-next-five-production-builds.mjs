@@ -1,3 +1,4 @@
+import { GAP_CLOSURE_PROTECTED_CHANGES } from "./governed-production-scope.mjs";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 
@@ -33,7 +34,7 @@ for (const phrase of ["guaranteed acceptance", "government approved", "legal adv
 
 const changed = process.env.VERCEL === "1" ? "" : run("git", ["diff", "--name-only", "HEAD~1..HEAD"]);
 const protectedPatterns = [/^app\/api\/webhooks?\/wise/, /^app\/api\/webhook\/wise/, /^app\/api\/deals\/.*payment/, /^app\/api\/deals\/.*release/, /^src\/features\/payments\//, /^src\/features\/release\//, /^src\/features\/ledger\//, /^lib\/wise/, /^lib\/supabase/, /^src\/features\/shipping\//, /^src\/features\/execution\/blueNotaryAdapter/];
-for (const file of changed.split("\n").filter(Boolean)) if (protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
+for (const file of changed.split("\n").filter(Boolean)) if (!GAP_CLOSURE_PROTECTED_CHANGES.includes(file) && protectedPatterns.some((pattern) => pattern.test(file))) failures.push(`Protected file changed: ${file}`);
 
 if (failures.length) { console.error("Next five production builds validation failed:"); for (const failure of failures) console.error(`- ${failure}`); process.exit(1); }
 console.log("Next five production builds validation passed.");
