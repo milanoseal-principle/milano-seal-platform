@@ -43,6 +43,7 @@ try{
  await run('source-certification','npm',['run','test:production-certification-source']);
  await run('p19-p23-certification','npm',['run','certify:source']);
  await run('dependency-audit','npm',['audit','--omit=dev','--audit-level=moderate']);
+ await run('dependency-audit-all','npm',['audit','--audit-level=moderate']);
  // Dev fixture suites are sequential; both restore Next's generated type reference.
  await run('governance-rendered','npm',['run','test:ai-governance-rendered']);
  await run('p3-rendered','npm',['run','test:p3-rendered']);
