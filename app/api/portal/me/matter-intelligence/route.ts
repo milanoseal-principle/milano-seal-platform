@@ -58,7 +58,7 @@ function deriveNextAction(params: {
   }
   if (status === "quoted" || status === "awaiting_payment") {
     if (params.schedulingEligible && !params.settlementVerified) {
-      return "Payment submission is recorded and scheduling authority is available. Verified Wise settlement is still pending.";
+      return "Payment submission is recorded. Scheduling remains locked until Wise settlement is verified.";
     }
     if (params.settlementVerified) {
       return "Verified Wise settlement is recorded and scheduling authority is available.";
@@ -147,7 +147,6 @@ export async function GET(req: NextRequest) {
   const scheduling = evaluateSchedulingGate({ matter: paymentGateMatter(d, deal.id) });
   const settlementVerified = scheduling.paymentRequirementMethod === "verified_payment";
   const paymentSubmitted =
-    scheduling.paymentRequirementMethod === "wise_submission_observed" ||
     Boolean(d.payment_observed_at);
 
   const paymentGate = {

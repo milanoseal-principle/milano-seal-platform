@@ -1,3 +1,4 @@
+import { PersonaRouting } from "@/components/landing/persona-routing";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
@@ -185,7 +186,8 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
           </div>
         </section>
 
-        <ExecutionTiers />
+        <PersonaRouting />
+          <ExecutionTiers />
 
         <section className="px-4 py-16 sm:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">

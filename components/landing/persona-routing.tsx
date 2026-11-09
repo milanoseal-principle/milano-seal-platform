@@ -1,19 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, FileSignature, FolderLock, Scale, Landmark } from "lucide-react";
+import { SERVICE_ENTRIES, serviceIntakeHref } from "@/lib/intake/serviceIntent";
+import { ArrowRight, FileSignature, FolderLock, Landmark } from "lucide-react";
 
 // Public persona routing — every visitor gets an explicit door. Brand-aligned to
 // the locked Milano Seal system (International Document Execution & Apostille
 // Coordination); no legal-advice or guarantee language. Links only — no logic.
 const PATHWAYS = [
-  {
-    eyebrow: "New Matter",
-    icon: FileSignature,
-    title: "Begin Secure Intake",
-    desc: "For individuals, families, founders, or professionals starting a new U.S. document execution matter for international use.",
-    cta: "Begin Secure Intake",
-    href: "/intake",
-    primary: true,
-  },
+  ...SERVICE_ENTRIES.map(entry => ({eyebrow:"Your request",icon:FileSignature,title:entry.label,desc:entry.description,cta:entry.cta,href:serviceIntakeHref(entry.intent),primary:true})),
   {
     eyebrow: "Existing Matter",
     icon: FolderLock,
@@ -21,15 +14,6 @@ const PATHWAYS = [
     desc: "For clients who already have a Milano Seal matter reference or portal access.",
     cta: "Open Secure Matter Portal",
     href: "/secure-portal",
-    primary: true,
-  },
-  {
-    eyebrow: "Attorney / Professional",
-    icon: Scale,
-    title: "International Counsel Execution Lane",
-    desc: "For international attorneys, law firms, advisors, and professional coordinators structuring the U.S. execution side of a client Matter.",
-    cta: "Send a U.S. Matter",
-    href: "/counsel",
     primary: true,
   },
   {
@@ -51,11 +35,10 @@ export function PersonaRouting() {
           Choose Your Pathway
         </div>
         <h2 className="text-center font-serif text-3xl text-white">
-          Choose the correct Milano Seal pathway
+          What do you need help with?
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-white/55">
-          U.S. document execution for international use. Select the door that matches you —
-          new matter, existing matter, professional coordination, or partnership.
+          From a straightforward online notarization to international document execution, start with what you need. We’ll confirm the appropriate path after review.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

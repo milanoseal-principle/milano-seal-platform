@@ -11,8 +11,8 @@ const shell = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
 test("scheduling readiness projects the canonical gate instead of creating a second authority", () => {
   assert.match(scheduling, /evaluateSchedulingGate/);
   assert.match(scheduling, /allOperationalRequirementsPassed/);
-  assert.match(scheduling, /wise_submission_observed/);
-  assert.match(scheduling, /Wise processing · scheduling authorized/);
+  assert.match(scheduling, /verified_payment/);
+  assert.match(scheduling, /Wise verified/);
   assert.doesNotMatch(scheduling, /payment_confirmed\s*:\s*true/);
   assert.doesNotMatch(scheduling, /\.update\(/);
   assert.doesNotMatch(scheduling, /\.insert\(/);

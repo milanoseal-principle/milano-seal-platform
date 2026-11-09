@@ -35,7 +35,7 @@ export function resolvePortalLifecycleSummary(status: string | null | undefined,
         : 'No client action is currently required.';
   const nextExpectedEvent: Record<string,string> = {
     new: 'Matter review', intake_received: 'Matter review', under_review: 'Validation or execution proposal', compliance_review: 'Compliance review decision',
-    needs_info: 'Requested information received', compliance_blocked: 'Operator review decision', quoted: 'Wise payment submission', awaiting_payment: 'Verified payment or scheduling authority',
+    needs_info: 'Requested information received', compliance_blocked: 'Operator review decision', quoted: 'Wise payment submission', awaiting_payment: 'Verified Wise settlement',
     payment_confirmed: 'Execution scheduling', scheduled: 'Execution', in_execution: authenticationRequirement === 'not_required' ? 'Execution QC and release review' : 'Apostille or authentication processing', apostille_processing: 'Custody and release preparation',
     courier_ready: 'Courier release', in_transit: 'Delivery confirmation', shipped: 'Delivery confirmation', delivered: 'Matter close', completed: 'No further event expected', closed: 'No further event expected',
   };

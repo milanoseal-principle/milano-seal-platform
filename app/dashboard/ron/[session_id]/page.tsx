@@ -35,8 +35,6 @@ function StatusBadge({ status }: { status: string }) {
 
 function authorityLabel(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
   if (method === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (method === 'complimentary_authorization') return 'Complimentary authorization · scheduling authorized';
   return 'Scheduling payment authority not satisfied';
 }
 

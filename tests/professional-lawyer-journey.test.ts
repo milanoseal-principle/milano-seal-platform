@@ -8,9 +8,10 @@ test("homepage routes new attorneys into counsel acquisition", () => {
   const persona = read("components/landing/persona-routing.tsx");
   const publicCta = read("components/conversion/MilanoPublicCtaModule.tsx");
 
-  assert.match(persona, /href: "\/counsel"/);
+  assert.match(persona, /SERVICE_ENTRIES/);
+  assert.match(read("lib/intake/serviceIntent.ts"), /foreign_counsel/);
   assert.doesNotMatch(persona, /href: "\/lawyer-access"/);
-  assert.match(persona, /International Counsel Execution Lane/);
+  assert.match(read("lib/intake/serviceIntent.ts"), /Professional \/ Counsel/);
   assert.match(publicCta, /For International Counsel/);
   assert.match(publicCta, /href: "\/counsel"/);
 });
@@ -36,7 +37,7 @@ test("public payment UX matches the governed 50/50 Matter gates", () => {
   const machine = read("data/matter-state-machine.ts");
   const matterService = read("src/features/matters/matterService.ts");
 
-  assert.match(portal, /An integrity-matched submission authorizes scheduling only/);
+  assert.match(portal, /Verified Wise settlement is required before scheduling/);
   assert.match(pricing, /50% Wise deposit unlocks scheduling and eligible RON\/execution/);
   assert.match(pricing, /final 50% must be verified before the completed document packet is released for international shipping/);
   assert.match(revenue, /verified 50% Wise deposit unlocks scheduling and eligible RON\/execution/);

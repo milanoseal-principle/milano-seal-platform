@@ -49,12 +49,12 @@ test("payment card does not ask for duplicate payment and keeps scheduling settl
   assert.match(paymentCard, /Payment Submitted/);
   assert.match(paymentCard, /Payment submitted successfully/);
   assert.match(paymentCard, /You do not need to submit payment again/);
-  assert.match(paymentCard, /Scheduling may proceed only after the recorded submission passes canonical integrity checks and the remaining Matter requirements are ready/);
+  assert.match(paymentCard, /Scheduling remains locked until Wise settlement is verified and the remaining Matter requirements are ready/);
   assert.doesNotMatch(paymentCard, /Scheduling unlocks automatically after verified payment/);
 });
 
 test("payment page keeps Wise submission distinct from scheduling authority", () => {
-  assert.match(paymentPage, /An integrity-matched Wise submission may authorize scheduling while settlement is pending/);
+  assert.match(paymentPage, /Scheduling remains locked while settlement is pending/);
   assert.match(paymentPage, /It does not confirm payment/);
   assert.match(paymentPage, /PolicyAcceptanceGate matterId=\{deal\.id\}/);
 });
@@ -69,26 +69,15 @@ test("invoice settlement check performs live server-side Wise reconciliation", (
   assert.doesNotMatch(invoice, /Wise payment processing/);
 });
 
-test("canonical scheduler accepts only matched submission without ever authoring paid state", () => {
-  assert.match(schedulingGate, /classifyObservedSubmission/);
-  assert.match(schedulingGate, /observed_pending/);
-  assert.match(schedulingGate, /submission === "observed"/);
-  assert.match(schedulingGate, /schedulingEligible:\s*false/);
-  assert.match(schedulingGate, /paymentRequirementSatisfied:\s*false/);
-  assert.match(schedulingGate, /Integrity-matched Wise submission authorizes scheduling only/);
+test('canonical scheduler requires settlement without ever authoring paid state', () => {
+  assert.match(schedulingGate, /evaluatePaymentGate/);
+  assert.match(schedulingGate, /PAYMENT_CONFIRMED/);
   assert.doesNotMatch(schedulingGate, /payment_status\s*[:=]\s*["']paid["']/);
   assert.doesNotMatch(schedulingGate, /payment_confirmed\s*[:=]\s*true/);
-  assert.doesNotMatch(schedulingGate, /amount_paid\s*[:=]\s*(?!params\.matter)/);
 });
 
-test("scheduling authority fails closed when the payable scope is mutated after submission", () => {
-  assert.match(schedulingGate, /payment_observed_amount/);
-  assert.match(schedulingGate, /payment_observed_currency/);
-  assert.match(schedulingGate, /payment_observed_reference/);
-  assert.match(schedulingGate, /projection_incomplete/);
-  assert.match(schedulingGate, /superseded/);
-  const post = observation.slice(observation.indexOf("export async function POST"));
-  assert.match(post, /begin_wise_payment_attempt/);
+test('submission snapshots remain bound while scheduling requires settlement', () => {
+  assert.match(schedulingGate, /evaluatePaymentGate/);
   assert.match(attemptMigration, /payment_observed_amount=d\.amount_due/);
   assert.match(attemptMigration, /payment_observed_currency=d\.currency/);
   assert.match(attemptMigration, /payment_observed_reference=coalesce/);

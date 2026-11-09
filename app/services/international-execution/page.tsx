@@ -41,7 +41,7 @@ export default function InternationalExecutionPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/intake"
+              href="/intake?intent=international_execution"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
             >
               <span>Begin International Matter</span>
@@ -109,7 +109,7 @@ export default function InternationalExecutionPage() {
             Submit your document type, destination country, and timeline requirements to begin.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=international_execution"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Start International Intake</span>

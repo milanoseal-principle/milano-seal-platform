@@ -88,7 +88,7 @@ export async function POST(
             schedulingGate.paymentRequirementSatisfied,
           paymentRequirementMethod: schedulingGate.paymentRequirementMethod,
           message:
-            "Verified Wise settlement or an integrity-matched Wise submission is required before scheduling can begin.",
+            "Verified Wise settlement is required before scheduling can begin.",
         },
         { status: 402 },
       );

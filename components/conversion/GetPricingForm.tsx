@@ -8,6 +8,7 @@ import { CONCIERGE_SERVICE_INTENTS, type ConciergeServiceIntent } from "@/lib/ac
 // know their execution route: "Not sure — review my document" is the default.
 // No internal or tier prices are shown; a private quote follows Milano review.
 const SERVICE_LABELS: Record<ConciergeServiceIntent, string> = {
+  witness: "Witness support",
   ron: "Remote online notarization",
   domestic_execution: "Domestic document execution",
   apostille: "Apostille coordination",

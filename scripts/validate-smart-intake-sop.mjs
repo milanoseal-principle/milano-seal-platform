@@ -67,9 +67,9 @@ const page = read("app/intake/page.tsx");
 
 const wizard = read("components/intake/smart-intake-sop-wizard.tsx");
 /buildIntakeClarifications/.test(wizard) ? ok("live Step 2 consumes buildIntakeClarifications") : fail("live Step 2 does not consume dynamic clarifications");
-/clarifications\.questions\.map/.test(wizard) ? ok("live Step 2 renders canonical questions only") : fail("live Step 2 does not render canonical question list");
-/projectClientPricing/.test(wizard) ? ok("live Step 3 consumes projectClientPricing") : fail("live Step 3 does not consume projectClientPricing");
-/priceSmartIntake/.test(wizard) ? ok("live intake prices via canonical engine") : fail("live intake does not call canonical pricing engine");
+/getSmartIntakeQuestionPlan/.test(wizard) ? ok("progressive visibility uses the central policy") : fail("central question policy missing");
+!/import.*pricing\/(milanoPricingTruth|pricingProjections)/.test(wizard) ? ok("private pricing engine excluded from public intake") : fail("private pricing import in browser");
+/Submit for document review/.test(wizard) && /calculatePrice/.test(read("app/api/intake/core.ts")) ? ok("public submission converges on canonical server review and pricing") : fail("canonical server pricing path missing");
 /Tell Us What You Need/.test(wizard) && /We Understand/.test(wizard) ? ok("Matter-first Step 1 + WE UNDERSTAND present") : fail("Matter-first Step 1 or WE UNDERSTAND missing");
 /Retry Upload/.test(wizard) && /retryFailedUploads/.test(wizard) ? ok("same-Matter retry UX present") : fail("upload retry UX missing");
 

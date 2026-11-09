@@ -12,6 +12,9 @@ import { FinalSealReviewPanel } from "@/components/dashboard/FinalSealReviewPane
 import { ExecutionQAMatrix } from "@/components/dashboard/ExecutionQAMatrix";
 
 interface MatterDetail {
+  customer_request_context?: Record<string,string>;
+  requested_service?: string | null;
+  confirmed_execution_route?: string | null;
   id: string;
   deal_id: string | null;
   client_name: string | null;
@@ -361,6 +364,8 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem 1.5rem" }}>
             <Field label="Country" value={matter.destination_country} />
             <Field label="Document Type" value={matter.document_type} />
+            <Field label="Client request" value={matter.requested_service ?? "Not captured"} />
+            <Field label="Confirmed execution route" value={matter.confirmed_execution_route?.replace(/_/g, " ") ?? "Pending Milano review"} />
             <Field label="Execution Lane" value={executionLane} />
             <Field label="RON Eligibility" value={ronEligibility} />
             <Field label="Witness Requirements" value={witnessRequirements} />
@@ -368,6 +373,8 @@ function DrawerContent({ matter, onClose }: { matter: MatterDetail; onClose: () 
             <Field label="Tracking Status" value={trackingStatusLabel(matter)} />
             <Field label="Next Action" value={nextActionLabel(matter)} />
           </div>
+          {matter.customer_request_context && <dl className="mt-5 min-w-0 space-y-4 text-sm">{Object.entries(matter.customer_request_context).filter(([,value])=>value).map(([key,value])=><div className="min-w-0" key={key}><dt className="text-white/45">{({witness_context:"Client witness wording — review required",document_description:"Client instructions",deadline:"Requested deadline",receiving_authority:"Requested receiving authority",requested_service_location:"Requested service location"} as Record<string,string>)[key]}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-white/75">{value}</dd></div>)}</dl>}
+
         </div>
 
         <div>

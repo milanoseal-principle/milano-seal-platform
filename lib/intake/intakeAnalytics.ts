@@ -7,6 +7,7 @@ export const INTAKE_ANALYTICS_EVENTS = [
   "counsel_submission_failed",
   "review_clicked",
 
+  "service_intent_selected",
   "intake_started",
   "description_completed",
   "document_uploaded",
@@ -29,6 +30,7 @@ export const INTAKE_ANALYTICS_EVENTS = [
 export type IntakeAnalyticsEvent = (typeof INTAKE_ANALYTICS_EVENTS)[number];
 
 const SAFE_METADATA_KEYS = new Set([
+  "serviceIntent",
   "journeySurface",
   "ctaIntent",
   "originatingPage",

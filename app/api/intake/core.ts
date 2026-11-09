@@ -1,3 +1,4 @@
+import { captureCustomerServiceContext } from "@/lib/intake/operatorHandoff";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { resolveServerRole } from "@/lib/auth/server-role";
@@ -336,6 +337,7 @@ export async function POST(req: NextRequest) {
       verifiedOperator = Boolean(user && canPerformProtectedMatterTransition(await resolveServerRole(user)));
     } catch { /* Unavailable identity never grants execution authority. */ }
     const executionPreference = customerExecutionPreference(raw);
+    const serviceContext = captureCustomerServiceContext(raw);
     const customerExecutionRequest = {
       execution_preference: executionPreference,
       notarization_preference: executionTruth.notarization_requirement,
@@ -409,6 +411,7 @@ export async function POST(req: NextRequest) {
         source,
         companyName,
         customer_execution_request: customerExecutionRequest,
+        customer_service_context: serviceContext,
         execution_truth: executionTruth,
         execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
         quote_state: "review_required",
@@ -846,6 +849,7 @@ export async function POST(req: NextRequest) {
       source,
       companyName,
       customer_execution_request: customerExecutionRequest,
+        customer_service_context: serviceContext,
       execution_truth: executionTruth,
       originAuthorityLabel: originAuthorityLabel ?? null,
       normalizedRouting: normalizedRouting ?? null,

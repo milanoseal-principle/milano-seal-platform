@@ -78,8 +78,6 @@ function operationalBlockers(matter: SchedulingMatter) {
 
 function paymentMethodLabel(method: ReturnType<typeof evaluateSchedulingGate>["paymentRequirementMethod"]) {
   if (method === "verified_payment") return "Wise verified";
-  if (method === "wise_submission_observed") return "Wise processing · scheduling authorized";
-  if (method === "complimentary_authorization") return "Complimentary authorization";
   return "Payment requirement open";
 }
 
@@ -115,7 +113,7 @@ export default async function SchedulingReadinessPage({ searchParams }: PageProp
 
   const readyCount = projections.filter((item) => item.ready).length;
   const blockedCount = projections.length - readyCount;
-  const processingCount = projections.filter((item) => item.gate.paymentRequirementMethod === "wise_submission_observed").length;
+  const processingCount = projections.filter((item) => !item.gate.schedulingEligible && Boolean(item.matter.payment_observed_at)).length;
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:p-6 lg:p-8">

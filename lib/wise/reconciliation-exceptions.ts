@@ -84,7 +84,7 @@ hasCurrentWiseProviderEvidence(matter);
   return {
     reason: "provider_correlation_missing",
     severity: "action_required",
-    nextAction: "Wise submission is recorded but provider correlation is still missing. Scheduling may continue if the canonical scheduling gate is satisfied. Obtain exact official Wise provider evidence for governed recovery; never infer paid state from amount or timing alone.",
+    nextAction: "Wise submission is recorded but provider correlation is still missing. Scheduling remains locked until Wise settlement is verified. Obtain exact official Wise provider evidence for governed recovery; never infer paid state from amount or timing alone.",
   };
 }
 

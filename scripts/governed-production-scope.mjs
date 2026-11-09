@@ -35,6 +35,10 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // Founder explicitly replaced submission scheduling with verified-settlement-only authority.
+ // Existing full unit + actual SQL suites enforce deny/allow parity.
+ 'supabase/migrations/20261109063000_verified_settlement_scheduling.sql',
+
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
  // Positive/negative authority tests run in test:wise-attempt-database and the

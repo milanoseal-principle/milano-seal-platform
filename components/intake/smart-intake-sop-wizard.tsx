@@ -7,9 +7,13 @@ import { SmartMatterIntake } from "@/components/intake/SmartMatterIntake";
 import { FileUploadZone } from "@/components/intake/FileUploadZone";
 import type { MatterAnalysis } from "@/lib/intake/matterAnalysis";
 import { classifyIntake, type AiExtraction } from "@/lib/intake/smartClassification";
-import { buildIntakeClarifications, type IntakeQuestion } from "@/lib/intake/intakeClarifications";
-import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
-import { projectClientPricing } from "@/lib/pricing/pricingProjections";
+import { buildIntakeClarifications } from "@/lib/intake/intakeClarifications";
+import Link from "next/link";
+import { SERVICE_ENTRIES, normalizeServiceIntent, serviceIntentLabel } from "@/lib/intake/serviceIntent";
+import { commercialHref } from "@/lib/conversion/commercialCta";
+import { getSmartIntakeQuestionPlan } from "@/lib/intake/questionPlan";
+import type { ConciergeServiceIntent } from "@/lib/acquisition/concierge-service-intents";
+
 import { buildIntakeAnalyticsPayload, type IntakeAnalyticsEvent } from "@/lib/intake/intakeAnalytics";
 import {
   documentIdentityLabel,
@@ -30,6 +34,7 @@ interface IntakePrefill {
 }
 
 interface Props {
+  initialServiceIntent?: ConciergeServiceIntent;
   initialTier?: "signature" | "priority" | "executive";
   prefill?: IntakePrefill;
   courtesyCode?: string;
@@ -90,18 +95,18 @@ function ReviewRow({ label, value, onEdit }: { label: string; value: string; onE
   );
 }
 
-export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
+export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialTier = "priority", prefill, courtesyCode, professionalReferral }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>({
     ...INITIAL,
+    serviceIntent: initialServiceIntent, serviceIntentSource: "link", detailStep: 0,
     destinationCountry: prefill?.country || "",
     documentType: prefill?.document?.replace(/-/g, " ") || "",
     description: prefill?.matter ? prefill.matter.replace(/_/g, " ") : "",
   });
   const [analysis, setAnalysis] = useState<AiExtraction | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [questionDrafts, setQuestionDrafts] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -115,7 +120,9 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const draftContext = JSON.stringify([initialTier, prefill?.country, prefill?.document, prefill?.matter, courtesyCode, professionalReferral?.profileId]);
   const startedRef = useRef(false);
   const submittedRef = useRef(false);
+  const submissionLock = useRef(false);
   const reviewViewedRef = useRef(false);
+  const intentTrackedRef = useRef(false);
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -125,7 +132,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   useEffect(() => {
     try {
       const draft = restoreIntakeDraft(sessionStorage.getItem(INTAKE_DRAFT_KEY), draftContext);
-      if (draft) { setForm(draft.form); setAnalysis(draft.analysis ?? null); setExecutionDraft(draft.form.executionType); setStep(draft.step); }
+      if (draft) { setForm({ ...draft.form, serviceIntent: draft.form.serviceIntent ?? initialServiceIntent }); setAnalysis(draft.analysis ?? null); setExecutionDraft(draft.form.executionType); setStep(draft.step); }
     } catch { setDraftStorageAvailable(false); }
     setDraftReady(true);
   }, [draftContext]);
@@ -184,9 +191,20 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     } : undefined,
   }), [form, analysis]);
 
-  const clarifications = useMemo(() => buildIntakeClarifications(classification), [classification]);
-  const pricing = useMemo(() => priceSmartIntake({ classification, selectedLane: initialTier, commercialContext: "consumer", timeline: form.timelineChoice, delivery: form.deliveryChoice }), [classification, initialTier, form.timelineChoice, form.deliveryChoice]);
-  const clientPricing = useMemo(() => projectClientPricing(pricing), [pricing]);
+  const rawClarifications = useMemo(() => buildIntakeClarifications(classification), [classification]);
+  const questionPlan = getSmartIntakeQuestionPlan({ intent: form.serviceIntent, description: form.description, internationalUse: form.internationalUse, classification, questions: rawClarifications.questions });
+  const clarifications = { ...rawClarifications, questions: questionPlan.questions };
+  // Public intake never imports private pricing rules. The canonical server
+  // reviews the Matter and issues its private quote through the existing flow.
+  const clientPricing = { mode: "quote_after_review", amount: undefined as number | undefined };
+  const detailIndex = Math.min(form.detailStep ?? 0, questionPlan.detailSteps.length - 1);
+  const detail = questionPlan.detailSteps[detailIndex];
+  useEffect(() => { if (step === 2) document.getElementById("intake-detail-heading")?.focus({preventScroll:true}); }, [step, detailIndex]);
+  const selectService = (value: string) => {
+    const intent = normalizeServiceIntent(value);
+    setForm(prev => ({ ...prev, serviceIntent: intent, serviceIntentSource: "intake", serviceIntentSelectedAt: new Date().toISOString(), detailStep: 0 }));
+    track("service_intent_selected", { serviceIntent: intent });
+  };
 
   const outstanding = useMemo(
     () =>
@@ -196,8 +214,8 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         delivery: form.deliveryChoice,
         pricingApproved: clientPricing.mode === "approved_price" && !form.executionType,
         executionReviewRequested: Boolean(form.executionType),
-      }),
-    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType],
+      }).filter(item => item === "Preferred execution timeline" || (questionPlan.showDelivery && item === "Delivery method")),
+    [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType, questionPlan.showDelivery],
   );
 
   const quoteReady = useMemo(
@@ -222,20 +240,9 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     return "Document Execution Coordination";
   }, [classification, form.executionType]);
 
-  const scopeBullets = useMemo(() => {
-    const bullets: string[] = [];
-    bullets.push(`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`);
-    if (classification.destinationCountry) bullets.push(`Destination: ${classification.destinationCountry}`);
-    if (classification.apostille === "required") bullets.push(`Apostille coordination required${classification.apostilleQuantity > 1 ? ` (${classification.apostilleQuantity})` : ""}`);
-    else if (classification.authentication === "required") bullets.push("Authentication coordination required");
-    bullets.push(classification.ron === "required" || form.executionType === "RON" ? "RON included" : classification.notarization === "required" ? "Notarization included" : "RON not required");
-    bullets.push(classification.translation === "required" ? "Translation included" : "Translation not required");
-    return bullets;
-  }, [classification, form.executionType, files.length]);
-
   const track = (event: IntakeAnalyticsEvent, metadata: Record<string, unknown> = {}, id?: string) => {
     try {
-      const payload = buildIntakeAnalyticsPayload(event, metadata, id || matterId || undefined);
+      const payload = buildIntakeAnalyticsPayload(event, { serviceIntent: form.serviceIntent ?? initialServiceIntent, ...metadata }, id || matterId || undefined);
       void fetch("/api/intake/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,6 +253,12 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       // Observational only. Never block intake.
     }
   };
+
+  useEffect(() => {
+    if (!draftReady || intentTrackedRef.current) return;
+    intentTrackedRef.current = true;
+    track("service_intent_selected", {serviceIntent: form.serviceIntent ?? initialServiceIntent});
+  }, [draftReady]);
 
   const markStarted = () => {
     if (startedRef.current) return;
@@ -266,48 +279,18 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     track("analysis_completed", { documentFamily: classification.documentFamily });
   };
 
-  const answerQuestion = (question: IntakeQuestion, value: string) => {
-    markStarted();
-    if (question.id === "destination") setField("destinationCountry", value);
-    else if (question.id === "document_origin") setField("originState", value);
-    else if (question.id === "signer_location") setField("signerLocation", value);
-    else if (question.id === "apostille_needed" || question.id === "resolve_apostille") {
-      setField("apostilleChoice", value === "Yes" ? "yes" : value === "No" ? "no" : "unsure");
-    } else if (question.id === "resolve_translation") {
-      setField("translationChoice", value === "Yes" ? "yes" : value === "No" ? "no" : "unsure");
-    } else if (question.id === "resolve_notarization") {
-      setField("notarizationChoice", value === "Already notarized" ? "already" : "yes");
-    } else if (question.id === "resolve_ron") {
-      setField("executionType", value === "Yes" ? "RON" : "Unsure");
-    } else if (question.id === "resolve_mobile") {
-      setField("executionType", value === "Yes" ? "InPerson" : "Unsure");
-    }
-    setQuestionDrafts((prev) => ({ ...prev, [question.id]: "" }));
-    track("clarification_completed", { questionCount: clarifications.questions.length });
-  };
-
   const continueFromStep1 = () => {
     markStarted();
     if (!form.description.trim()) return setError("Tell us what you need before continuing.");
-    if (!form.name.trim()) return setError("Your name is required.");
-    if (!form.email.includes("@")) return setError("A valid email is required.");
+
     track("description_completed", { documentFamily: classification.documentFamily, destinationCountry: classification.destinationCountry });
     track("step_1_completed", { questionCount: clarifications.questions.length });
-    if (clarifications.questions.length === 0) {
-      track("step_2_completed", { questionCount: 0 });
-      setStep(3);
-    } else {
-      track("clarification_requested", { questionCount: clarifications.questions.length });
-      setStep(2);
-    }
+    setStep(2);
+    setField("detailStep", 0);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   useEffect(() => {
-    if (step === 2 && clarifications.questions.length === 0) {
-      track("step_2_completed", { questionCount: 0 });
-      setStep(3);
-    }
     if (step === 3 && !reviewViewedRef.current) {
       reviewViewedRef.current = true;
       track("review_viewed", { pricingState: clientPricing.mode });
@@ -367,12 +350,22 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       return;
     }
     if (!consent) { setError("Confirm the review notice before submitting."); focusField("review-consent"); return; }
+    if (submissionLock.current || submittedRef.current || form.submissionOutcome === "unknown") return;
+    submissionLock.current = true;
     setSubmitting(true);
     setError(null);
     markStarted();
 
     const payload = {
       source_channel: "Website Form",
+      service_intent: form.serviceIntent ?? initialServiceIntent,
+      service_intent_source: form.serviceIntentSource ?? "link",
+      service_intent_selected_at: form.serviceIntentSelectedAt,
+      witness_context: form.witnessContext,
+      requested_service_location: form.mobileAddress,
+      receiving_authority: form.receivingAuthority,
+      company_name: form.firm,
+      professional_country: form.professionalCountry,
       ...(form.executionType ? {
         execution_method: form.executionType === "RON" ? "ron" : form.executionType === "InPerson" ? "in_person" : "review_required",
         notarization_requirement: form.executionType === "None" ? "not_required" : form.executionType === "Unsure" ? "review_required" : "required",
@@ -392,7 +385,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       signers: classification.signerCount,
       state: classification.originJurisdiction || "",
       signer_location: classification.signerLocation || undefined,
-      country: classification.destinationCountry || "United States",
+      country: classification.destinationCountry || "Not yet confirmed",
       destination_country: classification.destinationCountry || "",
       mobile: classification.mobile === "required",
       notarization_required: classification.notarization === "required",
@@ -416,6 +409,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       referral_reference: professionalReferral?.reference,
     };
 
+    let safeToRetry = false;
     try {
       const response = await fetch("/api/intake", {
         method: "POST",
@@ -423,7 +417,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         body: JSON.stringify(payload),
       });
       const json = await response.json();
-      if (!response.ok) throw new Error(json.error || "Failed to submit");
+      if (!response.ok) { safeToRetry = response.status === 400 && json.code === "VALIDATION_FAILED"; throw new Error(json.error || "Failed to submit"); }
       const id = json.deal?.id || json.deal_id;
       if (!id) throw new Error("Matter was created without an identifier");
       setMatterId(id);
@@ -431,11 +425,11 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       try { sessionStorage.removeItem(INTAKE_DRAFT_KEY); } catch {}
       track("intake_submitted", { uploadCount: files.length, pricingState: clientPricing.mode }, id);
 
-      if (typeof sessionStorage !== "undefined") {
+      try {
         if (json.payment_link) sessionStorage.setItem("ms_payment_link", json.payment_link);
         if (json.wise_invoice) sessionStorage.setItem("ms_wise_invoice", JSON.stringify(json.wise_invoice));
         sessionStorage.setItem("ms_intake_response", JSON.stringify(json));
-      }
+      } catch { /* A saved Matter must not become a failed intake because browser storage is unavailable. */ }
 
       const seeded = Object.fromEntries(files.map((file) => [fileKey(file), "pending" as UploadState]));
       setUploadStates(seeded);
@@ -449,8 +443,10 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       router.push(`/intake/confirmation?id=${id}`);
     } catch (cause) {
       track("intake_error", { failureCategory: "matter_submission" });
-      setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
+      setError(safeToRetry ? (cause instanceof Error ? cause.message : "Please check your details.") : "We couldn’t confirm whether your request was saved. Please speak with Nicholas before submitting again so we can check for an existing request.");
+      if (!safeToRetry) setForm(previous => ({...previous,submissionOutcome:"unknown"}));
       setSubmitting(false);
+      submissionLock.current = !safeToRetry;
     }
   };
 
@@ -497,15 +493,25 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     );
   }
 
-  const progress = step === 1 ? 0 : step === 2 ? 50 : 100;
+  const progressCurrent = step === 1 ? 1 : step === 2 ? detailIndex + 2 : questionPlan.detailSteps.length + 2;
+  const progressTotal = questionPlan.detailSteps.length + 2;
+  const progress = progressCurrent / progressTotal * 100;
+  const nextDetail = () => {
+    setError(null);
+    if (detail === "contact") {
+      if (!form.name.trim()) { setError("Your name is required."); focusField("intake-name"); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError("Enter a valid email address."); focusField("intake-email"); return; }
+      if (!form.timelineChoice) { setError("Choose your preferred timing."); focusField("intake-timeline"); return; }
+    }
+    if (detailIndex + 1 === questionPlan.detailSteps.length) { track("step_2_completed"); setStep(3); }
+    else setField("detailStep", detailIndex + 1);
+  };
 
   return (
     <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
-      <div className="mb-8">
-        <div className="mb-3 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9A9488]">
-          <span>Your Matter</span><span>Execution</span><span>Review</span>
-        </div>
-        <div className="h-px bg-[rgba(198,165,90,0.14)]"><div className="h-px bg-[var(--ms-gold)] transition-all" style={{ width: `${progress}%` }} /></div>
+      <div className="mb-8" aria-label="Intake progress">
+        <p role="status" aria-live="polite" className="mb-3 text-sm text-[#9A9488]">Step {progressCurrent} of {progressTotal}: {step === 1 ? "Your document" : step === 3 ? "Review" : detail === "signers" ? "Signer details" : detail === "use" ? "Document use" : "Timing & contact"}</p>
+        <div role="progressbar" aria-label="Intake completion" aria-valuemin={1} aria-valuemax={progressTotal} aria-valuenow={progressCurrent} className="h-1 bg-[rgba(198,165,90,0.14)]"><div className="h-1 bg-[var(--ms-gold)] motion-safe:transition-all" style={{ width: `${progress}%` }} /></div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[rgba(198,165,90,0.28)] bg-[linear-gradient(180deg,rgba(13,13,15,.97),rgba(7,7,8,.99))] shadow-[0_30px_80px_rgba(0,0,0,.55)]">
@@ -513,15 +519,17 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
           {step === 1 && (
             <>
               <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">Tell Us What You Need</h2>
-              <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Start with the Matter. We will structure it before asking for anything unnecessary.</p>
+              <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Start with your document. You can change your request without losing the details you have entered.</p>
 
+              <div className="mb-6"><label htmlFor="service-intent" className={labelCls}>What do you need help with?</label><select id="service-intent" className={inputCls} value={form.serviceIntent ?? initialServiceIntent} onChange={event => selectService(event.target.value)}>{SERVICE_ENTRIES.map(entry => <option key={entry.intent} value={entry.intent}>{entry.label}</option>)}<option value="authentication">Authentication / legalization review</option></select><p className="mt-2 text-sm text-[#9A9488]">Your request guides the questions. We’ll review the document before confirming requirements and pricing.</p></div>
               <SmartMatterIntake onAnalysisReady={handleAnalysisReady} onFilesPicked={(picked) => { markStarted(); setFiles((prev) => [...prev, ...picked.filter((file) => !prev.some((existing) => fileKey(existing) === fileKey(file)))].slice(0, 10)); }} initialMessage={form.description} />
 
               <div className="mt-6">
                 <label htmlFor="intake-description" className={labelCls}>Describe your matter <span className="text-[var(--ms-gold)]">*</span></label>
-                <textarea id="intake-description" value={form.description} onFocus={markStarted} onChange={(e) => setField("description", e.target.value)} rows={4} placeholder="I need a power of attorney notarized for use in Italy." className={`${inputCls} min-h-28 resize-none`} />
+                <textarea id="intake-description" value={form.description} onFocus={markStarted} onChange={(e) => setField("description", e.target.value)} rows={4} placeholder={questionPlan.domestic ? "Tell us about the document and what you need done." : "What do you need done with the document, and where will it be used?"} className={`${inputCls} min-h-28 resize-none`} />
               </div>
 
+              <div className="mt-5"><label htmlFor="intake-document-type" className={labelCls}>Document title or type (if known)</label><input id="intake-document-type" className={inputCls} value={form.documentType} onChange={event => setField("documentType", event.target.value)} placeholder="For example, affidavit or power of attorney" /></div>
               <div className="mt-5">
                 <label className={labelCls}>Upload document <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label>
                 <FileUploadZone value={files} onChange={(next) => { markStarted(); setFiles(next); }} maxFiles={5} maxSizeMB={10} />
@@ -534,75 +542,72 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                     <button type="button" onClick={() => { track("analysis_corrected", { step: 1 }); focusField("intake-description"); }} className={secondaryCls}>Edit</button>
                   </div>
                   <ReviewRow label="Document" value={classification.documentType || "Not yet confirmed"} />
-                  <ReviewRow label="Destination" value={classification.destinationCountry || "Not yet confirmed"} />
+                  {questionPlan.showDestination && <ReviewRow label="Destination" value={classification.destinationCountry || "Not yet confirmed"} />}
                   <ReviewRow label="Requested service" value={form.executionType === "RON" ? "Remote Online Notarization" : form.executionType === "InPerson" ? "In-person Notarization" : classification.notarization === "required" ? "Notarization" : "To be confirmed"} />
                   <ReviewRow label="Already completed" value={classification.notarization === "already_completed" ? "Notarization" : classification.apostille === "already_completed" ? "Apostille" : "None confirmed"} />
                   <ReviewRow label="Potential requirements" value={classification.manualReviewReasons.length ? "Additional route review may be required" : "No additional requirements confirmed yet"} />
                 </div>
               )}
 
-              <div className="mt-7 border-t border-[rgba(198,165,90,0.1)] pt-6">
-                <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ms-gold)]/70">Your contact</div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div><label htmlFor="intake-name" className={labelCls}>Name *</label><input id="intake-name" value={form.name} onFocus={markStarted} onChange={(e) => setField("name", e.target.value)} className={inputCls} autoComplete="name" /></div>
-                  <div><label htmlFor="intake-email" className={labelCls}>Email *</label><input id="intake-email" type="email" value={form.email} onFocus={markStarted} onChange={(e) => setField("email", e.target.value)} className={inputCls} autoComplete="email" /></div>
-                </div>
-                <div className="mt-4"><label htmlFor="intake-phone" className={labelCls}>Phone <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label><input id="intake-phone" type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} autoComplete="tel" /></div>
-              </div>
 
-              {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
+              {error && <p id="intake-step-error" role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
               <button type="button" onClick={continueFromStep1} className={`${primaryCls} mt-7`}>Continue <ArrowRight className="ml-2 inline h-4 w-4" /></button>
             </>
           )}
 
           {step === 2 && (
-            <>
-              <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">A Few Details</h2>
-              <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Only the facts still needed to route or price your Matter.</p>
-              <div className="space-y-5">
-                {clarifications.questions.map((question) => (
-                  <div key={question.id} className="rounded-sm border border-[rgba(198,165,90,0.18)] bg-[#0A0A0A] p-5">
-                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ms-gold)]/65">Required detail</div>
-                    <div className="mb-4 text-base font-light text-[#E8DCC0]">{question.prompt}</div>
-                    {question.options ? (
-                      <div className="grid grid-cols-1 gap-2">
-                        {question.options.map((option) => <button key={option} type="button" onClick={() => answerQuestion(question, option)} className="min-h-14 rounded-sm border border-[rgba(198,165,90,0.2)] bg-[rgba(198,165,90,0.03)] px-4 text-left text-base text-[#E8DCC0] hover:border-[var(--ms-gold)] sm:text-sm">{option}</button>)}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {question.id === "destination" ? (
-                          <select value={questionDrafts[question.id] || ""} onChange={(e) => setQuestionDrafts((prev) => ({ ...prev, [question.id]: e.target.value }))} className={inputCls}>
-                            <option value="">— Select destination —</option>{COUNTRIES.map((country) => <option key={country}>{country}</option>)}
-                          </select>
-                        ) : (
-                          <input value={questionDrafts[question.id] || ""} onChange={(e) => setQuestionDrafts((prev) => ({ ...prev, [question.id]: e.target.value }))} placeholder={question.id === "document_origin" ? "State or federal issuing authority" : "City and state"} className={inputCls} />
-                        )}
-                        <button type="button" disabled={!questionDrafts[question.id]?.trim()} onClick={() => answerQuestion(question, questionDrafts[question.id])} className={primaryCls}>Confirm</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <section aria-labelledby="intake-detail-heading">
+              <h2 tabIndex={-1} id="intake-detail-heading" className="mb-5 font-serif text-2xl text-[#E8DCC0]">{detail === "signers" ? "Who is signing?" : detail === "use" ? "Where will your document be used?" : "Timing & contact"}</h2>
+              {detail === "signers" && <div className="space-y-5">
+                <div><label htmlFor="intake-signers" className={labelCls}>How many people will sign?</label><input id="intake-signers" type="number" min="1" max="10000" className={inputCls} value={form.signerCount || ""} onChange={event => setField("signerCount", Math.max(0, Number(event.target.value)))} /></div>
+                <div><label htmlFor="intake-signer-location" className={labelCls}>Where will the signer or signers be physically located?</label><input id="intake-signer-location" className={inputCls} value={form.signerLocation} onChange={event => setField("signerLocation", event.target.value)} placeholder="City, state and country, or not yet known" /></div>
+                {questionPlan.showServiceLocation && <div><label htmlFor="intake-service-location" className={labelCls}>Where would you like the notary to meet you?</label><input id="intake-service-location" className={inputCls} value={form.mobileAddress} onChange={event => setField("mobileAddress", event.target.value)} placeholder="Requested location — availability subject to review" /></div>}
+                <div><label htmlFor="intake-witness-context" className={labelCls}>What does your document say about witnesses?</label><textarea id="intake-witness-context" className={inputCls} value={form.witnessContext ?? ""} onChange={event => setField("witnessContext", event.target.value)} placeholder="Copy the wording, or tell us you’re not sure. We’ll review the requirement." /></div>
+                <div><label htmlFor="intake-international-use" className={labelCls}>Will the document be used outside the United States?</label><select id="intake-international-use" className={inputCls} value={form.internationalUse === undefined ? "" : String(form.internationalUse)} onChange={event => setField("internationalUse", event.target.value === "true")}><option value="">Not yet known</option><option value="false">No</option><option value="true">Yes — add document-use details</option></select></div>
+              </div>}
+              {detail === "use" && <div className="space-y-5">
+                <div><label htmlFor="intake-destination" className={labelCls}>Where will the document be used? (if known)</label><select id="intake-destination" className={inputCls} value={form.destinationCountry} onChange={event => setField("destinationCountry", event.target.value)}><option value="">Not sure — review with Milano</option>{COUNTRIES.map(country => <option key={country}>{country}</option>)}</select></div>
+                {questionPlan.showOrigin && <div><label htmlFor="intake-origin" className={labelCls}>Where was the document issued?</label><input id="intake-origin" className={inputCls} value={form.originState} onChange={event => setField("originState", event.target.value)} placeholder="Issuing state, country or authority, if known" /></div>}
+                {questionPlan.showAuthority && <div><label htmlFor="intake-receiving-authority" className={labelCls}>Who will receive it? (if known)</label><input id="intake-receiving-authority" className={inputCls} value={form.receivingAuthority ?? ""} onChange={event => setField("receivingAuthority", event.target.value)} /></div>}
+                <div><label htmlFor="intake-signed" className={labelCls}>Has the document already been signed or notarized?</label><select id="intake-signed" className={inputCls} value={form.notarizationChoice} onChange={event => setField("notarizationChoice", event.target.value as FormState["notarizationChoice"])}><option value="">Not sure — please review</option><option value="already">Already notarized</option><option value="yes">I am requesting a new notarization</option><option value="unsure">Signed, but notarization status is unclear</option></select></div>
+                <p className="text-sm text-[#9A9488]">Unknown requirements stay with our document review team. Your answers do not establish eligibility or legal requirements.</p>
+              </div>}
+              {detail === "contact" && <>
+                <div><label htmlFor="intake-timeline" className={labelCls}>When do you need it?</label><select id="intake-timeline" className={inputCls} value={form.timelineChoice} onChange={event => setField("timelineChoice", event.target.value as TimelineChoice)}><option value="">Select preferred timing</option><option value="standard">Standard</option><option value="expedited">Expedited</option><option value="urgent">Urgent / same-day review</option></select></div>
+                <div className="mt-4"><label htmlFor="intake-deadline" className={labelCls}>Desired date / time or deadline (if known)</label><input id="intake-deadline" className={inputCls} value={form.deadline} onChange={event => setField("deadline", event.target.value)} placeholder="Date, time and time zone" /></div>
+                {questionPlan.professional && <div className="mt-4 grid gap-4"><p className="text-sm text-[#9A9488]">You remain counsel. Milano handles the U.S. execution workflow.</p><div><label htmlFor="intake-firm" className={labelCls}>Firm / professional organization</label><input id="intake-firm" className={inputCls} value={form.firm ?? ""} onChange={event => setField("firm", event.target.value)} /></div><div><label htmlFor="intake-professional-country" className={labelCls}>Your country</label><input id="intake-professional-country" className={inputCls} value={form.professionalCountry ?? ""} onChange={event => setField("professionalCountry", event.target.value)} /></div></div>}
+              <div className="mt-7 border-t border-[rgba(198,165,90,0.1)] pt-6">
+                <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ms-gold)]/70">Your contact</div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div><label htmlFor="intake-name" className={labelCls}>Name *</label><input id="intake-name" aria-describedby={error ? "intake-step-error" : undefined} aria-invalid={Boolean(error && !form.name.trim())} value={form.name} onFocus={markStarted} onChange={(e) => setField("name", e.target.value)} className={inputCls} autoComplete="name" /></div>
+                  <div><label htmlFor="intake-email" className={labelCls}>Email *</label><input id="intake-email" aria-describedby={error ? "intake-step-error" : undefined} aria-invalid={Boolean(error && !form.email.includes("@"))} type="email" value={form.email} onFocus={markStarted} onChange={(e) => setField("email", e.target.value)} className={inputCls} autoComplete="email" /></div>
+                </div>
+                <div className="mt-4"><label htmlFor="intake-phone" className={labelCls}>Phone <span className="normal-case tracking-normal text-[#9A9488]">(optional)</span></label><input id="intake-phone" type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} autoComplete="tel" /></div>
               </div>
-              <button type="button" onClick={() => setStep(1)} className={`${secondaryCls} mt-7`}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
-            </>
+
+              </>}
+              {error && <p id="intake-step-error" role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-between"><button type="button" className={secondaryCls} onClick={() => { setError(null); if (detailIndex === 0) setStep(1); else setField("detailStep", detailIndex - 1); }}>Back</button><button type="button" className={primaryCls} onClick={nextDetail}>{detailIndex + 1 === questionPlan.detailSteps.length ? "Review request" : "Continue"}</button></div>
+            </section>
           )}
 
           {step === 3 && (
             <>
-              <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">Your Matter</h2>
+              <h2 className="mb-1 font-serif text-2xl text-[#E8DCC0]">{questionPlan.domestic ? "Your request" : "Your Matter"}</h2>
               <p className="mb-7 text-[12px] font-light tracking-[0.04em] text-[#9A9488]">Review exactly what we understood before completing your order.</p>
 
               <div className="mb-6 overflow-hidden rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A]">
                 <div className="border-b border-[rgba(198,165,90,0.1)] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Your Matter</div>
+                <ReviewRow label="Client request" value={serviceIntentLabel(form.serviceIntent)} />
                 <ReviewRow label="Matter Type" value={matterTypeLabel} onEdit={() => edit(classification.apostille === "required" || classification.authentication === "required" ? "apostille" : "notarization")} />
                 <ReviewRow label="Documents" value={`${classification.documentCount || files.length || 1} document${(classification.documentCount || files.length || 1) === 1 ? "" : "s"}`} onEdit={() => edit("documents")} />
                 <ReviewRow label="Document Titles" value={documentIdentityLabel(classification.documentType)} onEdit={() => edit("matter")} />
-                <ReviewRow label="Destination" value={classification.destinationCountry || "Destination confirmation required"} onEdit={() => edit("destination")} />
+                {questionPlan.showDestination && <ReviewRow label="Destination" value={classification.destinationCountry || "Destination confirmation required"} onEdit={() => edit("destination")} />}
                 <ReviewRow label="Requested Service" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : matterTypeLabel} onEdit={() => edit(classification.apostille === "required" || classification.authentication === "required" ? "apostille" : "notarization")} />
-                <ReviewRow label="Notarization" value={serviceStateLabel(classification.notarization, "Notarization required")} onEdit={() => edit("notarization")} />
-                <ReviewRow label="Remote Online Notarization" value={serviceStateLabel(classification.ron, "Remote Online Notarization")} onEdit={() => edit("notarization")} />
-                <ReviewRow label="Apostille / Authentication" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : serviceStateLabel(classification.apostille, "Apostille Coordination")} onEdit={() => edit("apostille")} />
-                <ReviewRow label="Translation" value={serviceStateLabel(classification.translation, "Translation required")} onEdit={() => edit("translation")} />
+                <ReviewRow label="Notarization" value={serviceStateLabel(classification.notarization, "Notarization requested — subject to review")} onEdit={() => edit("notarization")} />
+                <ReviewRow label="Remote Online Notarization" value={serviceStateLabel(classification.ron, "Online notarization requested — subject to review")} onEdit={() => edit("notarization")} />
+                {questionPlan.international && <ReviewRow label="Apostille / Authentication" value={classification.apostille === "required" ? "Apostille Coordination" : classification.authentication === "required" ? "Authentication Coordination" : serviceStateLabel(classification.apostille, "Apostille Coordination")} onEdit={() => edit("apostille")} />}
+                {questionPlan.international && <ReviewRow label="Translation" value={serviceStateLabel(classification.translation, "Translation required")} onEdit={() => edit("translation")} />}
               </div>
 
               <section aria-labelledby="execution-method-heading" className="mb-6 min-w-0 space-y-4 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[#0A0A0A] p-4">
@@ -626,17 +631,17 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 <div className="mt-3 grid min-w-0 gap-4">
                   <div><label htmlFor="review-document-title" className={labelCls}>Exact document title</label><input id="review-document-title" className={inputCls} value={form.documentType || classification.documentType || ""} onChange={(e) => setField("documentType", e.target.value)} /></div>
                   <div><label htmlFor="review-document-count" className={labelCls}>Number of documents</label><input id="review-document-count" type="number" min="1" className={inputCls} value={form.documentCount || classification.documentCount} onChange={(e) => setField("documentCount", Math.max(1, Number(e.target.value)))} /></div>
-                  <div><label htmlFor="review-origin" className={labelCls}>Issuing state / authority</label><input id="review-origin" className={inputCls} value={form.originState} onChange={(e) => setField("originState", e.target.value)} /></div>
+                  {questionPlan.international && <div><label htmlFor="review-origin" className={labelCls}>Issuing state / authority</label><input id="review-origin" className={inputCls} value={form.originState} onChange={(e) => setField("originState", e.target.value)} /></div>}
                   <div><label htmlFor="review-signer-location" className={labelCls}>Signer physical location</label><input id="review-signer-location" className={inputCls} value={form.signerLocation} onChange={(e) => setField("signerLocation", e.target.value)} placeholder="City, state and country" /></div>
-                  <div><label htmlFor="review-destination" className={labelCls}>Destination country</label><select id="review-destination" className={inputCls} value={form.destinationCountry} onChange={(e) => setField("destinationCountry", e.target.value)}><option value="">Select destination</option>{Array.from(new Set([...COUNTRIES, ...(form.destinationCountry ? [form.destinationCountry] : [])])).map((country) => <option key={country}>{country}</option>)}</select></div>
-                  <div><label htmlFor="review-apostille" className={labelCls}>Apostille / authentication request</label><select id="review-apostille" className={inputCls} value={form.apostilleChoice} onChange={(e) => setField("apostilleChoice", e.target.value as FormState["apostilleChoice"])}><option value="">Confirm during review</option><option value="yes">Apostille requested — subject to authority review</option><option value="no">No apostille requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
-                  <div><label htmlFor="review-translation" className={labelCls}>Translation request</label><select id="review-translation" className={inputCls} value={form.translationChoice} onChange={(e) => setField("translationChoice", e.target.value as FormState["translationChoice"])}><option value="">Confirm during review</option><option value="yes">Translation requested</option><option value="no">No translation requested</option><option value="unsure">Not sure — confirm during review</option></select></div>
+                  {questionPlan.international && <div><label htmlFor="review-destination" className={labelCls}>Destination country</label><select id="review-destination" className={inputCls} value={form.destinationCountry} onChange={(e) => setField("destinationCountry", e.target.value)}><option value="">Select destination</option>{Array.from(new Set([...COUNTRIES, ...(form.destinationCountry ? [form.destinationCountry] : [])])).map((country) => <option key={country}>{country}</option>)}</select></div>}
+                  {questionPlan.international && <div><label htmlFor="review-apostille" className={labelCls}>Apostille / authentication request</label><select id="review-apostille" className={inputCls} value={form.apostilleChoice} onChange={(e) => setField("apostilleChoice", e.target.value as FormState["apostilleChoice"])}><option value="">Confirm during review</option><option value="yes">Apostille requested — subject to authority review</option><option value="no">No apostille requested</option><option value="unsure">Not sure — confirm during review</option></select></div>}
+                  {questionPlan.international && <div><label htmlFor="review-translation" className={labelCls}>Translation request</label><select id="review-translation" className={inputCls} value={form.translationChoice} onChange={(e) => setField("translationChoice", e.target.value as FormState["translationChoice"])}><option value="">Confirm during review</option><option value="yes">Translation requested</option><option value="no">No translation requested</option><option value="unsure">Not sure — confirm during review</option></select></div>}
                 </div>
               </details>
 
               <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.14)] bg-[#0A0A0A] px-4 py-5">
                 <div className="mb-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/60">Execution Path</div>
-                <p className="text-[12px] font-light leading-relaxed text-[#9A9488]">Document review → originating-authority verification → apostille / authentication route confirmation → submission → quality review → delivery</p>
+                <p className="text-[12px] font-light leading-relaxed text-[#9A9488]">{questionPlan.international ? "Document review → authority and route confirmation → private quote → execution → quality review → delivery" : "Document review → confirmed service and private quote → execution coordination → secure document return"}</p>
               </div>
 
               <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -649,7 +654,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                     <option value="urgent">Urgent / Same-Day</option>
                   </select>
                 </div>
-                <div>
+                {questionPlan.showDelivery && <div>
                   <label htmlFor="review-delivery" className={labelCls}>Delivery method <span className="text-[var(--ms-gold)]">*</span></label>
                   <select id="review-delivery" value={form.deliveryChoice} onChange={(e) => setField("deliveryChoice", e.target.value as DeliveryChoice)} className={inputCls}>
                     <option value="">— Select delivery —</option>
@@ -657,7 +662,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                     <option value="domestic_courier">Domestic courier</option>
                     <option value="international_courier">International courier</option>
                   </select>
-                </div>
+                </div>}
               </div>
 
               {outstanding.length > 0 && (
@@ -672,33 +677,6 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 </div>
               )}
 
-              {quoteReady && clientPricing.mode === "approved_price" && (
-                <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-6">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Pro Forma Quote</div>
-                  <div className="mt-2 font-serif text-lg text-[#E8DCC0]">{clientPricing.summary}</div>
-                  <div className="mt-4 border-t border-[rgba(198,165,90,0.14)] pt-4">
-                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Matter Scope</div>
-                    <ul className="space-y-1">
-                      {scopeBullets.map((bullet) => (
-                        <li key={bullet} className="flex items-start gap-2 text-[12px] font-light text-[#E8DCC0]"><span className="mt-0.5 text-[var(--ms-gold)]/70">•</span>{bullet}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="mt-5 border-t border-[rgba(198,165,90,0.14)] pt-4">
-                    <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9A9488]">Quote Breakdown</div>
-                    <div className="space-y-2">{pricing.clientLineItems.map((item) => (
-                      <div key={item.key} className="flex items-start justify-between gap-4 text-[12px] font-light text-[#E8DCC0]"><span>{item.label}</span><span className="shrink-0">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(item.amount)}</span></div>
-                    ))}</div>
-                  </div>
-                  {courtesyCode && <div className="mt-4 flex items-start justify-between gap-4 border-t border-[rgba(198,165,90,0.14)] pt-4 text-[12px]"><span className="text-[#D8C08A]">Courtesy code</span><span className="font-semibold text-[var(--ms-gold)]">{courtesyCode} · validated securely at checkout</span></div>}
-                  <div className="mt-5 flex items-baseline justify-between border-t border-[rgba(198,165,90,0.14)] pt-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9A9488]">Quoted Investment</span>
-                    <span className="text-2xl font-semibold text-white">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(clientPricing.amount ?? 0)}</span>
-                  </div>
-                  <p className="mt-3 text-[11px] font-light text-[#9A9488]">Wise secure payment · Scheduling available only after verified payment. Final pricing is confirmed after review.</p>
-                </div>
-              )}
-
               {!quoteReady && outstanding.length === 0 && (
                 <div className="mb-6 rounded-sm border border-[rgba(198,165,90,0.28)] bg-[rgba(198,165,90,0.06)] px-5 py-5">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ms-gold)]/70">Quote Status</div>
@@ -707,17 +685,19 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
                 </div>
               )}
 
+              {form.submissionOutcome === "unknown" && <p role="status" className="mb-4 text-sm text-amber-200">Your previous submission needs confirmation. Speak with Nicholas below before submitting again.</p>}
               <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-sm border border-[rgba(198,165,90,0.16)] bg-[#0A0A0A] p-4 text-sm text-[#E8DCC0]"><input id="review-consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4" /><span>I understand that all matters are reviewed and payment is required before scheduling or execution.</span></label>
-              {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
+              {error && <p id="intake-step-error" role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button type="button" onClick={() => setStep(clarifications.questions.length ? 2 : 1)} className={secondaryCls}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
-                <button type="button" onClick={submit} disabled={submitting} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>{quoteReady ? "Complete My Order" : "Submit for document review"} <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
+                <button type="button" onClick={() => { setField("detailStep", questionPlan.detailSteps.length - 1); setStep(2); }} className={secondaryCls}><ArrowLeft className="mr-2 inline h-4 w-4" />Back</button>
+                <button type="button" onClick={submit} disabled={submitting || form.submissionOutcome === "unknown"} className={primaryCls}>{submitting ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Submitting…</> : <>{quoteReady ? "Complete My Order" : "Submit for document review"} <ArrowRight className="ml-2 inline h-4 w-4" /></>}</button>
               </div>
             </>
           )}
         </div>
       </div>
 
+      <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-[var(--ms-gold)]"><Link href={commercialHref("get_pricing", {serviceIntent:form.serviceIntent,source:"intake-fallback"})}>Not ready? Get pricing</Link><Link href={commercialHref("speak", {serviceIntent:form.serviceIntent,source:"intake-fallback"})}>Speak with Nicholas</Link></div>
       <div className="mt-6 flex items-center justify-center gap-2 text-center text-[10px] uppercase tracking-[0.1em] text-[rgba(198,165,90,0.48)]"><Check className="h-3 w-3" />Payment-gated scheduling · Secure Matter intake</div>
     </div>
   );

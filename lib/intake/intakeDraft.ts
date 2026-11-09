@@ -1,6 +1,13 @@
 import { z } from "zod";
+import { CONCIERGE_SERVICE_INTENTS } from "@/lib/acquisition/concierge-service-intents";
 
 export const intakeFormSchema = z.object({
+  submissionOutcome: z.enum(["ready","unknown"]).optional(),
+  serviceIntent: z.enum(CONCIERGE_SERVICE_INTENTS).optional(),
+  serviceIntentSource: z.enum(['link','intake']).optional(), serviceIntentSelectedAt: z.string().max(50).optional(),
+  detailStep: z.number().int().min(0).max(2).optional(), internationalUse: z.boolean().optional(),
+  witnessContext: z.string().max(3000).optional(), receivingAuthority: z.string().max(1000).optional(),
+  firm: z.string().max(500).optional(), professionalCountry: z.string().max(200).optional(),
   description: z.string().max(20000), name: z.string().max(500), email: z.string().max(500), phone: z.string().max(100),
   documentType: z.string().max(1000), documentCount: z.number().int().min(0).max(10000), signerCount: z.number().int().min(0).max(10000),
   originState: z.string().max(500), signerLocation: z.string().max(500), destinationCountry: z.string().max(500),

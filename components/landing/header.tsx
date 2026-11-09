@@ -177,7 +177,7 @@ export function Header() {
             </div>
           </div>
         </div>
-        <CredentialTicker />
+        {pathname === "/intake" || pathname?.startsWith("/intake/") ? <div className="flex min-h-[52px] items-center justify-center border-b border-[#D4AF37]/10 px-4 text-center text-xs text-[#C6A55A]">Private document review · Clear next steps</div> : <CredentialTicker />}
       </header>
 
       <AnimatePresence>

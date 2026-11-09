@@ -20,6 +20,9 @@ export type CommercialServiceIntent = ConciergeServiceIntent;
 // truth. Anything unknown resolves to "unsure" (review my document).
 const INTENT_ALIASES: Record<string, ConciergeServiceIntent> = {
   ron: "ron",
+  witness: "witness",
+  international: "international_execution",
+  professional: "foreign_counsel",
   remote_online_notarization: "ron",
   remote_online_notary: "ron",
   online_notarization: "ron",
@@ -40,13 +43,13 @@ const INTENT_ALIASES: Record<string, ConciergeServiceIntent> = {
   "": "unsure",
 };
 
-export function normalizeServiceIntent(value?: string | null): ConciergeServiceIntent {
-  if (!value) return "unsure";
+export function normalizeServiceIntent(value?: unknown): ConciergeServiceIntent {
+  if (typeof value !== "string") return "unsure";
   const key = value.trim().toLowerCase().replace(/-/g, "_");
   if ((CONCIERGE_SERVICE_INTENTS as readonly string[]).includes(key)) {
     return key as ConciergeServiceIntent;
   }
-  return INTENT_ALIASES[key] ?? "unsure";
+  return Object.hasOwn(INTENT_ALIASES, key) ? INTENT_ALIASES[key] : "unsure";
 }
 
 export interface CommercialContext {

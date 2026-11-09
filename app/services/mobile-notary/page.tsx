@@ -40,7 +40,7 @@ export default function MobileNotaryPage() {
             In-person document execution at your location. High-sensitivity matters handled with discretion, precision, and flexible scheduling throughout the service area.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=domestic_execution"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Schedule Mobile Notary</span>
@@ -96,7 +96,7 @@ export default function MobileNotaryPage() {
             Provide your location, document type, and preferred scheduling window. We will confirm availability and dispatch details.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=domestic_execution"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Book Mobile Notary</span>

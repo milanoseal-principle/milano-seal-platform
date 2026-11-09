@@ -20,15 +20,11 @@ function badge(ok: boolean) {
 
 function schedulingAuthorityLabel(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
   if (method === 'verified_payment') return 'Wise verified · scheduling authorized';
-  if (method === 'wise_submission_observed') return 'Wise submitted · scheduling authorized';
-  if (method === 'complimentary_authorization') return 'Complimentary authorization · settlement still required';
   return 'Scheduling payment authority not satisfied';
 }
 
 function schedulingAuthorityDetail(method: ReturnType<typeof evaluateSchedulingGate>['paymentRequirementMethod']) {
   if (method === 'verified_payment') return 'Payment is verified. BlueNotary readiness now depends only on the remaining execution facts.';
-  if (method === 'wise_submission_observed') return 'Scheduling is authorized; signer-link release still requires server-side Wise provider evidence, and final release requires verified settlement.';
-  if (method === 'complimentary_authorization') return 'Courtesy authorization is not verified settlement and cannot unlock scheduling.';
   return 'Resolve the canonical scheduling payment requirement before creating the provider session.';
 }
 
@@ -322,7 +318,7 @@ export async function MatterRONReadiness({ matterId }: { matterId: string }) {
       </div>
 
       <p className="mt-4 text-[11px] leading-5 text-white/28">
-        The canonical scheduling gate decides whether the session may be reserved. A submitted Wise payment can satisfy scheduling without becoming paid truth; a Complimentary Authorization can satisfy the same gate under its own governance. Signing-link release and final international release remain independently protected by stronger evidence requirements.
+        Verified Wise settlement is required before scheduling or signer-link release. A submitted payment, provider processing evidence, or courtesy authorization cannot satisfy that prerequisite. Operational readiness and final release checks remain separate.
       </p>
     </section>
   );

@@ -69,12 +69,12 @@ const observedSubmission = {
   payment_observed_reference: "MS-2026-4887",
 };
 
-test("integrity-matched Wise submission authorizes scheduling without paid truth (Tiffany MS-2026-4887)", () => {
-  const gate = evaluateSchedulingGate({ matter: observedSubmission });
-  assert.equal(gate.schedulingEligible, true);
-  assert.equal(gate.paymentRequirementSatisfied, true);
-  assert.equal(gate.paymentRequirementMethod, "wise_submission_observed");
-  assert.equal(evaluatePaymentGate(observedSubmission), "PAYMENT_REQUIRED");
+test('integrity-matched Wise submission cannot authorize scheduling before verified settlement', () => {
+  const gate = evaluateSchedulingGate({matter: observedSubmission});
+  assert.equal(gate.schedulingEligible, false);
+  assert.equal(gate.paymentRequirementSatisfied, false);
+  assert.equal(gate.paymentRequirementMethod, 'not_satisfied');
+  assert.equal(evaluatePaymentGate(observedSubmission), 'PAYMENT_REQUIRED');
 });
 
 test("legacy observation with null snapshot columns cannot substitute for settlement", () => {
@@ -96,14 +96,14 @@ test("observed submission from an under-selected read model fails closed", () =>
   const gate = evaluateSchedulingGate({ matter: incomplete });
   assert.equal(gate.schedulingEligible, false);
   assert.equal(gate.paymentRequirementMethod, "not_satisfied");
-  assert.match(gate.reason, /integrity fields are missing/i);
+  assert.match(gate.reason, /Verified Wise settlement/i);
 });
 
 test("material amount mutation after submission fails scheduling closed", () => {
   const gate = evaluateSchedulingGate({ matter: { ...observedSubmission, amount_due: 7.88 } });
   assert.equal(gate.schedulingEligible, false);
   assert.equal(gate.paymentRequirementMethod, "not_satisfied");
-  assert.match(gate.reason, /changed after the recorded submission/);
+  assert.match(gate.reason, /Verified Wise settlement/);
 });
 
 test("currency mutation after submission fails scheduling closed", () => {
@@ -169,13 +169,13 @@ test("zero-value courtesy authorization never substitutes for Wise settlement", 
   assert.equal(result.paymentRequirementMethod, "not_satisfied");
 });
 
-test('observed scheduling, provider execution and settlement authority remain distinct', () => {
-  assert.equal(evaluateSchedulingGate({matter:observedSubmission}).schedulingEligible,true);
+test('observation and provider evidence never substitute for verified settlement', () => {
+  assert.equal(evaluateSchedulingGate({matter:observedSubmission}).schedulingEligible,false);
   assert.equal(evaluateExecutionGate(observedSubmission).schedulingEligible,false);
   const provider={...observedSubmission,wise_transaction_reference:'controlled-provider-reference',payment_funding_method:'wise_acquiring_payment',
     payment_attempt_id:'current-attempt',payment_attempt_started_at:'2026-01-01T00:00:00Z',
     wise_provider_evidence:{attempt_id:'current-attempt',matter_id:observedSubmission.id,resource_id:'controlled-provider-reference',status:'IN_PROGRESS',occurred_at:'2026-01-01T00:01:00Z',amount:observedSubmission.amount_due,currency:observedSubmission.currency,reference:observedSubmission.wise_reference}};
-  assert.equal(evaluateExecutionGate(provider).schedulingEligible,true);
+  assert.equal(evaluateExecutionGate(provider).schedulingEligible,false);
   assert.equal(evaluatePaymentGate(provider),'PAYMENT_REQUIRED');
   for(const change of [{payment_observed_amount:null},{payment_observed_currency:null},{payment_observed_reference:null},{amount_due:0},{amount_due:NaN},{amount_paid:1},{payment_status:'failed'},{payment_status:'refunded'},{payment_confirmed:true}]){
     assert.equal(evaluateSchedulingGate({matter:{...observedSubmission,...change}}).schedulingEligible,false,JSON.stringify(change));

@@ -45,7 +45,7 @@ export default function ApostillePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/intake"
+              href="/intake?intent=apostille"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
             >
               <span>Start Apostille Matter</span>
@@ -165,7 +165,7 @@ export default function ApostillePage() {
             Submit your document details, origin, destination, and known receiving authority. We will review the execution route, timing assumptions, and pricing before scheduling.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=apostille"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Start Apostille Intake</span>

@@ -46,7 +46,7 @@ export default function RemoteOnlineNotaryPage() {
             Secure digital notarization executed entirely online. Florida-compliant identity verification, encrypted session recording, and cryptographic sealing — no travel required.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=ron"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Begin RON Matter</span>
@@ -124,7 +124,7 @@ export default function RemoteOnlineNotaryPage() {
             Submit your matter details and we will confirm scheduling, platform access, and document requirements.
           </p>
           <Link
-            href="/intake"
+            href="/intake?intent=ron"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
             <span>Start RON Intake</span>

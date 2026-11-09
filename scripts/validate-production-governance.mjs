@@ -292,8 +292,8 @@ check(
     "Wise reference:",
     "Check Wise settlement now",
     "This performs a live server-side Wise reconciliation",
-    "An integrity-matched submission authorizes scheduling only",
-    "verified Wise settlement remains the authority for paid state",
+    "Verified Wise settlement is required before scheduling",
+    "execution, or final settlement-dependent release",
     "final settlement-dependent release",
   ]) &&
     portalInvoice.includes("window.setInterval(() => void loadPaymentFlow(), 10_000)") &&

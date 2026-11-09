@@ -208,10 +208,10 @@ export function SecurePaymentCard({
           <div aria-live="polite" className="rounded-xl border border-[#C6A55A]/18 bg-[#C6A55A]/[0.045] p-4">
             <div className="flex gap-2 text-sm text-[#F1E3B5]"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A55A]" /><strong>Payment submitted successfully.</strong></div>
             <p className="mt-2 text-xs leading-5 text-[#AAA296]">Your Matter remains active while Wise completes settlement in the background. You do not need to submit payment again.</p>
-            <p className="mt-2 text-xs leading-5 text-[#C9B77E]">Scheduling may proceed only after the recorded submission passes canonical integrity checks and the remaining Matter requirements are ready.</p>
+            <p className="mt-2 text-xs leading-5 text-[#C9B77E]">Scheduling remains locked until Wise settlement is verified and the remaining Matter requirements are ready.</p>
           </div>
         )}
-        {!isPaid && !isSubmitted && !isComplimentary && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Payment submission is not payment confirmation. Scheduling requires an integrity-matched submission or verified settlement.</div>}
+        {!isPaid && !isSubmitted && !isComplimentary && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Payment submission is not payment confirmation. Scheduling requires verified Wise settlement.</div>}
 
         <div className="border-t border-[#C6A55A]/10 pt-3">
           <button type="button" onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center justify-between text-xs text-[#7f796f] hover:text-[#B8B1A6]">

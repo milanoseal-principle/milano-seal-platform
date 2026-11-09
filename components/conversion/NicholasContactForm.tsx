@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { CONCIERGE_SERVICE_INTENTS, type ConciergeServiceIntent } from "@/lib/acquisition/concierge-service-intents";
 
 const SERVICE_LABELS: Record<ConciergeServiceIntent, string> = {
+  witness: "Witness support",
   ron: "Remote online notarization",
   domestic_execution: "Domestic document execution",
   apostille: "Apostille coordination",

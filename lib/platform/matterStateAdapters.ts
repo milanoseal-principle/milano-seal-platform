@@ -57,7 +57,7 @@ const CANONICAL_TO_LEGACY: Partial<Record<CanonicalMatterState, string>> = {
 };
 
 // Canonical-only supplemental transitions (states the legacy machine lacks).
-// Structural scheduling may follow an observed submission while settlement is pending.
+// Structural scheduling follows canonical payment confirmation.
 // The mutation endpoint and database independently require canonical Wise authority.
 const CANONICAL_SUPPLEMENT: Partial<Record<CanonicalMatterState, CanonicalMatterState[]>> = {
   quote_ready: ["quoted", "on_hold", "cancelled"],
@@ -133,8 +133,8 @@ export function canTransitionMatterState(
   if (f === t) return { allowed: false, reason: "no-op transition" };
 
   // Structural predecessor validation is separate from canonical Wise authority.
-  if (t === "scheduled" && !["awaiting_payment", "payment_confirmed"].includes(f)) {
-    return { allowed: false, reason: "scheduling requires an authorized awaiting-payment or payment-confirmed predecessor" };
+  if (t === "scheduled" && f !== "payment_confirmed") {
+    return { allowed: false, reason: "scheduling requires a payment-confirmed predecessor" };
   }
 
   const supplement = CANONICAL_SUPPLEMENT[f];

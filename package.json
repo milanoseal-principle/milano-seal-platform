@@ -179,7 +179,8 @@
     "verify:hosted-release": "node scripts/verify-hosted-release.mjs",
     "test:production-certification-source": "node scripts/run-production-certification.mjs",
     "verify:production-certification-hosted": "node scripts/run-production-certification.mjs --hosted-read-only",
-    "verify:hosted-schema": "node scripts/verify-hosted-schema.mjs"
+    "verify:hosted-schema": "node scripts/verify-hosted-schema.mjs",
+    "test:progressive-intake-rendered": "node scripts/test-progressive-intake-rendered.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

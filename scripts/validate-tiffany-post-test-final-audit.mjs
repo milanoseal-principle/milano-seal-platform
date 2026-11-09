@@ -39,10 +39,10 @@ check("automatic Wise observation polls every 10 seconds with cleanup", hasAll(i
   "window.removeEventListener(\"focus\", onFocus)",
 ]));
 check("client observation cannot author paid state", !/payment_confirmed\s*:\s*true/.test(observation) && !/payment_status\s*:\s*["']paid["']/.test(observation));
-check("canonical scheduling gate separates observed Wise submission from verified settlement", hasAll(scheduling, [
+check("canonical scheduling gate requires verified Wise settlement", hasAll(scheduling, [
   "verified_payment",
-  "wise_submission_observed",
-  "Integrity-matched Wise submission authorizes scheduling only",
+  "PAYMENT_CONFIRMED",
+  "Verified Wise settlement is required before scheduling.",
   "evaluatePaymentGate",
 ]));
 check("schedule API consumes the canonical scheduling gate", hasAll(scheduleRoute, [

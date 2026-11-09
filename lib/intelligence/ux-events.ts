@@ -12,6 +12,7 @@ export type UxEventType =
   | "counsel_inquiry_opened"
   | "counsel_inquiry_submitted"
   | "counsel_submission_failed"
+  | "service_intent_selected"
   | "intake_started"
   | "description_completed"
   | "document_uploaded"

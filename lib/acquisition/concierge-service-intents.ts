@@ -1,5 +1,6 @@
 export const CONCIERGE_SERVICE_INTENTS = [
   "ron",
+  "witness",
   "domestic_execution",
   "apostille",
   "authentication",

@@ -63,9 +63,9 @@ test("notarial resolution never authors payment truth", () => {
 });
 
 test("RON UX distinguishes Wise submission verified payment and complimentary authority", () => {
-  assert.match(readiness, /wise_submission_observed/);
+  assert.doesNotMatch(readiness, /Wise submitted · scheduling authorized/);
   assert.match(readiness, /verified_payment/);
-  assert.match(readiness, /complimentary_authorization/);
+  assert.match(readiness, /courtesy authorization cannot satisfy/);
   assert.match(readiness, /Payment is not the blocker/);
   assert.match(readiness, /BlueNotary is waiting on execution truth—not another payment/);
   assert.match(readiness, /NotarialActResolution/);
@@ -81,11 +81,10 @@ test("Matter execution page no longer renders an unwired placeholder gate ladder
   assert.match(executionPage, /Matter-backed operator readiness only/);
 });
 
-test("observed scheduling authority fails closed when a read model omits integrity fields", () => {
-  assert.match(schedulingGate, /projection_incomplete/);
-  assert.match(schedulingGate, /hasCompleteObservationProjection/);
-  assert.match(schedulingGate, /Object\.prototype\.hasOwnProperty/);
-  assert.match(schedulingGate, /integrity fields are missing/);
+test('submission cannot satisfy the shared settlement scheduling gate', () => {
+  assert.match(schedulingGate, /evaluatePaymentGate/);
+  assert.match(schedulingGate, /PAYMENT_CONFIRMED/);
+  assert.doesNotMatch(schedulingGate, /submission === ["']observed["']/);
 });
 
 test("every RON scheduling and command-center projection carries observation integrity fields", () => {

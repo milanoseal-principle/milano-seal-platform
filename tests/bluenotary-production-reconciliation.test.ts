@@ -25,15 +25,15 @@ test('BlueNotary session creation uses the canonical scheduling authority while 
   assert.doesNotMatch(guards, /payment_status !== 'paid'/);
 });
 
-test('integrity-matched Wise submission authorizes RON scheduling without paid truth', () => {
-  assert.match(readiness, /Wise submitted · scheduling authorized/);
+test('RON scheduling requires verified settlement', () => {
+  assert.match(readiness, /Wise verified · scheduling authorized/);
   assert.match(readiness, /evaluateSchedulingGate/);
-  assert.match(queue, /Wise submitted · scheduling authorized/);
+  assert.match(queue, /Wise verified · scheduling authorized/);
   assert.match(queue, /evaluateSchedulingGate/);
   assert.match(detail, /Paid truth:/);
   assert.match(detail, /schedulingAuthorized/);
-  assert.match(invoice, /An integrity-matched submission authorizes scheduling only/);
-  assert.match(invoice, /verified Wise settlement remains the authority for paid state/);
+  assert.match(invoice, /Verified Wise settlement is required before scheduling/);
+  assert.match(invoice, /Verified Wise settlement is required/);
 });
 
 test('client Wise settlement refresh is interactive, live, and visibly reports the result', () => {

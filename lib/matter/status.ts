@@ -136,7 +136,7 @@ export const NEXT_ACTION: Record<CanonicalStatus, string> = {
   intake_received: "Review intake and confirm document/jurisdiction details",
   under_review: "Complete compliance review and issue proposal",
   quoted: "Send payment instructions",
-  awaiting_payment: "Confirm payment observed/cleared (payment-gated)",
+  awaiting_payment: "Confirm payment verified and cleared (payment-gated)",
   payment_review: "Resolve payment mismatch before scheduling",
   scheduled: "Begin controlled execution (RON / mobile / witness)",
   in_execution: "Complete execution QA and submit apostille/authentication",
@@ -170,7 +170,7 @@ export function blockedReason(
     case "awaiting_payment":
       return gates.paymentCleared
         ? null
-        : "Payment must be observed/cleared before scheduling";
+        : "Payment must be verified and cleared before scheduling";
     case "payment_review":
       return "Payment mismatch is under review";
     case "ready_for_release":

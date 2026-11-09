@@ -34,7 +34,7 @@ export default function PaymentStatusPage() {
         <div className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#C6A55A]/60">Payment &amp; Authorization</div>
         <h1 className="font-serif text-3xl text-[#F6F1E6]">Secure Payment</h1>
         <p className="max-w-2xl text-sm leading-6 text-white/45">
-          Partner or courtesy codes are validated by the server before Wise instructions are refreshed. Your payment and Matter progress are tracked separately. An integrity-matched Wise submission may authorize scheduling while settlement is pending. It does not confirm payment, authorize signer-link release without stronger provider evidence, or authorize final release.
+          Partner or courtesy codes are validated by the server before Wise instructions are refreshed. Your payment and Matter progress are tracked separately. Scheduling remains locked while settlement is pending. It does not confirm payment, authorize signer-link release without stronger provider evidence, or authorize final release.
         </p>
       </header>
 

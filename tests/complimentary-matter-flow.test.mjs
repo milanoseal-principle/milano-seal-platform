@@ -24,7 +24,7 @@ test("server authorization never marks payment paid or confirmed", () => {
 test("scheduling gate separates verified payment from complimentary authorization", () => {
   const source = read("lib/scheduling/complimentarySchedulingGate.ts");
   assert.match(source, /verified_payment/);
-  assert.match(source, /complimentary_authorization/);
+  assert.doesNotMatch(source, /paymentRequirementMethod:\s*["']complimentary_authorization["']/);
   assert.match(source, /not_satisfied/);
   assert.match(source, /evaluatePaymentGate/);
 });

@@ -1,3 +1,4 @@
+import { normalizeServiceIntent } from "@/lib/intake/serviceIntent";
 import { Suspense } from "react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
 };
 
 type IntakeSearchParams = {
+  intent?: string;
+  service_intent?: string;
   tier?: string;
   lane?: string;
   destination?: string;
@@ -92,7 +95,8 @@ async function IntakeWizardWrapper({
   searchParams: Promise<IntakeSearchParams>;
 }) {
   const params = await searchParams;
-  const isProfessional = params.lane === "professional";
+  const serviceIntent = normalizeServiceIntent(params.service_intent || params.intent || (params.lane === "professional" ? "foreign_counsel" : undefined));
+  const isProfessional = params.lane === "professional" || serviceIntent === "foreign_counsel";
   const country = params.country || params.destination || "";
   const document = params.document || params.document_type?.replace(/_/g, "-") || "";
   const professionalMatter = buildProfessionalMatter(params);
@@ -136,6 +140,7 @@ async function IntakeWizardWrapper({
         </div>
       ) : null}
       <SmartIntakeSOPWizard
+        initialServiceIntent={serviceIntent}
         initialTier={validTier}
         prefill={prefill}
         courtesyCode={courtesyCode}
@@ -164,9 +169,9 @@ export default function IntakePage({
               <span className="text-sm text-[var(--ms-gold)] font-medium">Secure Records Intake</span>
             </div>
             <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">Begin Your Execution</h1>
-            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">Matter-first intake with controlled document intelligence, route review, and payment-gated execution.</p>
+            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">Tell us what you need, upload your document, and we’ll guide you through the relevant next steps.</p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-2">
-              {["50% Deposit Unlocks Scheduling", "Hague Route Review", "Final 50% Before International Release"].map((c) => (
+              {["Private document review", "Clear next steps", "Secure document handling"].map((c) => (
                 <span key={c} className="rounded-full border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.05] px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/80">{c}</span>
               ))}
             </div>
