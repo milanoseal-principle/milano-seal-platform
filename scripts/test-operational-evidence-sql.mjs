@@ -1,0 +1,33 @@
+import {migrationFixture} from './lib/migration-fixture.mjs';
+import {readFileSync,readdirSync,mkdirSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const db=await migrationFixture(),plan=JSON.parse(readFileSync('supabase/migration-replay-plan.json','utf8'));
+const files=readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort();
+for(const f of [...plan.fresh_database_prerequisites,...files.filter(f=>!plan.fresh_database_prerequisites.includes(f))])await db.exec(readFileSync('supabase/migrations/'+f,'utf8'));
+let checks=0;const ok=(v,s)=>{assert.ok(v,s);checks++;};const denied=async(fn,s)=>{await assert.rejects(fn,/permission denied/,s);checks++;};
+await db.exec(`insert into deals(deal_id,status,payment_status,payment_confirmed,payment_settlement_status,payment_observed_at,amount_due,amount_paid,currency)
+ select 'SYNTHETIC-SCAN-'||n,'intake_received','unpaid',false,'observed_pending',now()-interval '1 hour',100,0,'USD' from generate_series(1,617) n;
+insert into wise_reconciliation_exceptions(deal_id,matter_reference,reason,severity,payment_observed_at,amount_due,currency,next_action,last_detected_at)
+ select id,deal_id,'provider_correlation_missing','action_required',payment_observed_at,amount_due,currency,'Synthetic review',now()-interval '1 day' from deals where deal_id like 'SYNTHETIC-SCAN-%';`);
+const candidates=async()=>(await db.query("select id from wise_exception_scan_candidates(now()-interval '10 minutes',200)")).rows;
+const first=await candidates();ok(first.length===200,'candidate work is bounded');
+await db.query('update wise_reconciliation_exceptions set last_detected_at=now() where deal_id=any($1::uuid[])',[first.map(r=>r.id)]);
+const second=await candidates();ok(second.length===200&&second.every(r=>!first.some(prior=>prior.id===r.id)),'old unresolved Matters cannot starve the next candidate window');
+ok((await db.query('select resolve_wise_exceptions_from_current_truth(500) n')).rows[0].n===0,'unexamined pending Matters never resolve merely because they are outside a capped scan');
+ok(Number((await db.query("select count(*) n from wise_reconciliation_exceptions where status='open'")).rows[0].n)===617,'all open pending exceptions preserved across cap');
+const invalid=first[0].id,partial=first[1].id,settled=first[2].id,missing=first[3].id;
+await db.query("update deals set payment_status='failed',payment_settlement_status='failed' where id=$1",[invalid]);
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=50 where id=$1",[partial]);
+await db.query("update deals set payment_status='paid',payment_confirmed=true,payment_settlement_status='cleared',amount_paid=100 where id=$1",[settled]);
+await db.query("update deals set payment_observed_at=null,payment_settlement_status='unpaid' where id=$1",[missing]);
+ok((await db.query('select resolve_wise_exceptions_from_current_truth(1) n')).rows[0].n===1,'resolution work is bounded too');
+ok((await db.query('select resolve_wise_exceptions_from_current_truth(500) n')).rows[0].n===1,'only current terminal/settled truth resolves');
+const statuses=(await db.query('select deal_id,status,resolution from wise_reconciliation_exceptions where deal_id=any($1::uuid[])',[[invalid,partial,settled,missing]])).rows;
+ok(statuses.find(r=>r.deal_id===partial).status==='open','partial settlement keeps action open');
+ok(statuses.find(r=>r.deal_id===missing).status==='open','missing evidence is not a resolution');
+ok(statuses.find(r=>r.deal_id===settled).status==='resolved','exact canonical settlement resolves');
+ok(statuses.find(r=>r.deal_id===invalid).resolution.includes('no current settlement authority remains'),'invalidated attempt resolution never claims payment');
+ok((await db.query('select resolve_wise_exceptions_from_current_truth(500) n')).rows[0].n===0,'resolution replay idempotent');
+const state=(await db.query('select payment_status,payment_confirmed,amount_paid from deals where id=$1',[invalid])).rows[0];ok(state.payment_status==='failed'&&state.payment_confirmed===false&&Number(state.amount_paid)===0,'scanner never authors financial truth');
+await db.exec('set role authenticated');await denied(()=>candidates(),'browser cannot scan protected financial evidence');await denied(()=>db.query('select resolve_wise_exceptions_from_current_truth(500)'),'browser cannot resolve exceptions');await db.exec('reset role');
+mkdirSync('artifacts/operational-evidence',{recursive:true});writeFileSync('artifacts/operational-evidence/database.json',JSON.stringify({status:'PASS',checks,environment:'ISOLATED_POSTGRESQL',source_rows:617,real_migrations:files.length,hosted:false},null,2));console.log(`PASS ${checks} actual PostgreSQL capped-scan/current-truth checks on 617 Matters.`);await db.close();

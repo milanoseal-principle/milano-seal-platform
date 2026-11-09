@@ -95,21 +95,17 @@ export async function scanWiseReconciliationExceptions(): Promise<WiseExceptionS
   const nowMs = now.getTime();
 
   const { data, error } = await admin
-    .from("deals")
+    .rpc("wise_exception_scan_candidates", {
+      p_before: new Date(nowMs - exceptionThresholdMs()).toISOString(), p_limit: 200,
+    })
     .select(
       "id,deal_id,payment_attempt_id,payment_attempt_started_at,wise_provider_evidence,wise_reference,wise_transaction_reference,payment_funding_method,payment_confirmed,payment_status,payment_settlement_status,payment_observed_at,payment_observed_amount,payment_observed_currency,payment_observed_reference,amount_due,amount_paid,currency,payment_disposition,comp_authorized,comp_authorization_id,comp_authorized_at,comp_revoked_at,verified_revenue",
-    )
-    .eq("payment_confirmed", false)
-    .not("payment_observed_at", "is", null)
-    .in("payment_settlement_status", ["observed_pending", "mismatch_review"])
-    .order("payment_observed_at", { ascending: true })
-    .limit(200);
+    );
 
   if (error) throw new Error(`Wise exception scan failed: ${error.message}`);
 
   const pending = (data ?? []) as PendingMatter[];
   const matured = pending.filter((matter) => observedLongEnough(matter.payment_observed_at, nowMs));
-  const activeIds = new Set(matured.map((matter) => matter.id));
   let openedOrUpdated = 0;
 
   for (const matter of matured) {
@@ -168,29 +164,12 @@ export async function scanWiseReconciliationExceptions(): Promise<WiseExceptionS
     openedOrUpdated += 1;
   }
 
-  const { data: openExceptions, error: openError } = await admin
-    .from("wise_reconciliation_exceptions")
-    .select("id,deal_id")
-    .eq("status", "open")
-    .limit(500);
-  if (openError) throw new Error(`Wise exception resolution scan failed: ${openError.message}`);
-
-  let resolved = 0;
-  for (const exception of openExceptions ?? []) {
-    if (activeIds.has(exception.deal_id)) continue;
-    const { error: resolveError } = await admin
-      .from("wise_reconciliation_exceptions")
-      .update({
-        status: "resolved",
-        resolution: "Canonical Matter payment state no longer requires Wise exception handling.",
-        resolved_at: nowIso,
-        updated_at: nowIso,
-      })
-      .eq("id", exception.id)
-      .eq("status", "open");
-    if (resolveError) throw new Error(`Wise exception resolve failed: ${resolveError.message}`);
-    resolved += 1;
-  }
+  // Absence from a capped scan is never evidence of resolution. The existing
+  // queue resolves only from current locked canonical rows in one bounded RPC.
+  const resolution = await admin.rpc("resolve_wise_exceptions_from_current_truth", { p_limit: 500 });
+  if (resolution.error) throw new Error("Wise exception resolution was not confirmed");
+  const resolved = Number(resolution.data);
+  if (!Number.isSafeInteger(resolved) || resolved < 0) throw new Error("Wise exception resolution result unavailable");
 
   return {
     checked: pending.length,

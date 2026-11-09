@@ -82,6 +82,8 @@ const gates = [
   ["npm", ["run", "test:migration-replay"]],
   ["npm", ["run", "test:gap-closure-database"]],
   ["npm", ["run", "test:wise-attempt-database"]],
+  ["npm", ["run", "test:retention-authority-database"]],
+  ["npm", ["run", "test:operational-evidence-database"]],
   ["npm", ["run", "test:upgrade-restore"]],
   ["npm", ["run", "test:p4-database"]],
   ["npm", ["run", "validate:cinematic-ui-system"]],

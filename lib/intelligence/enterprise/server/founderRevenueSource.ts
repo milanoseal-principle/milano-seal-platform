@@ -71,6 +71,6 @@ export async function loadFounderRevenueSnapshot(range: IntelRange = 30): Promis
     };
   } catch (e) {
     if (e instanceof DealsSchemaError) return unavailableSnapshot(nowIso);
-    return emptySnapshot(nowIso, "Payment records unavailable.");
+    return unavailableSnapshot(nowIso);
   }
 }

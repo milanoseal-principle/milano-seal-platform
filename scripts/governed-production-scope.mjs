@@ -38,6 +38,15 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // Founder explicitly replaced submission scheduling with verified-settlement-only authority.
  // Existing full unit + actual SQL suites enforce deny/allow parity.
  'supabase/migrations/20261109063000_verified_settlement_scheduling.sql',
+ // User-authorized current-truth exception resolution and private operational evidence.
+ 'supabase/migrations/20261109062000_wise_exception_current_truth.sql',
+ 'app/api/admin/wise/health/route.ts',
+ // Auth-required diagnostics; actual HTTP denial regression covers this route.
+ 'app/api/health/webhooks/route.ts',
+ 'docs/production/P24_P30_EXISTING_SOURCE_MAP_2026-11-09.md',
+
+ // User-authorized P7 retention continuation; real SQL claim/hold/role tests.
+ 'supabase/migrations/20261109061000_retention_claim_and_hold_authority.sql',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.

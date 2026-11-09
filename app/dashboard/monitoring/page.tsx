@@ -1,6 +1,9 @@
-"use client";
 
 import { Activity, Circle } from "lucide-react";
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { loadOperationalHealth } from "@/lib/operator-intelligence/read-model";
+
+export const dynamic = "force-dynamic";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const GOLD = "rgba(212,175,55,1)";
@@ -10,81 +13,6 @@ const SURFACE = "rgba(255,255,255,0.03)";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type HealthState = "Operational" | "Unknown" | "Degraded" | "Offline";
-
-interface MonitorTarget {
-  id: string;
-  label: string;
-  category: string;
-  state: HealthState;
-  note: string;
-}
-
-// ── Safe default data — read-only indicators, no fake uptime percentages ───────
-const MONITORS: MonitorTarget[] = [
-  {
-    id: "vercel",
-    label: "Vercel",
-    category: "Frontend Hosting",
-    state: "Unknown",
-    note: "Frontend deployment platform — operator review required to confirm current state",
-  },
-  {
-    id: "render-api",
-    label: "Render API",
-    category: "Backend Hosting",
-    state: "Unknown",
-    note: "Render-hosted API service — confirm endpoint health before execution runs",
-  },
-  {
-    id: "supabase",
-    label: "Supabase",
-    category: "Database",
-    state: "Unknown",
-    note: "Database + auth provider — confirm connectivity before scheduling or matter creation",
-  },
-  {
-    id: "wise-webhook",
-    label: "Wise Webhook",
-    category: "Payment",
-    state: "Unknown",
-    note: "Payment confirmation webhook — payment_confirmed must be verified before release",
-  },
-  {
-    id: "shippo-webhook",
-    label: "Shippo Webhook",
-    category: "Courier",
-    state: "Unknown",
-    note: "Courier tracking events — confirm before courier release operations",
-  },
-  {
-    id: "twilio-webhook",
-    label: "Twilio Webhook",
-    category: "Communication",
-    state: "Unknown",
-    note: "Inbound SMS + notification callbacks — confirm before scheduling notifications",
-  },
-  {
-    id: "document-vault",
-    label: "The Vault",
-    category: "Storage",
-    state: "Unknown",
-    note: "Secure document storage endpoint — operator access only",
-  },
-  {
-    id: "email-delivery",
-    label: "Email Delivery",
-    category: "Communication",
-    state: "Unknown",
-    note: "Transactional email provider — confirm delivery before client-facing sends",
-  },
-  {
-    id: "ron-provider",
-    label: "RON Provider",
-    category: "Execution",
-    state: "Unknown",
-    note: "Remote Online Notarization infrastructure — authority-dependent eligibility, confirm before scheduling",
-  },
-];
 
 const STATE_COLOR: Record<HealthState, string> = {
   Operational: "rgba(34,197,94,0.75)",
@@ -113,9 +41,12 @@ function HealthDot({ state }: { state: HealthState }) {
   );
 }
 
-export default function MonitoringPage() {
-  const unknown = MONITORS.filter((m) => m.state === "Unknown").length;
-  const operational = MONITORS.filter((m) => m.state === "Operational").length;
+export default async function MonitoringPage() {
+  const actor = await requireDashboardAccess();
+  const monitors = await loadOperationalHealth(actor.role);
+  const unknown = monitors.filter((m) => m.state === "Unknown").length;
+  const degraded = monitors.filter(m => m.state === "Degraded").length;
+  const operational = monitors.filter((m) => m.state === "Operational").length;
 
   return (
     <div style={{ color: "#e8e4dc", fontFamily: "monospace" }}>
@@ -131,8 +62,8 @@ export default function MonitoringPage() {
           </h1>
         </div>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-          Read-only integration health indicators. States reflect last known configuration.
-          No live telemetry — operator verification required before execution.
+          Read-only observations from canonical records. Each observation is timestamped.
+          External provider availability, backup recovery and deployment identity remain NOT VERIFIED until separately evidenced.
         </p>
       </div>
 
@@ -154,6 +85,10 @@ export default function MonitoringPage() {
           </div>
           <div style={{ fontSize: 8, letterSpacing: "0.2em", color: GOLD_DIM, marginTop: 2 }}>UNVERIFIED</div>
         </div>
+        <div>
+          <div style={{ fontSize: 18, color: "rgba(239,68,68,0.75)", lineHeight: 1 }}>{degraded}</div>
+          <div style={{ fontSize: 8, letterSpacing: "0.2em", marginTop: 2 }}>RECORDED EXCEPTIONS</div>
+        </div>
         <div style={{ marginLeft: "auto" }}>
           <span style={{ fontSize: 8, color: "rgba(255,255,255,0.18)", letterSpacing: "0.15em" }}>
             READ-ONLY · NO UPTIME CLAIMS · CONFIRM BEFORE RELEASE
@@ -163,7 +98,7 @@ export default function MonitoringPage() {
 
       {/* Monitor targets */}
       <div className="flex flex-col gap-2">
-        {MONITORS.map((m) => (
+        {monitors.map((m) => (
           <div
             key={m.id}
             className="flex items-start gap-4 px-4 py-3 rounded-sm"
@@ -181,6 +116,7 @@ export default function MonitoringPage() {
               </div>
               <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>
                 {m.note}
+                {m.observedAt ? ` Observed ${m.observedAt}` : ""}
               </p>
             </div>
           </div>
@@ -190,7 +126,7 @@ export default function MonitoringPage() {
       {/* Footer */}
       <div className="mt-6 flex items-center justify-between flex-wrap gap-2">
         <span style={{ fontSize: 8, color: "rgba(255,255,255,0.15)", letterSpacing: "0.15em" }}>
-          {MONITORS.length} TARGETS REGISTERED · READ-ONLY DISPLAY · NO LIVE POLLING
+          {monitors.length} CANONICAL CHECKS · LATEST SERVER OBSERVATION · NO UPTIME CLAIMS
         </span>
         <span style={{ fontSize: 8, color: GOLD_DIM, letterSpacing: "0.15em" }}>
           THE MILANO SEAL™

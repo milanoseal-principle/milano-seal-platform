@@ -1,0 +1,222 @@
+{
+  "source_sha": "326a45a326566b0450e634da3ca973813b6f7c05",
+  "source_tree": "d381e29ae24698d7921943bd2e85b0c518d6dc0b",
+  "lockfile_sha256": "b04a1b3fd413705a7bc9a418529102342f8a021b74ea9b81693e6ee3fc934371",
+  "node": "v24.19.0",
+  "started_at": "2026-11-09T07:19:57.601Z",
+  "scope": "ISOLATED_LOCAL_SOURCE_ONLY",
+  "public_auth_configuration": "INERT_LOOPBACK_NO_SESSION",
+  "steps": [
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started_at": "2026-11-09T07:19:57.601Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:19:57.607Z"
+    },
+    {
+      "name": "route-types",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "node_modules/next/dist/bin/next",
+        "typegen"
+      ],
+      "started_at": "2026-11-09T07:19:57.608Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:19:57.895Z"
+    },
+    {
+      "name": "visual-system",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/validate-final-visual-system-hardening.mjs"
+      ],
+      "started_at": "2026-11-09T07:19:57.896Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:19:57.925Z"
+    },
+    {
+      "name": "vercel-merge-gate",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-vercel-merge-gate.mjs"
+      ],
+      "started_at": "2026-11-09T07:19:57.925Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:24:25.830Z"
+    },
+    {
+      "name": "production-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "started_at": "2026-11-09T07:24:25.831Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:24:44.458Z"
+    },
+    {
+      "name": "p3-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-database"
+      ],
+      "started_at": "2026-11-09T07:24:44.459Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:24:46.537Z"
+    },
+    {
+      "name": "p5-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p5-database"
+      ],
+      "started_at": "2026-11-09T07:24:46.537Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:24:48.355Z"
+    },
+    {
+      "name": "governance-regressions",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-regressions"
+      ],
+      "started_at": "2026-11-09T07:24:48.355Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:24:53.400Z"
+    },
+    {
+      "name": "source-certification",
+      "command": [
+        "npm",
+        "run",
+        "test:production-certification-source"
+      ],
+      "started_at": "2026-11-09T07:24:53.401Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:25:05.922Z"
+    },
+    {
+      "name": "dependency-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=moderate"
+      ],
+      "started_at": "2026-11-09T07:25:05.923Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:25:06.485Z"
+    },
+    {
+      "name": "governance-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-rendered"
+      ],
+      "started_at": "2026-11-09T07:25:06.486Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:26:21.368Z"
+    },
+    {
+      "name": "p3-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-rendered"
+      ],
+      "started_at": "2026-11-09T07:26:21.368Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:26:34.441Z"
+    },
+    {
+      "name": "retention-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:retention-rendered"
+      ],
+      "started_at": "2026-11-09T07:26:34.441Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:26:41.855Z"
+    },
+    {
+      "name": "operational-health-http",
+      "command": [
+        "npm",
+        "run",
+        "test:operational-health-http"
+      ],
+      "started_at": "2026-11-09T07:26:41.856Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:26:45.895Z"
+    },
+    {
+      "name": "map-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-map-proof.mjs"
+      ],
+      "started_at": "2026-11-09T07:26:45.895Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:27:05.991Z"
+    },
+    {
+      "name": "public-production-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-production-acceptance.mjs"
+      ],
+      "started_at": "2026-11-09T07:27:07.308Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T07:29:06.612Z"
+    }
+  ],
+  "status": "PASS",
+  "github_statuses_modified": false,
+  "hosted_preview": "NOT_RUN",
+  "production_deployment": "NOT_RUN",
+  "agents_activated": false,
+  "finished_at": "2026-11-09T07:29:06.655Z"
+}

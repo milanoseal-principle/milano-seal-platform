@@ -1,3 +1,4 @@
+import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { NextResponse } from "next/server";
 import { getWiseBaseUrl } from "@/lib/wise";
 
@@ -16,6 +17,10 @@ interface WiseProfile {
 }
 
 export async function GET() {
+  try {
+    const actor = await requireDashboardAccess();
+    if (!['founder','founder_admin','admin','finance','finance_operator'].includes(actor.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'Cache-Control': 'private, no-store' } }); }
   const base = getWiseBaseUrl();
   const token = process.env.WISE_API_TOKEN?.trim();
   const profileId = process.env.WISE_PROFILE_ID?.trim();
@@ -51,6 +56,7 @@ export async function GET() {
     const res = await fetch(`${base}/v1/profiles`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (res.status === 401) {
@@ -62,10 +68,10 @@ export async function GET() {
     }
 
     if (!res.ok) {
-      const detail = await res.text().catch(() => "");
+      await res.body?.cancel();
       return NextResponse.json({
         ...baseReport,
-        error: `Wise API ${res.status}: ${detail.slice(0, 300) || res.statusText}`,
+        error: `Wise API ${res.status}: observation unavailable`,
       });
     }
 
@@ -75,16 +81,16 @@ export async function GET() {
     return NextResponse.json({
       ...baseReport,
       ok: match,
-      profiles,
+      profiles: profiles.map(profile => ({ id: profile.id, type: profile.type })),
       profile_match: match,
       hint: match
         ? null
         : `WISE_PROFILE_ID=${profileId} not found. Available: ${profiles.map((p) => p.id).join(", ")}`,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({
       ...baseReport,
-      error: err instanceof Error ? err.message : "Network error",
+      error: "WISE_OBSERVATION_UNAVAILABLE",
       hint: `Could not reach Wise. Check that ${base} is reachable from your environment.`,
     });
   }

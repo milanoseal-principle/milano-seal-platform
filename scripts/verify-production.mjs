@@ -72,10 +72,10 @@ console.log("\n[retired alliance status stub] expect 404");
     : bad(`retired Alliance webhook -> ${status} (expected 404)`);
 }
 
-console.log("\n[db health] expect 200");
+console.log("\n[protected database diagnostics] expect authentication denial");
 {
   const { status } = await code("/api/health/database");
-  status === 200 ? ok("database health 200") : bad(`database health -> ${status}`);
+  [401,403].includes(status) ? ok("database diagnostics require authentication") : bad(`database health -> ${status}`);
 }
 
 if (doIntake) {
