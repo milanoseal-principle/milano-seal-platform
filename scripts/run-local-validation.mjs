@@ -59,6 +59,13 @@ try{
  if(!ready)throw Error('Local production server did not become ready');
  await run('public-production-rendered',process.execPath,['scripts/run-rendered-production-acceptance.mjs'],{MILANO_RENDERED_BASE_URL:base,MILANO_PRODUCTION_BASE_URL:base});
  if(stopping||git('rev-parse','HEAD')!==sha||git('diff','HEAD','--name-only')||git('ls-files','--others','--exclude-standard'))throw Error('Source changed during validation; results cannot certify this checkout');
+ const certificationPath=resolve('artifacts/certification/source-manifest.json');
+ const certification=JSON.parse(readFileSync(certificationPath,'utf8'));
+ if(certification.source_sha!==sha||certification.status!=='AVAILABLE_SCOPE_SIMULATION_PASS_P19_SKIPPED')throw Error('Certification manifest does not match the validated checkout');
+ for(let phase=7;phase<=18;phase++)if(phase!==12)certification['p'+phase+'_status']='EXISTING_SOURCE_FULL_REGRESSION_PASS_HOSTED_UNVERIFIED';
+ certification.local_validation={source_sha:sha,source_tree:tree,evidence_path:resolve(out,'summary.json'),all_steps_passed:report.steps.every(step=>step.status==='PASS'),scope:'SOURCE_ONLY'};
+ certification.generated_at=new Date().toISOString();writeFileSync(certificationPath,JSON.stringify(certification,null,2)+'\n');
+ await run('certification-manifest','npm',['run','validate:certification-manifest']);
  report.status='PASS';
 }catch(error){report.status='FAIL';report.failure=error.message;console.error(error.message);process.exitCode=1;}
 finally{if(server){server.kill('SIGTERM');await new Promise(accept=>{if(server.exitCode!==null)return accept();server.once('close',accept);});}if(serverFd!==undefined)closeSync(serverFd);report.finished_at=new Date().toISOString();save();rmSync(lock,{recursive:true});console.log('Evidence: '+resolve(out,'summary.json'));}
