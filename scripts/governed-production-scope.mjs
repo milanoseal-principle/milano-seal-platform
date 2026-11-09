@@ -55,6 +55,7 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'tests/bluenotary-production-reconciliation.test.ts','tests/wise-payment-observation-notifications.test.ts',
  'lib/stateMachine.ts','lib/scheduling/complimentarySchedulingGate.ts','lib/pipelineEngine.ts','lib/platform/matterStateAdapters.ts',
  'app/api/deals/[id]/schedule/route.ts','app/api/deals/[id]/execute/route.ts','app/api/admin/matters/[id]/status/route.ts',
+ 'scripts/validate-postpayment-ron-corridor.mjs','scripts/validate-tiffany-post-test-final-audit.mjs',
  'scripts/validate-immediate-scheduling-after-wise-submission.mjs','scripts/validate-postpayment-ron-matter-progression.mjs',
  'scripts/validate-payment-release-gates.mjs',
  'scripts/validate-custody-ledger-schema.mjs',

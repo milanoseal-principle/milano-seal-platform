@@ -5,7 +5,8 @@ function read(path) {
   return fs.readFileSync(path, 'utf8');
 }
 
-const migration = read('supabase/migrations/089_verified_settlement_scheduling_gate.sql');
+const latestGate = fs.readdirSync('supabase/migrations').filter(file=>file.endsWith('.sql')).sort().filter(file=>/create or replace function public\.check_payment_gate\(/i.test(read('supabase/migrations/'+file))).at(-1);
+const migration = read('supabase/migrations/'+latestGate);
 const guards = read('lib/bluenotary/guards.ts');
 const webhook = read('app/api/webhooks/bluenotary/route.ts');
 const apostilleQa = read('app/api/dashboard/ron/sessions/[id]/apostille-qa/route.ts');
@@ -17,13 +18,15 @@ const executedCapture = read('lib/ron/executedCapture.ts');
 const signedDocs = signedRoute + executedCapture;
 const finalRelease = read('lib/release/performFinalRelease.ts');
 
-// Observation alone cannot authorize scheduling or execution. The current
-// migration and shared gate require exact, verified Wise settlement.
+// Integrity-matched observation can authorize scheduling; provider evidence is
+// additionally required for execution. Final release remains settled and separate.
 assert.match(migration, /NEW\.payment_confirmed is true/);
 assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
 assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
 assert.match(migration, /verified Wise settlement required/);
-assert.doesNotMatch(migration, /observed_submission_valid|payment_observed_at/);
+assert.match(migration, /payment_observed_amount is not null/);
+assert.match(migration, /payment_observed_at is not null/);
+assert.match(migration, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 assert.match(guards, /verifyExecutionPaymentAuthorized/);
 assert.match(guards, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 

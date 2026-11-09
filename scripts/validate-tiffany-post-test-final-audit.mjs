@@ -42,7 +42,7 @@ check("client observation cannot author paid state", !/payment_confirmed\s*:\s*t
 check("canonical scheduling gate separates observed Wise submission from verified settlement", hasAll(scheduling, [
   "verified_payment",
   "wise_submission_observed",
-  "scheduling remains locked until verified Wise settlement",
+  "Integrity-matched Wise submission authorizes scheduling only",
   "evaluatePaymentGate",
 ]));
 check("schedule API consumes the canonical scheduling gate", hasAll(scheduleRoute, [
@@ -57,7 +57,7 @@ check("RON dashboard consumes canonical scheduling gate and shows pre-session Ma
   "preSessionMatters",
   "getRONBlockers",
   "Open RON Readiness",
-  "Wise submitted · scheduling locked",
+  "Wise submitted · scheduling authorized",
   "Ready for BlueNotary",
 ]));
 check("RON creation is Matter-scoped and delegates to canonical scheduling guard", hasAll(ronCreate, [
