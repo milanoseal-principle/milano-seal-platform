@@ -18,15 +18,14 @@ const executedCapture = read('lib/ron/executedCapture.ts');
 const signedDocs = signedRoute + executedCapture;
 const finalRelease = read('lib/release/performFinalRelease.ts');
 
-// Integrity-matched observation can authorize scheduling; provider evidence is
-// additionally required for execution. Final release remains settled and separate.
+// Verified settlement is required before scheduling or execution.
+// Submission/provider-processing evidence cannot substitute for settlement.
 assert.match(migration, /NEW\.payment_confirmed is true/);
 assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
+assert.doesNotMatch(migration, /settlement_verified or (observed_valid|provider_valid)/);
+assert.match(migration, /verified Wise settlement required before execution/);
 assert.match(migration, /round\(NEW\.amount_paid \* 100\) = round\(NEW\.amount_due \* 100\)/);
 assert.match(migration, /verified Wise settlement required/);
-assert.match(migration, /payment_observed_amount is not null/);
-assert.match(migration, /payment_observed_at is not null/);
-assert.match(migration, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 assert.match(guards, /verifyExecutionPaymentAuthorized/);
 assert.match(guards, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 

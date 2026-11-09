@@ -43,7 +43,7 @@ export default function MobileNotaryPage() {
             href="/intake?intent=domestic_execution"
             className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C6A55A] text-[#0A0A0A] font-medium rounded-lg transition-all duration-300 hover:bg-[#D4B76A]"
           >
-            <span>Schedule Mobile Notary</span>
+            <span>Request a Notary</span>
             <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>

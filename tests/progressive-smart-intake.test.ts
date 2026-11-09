@@ -86,3 +86,7 @@ test('courtesy scheduling helper rejects a verified boolean without the canonica
  const authorization=createComplimentaryAuthorization({quote:params.quote,reasonCode:'founder_authorized',reasonDetail:'Synthetic authorized courtesy for regression only',authorizedByUserId:'synthetic-founder',authorizedByRole:'founder_admin'});assert.equal(evaluateComplimentarySchedulingRequirement({...params,authorization}).paymentRequirementSatisfied,false);
  assert.equal(evaluateComplimentarySchedulingRequirement({...params,verifiedPayment:{id:'synthetic',payment_confirmed:true,payment_status:'paid',payment_settlement_status:'cleared',amount_due:100,amount_paid:100}}).paymentRequirementSatisfied,true);
 });
+
+test('existing service pages keep a direct contextual commercial path',()=>{
+ for(const [page,intent,label] of [['remote-online-notary','ron','Start Online Notary'],['mobile-notary','domestic_execution','Request a Notary'],['apostille','apostille','Start Apostille Review'],['international-execution','international_execution','Begin Matter Review']]){const source=readFileSync(`app/services/${page}/page.tsx`,'utf8');assert.ok(source.includes(`/intake?intent=${intent}`));assert.ok(source.includes(label));assert.match(source,/CommercialCtaRow/);}
+});

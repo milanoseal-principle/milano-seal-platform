@@ -215,7 +215,7 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialS
         delivery: form.deliveryChoice,
         pricingApproved: clientPricing.mode === "approved_price" && !form.executionType,
         executionReviewRequested: Boolean(form.executionType),
-      }).filter(item => item === "Preferred execution timeline" || (questionPlan.showDelivery && item === "Delivery method")),
+      }).filter(item => item === "Preferred execution timeline"),
     [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType, questionPlan.showDelivery],
   );
 
@@ -509,6 +509,8 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialS
     else setField("detailStep", detailIndex + 1);
   };
 
+  const witnessControl = <div><label htmlFor="intake-witness-context" className={labelCls}>What does your document say about witnesses?</label><textarea id="intake-witness-context" maxLength={3000} className={inputCls} value={form.witnessContext ?? ""} onChange={event => setField("witnessContext", event.target.value)} placeholder="Copy the wording, or tell us you’re not sure. We’ll review the requirement." /></div>;
+
   return (
     <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <div className="mb-8" aria-label="Intake progress">
@@ -564,7 +566,7 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialS
                 <div><label htmlFor="intake-signers" className={labelCls}>How many people will sign?</label><input id="intake-signers" type="number" min="1" max="10000" className={inputCls} value={form.signerCount || ""} onChange={event => setField("signerCount", Math.max(0, Number(event.target.value)))} /></div>
                 <div><label htmlFor="intake-signer-location" className={labelCls}>Where will the signer or signers be physically located?</label><input id="intake-signer-location" maxLength={500} className={inputCls} value={form.signerLocation} onChange={event => setField("signerLocation", event.target.value)} placeholder="City, state and country, or not yet known" /></div>
                 {questionPlan.showServiceLocation && <div><label htmlFor="intake-service-location" className={labelCls}>Where would you like the notary to meet you?</label><input id="intake-service-location" maxLength={2000} className={inputCls} value={form.mobileAddress} onChange={event => setField("mobileAddress", event.target.value)} placeholder="Requested location — availability subject to review" /></div>}
-                <div><label htmlFor="intake-witness-context" className={labelCls}>What does your document say about witnesses?</label><textarea id="intake-witness-context" maxLength={3000} className={inputCls} value={form.witnessContext ?? ""} onChange={event => setField("witnessContext", event.target.value)} placeholder="Copy the wording, or tell us you’re not sure. We’ll review the requirement." /></div>
+                {!questionPlan.witnessAfterTiming && witnessControl}
                 <div><label htmlFor="intake-international-use" className={labelCls}>Will the document be used outside the United States?</label><select id="intake-international-use" className={inputCls} value={form.internationalUse === undefined ? "" : String(form.internationalUse)} onChange={event => setField("internationalUse", event.target.value === "" ? undefined : event.target.value === "true")}><option value="">Not yet known</option><option value="false">No</option><option value="true">Yes — add document-use details</option></select></div>
               </div>}
               {detail === "use" && <div className="space-y-5">
@@ -577,6 +579,8 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialS
               {detail === "contact" && <>
                 <div><label htmlFor="intake-timeline" className={labelCls}>When do you need it?</label><select id="intake-timeline" aria-describedby={error ? "intake-step-error" : undefined} aria-invalid={Boolean(error && !form.timelineChoice)} className={inputCls} value={form.timelineChoice} onChange={event => setField("timelineChoice", event.target.value as TimelineChoice)}><option value="">Select preferred timing</option><option value="standard">Standard</option><option value="expedited">Expedited</option><option value="urgent">Urgent / same-day review</option></select></div>
                 <div className="mt-4"><label htmlFor="intake-deadline" className={labelCls}>Desired date / time or deadline (if known)</label><input id="intake-deadline" maxLength={100} className={inputCls} value={form.deadline} onChange={event => setField("deadline", event.target.value)} placeholder="Date, time and time zone" /></div>
+                {questionPlan.witnessAfterTiming && <div className="mt-5">{witnessControl}</div>}
+                {questionPlan.showDelivery && <div className="mt-5"><label htmlFor="intake-delivery" className={labelCls}>How would you like your documents returned?</label><select id="intake-delivery" className={inputCls} value={form.deliveryChoice} onChange={event=>setField("deliveryChoice",event.target.value as DeliveryChoice)}><option value="">Not sure — discuss during review</option><option value="digital">Digital return</option><option value="domestic_courier">Domestic courier</option><option value="international_courier">International courier</option></select></div>}
                 {questionPlan.professional && <div className="mt-4 grid gap-4"><p className="text-sm text-[#9A9488]">You remain counsel. Milano handles the U.S. execution workflow.</p><div><label htmlFor="intake-firm" className={labelCls}>Firm / professional organization</label><input id="intake-firm" maxLength={500} className={inputCls} value={form.firm ?? ""} onChange={event => setField("firm", event.target.value)} /></div><div><label htmlFor="intake-professional-country" className={labelCls}>Your country</label><input id="intake-professional-country" maxLength={200} className={inputCls} value={form.professionalCountry ?? ""} onChange={event => setField("professionalCountry", event.target.value)} /></div></div>}
               <div className="mt-7 border-t border-[rgba(198,165,90,0.1)] pt-6">
                 <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ms-gold)]/70">Your contact</div>
@@ -657,9 +661,9 @@ export function SmartIntakeSOPWizard({ initialServiceIntent = "unsure", initialS
                   </select>
                 </div>
                 {questionPlan.showDelivery && <div>
-                  <label htmlFor="review-delivery" className={labelCls}>Delivery method <span className="text-[var(--ms-gold)]">*</span></label>
+                  <label htmlFor="review-delivery" className={labelCls}>Delivery preference <span className="normal-case tracking-normal text-[#9A9488]">(if known)</span></label>
                   <select id="review-delivery" value={form.deliveryChoice} onChange={(e) => setField("deliveryChoice", e.target.value as DeliveryChoice)} className={inputCls}>
-                    <option value="">— Select delivery —</option>
+                    <option value="">Not sure — discuss during review</option>
                     <option value="digital">Digital return</option>
                     <option value="domestic_courier">Domestic courier</option>
                     <option value="international_courier">International courier</option>

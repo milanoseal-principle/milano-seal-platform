@@ -12,7 +12,7 @@ export function getSmartIntakeQuestionPlan(context:{intent:unknown;description?:
  const professional=intent==='foreign_counsel';
  const signerDetailsNeeded=!professional&&(!['apostille','authentication'].includes(intent)||c.notarization==='required');
  return {intent,international,domestic,professional,
-  showDestination:!domestic,showOrigin:international,showAuthority:international,showAuthentication:international,showTranslation:international,showDelivery:!domestic,showServiceLocation:intent==='domestic_execution',
+  witnessAfterTiming:['ron','domestic_execution'].includes(intent),showDestination:!domestic,showOrigin:international,showAuthority:international,showAuthentication:international,showTranslation:international,showDelivery:!domestic,showServiceLocation:intent==='domestic_execution',
   questions:context.questions.filter(q=>!domestic||!['destination','document_origin','apostille_needed'].includes(q.id)),
   detailSteps:!signerDetailsNeeded?['use','contact']:domestic?['signers','contact']:['ron','witness','domestic_execution'].includes(intent)?['signers','use','contact']:['use','signers','contact'],
   requiredClientInputs:['description','name','email','timelineChoice'],

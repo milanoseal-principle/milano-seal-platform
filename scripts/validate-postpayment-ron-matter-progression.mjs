@@ -27,11 +27,9 @@ assert.ok(gateMigrations.includes('089_verified_settlement_scheduling_gate.sql')
 assert.match(migration, /NEW\.payment_confirmed is true/);
 assert.match(migration, /NEW\.payment_status = 'paid'/);
 assert.match(migration, /NEW\.payment_settlement_status = 'cleared'/);
-assert.match(migration, /NEW\.payment_observed_amount is not null/);
-assert.match(migration, /NEW\.payment_observed_amount=NEW\.amount_due/);
-assert.match(migration, /observed_pending/);
+assert.doesNotMatch(migration, /settlement_verified or (observed_valid|provider_valid)/);
+assert.match(migration, /verified Wise settlement required before execution/);
 assert.match(migration, /target='scheduled'/);
-assert.match(migration, /WISE_PROVIDER_EVIDENCE_REQUIRED/);
 assert.match(migration, /'payment_confirmed','in_transit','delivered','completed'/);
 assert.match(migration, /PAYMENT_REQUIRED: verified Wise settlement required/);
 assert.doesNotMatch(migration, /payment_status\s*:=\s*'paid'/i);

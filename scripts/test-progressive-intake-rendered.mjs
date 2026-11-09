@@ -28,12 +28,12 @@ try{
   await page.locator('#service-intent').selectOption('witness');await page.locator('#service-intent').selectOption('ron');assert.equal(creates,0,'Intent switching must never create a Matter');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
   assert.equal(await page.locator('#intake-destination').count(),0);assert.equal(await page.locator('#review-apostille').count(),0);
-  await page.locator('#intake-signers').fill('1');await page.locator('#intake-signer-location').fill('Tampa, Florida, United States');await page.locator('#intake-witness-context').fill('I am not sure; please review the document.');
+  await page.locator('#intake-signers').fill('1');await page.locator('#intake-signer-location').fill('Tampa, Florida, United States');
   await page.getByRole('button',{name:'Back',exact:true}).click();await page.getByText('synthetic-affidavit.pdf',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Continue',exact:true}).click();assert.equal(await page.locator('#intake-signers').inputValue(),'1');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
   await page.getByRole('button',{name:'Review request',exact:true}).click();await page.getByText('Your name is required.',{exact:true}).waitFor();assert.equal(await page.locator('#intake-name').evaluate(e=>document.activeElement===e),true);
-  await page.locator('#intake-name').fill('Synthetic Person');await page.locator('#intake-email').fill('synthetic@example.invalid');await page.locator('#intake-timeline').selectOption('standard');
+  await page.locator('#intake-name').fill('Synthetic Person');await page.locator('#intake-email').fill('synthetic@example.invalid');await page.locator('#intake-timeline').selectOption('standard');await page.locator('#intake-witness-context').fill('I am not sure; please review the document.');
   await page.getByRole('button',{name:'Review request',exact:true}).click();
   assert.equal(await page.locator('[role=progressbar]').getAttribute('aria-valuenow'),'4');assert.equal(await page.locator('[role=progressbar]').getAttribute('aria-valuemax'),'4');
   assert.equal(await page.locator('#review-destination').count(),0);assert.equal(await page.locator('#review-origin').count(),0);assert.equal(await page.locator('#review-translation').count(),0);
