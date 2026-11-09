@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { portalRONProjection } from "@/lib/bluenotary/projection";
-import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { evaluateExecutionGate, evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { normalizeExecutionTruth } from "@/lib/matter/executionTruth";
 import { ClientProgressSpine } from "@/components/portal/ClientProgressSpine";
 import { PortalRONStatusCard } from "@/components/ron/PortalRONStatusCard";
@@ -19,7 +19,7 @@ export default async function PortalRONPage() {
 
   const email = normalizeEmail(user.email);
   const admin = createAdminClient();
-  const { data: candidate } = await admin.from("deals").select("id, deal_id, email, status, deal_status, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: candidate } = await admin.from("deals").select("id, deal_id, email, status, deal_status, document_type, execution_truth, scheduled_at, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, payment_attempt_id, payment_attempt_started_at, wise_provider_evidence, amount_due, amount_paid, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue").eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const deal = candidate && emailsMatch(candidate.email, email) ? candidate : null;
 
   if (!deal) return <main className="mx-auto max-w-2xl px-4 py-16"><h1 className="text-3xl text-[#F6F1E6]">Your signing session</h1><p className="mt-4 text-sm text-white/55">No active Matter was found. Contact your Milano coordinator if you need assistance.</p></main>;
@@ -34,7 +34,7 @@ export default async function PortalRONPage() {
     const verified = await admin.rpc('ron_statutory_evidence_verified', {p_session:session.id});
     session.statutory_evidence_verified = !verified.error && verified.data === true;
   }
-  const projection = session ? portalRONProjection(session as RONSession, (signers ?? []) as RONSigner[], email) : null;
+  const projection = session ? portalRONProjection(session as RONSession, (signers ?? []) as RONSigner[], email, { schedulingAuthorized: scheduling.schedulingEligible, executionAuthorized: evaluateExecutionGate(deal).schedulingEligible }) : null;
   const ronStatus = projection?.milano_ron_status ?? null;
   const matterStatus = String(deal.deal_status ?? deal.status ?? "");
   const progressStage =

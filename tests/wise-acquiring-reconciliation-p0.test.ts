@@ -39,8 +39,8 @@ test("settled balance statement can verify payment without Acquiring Activity", 
 });
 
 test("provider observation never authors paid state before settled Wise evidence", () => {
-  assert.match(reconciliation, /payment_settlement_status:\s*"observed_pending"/);
-  assert.match(reconciliation, /payment_funding_method:\s*"wise_acquiring_payment"/);
+  assert.match(reconciliation, /record_wise_attempt_evidence/);
+  assert.match(reconciliation, /record_wise_attempt_evidence/);
   assert.doesNotMatch(reconciliation, /payment_status:\s*"paid"/);
   assert.doesNotMatch(reconciliation, /payment_confirmed:\s*true/);
 });
@@ -60,7 +60,7 @@ test("unsupported statement access fails closed instead of fabricating settlemen
 test("provider processing cannot bypass the shared verified-settlement gate", () => {
   assert.match(guards, /verifyExecutionPaymentAuthorized/);
   assert.match(guards, /wise_transaction_reference/);
-  assert.match(guards, /payment_funding_method === 'wise_acquiring_payment'/);
+  assert.match(guards, /evaluateExecutionGate\(data\)/);
   assert.match(guards, /assertCanReleaseSigningURL[\s\S]*verifyExecutionPaymentAuthorized/);
   assert.match(guards, /assertCanAdvanceToApostille[\s\S]*verifyExecutionPaymentAuthorized/);
   assert.match(guards, /Final international release remains governed/);

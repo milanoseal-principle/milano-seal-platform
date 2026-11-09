@@ -1,0 +1,210 @@
+{
+  "source_sha": "a464e50a72f60b6416fc2a988f68a13a715ab0e9",
+  "source_tree": "b278d4f64f36470dccbbd64019898ef0c932ee89",
+  "lockfile_sha256": "b04a1b3fd413705a7bc9a418529102342f8a021b74ea9b81693e6ee3fc934371",
+  "node": "v24.19.0",
+  "started_at": "2026-11-09T06:05:05.546Z",
+  "scope": "ISOLATED_LOCAL_SOURCE_ONLY",
+  "public_auth_configuration": "INERT_LOOPBACK_NO_SESSION",
+  "steps": [
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started_at": "2026-11-09T06:05:05.547Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:05:05.554Z",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "route-types",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "node_modules/next/dist/bin/next",
+        "typegen"
+      ],
+      "started_at": "2026-11-09T06:05:05.554Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:05:05.866Z",
+      "log_sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "name": "visual-system",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/validate-final-visual-system-hardening.mjs"
+      ],
+      "started_at": "2026-11-09T06:05:05.867Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:05:05.900Z",
+      "log_sha256": "449e3b1c85158df5d974adbfc2570575d7ff2bac8ef9b38ff59e8e155d59db4f"
+    },
+    {
+      "name": "vercel-merge-gate",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-vercel-merge-gate.mjs"
+      ],
+      "started_at": "2026-11-09T06:05:05.900Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:19.331Z",
+      "log_sha256": "9815a706db917779c66d256adf92e4c0c02d1a3f940d9356b40c290ba30b7fe3"
+    },
+    {
+      "name": "production-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "started_at": "2026-11-09T06:09:19.331Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:37.801Z",
+      "log_sha256": "0009a1271ca39e5be5d919ae1056763964c65580256325730218aca56c4feacc"
+    },
+    {
+      "name": "p3-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-database"
+      ],
+      "started_at": "2026-11-09T06:09:37.801Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:39.743Z",
+      "log_sha256": "f28443e52445da879c2743fbc1304663d4681ad5e3e16bf70597c6f2c4b1d157"
+    },
+    {
+      "name": "p5-database",
+      "command": [
+        "npm",
+        "run",
+        "test:p5-database"
+      ],
+      "started_at": "2026-11-09T06:09:39.743Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:41.546Z",
+      "log_sha256": "4c8acd26da957cefa7673cf0310d4e13d7f6bf0d06891b968be46b63d952f8a4"
+    },
+    {
+      "name": "governance-regressions",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-regressions"
+      ],
+      "started_at": "2026-11-09T06:09:41.546Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:46.654Z",
+      "log_sha256": "b4e21f21b812b4647d2639ca8cd345e9270f1bf62a3167524609f5582d3f640b"
+    },
+    {
+      "name": "source-certification",
+      "command": [
+        "npm",
+        "run",
+        "test:production-certification-source"
+      ],
+      "started_at": "2026-11-09T06:09:46.654Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:58.357Z",
+      "log_sha256": "72fe5ec4095b33e895a0138c2fc6a0d2f88ae3939bdcee88a679b912a17d884f"
+    },
+    {
+      "name": "dependency-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=moderate"
+      ],
+      "started_at": "2026-11-09T06:09:58.358Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:09:58.922Z",
+      "log_sha256": "6d8c5c8f3d7684adb070417bd608d01ae90aa3dc26a65af03ffda4955f38d9a3"
+    },
+    {
+      "name": "governance-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:ai-governance-rendered"
+      ],
+      "started_at": "2026-11-09T06:09:58.922Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:11:15.663Z",
+      "log_sha256": "8b3492b9944ecb587e2b648933201cb33e4817cde517374c8808270cce464585"
+    },
+    {
+      "name": "p3-rendered",
+      "command": [
+        "npm",
+        "run",
+        "test:p3-rendered"
+      ],
+      "started_at": "2026-11-09T06:11:15.663Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:11:28.923Z",
+      "log_sha256": "5fcdef430fa9be849a88050803a86dc3a185cb11f773f75bca595fc7b69ce218"
+    },
+    {
+      "name": "map-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-map-proof.mjs"
+      ],
+      "started_at": "2026-11-09T06:11:28.924Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:11:49.735Z",
+      "log_sha256": "cb1db4518d7e4a642d2093128d97630a6e654fe25e45b9e50f544c00086e96db"
+    },
+    {
+      "name": "public-production-rendered",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "scripts/run-rendered-production-acceptance.mjs"
+      ],
+      "started_at": "2026-11-09T06:11:51.008Z",
+      "status": "PASS",
+      "exit_code": 0,
+      "signal": null,
+      "finished_at": "2026-11-09T06:13:53.296Z",
+      "log_sha256": "81b72bec60fd444e5d384d7551ba5370eabb9e9e8220e8d6ed136dbf7f19581e"
+    }
+  ],
+  "status": "PASS",
+  "github_statuses_modified": false,
+  "hosted_preview": "NOT_RUN",
+  "production_deployment": "NOT_RUN",
+  "agents_activated": false,
+  "finished_at": "2026-11-09T06:13:53.333Z"
+}

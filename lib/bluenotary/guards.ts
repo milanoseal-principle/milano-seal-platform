@@ -2,8 +2,9 @@
 // All guards throw on failure; callers must catch and return 403/400.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isRonSigningSessionActive } from '@/lib/bluenotary/projection';
 import { evaluatePaymentIntegrity } from '@/lib/safety/payment-integrity';
-import { evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
+import { evaluateExecutionGate, evaluateSchedulingGate } from '@/lib/scheduling/complimentarySchedulingGate';
 
 export class RONGuardError extends Error {
   constructor(
@@ -22,7 +23,7 @@ async function verifyPaymentConfirmed(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, amount_paid, amount_due')
+    .select('id, deal_id, payment_confirmed, payment_status, payment_settlement_status, amount_paid, amount_due')
     .eq('id', matterId)
     .single();
 
@@ -60,7 +61,7 @@ async function verifySchedulingAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, deal_id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
@@ -85,7 +86,7 @@ async function verifyExecutionPaymentAuthorized(
 ): Promise<void> {
   const { data, error } = await supabase
     .from('deals')
-    .select('id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
+    .select('id, deal_id, payment_confirmed, payment_status, payment_settlement_status, payment_observed_at, payment_observed_amount, payment_observed_currency, payment_observed_reference, currency, wise_reference, wise_transaction_reference, payment_funding_method, payment_attempt_id, payment_attempt_started_at, wise_provider_evidence, amount_paid, amount_due, payment_disposition, comp_authorized, comp_authorization_id, comp_authorized_at, comp_revoked_at, verified_revenue')
     .eq('id', matterId)
     .single();
 
@@ -93,23 +94,9 @@ async function verifyExecutionPaymentAuthorized(
     throw new RONGuardError('MATTER_NOT_FOUND', `Matter ${matterId} not found`);
   }
 
-  const schedulingGate = evaluateSchedulingGate({ matter: data });
-  if (!schedulingGate.schedulingEligible) {
-    throw new RONGuardError('PAYMENT_REQUIRED', schedulingGate.reason);
-  }
-
-  if (schedulingGate.paymentRequirementMethod === 'wise_submission_observed') {
-    const providerEvidence =
-      typeof data.wise_transaction_reference === 'string' &&
-      data.wise_transaction_reference.trim().length > 0 &&
-      data.payment_funding_method === 'wise_acquiring_payment';
-
-    if (!providerEvidence) {
-      throw new RONGuardError(
-        'WISE_PROVIDER_EVIDENCE_REQUIRED',
-        'Wise must expose the submitted payment to Milano server-side reconciliation before the signing link can be released'
-      );
-    }
+  const gate = evaluateExecutionGate(data);
+  if (!gate.schedulingEligible) {
+    throw new RONGuardError('WISE_PROVIDER_EVIDENCE_REQUIRED', gate.reason);
   }
 }
 
@@ -179,13 +166,13 @@ export async function assertCanReleaseSigningURL(
 
   const { data: session } = await supabase
     .from('ron_sessions')
-    .select('id, milano_ron_status, expired_at')
+    .select('id, milano_ron_status, ron_lifecycle_state, expired_at')
     .eq('id', ronSessionId)
     .eq('matter_id', matterId)
     .single();
 
   if (!session) throw new RONGuardError('SESSION_NOT_FOUND', `RON session ${ronSessionId} not found`);
-  if (session.milano_ron_status === 'RON_EXPIRED' || (session.expired_at && new Date(session.expired_at) < new Date())) {
+  if (!isRonSigningSessionActive(session)) {
     throw new RONGuardError('SESSION_EXPIRED', 'This RON session has expired');
   }
 

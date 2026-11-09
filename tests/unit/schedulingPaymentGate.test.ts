@@ -172,7 +172,9 @@ test("zero-value courtesy authorization never substitutes for Wise settlement", 
 test('observed scheduling, provider execution and settlement authority remain distinct', () => {
   assert.equal(evaluateSchedulingGate({matter:observedSubmission}).schedulingEligible,true);
   assert.equal(evaluateExecutionGate(observedSubmission).schedulingEligible,false);
-  const provider={...observedSubmission,wise_transaction_reference:'controlled-provider-reference',payment_funding_method:'wise_acquiring_payment'};
+  const provider={...observedSubmission,wise_transaction_reference:'controlled-provider-reference',payment_funding_method:'wise_acquiring_payment',
+    payment_attempt_id:'current-attempt',payment_attempt_started_at:'2026-01-01T00:00:00Z',
+    wise_provider_evidence:{attempt_id:'current-attempt',matter_id:observedSubmission.id,resource_id:'controlled-provider-reference',status:'IN_PROGRESS',occurred_at:'2026-01-01T00:01:00Z',amount:observedSubmission.amount_due,currency:observedSubmission.currency,reference:observedSubmission.wise_reference}};
   assert.equal(evaluateExecutionGate(provider).schedulingEligible,true);
   assert.equal(evaluatePaymentGate(provider),'PAYMENT_REQUIRED');
   for(const change of [{payment_observed_amount:null},{payment_observed_currency:null},{payment_observed_reference:null},{amount_due:0},{amount_due:NaN},{amount_paid:1},{payment_status:'failed'},{payment_status:'refunded'},{payment_confirmed:true}]){

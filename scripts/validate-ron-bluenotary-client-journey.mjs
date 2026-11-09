@@ -18,7 +18,10 @@ assert.doesNotMatch(portal + card, /Choose Jurat|Choose Acknowledgment|Pay Again
 assert.match(card, /Wise settlement verification continues automatically/);
 assert.match(card, /Enter Secure Signing Room/);
 assert.match(projection, /signing_url_released === true/);
-assert.match(projection, /const schedulingAuthorized = ronSession\.payment_gate_status === 'UNLOCKED'/);
+assert.match(projection, /const schedulingAuthorized = authority\.schedulingAuthorized/);
+assert.match(projection, /authority\.executionAuthorized &&/);
+assert.match(projection, /isRonSigningSessionActive/);
+for (const file of ['app/api/portal/me/ron/route.ts','app/portal/ron/page.tsx']) assert.match(read(file), /executionAuthorized: evaluateExecutionGate\(deal\)\.schedulingEligible/);
 assert.doesNotMatch(projection, /payment_confirmed:/);
 assert.match(guard, /verifySchedulingAuthorized/);
 assert.doesNotMatch(guard, /is_platform_fee_only'/, "RON reads must not query the removed schema column");

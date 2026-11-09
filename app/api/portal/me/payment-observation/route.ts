@@ -10,25 +10,27 @@ import {
 } from "@/lib/notifications/transactionalEmailAlerts";
 import { reconcileWiseMatter } from "@/lib/wise/reconciliation";
 import { appendMatterEvidence, readMatterEvidence } from "@/lib/matter/evidenceLedger";
+import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
+import { hasCurrentWiseProviderEvidence } from "@/lib/wise/attemptEvidence";
 import { requiredPolicyBlockers } from "@/lib/policy/acceptance";
 
 export const runtime = "nodejs";
 
 const WISE_HANDOFF_EVENT = "WISE_PAYMENT_HANDOFF_OPENED";
-const WISE_SUBMISSION_EVENT = "WISE_PAYMENT_SUBMISSION_CONFIRMED_BY_CLIENT";
 const HANDOFF_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 
 async function loadMatter(id: string) {
   const admin = createAdminClient();
   return admin
     .from("deals")
-    .select("id,deal_id,client_name,email,payment_status,payment_settlement_status,payment_confirmed,payment_observed_at,payment_confirmed_at,amount_due,amount_paid,currency,wise_reference,wise_payment_url,wise_transaction_reference,payment_funding_method")
+    .select("id,deal_id,client_name,email,payment_status,payment_settlement_status,payment_confirmed,payment_observed_at,payment_confirmed_at,amount_due,amount_paid,currency,wise_reference,wise_payment_url:payment_link,wise_transaction_reference,payment_funding_method,payment_attempt_id,payment_attempt_started_at,wise_provider_evidence,payment_observed_amount,payment_observed_currency,payment_observed_reference")
     .eq("id", id)
     .single();
 }
 
 function payload(row: Record<string, unknown>) {
-  const paymentConfirmed = Boolean(row.payment_confirmed) || ["paid", "confirmed", "payment_confirmed"].includes(String(row.payment_status ?? "").toLowerCase());
+  const paymentConfirmed = evaluatePaymentGate({ ...row, id: String(row.id) } as Parameters<typeof evaluatePaymentGate>[0]) === "PAYMENT_CONFIRMED";
   return {
     matterId: String(row.id ?? ""),
     displayId: String(row.deal_id ?? row.id ?? ""),
@@ -40,7 +42,7 @@ function payload(row: Record<string, unknown>) {
     amountDue: Number(row.amount_due ?? 0),
     amountPaid: Number(row.amount_paid ?? 0),
     currency: String(row.currency ?? "USD").toUpperCase(),
-    providerEvidence: Boolean(row.wise_transaction_reference),
+    providerEvidence: hasCurrentWiseProviderEvidence({ ...row, id: String(row.id) } as Parameters<typeof hasCurrentWiseProviderEvidence>[0]),
   };
 }
 
@@ -211,7 +213,7 @@ export async function PUT(req: NextRequest) {
           ? "Wise reports this payment as cancelled. Please review the payment before continuing."
           : reconciliation.providerStatus === "REQUIRES_ATTENTION"
             ? "Wise reports that the payment requires attention. Your Matter remains preserved while it is reviewed."
-            : "Payment submission is recorded. Your Matter remains active while settlement completes; scheduling stays locked until verified Wise settlement."
+            : "Payment submission is recorded. Scheduling requires a matching current submission; execution requires current Wise provider evidence."
         : state.paymentObservedAt
           ? "Payment submission is recorded. Your Matter remains active while settlement completes in the background."
           : "No payment submission has been recorded yet.";
@@ -286,7 +288,8 @@ export async function POST(req: NextRequest) {
 
   // Preserve already-observed Matters (including pre-hardening production data)
   // without forcing clients to manufacture a second payment handoff.
-  if (currentState.paymentObservedAt && ["observed_pending", "observed_available"].includes(currentState.settlementStatus)) {
+  if (currentState.paymentObservedAt && ["observed_pending", "observed_available"].includes(currentState.settlementStatus) &&
+      evaluateSchedulingGate({ matter: currentRow as unknown as Parameters<typeof evaluateSchedulingGate>[0]["matter"] }).schedulingEligible) {
     return NextResponse.json({
       success: true,
       payment: currentState,
@@ -310,25 +313,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const now = new Date().toISOString();
   const admin = createAdminClient();
-  const { data: updated, error } = await admin
-    .from("deals")
-    .update({
-      payment_settlement_status: "observed_pending",
-      payment_observed_at: now,
-      // Immutable snapshot of the payable scope this submission was made against.
-      // The canonical scheduling authority fails closed if these later diverge
-      // from the live Matter. This never authors paid/settled state.
-      payment_observed_amount: snapshot.amountDue,
-      payment_observed_currency: snapshot.currency,
-      payment_observed_reference: snapshot.wiseReference,
-      updated_at: now,
-    })
-    .eq("id", ctx.deal.id)
-    .eq("payment_confirmed", false)
-    .select("id,deal_id,client_name,email,payment_status,payment_settlement_status,payment_confirmed,payment_observed_at,payment_confirmed_at,amount_due,amount_paid,currency,wise_reference,wise_payment_url,wise_transaction_reference,payment_funding_method")
-    .single();
+  // The row lock, snapshot check, attempt rotation and evidence append commit
+  // together. A failed write cannot emit a successful client observation.
+  const { data: updated, error } = await admin.rpc("begin_wise_payment_attempt", {
+    p_deal_id: ctx.deal.id,
+    p_handoff_id: handoff.id,
+    p_actor_id: user.id,
+  });
 
   if (error || !updated) {
     return NextResponse.json({ error: "Payment submission could not be recorded." }, { status: 500 });
@@ -336,25 +328,7 @@ export async function POST(req: NextRequest) {
 
   const row = updated as Record<string, unknown>;
   const state = payload(row);
-  await appendMatterEvidence({
-    matterId: state.matterId,
-    eventType: WISE_SUBMISSION_EVENT,
-    domain: "payment",
-    actorType: "client",
-    actorId: user.id,
-    occurredAt: now,
-    source: "portal-payment-confirmation",
-    sourceReference: snapshot.wiseReference,
-    evidenceReference: String(handoff.id ?? "") || null,
-    correlationId: handoff.correlation_id ?? null,
-    reason: "Client confirmed completion after a matching governed Wise handoff.",
-    metadata: {
-      amountDue: snapshot.amountDue,
-      currency: snapshot.currency,
-      wiseReference: snapshot.wiseReference,
-      paymentUrlFingerprint: snapshot.paymentUrlFingerprint,
-    },
-  });
+
 
   await notifyClient(state.matterId, "payment_observed");
   await sendPaymentObservedAlerts({

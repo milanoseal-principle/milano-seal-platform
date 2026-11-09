@@ -210,7 +210,10 @@ export async function POST(req: NextRequest) {
   const subscriptionId = String(payload.subscription_id ?? "");
   const data = asRecord(payload.data);
   const resource = asRecord(data.resource ?? payload.resource);
-  const occurredAt = String(data.occurred_at ?? payload.sent_at ?? new Date().toISOString());
+  const occurredAt = String(data.occurred_at ?? payload.occurred_at ?? payload.sent_at ?? "");
+  if (!Number.isFinite(Date.parse(occurredAt)) || Date.parse(occurredAt) > Date.now()) {
+    return NextResponse.json({ error: "Provider event timestamp required" }, { status: 422 });
+  }
   const resourceType = String(data.resource_type ?? resource.type ?? "");
   const resourceId = String(resource.id ?? resource.profileId ?? resource.profile_id ?? "");
   const currentState = String(
@@ -295,6 +298,7 @@ export async function POST(req: NextRequest) {
       testNotification,
       env,
       eventRowId,
+      occurredAt,
       supabase,
     });
   } catch (err) {
@@ -319,6 +323,7 @@ async function processWiseEvent(opts: {
   testNotification: boolean;
   env: string;
   eventRowId: string | null;
+  occurredAt: string;
   supabase: ReturnType<typeof createAdminClient>;
 }): Promise<void> {
   const {
@@ -335,7 +340,9 @@ async function processWiseEvent(opts: {
   const milanoStatus =
     eventType === "transfers#state-change"
       ? mapWiseTransferState(currentState)
-      : mapWiseBalanceEvent(eventType);
+      : eventType === "transfers#refund" ? "PAYMENT_REFUNDED"
+        : eventType === "transfers#payout-failure" ? "PAYMENT_FAILED"
+          : mapWiseBalanceEvent(eventType);
 
   const handledTypes = [
     "transfers#state-change",
@@ -375,7 +382,7 @@ async function processWiseEvent(opts: {
 
   const { data: deal } = await supabase
     .from("deals")
-    .select("id, deal_id, payment_status, amount_due, amount_paid, wise_reference")
+    .select("id, deal_id, payment_status, amount_due, amount_paid, wise_reference, currency, payment_attempt_id, payment_attempt_started_at, wise_transaction_reference")
     .or(`wise_reference.eq.${reference},deal_id.eq.${reference}`)
     .maybeSingle();
 
@@ -384,15 +391,6 @@ async function processWiseEvent(opts: {
     return;
   }
 
-  if (deal.payment_status === "paid") {
-    if (eventRowId) {
-      await supabase
-        .from("wise_webhook_events")
-        .update({ processed: true, processed_at: new Date().toISOString() })
-        .eq("id", eventRowId);
-    }
-    return;
-  }
 
   const eventAmount = extractAmount(data, resource);
   const eventCurrency = extractCurrency(data, resource);
@@ -441,7 +439,7 @@ async function processWiseEvent(opts: {
     await flagForReview(supabase, eventRowId, "overpayment", reference, deal.id);
     return;
   }
-  if (eventCurrency !== "USD") {
+  if (eventCurrency !== String(deal.currency ?? "").trim().toUpperCase()) {
     await flagForReview(supabase, eventRowId, "currency_mismatch", reference, deal.id);
     return;
   }
@@ -470,10 +468,47 @@ async function processWiseEvent(opts: {
     return;
   }
 
+  const resourceId = firstNonEmptyString(
+    resource.id != null ? String(resource.id) : "",
+    resource.transferId != null ? String(resource.transferId) : "",
+    data.transaction_id != null ? String(data.transaction_id) : "",
+  );
+  const invalidation = milanoStatus === "PAYMENT_FAILED" || milanoStatus === "PAYMENT_REFUNDED";
+  if (deal.payment_attempt_id) {
+    // Transfer processing is not incoming payment authority. Invalidation must
+    // identify the resource already bound to this attempt; an unrelated outbound
+    // transfer cannot cancel a client's payment from the Matter reference alone.
+    if (milanoStatus === "PAYMENT_PENDING") return;
+    if (invalidation && resourceId !== deal.wise_transaction_reference) {
+      await flagForReview(supabase, eventRowId, "provider_attempt_mismatch", reference, deal.id);
+      return;
+    }
+    if (invalidation || milanoStatus === "PAYMENT_CONFIRMED") {
+      const observed = await supabase.rpc("record_wise_attempt_evidence", {
+        p_deal_id: deal.id, p_attempt_id: deal.payment_attempt_id,
+        p_resource_id: resourceId,
+        p_status: invalidation ? (milanoStatus === "PAYMENT_REFUNDED" ? "REFUNDED" : "FAILED") : "SETTLED",
+        p_occurred_at: opts.occurredAt, p_amount: eventAmount,
+        p_currency: eventCurrency, p_reference: reference,
+        p_source: "wise-webhook", p_event_id: eventRowId,
+      });
+      if (observed.error || !observed.data?.accepted) {
+        await flagForReview(supabase, eventRowId, "provider_attempt_rejected", reference, deal.id);
+        return;
+      }
+    }
+  } else if (invalidation && resourceId !== deal.wise_transaction_reference) {
+    await flagForReview(supabase, eventRowId, "legacy_provider_attempt_mismatch", reference, deal.id);
+    return;
+  } else if (milanoStatus === "PAYMENT_PENDING" && ["failed", "refunded"].includes(deal.payment_status)) {
+    // Out-of-order pending must never reset an invalidated legacy payment.
+    return;
+  }
+
   if (milanoStatus === "PAYMENT_FAILED") {
     await supabase
       .from("deals")
-      .update({ payment_status: "failed", updated_at: new Date().toISOString() })
+      .update({ payment_status: "failed", payment_settlement_status: "failed", updated_at: new Date().toISOString() })
       .eq("id", deal.id);
     await logActivity({
       deal_id: deal.deal_id ?? deal.id,
@@ -488,7 +523,7 @@ async function processWiseEvent(opts: {
   if (milanoStatus === "PAYMENT_REFUNDED") {
     await supabase
       .from("deals")
-      .update({ payment_status: "refunded", updated_at: new Date().toISOString() })
+      .update({ payment_status: "refunded", payment_settlement_status: "refunded", updated_at: new Date().toISOString() })
       .eq("id", deal.id);
     await logActivity({
       deal_id: deal.deal_id ?? deal.id,

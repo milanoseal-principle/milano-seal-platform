@@ -9,10 +9,11 @@ where n.nspname='public' and c.relname in ('deals','document_versions','custody_
 select p.proname,pg_get_function_identity_arguments(p.oid) arguments,p.prosecdef,p.proacl,
  encode(sha256(convert_to(pg_get_functiondef(p.oid),'utf8')),'hex') definition_sha256
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-where n.nspname='public' and (p.proname like 'governance_%' or p.proname in ('is_operator','is_valid_matter_transition','enforce_canonical_matter_transition','check_payment_gate','issue_financial_artifact','append_custody_event','record_document_release','finalize_production_certification','missing_required_policy_acceptances')) order by p.proname,arguments;
+where n.nspname='public' and (p.proname like 'governance_%' or p.proname in ('is_operator','is_valid_matter_transition','enforce_canonical_matter_transition','check_payment_gate','current_wise_attempt_evidence','wise_execution_authorized','guard_ron_signing_authority','revoke_ron_signing_authority','begin_wise_payment_attempt','record_wise_attempt_evidence','invalidate_wise_attempt_authority','confirm_wise_payment_for_deal','issue_financial_artifact','append_custody_event','record_document_release','finalize_production_certification','missing_required_policy_acceptances')) order by p.proname,arguments;
 select schemaname,tablename,policyname,roles,cmd,qual,with_check from pg_policies where schemaname in ('public','storage') order by schemaname,tablename,policyname;
 select event_object_table,trigger_name,action_timing,event_manipulation from information_schema.triggers where trigger_schema='public' order by event_object_table,trigger_name;
 select tablename,indexname,indexdef from pg_indexes where schemaname='public' and tablename in ('deals','document_versions','custody_ledger','notifications','governance_tasks','governance_attempts') order by tablename,indexname;
+select column_name,data_type from information_schema.columns where table_schema='public' and table_name='deals' and column_name in ('payment_attempt_id','payment_attempt_started_at','wise_provider_evidence');
 select agent_id,enabled,charter_hash from public.governance_agents order by agent_id;
 select paused,mode,concurrency_limit,daily_budget from public.governance_settings;
 rollback;
