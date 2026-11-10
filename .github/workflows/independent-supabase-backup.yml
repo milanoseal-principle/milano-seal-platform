@@ -48,6 +48,7 @@ jobs:
           docker run --rm -e SUPABASE_DB_URL -v "$RUNNER_TEMP/milano-backup/database:/backup" postgres:17 sh -ec 'pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file=/backup/auth-storage-data.dump'
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id" > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/export_storage.py "$RUNNER_TEMP/milano-backup/storage" "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
+          python3 scripts/backups/verify_backup.py "$RUNNER_TEMP/milano-backup"
       - name: Encrypt locally and upload off platform
         shell: bash
         run: |
@@ -61,7 +62,12 @@ jobs:
           aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "$RUNNER_TEMP/backup.tar.gpg" "s3://$BACKUP_S3_BUCKET/$KEY" --only-show-errors
           aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "$RUNNER_TEMP/backup.sha256" "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" --only-show-errors
           aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3api head-object --bucket "$BACKUP_S3_BUCKET" --key "$KEY" --query ContentLength --output text | awk '$1 > 0 { ok=1 } END { exit !ok }'
-          echo "Backup encrypted, uploaded, and remote object verified: $STAMP"
+          # Read back the remote encrypted bytes and checksum; never trust HEAD alone.
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/$KEY" "$RUNNER_TEMP/remote-backup.tar.gpg" --only-show-errors
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256" --only-show-errors
+          test "$(sha256sum "$RUNNER_TEMP/remote-backup.tar.gpg" | awk '{print $1}')" = "$(cat "$RUNNER_TEMP/remote-backup.sha256")"
+          cmp "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256"
+          echo "Backup encrypted, uploaded, and remote ciphertext verified: $STAMP (restore certification still pending)"
       - name: Always remove temporary sensitive files
         if: always()
-        run: rm -rf "$RUNNER_TEMP/milano-backup" "$RUNNER_TEMP/backup.tar.gpg" "$RUNNER_TEMP/backup.sha256"
+        run: rm -rf "$RUNNER_TEMP/milano-backup" "$RUNNER_TEMP/backup.tar.gpg" "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.tar.gpg" "$RUNNER_TEMP/remote-backup.sha256"

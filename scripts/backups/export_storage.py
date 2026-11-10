@@ -55,6 +55,9 @@ for bucket in buckets:
     names = list(enumerate_objects(bucket))
     if len(names) != len(set(names)):
         raise RuntimeError(f"Duplicate listing for {bucket}")
+    # Fail on changed inventory, not just object count. This catches equal-size
+    # replacements and makes an unstable export visibly incomplete.
+    initial_names = tuple(sorted(names))
     if len(names) != expected.get(bucket, 0):
         raise RuntimeError(f"Storage object mismatch in {bucket}: API={len(names)}, database={expected.get(bucket, 0)}")
     manifest["counts"][bucket] = len(names)
@@ -73,6 +76,9 @@ for bucket in buckets:
                 digest.update(chunk)
                 size += len(chunk)
         manifest["files"].append({"bucket": bucket, "path": name, "bytes": size, "sha256": digest.hexdigest()})
+    final_names = tuple(sorted(enumerate_objects(bucket)))
+    if final_names != initial_names:
+        raise RuntimeError(f"Storage inventory changed during export for {bucket}; retry backup")
 
 (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
 print("Verified Storage objects:", {x: manifest["counts"][x] for x in buckets})
