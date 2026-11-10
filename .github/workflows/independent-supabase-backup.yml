@@ -45,7 +45,7 @@ jobs:
           supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/data.sql" --use-copy --data-only
           # The standard Supabase CLI dump excludes managed auth/storage schemas.
           # Capture auth records and Storage metadata independently and fail closed on errors.
-          pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file="$RUNNER_TEMP/milano-backup/database/auth-storage-data.dump"
+          docker run --rm -e SUPABASE_DB_URL -v "$RUNNER_TEMP/milano-backup/database:/backup" postgres:17 sh -ec 'pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file=/backup/auth-storage-data.dump'
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id" > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/export_storage.py "$RUNNER_TEMP/milano-backup/storage" "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
       - name: Encrypt locally and upload off platform
