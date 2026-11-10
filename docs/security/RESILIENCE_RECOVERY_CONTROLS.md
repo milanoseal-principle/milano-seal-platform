@@ -71,3 +71,9 @@ Store exports in encrypted, founder-controlled storage.
 - If Shippo is unavailable, preserve actual handoff/custody evidence through the governed operator workflow; do not manufacture shipment purchase, delivery or closeout evidence.
 - If the RON provider is unavailable, record the blocker and obtain governed route review before changing the execution method. Keep payment and statutory-evidence requirements enforced.
 - If Supabase is unavailable: no portal access. Communicate ETA to active clients.
+
+## PR473 additional review — 2026-11-10
+
+The existing backup implementation now binds database bytes to manifest format2, rejects symlinked roots/unlisted content, requires revision sizes, commits the manifest atomically, and inspects TAR headers before extraction. The existing workflow verifies its production database target/TLS/PostgreSQL17 and custom-dump readability and is restricted to reviewed main.44 offline regressions pass; actual remote decryption and isolated restoration remain unperformed.
+
+Run42845657797/job129932291740 failed before any steps due to GitHub account billing/spending restrictions. Current execution bindings and secret metadata access are unavailable; no R2 privacy/retention/rotation, independent encryption-key custody, compatible isolated target, consistency window, delivered alert or independent freshness monitor has been verified. Production schema/migration and deployment facts above remain historical observations, not fresh hosted certification. No migration batch was reapplied and no production/restore/provider operation was performed. **Disaster recovery certification: BLOCKED.** See the canonical [backup runbook](../independent-free-plan-backups.md) for exact prerequisites and the actual-archive drill.

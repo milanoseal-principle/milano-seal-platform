@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   backup:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -40,6 +41,13 @@ jobs:
           for name in SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_GPG_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT; do
             test -n "${!name:-}" || { echo "::error::Missing required secret: $name"; exit 1; }
           done
+          python3 - <<'PYTHON'
+          import os
+          from scripts.backups.export_storage import validate_database_url
+          validate_database_url(os.environ["SUPABASE_DB_URL"], os.environ["SUPABASE_PROJECT_REF"])
+          PYTHON
+          # Verify the live connection is TLS and PostgreSQL 17, without logging its URL.
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -c "select current_setting('server_version_num')::int between 170000 and 179999 and coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)" | awk '$0 == "t" { ok=1 } END { exit !ok }'
           umask 077
           mkdir -p "$RUNNER_TEMP/milano-backup/database" "$RUNNER_TEMP/milano-backup/storage"
           supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/roles.sql" --role-only
@@ -48,6 +56,7 @@ jobs:
           # The standard Supabase CLI dump excludes managed auth/storage schemas.
           # Capture auth records and Storage metadata independently and fail closed on errors.
           docker run --rm -e SUPABASE_DB_URL -v "$RUNNER_TEMP/milano-backup/database:/backup" postgres:17 sh -ec 'pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file=/backup/auth-storage-data.dump'
+          docker run --rm -v "$RUNNER_TEMP/milano-backup/database:/backup:ro" postgres:17 pg_restore --list /backup/auth-storage-data.dump > /dev/null
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id" > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/export_storage.py "$RUNNER_TEMP/milano-backup/storage" "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/verify_backup.py "$RUNNER_TEMP/milano-backup"

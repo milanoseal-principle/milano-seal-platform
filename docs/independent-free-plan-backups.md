@@ -47,7 +47,7 @@ Important caveats: Supabase CLI excludes managed schemas; the separate managed-d
 ## Revision and archive integrity checks
 
 - `python3 scripts/backups/test_backups.py -v` runs offline without provider access. PR CI and the existing backup workflow both run it.
-- Storage enumeration advances by actual rows returned and stops only on an empty page. Nested objects, duplicate pages and malformed paths fail closed.
+- Storage enumeration advances by actual rows returned and stops only on an empty page. Nested object keys and duplicate basenames are preserved; duplicate pages and malformed paths fail closed.
 - Before downloading, capture all three bucket inventories with object IDs, update timestamps, and available ETag/size metadata. After all downloads, compare every bucket again. Same-name overwrites and earlier-bucket changes invalidate the export.
 - The manifest records each downloaded object revision, byte count and SHA-256. It is written only after all revision comparisons pass. Missing revisions or partial downloads do not produce a success manifest.
 - Offline verification rejects object, directory and database-export symlinks before resolving their targets.
@@ -57,6 +57,28 @@ Important caveats: Supabase CLI excludes managed schemas; the separate managed-d
 Any database export error, bucket mismatch, download failure, encryption failure, upload failure, or object verification error fails the GitHub run. Do not delete working source data, disable RLS, expose backup blobs publicly, or push sensitive exports to GitHub Actions artifacts.
 
 ## Limitations
-This is a daily logical snapshot, not continuous point-in-time recovery. Up to a full day of changes could be lost even if the schedule runs perfectly. GitHub's runner duration and free quota may limit large backups. The workflow depends on reachable Supabase and independent S3 services; periodically test from fresh machines.
+This is a scheduled best-effort logical export, not a shared database/Storage snapshot or continuous point-in-time recovery. No RPO/RTO or recoverable point has been measured; separate dump commands and object revisions alone cannot establish one. GitHub's runner duration and free quota may limit large backups. The workflow depends on reachable Supabase and independent S3 services; periodically test from fresh machines.
 
 Sources: https://supabase.com/docs/guides/platform/backups and https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
+
+## Additional integrity review — 2026-11-10
+
+Review of PR #473 reproduced acceptance of a symlinked backup root, modified nonempty database exports and unlisted Storage files. The same canonical exporter/verifier now rejects these cases. Integrity manifest format2 records SHA-256/bytes for the four required database exports (and the count inventory when present), plus required per-object revision sizes. Export rechecks local dump hashes after Storage downloads and atomically links a fully written/fsynced manifest into place; interrupted serialization leaves no success marker. The verifier rejects malformed manifest types, unlisted content, symlinked roots/ancestors and modified exports. Old manifests without these database hashes cannot be upgraded retroactively into proof of integrity.
+
+The existing workflow is main-only, validates the exact production direct/session database target and TLS configuration without logging its URI, checks live PostgreSQL17/TLS, and uses PostgreSQL17 `pg_restore --list` on the supplemental custom dump before encryption. An offline header/checksum check does not establish a semantically restorable database; an actual compatible restore remains mandatory. Database/Storage snapshot consistency is still NOT established. No production write-free window is authorized or implemented.
+
+Before extracting the decrypted TAR, run the existing verifier's read-only inspection mode:
+
+```sh
+python3 scripts/backups/verify_backup.py --archive backup.tar
+```
+
+It reads headers without extraction and rejects traversal/absolute/duplicate paths, symbolic/hard links, special/sparse types and missing required export members. Extract only into an empty approved isolated staging directory, without preserving archive ownership or permissions, then run the same verifier on the extracted root. These two checks are not a restoration procedure or a destination authorization.
+
+Offline regression suite:44 tests passed, including source-compatible Storage v1 file/folder shapes, capped pagination, overwrite/inter-bucket changes, empty objects/buckets, corrupt export bytes, missing revisions/sizes, interruption, failed manifest writing, root/file/directory links, unlisted data and unsafe TAR entries. This is synthetic/offline evidence, not a real encrypted archive or production restore.
+
+Fresh external observations: PR check130075900428 and newer backup job129932291740 both report the account payment/spending-limit startup error; the newer backup run42845657797 executed zero steps. Secret-binding metadata access returned403. The coding environment has none of the seven backup bindings and no permitted Supabase/R2/Vercel management connection. No account billing settings, R2 privacy/retention/key rotation, independent key custody, remote archive, restore target, alert destination or independent freshness monitor could be verified. No blocked workflow was repeatedly dispatched, no production secrets were retrieved, and no backup/restore was fabricated.
+
+Official Supabase guidance was refreshed from the project's current documentation source for `platform/migrating-within-supabase/backup-restore` on2026-11-10. It requires project-specific handling of custom Auth/Storage schema changes, login-role passwords and Vault/encryption-root continuity; encrypted database values do not carry the root key in the dump. Never copy production secrets merely to bypass a missing recovery connection, overwrite a target encryption root blindly, or replay managed data into an incompatible hosted schema. Required secure configuration inventory and independently retained keys remain owner dependencies.
+
+Recovery status remains **BLOCKED**: obtain reviewed exact-head checks, secure operational bindings, independently verify R2 access/privacy/90-day retention/rotation, establish a proven consistency mechanism or separately approved write-free window, then run the existing reviewed main workflow and recover its actual remote ciphertext into an explicitly named non-production target. Verify counts/hashes, compatible Auth/Storage, RLS/roles and canonical P19/P19-no-auth/P20–P23 checks against restored records. Record archive key/hash, backup age, restore start/end and actual duration; do not infer guaranteed RPO/RTO from one drill. Alerts require an explicitly authorized destination and a freshness check independent of this Actions scheduler; red badges and an installed cron are insufficient.

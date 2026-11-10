@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import sys
+import tempfile
 import urllib.parse
 import urllib.request
 
@@ -19,6 +20,61 @@ def safe_path(name):
     if path.is_absolute() or any(p in ("", ".", "..") for p in name.split("/")):
         raise RuntimeError("Unsafe object path")
     return path
+
+
+def file_record(path, allow_empty=False):
+    if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file():
+        raise RuntimeError("Invalid backup file")
+    digest, size = hashlib.sha256(), 0
+    with path.open("rb") as fh:
+        while chunk := fh.read(1024 * 1024):
+            size += len(chunk)
+            digest.update(chunk)
+    if size == 0 and not allow_empty:
+        raise RuntimeError("Empty backup file")
+    return {"bytes": size, "sha256": digest.hexdigest()}
+
+
+def database_inventory(root):
+    result = {name: file_record(root / name) for name in
+              ("roles.sql", "schema.sql", "data.sql", "auth-storage-data.dump")}
+    counts = root / "storage-object-counts.tsv"
+    if counts.exists() or counts.is_symlink():
+        result[counts.name] = file_record(counts, allow_empty=True)
+    with (root / "auth-storage-data.dump").open("rb") as fh:
+        if fh.read(5) != b"PGDMP":
+            raise RuntimeError("Invalid custom database archive header")
+    return result
+
+
+def validate_revision(revision):
+    if (not isinstance(revision, dict) or not isinstance(revision.get("id"), str)
+            or not revision["id"] or not isinstance(revision.get("updated_at"), str)
+            or not revision["updated_at"] or type(revision.get("size")) is not int
+            or revision["size"] < 0 or (revision.get("etag") is not None
+                                      and not isinstance(revision["etag"], str))):
+        raise RuntimeError("Object revision unavailable or invalid")
+    return revision
+
+
+def validate_database_url(value, project_ref):
+    """Reject wrong targets, transaction pools and non-TLS URLs without echoing secrets."""
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+        direct = parsed.hostname == f"db.{project_ref}.supabase.co"
+        session = (bool(parsed.hostname) and parsed.hostname.endswith(".pooler.supabase.com")
+                   and urllib.parse.unquote(parsed.username or "").endswith("." + project_ref))
+        valid = (parsed.scheme in ("postgres", "postgresql") and (direct or session)
+                 and parsed.port in (None, 5432) and parsed.path == "/postgres"
+                 and bool(parsed.username) and bool(parsed.password) and not parsed.fragment
+                 and query.get("sslmode") in (["require"], ["verify-ca"], ["verify-full"])
+                 and not set(query).intersection({"host", "hostaddr", "port", "user", "password",
+                                                  "dbname", "service", "servicefile", "passfile"}))
+    except (ValueError, TypeError, AttributeError):
+        valid = False
+    if not valid:
+        raise RuntimeError("Invalid production backup database target or TLS configuration") from None
 
 
 def request(url, payload=None):
@@ -51,7 +107,11 @@ def enumerate_objects(base, bucket, prefix=""):
             if "/" in name or name in seen:
                 raise RuntimeError("Duplicate or invalid storage listing")
             seen.add(name)
-            if item.get("id") is None:
+            if "id" not in item:
+                raise RuntimeError("Object revision unavailable")
+            if item["id"] is None:
+                if item.get("metadata") is not None:
+                    raise RuntimeError("Invalid folder listing")
                 yield from enumerate_objects(base, bucket, prefix + name + "/")
             else:
                 if not isinstance(item["id"], str) or not item["id"] or not item.get("updated_at"):
@@ -61,7 +121,7 @@ def enumerate_objects(base, bucket, prefix=""):
                     raise RuntimeError("Invalid object metadata")
                 revision = {"id": item["id"], "updated_at": item["updated_at"],
                             "etag": metadata.get("eTag"), "size": metadata.get("size")}
-                yield prefix + name, revision
+                yield prefix + name, validate_revision(revision)
         # Advance by actual rows; a server cap smaller than 1000 is not EOF.
         offset += len(rows)
 
@@ -80,6 +140,8 @@ def export(out, count_file):
     if len(ref) != 20 or not ref.isascii() or not ref.isalnum() or ref.lower() != ref:
         raise RuntimeError("Invalid Supabase project reference")
     base = f"https://{ref}.supabase.co/storage/v1"
+    if any(p.is_symlink() for p in (out, *out.parents)):
+        raise RuntimeError("Symlink in export destination")
     out.mkdir(parents=True, exist_ok=True)
     manifest_path = out / "manifest.json"
     if manifest_path.exists() or manifest_path.is_symlink():
@@ -92,8 +154,9 @@ def export(out, count_file):
             expected[bucket] = int(count)
     if set(expected) - set(BUCKETS):
         raise RuntimeError("Unrecognized nonempty Storage bucket")
+    database = database_inventory(out.parent / "database")
     initial = {bucket: inventory(base, bucket) for bucket in BUCKETS}
-    manifest = {"project_ref": ref, "files": [], "counts": {},
+    manifest = {"format_version": 2, "project_ref": ref, "files": [], "counts": {}, "database": database,
                 "consistency": "revision_checked_not_transactional_snapshot"}
     for bucket, objects in initial.items():
         if len(objects) != expected.get(bucket, 0):
@@ -120,8 +183,20 @@ def export(out, count_file):
     for bucket in BUCKETS:
         if inventory(base, bucket) != initial[bucket]:
             raise RuntimeError(f"Storage inventory or revision changed during export for {bucket}; retry backup")
-    with manifest_path.open("x") as fh:
-        json.dump(manifest, fh, indent=2, sort_keys=True)
+    if database_inventory(out.parent / "database") != database:
+        raise RuntimeError("Database exports changed during Storage export")
+    # Commit the success marker atomically only after every check and durable write.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", dir=out, prefix=".manifest-", delete=False) as fh:
+            temporary = Path(fh.name)
+            json.dump(manifest, fh, indent=2, sort_keys=True)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.link(temporary, manifest_path)  # Atomic and refuses an existing destination.
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     print("Verified Storage objects:", manifest["counts"])
 
 
