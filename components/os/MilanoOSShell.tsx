@@ -4,7 +4,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -227,7 +228,7 @@ export function MilanoOSShell({
   contentClassName = "",
 }: MilanoOSShellProps) {
   const pathname = usePathname();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [query, setQuery] = useState("");

@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 interface MilanoPageLoaderProps {
   complete?: boolean;
 }
 
 export function MilanoPageLoader({ complete = false }: MilanoPageLoaderProps) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function MilanoPageLoader({ complete = false }: MilanoPageLoaderProps) {
 }
 
 export function MilanoFullPageLoader() {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
 
   return (
     <div

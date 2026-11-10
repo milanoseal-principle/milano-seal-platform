@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; border: string; pulse?: boolean }> = {
   new: { label: "NEW", color: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
@@ -32,7 +33,7 @@ interface StatusTransitionPillProps {
 }
 
 export function StatusTransitionPill({ status, size = "md" }: StatusTransitionPillProps) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const mapping = STATUS_MAP[status] ?? {
     label: status.toUpperCase().replace(/_/g, " "),
     color: "#94a3b8",

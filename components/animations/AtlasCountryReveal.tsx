@@ -1,7 +1,8 @@
 "use client";
 
 import React, { Children } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 interface AtlasCountryRevealProps {
   isVisible: boolean;
@@ -14,7 +15,7 @@ interface AtlasCountryRevealProps {
 }
 
 export function AtlasCountryReveal({ isVisible, children, className }: AtlasCountryRevealProps) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const childArray = Children.toArray(children);
 
   if (reduced) {

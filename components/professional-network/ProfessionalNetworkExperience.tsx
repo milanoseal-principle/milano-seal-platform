@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, Network, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { PROFESSIONAL_NETWORK_LANES, PROFESSIONAL_NETWORK_PRINCIPLES } from "@/data/professional-network";
 
@@ -14,7 +15,7 @@ const laneIcon = {
 } as const;
 
 export function ProfessionalNetworkExperience() {
-  const reduce = useReducedMotion();
+  const reduce = useMilanoReducedMotion();
 
   return (
     <div className="relative overflow-hidden bg-[#050507] text-white">

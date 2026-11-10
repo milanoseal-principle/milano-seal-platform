@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { hasMotionPreference } from "../scripts/lib/reduced-motion-contract.mjs";
 
 // Regression locks for the Matter 360 canonical object view
 // (app/dashboard/matters/[matterId]/page.tsx).
@@ -46,7 +47,7 @@ test("Matter 360 renders the full canonical lifecycle from intake to closed", ()
 });
 
 test("Matter 360 supports reduced motion and explicit non-happy states", () => {
-  assert.match(source, /useReducedMotion/);
+  assert.equal(hasMotionPreference(source, readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8")), true);
   assert.match(source, /Loading/);
   assert.match(source, /not authorized/i);
   assert.match(source, /No Matter found/i);

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { hasMotionPreference } from "./lib/reduced-motion-contract.mjs";
 
 const BRAND_NAME = "The Milano Seal™";
 const TAGLINE = "SEALING TRUST IN EVERY SIGNATURE";
@@ -31,6 +32,7 @@ const theme = readFileSync("app/styles/milano-theme.css", "utf8");
 const header = readFileSync("components/landing/header.tsx", "utf8");
 const footer = readFileSync("components/landing/footer.tsx", "utf8");
 const shell = readFileSync("components/os/MilanoOSShell.tsx", "utf8");
+const sharedMotionHook = readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8");
 const operator = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
 const portal = readFileSync("components/portal/portal-shell.tsx", "utf8");
 const va = readFileSync("components/va/VAWorkspaceShell.tsx", "utf8");
@@ -78,7 +80,7 @@ for (const mode of ["operator", "client", "va", "alliance"]) {
 assert.ok(shell.includes(BRAND_NAME), "Authenticated shell must visibly identify The Milano Seal™");
 assert.ok(shell.includes('ms-os-mobile-drawer'), "Authenticated shell must retain mobile drawer");
 assert.ok(shell.includes('lg:hidden'), "Authenticated shell must retain responsive mobile controls");
-assert.ok(shell.includes('useReducedMotion'), "Authenticated shell must retain accessibility motion behavior");
+assert.ok(hasMotionPreference(shell, sharedMotionHook), "Authenticated shell must retain accessibility motion behavior");
 
 for (const [label, source] of [
   ["operator", operator],
@@ -113,7 +115,7 @@ const reducedMotionSources = activeFiles
   .map((file) => readFileSync(file, "utf8"))
   .filter((source) => source.includes("prefers-reduced-motion: reduce"));
 assert.ok(
-  shell.includes("useReducedMotion") && reducedMotionSources.length > 0,
+  hasMotionPreference(shell, sharedMotionHook) && reducedMotionSources.length > 0,
   "Canonical visual system must retain both component and CSS reduced-motion safety",
 );
 

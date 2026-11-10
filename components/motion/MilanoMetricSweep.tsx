@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 type MilanoMetricSweepProps = {
   children: ReactNode;
@@ -9,7 +10,7 @@ type MilanoMetricSweepProps = {
 };
 
 export function MilanoMetricSweep({ children, className }: MilanoMetricSweepProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;

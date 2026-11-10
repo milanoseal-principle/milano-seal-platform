@@ -346,7 +346,7 @@ function LoginInner() {
         .ms-fi:focus { border-color:var(--ms-gold); background:rgba(198,165,90,.04); }
         .ms-pwd-wrap { position:relative; }
         .ms-pwd-wrap .ms-fi { padding-right:52px; }
-        .ms-show-pwd { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:rgba(198,165,90,.6); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:4px; }
+        .ms-show-pwd { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; color:rgba(198,165,90,.6); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0 10px; min-width:44px; min-height:32px; }
         .ms-show-pwd:hover { color:var(--ms-gold); }
         .ms-submit-btn { width:100%; padding:13px; background:var(--ms-gold); color:#0a0a0a; border:none; font-family:var(--font-geist,system-ui),sans-serif; font-size:9.5px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s ease; border-radius:2px; display:inline-flex; align-items:center; justify-content:center; gap:10px; }
         .ms-submit-btn:hover:not(:disabled) { background:#d4b76a; }
@@ -359,7 +359,7 @@ function LoginInner() {
         @media (prefers-reduced-motion: reduce) { .ms-card,.ms-ring,.ms-glow { animation:none !important; } }
       `}</style>
 
-      <div className="ms-bg">
+      <main className="ms-bg">
         <div className="ms-grid" />
         <div className="ms-glow" />
         <div className="ms-card">
@@ -456,7 +456,7 @@ function LoginInner() {
           </div>
           <div className="ms-foot-reg">FL Notary #668288 · EIN 41-5272965</div>
         </div>
-      </div>
+      </main>
     </>
   );
 }

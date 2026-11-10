@@ -1,11 +1,12 @@
 "use client";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { ease } from "./motionPresets";
 
 interface Props { children: React.ReactNode; delay?: number; className?: string; }
 
 export function ScaleIn({ children, delay = 0, className }: Props) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   if (reduced) return <div className={className}>{children}</div>;
   return (
     <motion.div

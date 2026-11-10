@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { softScale, panelTransition } from "./motionPresets";
 
 type MilanoPanelProps = {
@@ -10,7 +11,7 @@ type MilanoPanelProps = {
 };
 
 export function MilanoPanel({ children, className }: MilanoPanelProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;

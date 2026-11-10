@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { ArrowRight, BriefcaseBusiness, Route, Workflow } from "lucide-react";
 
 const SPINE = [
@@ -49,7 +50,7 @@ const LENSES = [
 ] as const;
 
 export function MatterExecutionCorridorSpine() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
 
   return (
     <section className="mx-auto mt-7 max-w-7xl px-4 sm:px-0">

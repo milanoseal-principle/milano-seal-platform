@@ -110,16 +110,16 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <Mail className="w-4 h-4 text-[var(--ms-gold)]" />
-                <a href="mailto:contact@themilanoseal.com" className="hover:text-white transition-colors">contact@themilanoseal.com</a>
+                <a href="mailto:contact@themilanoseal.com" className="inline-flex min-h-[24px] items-center hover:text-white transition-colors">contact@themilanoseal.com</a>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#B0B0B0]">
                 <Phone className="w-4 h-4 text-[var(--ms-gold)]" />
                 <span>{t.footer.availableUponIntake}</span>
               </div>
             </div>
-            <div className="mt-6 space-y-2">
+            <div className="mt-6">
               {translatedNetworkLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="block text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link>
+                <Link key={link.href} href={link.href} className="flex min-h-[24px] items-center text-xs text-[#8A8A8A] hover:text-[var(--ms-gold)] transition-colors">{link.label}</Link>
               ))}
             </div>
           </div>
@@ -164,8 +164,8 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-[#B0B0B0]">&copy; {currentYear} {MILANO_BRAND.name}. {t.footer.allRights}</p>
             <div className="flex items-center gap-6">
-              <Link href="/privacy" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.privacy}</Link>
-              <Link href="/terms" className="text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.terms}</Link>
+              <Link href="/privacy" className="inline-flex min-h-[24px] items-center text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.privacy}</Link>
+              <Link href="/terms" className="inline-flex min-h-[24px] items-center text-sm text-[#B0B0B0] hover:text-white transition-colors">{t.footer.terms}</Link>
             </div>
           </div>
           <p className="mt-6 text-xs text-[#B0B0B0]/50 text-center md:text-left">
