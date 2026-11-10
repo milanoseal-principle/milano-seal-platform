@@ -24,6 +24,8 @@ jobs:
       BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
     steps:
       - uses: actions/checkout@v4
+      - name: Offline backup integrity regressions
+        run: python3 scripts/backups/test_backups.py -v
       - uses: supabase/setup-cli@v1
         with:
           version: latest

@@ -6,8 +6,9 @@ Practical data protection and recovery controls for production operations.
 
 ## Supabase Backup
 
-- Supabase Pro plan includes daily automated backups.
-- Verify backup schedule is active in Supabase dashboard → Settings → Backups.
+- Production uses Supabase Free; managed daily backups and PITR are not established.
+- Follow [Independent Free-plan Backups](../independent-free-plan-backups.md) for the existing encrypted off-site workflow, credential setup, actual remote verification and isolated restore drill.
+- Do not infer a successful backup from the schedule or a successful application deployment.
 - Export critical matter data monthly to a founder-controlled secure location.
 - Do not rely solely on Supabase backup for compliance-critical records.
 
@@ -47,7 +48,7 @@ Practical data protection and recovery controls for production operations.
 ## Bad Deploy Rollback — Database
 
 - Supabase migrations are forward-only. Do not run destructive rollbacks in production.
-- If a migration causes data loss, restore from the most recent backup.
+- If a migration causes data loss, preserve evidence and validate a verified clean backup in an isolated environment first. Any production restoration requires a separate reviewed incident decision; never blindly restore over production.
 - For schema-only issues (new column, new table), assess impact before restoring.
 - Critical matter data: `deals`, `execution_safety_checks`, `identifier_locks`, `final_release_reviews`, `legacy_client_credits`, `delivery_logs`, `custody_ledger`.
 
@@ -66,7 +67,7 @@ Store exports in encrypted, founder-controlled storage.
 
 ## Service Continuity
 
-- If Wise webhook fails: manual payment confirmation via `PAYMENT_CONFIRMED_MANUAL` (founder only).
-- If Shippo is unavailable: document courier handoff manually in `delivery_logs`.
-- If BlueNotary/RON platform is unavailable: schedule mobile notarization alternative.
+- If the Wise webhook fails, use the canonical reconciliation/exception workflow and exact provider settlement evidence. Submission, processing, founder assertions and payment flags do not establish settlement or unlock scheduling, execution or final release.
+- If Shippo is unavailable, preserve actual handoff/custody evidence through the governed operator workflow; do not manufacture shipment purchase, delivery or closeout evidence.
+- If the RON provider is unavailable, record the blocker and obtain governed route review before changing the execution method. Keep payment and statutory-evidence requirements enforced.
 - If Supabase is unavailable: no portal access. Communicate ETA to active clients.
