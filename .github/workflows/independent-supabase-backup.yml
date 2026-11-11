@@ -25,15 +25,36 @@ jobs:
       BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validate required backup secret bindings
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          for name in SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_GPG_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required backup secret binding: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
       - name: Offline backup integrity regressions
         run: python3 scripts/backups/test_backups.py -v
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Install PostgreSQL and S3 tools
+      - name: Install PostgreSQL and AWS CLI tools
+        shell: bash
         run: |
+          set -Eeuo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client awscli gnupg
+          sudo apt-get install -y postgresql-client gnupg curl
+          # Official AWS installer verifies its release; distro apt may not offer awscli.
+          curl --fail --silent --show-error --location \
+            https://awscli.amazonaws.com/v2/install.sh \
+            --output "$RUNNER_TEMP/awscli-install.sh"
+          bash "$RUNNER_TEMP/awscli-install.sh"
+          "$HOME/.local/bin/aws" --version
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Export database and actual private Storage objects
         shell: bash
         run: |
