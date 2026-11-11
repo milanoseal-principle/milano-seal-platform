@@ -1,0 +1,83 @@
+name: Milano Seal Production Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milano-production-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke-test:
+    name: Verify live production routes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_URL: https://www.themilanoseal.com
+
+    steps:
+      - name: Verify public health contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 30 -o /tmp/milano-health.json -w '%{http_code}' "$BASE_URL/api/health")"
+          test "$status" = "200" || { echo "::error::Health returned HTTP $status"; exit 1; }
+          python3 - <<'PY'
+          import json
+          from datetime import datetime
+          with open("/tmp/milano-health.json", encoding="utf-8") as f:
+              data = json.load(f)
+          assert data.get("status") == "ok", "Health status is not ok"
+          assert data.get("service") == "milano-seal-platform", "Unexpected service identity"
+          timestamp = data.get("timestamp")
+          assert isinstance(timestamp, str) and timestamp, "Missing health timestamp"
+          datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+          print("PASS: public /api/health liveness contract")
+          PY
+
+      - name: Verify key public pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in / /login /intake /map /countries /notary/join /professional/damiani /documents/birth-certificate/italy; do
+            code="$(curl --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$BASE_URL$route")"
+            if [ "$code" != "200" ]; then
+              echo "::error::Public route $route returned HTTP $code (expected 200)"
+              exit 1
+            fi
+            echo "PASS: $route — HTTP $code"
+          done
+
+      - name: Verify protected pages reject anonymous access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in /dashboard /portal /portal/payment /workspace/release /alliance/dashboard /va/dashboard; do
+            code="$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$BASE_URL$route")"
+            case "$code" in
+              302|303|307|308|401|403) echo "PASS: $route — HTTP $code" ;;
+              *) echo "::error::Protected route $route returned HTTP $code (expected redirect or denial)"; exit 1 ;;
+            esac
+          done
+
+      - name: Verify protected APIs reject anonymous access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in /api/dashboard/discounts /api/dashboard/incidents /api/notary/credentials /api/dashboard/shippo/health; do
+            code="$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$BASE_URL$route")"
+            case "$code" in
+              401|403) echo "PASS: $route — HTTP $code" ;;
+              *) echo "::error::Protected API $route returned HTTP $code (expected 401 or 403)"; exit 1 ;;
+            esac
+          done
+
+      - name: Certification boundary
+        shell: bash
+        run: |
+          echo "PASS: public liveness, critical public routes, and anonymous access controls."
+          echo "NOT VERIFIED HERE: Wise settlement, Supabase dependency readiness, provider execution, apostille, delivery, or authenticated Matter lifecycle."
+          echo "Independent off-site backup remains deferred."
