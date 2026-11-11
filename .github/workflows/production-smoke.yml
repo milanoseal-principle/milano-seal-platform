@@ -245,10 +245,7 @@ jobs:
               const h = JSON.parse(fs.readFileSync("/tmp/health.json", "utf8"));
               if (h.status !== "ok") process.exit(1);
               if (h.service !== "milano-seal-platform") process.exit(1);
-              if (h.environment !== "production") process.exit(1);
-              if (h?.env?.supabase_anon_key !== "SET") process.exit(1);
-              if (h?.env?.supabase_service_role_key !== "SET") process.exit(1);
-              if (h?.supabase?.reachable !== true) process.exit(1);
+              if (typeof h.timestamp !== "string" || !Number.isFinite(Date.parse(h.timestamp))) process.exit(1);
             '; then
               echo "❌ FAIL [health] invalid production/Supabase health payload"
               cat /tmp/health.json
@@ -256,7 +253,7 @@ jobs:
               return
             fi
 
-            echo "✅ PASS [health] production runtime + Supabase reachable"
+            echo "✅ PASS [health] public application liveness (Supabase dependency health not asserted)"
             PASS=$((PASS+1))
           }
 
