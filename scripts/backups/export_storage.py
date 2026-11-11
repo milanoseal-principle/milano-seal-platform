@@ -59,6 +59,10 @@ def validate_revision(revision):
 
 def validate_database_url(value, project_ref):
     """Reject wrong targets, transaction pools and non-TLS URLs without echoing secrets."""
+    # urlsplit silently drops tab/CR/LF, so validate the raw string psql will receive.
+    if not isinstance(value, str) or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value):
+        raise RuntimeError("Backup database URL contains whitespace or control characters "
+                           "(often a trailing newline); save it as a single line") from None
     try:
         parsed = urllib.parse.urlsplit(value)
         query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)

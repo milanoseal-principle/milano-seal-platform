@@ -40,6 +40,18 @@ class DatabaseTargetTests(unittest.TestCase):
                     exporter.validate_database_url(url,ref)
                 self.assertNotIn("synthetic-secret",str(error.exception))
 
+    def test_whitespace_or_control_characters_fail_without_secret_disclosure(self):
+        # urlsplit silently drops tab/CR/LF, but psql receives the raw secret: a
+        # trailing newline became sslmode="require\n" in run 43060264117.
+        ref = "a" * 20
+        valid = f"postgresql://postgres:synthetic-secret@db.{ref}.supabase.co:5432/postgres?sslmode=require"
+        for url in (valid+"\n", valid+"\r\n", " "+valid, valid+" ", valid.replace("?","\n?"), valid.replace("@","\t@"), valid+"\x00"):
+            with self.subTest(case=repr(url[-3:])):
+                with self.assertRaises(RuntimeError) as error:
+                    exporter.validate_database_url(url,ref)
+                self.assertNotIn("synthetic-secret",str(error.exception))
+                self.assertIn("whitespace or control characters",str(error.exception))
+
 
 class ExportTests(unittest.TestCase):
     def setUp(self):
