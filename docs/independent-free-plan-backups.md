@@ -1,6 +1,9 @@
 # The Milano Seal — Independent Supabase Free-plan Backup Runbook
 
-## Current status (2026-11-10)
+## Current status (2026-11-11): DEFERRED / NOT ACTIVE / NOT DR CERTIFIED
+The scheduled workflow `.github/workflows/independent-supabase-backup.yml` was removed from `main` in `e5708a1a` at the operator's request after repeated database-authentication failures. No backup has ever completed: nothing was exported, encrypted or uploaded to R2, and no restore was tested. The exporter, verifier and offline tests under `scripts/backups/` remain in the repository. Restoring the workflow from history re-enables it; the secret-binding and URL-format notes below still apply.
+
+## Earlier status (2026-11-10)
 Backup automation is **implemented but not verified operational**. Run `42784099006` was blocked before execution by GitHub billing/spending restrictions; the supplied account screenshot shows an Actions budget of $0 with usage blocked. Seven secret values, the reported private R2 bucket `milano-seal-production-backups-2`, 90-day retention, and an isolated restore remain unverified. A successful production application deployment does not certify backups. Do not represent a successful upload as a successful restoration.
 
 Production Supabase project: `ehqdzfopsrbwewtddiwq` (`supabase-teal-chair`). Database: PostgreSQL 17.
