@@ -51,9 +51,10 @@ jobs:
           AWS_CLI_SIGNING_FPR: FB5DB77FD5C118B80511ADA8A6310ACC4672475C
         run: |
           set -Eeuo pipefail
-          sudo apt-get update -qq
-          # Ubuntu 24.04 no longer ships an awscli apt package; install AWS's signed release instead.
-          sudo apt-get install -y postgresql-client gnupg gpgv unzip curl
+          # Use runner tools and the existing postgres:17 image; no apt mirrors needed.
+          for tool in gpg gpgv unzip curl docker; do
+            command -v "$tool" >/dev/null || { echo "::error::Required runner tool missing: $tool"; exit 1; }
+          done
           dl="$RUNNER_TEMP/awscli-download"
           rm -rf "$dl"; mkdir -p "$dl"
           gpg --batch --no-autostart --dearmor --output "$dl/aws-cli-team.gpg" scripts/backups/aws-cli-team-public-key.asc
@@ -83,7 +84,7 @@ jobs:
           validate_database_url(os.environ["SUPABASE_DB_URL"], os.environ["SUPABASE_PROJECT_REF"])
           PYTHON
           # Verify the live connection is TLS and PostgreSQL 17, without logging its URL.
-          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -c "select current_setting('server_version_num')::int between 170000 and 179999 and coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)" | awk '$0 == "t" { ok=1 } END { exit !ok }'
+          docker run --rm -e SUPABASE_DB_URL -e BACKUP_TLS_CHECK_SQL="select current_setting('server_version_num')::int between 170000 and 179999 and coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)" postgres:17 sh -ec 'psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -c "$BACKUP_TLS_CHECK_SQL"' | awk '$0 == "t" { ok=1 } END { exit !ok }'
           umask 077
           mkdir -p "$RUNNER_TEMP/milano-backup/database" "$RUNNER_TEMP/milano-backup/storage"
           supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/roles.sql" --role-only
@@ -93,7 +94,7 @@ jobs:
           # Capture auth records and Storage metadata independently and fail closed on errors.
           docker run --rm -e SUPABASE_DB_URL -v "$RUNNER_TEMP/milano-backup/database:/backup" postgres:17 sh -ec 'pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file=/backup/auth-storage-data.dump'
           docker run --rm -v "$RUNNER_TEMP/milano-backup/database:/backup:ro" postgres:17 pg_restore --list /backup/auth-storage-data.dump > /dev/null
-          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id" > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
+          docker run --rm -e SUPABASE_DB_URL postgres:17 sh -ec 'psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F "$(printf "\t")" -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id"' > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/export_storage.py "$RUNNER_TEMP/milano-backup/storage" "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
           python3 scripts/backups/verify_backup.py "$RUNNER_TEMP/milano-backup"
       - name: Encrypt locally and upload off platform
