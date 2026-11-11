@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { hasMotionPreference } from "./lib/reduced-motion-contract.mjs";
 
 const requiredFiles = [
   "components/os/MilanoOSShell.tsx",
@@ -16,6 +17,7 @@ for (const file of requiredFiles) {
 }
 
 const shared = readFileSync("components/os/MilanoOSShell.tsx", "utf8");
+const sharedMotionHook = readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8");
 const css = readFileSync("styles/components/milano-os-shell.css", "utf8");
 const theme = readFileSync("app/styles/milano-theme.css", "utf8");
 const operator = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
@@ -49,7 +51,7 @@ assert.ok(
     shared.includes("routeTransition"),
   "Shared shell must reuse the existing canonical Milano motion presets",
 );
-assert.ok(shared.includes("useReducedMotion"), "Shared shell must honor reduced motion");
+assert.ok(hasMotionPreference(shared, sharedMotionHook), "Shared shell must honor reduced motion");
 assert.ok(
   css.includes("@media (prefers-reduced-motion: reduce)"),
   "CSS motion system must include reduced-motion fallback",

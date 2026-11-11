@@ -156,14 +156,14 @@ export default async function CountryPage({ params }: PageProps) {
         >
           <Link
             href="/"
-            className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors"
+            className="inline-flex min-h-[24px] items-center font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors"
           >
             Home
           </Link>
           <ChevronRight className="w-3 h-3 text-[#2A2A2A]" />
           <Link
             href="/countries"
-            className="font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors"
+            className="inline-flex min-h-[24px] items-center font-mono text-[10px] text-[#444] hover:text-[#666] tracking-widest uppercase transition-colors"
           >
             Countries
           </Link>

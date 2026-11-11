@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import Link from "next/link";
-import { useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import {
   GLOBAL_ROUTE_DATA,
   getGlobalRoute,
@@ -47,7 +47,7 @@ function routePath(
 
 export function SeoCorridorMapPreview({ slug, className }: Props) {
   const uid = useId().replace(/:/g, "");
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
   const route = getGlobalRoute(slug);
   if (!route) return null;
 

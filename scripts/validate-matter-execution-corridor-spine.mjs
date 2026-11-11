@@ -2,9 +2,11 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { hasMotionPreference } from "./lib/reduced-motion-contract.mjs";
 
 const shell = readFileSync("components/dashboard/OperatorShell.tsx", "utf8");
 const spine = readFileSync("components/dashboard/MatterExecutionCorridorSpine.tsx", "utf8");
+const sharedMotionHook = readFileSync("lib/motion/use-milano-reduced-motion.ts", "utf8");
 const executive = readFileSync("app/dashboard/executive/page.tsx", "utf8");
 
 for (const group of ["Matter", "Execution", "Corridor"]) {
@@ -21,7 +23,7 @@ assert.match(spine, /Matter/);
 assert.match(spine, /Execution/);
 assert.match(spine, /Corridor/);
 assert.match(spine, /Everything else is a read-only or supporting intelligence lens/);
-assert.match(spine, /useReducedMotion/);
+assert.ok(hasMotionPreference(spine, sharedMotionHook), "Corridor spine must honor reduced motion through a valid imported hook");
 assert.doesNotMatch(spine, /setInterval|particles|three|WebGL/i);
 
 assert.ok(executive.includes("MatterExecutionCorridorSpine"), "Executive view must render the operating spine");

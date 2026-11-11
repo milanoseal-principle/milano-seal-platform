@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import type { ClientReadinessSummary } from "@/lib/executionReadiness";
 
 const GOLD = "#C6A55A";
@@ -94,7 +95,7 @@ function deriveNextAction(r: ClientReadinessSummary): string {
 export function ReadinessSummaryCard() {
   const [readiness, setReadiness] = useState<ClientReadinessSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
 
   useEffect(() => {
     fetch("/api/portal/me/readiness")

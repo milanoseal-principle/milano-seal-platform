@@ -194,7 +194,8 @@ export function SmartMatterIntake({
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            className="text-[10px] uppercase tracking-[0.18em] text-white/40 hover:text-[var(--ms-gold)] transition-colors cursor-pointer"
+            aria-expanded={!collapsed}
+            className="inline-flex min-h-[32px] min-w-[44px] items-center justify-center px-2 text-[10px] uppercase tracking-[0.18em] text-white/40 hover:text-[var(--ms-gold)] transition-colors cursor-pointer"
           >
             {collapsed ? "Open" : "Hide"}
           </button>
@@ -225,6 +226,7 @@ export function SmartMatterIntake({
                   onChange={(e) => setMessage(e.target.value)}
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
+                  aria-label="Describe your international document matter"
                   placeholder="Describe your international document matter…"
                   rows={4}
                   className="w-full bg-transparent border-none outline-none resize-none text-[#F5F1E8] text-base leading-relaxed font-light placeholder:text-[#888]/40"

@@ -3,13 +3,8 @@
 import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  motion,
-  useInView,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import {
   ArrowRight,
   FileInput,
@@ -444,7 +439,7 @@ function FinalCTA({ reduce }: { reduce: boolean }) {
 
 export function ProcessExperience() {
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion() ?? false;
+  const reduce = useMilanoReducedMotion() ?? false;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const hazeY = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-30, 30]);
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import clsx from "clsx";
 
 export type MilanoOrbitMode =
@@ -110,7 +111,7 @@ export function MilanoSealOrbitCore({
   crestSrc,
   onClick,
 }: MilanoSealOrbitCoreProps) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useMilanoReducedMotion();
   const interactionState = toInteractionState(String(state));
   const nodeCount = mode === "hero" ? 6 : mode === "portal" ? 4 : 7;
   const nodes = Array.from({ length: nodeCount });

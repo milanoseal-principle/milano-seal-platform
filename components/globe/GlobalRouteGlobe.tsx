@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import {
   GLOBAL_ROUTE_DATA,
   type GlobalRouteRecord,
@@ -51,7 +51,7 @@ function routeAccent(route: GlobalRouteRecord | null) {
 
 export function GlobalRouteGlobe({ selectedSlug, onSelectCountry, className }: Props) {
   const uid = useId().replace(/:/g, "");
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
   const [hovered, setHovered] = useState<string | null>(null);
   const [animKey, setAnimKey] = useState(0);
   const prevSelected = useRef<string | null | undefined>(null);

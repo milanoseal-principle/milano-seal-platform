@@ -1,13 +1,14 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 
 type MilanoPulseOrbProps = {
   className?: string;
 };
 
 export function MilanoPulseOrb({ className }: MilanoPulseOrbProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
 
   if (reduceMotion) {
     return <div className={className} />;

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import {
   buildMatterTruthSections,
   deriveMatterCompleteness,
@@ -112,7 +112,7 @@ const STATE_TONE: Record<EvidenceState | "COMPLETE" | "NOT_APPLICABLE", string> 
 export default function Matter360Page() {
   const params = useParams<{ matterId: string }>();
   const matterId = params?.matterId ?? "";
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMilanoReducedMotion();
 
   const [row, setRow] = useState<DealRow | null>(null);
   const [loading, setLoading] = useState(true);

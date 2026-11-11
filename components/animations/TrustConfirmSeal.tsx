@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useMilanoReducedMotion } from "@/lib/motion/use-milano-reduced-motion";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SIZE_DIMS = { sm: 64, md: 96, lg: 128 };
@@ -13,7 +13,7 @@ interface TrustConfirmSealProps {
 }
 
 export function TrustConfirmSeal({ event, size = "md", onComplete }: TrustConfirmSealProps) {
-  const reduced = useReducedMotion();
+  const reduced = useMilanoReducedMotion();
   const dim = SIZE_DIMS[size];
   const r = (dim / 2) * 0.8;
   const cx = dim / 2;
