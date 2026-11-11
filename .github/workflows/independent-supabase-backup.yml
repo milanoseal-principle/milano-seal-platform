@@ -113,7 +113,7 @@ jobs:
           aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/$KEY" "$RUNNER_TEMP/remote-backup.tar.gpg" --only-show-errors
           aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256" --only-show-errors
           test "$(sha256sum "$RUNNER_TEMP/remote-backup.tar.gpg" | awk '{print $1}')" = "$(cat "$RUNNER_TEMP/remote-backup.sha256")"
-          cmp "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256" "$RUNNER_TEMP/awscli-download"
+          cmp "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256"
           echo "Backup encrypted, uploaded, and remote ciphertext verified: $STAMP (restore certification still pending)"
       - name: Always remove temporary sensitive files
         if: always()

@@ -371,5 +371,17 @@ class ArchiveTests(unittest.TestCase):
         self.assertNotEqual(self.inspect(entry), 0)
 
 
+class WorkflowTests(unittest.TestCase):
+    WORKFLOW = HERE.parents[1] / ".github" / "workflows" / "independent-supabase-backup.yml"
+
+    def test_checksum_cmp_compares_exactly_two_files(self):
+        # cmp's third/fourth operands are byte offsets; an extra path aborts the step.
+        import shlex
+        lines = [l.strip() for l in self.WORKFLOW.read_text().splitlines() if l.strip().startswith("cmp ")]
+        self.assertTrue(lines, "workflow must compare local and remote checksums with cmp")
+        for line in lines:
+            self.assertEqual(len(shlex.split(line)[1:]), 2, line)
+
+
 if __name__ == "__main__":
     unittest.main()
