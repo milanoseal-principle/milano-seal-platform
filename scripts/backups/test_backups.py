@@ -383,8 +383,14 @@ class ArchiveTests(unittest.TestCase):
         self.assertNotEqual(self.inspect(entry), 0)
 
 
+BACKUP_WORKFLOW = HERE.parents[1] / ".github" / "workflows" / "independent-supabase-backup.yml"
+
+
+# The scheduled backup workflow was removed from main (e5708a1a) and is deferred.
+# This guard returns automatically if the workflow is restored.
+@unittest.skipUnless(BACKUP_WORKFLOW.exists(), "backup workflow deferred: not present on this branch")
 class WorkflowTests(unittest.TestCase):
-    WORKFLOW = HERE.parents[1] / ".github" / "workflows" / "independent-supabase-backup.yml"
+    WORKFLOW = BACKUP_WORKFLOW
 
     def test_checksum_cmp_compares_exactly_two_files(self):
         # cmp's third/fourth operands are byte offsets; an extra path aborts the step.
