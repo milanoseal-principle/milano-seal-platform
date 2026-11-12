@@ -24,6 +24,8 @@ const VERIFIED_FILES = [
   "app/api/va/matters/route.ts",
   "app/api/va/matters/[id]/route.ts",
   "app/api/dashboard/readiness/[matterId]/route.ts",
+  "lib/release/certificateEligibility.ts",
+  "app/api/dashboard/certificates/generate/route.ts",
 ];
 // Tables that exist in no schema; queries against them are reported as unavailable by design.
 const ABSENT_BY_DESIGN = new Set(["deal_documents"]);

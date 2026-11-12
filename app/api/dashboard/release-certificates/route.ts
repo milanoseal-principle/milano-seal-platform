@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { releaseCertificateEligibility } from "@/lib/release/certificateEligibility";
 
 export const runtime = "nodejs";
 
@@ -70,13 +71,18 @@ export async function POST(req: NextRequest) {
   const verification_hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
   const supabase = createAdminClient();
+  // Never attest a release the canonical authorities have not recorded.
+  const eligibility = await releaseCertificateEligibility(supabase, matter_id);
+  if (!eligibility.ok) {
+    return NextResponse.json({ error: eligibility.error, gate: eligibility.gate }, { status: eligibility.status });
+  }
   const { data: cert, error } = await supabase
     .from("release_certificates")
     .insert({
       deal_id: matter_id,
       verification_id: `MSV-${verification_hash.slice(0, 16).toUpperCase()}`,
       verification_hash,
-      release_date: new Date().toISOString(),
+      release_date: eligibility.releasedAt,
       document_count: document_count ?? 0,
       status: "valid",
       // Issuer is the verified operator session, never a client-supplied value.
