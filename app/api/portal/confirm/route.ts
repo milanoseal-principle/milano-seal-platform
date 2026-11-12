@@ -81,11 +81,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid code" }, { status: 403 });
     }
 
-    // Mark OTP used (single-use enforcement) and rotate by clearing the value
-    await supabase
+    // Mark OTP used (single-use enforcement). otp is NOT NULL, so it is not cleared;
+    // used=true plus the used=false lookup above makes the code single-use. Fail closed:
+    // without a confirmed write the code could be replayed until it expires.
+    const { data: consumed, error: consumeError } = await supabase
       .from("portal_otps")
-      .update({ used: true, otp: null })
-      .eq("id", record.id);
+      .update({ used: true })
+      .eq("id", record.id)
+      .eq("used", false)
+      .select("id");
+    if (consumeError || !consumed?.length) {
+      return NextResponse.json({ error: "Verification failed" }, { status: 409 });
+    }
 
     // Build HMAC-signed session token
     const session = buildSession(deal.id, normalizedEmail, sessionSecret);
