@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,23 +11,21 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id, partner_code")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   if (!partner) {
-    return NextResponse.json({ links: [] });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: links } = await supabase
+  const { data: links, error } = await supabase
     .from("partner_intake_links")
     .select("id, partner_code, campaign_label, destination_country, document_type, click_count, active, created_at")
     .eq("partner_id", partner.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // A failed read is reported, never shown as "no links".
+  if (error) return NextResponse.json({ error: "Intake links are unavailable right now." }, { status: 503 });
   return NextResponse.json({ links: links ?? [] });
 }
 
@@ -39,11 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id, partner_code")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   if (!partner) {
     return NextResponse.json({ error: "Partner record not found" }, { status: 404 });

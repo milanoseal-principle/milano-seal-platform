@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
@@ -22,11 +23,7 @@ export default async function AllianceToolbeltPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/alliance/login");
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id, firm_name, contact_name, routing_eligible, toolbelt_completed")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   const progress = partner?.id
     ? await getToolbeltProgress(partner.id, supabase)

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ALLIANCE_ACCOUNT_ROLES } from "@/lib/alliance/partnerContext";
 import {
   mapAllianceState,
   type AllianceOperatingState,
@@ -57,10 +58,31 @@ function clean(v: unknown): string | null {
 export async function loadAllianceQualityCapacity(): Promise<AllianceQualitySnapshot> {
   const generatedAt = new Date().toISOString();
   const supabase = createAdminClient();
-  const partners = await supabase
-    .from("alliance_partners")
-    .select("id, full_name, firm_name, status, updated_at")
+  // Canonical partner identity: active operator accounts in an Alliance role; firm and status
+  // come from the bound operator profile (operators.profile_id).
+  const accounts = await supabase
+    .from("operators")
+    .select("id, full_name, role, is_active, profile_id, updated_at")
+    .in("role", [...ALLIANCE_ACCOUNT_ROLES])
     .order("updated_at", { ascending: false });
+  const profileIds = (accounts.data ?? []).map((a) => a.profile_id).filter((id): id is string => Boolean(id));
+  const profiles = profileIds.length
+    ? await supabase.from("operator_profiles").select("id, firm_name, onboarding_status").in("id", profileIds)
+    : { data: [] as { id: string; firm_name: string | null; onboarding_status: string | null }[], error: null };
+  const profileById = new Map((profiles.data ?? []).map((p) => [p.id as string, p]));
+  const partners = {
+    error: accounts.error ?? profiles.error,
+    data: (accounts.data ?? []).map((a) => {
+      const profile = a.profile_id ? profileById.get(a.profile_id as string) : undefined;
+      return {
+        id: a.id as string,
+        full_name: (a.full_name as string | null) ?? null,
+        firm_name: profile?.firm_name ?? null,
+        status: a.is_active === false ? "inactive" : profile?.onboarding_status ?? "unbound",
+        updated_at: (a.updated_at as string | null) ?? null,
+      };
+    }),
+  };
 
   if (partners.error) {
     return {

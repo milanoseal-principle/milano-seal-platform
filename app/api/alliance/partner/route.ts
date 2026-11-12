@@ -1,67 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 
-// GET — fetch current partner's own record (auth required)
-export async function GET() {
+async function sessionUserId() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: partner, error } = await supabase
-    .from("alliance_partners")
-    .select(
-      "id, partner_code, firm_name, contact_name, email, partner_type, status, " +
-      "toolbelt_completed, compliance_verified, security_attested, routing_eligible, " +
-      "jurisdiction_codes, document_categories, created_at, updated_at"
-    )
-    .eq("user_id", user.id)
-    .single();
-
-  if (error || !partner) {
-    return NextResponse.json({ partner: null });
-  }
-
-  // Never expose: user_id directly, internal notes, margin, base_cost, or other partners' data
-  return NextResponse.json({ partner });
+  return user?.id ?? null;
 }
 
-// POST — update partner profile fields (subset only)
+// GET — the signed-in partner's own canonical operator identity (partner-safe projection).
+export async function GET() {
+  try {
+    const partner = await resolveAlliancePartner(await sessionUserId());
+    if (!partner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ partner });
+  } catch {
+    return NextResponse.json({ error: "Profile is unavailable right now." }, { status: 503 });
+  }
+}
+
+// POST — a partner may edit only their contact name, and their firm name once an operator has
+// bound their profile. Role (partner_type), jurisdictions and document categories are verified
+// operator data and are never self-editable.
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const db = createAdminClient();
+  let partner;
+  try {
+    partner = await resolveAlliancePartner(await sessionUserId(), db);
+  } catch {
+    return NextResponse.json({ error: "Profile is unavailable right now." }, { status: 503 });
+  }
+  if (!partner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const contact = typeof body.contact_name === "string" ? body.contact_name.trim().slice(0, 160) : null;
+  const firm = typeof body.firm_name === "string" ? body.firm_name.trim().slice(0, 200) : null;
+  if (!contact && !firm) return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  if (firm && !partner.profile_id) {
+    return NextResponse.json({ error: "Your firm profile is pending activation by the Milano Seal team." }, { status: 409 });
   }
 
-  const body = await req.json().catch(() => ({}));
-
-  // Only allow updating partner-safe profile fields
-  const allowed = ["contact_name", "firm_name", "partner_type", "jurisdiction_codes", "document_categories"];
-  const updates: Record<string, unknown> = {};
-  for (const key of allowed) {
-    if (key in body) updates[key] = body[key];
+  const now = new Date().toISOString();
+  if (contact) {
+    const { error } = await db.from("operators").update({ full_name: contact, updated_at: now }).eq("id", partner.id);
+    if (error) return NextResponse.json({ error: "Update failed" }, { status: 503 });
   }
-
-  if (!Object.keys(updates).length) {
-    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  if (firm && partner.profile_id) {
+    const { error } = await db.from("operator_profiles").update({ firm_name: firm, updated_at: now }).eq("id", partner.profile_id);
+    if (error) return NextResponse.json({ error: "Update failed" }, { status: 503 });
   }
-
-  updates.updated_at = new Date().toISOString();
-
-  const { data: partner, error } = await supabase
-    .from("alliance_partners")
-    .update(updates)
-    .eq("user_id", user.id)
-    .select("id, firm_name, contact_name, partner_type, status")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true, partner });
+  return NextResponse.json({ success: true, partner: await resolveAlliancePartner(await sessionUserId(), db) });
 }

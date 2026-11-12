@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceMatterQueue, type MatterRow } from "@/components/alliance/AllianceMatterQueue";
@@ -6,11 +7,7 @@ import { AllianceShell } from "@/components/alliance/AllianceShell";
 async function getPartnerMatters(userId: string): Promise<{ matters: MatterRow[]; partner: { firm_name: string | null; contact_name: string | null; routing_eligible: boolean } | null }> {
   const supabase = await createClient();
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id, firm_name, contact_name, routing_eligible, toolbelt_completed, compliance_verified, security_attested, status")
-    .eq("user_id", userId)
-    .single();
+  const partner = await resolveAlliancePartner(userId);
 
   if (!partner) return { matters: [], partner: null };
 

@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -11,11 +12,7 @@ import { allianceDashboardModules } from "@/lib/modules/allianceDashboardModules
 
 async function getPartnerData(userId: string) {
   const supabase = await createClient();
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  const partner = await resolveAlliancePartner(userId);
 
   const p = partner ?? {
     id: null,

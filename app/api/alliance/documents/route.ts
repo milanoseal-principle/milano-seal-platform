@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,11 +20,7 @@ async function resolvePartner(): Promise<{ partnerId: string } | null> {
   if (!allowed.includes(role)) return null;
 
   const admin = createAdminClient();
-  const { data: partner } = await admin
-    .from("alliance_partners")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   if (!partner) return null;
   return { partnerId: partner.id };

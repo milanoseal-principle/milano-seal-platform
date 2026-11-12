@@ -30,6 +30,13 @@ const VERIFIED_FILES = [
   "app/api/va/checklists/route.ts",
   "app/api/va/ron/tasks/route.ts",
   "app/api/va/tasks/[id]/route.ts",
+  "lib/alliance/partnerContext.ts",
+  "lib/alliance/referralLeads.ts",
+  "app/api/alliance/referrals/route.ts",
+  "app/api/alliance/referrals/review/route.ts",
+  "app/api/alliance/dashboard/route.ts",
+  "app/api/alliance/partner/route.ts",
+  "app/dashboard/alliance/referrals/page.tsx",
 ];
 // Tables that exist in no schema; queries against them are reported as unavailable by design.
 const ABSENT_BY_DESIGN = new Set(["deal_documents"]);

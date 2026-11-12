@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,11 +15,7 @@ export default async function AllianceBenefitsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/alliance/login");
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   const p = (partner ?? {}) as Record<string, unknown>;
   const partnerId = String(p.id ?? "") || null;

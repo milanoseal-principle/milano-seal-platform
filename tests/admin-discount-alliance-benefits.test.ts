@@ -35,7 +35,9 @@ test("Alliance benefits are read-only and referral attribution is authenticated-
   const referralPage = read("app/alliance/referrals/new/page.tsx");
   const referralEngine = read("components/alliance/AllianceReferralEngine.tsx");
 
-  assert.match(benefits, /\.eq\("user_id", user\.id\)/);
+  // Partner identity is the canonical operator account of the verified session user.
+  assert.match(benefits, /resolveAlliancePartner\(user\.id\)/);
+  assert.doesNotMatch(benefits, /from\("alliance_partners"\)/);
   assert.match(benefits, /alliance_member_id/);
   assert.match(card, /Read-only benefits/);
   assert.equal(/method:\s*"(?:POST|PATCH|DELETE)"/.test(card), false);

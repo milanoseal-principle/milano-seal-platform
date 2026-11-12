@@ -1,154 +1,112 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { partnerIdForReferralCode, resolveAlliancePartner } from "@/lib/alliance/partnerContext";
+import { ALLIANCE_REFERRAL_LEAD_TYPE, submitPartnerReferral } from "@/lib/alliance/referralLeads";
 
+const INCOMPLETE = "Please complete the required referral details before submitting.";
+
+async function sessionUserId() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+// POST — partner referral into the canonical lead intake. Attribution comes from the signed-in
+// partner or a verified referral code, never from a typed partner email. A referral is reported
+// received only after it is stored.
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
-    const {
-      referral_code, partner_name, partner_email, partner_firm,
-      client_name, client_email, client_phone, preferred_contact_method,
-      destination_country, document_type, matter_type, urgency,
-      signer_location, requires_apostille, requires_translation, requires_witness,
-      partner_context_note, deadline_note, receiving_authority_note, known_issue_note,
-    } = body;
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: INCOMPLETE }, { status: 400 });
+  }
+  const text = (key: string) => (typeof body[key] === "string" ? (body[key] as string).trim().slice(0, 2000) : "");
+  const referral_code = text("referral_code"), client_email = text("client_email");
+  const destination_country = text("destination_country"), document_type = text("document_type"), matter_type = text("matter_type");
 
-    // Validation
-    if (!partner_email && !referral_code) {
-      return NextResponse.json({ error: "Please complete the required referral details before submitting." }, { status: 400 });
+  if (!client_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client_email)) {
+    return NextResponse.json({ error: "Please add the client's email address so the team can reach them." }, { status: 400 });
+  }
+  if (!destination_country || !document_type || !matter_type) {
+    return NextResponse.json({ error: INCOMPLETE }, { status: 400 });
+  }
+
+  try {
+    const db = createAdminClient();
+    const sessionPartner = await resolveAlliancePartner(await sessionUserId(), db);
+    const partnerId = sessionPartner?.id ?? (await partnerIdForReferralCode(referral_code, db));
+    if (!partnerId) {
+      return NextResponse.json({ error: "Sign in to your Alliance account or use a valid referral code." }, { status: 400 });
     }
-    if (!client_name && !client_email) {
-      return NextResponse.json({ error: "Please complete the required referral details before submitting." }, { status: 400 });
-    }
-    if (!destination_country || !document_type || !matter_type) {
-      return NextResponse.json({ error: "Please complete the required referral details before submitting." }, { status: 400 });
-    }
-
-    const supabase = createAdminClient();
-
-    // Look up partner by referral_code if provided
-    let partner_id: string | null = null;
-    if (referral_code) {
-      const { data: partner } = await supabase
-        .from("alliance_partners")
-        .select("id")
-        .eq("referral_code", referral_code)
-        .single();
-      if (partner) partner_id = partner.id;
-    }
-
-    // Build observation text from context notes
-    const observationParts: string[] = [];
-    if (partner_context_note) observationParts.push(partner_context_note);
-    if (deadline_note) observationParts.push(`Deadline: ${deadline_note}`);
-    if (receiving_authority_note) observationParts.push(`Authority note: ${receiving_authority_note}`);
-    if (known_issue_note) observationParts.push(`Known issue: ${known_issue_note}`);
-
-    // Build a metadata summary for operator review
-    const metaSummary = [
-      `Partner: ${partner_name || partner_email || referral_code || "unknown"}`,
-      partner_firm ? `Firm: ${partner_firm}` : null,
-      `Client: ${client_name || client_email || "unknown"}`,
-      client_phone ? `Phone: ${client_phone}` : null,
-      `Contact method: ${preferred_contact_method || "Email"}`,
-      `Matter type: ${matter_type}`,
-      `Urgency: ${urgency || "Standard"}`,
-      signer_location ? `Signer location: ${signer_location}` : null,
-      requires_apostille ? "Requires apostille" : null,
-      requires_translation ? "Requires translation" : null,
-      requires_witness ? "Requires witness" : null,
-    ].filter(Boolean).join(" | ");
-
-    const fullText = [metaSummary, ...observationParts].join("\n\n") || "Partner referral submission";
-
-    // Store referral submission — use partner_observations table as staging
-    // (referral_ledger rows are created by operator when attaching to a matter)
-    const { data: observation, error } = await supabase
-      .from("partner_observations")
-      .insert({
-        partner_id,
-        observation_type: "authority_observation", // closest match; operator reclassifies
-        observation_text: fullText,
-        source_url: null,
-        country: destination_country,
-        document_type,
-        status: "pending_review",
-      })
-      .select("id")
-      .single();
-
-    if (error || !observation) {
-      // Graceful degradation — log and return success anyway (don't lose referral)
-      console.error("[REFERRAL_SUBMISSION_ERROR]", error?.message);
-    }
-
-    const referral_id = observation?.id
-      ? `REF-${observation.id.substring(0, 8).toUpperCase()}`
-      : `REF-${Date.now().toString(36).toUpperCase()}`;
-
-    // Return ONLY partner-safe fields
+    const stored = await submitPartnerReferral(db, {
+      client_name: text("client_name") || null,
+      client_email,
+      client_phone: text("client_phone") || null,
+      destination_country,
+      document_type,
+      matter_type,
+      urgency: text("urgency") || null,
+      referral_code: sessionPartner?.referral_code ?? referral_code ?? null,
+      context: {
+        preferred_contact_method: text("preferred_contact_method") || "Email",
+        signer_location: text("signer_location") || null,
+        requires_apostille: body.requires_apostille === true,
+        requires_translation: body.requires_translation === true,
+        requires_witness: body.requires_witness === true,
+        partner_context_note: text("partner_context_note") || null,
+        deadline_note: text("deadline_note") || null,
+        receiving_authority_note: text("receiving_authority_note") || null,
+        known_issue_note: text("known_issue_note") || null,
+      },
+    }, partnerId);
     return NextResponse.json({
       success: true,
-      referral_id,
+      referral_id: stored.reference,
       status: "submitted",
       message: "Referral received. The Milano Seal team will review and follow up.",
     });
   } catch {
-    return NextResponse.json({ error: "Submission failed. Please try again." }, { status: 500 });
+    // Never report a referral as received unless it was stored.
+    return NextResponse.json({ error: "Submission failed. Please try again." }, { status: 503 });
   }
 }
 
-// GET — partner-safe referral status list
-// No auth on GET — partners identify by referral_code query param
-export async function GET(req: NextRequest) {
-  const referral_code = req.nextUrl.searchParams.get("ref");
-  if (!referral_code) {
-    return NextResponse.json({ referrals: [] });
+// GET — the signed-in partner's own referral statuses, partner-safe fields only.
+export async function GET() {
+  try {
+    const db = createAdminClient();
+    const partner = await resolveAlliancePartner(await sessionUserId(), db);
+    if (!partner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: leads, error } = await db
+      .from("sales_leads")
+      .select("id, country, document_type, canonical_matter_id, details, created_at")
+      .eq("lead_type", ALLIANCE_REFERRAL_LEAD_TYPE)
+      .eq("details->>partner_id", partner.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) return NextResponse.json({ error: "Referrals are unavailable right now." }, { status: 503 });
+
+    // Never expose operator notes, revenue or client contact details.
+    const referrals = (leads ?? []).map((lead) => {
+      const review = String((lead.details as Record<string, unknown> | null)?.review_status ?? "pending_review");
+      const status = lead.canonical_matter_id ? "accepted" : review === "rejected" ? "not_accepted" : review === "pending_review" ? "submitted" : "under_review";
+      return {
+        referral_id: `REF-${String(lead.id).slice(0, 8).toUpperCase()}`,
+        submitted_at: lead.created_at,
+        destination_country: lead.country,
+        document_type: lead.document_type,
+        status,
+        public_next_step: status === "submitted" ? "Your referral has been received and is pending review."
+          : status === "accepted" ? "Referral accepted. Matter is being prepared for execution."
+          : status === "not_accepted" ? "This referral was not accepted at this time."
+          : "The Milano Seal team is reviewing this referral.",
+      };
+    });
+    return NextResponse.json({ referrals });
+  } catch {
+    return NextResponse.json({ error: "Referrals are unavailable right now." }, { status: 503 });
   }
-
-  const supabase = createAdminClient();
-
-  // Look up partner
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id")
-    .eq("referral_code", referral_code)
-    .single();
-
-  if (!partner) {
-    return NextResponse.json({ referrals: [] });
-  }
-
-  const { data: observations } = await supabase
-    .from("partner_observations")
-    .select("id, country, document_type, status, created_at")
-    .eq("partner_id", partner.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  // Map to partner-safe format — never expose operator notes, revenue, client details
-  const referrals = (observations ?? []).map((obs: {
-    id: string;
-    country: string | null;
-    document_type: string | null;
-    status: string;
-    created_at: string;
-  }) => ({
-    referral_id: `REF-${obs.id.substring(0, 8).toUpperCase()}`,
-    submitted_at: obs.created_at,
-    destination_country: obs.country,
-    document_type: obs.document_type,
-    status: obs.status === "pending_review" ? "submitted"
-          : obs.status === "accepted" ? "accepted"
-          : obs.status === "rejected" ? "not_accepted"
-          : "under_review",
-    public_next_step: obs.status === "pending_review"
-      ? "Your referral has been received and is pending review."
-      : obs.status === "accepted"
-      ? "Referral accepted. Matter is being prepared for execution."
-      : obs.status === "rejected"
-      ? "This referral was not accepted at this time."
-      : "The Milano Seal team is reviewing this referral.",
-  }));
-
-  return NextResponse.json({ referrals });
 }
