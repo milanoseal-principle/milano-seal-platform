@@ -533,20 +533,20 @@ export const JURISDICTIONS: Jurisdiction[] = [
     kind: "country",
     region: "Middle East",
     flag: "🇦🇪",
-    hague: true,
+    hague: false,
     ron: null,
     authentication_path:
-      "U.S. apostille (UAE acceded to Hague — effective 2025); legacy matters via UAE Consulate.",
-    execution_path: "Apostille; certified Arabic translation required.",
+      "Authentication and legalization pathway confirmed per document and UAE receiving authority; not a Hague apostille route.",
+    execution_path: "Authentication / legalization review; certified Arabic translation commonly required.",
     typical_documents: ["Corporate documents", "POA", "Affidavit"],
-    witness_rules: "Two witnesses for POAs.",
+    witness_rules: "Confirmed per document and receiving authority.",
     summary:
-      "Recent Hague accession simplified the path. Arabic translation by an MOJ-licensed translator is required.",
+      "The UAE is not listed as a Contracting Party on the HCCH Apostille Convention status table. The authentication and legalization chain is confirmed before execution.",
     requirements: [
-      { label: "Authentication", value: "Apostille (Hague)" },
-      { label: "Translation", value: "MOJ-licensed Arabic translator" },
+      { label: "Authentication", value: "Authentication / legalization (not Hague)" },
+      { label: "Translation", value: "Arabic translation, as required by the receiving authority" },
     ],
-    regulations: ["Hague Apostille Convention (effective UAE 2025)"],
+    regulations: ["HCCH Apostille Convention status table (UAE not a Contracting Party)"],
   },
   {
     code: "il",

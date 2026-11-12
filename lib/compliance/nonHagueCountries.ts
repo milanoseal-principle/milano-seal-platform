@@ -1,3 +1,5 @@
+import { HCCH_APOSTILLE_SOURCE, hcchParty } from "@/lib/treaty/hcchApostilleStatus";
+
 export interface NonHagueCountry {
   iso2: string;
   iso3: string;
@@ -6,7 +8,7 @@ export interface NonHagueCountry {
   notes?: string;
 }
 
-export const nonHagueCountries: NonHagueCountry[] = [
+const LEGALIZATION_DESTINATIONS: NonHagueCountry[] = [
   { iso2: "CN", iso3: "CHN", name: "China", legalizationPath: "consular_legalization" },
   { iso2: "VN", iso3: "VNM", name: "Vietnam", legalizationPath: "consular_legalization" },
   { iso2: "SA", iso3: "SAU", name: "Saudi Arabia", legalizationPath: "operator_review_required" },
@@ -27,3 +29,11 @@ export const nonHagueCountries: NonHagueCountry[] = [
   { iso2: "IR", iso3: "IRN", name: "Iran", legalizationPath: "operator_review_required" },
   { iso2: "LY", iso3: "LBY", name: "Libya", legalizationPath: "operator_review_required" },
 ];
+
+// Only destinations the canonical HCCH registry does not list as a Contracting Party in force at
+// its last official verification. Entries that have since joined the Convention drop out here
+// automatically, so this list can never contradict the registry.
+export const nonHagueCountries: NonHagueCountry[] = LEGALIZATION_DESTINATIONS.filter((country) => {
+  const party = hcchParty(country.iso2);
+  return !party || party.entryIntoForce > HCCH_APOSTILLE_SOURCE.verifiedAt;
+});
