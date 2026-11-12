@@ -111,3 +111,65 @@ begin
   end if;
 end
 $$;
+
+-- 4. Alliance referrals are canonical sales_leads (lead_type 'alliance_referral') and become Matters
+--    through the same governed transition as every other lead. Only the lead-type allowlist
+--    changes; the body is otherwise identical to 20261107215959_p3_domestic_execution.sql (actor
+--    role check, row lock, idempotent linkage, required client name and email, evidence ledger).
+--    create or replace keeps the function's existing grants.
+create or replace function public.convert_sales_lead_to_matter(p_lead_id uuid, p_actor_id uuid)
+returns table(matter_id uuid, duplicate boolean)
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_lead public.sales_leads%rowtype;
+  v_id uuid;
+  v_preference text;
+  v_truth jsonb;
+  v_now timestamptz := now();
+begin
+  if not exists (select 1 from auth.users u where u.id = p_actor_id
+    and coalesce(u.raw_app_meta_data->>'disabled','false') <> 'true'
+    and (u.banned_until is null or u.banned_until <= v_now)
+    and u.raw_app_meta_data->>'role' in ('founder','founder_admin','admin','admin_operator','ops_manager','execution_coordinator','apostille_coordinator')) then
+    raise exception using errcode='42501', message='FORBIDDEN';
+  end if;
+  select * into v_lead from public.sales_leads where id=p_lead_id for update;
+  if not found then raise exception using errcode='P0002', message='LEAD_NOT_FOUND'; end if;
+  if v_lead.canonical_matter_id is not null then
+    return query select v_lead.canonical_matter_id, true;
+    return;
+  end if;
+  if v_lead.lead_type not in ('pricing_request','concierge_inquiry','client_intake','alliance_referral') or v_lead.lead_type is null then
+    raise exception using errcode='22023', message='LEAD_REQUIRES_ITS_GOVERNED_WORKFLOW';
+  end if;
+  if nullif(trim(v_lead.full_name),'') is null or nullif(trim(v_lead.email),'') is null then
+    raise exception using errcode='22023', message='LEAD_CONTACT_REQUIRED';
+  end if;
+  v_preference := coalesce(v_lead.details->>'customer_execution_preference', v_lead.details->>'execution_preference',
+    case when v_lead.product_interest='ron' then 'ron' else 'review_required' end);
+  if v_preference not in ('ron','in_person','mobile','already_notarized','third_party_notary','review_required') then v_preference := 'review_required'; end if;
+  v_truth := jsonb_build_object('version',1,'notarization_requirement','review_required',
+    'execution_method','review_required','notarial_act','review_required','authentication_requirement','review_required',
+    'signer_location',nullif(v_lead.details->>'signer_location',''),
+    'execution_location',null,'assigned_notary',null,'notary_jurisdiction',null,'certificate_type',null,
+    'ron_kba_status',null,'ron_credential_analysis_status',null);
+  insert into public.deals (deal_id, access_token, client_name, email, phone, document_type,
+    destination_country, origin_state, customer_execution_preference, execution_truth,
+    payment_status, payment_confirmed, amount_paid, currency, status, deal_status,
+    quote_review_required, quote_review_reasons, internal_notes)
+  values ('MS-' || extract(year from v_now)::text || '-' || p_lead_id::text, gen_random_uuid()::text,
+    v_lead.full_name, lower(trim(v_lead.email)), v_lead.phone, v_lead.document_type,
+    coalesce(nullif(trim(v_lead.country),''), nullif(trim(v_lead.details->>'destination'),'')),
+    nullif(v_lead.details->>'document_origin',''), v_preference, v_truth,
+    'unpaid',false,0,'USD','intake_received','reviewing',true,'["EXECUTION_REVIEW_REQUIRED"]'::jsonb,
+    jsonb_build_object('source_lead_id',v_lead.id,'source_route',v_lead.source_route,'service_intent',v_lead.product_interest,
+      'lead_context',v_lead.details,'execution_review',jsonb_build_object('required',true))::text)
+  returning id into v_id;
+  update public.sales_leads set canonical_matter_id=v_id,linked_by=p_actor_id,linked_at=v_now where id=p_lead_id;
+  insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,source_reference,new_value,reason)
+  values(v_id,'LEAD_LINKED_TO_MATTER','execution','operator',p_actor_id,v_now,'operator_lead_conversion',p_lead_id::text,
+    jsonb_build_object('lead_id',p_lead_id,'matter_id',v_id,'customer_execution_preference',v_preference),
+    'Operator opened canonical Matter review; no pricing, payment or execution authority was established.');
+  return query select v_id,false;
+end;
+$$;

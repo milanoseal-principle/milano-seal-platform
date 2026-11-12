@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
   if (!client_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client_email)) {
     return NextResponse.json({ error: "Please add the client's email address so the team can reach them." }, { status: 400 });
   }
-  if (!destination_country || !document_type || !matter_type) {
+  // The governed lead-to-Matter conversion requires the client's name and email.
+  if (!text("client_name") || !destination_country || !document_type || !matter_type) {
     return NextResponse.json({ error: INCOMPLETE }, { status: 400 });
   }
 

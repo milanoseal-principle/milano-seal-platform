@@ -3,7 +3,9 @@ import fs from "node:fs";
 import test from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PGlite } from "@electric-sql/pglite";
-import { partnerIdForReferralCode, resolveAlliancePartner } from "@/lib/alliance/partnerContext";
+import { randomUUID } from "node:crypto";
+import { isolatedCanonicalDatabase } from "../scripts/certification/shared.mjs";
+import { allianceStatus, partnerIdForReferralCode, resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { recordPartnerReferralAttribution, submitPartnerReferral } from "@/lib/alliance/referralLeads";
 
 // Alliance partners use the canonical operator identity (operators.user_id -> operators.profile_id
@@ -126,7 +128,8 @@ test("referrals are stored as canonical leads or fail; attribution is idempotent
 const MIGRATION = fs.readFileSync("supabase/migrations/20261112130000_alliance_operator_identity.sql", "utf8");
 test("migration: hosted operators gain the binding; duplicate user_ids skip the unique index instead of failing", async () => {
   const db = new PGlite();
-  await db.exec(`create table public.operator_profiles(id uuid primary key default gen_random_uuid(), email text unique not null);
+  await db.exec(`create table public.sales_leads(id uuid primary key);
+    create table public.operator_profiles(id uuid primary key default gen_random_uuid(), email text unique not null);
     create table public.operators(id uuid primary key default gen_random_uuid(), user_id uuid, email text not null unique, full_name text, role text, is_active bool default true, created_at timestamptz default now(), updated_at timestamptz default now());
     insert into public.operators(user_id, email) values ('00000000-0000-4000-8000-000000000001','a@example.invalid'), ('00000000-0000-4000-8000-000000000001','b@example.invalid');`);
   await db.exec(MIGRATION);
@@ -154,4 +157,37 @@ test("no legacy partner tables, no email or client-id partner identity", () => {
   assert.doesNotMatch(referrals, /return success anyway|partner_email/, "never reports an unstored referral; never attributes by typed email");
   const review = fs.readFileSync("app/api/alliance/referrals/review/route.ts", "utf8");
   assert.match(review, /canPerformProtectedMatterTransition\(access\.role\)/, "Matter creation keeps the protected-transition authority");
+});
+
+test("replayed schema: an Alliance referral lead converts through the governed transition; other rules unchanged", async () => {
+  const db = await isolatedCanonicalDatabase(fs.readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql")).sort());
+  try {
+    const coordinator = randomUUID(), partnerUser = randomUUID();
+    await db.query(`insert into auth.users(id, raw_app_meta_data) values($1, '{"role":"execution_coordinator"}'), ($2, '{"role":"alliance_partner"}')`, [coordinator, partnerUser]);
+    const lead = async (type: string, name: string | null = "Synthetic Client") => (await db.query<{ id: string }>(
+      "insert into public.sales_leads(full_name, email, document_type, country, details, product_interest, lead_type, source_route) values($1,'client@example.invalid','Power of Attorney','Italy',$2,'international',$3,'/alliance/referrals') returning id",
+      [name, JSON.stringify({ partner_id: ACCOUNT, review_status: "pending_review" }), type])).rows[0].id;
+    const convert = (id: string, actor: string) => db.query<{ matter_id: string; duplicate: boolean }>("select * from public.convert_sales_lead_to_matter($1,$2)", [id, actor]);
+
+    const referral = await lead("alliance_referral");
+    const first = (await convert(referral, coordinator)).rows[0];
+    assert.equal(first.duplicate, false);
+    assert.equal((await db.query("select 1 from public.deals where id=$1", [first.matter_id])).rows.length, 1, "canonical Matter in public.deals");
+    assert.equal((await convert(referral, coordinator)).rows[0].matter_id, first.matter_id, "idempotent linkage");
+    assert.equal((await db.query("select 1 from public.matter_evidence_ledger where matter_id=$1 and event_type='LEAD_LINKED_TO_MATTER'", [first.matter_id])).rows.length, 1);
+
+    await assert.rejects(async () => convert(await lead("alliance_referral"), partnerUser), /FORBIDDEN/, "partners cannot create Matters");
+    await assert.rejects(async () => convert(await lead("ungoverned_type"), coordinator), /LEAD_REQUIRES_ITS_GOVERNED_WORKFLOW/);
+    await assert.rejects(async () => convert(await lead("alliance_referral", null), coordinator), /LEAD_CONTACT_REQUIRED/);
+  } finally {
+    await db.close();
+  }
+});
+
+test("profile onboarding status maps to the Alliance lifecycle; approved is active", () => {
+  assert.equal(allianceStatus("approved"), "active");
+  assert.equal(allianceStatus("compliance_review"), "compliance_pending");
+  assert.equal(allianceStatus("rejected"), "offboarded");
+  assert.equal(allianceStatus(undefined), "invited");
+  assert.equal(allianceStatus("anything_else"), "invited");
 });

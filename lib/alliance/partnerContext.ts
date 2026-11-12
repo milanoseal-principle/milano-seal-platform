@@ -29,6 +29,23 @@ export type AlliancePartner = {
   created_at: string | null;
 };
 
+// operator_profiles.onboarding_status (constraint operator_profiles_onboarding_status_check) mapped
+// to the Alliance lifecycle vocabulary the partner UI renders; an approved profile is "active".
+const ONBOARDING_TO_ALLIANCE_STATUS: Record<string, string> = {
+  invited: "invited",
+  profile_started: "profile_started",
+  documents_pending: "identity_pending",
+  training_pending: "profile_completed",
+  toolbelt_pending: "toolbelt_started",
+  compliance_review: "compliance_pending",
+  approved: "active",
+  suspended: "suspended",
+  rejected: "offboarded",
+};
+export function allianceStatus(onboardingStatus: unknown): string {
+  return ONBOARDING_TO_ALLIANCE_STATUS[String(onboardingStatus ?? "")] ?? "invited";
+}
+
 export async function resolveAlliancePartner(
   verifiedUserId: string | null | undefined,
   db: SupabaseClient = createAdminClient(),
@@ -70,7 +87,7 @@ export async function resolveAlliancePartner(
     contact_name: (account.full_name as string | null) ?? (profile?.full_name as string | null) ?? null,
     firm_name: (profile?.firm_name as string | null) ?? null,
     partner_type: String(account.role),
-    status: profileId ? String(profile?.onboarding_status ?? "pending") : "unbound",
+    status: profileId ? allianceStatus(profile?.onboarding_status) : "unbound",
     referral_code: code,
     partner_code: code,
     // Unbound accounts are never eligible: eligibility belongs to the verified profile.
