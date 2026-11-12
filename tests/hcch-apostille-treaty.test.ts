@@ -115,6 +115,12 @@ test("fails closed: unknown places, non-parties, stale registry, institutional a
   assert.equal(status("US", "Atlantis"), "OFFICIAL_REVIEW_REQUIRED");
   assert.equal(status("", "IT"), "OFFICIAL_REVIEW_REQUIRED");
   assert.equal(status("US", "IT", "not-a-date"), "OFFICIAL_REVIEW_REQUIRED");
+  assert.equal(status("US", "IT", "2026-02-30"), "OFFICIAL_REVIEW_REQUIRED", "impossible calendar date");
+  assert.equal(status("US", "IT", "2026-13-01"), "OFFICIAL_REVIEW_REQUIRED");
+  assert.equal(status("HK", "Hong Kong"), "APOSTILLE_NOT_APPLICABLE", "same territory");
+  assert.equal(status("HK", "CN"), "OFFICIAL_REVIEW_REQUIRED", "territory and its own State");
+  assert.equal(status("HK", "MO"), "OFFICIAL_REVIEW_REQUIRED");
+  assert.equal(status("GI", "GB"), "OFFICIAL_REVIEW_REQUIRED");
   assert.equal(status("US", "United Arab Emirates"), "APOSTILLE_NOT_APPLICABLE");
   assert.equal(status("US", "Egypt"), "APOSTILLE_NOT_APPLICABLE");
   assert.equal(status("US", "US"), "APOSTILLE_NOT_APPLICABLE");

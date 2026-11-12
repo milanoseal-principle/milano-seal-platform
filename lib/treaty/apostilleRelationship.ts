@@ -123,7 +123,9 @@ export function evaluateApostilleRelationship(input: ApostilleRelationshipInput)
   const result = (status: ApostilleRelationshipStatus, reasons: string[], effectiveFrom: string | null = null, notes: string[] = []): ApostilleRelationship =>
     ({ status, ...base, effectiveFrom, reasons, notes });
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(evaluationDate) || Number.isNaN(Date.parse(evaluationDate))) {
+  // Round-trip so an impossible calendar date (2026-02-30) is rejected rather than normalized.
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(evaluationDate) ? Date.parse(`${evaluationDate}T00:00:00Z`) : Number.NaN;
+  if (Number.isNaN(parsed) || new Date(parsed).toISOString().slice(0, 10) !== evaluationDate) {
     return result("OFFICIAL_REVIEW_REQUIRED", ["The evaluation date is not a valid date."]);
   }
   if (!originCode || !destinationCode) {
@@ -134,8 +136,13 @@ export function evaluateApostilleRelationship(input: ApostilleRelationshipInput)
   }
 
   const a = side(originCode), b = side(destinationCode);
-  if (a.party && a.party === b.party && !a.isTerritory && !b.isTerritory) {
-    return result("APOSTILLE_NOT_APPLICABLE", ["The Convention applies to documents produced in another Contracting Party; origin and destination are the same State."]);
+  if (a.code === b.code) {
+    return result("APOSTILLE_NOT_APPLICABLE", ["The Convention applies to documents produced in another Contracting Party; origin and destination are the same place."]);
+  }
+  if (a.party && a.party === b.party) {
+    // A territory and its own State, or two territories of one State: not a relationship between
+    // Contracting Parties. Any internal arrangement must be confirmed officially.
+    return result("OFFICIAL_REVIEW_REQUIRED", [`${a.name} and ${b.name} belong to the same Contracting Party; the Convention does not govern documents moving between them, and the applicable internal arrangement requires official confirmation.`]);
   }
   for (const s of [a, b]) {
     if (!s.party) return result("APOSTILLE_NOT_APPLICABLE", [`${s.name} is not listed as a Contracting Party on the HCCH status table verified ${HCCH_APOSTILLE_SOURCE.verifiedAt}.`]);
