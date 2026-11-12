@@ -25,9 +25,12 @@ export async function GET() {
 // operator data and are never self-editable.
 export async function POST(req: NextRequest) {
   const db = createAdminClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let partner;
   try {
-    partner = await resolveAlliancePartner(await sessionUserId(), db);
+    partner = await resolveAlliancePartner(user.id, db);
   } catch {
     return NextResponse.json({ error: "Profile is unavailable right now." }, { status: 503 });
   }
@@ -43,12 +46,12 @@ export async function POST(req: NextRequest) {
 
   const now = new Date().toISOString();
   if (contact) {
-    const { error } = await db.from("operators").update({ full_name: contact, updated_at: now }).eq("id", partner.id);
+    const { error } = await db.from("operators").update({ full_name: contact, updated_at: now }).eq("id", partner.id).eq("user_id", user.id);
     if (error) return NextResponse.json({ error: "Update failed" }, { status: 503 });
   }
   if (firm && partner.profile_id) {
     const { error } = await db.from("operator_profiles").update({ firm_name: firm, updated_at: now }).eq("id", partner.profile_id);
     if (error) return NextResponse.json({ error: "Update failed" }, { status: 503 });
   }
-  return NextResponse.json({ success: true, partner: await resolveAlliancePartner(await sessionUserId(), db) });
+  return NextResponse.json({ success: true, partner: await resolveAlliancePartner(user.id, db) });
 }
