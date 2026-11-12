@@ -1,3 +1,5 @@
+import { HCCH_APOSTILLE_SOURCE, hcchParty } from "@/lib/treaty/hcchApostilleStatus";
+
 export type HagueMemberStatus = "member" | "non-member" | "bilateral";
 export type ExecutionTier = "ron" | "ink" | "ink+apostille" | "apostille+consular";
 export type CompliancePhase = "P0" | "P1" | "P2" | "P3";
@@ -27,7 +29,7 @@ export interface CountryComplianceProfile {
   faqs: { q: string; a: string }[];
 }
 
-export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
+const COUNTRY_PROFILES: CountryComplianceProfile[] = [
   {
     slug: "italy",
     name: "Italy",
@@ -125,11 +127,10 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     name: "United Arab Emirates",
     iso2: "AE",
     iso3: "ARE",
-    hagueMember: "member",
-    hagueMemberSince: "2024-09-05",
-    apostilleRequired: true,
-    consularLegalizationRequired: false,
-    executionTiers: ["ink+apostille"],
+    hagueMember: "non-member",
+    apostilleRequired: false,
+    consularLegalizationRequired: true,
+    executionTiers: ["apostille+consular"],
     primaryLanguage: "Arabic",
     secondaryLanguages: ["English"],
     phase: "P0",
@@ -139,7 +140,7 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     region: "Middle East",
     verificationStatus: "VERIFICATION_REQUIRED",
     notes: "Receiving-authority review is required before confirming an apostille or consular pathway.",
-    seoTitle: "Apostille for UAE | The Milano Seal™",
+    seoTitle: "U.S. Document Authentication for UAE | The Milano Seal™",
     seoDescription: "UAE document execution and authentication pathway review. Requirements are confirmed against the document type and receiving authority before release.",
     faqs: [
       { q: "What authentication pathway applies for the UAE?", a: "The pathway must be verified against the document type and receiving authority. The Milano Seal does not treat every UAE matter as universally apostille-only or consular-only." },
@@ -217,9 +218,10 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     name: "Canada",
     iso2: "CA",
     iso3: "CAN",
-    hagueMember: "non-member",
-    apostilleRequired: false,
-    consularLegalizationRequired: true,
+    hagueMember: "member",
+    hagueMemberSince: "2024-01-11",
+    apostilleRequired: true,
+    consularLegalizationRequired: false,
     executionTiers: ["ink+apostille"],
     primaryLanguage: "English",
     secondaryLanguages: ["French"],
@@ -228,11 +230,11 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     lat: 45.4215,
     lng: -75.6972,
     region: "North America",
-    seoTitle: "Document Authentication for Canada | The Milano Seal™",
-    seoDescription: "Florida document authentication for Canada. Canada is not a Hague Convention member — documents require federal authentication through Global Affairs Canada.",
+    seoTitle: "U.S. Apostille for Canada | The Milano Seal™",
+    seoDescription: "U.S. apostille and document-authentication coordination for Canada following the Apostille Convention's entry into force for Canada on January 11, 2024.",
     faqs: [
-      { q: "Does Canada accept US apostilles?", a: "No. Canada is not a member of the Hague Apostille Convention. US documents destined for Canada require authentication through the US federal chain and legalization through Global Affairs Canada." },
-      { q: "What is the process for documents to Canada?", a: "The standard process involves notarization, US federal authentication (US Department of State), and legalization through the Canadian Embassy or consulate." },
+      { q: "Is Canada part of the Hague Apostille Convention?", a: "Yes. The Apostille Convention entered into force for Canada on January 11, 2024." },
+      { q: "Which U.S. authority apostilles a document for Canada?", a: "The competent authority depends on the document's origin. State-issued or state-notarized documents generally follow the relevant state authority, while federal documents follow the applicable federal route." },
     ],
   },
   {
@@ -388,7 +390,7 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     seoTitle: "Apostille for Peru | The Milano Seal™",
     seoDescription: "Florida apostille preparation for Peru. Notarization, apostille routing, and courier custody.",
     faqs: [
-      { q: "Does Peru accept US apostilles?", a: "Yes. Peru joined the Hague Convention in 2011. Florida-apostilled documents are generally accepted." },
+      { q: "Does Peru accept US apostilles?", a: "Yes. The Apostille Convention entered into force for Peru in 2010. Florida-apostilled documents are generally accepted." },
     ],
   },
   {
@@ -548,6 +550,24 @@ export const COUNTRY_REGISTRY: CountryComplianceProfile[] = [
     ],
   },
 ];
+
+// Hague membership and its date are never hand-maintained here: they come from the canonical HCCH
+// registry, as of its last official verification. A profile whose stored status disagreed with
+// the registry also has its route flags corrected, so no page can describe the wrong route.
+function withHcchStatus(profile: CountryComplianceProfile): CountryComplianceProfile {
+  const party = hcchParty(profile.iso2);
+  const inForce = Boolean(party && party.entryIntoForce <= HCCH_APOSTILLE_SOURCE.verifiedAt);
+  const hagueMember: HagueMemberStatus = inForce ? "member" : "non-member";
+  const changed = profile.hagueMember !== hagueMember;
+  return {
+    ...profile,
+    hagueMember,
+    hagueMemberSince: inForce ? party!.entryIntoForce : undefined,
+    ...(changed ? { apostilleRequired: inForce, consularLegalizationRequired: !inForce } : {}),
+  };
+}
+
+export const COUNTRY_REGISTRY: CountryComplianceProfile[] = COUNTRY_PROFILES.map(withHcchStatus);
 
 // Alternate slugs that may arrive via external links or older URLs.
 const SLUG_ALIASES: Record<string, string> = {
