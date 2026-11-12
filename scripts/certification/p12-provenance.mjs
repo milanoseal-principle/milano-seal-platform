@@ -10,7 +10,8 @@ try{
  // by path; the default remains the committed 2026-11-09 evidence snapshot.
  const hostedPath=process.env.P12_HOSTED_METADATA??'docs/production/evidence/P12_HOSTED_METADATA_2026-11-09.json';
  const raw=JSON.parse(readFileSync(hostedPath,'utf8'));const hosted=raw.p12_hosted_metadata??(Array.isArray(raw)?raw[0]?.p12_hosted_metadata:null)??raw;
- if(hosted.inspection!=='READ_ONLY_METADATA_HASHES_ONLY'||!hosted.catalog||!Array.isArray(hosted.migrations))throw Error('P12_HOSTED_SNAPSHOT_FORMAT_INVALID');
+ // Both labels denote the same read-only metadata-and-hash catalog shape.
+ if(!['READ_ONLY_METADATA_HASHES_ONLY','READ_ONLY_LIVE_P12_CATALOG'].includes(hosted.inspection)||!hosted.catalog||!Array.isArray(hosted.migrations))throw Error('P12_HOSTED_SNAPSHOT_FORMAT_INVALID');
  const local=(await db.query(readFileSync('supabase/verification/certification_catalog.sql','utf8'))).rows[0].catalog;
  const gaps={};for(const [category,entries] of Object.entries(local)){const existing=new Map(hosted.catalog[category].map(v=>[v.key,v])),expected=new Map(entries.map(v=>[v.key,v]));gaps[category]={missing:entries.filter(v=>!existing.has(v.key)),different:entries.filter(v=>existing.has(v.key)&&JSON.stringify(v)!==JSON.stringify(existing.get(v.key))).map(v=>({key:v.key,local:v,hosted:existing.get(v.key)})),hosted_only:hosted.catalog[category].filter(v=>!expected.has(v.key))};}
  const plan=JSON.parse(readFileSync('supabase/migration-replay-plan.json','utf8'));const order=[...plan.fresh_database_prerequisites,...files.filter(f=>!plan.fresh_database_prerequisites.includes(f))];
