@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { sendWhatsApp } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
@@ -31,6 +32,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const { id } = await params;
   const deal = await resolveDealUuid(id);
   if (!deal) {
@@ -55,6 +58,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const { id } = await params;
   const deal = await resolveDealUuid(id);
   if (!deal) {

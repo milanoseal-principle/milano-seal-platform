@@ -142,7 +142,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  if (pathname.startsWith("/api/dashboard") && !isRouteAllowedForRole("/dashboard", role)) {
+  // Operator APIs: a signed-in session alone is not enough. /api/admin and
+  // /api/follow-ups expose and mutate cross-Matter data with the service-role
+  // client, so they require the same operator family as /api/dashboard.
+  if (
+    (pathname.startsWith("/api/dashboard") ||
+      pathname === "/api/admin" ||
+      pathname.startsWith("/api/admin/") ||
+      pathname === "/api/follow-ups" ||
+      pathname.startsWith("/api/follow-ups/")) &&
+    !isRouteAllowedForRole("/dashboard", role)
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

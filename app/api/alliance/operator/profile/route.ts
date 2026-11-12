@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { evaluateEligibilityGate } from "@/lib/alliance/operatorEligibilityGate";
 
 export const runtime = "nodejs";
@@ -7,6 +8,8 @@ export const runtime = "nodejs";
 // GET /api/alliance/operator/profile — fetch operator profile + toolbelt + compliance + eligibility
 // Used by the alliance portal (read-only, no internal cost/margin data)
 export async function GET(req: NextRequest) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const admin = createAdminClient();
   const operatorId = req.nextUrl.searchParams.get("operator_id");
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { persistEligibilityCheck } from "@/lib/alliance/operatorEligibilityGate";
 
 export const runtime = "nodejs";
@@ -7,6 +8,8 @@ export const runtime = "nodejs";
 // PATCH /api/alliance/operator/toolbelt — update tool status (by operator or admin)
 // Triggers eligibility re-evaluation after update.
 export async function PATCH(req: NextRequest) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const admin = createAdminClient();
 
   let body: {
