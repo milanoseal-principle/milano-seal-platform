@@ -73,6 +73,9 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // Adds operator authorization (founder-only manual confirmation) and session-
  // derived audit attribution; no payment rule changes. tests/operator-api-authorization.test.ts.
  'app/api/deals/[id]/payment/manual-confirm/route.ts','app/api/deals/[id]/payment/request-final/route.ts',
+ // 2026-11-12 user-authorized RLS policy remediation from the P12 catalog review;
+ // exact path only. Regression: tests/public-rls-policy-revocation.test.ts.
+ 'supabase/migrations/20261112090000_revoke_unrestricted_public_rls_policies.sql','tests/public-rls-policy-revocation.test.ts',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
