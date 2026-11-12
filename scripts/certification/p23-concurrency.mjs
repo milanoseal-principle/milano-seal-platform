@@ -205,6 +205,7 @@ async function main(){
   await scenario('ROLLBACK_GRANTS_NOTHING',['INV-13'],'confirmation rolled back while 9 sessions try to schedule',async()=>{
    const m=await ready();
    const r=await raceIn(10,(c,i)=>i===0?confirmOn(c,m.id,m.resource):c.query("update deals set status='scheduled',deal_status='scheduled' where id=$1",[m.id]),{rollback:i=>i===0});
+   assert.ok(r.results[0].ok&&r.results[0].rolled_back,'worker 0 must confirm and then roll back');
    const row=await fx.load(m.id);
    assert.equal(row.payment_confirmed,false,'rolled back confirmation must leave no payment authority');
    assert.equal(await scheduledEvents(m.id),0);assert.equal(row.status,'awaiting_payment');
@@ -253,6 +254,10 @@ async function main(){
   const setState=(c,id,next)=>c.query('update deals set status=$1,deal_status=$1 where id=$2',[next,id]);
   const out=(r,extra={})=>({sessions:r.distinct_backends,overlap:r.overlap_waiting_backends,...extra,outcomes:summary(r.results)});
   const onlyRejected=(s,pattern)=>Object.keys(s.rejected).every(k=>pattern.test(k));
+  // A rollback scenario proves nothing unless worker 0's write really succeeded before rolling back.
+  const rolledBack=r=>assert.ok(r.results[0].ok&&r.results[0].rolled_back,'worker 0 must complete its write and then roll back: '+(r.results[0].message??''));
+  // An idempotent retry proves nothing unless every concurrent attempt succeeded.
+  const allCommitted=(r,n)=>assert.equal(summary(r.results).committed,n,`all ${n} concurrent retries must succeed`);
   const authenticated=()=>prepareAuthenticationMatter(db,fx,operator);
   const released=async()=>{const a=await authenticated(),v=await a.chain();await a.release([v.final]);return {...a,...v};};
   const delivery=(c,id,key)=>c.query('select append_custody_event($1,$2)',[{deal_id:id,event:'DOC_DELIVERED',actor_type:'system',actor_id:operator,location:null,method:'SIMULATION_ONLY',status:'synthetic_delivery',notes:'Isolated synthetic delivery; no courier/provider transmission',metadata:{mode:'SIMULATION',live_delivery:false}},key]);
@@ -292,7 +297,7 @@ async function main(){
   // DOCUMENT RELEASE: exact final-packet release produces one custody fact.
   for(const n of [2,10]) await scenario(`RELEASE_DUPLICATE_${n}`,['INV-08','INV-14'],`${n} parallel releases of one exact final packet`,async()=>{
    const a=await authenticated(),v=await a.chain();
-   const r=await raceIn(n,c=>a.release([v.final],c).then(x=>x.rows[0].result.hash));
+   const r=await raceIn(n,c=>a.release([v.final],c).then(x=>x.rows[0].result.hash));allCommitted(r,n);
    assert.equal(await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),1,'exactly one release custody record');
    const hashes=new Set(r.results.filter(x=>x.ok).map(x=>x.value));assert.equal(hashes.size,1,'every successful retry returns the same custody hash');
    return out(r,{distinct_release_hashes:hashes.size});});
@@ -313,7 +318,7 @@ async function main(){
 
   await scenario('RELEASE_ROLLBACK_GRANTS_NOTHING',['INV-08','INV-13'],'release rolled back while 9 sessions try to move the Matter in transit',async()=>{
    const a=await authenticated(),v=await a.chain();
-   const r=await raceIn(10,(c,i)=>i===0?a.release([v.final],c):setState(c,a.matter,'in_transit'),{rollback:i=>i===0});
+   const r=await raceIn(10,(c,i)=>i===0?a.release([v.final],c):setState(c,a.matter,'in_transit'),{rollback:i=>i===0});rolledBack(r);
    assert.equal(await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),0,'rolled back release leaves no custody');
    assert.equal(await statusOf(a.matter),'apostille_processing');assert.equal(await stateEvents(a.matter,'in_transit'),0);
    return out(r);});
@@ -373,7 +378,7 @@ async function main(){
 
   await scenario('RON_ROLLBACK_GRANTS_NOTHING',['INV-05','INV-13'],'statutory append rolled back while 9 sessions try to complete',async()=>{
    const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();const completion={ron_lifecycle_state:'COMPLETED'};
-   const r=await raceIn(10,(c,i)=>i===0?appendOn(c,ron,evidence,randomUUID()):ron.update('ron_sessions',ron.session,completion,c),{rollback:i=>i===0});
+   const r=await raceIn(10,(c,i)=>i===0?appendOn(c,ron,evidence,randomUUID()):ron.update('ron_sessions',ron.session,completion,c),{rollback:i=>i===0});rolledBack(r);
    const row=await ronRow(ron.session);assert.equal(row.statutory_evidence_id,null);assert.equal(row.ron_lifecycle_state,'EVIDENCE_PENDING');
    assert.equal(await ronEvidence(ron.session),0);assert.equal(summary(r.results).committed,0);return out(r);});
 
@@ -385,12 +390,12 @@ async function main(){
 
   // MATTER CLOSURE: synthetic delivery evidence and terminal transitions, no real courier.
   await scenario('CLOSE_IN_TRANSIT_10',['INV-10','INV-14'],'10 parallel in-transit transitions after exact release',async()=>{
-   const a=await released();const r=await raceIn(10,c=>setState(c,a.matter,'in_transit'));
+   const a=await released();const r=await raceIn(10,c=>setState(c,a.matter,'in_transit'));allCommitted(r,10);
    assert.equal(await stateEvents(a.matter,'in_transit'),1);assert.equal(await statusOf(a.matter),'in_transit');return out(r);});
 
   await scenario('CLOSE_DELIVERY_EVIDENCE_10',['INV-10','INV-14'],'10 parallel synthetic delivery confirmations with one key',async()=>{
    const a=await released();await setState(db,a.matter,'in_transit');const key='P23-DELIVERY-'+a.matter;
-   const r=await raceIn(10,c=>delivery(c,a.matter,key));
+   const r=await raceIn(10,c=>delivery(c,a.matter,key));allCommitted(r,10);
    assert.equal(await custodyEvents(a.matter,'DOC_DELIVERED'),1,'one delivery custody record');return out(r);});
 
   await scenario('CLOSE_DELIVERED_WITHOUT_EVIDENCE_10',['INV-10'],'10 parallel delivered transitions without delivery evidence',async()=>{
@@ -411,12 +416,12 @@ async function main(){
 
   await scenario('CLOSE_COMPLETED_10',['INV-10','INV-14'],'10 parallel Matter closures',async()=>{
    const a=await released();await setState(db,a.matter,'in_transit');await delivery(db,a.matter,'P23-DELIVERY-'+a.matter);await setState(db,a.matter,'delivered');
-   const r=await raceIn(10,c=>setState(c,a.matter,'completed'));
+   const r=await raceIn(10,c=>setState(c,a.matter,'completed'));allCommitted(r,10);
    assert.equal(await stateEvents(a.matter,'completed'),1,'exactly one closure');assert.equal(await statusOf(a.matter),'completed');return out(r);});
 
   await scenario('CLOSE_ROLLBACK_GRANTS_NOTHING',['INV-10','INV-13'],'delivery evidence rolled back while 9 sessions try to mark delivered',async()=>{
    const a=await released();await setState(db,a.matter,'in_transit');
-   const r=await raceIn(10,(c,i)=>i===0?delivery(c,a.matter,'P23-DELIVERY-'+a.matter):setState(c,a.matter,'delivered'),{rollback:i=>i===0});
+   const r=await raceIn(10,(c,i)=>i===0?delivery(c,a.matter,'P23-DELIVERY-'+a.matter):setState(c,a.matter,'delivered'),{rollback:i=>i===0});rolledBack(r);
    assert.equal(await custodyEvents(a.matter,'DOC_DELIVERED'),0);assert.equal(await statusOf(a.matter),'in_transit');assert.equal(await stateEvents(a.matter,'delivered'),0);
    return out(r);});
 
