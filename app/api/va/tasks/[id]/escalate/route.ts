@@ -37,60 +37,21 @@ export async function POST(
 
   try {
     const admin = createAdminClient();
-
-    const { data: task, error: fetchError } = await admin
-      .from("va_tasks")
-      .select("id, assigned_to, status, matter_id")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (fetchError) {
-      if (
-        fetchError.message?.includes("does not exist") ||
-        fetchError.code === "42P01"
-      ) {
-        return NextResponse.json(
-          { error: "Task system not yet provisioned" },
-          { status: 503 }
-        );
-      }
-      throw fetchError;
-    }
-
-    if (!task) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
-    }
-
-    if (task.assigned_to !== user.id) {
-      return NextResponse.json(
-        { error: "Not assigned to this task" },
-        { status: 403 }
-      );
-    }
-
-    const now = new Date().toISOString();
-
-    const { error: updateError } = await admin
-      .from("va_tasks")
-      .update({
-        status: "escalated",
-        escalated_at: now,
-        notes_public: reason || null,
-        updated_at: now,
-      })
-      .eq("id", id);
-
-    if (updateError) throw updateError;
-
-    await admin.from("va_task_events").insert({
-      task_id: id,
-      matter_id: (task as { matter_id?: string | null }).matter_id ?? null,
-      actor_id: user.id,
-      event_type: "VA_TASK_ESCALATED",
-      description: reason || "Task escalated by VA",
-      severity: "warning",
-      created_at: now,
+    // One locked transaction: ownership, allowed current state, update and audit event.
+    const { error } = await admin.rpc("va_task_transition", {
+      p_task: id,
+      p_actor: user.id,
+      p_action: "escalate",
+      p_reason: reason,
     });
+    if (error) {
+      const code = String(error.message ?? "");
+      if (code.includes("VA_TASK_NOT_FOUND")) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      if (code.includes("VA_TASK_NOT_ASSIGNED")) return NextResponse.json({ error: "Not assigned to this task" }, { status: 403 });
+      if (code.includes("VA_TASK_STATE_CONFLICT")) return NextResponse.json({ error: "Task is not in a state that allows this action" }, { status: 409 });
+      // Missing schema or any database failure is an error, never a silent success.
+      return NextResponse.json({ error: "Task system unavailable" }, { status: 503 });
+    }
 
     return NextResponse.json({ success: true });
   } catch {

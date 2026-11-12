@@ -45,8 +45,10 @@ function formatDue(due: string | null): string {
 }
 
 export function VATaskQueue() {
-  const { data, isLoading, refetch } = useApi<TasksResponse>("/api/va/tasks");
+  const { data, isLoading, error, refetch } = useApi<TasksResponse>("/api/va/tasks");
   const [completing, setCompleting] = useState<string | null>(null);
+  // A refused or failed action must never look like success.
+  const [actionError, setActionError] = useState<string | null>(null);
   const [escalating, setEscalating] = useState<string | null>(null);
 
   const tasks = data?.tasks ?? [];
@@ -54,7 +56,9 @@ export function VATaskQueue() {
   async function handleComplete(id: string) {
     setCompleting(id);
     try {
-      await fetch(`/api/va/tasks/${id}/complete`, { method: "POST" });
+      setActionError(null);
+      const res = await fetch(`/api/va/tasks/${id}/complete`, { method: "POST" });
+      if (!res.ok) setActionError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? "Task could not be completed.");
       await refetch();
     } finally {
       setCompleting(null);
@@ -64,11 +68,13 @@ export function VATaskQueue() {
   async function handleEscalate(id: string) {
     setEscalating(id);
     try {
-      await fetch(`/api/va/tasks/${id}/escalate`, {
+      setActionError(null);
+      const res = await fetch(`/api/va/tasks/${id}/escalate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ reason: "" }),
       });
+      if (!res.ok) setActionError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? "Task could not be escalated.");
       await refetch();
     } finally {
       setEscalating(null);
@@ -121,7 +127,16 @@ export function VATaskQueue() {
         className="p-4 space-y-2 overflow-y-auto"
         style={{ maxHeight: 480, scrollbarWidth: "none" }}
       >
-        {isLoading ? (
+        {actionError && (
+          <p role="alert" className="text-xs rounded-sm px-3 py-2" style={{ color: "#F2C27A", background: "rgba(242,194,122,0.08)" }}>
+            {actionError}
+          </p>
+        )}
+        {error && !isLoading ? (
+          <p role="alert" className="py-10 text-center text-sm" style={{ color: "#F2C27A" }}>
+            Tasks are unavailable right now. This is not an empty queue — please retry or contact operations.
+          </p>
+        ) : isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div
