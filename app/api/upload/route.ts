@@ -2,6 +2,7 @@ import {persistUploadedVersion} from '@/lib/documents/versions';
 import {authorizeMatterUpload} from '@/lib/uploads/authorization';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PORTAL_URL_EXPIRY_SECONDS } from "@/lib/vault";
 import {
   DOCUMENT_PREFLIGHT_MAX_BYTES,
   DOCUMENT_PREFLIGHT_SUPPORTED_MIME_TYPES,
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     // SECURITY-05/06: Signed URL — bucket must be private; no public CDN path exposed.
     const { data: signedData } = await supabase.storage
       .from("documents")
-      .createSignedUrl(path, 60 * 60 * 24 * 7); // 7-day signed URL
+      .createSignedUrl(path, PORTAL_URL_EXPIRY_SECONDS); // same 15-minute vault window as the portal
 
     const fileUrl = signedData?.signedUrl ?? null;
 
