@@ -66,15 +66,32 @@ export type BindingAccount = {
 };
 export type BindingProfile = { id: string; full_name: string | null; firm_name: string | null; email: string | null; state: string | null; onboarding_status: string | null; bound: boolean };
 
+export const BINDING_PAGE_SIZE = 1000;
+const MAX_PAGES = 200;
+
+type Page = PromiseLike<{ data: Record<string, unknown>[] | null; error: unknown }>;
+async function readAllPages(page: (from: number, to: number) => Page): Promise<Record<string, unknown>[]> {
+  const all: Record<string, unknown>[] = [];
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const { data, error } = await page(i * BINDING_PAGE_SIZE, (i + 1) * BINDING_PAGE_SIZE - 1);
+    if (error || !data) throw Error("BINDING_ACCOUNTS_UNAVAILABLE");
+    all.push(...data);
+    if (data.length < BINDING_PAGE_SIZE) return all;
+  }
+  // More rows than this screen can list: refuse rather than present a partial identity list.
+  throw Error("BINDING_ACCOUNTS_UNAVAILABLE");
+}
+
 // Alliance accounts and the profiles they can be bound to. Throws on any read failure so the
 // caller reports "unavailable" instead of an empty list.
 export async function listBindingAccounts(db: SupabaseClient): Promise<{ accounts: BindingAccount[]; profiles: BindingProfile[] }> {
-  const [accounts, profiles] = await Promise.all([
-    db.from("operators").select("id, user_id, email, full_name, role, is_active, profile_id, referral_code").in("role", [...ALLIANCE_ACCOUNT_ROLES]).order("email"),
-    db.from("operator_profiles").select("id, full_name, firm_name, email, state, onboarding_status").order("full_name"),
+  // Every page is read: the API returns at most PAGE_SIZE rows per request, and a truncated list
+  // would show a bound account as unbound. A stable secondary order keeps pages disjoint.
+  const [rows, profileRows] = await Promise.all([
+    readAllPages((from, to) => db.from("operators").select("id, user_id, email, full_name, role, is_active, profile_id, referral_code").in("role", [...ALLIANCE_ACCOUNT_ROLES]).order("email").order("id").range(from, to)),
+    readAllPages((from, to) => db.from("operator_profiles").select("id, full_name, firm_name, email, state, onboarding_status").order("full_name").order("id").range(from, to)),
   ]);
-  if (accounts.error || profiles.error) throw Error("BINDING_ACCOUNTS_UNAVAILABLE");
-  const rows = accounts.data ?? [];
+  const profiles = { data: profileRows };
   const userCounts = new Map<string, number>();
   for (const row of rows) if (row.user_id) userCounts.set(row.user_id as string, (userCounts.get(row.user_id as string) ?? 0) + 1);
   const profileById = new Map((profiles.data ?? []).map((p) => [p.id as string, p]));

@@ -142,7 +142,8 @@ function client(db: Db, tables: Record<string, unknown[]> = {}, fail = false) {
       const api: Record<string, unknown> = {};
       api.select = () => api;
       api.in = () => api;
-      api.order = () => Promise.resolve(result);
+      api.order = () => api;
+      api.range = (from: number, to: number) => Promise.resolve(result.data ? { data: result.data.slice(from, to + 1), error: null } : result);
       return api;
     },
   } as unknown as SupabaseClient;
@@ -211,6 +212,17 @@ test("admin gate and listing: role allow-list, duplicate users flagged, read fai
   assert.deepEqual(listed.accounts.map((a) => [a.id, a.duplicate_user, a.has_user, a.profile?.id ?? null]), [["o1", true, true, "p1"], ["o2", true, true, null], ["o3", false, false, null]]);
   assert.deepEqual(listed.profiles.map((p) => [p.id, p.bound]), [["p1", true], ["p2", false]]);
   await assert.rejects(() => listBindingAccounts(client(null as unknown as Db, tables, true)), /BINDING_ACCOUNTS_UNAVAILABLE/);
+
+  // More rows than one API page: every page is read, so a bound profile on a later page still resolves.
+  const many = {
+    operators: Array.from({ length: 1001 }, (_, i) => ({ id: `o${i}`, user_id: `u${i}`, email: `${i}@example.invalid`, full_name: null, role: "alliance_partner", is_active: true, profile_id: i === 1000 ? "p1500" : null, referral_code: null })),
+    operator_profiles: Array.from({ length: 2001 }, (_, i) => ({ id: `p${i}`, full_name: `P${i}`, firm_name: null, email: null, state: null, onboarding_status: "approved" })),
+  };
+  const paged = await listBindingAccounts(client(null as unknown as Db, many));
+  assert.equal(paged.accounts.length, 1001);
+  assert.equal(paged.profiles.length, 2001);
+  assert.equal(paged.accounts[1000].profile?.id, "p1500", "bound profile beyond the first page is not shown as unbound");
+  assert.equal(paged.profiles.filter((p) => p.bound).length, 1);
 });
 
 test("route contracts: admin gate first, actor from the session, no email matching, no direct column writes", () => {
