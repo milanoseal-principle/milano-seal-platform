@@ -23,11 +23,13 @@ const URGENCY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, 
 export function VAMattersClient() {
   const [matters, setMatters] = useState<VAMatter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     void (async () => {
       try {
         const r = await fetch("/api/va/tasks", { cache: "no-store" });
+        if (!r.ok) setUnavailable(true);
         if (r.ok) {
           const body = (await r.json()) as {
             tasks?: Array<{ matter_id?: string | null; urgency?: string; due_at?: string | null }>;
@@ -52,6 +54,8 @@ export function VAMattersClient() {
           }
           setMatters(Array.from(grouped.values()));
         }
+      } catch {
+        setUnavailable(true);
       } finally {
         setLoading(false);
       }
@@ -76,6 +80,10 @@ export function VAMattersClient() {
             <div key={i} className="h-16 rounded-lg bg-white/5 animate-pulse" />
           ))}
         </div>
+      ) : unavailable ? (
+        <p role="alert" className="text-center py-16 text-sm" style={{ color: "#F2C27A" }}>
+          Matters are unavailable right now. This is not an empty list — please retry or contact operations.
+        </p>
       ) : !matters.length ? (
         <div className="text-center py-16">
           <FileCheck className="w-8 h-8 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.1)" }} />

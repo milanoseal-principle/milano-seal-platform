@@ -28,14 +28,14 @@ export async function GET() {
     const { data, error } = await admin
       .from("va_tasks")
       .select(
-        "id, matter_id, matter_display_id, task_type, title, status, urgency, priority, assigned_to, due_at, created_at, completed_at, notes_public, escalation_reason, client_safe_context"
+        "id, matter_id, task_type, status, urgency, assigned_to, due_at, created_at, completed_at, escalated_at, notes_public, next_action"
       )
       .eq("assigned_to", user.id)
       .eq("task_type", "checklist")
       .order("due_at", { ascending: true, nullsFirst: false });
 
-    if (error && (error.code === "42P01" || error.message?.includes("does not exist"))) {
-      return NextResponse.json({ checklists: [], migration_needed: true });
+    if (error) {
+      return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", checklists: null }, { status: 503 });
     }
 
     const checklists = (data ?? []).map((row) =>
@@ -44,6 +44,6 @@ export async function GET() {
 
     return NextResponse.json({ checklists });
   } catch {
-    return NextResponse.json({ checklists: [], migration_needed: true });
+    return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", checklists: null }, { status: 503 });
   }
 }

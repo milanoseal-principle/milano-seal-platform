@@ -49,8 +49,8 @@ export async function GET() {
       .eq("assigned_to", user.id)
       .not("matter_id", "is", null);
 
-    if (taskError && (taskError.code === "42P01" || taskError.message?.includes("does not exist"))) {
-      return NextResponse.json({ matters: [], migration_needed: true });
+    if (taskError) {
+      return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", matters: null }, { status: 503 });
     }
 
     const matterIds = [
@@ -69,8 +69,8 @@ export async function GET() {
       )
       .in("id", matterIds);
 
-    if (dealError && (dealError.code === "42P01" || dealError.message?.includes("does not exist"))) {
-      return NextResponse.json({ matters: [], migration_needed: true });
+    if (dealError) {
+      return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", matters: null }, { status: 503 });
     }
 
     const matters = (deals ?? []).map((row) =>
@@ -79,6 +79,6 @@ export async function GET() {
 
     return NextResponse.json({ matters });
   } catch {
-    return NextResponse.json({ matters: [], migration_needed: true });
+    return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", matters: null }, { status: 503 });
   }
 }

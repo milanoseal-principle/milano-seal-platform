@@ -31,7 +31,7 @@ export async function GET(
     const admin = createAdminClient();
 
     // Security gate: VA must have at least one task on this matter
-    const { data: taskCheck } = await admin
+    const { data: taskCheck, error: taskCheckError } = await admin
       .from("va_tasks")
       .select("id")
       .eq("matter_id", id)
@@ -39,6 +39,9 @@ export async function GET(
       .limit(1)
       .maybeSingle();
 
+    if (taskCheckError) {
+      return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE" }, { status: 503 });
+    }
     if (!taskCheck) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -52,8 +55,8 @@ export async function GET(
       .eq("id", id)
       .maybeSingle();
 
-    if (error && (error.code === "42P01" || error.message?.includes("does not exist"))) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (error) {
+      return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE" }, { status: 503 });
     }
 
     if (!data) {
@@ -62,6 +65,6 @@ export async function GET(
 
     return NextResponse.json({ matter: projectMatter(data as Record<string, unknown>) });
   } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE" }, { status: 503 });
   }
 }

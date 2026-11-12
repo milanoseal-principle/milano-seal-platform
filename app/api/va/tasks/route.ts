@@ -27,7 +27,7 @@ export async function GET() {
     const { data: tasks, error } = await admin
       .from("va_tasks")
       .select(
-        "id, matter_id, task_type, urgency, status, assigned_to, due_at, notes_public, next_action, completed_at, escalated_at, created_at, updated_at"
+        "id, matter_id, task_type, status, urgency, assigned_to, due_at, created_at, completed_at, escalated_at, notes_public, next_action"
       )
       .eq("assigned_to", user.id)
       .neq("status", "completed")
@@ -35,17 +35,14 @@ export async function GET() {
       .order("due_at", { ascending: true, nullsFirst: false });
 
     if (error) {
-      if (
-        error.message?.includes("does not exist") ||
-        error.code === "42P01"
-      ) {
-        return NextResponse.json({ tasks: [], migration_needed: true });
+      if (error) {
+        return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", tasks: null }, { status: 503 });
       }
       throw error;
     }
 
     return NextResponse.json({ tasks: tasks ?? [] });
   } catch {
-    return NextResponse.json({ tasks: [], migration_needed: true });
+    return NextResponse.json({ error: "VA_TASK_STORE_UNAVAILABLE", tasks: null }, { status: 503 });
   }
 }

@@ -79,6 +79,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // 2026-11-12 user-authorized upload write-contract restoration; exact path only.
  'supabase/migrations/20261112100000_files_upload_compatibility_columns.sql',
  'supabase/migrations/20261112110000_restore_application_column_contract.sql',
+ // 2026-11-12 user-authorized VA task ledger (003 contract + atomic transition); exact path only.
+ 'supabase/migrations/20261112120000_va_task_ledger.sql',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
