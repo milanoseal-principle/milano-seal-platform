@@ -7,6 +7,8 @@ import { COUNTRY_REGISTRY, getCountryBySlug } from "@/lib/compliance/countries";
 import { applyVerifiedCountryOverride } from "@/lib/compliance/verified-country-overrides";
 import { isHagueMember } from "@/lib/intake/hagueMembers";
 import { JURISDICTIONS } from "@/lib/jurisdictions";
+import { hagueCountries } from "@/lib/compliance/hagueCountries";
+import { nonHagueCountries } from "@/lib/compliance/nonHagueCountries";
 
 // Canonical HCCH Apostille Convention registry and the country-pair evaluator. Expected values are
 // the HCCH status table as verified on 12 November 2026.
@@ -148,8 +150,7 @@ test("every platform country list agrees with the registry", () => {
   assert.equal(isHagueMember("", AT), false);
 });
 
-test("the legacy Hague lists are views of the registry and cannot contradict it", async () => {
-  const { hagueCountries, nonHagueCountries } = await import("@/lib/compliance");
+test("the legacy Hague lists are views of the registry and cannot contradict it", () => {
   assert.equal(hagueCountries.length, HCCH_CONTRACTING_PARTIES.filter((p) => p.entryIntoForce <= HCCH_APOSTILLE_SOURCE.verifiedAt).length);
   assert.ok(!hagueCountries.some((c) => c.iso2 === "TH"), "future-effective Thailand is not listed as in force");
   for (const c of nonHagueCountries) assert.equal(isApostilleConventionInForce(c.iso2, AT), false, c.name);
