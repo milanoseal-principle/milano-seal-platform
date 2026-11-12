@@ -9,6 +9,8 @@ import {readFileSync,readdirSync,writeFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {wiseFixtures} from './shared.mjs';
+import {prepareAuthenticationMatter} from './release-chain-fixture.mjs';
+import {prepareRonSession} from './ron-matter-fixture.mjs';
 
 const started=Date.now();
 const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
@@ -237,6 +239,193 @@ async function main(){
    for(const m of ms){const row=await fx.load(m.id);assert.equal(row.payment_confirmed,true);assert.equal(Number(row.amount_paid),100);}
    const s=summary(r.results);assert.equal(s.committed,5,'only own-reference confirmations commit');
    return {sessions:r.distinct_backends,overlap:r.overlap_waiting_backends,outcomes:s};});
+
+  // ------------------------------------------------ final four groups (P23 stage 18)
+  // Fixtures are the P22 apostille/release chain and the P19 RON session builder, run
+  // unchanged; only the raced call is issued from each worker's own backend session.
+  const client=randomUUID();
+  await db.query("insert into auth.users(id,email,raw_app_meta_data) values($1,'p23-client@example.invalid','{\"role\":\"client\"}')",[client]);
+  const count=async(sql,params)=>Number((await db.query(sql,params)).rows[0].n);
+  const stateEvents=(id,state)=>count('select count(*) n from matter_state_events where matter_id=$1 and new_state=$2',[id,state]);
+  const custodyEvents=(id,event)=>count('select count(*) n from custody_ledger where deal_id=$1 and event=$2',[id,event]);
+  const approvals=id=>count("select count(*) n from audit_events where event_type='SECURITY_DOCUMENT_VERSION_APPROVED' and metadata->>'version_id'=$1",[id]);
+  const statusOf=async id=>(await fx.load(id)).status;
+  const setState=(c,id,next)=>c.query('update deals set status=$1,deal_status=$1 where id=$2',[next,id]);
+  const out=(r,extra={})=>({sessions:r.distinct_backends,overlap:r.overlap_waiting_backends,...extra,outcomes:summary(r.results)});
+  const onlyRejected=(s,pattern)=>Object.keys(s.rejected).every(k=>pattern.test(k));
+  const authenticated=()=>prepareAuthenticationMatter(db,fx,operator);
+  const released=async()=>{const a=await authenticated(),v=await a.chain();await a.release([v.final]);return {...a,...v};};
+  const delivery=(c,id,key)=>c.query('select append_custody_event($1,$2)',[{deal_id:id,event:'DOC_DELIVERED',actor_type:'system',actor_id:operator,location:null,method:'SIMULATION_ONLY',status:'synthetic_delivery',notes:'Isolated synthetic delivery; no courier/provider transmission',metadata:{mode:'SIMULATION',live_delivery:false}},key]);
+
+  // APOSTILLE EVIDENCE: founder QC of returned authority evidence, and its binding to Matter facts.
+  await scenario('APOSTILLE_APPROVE_RETURNED_10',['INV-07','INV-14'],'10 parallel founder approvals of one returned apostille version',async()=>{
+   const a=await authenticated();const source=await a.insert('executed');await a.approve(source);const submitted=await a.insert('apostille_packet',source);await a.approve(submitted);
+   const returned=await a.insert('apostilled',submitted);
+   const r=await raceIn(10,c=>a.approve(returned,c));const s=summary(r.results);
+   assert.equal(s.committed,1,'exactly one approval commits');assert.ok(onlyRejected(s,/VERSION_REVIEW_TARGET_MISMATCH/),'losers must see the already-approved version');
+   assert.equal(await approvals(returned),1,'exactly one approval audit record');
+   assert.equal((await db.query('select approval_status from document_versions where id=$1',[returned])).rows[0].approval_status,'approved');
+   return out(r);});
+
+  await scenario('APOSTILLE_APPROVE_UNAUTHORIZED',['INV-07','INV-11'],'5 client approvals racing 5 founder approvals of a submitted packet',async()=>{
+   const a=await authenticated();const source=await a.insert('executed');await a.approve(source);const submitted=await a.insert('apostille_packet',source);
+   const r=await raceIn(10,(c,i)=>a.approve(submitted,c,i%2?client:operator));const s=summary(r.results);
+   assert.equal(s.committed,1);assert.equal(await approvals(submitted),1);
+   assert.equal(r.results.filter((x,i)=>i%2&&x.ok).length,0,'no client approval may commit');
+   assert.equal((await db.query('select approved_by from document_versions where id=$1',[submitted])).rows[0].approved_by,operator);
+   return out(r);});
+
+  await scenario('APOSTILLE_RELEASE_VS_DESTINATION',['INV-07','INV-08'],'1 destination change racing 9 releases bound to returned authority evidence',async()=>{
+   const a=await authenticated(),v=await a.chain();
+   const r=await raceIn(10,(c,i)=>i===0?a.setFacts({destination_country:'Germany'},c):a.release([v.final],c));
+   const releases=r.results.slice(1),released=releases.filter(x=>x.ok).length;
+   const custody=await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),dest=(await fx.load(a.matter)).destination_country;
+   assert.ok(r.results[0].ok,'the destination change itself is not blocked');assert.equal(dest,'Germany');
+   // The deal row lock serializes the change against every release: each release either ran
+   // entirely before the change (France evidence) or was refused afterwards; never half of each.
+   assert.ok(releases.filter(x=>!x.ok).every(x=>/VERIFIED_AUTHORITY_RETURN_LINEAGE_REQUIRED/.test(x.message)),'releases fail only on invalidated authority evidence');
+   assert.equal(custody,released?1:0,'custody exists exactly when a release committed, and only once');
+   // After the race the changed destination must refuse any further release.
+   await assert.rejects(()=>a.release([v.final]),/VERIFIED_AUTHORITY_RETURN_LINEAGE_REQUIRED/);
+   return out(r,{releases_committed_before_change:released,release_custody_records:custody});});
+
+  // DOCUMENT RELEASE: exact final-packet release produces one custody fact.
+  for(const n of [2,10]) await scenario(`RELEASE_DUPLICATE_${n}`,['INV-08','INV-14'],`${n} parallel releases of one exact final packet`,async()=>{
+   const a=await authenticated(),v=await a.chain();
+   const r=await raceIn(n,c=>a.release([v.final],c).then(x=>x.rows[0].result.hash));
+   assert.equal(await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),1,'exactly one release custody record');
+   const hashes=new Set(r.results.filter(x=>x.ok).map(x=>x.value));assert.equal(hashes.size,1,'every successful retry returns the same custody hash');
+   return out(r,{distinct_release_hashes:hashes.size});});
+
+  await scenario('RELEASE_UNAUTHORIZED',['INV-08','INV-11'],'5 client releases racing 5 founder releases',async()=>{
+   const a=await authenticated(),v=await a.chain();
+   const r=await raceIn(10,(c,i)=>a.release([v.final],c,i%2?client:operator));
+   assert.equal(r.results.filter((x,i)=>i%2&&x.ok).length,0,'no client release may commit');
+   assert.equal(await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),1);return out(r);});
+
+  await scenario('RELEASE_STALE_VERSION',['INV-08'],'5 releases of the returned (non-final) version racing 5 exact releases',async()=>{
+   const a=await authenticated(),v=await a.chain();
+   const r=await raceIn(10,(c,i)=>a.release([i%2?v.returned:v.final],c));
+   assert.equal(r.results.filter((x,i)=>i%2&&x.ok).length,0,'a non-final version can never release');
+   const rows=(await db.query("select metadata from custody_ledger where deal_id=$1 and event='DOC_RELEASE_CONFIRMED'",[a.matter])).rows;
+   assert.equal(rows.length,1);assert.ok(JSON.stringify(rows[0].metadata).includes(v.final),'custody names the exact final packet');
+   return out(r);});
+
+  await scenario('RELEASE_ROLLBACK_GRANTS_NOTHING',['INV-08','INV-13'],'release rolled back while 9 sessions try to move the Matter in transit',async()=>{
+   const a=await authenticated(),v=await a.chain();
+   const r=await raceIn(10,(c,i)=>i===0?a.release([v.final],c):setState(c,a.matter,'in_transit'),{rollback:i=>i===0});
+   assert.equal(await custodyEvents(a.matter,'DOC_RELEASE_CONFIRMED'),0,'rolled back release leaves no custody');
+   assert.equal(await statusOf(a.matter),'apostille_processing');assert.equal(await stateEvents(a.matter,'in_transit'),0);
+   return out(r);});
+
+  await scenario('RELEASE_CROSS_MATTER',['INV-12'],'5 releases on Matter A racing 5 releases of A\'s packet under Matter B',async()=>{
+   const A=await authenticated(),va=await A.chain(),B=await authenticated();await B.chain();
+   const r=await raceIn(10,(c,i)=>i<5?A.release([va.final],c):B.release([va.final],c));
+   assert.equal(r.results.slice(5).filter(x=>x.ok).length,0,'another Matter\'s version can never release');
+   assert.equal(await custodyEvents(A.matter,'DOC_RELEASE_CONFIRMED'),1);assert.equal(await custodyEvents(B.matter,'DOC_RELEASE_CONFIRMED'),0);
+   return out(r);});
+
+  // RON STATUTORY COMPLETION: synthetic session evidence, never a real notarization.
+  const ronMatter=async()=>{const m=await ready();await fx.confirm(m.id,m.resource);
+   await db.query('update deals set execution_truth=$1 where id=$2',[{execution_method:'ron',notarial_act:'acknowledgment',notary_jurisdiction:'FL',signer_location:'US-FL',ron_kba_status:'required',ron_credential_analysis_status:'required'},m.id]);
+   await setState(db,m.id,'scheduled');return m.id;};
+  const ronSession=async()=>{const matter=await ronMatter();const ron=await prepareRonSession(db,matter,operator,'a'.repeat(64),Buffer.from('%PDF-1.4\nSynthetic P23 executed '+randomUUID()),assert);return {matter,ron};};
+  const appendOn=(c,ron,body,key,by=operator,expected=null)=>c.query('select append_ron_statutory_evidence($1,$2,$3,$4,$5,$6) result',[ron.session,by,expected,key,body,'P23 concurrency statutory evidence review']).then(x=>x.rows[0].result.evidence_id);
+  const ronEvidence=id=>count("select count(*) n from ron_audit_events where ron_session_id=$1 and idempotency_key is not null",[id]);
+  const ronRow=async id=>(await db.query('select ron_lifecycle_state,completed_at,statutory_evidence_id from ron_sessions where id=$1',[id])).rows[0];
+
+  await scenario('RON_APPEND_SAME_KEY_10',['INV-05','INV-14'],'10 parallel statutory appends with one idempotency key',async()=>{
+   const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();const key=randomUUID();
+   const r=await raceIn(10,c=>appendOn(c,ron,evidence,key));
+   const ids=new Set(r.results.filter(x=>x.ok).map(x=>x.value));
+   assert.equal(summary(r.results).committed,10,'idempotent retries all succeed');assert.equal(ids.size,1,'one evidence id');
+   assert.equal(await ronEvidence(ron.session),1);assert.equal((await ronRow(ron.session)).statutory_evidence_id,[...ids][0]);
+   return out(r);});
+
+  await scenario('RON_APPEND_DISTINCT_KEYS_10',['INV-05'],'10 parallel first statutory appends with distinct keys',async()=>{
+   const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();
+   const r=await raceIn(10,c=>appendOn(c,ron,evidence,randomUUID()));const s=summary(r.results);
+   assert.equal(s.committed,1,'only one first statutory evidence record');assert.ok(onlyRejected(s,/STALE_EVIDENCE/));
+   assert.equal(await ronEvidence(ron.session),1);return out(r);});
+
+  await scenario('RON_APPEND_UNAUTHORIZED',['INV-05','INV-11'],'5 client statutory appends racing 5 operator appends',async()=>{
+   const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();const key=randomUUID();
+   const r=await raceIn(10,(c,i)=>appendOn(c,ron,evidence,key,i%2?client:operator));
+   assert.ok(r.results.filter((x,i)=>i%2).every(x=>!x.ok&&x.code==='42501'),'client appends are forbidden');
+   assert.equal(await ronEvidence(ron.session),1);return out(r);});
+
+  await scenario('RON_PROVIDER_ONLY_COMPLETION_10',['INV-05'],'10 parallel completions from provider status alone',async()=>{
+   const {ron}=await ronSession();
+   const r=await raceIn(10,c=>ron.update('ron_sessions',ron.session,{ron_lifecycle_state:'COMPLETED'},c));const s=summary(r.results);
+   assert.equal(s.committed,0);assert.ok(onlyRejected(s,/INVALID_RON_LIFECYCLE_TRANSITION/));
+   assert.equal((await ronRow(ron.session)).ron_lifecycle_state,'EVIDENCE_PENDING');return out(r);});
+
+  await scenario('RON_COMPLETE_10',['INV-05','INV-14'],'10 parallel Milano completions of one verified session, each with its own timestamp',async()=>{
+   const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();await appendOn(db,ron,evidence,randomUUID());await ron.verify();
+   // Distinct completion commands: a second completion would have to overwrite completed_at.
+   const commands=[];for(let i=0;i<10;i++){commands.push(await ron.fields('complete'));await new Promise(r=>setTimeout(r,2));}
+   assert.equal(new Set(commands.map(c=>c.completed_at)).size,10,'each worker carries a distinct completion time');
+   const r=await raceIn(10,(c,i)=>ron.update('ron_sessions',ron.session,commands[i],c).then(()=>commands[i].completed_at));const s=summary(r.results);
+   assert.equal(s.committed,1,'exactly one completion commits');assert.ok(onlyRejected(s,/RON_EVIDENCE_FROZEN|INVALID_RON_LIFECYCLE_TRANSITION/));
+   const row=await ronRow(ron.session),winner=r.results.find(x=>x.ok).value;
+   assert.equal(row.ron_lifecycle_state,'COMPLETED');assert.equal(new Date(row.completed_at).toISOString(),new Date(winner).toISOString(),'completion time is the single winner\'s');
+   return out(r);});
+
+  await scenario('RON_ROLLBACK_GRANTS_NOTHING',['INV-05','INV-13'],'statutory append rolled back while 9 sessions try to complete',async()=>{
+   const {ron}=await ronSession();const {evidence}=await ron.attachEvidence();const completion={ron_lifecycle_state:'COMPLETED'};
+   const r=await raceIn(10,(c,i)=>i===0?appendOn(c,ron,evidence,randomUUID()):ron.update('ron_sessions',ron.session,completion,c),{rollback:i=>i===0});
+   const row=await ronRow(ron.session);assert.equal(row.statutory_evidence_id,null);assert.equal(row.ron_lifecycle_state,'EVIDENCE_PENDING');
+   assert.equal(await ronEvidence(ron.session),0);assert.equal(summary(r.results).committed,0);return out(r);});
+
+  await scenario('RON_CROSS_MATTER',['INV-12'],'5 appends on session A racing 5 appends of A\'s evidence on session B',async()=>{
+   const A=await ronSession(),B=await ronSession();const ea=await A.ron.attachEvidence();await B.ron.attachEvidence();
+   const r=await raceIn(10,(c,i)=>appendOn(c,i<5?A.ron:B.ron,ea.evidence,randomUUID()));
+   assert.equal(r.results.slice(5).filter(x=>x.ok).length,0,'evidence for another session can never be appended');
+   assert.equal(await ronEvidence(A.ron.session),1);assert.equal(await ronEvidence(B.ron.session),0);return out(r);});
+
+  // MATTER CLOSURE: synthetic delivery evidence and terminal transitions, no real courier.
+  await scenario('CLOSE_IN_TRANSIT_10',['INV-10','INV-14'],'10 parallel in-transit transitions after exact release',async()=>{
+   const a=await released();const r=await raceIn(10,c=>setState(c,a.matter,'in_transit'));
+   assert.equal(await stateEvents(a.matter,'in_transit'),1);assert.equal(await statusOf(a.matter),'in_transit');return out(r);});
+
+  await scenario('CLOSE_DELIVERY_EVIDENCE_10',['INV-10','INV-14'],'10 parallel synthetic delivery confirmations with one key',async()=>{
+   const a=await released();await setState(db,a.matter,'in_transit');const key='P23-DELIVERY-'+a.matter;
+   const r=await raceIn(10,c=>delivery(c,a.matter,key));
+   assert.equal(await custodyEvents(a.matter,'DOC_DELIVERED'),1,'one delivery custody record');return out(r);});
+
+  await scenario('CLOSE_DELIVERED_WITHOUT_EVIDENCE_10',['INV-10'],'10 parallel delivered transitions without delivery evidence',async()=>{
+   const a=await released();await setState(db,a.matter,'in_transit');
+   const r=await raceIn(10,c=>setState(c,a.matter,'delivered'));const s=summary(r.results);
+   assert.equal(s.committed,0);assert.ok(onlyRejected(s,/DELIVERY_CUSTODY_EVIDENCE_REQUIRED/));assert.equal(await statusOf(a.matter),'in_transit');return out(r);});
+
+  await scenario('CLOSE_DELIVERED_VS_COMPLETED',['INV-10'],'5 delivered racing 5 completed transitions',async()=>{
+   const a=await released();await setState(db,a.matter,'in_transit');await delivery(db,a.matter,'P23-DELIVERY-'+a.matter);
+   const r=await raceIn(10,(c,i)=>setState(c,a.matter,i%2?'completed':'delivered'));
+   const status=await statusOf(a.matter),delivered=await stateEvents(a.matter,'delivered'),completed=await stateEvents(a.matter,'completed');
+   assert.equal(delivered,1,'exactly one delivered transition');assert.ok(completed<=1);
+   // created_at is each transaction's start time (all began before the barrier), so the
+   // proof of ordering is the transition each event recorded, not its timestamp.
+   const edges=(await db.query("select previous_state,new_state from matter_state_events where matter_id=$1 and new_state in ('delivered','completed')",[a.matter])).rows;
+   assert.ok(edges.every(e=>e.new_state==='delivered'?e.previous_state==='in_transit':e.previous_state==='delivered'),'completion only from delivered: '+JSON.stringify(edges));
+   assert.ok(['delivered','completed'].includes(status));return out(r,{final_status:status});});
+
+  await scenario('CLOSE_COMPLETED_10',['INV-10','INV-14'],'10 parallel Matter closures',async()=>{
+   const a=await released();await setState(db,a.matter,'in_transit');await delivery(db,a.matter,'P23-DELIVERY-'+a.matter);await setState(db,a.matter,'delivered');
+   const r=await raceIn(10,c=>setState(c,a.matter,'completed'));
+   assert.equal(await stateEvents(a.matter,'completed'),1,'exactly one closure');assert.equal(await statusOf(a.matter),'completed');return out(r);});
+
+  await scenario('CLOSE_ROLLBACK_GRANTS_NOTHING',['INV-10','INV-13'],'delivery evidence rolled back while 9 sessions try to mark delivered',async()=>{
+   const a=await released();await setState(db,a.matter,'in_transit');
+   const r=await raceIn(10,(c,i)=>i===0?delivery(c,a.matter,'P23-DELIVERY-'+a.matter):setState(c,a.matter,'delivered'),{rollback:i=>i===0});
+   assert.equal(await custodyEvents(a.matter,'DOC_DELIVERED'),0);assert.equal(await statusOf(a.matter),'in_transit');assert.equal(await stateEvents(a.matter,'delivered'),0);
+   return out(r);});
+
+  await scenario('CLOSE_CROSS_MATTER',['INV-12'],'closing Matter A in parallel with Matter B that has no delivery evidence',async()=>{
+   const A=await released(),B=await released();for(const m of [A,B])await setState(db,m.matter,'in_transit');await delivery(db,A.matter,'P23-DELIVERY-'+A.matter);
+   const r=await raceIn(10,(c,i)=>setState(c,i<5?A.matter:B.matter,'delivered'));
+   assert.equal(await statusOf(A.matter),'delivered');assert.equal(await statusOf(B.matter),'in_transit');
+   assert.equal(r.results.slice(5).filter(x=>x.ok).length,0,'A\'s delivery evidence never satisfies B');return out(r);});
+
 
   await db.query("select count(*) from p23_concurrency_marker where run_id=$1",[report.run_id]).then(x=>assert.equal(Number(x.rows[0].count),1));
   await coord.end();
