@@ -139,9 +139,9 @@ test("migration: hosted operators gain the binding; duplicate user_ids skip the 
 });
 
 test("no legacy partner tables, no email or client-id partner identity", () => {
-  const files = ["app/alliance", "app/api/alliance", "lib/alliance", "app/dashboard/alliance"].flatMap(function walk(dir: string): string[] {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.(ts|tsx)$/.test(e.name) ? [`${dir}/${e.name}`] : []);
-  });
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.(ts|tsx)$/.test(e.name) ? [`${dir}/${e.name}`] : []));
+  const files = ["app/alliance", "app/api/alliance", "lib/alliance", "app/dashboard/alliance"].flatMap(walk);
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8").replace(/^\s*\/\/.*$/gm, "");
     assert.doesNotMatch(source, /from\("(alliance_partners|partner_observations|partner_commissions)"\)/, file);
