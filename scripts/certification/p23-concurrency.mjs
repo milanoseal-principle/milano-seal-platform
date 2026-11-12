@@ -112,12 +112,14 @@ const summary=results=>{const out={committed:0,rolled_back:0,rejected:{}};for(co
 async function main(){
  guardTarget();
  const admin=await connect('postgres');
- await provePositiveIdentity(admin);
- const dbname='p23_conc_'+randomBytes(6).toString('hex');
- await admin.query(`create database ${dbname}`);
- report.database.name=dbname;report.isolation.push(`fresh randomly named database ${dbname}, empty before marker`);
- let db;
+ // Everything after connecting runs inside the cleanup scope, so a refused target or a
+ // failed CREATE DATABASE still closes the admin session and the process exits.
+ let db,dbname=null;
  try{
+  await provePositiveIdentity(admin);
+  dbname='p23_conc_'+randomBytes(6).toString('hex');
+  await admin.query(`create database ${dbname}`);
+  report.database.name=dbname;report.isolation.push(`fresh randomly named database ${dbname}, empty before marker`);
   db=await buildDatabase(dbname);
   const coord=await connect(dbname);
   const fx=await wiseFixtures(db);
@@ -140,7 +142,10 @@ async function main(){
    await db.query('create table p23_unsafe_counter(id int primary key,n int not null)');await db.query('insert into p23_unsafe_counter values(1,0)');
    const r=await raceIn(10,async c=>{const n=(await c.query('select n from p23_unsafe_counter where id=1')).rows[0].n;await c.query('update p23_unsafe_counter set n=$1 where id=1',[n+1]);});
    const n=(await db.query('select n from p23_unsafe_counter where id=1')).rows[0].n;
-   assert.ok(n<10,`expected lost updates under overlap, got ${n}`);
+   // Every worker must commit; otherwise failed workers could leave a low counter that
+   // looks like lost updates without any concurrent execution having happened.
+   assert.equal(summary(r.results).committed,10,'all 10 counter workers must commit');
+   assert.ok(n>=1&&n<10,`expected lost updates under overlap, got ${n}`);
    return {sessions:r.distinct_backends,overlap:r.overlap_waiting_backends,final_counter:n,outcomes:summary(r.results)};});
 
   // Sequential control: ledger growth caused by exactly one confirmation.
