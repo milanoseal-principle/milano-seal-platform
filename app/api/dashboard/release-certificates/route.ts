@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { releaseCertificateEligibility } from "@/lib/release/certificateEligibility";
 
 export const runtime = "nodejs";
 
+// Real columns (repository and hosted agree); display_id is the Matter's deals.deal_id.
 const SAFE_FIELDS =
-  "id,verification_hash,display_id,release_date,document_count,custody_status,release_method,created_at";
+  "id,deal_id,verification_id,verification_hash,release_date,document_count,status,public_summary,created_at";
+
+type CertificateRow = { deal_id: string | null; status: string | null } & Record<string, unknown>;
+async function withDisplayIds(supabase: ReturnType<typeof createAdminClient>, rows: CertificateRow[]) {
+  const ids = [...new Set(rows.map((r) => r.deal_id).filter((id): id is string => Boolean(id)))];
+  const refs = new Map<string, string>();
+  if (ids.length) {
+    const { data } = await supabase.from("deals").select("id, deal_id").in("id", ids);
+    for (const d of data ?? []) refs.set(d.id as string, d.deal_id as string);
+  }
+  return rows.map((r) => ({ ...r, display_id: r.deal_id ? refs.get(r.deal_id) ?? null : null, custody_status: r.status }));
+}
 
 const WRITE_ROLES = new Set(["founder_admin", "admin_operator"]);
 
@@ -25,28 +38,26 @@ export async function GET(_req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ certificates: data ?? [] });
+  return NextResponse.json({ certificates: await withDisplayIds(supabase, (data ?? []) as CertificateRow[]) });
 }
 
 export async function POST(req: NextRequest) {
-  const { role } = await requireDashboardAccess();
+  const { role, userId } = await requireDashboardAccess();
   if (!WRITE_ROLES.has(role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
   const body = (await req.json()) as {
     matter_id?: string;
-    display_id?: string;
     document_count?: number;
     release_method?: string;
-    released_by?: string;
   };
 
-  const { matter_id, display_id, document_count, release_method, released_by } = body;
+  const { matter_id, document_count, release_method } = body;
 
-  if (!matter_id || !display_id) {
+  if (!matter_id) {
     return NextResponse.json(
-      { error: "matter_id and display_id are required" },
+      { error: "matter_id is required" },
       { status: 400 }
     );
   }
@@ -60,17 +71,23 @@ export async function POST(req: NextRequest) {
   const verification_hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
   const supabase = createAdminClient();
+  // Never attest a release the canonical authorities have not recorded.
+  const eligibility = await releaseCertificateEligibility(supabase, matter_id);
+  if (!eligibility.ok) {
+    return NextResponse.json({ error: eligibility.error, gate: eligibility.gate }, { status: eligibility.status });
+  }
   const { data: cert, error } = await supabase
     .from("release_certificates")
     .insert({
+      deal_id: matter_id,
+      verification_id: `MSV-${verification_hash.slice(0, 16).toUpperCase()}`,
       verification_hash,
-      matter_id,
-      display_id,
-      release_date: new Date().toISOString(),
-      document_count: document_count ?? null,
-      custody_status: "valid",
-      release_method: release_method ?? null,
-      released_by: released_by ?? null,
+      release_date: eligibility.releasedAt,
+      document_count: document_count ?? 0,
+      status: "valid",
+      // Issuer is the verified operator session, never a client-supplied value.
+      issued_by: userId,
+      public_summary: release_method ? `Released via ${release_method}` : null,
     })
     .select(SAFE_FIELDS)
     .single();
@@ -82,5 +99,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ certificate: cert }, { status: 201 });
+  const [certificate] = await withDisplayIds(supabase, [cert as unknown as CertificateRow]);
+  return NextResponse.json({ certificate }, { status: 201 });
 }

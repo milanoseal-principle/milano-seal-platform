@@ -12,9 +12,13 @@ export async function logVAAction(params: {
     await admin.from("audit_events").insert({
       actor_id: params.userId,
       event_type: `va.${params.action}`,
-      resource_type: params.taskId ? "va_task" : "va_session",
-      resource_id: params.taskId ?? params.matterId ?? null,
-      metadata: params.note ? { note: params.note } : null,
+      // audit_events has no resource columns; keep them in metadata (NOT NULL).
+      route: params.matterId ?? null,
+      metadata: {
+        resource_type: params.taskId ? "va_task" : "va_session",
+        resource_id: params.taskId ?? params.matterId ?? null,
+        ...(params.note ? { note: params.note } : {}),
+      },
       created_at: new Date().toISOString(),
     });
   } catch {

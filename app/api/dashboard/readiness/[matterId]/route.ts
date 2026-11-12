@@ -17,7 +17,7 @@ export async function GET(
     const { data: matter, error } = await adminClient
       .from("deals")
       .select(
-        "id, deal_id, deal_status, payment_status, client_name, client_email, document_count, destination_country, receiving_authority, signing_type, ron_eligible, apostille_required, apostille_route"
+        "id, deal_id, deal_status, payment_status, client_name, email, document_count:docs_count, destination_country, apostille_required, customer_execution_preference, execution_truth"
       )
       .eq("id", matterId)
       .single();
@@ -26,7 +26,20 @@ export async function GET(
       return NextResponse.json({ error: "Matter not found" }, { status: 404 });
     }
 
-    const result = evaluateExecutionReadiness(matter as Record<string, unknown>);
+    // Derive readiness facts from canonical columns: execution_truth holds the operator-confirmed
+    // method, review and governed authority route (no separate signing/route columns exist).
+    const row = matter as Record<string, unknown>;
+    const truth = (row.execution_truth ?? {}) as Record<string, unknown>;
+    const packet = (truth.authority_packet ?? {}) as Record<string, unknown>;
+    const method = (truth.execution_method as string | undefined) ?? (row.customer_execution_preference as string | undefined) ?? null;
+    const result = evaluateExecutionReadiness({
+      ...row,
+      client_email: row.email ?? null,
+      signing_type: method,
+      ron_eligible: method === "ron" && Boolean(truth.review_confirmed_by),
+      apostille_route: (packet.route_type as string | undefined) ?? null,
+      receiving_authority: (truth.receiving_authority as string | undefined) ?? null,
+    });
     return NextResponse.json(result);
   } catch {
     return NextResponse.json(

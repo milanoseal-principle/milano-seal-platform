@@ -23,11 +23,13 @@ export async function logQAEvent(
   params: { dealId: string; eventType: QAEvent; operatorId?: string; notes?: string }
 ): Promise<void> {
   try {
+    // audit_events has no deal_id/notes columns: the Matter id is recorded in route (as the
+    // canonical approve_document_version audit does) and details in metadata.
     await supabase.from("audit_events").insert({
-      deal_id: params.dealId,
       event_type: params.eventType,
       actor_id: params.operatorId ?? null,
-      notes: params.notes ?? null,
+      route: params.dealId,
+      metadata: { deal_id: params.dealId, notes: params.notes ?? null },
       created_at: new Date().toISOString(),
     });
   } catch {

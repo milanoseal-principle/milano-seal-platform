@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseCertificateEligibility } from "@/lib/release/certificateEligibility";
 import { generateCustodyHash, generateVerificationId, generatePublicSummary } from "@/lib/custody/hash";
 
 export async function POST(req: NextRequest) {
@@ -20,34 +21,16 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Verify matter is paid and released before generating certificate
-    const { data: deal } = await supabase
-      .from("deals")
-      .select("id, matter_status, payment_status, is_paid_and_released")
-      .eq("id", matter_id)
-      .single();
-
-    if (!deal) {
-      return NextResponse.json({ error: "Matter not found" }, { status: 404 });
-    }
-
-    const isPaid =
-      deal.payment_status === "paid" ||
-      deal.payment_status === "confirmed" ||
-      deal.payment_status === "payment_confirmed";
-
-    const isReleased =
-      deal.is_paid_and_released ||
-      deal.matter_status === "completed" ||
-      deal.matter_status === "delivered";
-
-    if (!isPaid || !isReleased) {
+    // Canonical gate: verified settlement plus the recorded exact release (shared helper).
+    const eligibility = await releaseCertificateEligibility(supabase, matter_id);
+    if (!eligibility.ok) {
       return NextResponse.json(
         {
-          error: "Certificate cannot be generated until matter is paid and released.",
-          gate: "PAYMENT_AND_RELEASE_REQUIRED",
+          error: eligibility.status === 404 ? eligibility.error : "Certificate cannot be generated until matter is paid and released.",
+          gate: eligibility.status === 404 ? eligibility.gate : "PAYMENT_AND_RELEASE_REQUIRED",
+          reason: eligibility.gate,
         },
-        { status: 422 }
+        { status: eligibility.status }
       );
     }
 
