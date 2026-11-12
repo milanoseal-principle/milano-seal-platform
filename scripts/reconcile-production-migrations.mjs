@@ -53,15 +53,42 @@ export function unwrapSnapshot(raw) {
 // Statements whose effect is invisible on a clean replay because they repair objects that only
 // the hosted database has (a column the repository schema already defines, a policy that exists
 // only in production). They are read from the migration text itself: presence/absence only.
+const TABLE_PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'];
+
 export function declaredPostconditions(sql) {
   const text = sql.replace(/--.*$/gm, '');
-  const name = (raw) => raw.replace(/^public\./, '').replace(/"/g, '');
-  const required = [...text.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?([\w."]+)\s+add\s+column\s+(?:if\s+not\s+exists\s+)?("?[\w]+"?)/gi)]
-    .map((m) => `columns:public.${name(m[1])}.${name(m[2])}`)
-    .concat([...text.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/gi)].map((m) => `tables:public.${name(m[1])}`));
-  const removed = [...text.matchAll(/drop\s+policy\s+(?:if\s+exists\s+)?("[^"]+"|[\w]+)\s+on\s+([\w."]+)/gi)]
-    .map((m) => `policies:public.${name(m[2])}.${name(m[1])}`);
-  return { required: [...new Set(required)], removed: [...new Set(removed)] };
+  const name = (raw) => raw.trim().replace(/^public\./, '').replace(/"/g, '');
+  const list = (raw) => raw.split(',').map(name).filter(Boolean);
+  const role = (raw) => (name(raw).toLowerCase() === 'public' ? 'PUBLIC' : name(raw));
+  const required = [
+    ...[...text.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?([\w."]+)\s+add\s+column\s+(?:if\s+not\s+exists\s+)?("?[\w]+"?)/gi)].map((m) => `columns:public.${name(m[1])}.${name(m[2])}`),
+    ...[...text.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/gi)].map((m) => `tables:public.${name(m[1])}`),
+    // Row level security is carried on the table entry (rls: true).
+    ...[...text.matchAll(/alter\s+table\s+([\w."]+)\s+enable\s+row\s+level\s+security/gi)].map((m) => `tables:public.${name(m[1])}`),
+    ...[...text.matchAll(/create\s+policy\s+("[^"]+"|[\w]+)\s+on\s+([\w."]+)/gi)].map((m) => `policies:public.${name(m[2])}.${name(m[1])}`),
+  ];
+  const removed = [...text.matchAll(/drop\s+policy\s+(?:if\s+exists\s+)?("[^"]+"|[\w]+)\s+on\s+([\w."]+)/gi)].map((m) => `policies:public.${name(m[2])}.${name(m[1])}`);
+  // Privileges a migration revokes must be absent afterwards, unless it grants them back (the
+  // caller drops any that exist after the replay).
+  const revokedFunctions = [];
+  for (const m of text.matchAll(/revoke\s+([\w\s,]+?)\s+on\s+(function\s+)?([^;]+?)\s+from\s+([^;]+);/gi)) {
+    const privileges = /\ball\b/i.test(m[1]) ? null : m[1].split(',').map((x) => x.trim().toUpperCase());
+    const roles = m[4].split(',').map(role);
+    if (m[2]) {
+      for (const fn of m[3].split(/\)\s*,/)) for (const r of roles) revokedFunctions.push({ function: name(fn.split('(')[0]), role: r });
+    } else {
+      for (const table of list(m[3].replace(/^table\s+/i, ''))) for (const r of roles) for (const privilege of privileges ?? TABLE_PRIVILEGES) removed.push(`table_grants:public.${table}.${r}.${privilege}`);
+    }
+  }
+  return { required: [...new Set(required)], removed: [...new Set(removed)], revokedFunctions };
+}
+
+// What must match for an object the replay left unchanged: enough to catch a wrong type, disabled
+// row level security or a different policy, without flagging nullability or defaults that the
+// hosted schema may legitimately carry.
+function declaredExpectation(id, entry) {
+  if (id.startsWith('columns:')) return { key: entry.key, type: entry.type };
+  return entry;
 }
 
 // Postconditions of each target: what the migration adds/changes (must be present) and what it
@@ -87,8 +114,10 @@ export async function migrationPostconditions(targets = DEFAULT_TARGETS) {
       const required = [...after].filter(([id, entry]) => JSON.stringify(before.get(id)) !== JSON.stringify(entry)).map(([id, entry]) => ({ id, entry }));
       // A declared object that the replay did not change is checked for presence only; one the
       // migration later drops again (absent after replay) is not a postcondition.
-      for (const id of declared.required) if (after.has(id) && !required.some((r) => r.id === id)) required.push({ id, entry: { key: after.get(id).key } });
-      const removed = [...new Set([...[...before.keys()].filter((id) => !after.has(id)), ...declared.removed.filter((id) => !after.has(id))])];
+      for (const id of declared.required) if (after.has(id) && !required.some((r) => r.id === id)) required.push({ id, entry: declaredExpectation(id, after.get(id)) });
+      const functionRevokes = declared.revokedFunctions.flatMap(({ function: fn, role }) =>
+        [...after.keys()].filter((id) => id.startsWith(`functions:public.${fn}(`)).map((id) => `function_grants:${id.slice('functions:'.length)}.${role}.EXECUTE`));
+      const removed = [...new Set([...[...before.keys()].filter((id) => !after.has(id)), ...[...declared.removed, ...functionRevokes].filter((id) => !after.has(id))])];
       result.push({ file, required, removed });
       before = after;
     }
@@ -111,7 +140,11 @@ export function reconcile(hostedSnapshot, postconditions) {
       ...removed.map((id) => ({ object: id, expectation: 'absent', state: live.has(id) ? 'STILL_PRESENT' : 'INSTALLED', fields: [] })),
     ];
     const count = (state) => checks.filter((c) => c.state === state).length;
-    const done = count('INSTALLED') + count('PRESENT_DEFINITION_DIFFERS'), pending = count('MISSING') + count('STILL_PRESENT');
+    const pending = count('MISSING') + count('STILL_PRESENT');
+    // A privilege that is absent only because its table does not exist yet is not progress: when a
+    // migration creates objects, only created objects decide between MISSING and PARTIAL.
+    const creates = checks.filter((c) => c.expectation === 'present');
+    const done = (creates.length ? creates : checks).filter((c) => c.state === 'INSTALLED' || c.state === 'PRESENT_DEFINITION_DIFFERS').length;
     // Fail closed: a replaced function or default whose hash differs may be the old definition, so
     // it needs a human look before the migration counts as applied.
     const status = checks.length === 0 ? 'NO_OBSERVABLE_POSTCONDITIONS' : count('DRIFTED') ? 'DRIFTED' : pending > 0 ? (done === 0 ? 'MISSING' : 'PARTIAL') : count('PRESENT_DEFINITION_DIFFERS') ? 'REVIEW' : 'APPLIED';

@@ -43,7 +43,7 @@ test("every target has observable postconditions, including hosted-only repairs"
 test("nothing applied: every migration is MISSING and the report fails", () => {
   const report = reconcile(hosted([]), post);
   assert.equal(report.status, "FAIL");
-  assert.ok(report.migrations.every((m: { status: string }) => m.status === "MISSING"));
+  assert.ok(report.migrations.every((m: { status: string }) => m.status === "MISSING"), "privileges absent only because the table is absent are not progress");
   assert.equal(report.mode, "READ_ONLY_SNAPSHOT_COMPARISON");
 });
 
@@ -79,6 +79,41 @@ test("declared postconditions are read from the migration text; comments are ign
     drop policy if exists "Service role full access" on public.payments;`);
   assert.deepEqual(d.required, ["columns:public.files.file_path", "tables:public.va_tasks"]);
   assert.deepEqual(d.removed, ["policies:public.payments.Service role full access"]);
+  const sec = declaredPostconditions(`alter table public.t enable row level security;
+    create policy "own" on public.t for select using (true);
+    revoke all on public.t, public.u from anon, authenticated;
+    revoke all on function public.f(uuid, text) from public, anon;`);
+  assert.deepEqual(sec.required, ["tables:public.t", "policies:public.t.own"]);
+  assert.equal(sec.removed.length, 2 * 2 * 7);
+  assert.ok(sec.removed.includes("table_grants:public.u.anon.INSERT"));
+  assert.deepEqual(sec.revokedFunctions, [{ function: "f", role: "PUBLIC" }, { function: "f", role: "anon" }]);
+});
+
+test("security effects that a clean replay does not change are still required", () => {
+  const va = post.find((m) => m.file.startsWith("20261112120000"))!;
+  assert.deepEqual((va.required.find((r) => r.id === "tables:public.va_tasks")!.entry as Entry).rls, true);
+  assert.ok(va.required.some((r) => r.id === "policies:public.va_tasks.va_own_task_read"));
+  assert.ok(va.removed.includes("table_grants:public.va_tasks.anon.INSERT"));
+  assert.ok(va.removed.includes("table_grants:public.va_task_events.authenticated.SELECT"));
+  assert.ok(!va.removed.includes("table_grants:public.va_tasks.authenticated.SELECT"), "granted back by the migration");
+  assert.ok(va.removed.some((id) => /^function_grants:public\.va_task_transition\(.*\)\.anon\.EXECUTE$/.test(id)));
+  assert.ok(va.removed.some((id) => /^function_grants:public\.va_task_transition\(.*\)\.PUBLIC\.EXECUTE$/.test(id)));
+
+  const VA = "20261112120000";
+  const edit = (fn: (c: Catalog) => void) => statuses(hosted(DEFAULT_TARGETS, fn))[VA];
+  assert.equal(edit((c) => { c.tables = c.tables.map((t) => (t.key === "public.va_tasks" ? { ...t, rls: false } : t)); }), "DRIFTED", "row level security disabled");
+  assert.equal(edit((c) => { c.policies = c.policies.filter((p) => p.key !== "public.va_tasks.va_own_task_read"); }), "PARTIAL", "own-task policy missing");
+  assert.equal(edit((c) => { (c.table_grants ??= []).push({ key: "public.va_tasks.anon.INSERT" }); }), "PARTIAL", "anonymous write privilege still present");
+  assert.equal(edit((c) => { const fn = c.functions.find((f) => f.key.startsWith("public.va_task_transition("))!; (c.function_grants ??= []).push({ key: `${fn.key}.anon.EXECUTE` }); }), "PARTIAL", "anonymous execute still present");
+});
+
+test("repaired columns are checked for type, not just name", () => {
+  const withType = (key: string, type: string) => hosted(DEFAULT_TARGETS, (c) => { c.columns = c.columns.map((col) => (col.key === key ? { ...col, type } : col)); });
+  assert.equal(statuses(withType("public.files.file_path", "pg_catalog.int4"))["20261112100000"], "DRIFTED");
+  assert.equal(statuses(withType("public.portal_otps.deal_id", "pg_catalog.text"))["20261112110000"], "DRIFTED");
+  // Nullability and defaults on a repaired column are not asserted.
+  const relaxed = hosted(DEFAULT_TARGETS, (c) => { c.columns = c.columns.map((col) => (col.key === "public.files.file_path" ? { ...col, nullable: "NO", default_hash: "other" } : col)); });
+  assert.equal(statuses(relaxed)["20261112100000"], "APPLIED");
 });
 
 test("fails closed on an unreadable or malformed snapshot and never connects to a database", () => {
