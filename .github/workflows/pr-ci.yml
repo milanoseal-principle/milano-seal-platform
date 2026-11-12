@@ -17,6 +17,20 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      # Disposable PostgreSQL for P23 stage 18 parallel-session certification only.
+      # Loopback-only, no secrets, destroyed with the job; production is never contacted.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     steps:
       - name: Checkout
@@ -94,6 +108,13 @@ jobs:
 
       - name: P19 through P23 safe source certification suites
         run: npm run test:production-certification-source
+
+      - name: P23 parallel-session concurrency certification
+        env:
+          P23_CONCURRENCY_PGHOST: 127.0.0.1
+          P23_CONCURRENCY_PGUSER: postgres
+          P23_CONCURRENCY_SERVICE_CONTAINER: "true"
+        run: npm run certify:p23-concurrency
 
       - name: Clean dependency-aware migration replay
         run: npm run test:migration-replay
