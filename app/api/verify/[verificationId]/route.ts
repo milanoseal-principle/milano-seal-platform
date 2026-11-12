@@ -86,7 +86,7 @@ export async function POST(
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("release_certificates")
-      .select("verification_hash,display_id,release_date,document_count,custody_status,created_at")
+      .select("deal_id,verification_hash,release_date,document_count,status,created_at")
       .eq("verification_hash", verificationId)
       .single();
 
@@ -94,15 +94,19 @@ export async function POST(
       return NextResponse.json({ valid: false, status: "not_found", verificationHash: verificationId });
     }
 
-    const certStatus = data.custody_status as "valid" | "revoked" | "expired";
+    const certStatus = data.status as "valid" | "revoked" | "expired";
+    // Public display reference only (the same value printed on the certificate).
+    const { data: matter } = data.deal_id
+      ? await supabase.from("deals").select("deal_id").eq("id", data.deal_id).maybeSingle()
+      : { data: null };
     return NextResponse.json({
       valid: certStatus === "valid",
       status: certStatus,
       verificationHash: data.verification_hash,
-      displayId: data.display_id,
+      displayId: matter?.deal_id ?? null,
       releaseDate: data.release_date,
       documentCount: data.document_count,
-      custodyStatus: data.custody_status,
+      custodyStatus: data.status,
       releasedAt: data.created_at,
     });
   } catch {

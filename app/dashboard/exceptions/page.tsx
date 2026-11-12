@@ -1,4 +1,6 @@
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { loadExceptionQueue } from "@/lib/dashboard/exceptionQueue";
 import { ExceptionGroup } from "@/components/dashboard/ExceptionGroup";
 import Link from "next/link";
 
@@ -20,6 +22,8 @@ interface ExceptionItem {
   due_at?: string;
   title?: string;
   escalation_reason?: string;
+  next_action?: string;
+  status?: string;
 }
 
 interface ExceptionsData {
@@ -76,22 +80,16 @@ function ItemRow({
   );
 }
 
-async function fetchExceptions(): Promise<ExceptionsData | null> {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  try {
-    const res = await fetch(`${base}/api/dashboard/exceptions`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
 export default async function ExceptionsPage() {
   await requireDashboardAccess();
-  const data = await fetchExceptions();
+  // Read directly with the verified operator context; an HTTP self-fetch carried no session.
+  let data: (ExceptionsData & { unavailable?: string[] }) | null = null;
+  try {
+    data = (await loadExceptionQueue(createAdminClient())) as unknown as ExceptionsData & { unavailable?: string[] };
+  } catch {
+    data = null;
+  }
+  const unavailable = data ? (data.unavailable ?? []) : ["all panels"];
 
   const ex = data?.exceptions ?? {
     payment_mismatch: [],
@@ -118,6 +116,11 @@ export default async function ExceptionsPage() {
         <p className="text-muted-foreground mt-2 max-w-xl">
           All blocked, stuck, and review-required items across active matters.
         </p>
+        {unavailable.length > 0 && (
+          <p role="status" className="mt-4 max-w-xl rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            Some sources could not be read, so their counts are incomplete: {unavailable.join(", ").replaceAll("_", " ")}.
+          </p>
+        )}
       </div>
 
       {/* Summary strip */}
@@ -259,7 +262,7 @@ export default async function ExceptionsPage() {
               <ItemRow
                 key={item.id}
                 item={item}
-                description={item.escalation_reason ?? item.title ?? "Escalated"}
+                description={item.next_action ?? item.task_type ?? "Escalated"}
                 href={`/dashboard/deals/${item.matter_id ?? item.id}`}
               />
             ))
@@ -319,7 +322,7 @@ export default async function ExceptionsPage() {
               <ItemRow
                 key={item.id}
                 item={item}
-                description={`Tracking status: ${item.tracking_status ?? "exception"}`}
+                description={`Tracking status: ${(item.status ?? item.tracking_status) ?? "exception"}`}
                 href={`/dashboard/deals/${item.matter_id ?? item.id}`}
               />
             ))
