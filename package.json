@@ -192,6 +192,7 @@
     "certify:p23": "node --conditions=react-server --import ./scripts/certification/server-condition.mjs --import tsx scripts/certification/p23-recovery.mjs",
     "certify:p23-concurrency": "node --import tsx scripts/certification/p23-concurrency.mjs",
     "certify:p12": "node scripts/certification/p12-provenance.mjs",
+    "reconcile:production-migrations": "node scripts/reconcile-production-migrations.mjs",
     "certify:source": "node scripts/certification/run-source.mjs",
     "validate:certification-source": "node scripts/certification/validate-source.mjs",
     "validate:certification-manifest": "node scripts/certification/validate-manifest.mjs",
