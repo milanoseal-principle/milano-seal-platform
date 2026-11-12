@@ -138,7 +138,11 @@ function client(db: Db, tables: Record<string, unknown[]> = {}, fail = false) {
     },
     from: (table: string) => {
       const result = fail ? { data: null, error: { message: "boom" } } : { data: tables[table] ?? [], error: null };
-      const api = { select: () => api, in: () => api, order: () => Promise.resolve(result) };
+      // Explicitly typed: a self-referential inferred builder makes the type-checker explode.
+      const api: Record<string, unknown> = {};
+      api.select = () => api;
+      api.in = () => api;
+      api.order = () => Promise.resolve(result);
       return api;
     },
   } as unknown as SupabaseClient;
@@ -163,7 +167,20 @@ test("server helpers map database refusals to honest HTTP results and never repo
     assert.ok(!empty.ok && empty.status === 503);
 
     // The bound account now resolves for its own user, with the issued code; another user does not.
-    const real = { from: (t: string) => { const f: [string, unknown][] = []; const api = { select: () => api, eq: (k: string, v: unknown) => (f.push([k, v]), api), neq: () => api, maybeSingle: async () => ({ data: (await db.query(`select * from public.${t} where ${f.map(([k], i) => `${k}=$${i + 1}`).join(" and ") || "true"} limit 1`, f.map(([, v]) => v))).rows[0] ?? null, error: null }), then: (res: (v: unknown) => void) => db.query(`select * from public.${t} where ${f.map(([k], i) => `${k}=$${i + 1}`).join(" and ") || "true"}`, f.map(([, v]) => v)).then((r) => res({ data: r.rows, error: null })) }; return api; } } as unknown as SupabaseClient;
+    const real = {
+      from: (table: string) => {
+        const filters: [string, unknown][] = [];
+        const where = () => filters.map(([column], i) => column + "=$" + (i + 1)).join(" and ") || "true";
+        const rows = async () => (await db.query("select * from public." + table + " where " + where(), filters.map(([, value]) => value))).rows;
+        const api: Record<string, unknown> = {};
+        api.select = () => api;
+        api.eq = (column: string, value: unknown) => { filters.push([column, value]); return api; };
+        api.neq = () => api;
+        api.maybeSingle = async () => ({ data: (await rows())[0] ?? null, error: null });
+        api.then = (resolve: (v: unknown) => void) => rows().then((data) => resolve({ data, error: null }));
+        return api;
+      },
+    } as unknown as SupabaseClient;
     const partner = await resolveAlliancePartner(s.partnerUser, real);
     assert.equal(partner?.profile_id, s.profileA);
     assert.equal(partner?.referral_code, ok.ok ? ok.referral_code : null);
