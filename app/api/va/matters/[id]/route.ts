@@ -45,8 +45,9 @@ export async function GET(
 
     const { data, error } = await admin
       .from("deals")
+      // Real deals columns only; projectMatter derives the VA-safe view (no client name).
       .select(
-        "id, deal_id, display_id, client_display_name, destination_country, document_type, deal_status, client_safe_status, next_step, assigned_lane_name, due_at, priority, missing_info_count, assigned_task_count"
+        "id, deal_id, destination_country, document_type, deal_status, due_at"
       )
       .eq("id", id)
       .maybeSingle();

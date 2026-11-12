@@ -61,11 +61,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { action, matter_id, admin_id, reason, payload = {} } = body;
+  const { action, matter_id, reason, payload = {} } = body;
+  // Attribution is the verified founder session; a body-supplied admin_id is ignored.
+  const admin_id = user.id;
 
-  if (!action || !matter_id || !admin_id) {
+  if (!action || !matter_id) {
     return NextResponse.json(
-      { error: "action, matter_id, and admin_id are required" },
+      { error: "action and matter_id are required" },
       { status: 422 },
     );
   }
@@ -160,15 +162,16 @@ export async function POST(req: NextRequest) {
     matter_id,
     event_type: `ADMIN_OVERRIDE_${action.toUpperCase()}`,
     actor_type: "administrator",
-    actor_name: admin_id,
+    actor: user.email ?? admin_id,
     client_visible: false,
-    status_before: previousStatus,
-    status_after: newStatus ?? previousStatus,
-    payload: {
+    // matter_events has no status/payload columns; the override record lives in metadata.
+    metadata: {
+      ...payload,
       action,
       reason: reason ?? null,
       admin_id,
-      ...payload,
+      status_before: previousStatus,
+      status_after: newStatus ?? previousStatus,
     },
     notes: reason ?? null,
   });

@@ -244,7 +244,7 @@ async function notifyHighValue(
       message: `HIGH VALUE MATTER — ${country} · $${value} · ${dealId}`,
       type: "HIGH_VALUE_DEAL",
       deal_id: dealId,
-      read: false,
+      // Unread is read_at IS NULL; there is no read column.
     });
   } catch (error) {
     console.error("[intake] high-value notification failed", {

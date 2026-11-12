@@ -11,7 +11,7 @@ export default async function SecurityPage() {
   // Query audit_events — requires migration 001_audit_security_events.sql applied
   const { data: auditRows, error: auditError } = await supabase
     .from("audit_events")
-    .select("id, event_type, user_id, created_at, metadata")
+    .select("id, event_type, user_id:actor_id, created_at, metadata")
     .order("created_at", { ascending: false })
     .limit(50);
 

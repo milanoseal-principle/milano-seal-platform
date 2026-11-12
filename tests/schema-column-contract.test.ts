@@ -16,6 +16,14 @@ const VERIFIED_FILES = [
   "app/api/upload/route.ts",
   "app/api/intake/upload/route.ts",
   "app/api/portal/me/upload/route.ts",
+  "lib/execution-qa/events.ts",
+  "lib/va/vaAudit.ts",
+  "app/api/admin/override/route.ts",
+  "app/dashboard/security/page.tsx",
+  "app/api/intake/core.ts",
+  "app/api/va/matters/route.ts",
+  "app/api/va/matters/[id]/route.ts",
+  "app/api/dashboard/readiness/[matterId]/route.ts",
 ];
 // Tables that exist in no schema; queries against them are reported as unavailable by design.
 const ABSENT_BY_DESIGN = new Set(["deal_documents"]);
