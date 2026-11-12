@@ -69,6 +69,11 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // User-authorized P7 retention continuation; real SQL claim/hold/role tests.
  'supabase/migrations/20261109061000_retention_claim_and_hold_authority.sql',
 
+ // 2026-11-12 user-authorized API authorization remediation; exact paths only.
+ // Adds operator authorization (founder-only manual confirmation) and session-
+ // derived audit attribution; no payment rule changes. tests/operator-api-authorization.test.ts.
+ 'app/api/deals/[id]/payment/manual-confirm/route.ts','app/api/deals/[id]/payment/request-final/route.ts',
+
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
  // Positive/negative authority tests run in test:wise-attempt-database and the
