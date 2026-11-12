@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 
 export async function POST(req: NextRequest) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   try {
     let id: string | null = null;
     let action: string | null = null;

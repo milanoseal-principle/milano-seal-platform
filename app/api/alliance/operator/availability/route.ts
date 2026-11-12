@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { persistEligibilityCheck } from "@/lib/alliance/operatorEligibilityGate";
 
 export const runtime = "nodejs";
@@ -21,6 +22,8 @@ const VALID_STATES: AvailabilityState[] = [
 
 // POST /api/alliance/operator/availability — update availability state
 export async function POST(req: NextRequest) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const admin = createAdminClient();
 
   let body: { operator_id?: string; availability?: string; reason?: string; set_by?: string };
@@ -74,6 +77,8 @@ export async function POST(req: NextRequest) {
 
 // GET /api/alliance/operator/availability — get current availability
 export async function GET(req: NextRequest) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const admin = createAdminClient();
   const operatorId = req.nextUrl.searchParams.get("operator_id");
 

@@ -67,7 +67,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for route in /api/dashboard/discounts /api/dashboard/incidents /api/notary/credentials /api/dashboard/shippo/health; do
+          # Nil-UUID probes match no record; they only prove the route refuses anonymous callers.
+          nil=00000000-0000-4000-8000-000000000000
+          for route in /api/dashboard/discounts /api/dashboard/incidents /api/notary/credentials /api/dashboard/shippo/health "/api/deals/$nil/activity" "/api/deals/$nil/messages" "/api/alliance/operator/profile?operator_id=$nil"; do
             code="$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 30 -o /dev/null -w '%{http_code}' "$BASE_URL$route")"
             case "$code" in
               401|403) echo "PASS: $route — HTTP $code" ;;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 
 export const runtime = "nodejs";
 
@@ -7,6 +8,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   try {
     const { id } = await params;
     const supabase = createAdminClient();

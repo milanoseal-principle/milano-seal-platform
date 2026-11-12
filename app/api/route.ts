@@ -1,8 +1,12 @@
 import { supabaseServer } from "@/lib/supabaseServer";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  // Service-role Matter insert: operators only, never anonymous.
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   try {
     const body = await req.json();
 

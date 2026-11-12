@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { persistEligibilityCheck } from "@/lib/alliance/operatorEligibilityGate";
 
 export const runtime = "nodejs";
@@ -8,17 +9,20 @@ type Params = { params: Promise<{ id: string }> };
 
 // POST /api/admin/operators/[id]/approve — admin approves operator for routing
 export async function POST(req: NextRequest, { params }: Params) {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
   const { id } = await params;
   const admin = createAdminClient();
 
-  let body: { approved_by?: string; notes?: string } = {};
+  let body: { notes?: string } = {};
   try {
     body = await req.json();
   } catch {
     // body is optional
   }
 
-  const approvedBy = body.approved_by ?? "admin";
+  // Attribution comes from the verified operator session, never the request body.
+  const approvedBy = access.actor;
 
   const { data: profile, error: profileError } = await admin
     .from("operator_profiles")

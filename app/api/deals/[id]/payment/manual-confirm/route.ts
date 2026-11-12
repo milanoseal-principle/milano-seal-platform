@@ -2,15 +2,24 @@ import { NextResponse } from "next/server";
 import { getMatterById, updateMatter } from "@/src/features/matters/matterRepository";
 import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
 import type { PaymentType } from "@/src/features/milano/types";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
+import { canPerformAction } from "@/lib/security/access-control";
 
 function money(value: number) {
   return Math.round(value * 100) / 100;
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  // Manual payment confirmation is a founder-only action; the audit actor is the
+  // verified session, never a client-supplied email.
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
+  if (!canPerformAction(access.role, "confirm_payment_manual")) {
+    return NextResponse.json({ error: "FOUNDER_ADMIN_REQUIRED" }, { status: 403 });
+  }
   try {
     const { id } = await params;
-    const body = (await request.json()) as { payment_type?: PaymentType; amount_received?: number; payment_reference?: string; actorEmail?: string };
+    const body = (await request.json()) as { payment_type?: PaymentType; amount_received?: number; payment_reference?: string };
     const matterResult = await getMatterById(id);
     if (matterResult.error) throw matterResult.error;
     const matter = matterResult.data;
@@ -42,9 +51,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const updated = await updateMatter(id, values);
     if (updated.error) throw updated.error;
-    await writeEventLedger({ matterId: id, actorEmail: body.actorEmail, eventType: mismatch ? "PAYMENT_MISMATCH_FLAGGED" : "MANUAL_PAYMENT_CONFIRMED", metadata: { paymentType, amountDue, amountReceived } });
-    if (!mismatch && paymentType === "deposit") await writeEventLedger({ matterId: id, actorEmail: body.actorEmail, eventType: "SCHEDULING_UNLOCKED" });
-    if (!mismatch && (paymentType === "final_balance" || paymentType === "full_payment")) await writeEventLedger({ matterId: id, actorEmail: body.actorEmail, eventType: "RELEASE_UNLOCKED" });
+    await writeEventLedger({ matterId: id, actorEmail: access.actor, eventType: mismatch ? "PAYMENT_MISMATCH_FLAGGED" : "MANUAL_PAYMENT_CONFIRMED", metadata: { paymentType, amountDue, amountReceived } });
+    if (!mismatch && paymentType === "deposit") await writeEventLedger({ matterId: id, actorEmail: access.actor, eventType: "SCHEDULING_UNLOCKED" });
+    if (!mismatch && (paymentType === "final_balance" || paymentType === "full_payment")) await writeEventLedger({ matterId: id, actorEmail: access.actor, eventType: "RELEASE_UNLOCKED" });
     return NextResponse.json({ matter: updated.data, mismatch });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Payment confirmation failed." }, { status: 400 });
