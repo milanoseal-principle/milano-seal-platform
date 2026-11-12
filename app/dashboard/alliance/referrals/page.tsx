@@ -4,15 +4,34 @@ import Link from "next/link";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Inbox, CheckCheck, XCircle, ArrowRight } from "lucide-react";
+import { ALLIANCE_REFERRAL_LEAD_TYPE } from "@/lib/alliance/referralLeads";
 
-async function getReferralObservations() {
+// Partner referrals are canonical leads (sales_leads, lead_type alliance_referral). Rows are
+// mapped to the review table's shape; a read failure is reported, never shown as no referrals.
+async function getReferralObservations(): Promise<{ rows: Obs[]; unavailable: boolean }> {
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("partner_observations")
-    .select("id, partner_id, country, document_type, observation_text, status, created_at")
+  const { data, error } = await admin
+    .from("sales_leads")
+    .select("id, country, document_type, urgency, canonical_matter_id, details, created_at")
+    .eq("lead_type", ALLIANCE_REFERRAL_LEAD_TYPE)
     .order("created_at", { ascending: false })
     .limit(100);
-  return data ?? [];
+  if (error) return { rows: [], unavailable: true };
+  const rows = (data ?? []).map((lead) => {
+    const d = (lead.details ?? {}) as Record<string, unknown>;
+    const meta = [`Partner: ${typeof d.partner_id === "string" ? d.partner_id.slice(0, 8) : "unattributed"}`, `Urgency: ${lead.urgency ?? "Standard"}`].join(" | ");
+    const notes = [d.partner_context_note, d.receiving_authority_note ? `Authority note: ${d.receiving_authority_note}` : null].filter(Boolean).join("\n\n");
+    return {
+      id: String(lead.id),
+      partner_id: typeof d.partner_id === "string" ? d.partner_id : null,
+      country: (lead.country as string | null) ?? null,
+      document_type: (lead.document_type as string | null) ?? null,
+      observation_text: notes ? `${meta}\n\n${notes}` : meta,
+      status: lead.canonical_matter_id ? "converted" : String(d.review_status ?? "pending_review"),
+      created_at: String(lead.created_at),
+    };
+  });
+  return { rows, unavailable: false };
 }
 
 type Obs = {
@@ -37,9 +56,10 @@ function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, React.CSSProperties> = {
     pending_review: { background: "rgba(212,175,55,0.08)", color: "#d4af37", border: "1px solid rgba(212,175,55,0.2)" },
     accepted: { background: "rgba(34,197,94,0.06)", color: "rgba(34,197,94,0.7)", border: "1px solid rgba(34,197,94,0.15)" },
+    converted: { background: "rgba(34,197,94,0.06)", color: "rgba(34,197,94,0.7)", border: "1px solid rgba(34,197,94,0.15)" },
     rejected: { background: "rgba(180,50,50,0.06)", color: "rgba(255,100,100,0.5)", border: "1px solid rgba(180,50,50,0.15)" },
   };
-  const labels: Record<string, string> = { pending_review: "Pending Review", accepted: "Accepted", rejected: "Not Accepted" };
+  const labels: Record<string, string> = { pending_review: "Pending Review", accepted: "Accepted", rejected: "Not Accepted", converted: "Matter Created" };
   const s = styles[status] ?? styles.pending_review;
   return (
     <span className="text-[8px] font-mono uppercase tracking-[0.1em] px-2 py-0.5 rounded-sm" style={s}>
@@ -50,7 +70,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default async function OperatorReferralReviewPage() {
   await requireDashboardAccess();
-  const observations = await getReferralObservations();
+  const { rows: observations, unavailable } = await getReferralObservations();
 
   return (
     <div className="space-y-8">
@@ -115,7 +135,7 @@ export default async function OperatorReferralReviewPage() {
               {observations.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-8 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-                    No referrals in queue.
+                    {unavailable ? "Referrals could not be loaded. This is not an empty queue — retry shortly." : "No referrals in queue."}
                   </td>
                 </tr>
               )}

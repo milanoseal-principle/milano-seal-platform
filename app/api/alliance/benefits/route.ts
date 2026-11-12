@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,11 +11,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   if (!partner) return NextResponse.json({ benefits: [], referral_code: null, referral_count: 0 });
 

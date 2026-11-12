@@ -7,7 +7,9 @@ const source = readFileSync("app/api/alliance/benefits/route.ts", "utf8");
 test("Alliance benefits API is authenticated and read-only", () => {
   assert.match(source, /auth\.getUser\(\)/);
   assert.match(source, /Unauthorized/);
-  assert.match(source, /\.eq\("user_id", user\.id\)/);
+  // Partner identity is the canonical operator account of the verified session user.
+  assert.match(source, /resolveAlliancePartner\(user\.id\)/);
+  assert.doesNotMatch(source, /from\("alliance_partners"\)/);
   assert.match(source, /alliance_member_id/);
   assert.doesNotMatch(source, /export async function POST/);
   assert.doesNotMatch(source, /export async function PATCH/);

@@ -38,7 +38,10 @@ export default function AllianceCommissionsPage() {
       .then((r) => {
         if (!r.ok) {
           if (r.status === 401) throw new Error("Session expired. Please sign in again.");
-          throw new Error("Could not load commission data. Please try again.");
+          // Show the server's explicit reason (e.g. commission tracking not yet configured).
+          return r.json().catch(() => ({})).then((body: { error?: string }) => {
+            throw new Error(body.error ?? "Could not load commission data. Please try again.");
+          });
         }
         return r.json();
       })

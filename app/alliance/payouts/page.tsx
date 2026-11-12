@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
@@ -8,11 +9,7 @@ export default async function AlliancePayoutsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/alliance/login");
 
-  const { data: partner } = await supabase
-    .from("alliance_partners")
-    .select("id, firm_name, contact_name, routing_eligible, compliance_verified, toolbelt_completed")
-    .eq("user_id", user.id)
-    .single();
+  const partner = await resolveAlliancePartner(user.id);
 
   // Partner-safe: never expose base_cost, margin, or payout formula
   // Show only summary status — no internal revenue data

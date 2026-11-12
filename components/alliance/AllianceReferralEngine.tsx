@@ -5,7 +5,7 @@ import { Send, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface FormState {
   referral_code: string;
-  partner_email: string;
+  client_email: string;
   client_name: string;
   destination_country: string;
   document_type: string;
@@ -26,7 +26,7 @@ const URGENCY_OPTIONS = ["Standard (10–15 business days)", "Expedited (5–7 b
 export function AllianceReferralEngine({ partnerEmail = "", referralCode = "" }: AllianceReferralEngineProps) {
   const initial = useMemo<FormState>(() => ({
     referral_code: referralCode ?? "",
-    partner_email: partnerEmail ?? "",
+    client_email: "",
     client_name: "",
     destination_country: "",
     document_type: "",
@@ -45,7 +45,8 @@ export function AllianceReferralEngine({ partnerEmail = "", referralCode = "" }:
 
   function canSubmit() {
     return (
-      (form.partner_email.trim() || form.referral_code.trim()) &&
+      (partnerEmail || form.referral_code.trim()) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.client_email.trim()) &&
       form.client_name.trim() &&
       form.destination_country.trim() &&
       form.document_type &&
@@ -105,8 +106,8 @@ export function AllianceReferralEngine({ partnerEmail = "", referralCode = "" }:
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         <div>
-          <label style={labelStyle}>Partner Email <span style={{ color: "#C6A55A" }}>*</span></label>
-          <input type="email" required={!form.referral_code} value={form.partner_email} onChange={(e) => set("partner_email", e.target.value)} readOnly={Boolean(partnerEmail)} style={{ ...inputStyle, opacity: partnerEmail ? 0.72 : 1 }} />
+          <label style={labelStyle}>Client Email <span style={{ color: "#C6A55A" }}>*</span></label>
+          <input type="email" required autoComplete="off" value={form.client_email} onChange={(e) => set("client_email", e.target.value)} style={inputStyle} />
         </div>
         <div>
           <label style={labelStyle}>Client Name <span style={{ color: "#C6A55A" }}>*</span></label>

@@ -1,3 +1,4 @@
+import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { requireAllianceAccess } from "@/lib/allianceAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AllianceTrainingHub } from "@/components/alliance/AllianceTrainingHub";
@@ -11,11 +12,7 @@ async function getTrainingModules(userId: string) {
   const admin = createAdminClient();
 
   // Resolve partner record
-  const { data: partner } = await admin
-    .from("alliance_partners")
-    .select("id, partner_type")
-    .eq("user_id", userId)
-    .single();
+  const partner = await resolveAlliancePartner(userId);
 
   if (!partner) return { modules: [], partnerType: undefined };
 
