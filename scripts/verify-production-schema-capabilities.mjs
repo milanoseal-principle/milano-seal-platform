@@ -6,6 +6,8 @@ export const REQUIRED_SCHEMA = Object.freeze({
   retention_holds: ['id'], policy_versions: ['id'], policy_acceptances: ['id'],
   governance_tasks: ['id'], governance_agents: ['agent_id'], governance_settings: ['id'],
   matter_financial_artifacts: ['id'], document_versions: ['id'], notifications: ['id','delivery_status'],
+  // Upload write contract (app/api/upload, intake/upload, portal/me/upload).
+  files: ['id','deal_id','name','storage_path','filename','file_path','file_url','mime_type','size_bytes'],
 });
 export const REQUIRED_RPCS = Object.freeze([
   'begin_wise_payment_attempt','record_wise_attempt_evidence','confirm_wise_payment_for_deal',
