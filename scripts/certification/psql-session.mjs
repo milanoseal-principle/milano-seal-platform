@@ -46,7 +46,14 @@ export class PsqlSession {
  }
  // Same contract the certification fixtures use: query(sql, params) -> {rows}.
  async query(sql,params=[]){
-  const statement=sql.trim().replace(/;\s*$/,'');
+  let statement=sql.trim().replace(/;\s*$/,'');
+  // psql's \bind cannot send SQL NULL: a null parameter becomes a NULL literal in the
+  // statement and the remaining placeholders are renumbered. Non-null values stay bound.
+  if(params.some(v=>v===null||v===undefined)){
+   const map=[];let next=0;params.forEach((v,i)=>{map[i+1]=v===null||v===undefined?null:++next;});
+   statement=statement.replace(/\$(\d+)(?!\d)/g,(m,n)=>{const to=map[Number(n)];if(to===undefined)throw Error('PSQL_SESSION_PARAMETER_OUT_OF_RANGE');return to===null?'NULL':'$'+to;});
+   params=params.filter(v=>v!==null&&v!==undefined);
+  }
   const bind=params.length?' \\bind '+params.map(quote).join(' '):(statement.includes('$1')?' \\bind':'');
   if(!returnsRows(statement)){await this.send(`${statement}${bind} \\g`);return {rows:[],rowCount:null};}
   const wrapped=/\breturning\b/i.test(statement)&&!/^\s*(select|with)\b/i.test(statement)
