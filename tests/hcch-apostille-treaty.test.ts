@@ -148,7 +148,12 @@ test("every platform country list agrees with the registry", () => {
   assert.equal(isHagueMember("", AT), false);
 });
 
-test("no second hand-maintained Hague member list remains", () => {
-  assert.ok(!fs.existsSync("lib/compliance/hagueCountries.ts") && !fs.existsSync("lib/compliance/nonHagueCountries.ts"));
+test("the legacy Hague lists are views of the registry and cannot contradict it", async () => {
+  const { hagueCountries, nonHagueCountries } = await import("@/lib/compliance");
+  assert.equal(hagueCountries.length, HCCH_CONTRACTING_PARTIES.filter((p) => p.entryIntoForce <= HCCH_APOSTILLE_SOURCE.verifiedAt).length);
+  assert.ok(!hagueCountries.some((c) => c.iso2 === "TH"), "future-effective Thailand is not listed as in force");
+  for (const c of nonHagueCountries) assert.equal(isApostilleConventionInForce(c.iso2, AT), false, c.name);
+  assert.deepEqual(nonHagueCountries.filter((c) => ["CN", "VN", "PK", "BD", "ID", "PH", "SA"].includes(c.iso2)), []);
+  assert.ok(nonHagueCountries.some((c) => c.iso2 === "TH"), "Thailand stays a legalization destination until 28 February 2027");
   assert.doesNotMatch(fs.readFileSync("lib/intake/hagueMembers.ts", "utf8"), /new Set\(/);
 });
