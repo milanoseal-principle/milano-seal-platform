@@ -53,6 +53,77 @@ class DatabaseTargetTests(unittest.TestCase):
                 self.assertIn("whitespace or control characters",str(error.exception))
 
 
+class DatabaseUrlDiagnosisTests(unittest.TestCase):
+    REF = "a" * 20
+    DIRECT = f"postgresql://postgres:synthetic-secret@db.{REF}.supabase.co:5432/postgres?sslmode=require"
+    POOLER = f"postgresql://postgres.{REF}:synthetic-secret@aws-0-region.pooler.supabase.com:5432/postgres?sslmode=require"
+
+    def failed(self, url):
+        result = exporter.diagnose_database_url(url, self.REF)
+        self.assertEqual(tuple(result), exporter.DATABASE_URL_CHECKS)
+        self.assertTrue(all(isinstance(v, bool) for v in result.values()), "booleans only: nothing derived from the value")
+        return {name for name, ok in result.items() if not ok}
+
+    def test_valid_targets_pass_every_check(self):
+        for url in (self.DIRECT, self.POOLER, self.DIRECT.replace(":5432", ""), self.POOLER.replace("postgresql:", "postgres:")):
+            self.assertEqual(self.failed(url), set())
+
+    def test_each_defect_is_named_by_its_own_check(self):
+        cases = (
+            (None, set(exporter.DATABASE_URL_CHECKS)),
+            ("", set(exporter.DATABASE_URL_CHECKS)),
+            (self.DIRECT.replace("?sslmode=require", ""), {"TLS"}),
+            (self.DIRECT.replace("sslmode=require", "sslmode=disable"), {"TLS"}),
+            (self.POOLER.replace(":5432", ":6543"), {"PORT"}),
+            (self.POOLER.replace(f"postgres.{self.REF}", "postgres"), {"USERNAME"}),
+            (self.POOLER.replace(self.REF, "b" * 20), {"USERNAME"}),
+            (self.DIRECT.replace(self.REF, "b" * 20), {"HOST"}),
+            (self.DIRECT.replace("/postgres?", "/postgres/postgres?"), {"DATABASE"}),
+            (self.DIRECT.replace("/postgres?", "?"), {"DATABASE"}),
+            (self.DIRECT.replace("postgresql:", "https:"), {"SCHEME"}),
+            (self.DIRECT.replace(":synthetic-secret", ""), {"STRUCTURE"}),
+            (self.DIRECT + "&host=wrong.invalid", {"STRUCTURE"}),
+            (self.DIRECT + "#fragment", {"STRUCTURE"}),
+            (self.DIRECT + "\n", {"URL_PARSING"}),
+            (" " + self.DIRECT, {"URL_PARSING"}),
+            ('"' + self.DIRECT + '"', {"SCHEME", "HOST", "USERNAME", "DATABASE", "TLS", "STRUCTURE"}),
+        )
+        for url, expected in cases:
+            with self.subTest(expected=sorted(expected)):
+                self.assertEqual(self.failed(url), expected)
+        # A malformed port cannot be parsed at all: only PRESENT holds.
+        self.assertEqual(self.failed(self.DIRECT.replace(":5432", ":invalid")), set(exporter.DATABASE_URL_CHECKS) - {"PRESENT"})
+
+    def test_diagnosis_agrees_with_the_validator(self):
+        urls = [self.DIRECT, self.POOLER, self.DIRECT.replace("?sslmode=require", ""), self.POOLER.replace(":5432", ":6543"),
+                self.POOLER.replace(self.REF, "b" * 20), self.DIRECT + "\n", self.DIRECT.replace(":5432", ":invalid"),
+                self.DIRECT + "&port=6543", "postgresql://synthetic-secret", '"' + self.DIRECT + '"']
+        for url in urls:
+            with self.subTest(url=urls.index(url)):
+                try:
+                    exporter.validate_database_url(url, self.REF)
+                    accepted = True
+                except RuntimeError:
+                    accepted = False
+                self.assertEqual(accepted, not self.failed(url))
+
+    def test_command_prints_only_check_names_and_never_the_value(self):
+        import subprocess
+        script = HERE / "diagnose_database_url.py"
+        for url, code in ((self.POOLER, 0), (self.POOLER.replace("?sslmode=require", ""), 1), ("\x00not a url", 1)):
+            env = {"PATH": os.environ.get("PATH", ""), "SUPABASE_PROJECT_REF": self.REF}
+            if "\x00" not in url:
+                env["SUPABASE_DB_URL"] = url
+            done = subprocess.run([sys.executable, str(script)], env=env, capture_output=True, text=True)
+            self.assertEqual(done.returncode, code)
+            self.assertEqual(done.stderr, "")
+            lines = done.stdout.splitlines()
+            self.assertEqual([l.split(": ")[0] for l in lines], list(exporter.DATABASE_URL_CHECKS))
+            self.assertTrue(all(l.split(": ")[1] in ("PASS", "FAIL") for l in lines))
+            for fragment in ("synthetic-secret", "pooler", "postgres.", self.REF, "5432"):
+                self.assertNotIn(fragment, done.stdout)
+
+
 class ExportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -399,6 +470,21 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(lines, "workflow must compare local and remote checksums with cmp")
         for line in lines:
             self.assertEqual(len(shlex.split(line)[1:]), 2, line)
+
+    def test_runs_only_on_main_by_manual_dispatch_and_diagnoses_before_export(self):
+        text = self.WORKFLOW.read_text()
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request", text)
+        self.assertNotIn("schedule:", text, "no schedule until a backup and restore have been verified")
+        self.assertIn("if: github.ref == 'refs/heads/main'", text)
+        self.assertLess(text.index("scripts/backups/diagnose_database_url.py"), text.index("supabase db dump"))
+
+    def test_database_errors_are_classified_without_printing_client_output(self):
+        text = self.WORKFLOW.read_text()
+        for marker in ("DATABASE_AUTH_FAILED", "DATABASE_CONNECTION_FAILED", "DATABASE_TLS_OR_VERSION_CHECK_FAILED"):
+            self.assertIn(marker, text)
+        self.assertNotIn("set -x", text)
+        self.assertNotIn("cat \"$probe_err\"", text)
 
 
 if __name__ == "__main__":

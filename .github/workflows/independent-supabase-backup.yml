@@ -1,0 +1,142 @@
+name: Independent encrypted Supabase backup
+# Manual dispatch only. The daily schedule returns once a backup and an isolated restore have been
+# verified; a failing schedule is noise, not protection.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: milano-seal-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUPABASE_PROJECT_REF: ehqdzfopsrbwewtddiwq
+      SUPABASE_DB_URL: ${{ secrets.BACKUP_SUPABASE_DB_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
+      BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required backup secret bindings
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          for name in SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_GPG_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required backup secret binding: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: Offline backup integrity regressions
+        run: python3 scripts/backups/test_backups.py -v
+      - name: Diagnose backup database URL structure
+        # Prints one PASS/FAIL line per structural check. No network connection, and nothing
+        # derived from the secret value is printed.
+        run: python3 scripts/backups/diagnose_database_url.py
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install PostgreSQL and AWS CLI tools
+        shell: bash
+        env:
+          # Pinned AWS CLI v2 release, verified against the AWS CLI Team signing key
+          # (fingerprint pinned here; public key committed beside the backup scripts).
+          AWS_CLI_VERSION: 2.39.0
+          AWS_CLI_SIGNING_FPR: FB5DB77FD5C118B80511ADA8A6310ACC4672475C
+        run: |
+          set -Eeuo pipefail
+          # Use runner tools and the existing postgres:17 image; no apt mirrors needed.
+          for tool in gpg gpgv unzip curl docker; do
+            command -v "$tool" >/dev/null || { echo "::error::Required runner tool missing: $tool"; exit 1; }
+          done
+          dl="$RUNNER_TEMP/awscli-download"
+          rm -rf "$dl"; mkdir -p "$dl"
+          gpg --batch --no-autostart --dearmor --output "$dl/aws-cli-team.gpg" scripts/backups/aws-cli-team-public-key.asc
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" --output "$dl/awscliv2.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip.sig" --output "$dl/awscliv2.zip.sig"
+          # Refuse to unpack unless the archive carries a valid signature from the pinned key.
+          gpgv --keyring "$dl/aws-cli-team.gpg" --status-fd 1 "$dl/awscliv2.zip.sig" "$dl/awscliv2.zip" 2>/dev/null > "$dl/verify.status"
+          grep -q "^\[GNUPG:\] VALIDSIG ${AWS_CLI_SIGNING_FPR} " "$dl/verify.status"
+          unzip -q "$dl/awscliv2.zip" -d "$dl"
+          "$dl/aws/install" --install-dir "$RUNNER_TEMP/aws-cli" --bin-dir "$RUNNER_TEMP/aws-bin"
+          rm -rf "$dl"
+          "$RUNNER_TEMP/aws-bin/aws" --version | grep -q "^aws-cli/${AWS_CLI_VERSION} "
+          "$RUNNER_TEMP/aws-bin/aws" --version
+          echo "$RUNNER_TEMP/aws-bin" >> "$GITHUB_PATH"
+      - name: Export database and actual private Storage objects
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_GPG_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT; do
+            test -n "${!name:-}" || { echo "::error::Missing required secret: $name"; exit 1; }
+          done
+          python3 - <<'PYTHON'
+          import os
+          from scripts.backups.export_storage import validate_database_url
+          validate_database_url(os.environ["SUPABASE_DB_URL"], os.environ["SUPABASE_PROJECT_REF"])
+          PYTHON
+          # Verify the live connection is TLS and PostgreSQL 17, without logging its URL.
+          # The client's own error text names the host and user, so it is classified and discarded.
+          probe_out="$RUNNER_TEMP/db-probe.out"; probe_err="$RUNNER_TEMP/db-probe.err"
+          if ! docker run --rm -e SUPABASE_DB_URL -e BACKUP_TLS_CHECK_SQL="select current_setting('server_version_num')::int between 170000 and 179999 and coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)" postgres:17 sh -ec 'psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -c "$BACKUP_TLS_CHECK_SQL"' > "$probe_out" 2> "$probe_err"; then
+            if grep -qiE 'password authentication failed|authentication failed|SASL authentication|no pg_hba.conf entry|Tenant or user not found' "$probe_err"; then
+              echo "::error::DATABASE_AUTH_FAILED: PostgreSQL was reached and rejected the credentials."
+            else
+              echo "::error::DATABASE_CONNECTION_FAILED: PostgreSQL could not be reached or the session failed before authentication completed."
+            fi
+            rm -f "$probe_out" "$probe_err"
+            exit 1
+          fi
+          if ! awk '$0 == "t" { ok=1 } END { exit !ok }' "$probe_out"; then
+            echo "::error::DATABASE_TLS_OR_VERSION_CHECK_FAILED: connected and authenticated, but the session is not TLS on PostgreSQL 17."
+            rm -f "$probe_out" "$probe_err"
+            exit 1
+          fi
+          rm -f "$probe_out" "$probe_err"
+          echo "DATABASE_AUTH: PASS"
+          umask 077
+          mkdir -p "$RUNNER_TEMP/milano-backup/database" "$RUNNER_TEMP/milano-backup/storage"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/roles.sql" --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/schema.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/milano-backup/database/data.sql" --use-copy --data-only
+          # The standard Supabase CLI dump excludes managed auth/storage schemas.
+          # Capture auth records and Storage metadata independently and fail closed on errors.
+          docker run --rm -e SUPABASE_DB_URL -v "$RUNNER_TEMP/milano-backup/database:/backup" postgres:17 sh -ec 'pg_dump "$SUPABASE_DB_URL" --format=custom --data-only --no-owner --no-acl --schema=auth --schema=storage --file=/backup/auth-storage-data.dump'
+          docker run --rm -v "$RUNNER_TEMP/milano-backup/database:/backup:ro" postgres:17 pg_restore --list /backup/auth-storage-data.dump > /dev/null
+          docker run --rm -e SUPABASE_DB_URL postgres:17 sh -ec 'psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -F "$(printf "\t")" -c "select bucket_id, count(*) from storage.objects group by bucket_id order by bucket_id"' > "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
+          python3 scripts/backups/export_storage.py "$RUNNER_TEMP/milano-backup/storage" "$RUNNER_TEMP/milano-backup/database/storage-object-counts.tsv"
+          python3 scripts/backups/verify_backup.py "$RUNNER_TEMP/milano-backup"
+      - name: Encrypt locally and upload off platform
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+          KEY="milano-seal/${STAMP}/backup.tar.gpg"
+          tar -C "$RUNNER_TEMP/milano-backup" -cf - . | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 --output "$RUNNER_TEMP/backup.tar.gpg" 3<<<"$BACKUP_GPG_PASSPHRASE"
+          test -s "$RUNNER_TEMP/backup.tar.gpg"
+          sha256sum "$RUNNER_TEMP/backup.tar.gpg" | awk '{print $1}' > "$RUNNER_TEMP/backup.sha256"
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "$RUNNER_TEMP/backup.tar.gpg" "s3://$BACKUP_S3_BUCKET/$KEY" --only-show-errors
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "$RUNNER_TEMP/backup.sha256" "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" --only-show-errors
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3api head-object --bucket "$BACKUP_S3_BUCKET" --key "$KEY" --query ContentLength --output text | awk '$1 > 0 { ok=1 } END { exit !ok }'
+          # Read back the remote encrypted bytes and checksum; never trust HEAD alone.
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/$KEY" "$RUNNER_TEMP/remote-backup.tar.gpg" --only-show-errors
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256" --only-show-errors
+          test "$(sha256sum "$RUNNER_TEMP/remote-backup.tar.gpg" | awk '{print $1}')" = "$(cat "$RUNNER_TEMP/remote-backup.sha256")"
+          cmp "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.sha256"
+          echo "Backup encrypted, uploaded, and remote ciphertext verified: $STAMP (restore certification still pending)"
+      - name: Always remove temporary sensitive files
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/milano-backup" "$RUNNER_TEMP/backup.tar.gpg" "$RUNNER_TEMP/backup.sha256" "$RUNNER_TEMP/remote-backup.tar.gpg" "$RUNNER_TEMP/remote-backup.sha256" "$RUNNER_TEMP/awscli-download" "$RUNNER_TEMP/db-probe.out" "$RUNNER_TEMP/db-probe.err"

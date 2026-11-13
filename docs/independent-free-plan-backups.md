@@ -1,6 +1,17 @@
 # The Milano Seal — Independent Supabase Free-plan Backup Runbook
 
-## Current status (2026-11-11): DEFERRED / NOT ACTIVE / NOT DR CERTIFIED
+## Current status (2026-11-13): RESTORED FOR MANUAL RUNS / NO BACKUP COMPLETED / NOT DR CERTIFIED
+- **Workflow:** `.github/workflows/independent-supabase-backup.yml` is restored from the last reviewed version (the parent of `e5708a1a`). It runs by manual dispatch on `main` only. The daily schedule is not restored until one backup and one isolated restore have been verified.
+- **No backup has completed.** Nothing has been exported, encrypted, uploaded or restored.
+- **Two distinct failure stages have occurred. They are not the same error:**
+  - *Before 2026-11-11:* PostgreSQL was reached and rejected the credentials (authentication).
+  - *2026-11-13, run `43079462957` attempt 6:* the run stopped at the URL structure check, before any connection. This says nothing about the password.
+- **New step, "Diagnose backup database URL structure":** prints one `PASS`/`FAIL` line each for `PRESENT`, `URL_PARSING`, `SCHEME`, `HOST`, `USERNAME`, `PORT`, `DATABASE`, `TLS`, `STRUCTURE`. It makes no connection and prints nothing derived from the secret.
+- **Connection failures are now classified** as `DATABASE_AUTH_FAILED`, `DATABASE_CONNECTION_FAILED` or `DATABASE_TLS_OR_VERSION_CHECK_FAILED`. The database client's own error text, which names the host and user, is discarded.
+- **Most likely fix if `TLS` fails:** the URL copied from Supabase **Connect** has no TLS parameter. The secret must end with `?sslmode=require`.
+- **Restore is not automated.** The workflow ends after verifying the uploaded ciphertext. Decryption and an isolated restore follow the runbook below and are still required before any recovery claim.
+
+## Earlier status (2026-11-11): DEFERRED / NOT ACTIVE / NOT DR CERTIFIED
 The scheduled workflow `.github/workflows/independent-supabase-backup.yml` was removed from `main` in `e5708a1a` at the operator's request after repeated database-authentication failures. No backup has ever completed: nothing was exported, encrypted or uploaded to R2, and no restore was tested. The exporter, verifier and offline tests under `scripts/backups/` remain in the repository. Restoring the workflow from history re-enables it; the secret-binding and URL-format notes below still apply.
 
 ## Earlier status (2026-11-10)
