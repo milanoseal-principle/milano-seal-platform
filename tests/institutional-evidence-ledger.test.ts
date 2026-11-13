@@ -185,6 +185,29 @@ test("corrections are versioned, history is immutable, and a superseded or expir
   } finally { await db.close(); }
 });
 
+test("an approval covers exactly the evidence versions it named, whatever the timestamps say", async () => {
+  const db = await isolatedCanonicalDatabase(migrations());
+  try {
+    const s = await seed(db), c = client(db), p: InstitutionalPathway = "DIRECT_COMPETENT_AUTHORITY";
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p), T("2026-11-12T08:00:00Z"));
+    await fill(c, s.matter, s.operator, p, "2026-11-12T09:00:00Z");
+    await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
+    const before = await loadInstitutionalState(c, s.matter, T("2026-11-12T11:00:00Z"));
+    assert.equal(before.evaluation?.decision, "VERIFIED_ROUTE");
+    assert.equal(before.approval?.coveredEvidence.competentAuthority, before.evidence.competentAuthority?.eventId);
+    // A concurrent correction that committed after the approval but carries an EARLIER timestamp.
+    await db.query(
+      "insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,new_value) values($1,$2,'authority','operator',$3,$4,$5,$6)",
+      [s.matter, INSTITUTIONAL_EVENTS.evidence, s.operator, "2026-11-12T09:59:59Z", INSTITUTIONAL_LEDGER_SOURCE,
+        JSON.stringify({ reviewEventId: before.review!.eventId, key: "competentAuthority", state: "verified", source: "https://authority.example.invalid/other", verifiedAt: "2026-11-10", version: 2 })]);
+    const after = await loadInstitutionalState(c, s.matter, T("2026-11-12T11:00:00Z"));
+    assert.notEqual(after.evidence.competentAuthority?.eventId, before.evidence.competentAuthority?.eventId);
+    assert.equal(after.approval, null, "the approval named a different evidence version");
+    assert.equal(after.evaluation?.decision, "CONDITIONAL_REVIEW");
+    assert.match(String(after.approvalVoided), /must be approved again/);
+  } finally { await db.close(); }
+});
+
 test("a new review version discards earlier evidence and approval; a rejection blocks until then", async () => {
   const db = await isolatedCanonicalDatabase(migrations());
   try {

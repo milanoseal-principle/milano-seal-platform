@@ -52,7 +52,7 @@ export type InstitutionalEvidenceRecord = {
   documentVersionId: string | null; sha256: string | null; recordedBy: string | null; recordedAt: string;
   supersedes: string | null; current: boolean; expired: boolean;
 };
-export type InstitutionalDecisionRecord = { eventId: string; decision: "approved" | "rejected"; by: string | null; at: string; reason: string | null; reviewEventId: string };
+export type InstitutionalDecisionRecord = { eventId: string; decision: "approved" | "rejected"; by: string | null; at: string; reason: string | null; reviewEventId: string; coveredEvidence: Record<string, string> };
 
 export type InstitutionalState = {
   matterId: string;
@@ -119,7 +119,7 @@ export function deriveInstitutionalState(matterId: string, events: LedgerRow[], 
       state.evidence[key] = record;
       state.history.push(record);
     } else if (e.event_type === INSTITUTIONAL_EVENTS.approved || e.event_type === INSTITUTIONAL_EVENTS.rejected) {
-      state.decisions.push({ eventId: e.id, decision: e.event_type === INSTITUTIONAL_EVENTS.approved ? "approved" : "rejected", by: e.actor_id, at: e.occurred_at, reason: e.reason, reviewEventId: review.eventId });
+      state.decisions.push({ eventId: e.id, decision: e.event_type === INSTITUTIONAL_EVENTS.approved ? "approved" : "rejected", by: e.actor_id, at: e.occurred_at, reason: e.reason, reviewEventId: review.eventId, coveredEvidence: (n.coveredEvidence as Record<string, string> | undefined) ?? {} });
     }
   }
 
@@ -127,7 +127,12 @@ export function deriveInstitutionalState(matterId: string, events: LedgerRow[], 
   if (lastDecision?.decision === "rejected") state.rejection = lastDecision;
   if (lastDecision?.decision === "approved") {
     const current = Object.values(state.evidence).filter(Boolean) as InstitutionalEvidenceRecord[];
-    if (current.some((r) => Date.parse(r.recordedAt) > Date.parse(lastDecision.at))) state.approvalVoided = "Evidence was recorded after the approval; the pathway must be approved again.";
+    // An approval covers exactly the evidence versions it named. Comparing ids, not only times,
+    // closes the race where a correction is saved after the approval read the ledger but carries
+    // an earlier timestamp.
+    const covered = lastDecision.coveredEvidence;
+    const sameEvidence = current.length === Object.keys(covered).length && current.every((r) => covered[r.key] === r.eventId);
+    if (!sameEvidence || current.some((r) => Date.parse(r.recordedAt) > Date.parse(lastDecision.at))) state.approvalVoided = "Evidence was recorded after the approval; the pathway must be approved again.";
     else if (current.some((r) => r.expired)) state.approvalVoided = "Evidence covered by the approval has expired and must be re-verified.";
     else state.approval = lastDecision;
   }
