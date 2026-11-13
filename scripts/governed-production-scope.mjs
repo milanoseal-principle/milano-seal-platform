@@ -87,6 +87,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261112140000_operator_profile_binding.sql',
  // 2026-11-13 B10: append-only, source-verified receiving-authority requirement statements (additive).
  'supabase/migrations/20261113090000_receiving_authority_requirements.sql',
+ // 2026-11-13 B04: a rejected Alliance referral cannot be linked to a Matter (additive trigger).
+ 'supabase/migrations/20261113150000_rejected_referral_not_convertible.sql',
  'supabase/migrations/20261113120000_institutional_transition_integrity.sql',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
