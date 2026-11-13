@@ -138,6 +138,7 @@ test("attribution: the deterministic row id makes a racing second insert a dupli
     assert.equal(await count(db, "select 1 from public.referral_ledger where matter_id=$1", [matter]), 1);
     assert.match(referralAttributionId(lead.id, s.partner), /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     assert.notEqual(referralAttributionId(lead.id, s.partner), referralAttributionId(lead.id, s.inactive));
+    assert.equal(referralAttributionId(lead.id.toUpperCase(), ` ${s.partner.toUpperCase()} `), referralAttributionId(lead.id, s.partner), "letter case never changes the key");
   } finally { await db.close(); }
 });
 
@@ -204,6 +205,28 @@ test("review: reject blocks conversion; accept allows it; invalid input and fail
     const retry = await review(lead.id, "convert");
     assert.ok(retry.ok && retry.status === 200 && retry.duplicate === true && retry.matterId === (partial.ok ? partial.matterId : null));
     assert.equal(await count(db, "select 1 from public.referral_ledger where matter_id=$1", [retry.ok ? retry.matterId : null]), 1);
+
+    // An upper-case id resolves to the same lead, Matter and attribution row.
+    const again = await review(lead.id.toUpperCase(), "convert");
+    assert.ok(again.ok && again.duplicate === true && again.matterId === (retry.ok ? retry.matterId : null));
+    assert.equal(await count(db, "select 1 from public.referral_ledger where matter_id=$1", [retry.ok ? retry.matterId : null]), 1);
+
+    // A rejection stored after the application's check is still refused, under the conversion's own lock.
+    const late = await referral(c, s.partner);
+    const lateClient = client(db);
+    const rpc = lateClient.rpc.bind(lateClient);
+    (lateClient as unknown as { rpc: unknown }).rpc = async (fn: string, args: Record<string, unknown>) => {
+      await db.query(`update public.sales_leads set details = details || '{"review_status":"rejected"}'::jsonb where id=$1`, [late.id]);
+      return rpc(fn, args);
+    };
+    const dealsBefore = await count(db, "select 1 from public.deals");
+    assert.deepEqual(await review(late.id, "convert", lateClient), { ok: false, status: 409, error: "REFERRAL_REJECTED" });
+    await assert.rejects(() => db.query("select * from public.convert_sales_lead_to_matter($1,$2)", [late.id, s.coordinator]), /REFERRAL_REJECTED/, "every caller of the function is covered");
+    assert.equal(await count(db, "select 1 from public.deals"), dealsBefore, "the Matter insert is rolled back with the refused link");
+    assert.equal(await count(db, "select 1 from public.sales_leads where id=$1 and canonical_matter_id is null", [late.id]), 1);
+    // Other lead types and unrejected referrals are unaffected by the trigger.
+    await db.query(`update public.sales_leads set details='{"review_status":"rejected"}'::jsonb where id=$1`, [other]);
+    assert.equal((await db.query("select * from public.convert_sales_lead_to_matter($1,$2)", [other, s.coordinator])).rows.length, 1);
 
     await assert.rejects(() => submitPartnerReferral(client(db, { failInsertInto: "sales_leads" }), { client_email: "c@example.invalid", destination_country: "X", document_type: "Y", matter_type: "Z", context: {} }, s.partner), /REFERRAL_NOT_STORED/);
   } finally { await db.close(); }

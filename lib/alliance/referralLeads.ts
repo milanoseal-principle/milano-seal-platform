@@ -53,7 +53,8 @@ export async function submitPartnerReferral(db: SupabaseClient, input: PartnerRe
 // One ledger row per referral lead and partner: the row id is derived from them, so a concurrent
 // second attempt collides on the primary key instead of writing a duplicate attribution.
 export function referralAttributionId(leadId: string, partnerId: string): string {
-  const hex = createHash("sha256").update(`alliance-referral-attribution:${leadId}:${partnerId}`).digest("hex");
+  // UUIDs are compared case-insensitively by the database, so the key uses their canonical lower case.
+  const hex = createHash("sha256").update(`alliance-referral-attribution:${leadId.trim().toLowerCase()}:${partnerId.trim().toLowerCase()}`).digest("hex");
   const variant = ((parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
@@ -124,15 +125,17 @@ export async function reviewPartnerReferral(
   if (!input.canConvert) return { ok: false, status: 403, error: "FORBIDDEN" };
   if (!lead.canonical_matter_id && details.review_status === "rejected") return { ok: false, status: 409, error: "REFERRAL_REJECTED" };
 
-  const { data, error } = await db.rpc("convert_sales_lead_to_matter", { p_lead_id: id, p_actor_id: input.actorId });
+  const { data, error } = await db.rpc("convert_sales_lead_to_matter", { p_lead_id: lead.id, p_actor_id: input.actorId });
   if (error) {
     const code = (error as { code?: string }).code;
-    return { ok: false, status: code === "P0002" ? 404 : code === "42501" ? 403 : code === "22023" ? 409 : 503, error: code === "P0002" ? "REFERRAL_NOT_FOUND" : code === "42501" ? "FORBIDDEN" : "LEAD_CONVERSION_FAILED" };
+    // The database refuses a referral rejected after the check above (same lock as the conversion).
+    const rejected = code === "22023" && /REFERRAL_REJECTED/.test(String((error as { message?: string }).message ?? ""));
+    return { ok: false, status: code === "P0002" ? 404 : code === "42501" ? 403 : code === "22023" ? 409 : 503, error: rejected ? "REFERRAL_REJECTED" : code === "P0002" ? "REFERRAL_NOT_FOUND" : code === "42501" ? "FORBIDDEN" : "LEAD_CONVERSION_FAILED" };
   }
   const row = (Array.isArray(data) ? data[0] : data) as { matter_id?: string; duplicate?: boolean } | null;
   if (!row?.matter_id) return { ok: false, status: 503, error: "LEAD_CONVERSION_UNCONFIRMED" };
   try {
-    await recordPartnerReferralAttribution(db, id, row.matter_id);
+    await recordPartnerReferralAttribution(db, String(lead.id), row.matter_id);
   } catch {
     // The Matter exists; attribution is retried by repeating the action (both steps are idempotent).
     return { ok: true, status: 202, action, matterId: row.matter_id, duplicate: row.duplicate === true, attribution: "NOT_RECORDED_RETRY" };

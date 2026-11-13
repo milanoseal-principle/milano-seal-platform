@@ -29,6 +29,7 @@ export const DEFAULT_TARGETS = [
   '20261112140000_operator_profile_binding.sql',
   '20261113090000_receiving_authority_requirements.sql',
   '20261113120000_institutional_transition_integrity.sql',
+  '20261113150000_rejected_referral_not_convertible.sql',
 ];
 
 // Definition hashes are produced by PostgreSQL's deparser and can differ between server versions
