@@ -113,6 +113,24 @@ test("unsettled treaty relationship or missing destination keeps a fully evidenc
   assert.equal(evaluateInstitutionalRoute(base(p, { destination: "Aruba" })).decision, "CONDITIONAL_REVIEW");
 });
 
+test("a Party's document limitation keeps the pathway conditional; same-day approval must follow the evidence", () => {
+  const p: InstitutionalPathway = "DIRECT_COMPETENT_AUTHORITY";
+  assert.equal(evaluateInstitutionalRoute(base(p, { destination: "OM", documentCategory: "commercial invoice" })).decision, "CONDITIONAL_REVIEW", "Oman excludes commercial documents");
+  assert.equal(evaluateInstitutionalRoute(base(p, { destination: "OM", documentCategory: "birth certificate" })).decision, "VERIFIED_ROUTE");
+  assert.equal(evaluateInstitutionalRoute(base(p, { destination: "RW", documentCategory: "Power of Attorney" })).decision, "CONDITIONAL_REVIEW");
+
+  const at = (verifiedAt: string, approvedAt: string) => evaluateInstitutionalRoute(base(p, {
+    evidence: Object.fromEntries(INSTITUTIONAL_PATHWAY_EVIDENCE[p].map((key) => [key, ok({ verifiedAt })])) as InstitutionalRouteInput["evidence"],
+    operatorApproval: { approvedBy: "op", approvedAt },
+  }));
+  const early = at("2026-11-12T18:00:00Z", "2026-11-12T09:00:00Z");
+  assert.equal(early.decision, "CONDITIONAL_REVIEW", "approval earlier the same day does not cover later evidence");
+  assert.deepEqual(early.outstanding.map((o) => [o.key, o.problem]), [["operatorApproval", "stale"]]);
+  assert.equal(at("2026-11-12T09:00:00Z", "2026-11-12T18:00:00Z").decision, "VERIFIED_ROUTE");
+  assert.equal(at("2026-11-12T09:00:00Z", "2026-11-12").decision, "CONDITIONAL_REVIEW", "a date-only approval counts as the start of the day");
+  assert.equal(at("2026-11-11", "2026-11-12").decision, "VERIFIED_ROUTE");
+});
+
 test("Matter path: institutional origin stays in review until verified, and never picks a U.S. lane or bypasses other gates", () => {
   const facts = { destinationHagueVerified: true, destinationHagueOperativeForMatter: true, documentOriginLevel: "institutional" as const };
   for (const decision of [undefined, null, "UNKNOWN", "CONDITIONAL_REVIEW", "UNSUPPORTED"] as const) {

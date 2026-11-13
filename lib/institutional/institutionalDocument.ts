@@ -121,7 +121,9 @@ export function evaluateInstitutionalRoute(input: InstitutionalRouteInput): Inst
     conditional = true;
     reasons.push("The destination is not identified, so the treaty relationship cannot be evaluated.");
   } else {
-    const treaty = evaluateApostilleRelationship({ origin: host, destination: String(input.destination), evaluationDate });
+    // The document category goes in too, so a Party's declared document limitations keep the
+    // pathway conditional instead of activating a route.
+    const treaty = evaluateApostilleRelationship({ origin: host, destination: String(input.destination), evaluationDate, documentType: input.documentCategory });
     if (treaty.status === "APOSTILLE_NOT_APPLICABLE") return done("UNSUPPORTED", [`An apostille issued by the host State does not apply for this destination. ${treaty.reasons[0] ?? ""}`.trim()]);
     if (treaty.status !== "APOSTILLE_APPLICABLE") {
       conditional = true;
@@ -145,8 +147,10 @@ export function evaluateInstitutionalRoute(input: InstitutionalRouteInput): Inst
   const approval = input.operatorApproval;
   const approved = Boolean(approval && String(approval.approvedBy ?? "").trim() && isIsoDate(approval.approvedAt) && approval.approvedAt.slice(0, 10) <= evaluationDate);
   if (!approved) outstanding.push({ key: "operatorApproval", requirement: "An authorized operator has approved this pathway for this document.", problem: "missing" });
-  // Approval given before the evidence was (re)verified does not cover it.
-  if (approved && INSTITUTIONAL_PATHWAY_EVIDENCE[pathway].some((key) => { const at = input.evidence?.[key]?.verifiedAt; return isIsoDate(at) && at.slice(0, 10) > approval!.approvedAt.slice(0, 10); })) {
+  // Approval given before the evidence was (re)verified does not cover it. Full instants are
+  // compared: a date-only value counts as the start of that day, so a same-day approval must
+  // carry a time later than the evidence to cover it.
+  if (approved && INSTITUTIONAL_PATHWAY_EVIDENCE[pathway].some((key) => { const at = input.evidence?.[key]?.verifiedAt; return isIsoDate(at) && Date.parse(at) > Date.parse(approval!.approvedAt); })) {
     outstanding.push({ key: "operatorApproval", requirement: "Operator approval must follow the latest evidence verification.", problem: "stale" });
   }
 
