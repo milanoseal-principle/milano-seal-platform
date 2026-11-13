@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { computeEventHash } from '@/lib/bluenotary/webhook';
+import { computeEventHash, verifyBNWebhookAuth } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
@@ -131,13 +131,12 @@ async function advanceMatterIntoExecution(
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.BLUENOTARY_WEBHOOK_SECRET) {
+  const auth = verifyBNWebhookAuth(request);
+  if (!auth.ok && auth.status === 500) {
     console.error('[BN webhook] BLUENOTARY_WEBHOOK_SECRET is not configured');
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.BLUENOTARY_WEBHOOK_SECRET}`) {
+  if (!auth.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

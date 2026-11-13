@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 import type { BNWebhookPayload } from './types';
 
 export type BNWebhookAuthResult =
@@ -16,8 +16,11 @@ export function verifyBNWebhookAuth(request: Request): BNWebhookAuthResult {
     return { ok: false, status: 500, reason: 'misconfigured' };
   }
 
+  // Compared as fixed-length digests in constant time, so neither the length nor a matching
+  // prefix of the secret can be learned from response timing. The provider protocol is unchanged.
   const authHeader = request.headers.get('authorization') ?? '';
-  if (authHeader === `Bearer ${secret}`) {
+  const digest = (value: string) => createHash('sha256').update(value, 'utf8').digest();
+  if (timingSafeEqual(digest(authHeader), digest(`Bearer ${secret}`))) {
     return { ok: true };
   }
 
