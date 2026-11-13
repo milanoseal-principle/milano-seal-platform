@@ -272,3 +272,17 @@ test("route and module contracts: operator gate first, approval needs protected 
   assert.deepEqual([...lib.matchAll(/\.from\("([a-z_]+)"\)\s*\.insert/g)].map((m) => m[1]), ["matter_evidence_ledger"], "the only write is an append to the canonical ledger");
   assert.doesNotMatch(lib, /\.update\(|\.delete\(|\.upsert\(|getPublicUrl|createSignedUrl|payment|wise|ron_sessions|deal_status/i);
 });
+
+test("operator screen: linked from the Matter page, honest states, no client-side approval authority", () => {
+  const matterPage = fs.readFileSync("app/dashboard/matters/[matterId]/page.tsx", "utf8");
+  assert.match(matterPage, /\/institutional`\} title="Institutional Document Review"/, "reached from the existing Matter page, not a separate portal");
+  const panel = fs.readFileSync("components/dashboard/institutional/InstitutionalReviewPanel.tsx", "utf8");
+  assert.match(panel, /This is not an empty review: the evidence could not be read/);
+  assert.match(panel, /An organisation or authority name alone is not evidence/);
+  assert.match(panel, /disabled=\{busy \|\| !complete\}/, "approve is unavailable until the evidence is complete");
+  assert.match(panel, /setData\(\(prev\) => \(\{ \.\.\.\(prev \?\? \{\}\), state: out\.state \}\)\)/, "the displayed decision always comes from the server");
+  assert.doesNotMatch(panel, /VERIFIED_ROUTE"\s*[:}]\s*true|routeActive\s*=\s*true|approvedBy|actorId|userId/, "the screen never asserts an approval or an actor itself");
+  assert.doesNotMatch(panel, /getPublicUrl|createSignedUrl|supabase/i, "no storage links and no direct database access from the screen");
+  const page = fs.readFileSync("app/dashboard/matters/[matterId]/institutional/page.tsx", "utf8");
+  assert.match(page, /Nothing on this screen establishes that an authority will act on the document/);
+});

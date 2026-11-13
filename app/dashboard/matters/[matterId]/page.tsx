@@ -280,6 +280,7 @@ export default function Matter360Page() {
             <NavCard href={`/dashboard/matters/${encodeURIComponent(matterId)}/execution`} title="Execution Readiness" caption="Governed progression, gates and next action." />
             <ExecutionIntelligenceStatusCard matterId={matterId} />
             <NavCard href={`/dashboard/deals/${encodeURIComponent(matterId)}`} title="Matter Record" caption="Canonical Matter record and activity." />
+            <NavCard href={`/dashboard/matters/${encodeURIComponent(matterId)}/institutional`} title="Institutional Document Review" caption="Evidence and pathway approval for documents issued by supranational or intergovernmental organisations." />
           </section>
 
           {discrepancies.length ? (
