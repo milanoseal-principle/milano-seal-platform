@@ -34,3 +34,7 @@ credentials.json
 
 # Local validation evidence (may include screenshots and authenticated browser state)
 artifacts/
+
+# Python bytecode
+__pycache__/
+*.pyc
