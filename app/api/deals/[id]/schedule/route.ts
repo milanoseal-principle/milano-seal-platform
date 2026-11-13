@@ -7,6 +7,7 @@ import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { logActivity } from "@/lib/activity";
+import { institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -93,6 +94,11 @@ export async function POST(
         { status: 402 },
       );
     }
+
+    // Institutional documents: an unverified or lapsed route approval blocks progression. This only
+    // adds a refusal after the checks above; it never satisfies the payment requirement.
+    const institutionalRefusal = await institutionalRouteRefusal(supabase, String(deal.id));
+    if (institutionalRefusal) return institutionalRefusal;
 
     const body = await req.json().catch(() => ({}));
     const scheduledAt =

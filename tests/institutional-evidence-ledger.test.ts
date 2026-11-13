@@ -10,6 +10,7 @@ import {
 } from "@/lib/institutional/evidenceLedger";
 import { INSTITUTIONAL_PATHWAY_EVIDENCE, INSTITUTIONAL_PATHWAYS, type InstitutionalPathway } from "@/lib/institutional/institutionalDocument";
 import { deriveInternationalExecutionPath } from "@/lib/control-plane/internationalDocumentExecutionProfile";
+import { institutionalExecutionGate, institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 // B09: institutional evidence persisted in the canonical Matter evidence ledger and reviewed by
 // operators. Runs against the replayed repository schema; fixtures are synthetic.
@@ -308,4 +309,65 @@ test("operator screen: linked from the Matter page, honest states, no client-sid
   assert.doesNotMatch(panel, /getPublicUrl|createSignedUrl|supabase/i, "no storage links and no direct database access from the screen");
   const page = fs.readFileSync("app/dashboard/matters/[matterId]/institutional/page.tsx", "utf8");
   assert.match(page, /Nothing on this screen establishes that an authority will act on the document/);
+});
+
+test("execution gate: a Matter under institutional review proceeds only while its route is verified", async () => {
+  const db = await isolatedCanonicalDatabase(migrations());
+  try {
+    const s = await seed(db), c = client(db), p: InstitutionalPathway = "HOST_STATE_NOTARIAL_AUTHENTICATION";
+    // A Matter with no institutional review is not affected at all.
+    assert.deepEqual(await institutionalExecutionGate(c, s.matter), { applies: false });
+    assert.equal(await institutionalRouteRefusal(c, s.other), null);
+
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p), T("2026-11-12T08:00:00Z"));
+    const blocked = await institutionalExecutionGate(c, s.matter, T("2026-11-12T08:30:00Z"));
+    assert.deepEqual([blocked.applies, blocked.applies && blocked.allowed, blocked.applies && blocked.decision], [true, false, "CONDITIONAL_REVIEW"]);
+    await fill(c, s.matter, s.operator, p, "2026-11-12T09:00:00Z");
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T09:30:00Z")) as { allowed: boolean }).allowed, false, "complete evidence without approval still blocks");
+    await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T10:30:00Z")) as { allowed: boolean }).allowed, true);
+    assert.equal(await institutionalRouteRefusal(c, s.other), null, "another Matter is never affected");
+
+    // A correction with the SAME timestamp as the approval voids it: ids decide, not times.
+    await db.query(
+      "insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,new_value) values($1,$2,'authority','operator',$3,$4,$5,$6)",
+      [s.matter, INSTITUTIONAL_EVENTS.evidence, s.operator, "2026-11-12T10:00:00Z", INSTITUTIONAL_LEDGER_SOURCE,
+        JSON.stringify({ reviewEventId: (await loadInstitutionalState(c, s.matter)).review!.eventId, key: "hostStateNotary", state: "verified", source: "https://authority.example.invalid/same-instant", verifiedAt: "2026-11-10", expiresAt: "2026-12-31", version: 2 })]);
+    const lapsed = await institutionalExecutionGate(c, s.matter, T("2026-11-12T11:00:00Z"));
+    assert.deepEqual([lapsed.applies && lapsed.allowed, lapsed.applies && lapsed.decision], [false, "CONDITIONAL_REVIEW"], "superseded evidence can never authorize the route");
+    await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T12:00:00Z"));
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T13:00:00Z")) as { allowed: boolean }).allowed, true);
+    // Expiry blocks again without anyone touching the record.
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2027-01-02T00:00:00Z")) as { allowed: boolean }).allowed, false);
+    // A rejection blocks.
+    await decideInstitutionalRoute(c, s.matter, s.approver, "reject", "Notary withdrew.", T("2026-11-13T09:00:00Z"));
+    const rejected = await institutionalExecutionGate(c, s.matter, T("2026-11-13T10:00:00Z"));
+    assert.deepEqual([rejected.applies && rejected.allowed, rejected.applies && rejected.decision], [false, "UNSUPPORTED"]);
+
+    const refusal = await institutionalRouteRefusal(c, s.matter);
+    assert.equal(refusal?.status, 409);
+    assert.equal((await refusal!.json()).error, "INSTITUTIONAL_ROUTE_NOT_VERIFIED");
+    // An unreadable ledger blocks; it is never read as "no review".
+    const unreadable = await institutionalRouteRefusal(client(db, { failRead: true }), s.matter);
+    assert.equal(unreadable?.status, 503);
+    assert.equal((await unreadable!.json()).error, "INSTITUTIONAL_REVIEW_UNAVAILABLE");
+  } finally { await db.close(); }
+});
+
+test("execution gate wiring: scheduling, execution start and packet actions check it after their existing gates, before writing", () => {
+  for (const file of ["app/api/deals/[id]/schedule/route.ts", "app/api/deals/[id]/execute/route.ts"]) {
+    const source = fs.readFileSync(file, "utf8");
+    const gate = source.indexOf("await institutionalRouteRefusal(supabase, String(deal.id))");
+    assert.ok(gate > 0, file);
+    assert.ok(source.indexOf('error: "PAYMENT_REQUIRED"') < gate, `${file}: the payment gate still runs first and is unchanged`);
+    assert.ok(source.indexOf('error: "EXECUTION_REVIEW_REQUIRED"') < gate, file);
+    assert.ok(gate < source.indexOf(".update("), `${file}: refused before any write`);
+    assert.match(source, /if \(institutionalRefusal\) return institutionalRefusal;/);
+  }
+  const packet = fs.readFileSync("app/api/dashboard/matters/[id]/authority-packet/route.ts", "utf8");
+  const gate = packet.indexOf("await institutionalRouteRefusal(createAdminClient(), loaded.matter.id)");
+  assert.ok(gate > 0 && gate < packet.indexOf('.rpc("record_matter_authority_packet"'), "no packet step is recorded while the route is unverified");
+  assert.match(packet, /if \(action !== "evaluate"\) \{\s*const institutionalRefusal/);
+  const lib = fs.readFileSync("lib/institutional/executionGate.ts", "utf8").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(lib, /\.insert\(|\.update\(|\.rpc\(|payment_|wise/i, "the gate only reads and only refuses");
 });

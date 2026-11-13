@@ -3,7 +3,7 @@
 Written 2026-11-13. Facts only; verify against GitHub before relying on SHAs.
 
 ## Position
-- **Base main:** `b93dddd3` (B08 merged as #494).
+- **Base main:** `f3c2859d` (B09 merged as #495).
 - **Working branch:** `claude/cool-darwin-8r9v7p`.
 - **PR:** #495, https://github.com/milanoseal-principle/milano-seal-platform/pull/495. Its head commit on GitHub is the final pushed SHA; the description carries the test counts.
 - **B08 dependency:** merged. B09 uses `lib/institutional/institutionalDocument.ts` unchanged.
@@ -15,7 +15,8 @@ Written 2026-11-13. Facts only; verify against GitHub before relying on SHAs.
 | `app/api/dashboard/matters/[id]/institutional/route.ts` | Operator API (GET state, POST review / evidence / approve / reject) |
 | `app/dashboard/matters/[matterId]/institutional/page.tsx` | Operator screen |
 | `components/dashboard/institutional/InstitutionalReviewPanel.tsx` | Review form, evidence checklist, approval, history |
-| `tests/institutional-evidence-ledger.test.ts` | 10 test groups on the replayed schema |
+| `tests/institutional-evidence-ledger.test.ts` | 13 test groups on the replayed schema |
+| `lib/institutional/executionGate.ts` | Blocks scheduling, execution start and authority-packet steps while the route is unverified (added after #495) |
 
 Modified: `app/dashboard/matters/[matterId]/page.tsx` (one link card).
 
@@ -40,7 +41,7 @@ Modified: `app/dashboard/matters/[matterId]/page.tsx` (one link card).
 ## Not done
 - **Two-person approval is not enforced.** The same person may record evidence and approve it if their role allows both. Enforcing separation needs a founder decision.
 - **Intake does not set the institutional origin.** An operator opens the review from the Matter page.
-- **The route decision is not yet fed into Matter execution gating.** `deriveInternationalExecutionPath` accepts `institutionalRouteDecision`, but nothing in the live Matter flow calls it with this state.
+- **Execution gating is wired** (follow-up to #495): once a Matter has an institutional review, scheduling, execution start and authority-packet assemble / QA / dispatch are refused unless the route is currently `VERIFIED_ROUTE`. Release and delivery steps are not separately gated.
 - **No file upload on the screen.** Evidence files are attached by selecting an existing document version of the Matter.
 - **No rendered browser check** of the new screen was run (needs an authenticated operator session and a database).
 
@@ -49,8 +50,8 @@ Modified: `app/dashboard/matters/[matterId]/page.tsx` (one link card).
 - **Backup / restore verification:** not run.
 
 ## 22-block status
-- **Merged:** B01 (#492), B03 (#493), B07 (#491), B08 (#494).
-- **In review:** B09.
+- **Merged:** B01 (#492), B03 (#493), B07 (#491), B08 (#494), B09 (#495).
+- **In review:** B09 execution gating (follow-up PR).
 - **Blocked:** B02.
 - **Not started:** B04, B05, B06, B10–B22.
 

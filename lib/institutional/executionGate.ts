@@ -1,0 +1,45 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import { InstitutionalLedgerError, loadInstitutionalState } from "@/lib/institutional/evidenceLedger";
+
+// Connects the institutional evidence decision to live Matter progression.
+//
+// A Matter is treated as institutional once an operator has recorded an institutional review for
+// it. From then on scheduling, execution start and authority-packet assembly, QA and dispatch are
+// refused unless the replayed evidence currently yields VERIFIED_ROUTE. Because the decision is
+// re-derived from the ledger on every call, a lapsed approval (corrected, superseded or expired
+// evidence, a new review version, a rejection) blocks again immediately.
+//
+// This gate only ever adds a refusal. It runs after the existing payment and execution checks and
+// never satisfies or replaces any of them. A read failure blocks: an unreadable ledger is never
+// treated as "no review".
+
+export type InstitutionalGate =
+  | { applies: false }
+  | { applies: true; allowed: boolean; decision: string; reasons: string[] };
+
+export async function institutionalExecutionGate(db: SupabaseClient, matterId: string, now: Date = new Date()): Promise<InstitutionalGate> {
+  const state = await loadInstitutionalState(db, matterId, now);
+  if (!state.review || !state.evaluation) return { applies: false };
+  return { applies: true, allowed: state.evaluation.decision === "VERIFIED_ROUTE", decision: state.evaluation.decision, reasons: state.evaluation.reasons };
+}
+
+// Null when the Matter may proceed; otherwise the refusal to return.
+export async function institutionalRouteRefusal(db: SupabaseClient, matterId: string): Promise<NextResponse | null> {
+  try {
+    const gate = await institutionalExecutionGate(db, matterId);
+    if (!gate.applies || gate.allowed) return null;
+    return NextResponse.json(
+      {
+        error: "INSTITUTIONAL_ROUTE_NOT_VERIFIED",
+        message: "This Matter has an institutional document review that is not a verified, approved route. Complete the evidence and approval before the Matter proceeds.",
+        institutional_decision: gate.decision,
+        reasons: gate.reasons,
+      },
+      { status: 409 },
+    );
+  } catch (error) {
+    const status = error instanceof InstitutionalLedgerError && error.status < 500 ? error.status : 503;
+    return NextResponse.json({ error: "INSTITUTIONAL_REVIEW_UNAVAILABLE", message: "The institutional review for this Matter could not be read, so the Matter cannot proceed yet." }, { status });
+  }
+}
