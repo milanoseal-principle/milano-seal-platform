@@ -5,7 +5,7 @@ Written 2026-11-13. Facts only; verify against GitHub before relying on SHAs.
 ## Position
 - **Base main:** `b93dddd3` (B08 merged as #494).
 - **Working branch:** `claude/cool-darwin-8r9v7p`.
-- **PR and final SHA:** see the B09 pull request on GitHub (opened from this branch); the PR description carries the final test counts.
+- **PR:** #495, https://github.com/milanoseal-principle/milano-seal-platform/pull/495. Its head commit on GitHub is the final pushed SHA; the description carries the test counts.
 - **B08 dependency:** merged. B09 uses `lib/institutional/institutionalDocument.ts` unchanged.
 
 ## What B09 adds
