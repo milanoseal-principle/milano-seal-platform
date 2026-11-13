@@ -82,7 +82,14 @@ export type InstitutionalRouteResult = {
 
 const NOTICE = "This describes a candidate authentication pathway under review. It is not legal advice, does not establish that any authority will act on the document, and never guarantees acceptance by the receiving authority.";
 const today = () => new Date().toISOString().slice(0, 10);
-const isIsoDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value) && !Number.isNaN(Date.parse(value));
+// A real calendar date (optionally with a time): the date part must round-trip, so an impossible
+// date such as 2026-02-30 is rejected instead of being normalized by Date.parse.
+function isIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(value) || Number.isNaN(Date.parse(value))) return false;
+  const day = value.slice(0, 10);
+  const parsed = Date.parse(day + "T00:00:00Z");
+  return !Number.isNaN(parsed) && new Date(parsed).toISOString().slice(0, 10) === day;
+}
 const daysBetween = (from: string, to: string) => (Date.parse(to.slice(0, 10)) - Date.parse(from.slice(0, 10))) / 86_400_000;
 
 export function isInstitutionalOrigin(value: unknown): boolean {

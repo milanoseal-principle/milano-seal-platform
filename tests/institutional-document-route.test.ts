@@ -129,6 +129,13 @@ test("a Party's document limitation keeps the pathway conditional; same-day appr
   assert.equal(at("2026-11-12T09:00:00Z", "2026-11-12T18:00:00Z").decision, "VERIFIED_ROUTE");
   assert.equal(at("2026-11-12T09:00:00Z", "2026-11-12").decision, "CONDITIONAL_REVIEW", "a date-only approval counts as the start of the day");
   assert.equal(at("2026-11-11", "2026-11-12").decision, "VERIFIED_ROUTE");
+  // Impossible calendar dates never satisfy a verification gate.
+  const impossible = at("2026-02-30", "2026-02-31");
+  assert.equal(impossible.decision, "CONDITIONAL_REVIEW");
+  assert.ok(impossible.outstanding.every((o) => o.problem === "no_source" || o.key === "operatorApproval"));
+  assert.equal(impossible.outstanding.length, INSTITUTIONAL_PATHWAY_EVIDENCE[p].length + 1);
+  assert.equal(at("2026-10-01", "2026-13-01").decision, "CONDITIONAL_REVIEW");
+  assert.equal(evaluateInstitutionalRoute(base(p, { evaluationDate: "2026-02-30" })).decision, "UNKNOWN");
 });
 
 test("Matter path: institutional origin stays in review until verified, and never picks a U.S. lane or bypasses other gates", () => {
