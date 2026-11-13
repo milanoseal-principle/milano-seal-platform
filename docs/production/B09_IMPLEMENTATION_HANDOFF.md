@@ -41,7 +41,7 @@ Modified: `app/dashboard/matters/[matterId]/page.tsx` (one link card).
 ## Not done
 - **Two-person approval is not enforced.** The same person may record evidence and approve it if their role allows both. Enforcing separation needs a founder decision.
 - **Intake does not set the institutional origin.** An operator opens the review from the Matter page.
-- **Execution gating is wired** (follow-up to #495): once a Matter has an institutional review, scheduling, execution start and authority-packet assemble / QA / dispatch are refused unless the route is currently `VERIFIED_ROUTE`. Release and delivery steps are not separately gated.
+- **Execution gating is wired** (#496): once a Matter has an institutional review, scheduling, execution start (including the BlueNotary automatic advance, `runStep`, the pipeline engine and the admin status route) and authority-packet assemble / QA / dispatch are refused unless the route is currently `VERIFIED_ROUTE`. The two RON session routes that move a Matter to `apostille_processing` are not gated.
 - **No file upload on the screen.** Evidence files are attached by selecting an existing document version of the Matter.
 - **No rendered browser check** of the new screen was run (needs an authenticated operator session and a database).
 
@@ -62,4 +62,4 @@ First command for a fresh session:
 git fetch origin main && git log --oneline -5 origin/main
 ```
 
-Next block after B09 merges: B10 (receiving-authority requirements), which can reuse this ledger pattern.
+B10 is implemented; see `B10_IMPLEMENTATION_HANDOFF.md` for the current position and block status.
