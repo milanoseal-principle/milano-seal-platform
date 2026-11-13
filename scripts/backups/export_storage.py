@@ -81,6 +81,45 @@ def validate_database_url(value, project_ref):
         raise RuntimeError("Invalid production backup database target or TLS configuration") from None
 
 
+DATABASE_URL_CHECKS = ("PRESENT", "URL_PARSING", "SCHEME", "HOST", "USERNAME", "PORT", "DATABASE", "TLS", "STRUCTURE")
+
+
+def diagnose_database_url(value, project_ref):
+    """Which structural condition of the backup database URL holds, as booleans only.
+
+    Mirrors validate_database_url: the URL is accepted exactly when every check is True. Nothing
+    derived from the value (no host, user, password, length or exception text) is returned.
+    """
+    result = dict.fromkeys(DATABASE_URL_CHECKS, False)
+    if not isinstance(value, str) or not value:
+        return result
+    result["PRESENT"] = True
+    try:
+        clean = not any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value)
+        parsed = urllib.parse.urlsplit(value)
+        port = parsed.port  # raises ValueError on a malformed port
+        query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+        host = parsed.hostname or ""
+        username = urllib.parse.unquote(parsed.username or "")
+    except (ValueError, TypeError, AttributeError):
+        return result
+    direct = host == f"db.{project_ref}.supabase.co"
+    pooler = host.endswith(".pooler.supabase.com")
+    result["URL_PARSING"] = clean
+    result["SCHEME"] = parsed.scheme in ("postgres", "postgresql")
+    result["HOST"] = direct or pooler
+    # The session pooler identifies the project in the user name: <role>.<project ref>.
+    result["USERNAME"] = bool(username) and (not pooler or username.endswith("." + project_ref))
+    result["PORT"] = port in (None, 5432)
+    result["DATABASE"] = parsed.path == "/postgres"
+    result["TLS"] = query.get("sslmode") in (["require"], ["verify-ca"], ["verify-full"])
+    result["STRUCTURE"] = (bool(parsed.password) and not parsed.fragment
+                           and value[:1] not in "\"'" and value[-1:] not in "\"'"
+                           and not set(query).intersection({"host", "hostaddr", "port", "user", "password",
+                                                            "dbname", "service", "servicefile", "passfile"}))
+    return result
+
+
 def request(url, payload=None):
     key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
     headers = {"Authorization": f"Bearer {key}", "apikey": key}
