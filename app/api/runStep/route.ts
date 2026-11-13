@@ -9,6 +9,7 @@ import { sendAdminAlert } from "@/lib/whatsapp";
 import { enforceRules, RuleViolation } from "@/lib/core/enforceRules";
 import { uploadEvidencePacket } from "@/lib/evidenceStorage";
 import { snapshotDeal } from "@/lib/dealBackup";
+import { institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 export const runtime = "nodejs";
 
@@ -117,6 +118,9 @@ export async function POST(req: NextRequest) {
     }
     throw err;
   }
+
+  const institutionalRefusal = await institutionalRouteRefusal(supabase, String(deal.id));
+  if (institutionalRefusal) return institutionalRefusal;
 
   // Execute transition
   const updatePayload: Record<string, any> = {

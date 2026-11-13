@@ -6,6 +6,7 @@ import { canTransition, normalizeMatterStatus } from "@/lib/stateMachine";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 import { logActivity } from "@/lib/activity";
+import { institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 export const runtime = "nodejs";
 
@@ -159,6 +160,9 @@ export async function POST(
         { status: 402 },
       );
     }
+
+    const institutionalRefusal = await institutionalRouteRefusal(admin, String(matter.id));
+    if (institutionalRefusal) return institutionalRefusal;
   }
 
   const actorEmail = user.email ?? user.id;

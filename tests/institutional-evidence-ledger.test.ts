@@ -10,7 +10,7 @@ import {
 } from "@/lib/institutional/evidenceLedger";
 import { INSTITUTIONAL_PATHWAY_EVIDENCE, INSTITUTIONAL_PATHWAYS, type InstitutionalPathway } from "@/lib/institutional/institutionalDocument";
 import { deriveInternationalExecutionPath } from "@/lib/control-plane/internationalDocumentExecutionProfile";
-import { institutionalExecutionGate, institutionalRouteRefusal } from "@/lib/institutional/executionGate";
+import { institutionalBlockReason, institutionalExecutionGate, institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 // B09: institutional evidence persisted in the canonical Matter evidence ledger and reviewed by
 // operators. Runs against the replayed repository schema; fixtures are synthetic.
@@ -351,6 +351,9 @@ test("execution gate: a Matter under institutional review proceeds only while it
     const unreadable = await institutionalRouteRefusal(client(db, { failRead: true }), s.matter);
     assert.equal(unreadable?.status, 503);
     assert.equal((await unreadable!.json()).error, "INSTITUTIONAL_REVIEW_UNAVAILABLE");
+    assert.match(String(await institutionalBlockReason(c, s.matter)), /^INSTITUTIONAL_ROUTE_NOT_VERIFIED/);
+    assert.match(String(await institutionalBlockReason(client(db, { failRead: true }), s.matter)), /^INSTITUTIONAL_REVIEW_UNAVAILABLE/);
+    assert.equal(await institutionalBlockReason(c, s.other), null);
   } finally { await db.close(); }
 });
 
@@ -368,6 +371,21 @@ test("execution gate wiring: scheduling, execution start and packet actions chec
   const gate = packet.indexOf("await institutionalRouteRefusal(createAdminClient(), loaded.matter.id)");
   assert.ok(gate > 0 && gate < packet.indexOf('.rpc("record_matter_authority_packet"'), "no packet step is recorded while the route is unverified");
   assert.match(packet, /if \(action !== "evaluate"\) \{\s*const institutionalRefusal/);
+  // Every other path that can start execution or advance a Matter toward release.
+  const webhook = fs.readFileSync("app/api/webhooks/bluenotary/route.ts", "utf8");
+  const advance = webhook.slice(webhook.indexOf("async function advanceMatterIntoExecution"), webhook.indexOf("export async function POST"));
+  const webhookGate = advance.indexOf("await institutionalBlockReason(supabase, String(matter.id))");
+  assert.ok(webhookGate > 0 && webhookGate < advance.indexOf(".update("), "the provider webhook holds the automatic advance for review");
+  assert.match(advance, /if \(institutionalBlock\) \{\s*await writeTransitionReview\(/);
+  const runStep = fs.readFileSync("app/api/runStep/route.ts", "utf8");
+  const runStepGate = runStep.indexOf("await institutionalRouteRefusal(supabase, String(deal.id))");
+  assert.ok(runStep.indexOf('code: "PAYMENT_REQUIRED"') < runStepGate && runStepGate < runStep.indexOf(".update("), "runStep refuses after the payment gate, before writing");
+  const engine = fs.readFileSync("lib/pipelineEngine.ts", "utf8");
+  const engineGate = engine.indexOf("await institutionalBlockReason(supabase, String(deal.id))");
+  assert.ok(engine.indexOf("evaluatePaymentGate(deal)") < engineGate && engineGate < engine.indexOf(".update("), "moveDeal refuses before writing");
+  const status = fs.readFileSync("app/api/admin/matters/[id]/status/route.ts", "utf8");
+  const statusGate = status.indexOf("await institutionalRouteRefusal(admin, String(matter.id))");
+  assert.ok(status.indexOf('code: "PAYMENT_REQUIRED"') < statusGate && statusGate < status.indexOf(".update("), "admin status refuses release stages before writing");
   const lib = fs.readFileSync("lib/institutional/executionGate.ts", "utf8").replace(/^\s*\/\/.*$/gm, "");
   assert.doesNotMatch(lib, /\.insert\(|\.update\(|\.rpc\(|payment_|wise/i, "the gate only reads and only refuses");
 });

@@ -6,6 +6,7 @@ import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
 import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
+import { institutionalBlockReason } from '@/lib/institutional/executionGate';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -72,6 +73,14 @@ async function advanceMatterIntoExecution(
       current,
       'Matter is not in the canonical scheduled state'
     );
+    return;
+  }
+
+  // Provider evidence is still recorded by the caller; only the automatic Matter advance is held
+  // for operator review while an institutional route is not verified.
+  const institutionalBlock = await institutionalBlockReason(supabase, String(matter.id));
+  if (institutionalBlock) {
+    await writeTransitionReview(supabase, matterId, ronSessionId, providerEvent, current, institutionalBlock);
     return;
   }
 

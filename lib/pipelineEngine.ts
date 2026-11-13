@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity";
 import { validateExecutionTruth } from "@/lib/matter/executionTruth";
 import { evaluatePaymentGate } from "@/lib/payments/paymentGate";
 import { evaluateSchedulingGate } from "@/lib/scheduling/complimentarySchedulingGate";
+import { institutionalBlockReason } from "@/lib/institutional/executionGate";
 
 const VALID_STAGES = [
   "new",
@@ -85,6 +86,11 @@ export async function moveDeal(
           "Payment required before advancing to this stage — verified Wise settlement is required.",
       };
     }
+  }
+
+  if (gatedStages.includes(stage)) {
+    const institutionalBlock = await institutionalBlockReason(supabase, String(deal.id));
+    if (institutionalBlock) return { ok: false, error: institutionalBlock };
   }
 
   // Enforce state machine

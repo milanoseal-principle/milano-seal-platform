@@ -24,6 +24,18 @@ export async function institutionalExecutionGate(db: SupabaseClient, matterId: s
   return { applies: true, allowed: state.evaluation.decision === "VERIFIED_ROUTE", decision: state.evaluation.decision, reasons: state.evaluation.reasons };
 }
 
+// For transition paths that do not answer with a route response (the provider webhook, the pipeline
+// engine). Null when the Matter may proceed; otherwise a plain reason. An unreadable ledger blocks.
+export async function institutionalBlockReason(db: SupabaseClient, matterId: string): Promise<string | null> {
+  try {
+    const gate = await institutionalExecutionGate(db, matterId);
+    if (!gate.applies || gate.allowed) return null;
+    return `INSTITUTIONAL_ROUTE_NOT_VERIFIED: institutional route decision is ${gate.decision}`;
+  } catch {
+    return "INSTITUTIONAL_REVIEW_UNAVAILABLE: the institutional review could not be read";
+  }
+}
+
 // Null when the Matter may proceed; otherwise the refusal to return.
 export async function institutionalRouteRefusal(db: SupabaseClient, matterId: string): Promise<NextResponse | null> {
   try {
