@@ -44,7 +44,7 @@ Modified:
 ## Production status
 - **Current hosted migration effects are UNVERIFIED.** Reconciliation retains the exact six 2026-11-12 targets and adds `20261113090000` plus forward integrity correction `20261113120000`. Historical snapshots cannot establish which effects are currently pending. Nothing has been applied by this review.
 - The B10 screen will show the "not deployed" message in production until its migration is applied. `20261112110000` must be applied first: the store reads `routing_status` and `manual_review_required`, which that migration adds on the hosted table.
-- B02 still needs a fresh snapshot, a verified recovery point and explicit authorization.
+- B02 is authorized subject to a fresh snapshot and verified recovery; those execution prerequisites remain unmet.
 
 ## Also on this branch (B06, partial)
 - The BlueNotary webhook compared its secret with a plain string comparison. It now uses `verifyBNWebhookAuth`, which compares fixed-length digests with `timingSafeEqual`. Protocol, status codes, replay protection and idempotency are unchanged. Test: `tests/ron-provider-callback-auth.test.ts`.

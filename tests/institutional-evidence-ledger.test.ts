@@ -59,7 +59,7 @@ function client(db: Db, opts: { failRead?: boolean; cap?: number } = {}): Supaba
     return api;
   };
   const rpc = async (name:string,args:Record<string,unknown>)=>{
-    try {return {data:(await db.query('select public.'+name+'($1) result',[args.p_matter])).rows[0].result,error:null};}
+    try {return {data:(await db.query<{result:boolean}>('select public.'+name+'($1) result',[args.p_matter])).rows[0].result,error:null};}
     catch(error){return {data:null,error:{message:String(error)}};}
   };
   return { from, rpc } as unknown as SupabaseClient;
