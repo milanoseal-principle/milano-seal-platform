@@ -46,11 +46,16 @@ Modified:
 - The B10 screen will show the "not deployed" message in production until its migration is applied. `20261112110000` must be applied first: the store reads `routing_status` and `manual_review_required`, which that migration adds on the hosted table.
 - B02 still needs a fresh snapshot, a verified recovery point and explicit authorization.
 
+## Also on this branch (B06, partial)
+- The BlueNotary webhook compared its secret with a plain string comparison. It now uses `verifyBNWebhookAuth`, which compares fixed-length digests with `timingSafeEqual`. Protocol, status codes, replay protection and idempotency are unchanged. Test: `tests/ron-provider-callback-auth.test.ts`.
+- Still open in B06: review of the ten unmatched policies, the partner documents / messages / intake-links product contract, and the commission policy (not approved; stays disabled).
+
 ## 22-block status
 - **Merged:** B01 (#492), B03 (#493), B07 (#491), B08 (#494), B09 (#495).
-- **In review (#496):** B09 execution gating; B10.
+- **In review (#496):** B09 execution gating; B10; B06 webhook secret comparison.
 - **Blocked:** B02.
-- **Not started:** B04, B05, B06, B11–B22.
+- **Partly done:** B06.
+- **Not started:** B04, B05, B11–B22.
 
 ## Resume
 ```bash
