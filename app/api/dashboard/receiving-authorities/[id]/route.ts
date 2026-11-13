@@ -92,7 +92,7 @@ export async function DELETE(
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("receiving_authorities")
-    .update({ routing_status: "SUSPENDED", updated_at: new Date().toISOString() })
+    .update({ routing_status: "INACTIVE", manual_review_required: true, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select("id,routing_status")
     .single();
