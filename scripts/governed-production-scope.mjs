@@ -83,6 +83,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261112120000_va_task_ledger.sql',
  // 2026-11-12 user-authorized Alliance-on-operators identity (schema-as-code + binding); exact path only.
  'supabase/migrations/20261112130000_alliance_operator_identity.sql',
+ // 2026-11-12 B03: admin-only operator profile binding and referral-code functions (additive).
+ 'supabase/migrations/20261112140000_operator_profile_binding.sql',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.

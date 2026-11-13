@@ -31,6 +31,7 @@ const VERIFIED_FILES = [
   "app/api/va/ron/tasks/route.ts",
   "app/api/va/tasks/[id]/route.ts",
   "lib/alliance/partnerContext.ts",
+  "lib/alliance/accountBinding.ts",
   "lib/alliance/referralLeads.ts",
   "app/api/alliance/referrals/route.ts",
   "app/api/alliance/referrals/review/route.ts",
