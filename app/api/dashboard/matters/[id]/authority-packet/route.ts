@@ -14,6 +14,7 @@ import {
   type PacketEvaluationFacts,
 } from "@/lib/intelligence/execution-brain/authorityPacket";
 import { loadAuthorityPacket } from "@/lib/intelligence/execution-brain/authorityPacketServer";
+import { institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACTIONS = new Set(["evaluate", "assemble", "qa", "approve_dispatch"]);
@@ -159,6 +160,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   if (action === "approve_dispatch" && !before.operatorQa.complete) {
     return NextResponse.json({ error: "PACKET_QA_NOT_COMPLETE", missing_items: before.missingItems }, { status: 409 });
+  }
+
+  // Institutional documents: nothing is assembled, QA'd or dispatched to an authority while the
+  // institutional route is unverified or its approval has lapsed. Recording packet facts is allowed.
+  if (action !== "evaluate") {
+    const institutionalRefusal = await institutionalRouteRefusal(createAdminClient(), loaded.matter.id);
+    if (institutionalRefusal) return institutionalRefusal;
   }
 
   const occurredAt = new Date().toISOString();

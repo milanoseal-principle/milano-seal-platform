@@ -299,6 +299,12 @@ export default async function AuthorityVerifyPage({ searchParams }: PageProps) {
                   <p className="mt-1 text-[11px] text-white/35">
                     {formatDate(authority.last_verified_at)}
                   </p>
+                  <Link
+                    href={`/dashboard/authorities/${encodeURIComponent(authority.id)}/requirements`}
+                    className="mt-3 inline-flex text-[11px] font-medium text-[#E4CA8C] hover:underline"
+                  >
+                    Source-verified requirements →
+                  </Link>
                 </div>
               </article>
             ))}

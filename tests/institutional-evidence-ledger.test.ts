@@ -10,6 +10,7 @@ import {
 } from "@/lib/institutional/evidenceLedger";
 import { INSTITUTIONAL_PATHWAY_EVIDENCE, INSTITUTIONAL_PATHWAYS, type InstitutionalPathway } from "@/lib/institutional/institutionalDocument";
 import { deriveInternationalExecutionPath } from "@/lib/control-plane/internationalDocumentExecutionProfile";
+import { institutionalBlockReason, institutionalExecutionGate, institutionalRouteRefusal } from "@/lib/institutional/executionGate";
 
 // B09: institutional evidence persisted in the canonical Matter evidence ledger and reviewed by
 // operators. Runs against the replayed repository schema; fixtures are synthetic.
@@ -21,10 +22,11 @@ const migrations = () => fs.readdirSync("supabase/migrations").filter((f) => f.e
 const iso = (row: unknown) => Object.fromEntries(Object.entries(row as Record<string, unknown>).map(([k, v]) => [k, v instanceof Date ? v.toISOString() : v]));
 
 // Minimal stand-in for the Supabase client over the real database. Explicitly typed on purpose.
-function client(db: Db, opts: { failRead?: boolean } = {}): SupabaseClient {
+function client(db: Db, opts: { failRead?: boolean; cap?: number } = {}): SupabaseClient {
   const from = (table: string) => {
     const filters: [string, unknown][] = [];
     const orders: string[] = [];
+    const after: [string, unknown][] = [];
     let cols = "*", limit = "", inserted: Record<string, unknown> | null = null;
     const run = async () => {
       if (opts.failRead && !inserted) return { data: null, error: { message: "boom" } };
@@ -35,8 +37,9 @@ function client(db: Db, opts: { failRead?: boolean } = {}): SupabaseClient {
           const r = await db.query("insert into public." + table + "(" + keys.join(",") + ") values(" + keys.map((_, i) => "$" + (i + 1)).join(",") + ") returning " + cols, values);
           return { data: r.rows.map(iso), error: null };
         }
-        const where = filters.map(([k], i) => k + "=$" + (i + 1)).join(" and ") || "true";
-        const r = await db.query("select " + cols + " from public." + table + " where " + where + (orders.length ? " order by " + orders.join(",") : "") + limit, filters.map(([, v]) => v));
+        const all = [...filters, ...after];
+        const where = all.map(([k], i) => k + (i < filters.length ? "=$" : ">$" ) + (i + 1)).join(" and ") || "true";
+        const r = await db.query("select " + cols + " from public." + table + " where " + where + (orders.length ? " order by " + orders.join(",") : "") + (limit || (opts.cap ? " limit " + opts.cap : "")), all.map(([, v]) => v));
         return { data: r.rows.map(iso), error: null };
       } catch (error) {
         return { data: null, error: { message: (error as Error).message } };
@@ -46,20 +49,26 @@ function client(db: Db, opts: { failRead?: boolean } = {}): SupabaseClient {
     const api: Record<string, unknown> = {};
     api.select = (c: string) => { cols = c; return api; };
     api.insert = (row: Record<string, unknown>) => { inserted = row; return api; };
+    api.gt = (k: string, v: unknown) => { after.push([k, v]); return api; };
     api.eq = (k: string, v: unknown) => { filters.push([k, v]); return api; };
     api.order = (k: string, o?: { ascending?: boolean }) => { orders.push(k + (o?.ascending === false ? " desc" : " asc")); return api; };
-    api.limit = (n: number) => { limit = " limit " + n; return api; };
+    api.limit = (n: number) => { limit = " limit " + Math.min(n, opts.cap ?? n); return api; };
     api.maybeSingle = one;
     api.single = one;
     api.then = (resolve: (v: unknown) => void, reject: (e: unknown) => void) => run().then(resolve, reject);
     return api;
   };
-  return { from } as unknown as SupabaseClient;
+  const rpc = async (name:string,args:Record<string,unknown>)=>{
+    try {return {data:(await db.query<{result:boolean}>('select public.'+name+'($1) result',[args.p_matter])).rows[0].result,error:null};}
+    catch(error){return {data:null,error:{message:String(error)}};}
+  };
+  return { from, rpc } as unknown as SupabaseClient;
 }
 
 const SHA = (c: string) => c.repeat(64);
 async function seed(db: Db) {
   const matter = randomUUID(), other = randomUUID(), operator = randomUUID(), approver = randomUUID();
+  for (const id of [operator,approver]) await db.query("insert into auth.users(id,raw_app_meta_data) values($1,'{\"role\":\"founder_admin\"}')",[id]);
   for (const id of [matter, other]) await db.query("insert into public.deals(id, deal_id, status, email) values($1,$2,'intake_received','client@example.invalid')", [id, "SIM-" + id]);
   const version = async (m: string, hash: string | null) => (await db.query<{ id: string }>(
     "insert into public.document_versions(matter_id, stage, file_hash, actor, source_file, version_number) values($1,'intake_upload',$2,'operator','synthetic.pdf',1) returning id", [m, hash ?? "unhashed"])).rows[0].id;
@@ -110,7 +119,7 @@ test("evidence rules: source and real past date required, only pathway items, re
   try {
     const s = await seed(db), c = client(db), at = T("2026-11-12T09:00:00Z");
     assert.equal(await code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("issuerIdentity"), at)), "409:REVIEW_REQUIRED");
-    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY"), at);
+    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc}), at);
     const bad = (extra: EvidenceInput) => code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("competentAuthority", extra), at));
     assert.equal(await bad({ source: "  " }), "400:SOURCE_REQUIRED");
     assert.equal(await bad({ verifiedAt: "2026-02-30" }), "400:VERIFIED_DATE_INVALID");
@@ -125,7 +134,7 @@ test("evidence rules: source and real past date required, only pathway items, re
     assert.equal(await code(() => recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", { issuingOrganisation: "" }), at)), "400:REVIEW_INCOMPLETE");
     assert.equal(await code(() => recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", { hostState: "Atlantis" }), at)), "400:HOST_STATE_UNKNOWN");
     assert.equal(await code(() => recordInstitutionalReview(c, s.matter, s.operator, review("INVENTED" as InstitutionalPathway), at)), "400:PATHWAY_UNKNOWN");
-    assert.equal(await code(() => recordInstitutionalReview(c, randomUUID(), s.operator, review("DIRECT_COMPETENT_AUTHORITY"), at)), "404:MATTER_NOT_FOUND");
+    assert.equal(await code(() => recordInstitutionalReview(c, randomUUID(), s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc}), at)), "404:MATTER_NOT_FOUND");
     assert.equal(await code(() => loadInstitutionalState(c, "not-a-uuid")), "400:INVALID_MATTER_ID");
   } finally { await db.close(); }
 });
@@ -135,7 +144,7 @@ test("wrong host State or blocked treaty relationship can never be approved", as
   try {
     const s = await seed(db), c = client(db);
     const attempt = async (extra: ReviewInput, at: string) => {
-      await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", extra), T(at + "T08:00:00Z"));
+      await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc,...extra}), T(at + "T08:00:00Z"));
       await fill(c, s.matter, s.operator, "DIRECT_COMPETENT_AUTHORITY", at + "T09:00:00Z");
       const state = await loadInstitutionalState(c, s.matter, T(at + "T10:00:00Z"));
       return [state.evaluation?.decision, await code(() => decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T(at + "T10:00:00Z")))];
@@ -151,7 +160,7 @@ test("corrections are versioned, history is immutable, and a superseded or expir
   const db = await isolatedCanonicalDatabase(migrations());
   try {
     const s = await seed(db), c = client(db), p: InstitutionalPathway = "HOST_STATE_NOTARIAL_AUTHENTICATION";
-    await recordInstitutionalReview(c, s.matter, s.operator, review(p), T("2026-11-12T08:00:00Z"));
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p, {documentVersionId:s.doc}), T("2026-11-12T08:00:00Z"));
     await fill(c, s.matter, s.operator, p, "2026-11-12T09:00:00Z");
     await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
     assert.equal((await loadInstitutionalState(c, s.matter, T("2026-11-12T11:00:00Z"))).evaluation?.decision, "VERIFIED_ROUTE");
@@ -189,7 +198,7 @@ test("an approval covers exactly the evidence versions it named, whatever the ti
   const db = await isolatedCanonicalDatabase(migrations());
   try {
     const s = await seed(db), c = client(db), p: InstitutionalPathway = "DIRECT_COMPETENT_AUTHORITY";
-    await recordInstitutionalReview(c, s.matter, s.operator, review(p), T("2026-11-12T08:00:00Z"));
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p, {documentVersionId:s.doc}), T("2026-11-12T08:00:00Z"));
     await fill(c, s.matter, s.operator, p, "2026-11-12T09:00:00Z");
     await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
     const before = await loadInstitutionalState(c, s.matter, T("2026-11-12T11:00:00Z"));
@@ -198,8 +207,8 @@ test("an approval covers exactly the evidence versions it named, whatever the ti
     // A concurrent correction that committed after the approval but carries an EARLIER timestamp.
     await db.query(
       "insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,new_value) values($1,$2,'authority','operator',$3,$4,$5,$6)",
-      [s.matter, INSTITUTIONAL_EVENTS.evidence, s.operator, "2026-11-12T09:59:59Z", INSTITUTIONAL_LEDGER_SOURCE,
-        JSON.stringify({ reviewEventId: before.review!.eventId, key: "competentAuthority", state: "verified", source: "https://authority.example.invalid/other", verifiedAt: "2026-11-10", version: 2 })]);
+      [s.matter, INSTITUTIONAL_EVENTS.evidence, s.operator, "2026-11-12T08:59:59Z", INSTITUTIONAL_LEDGER_SOURCE,
+        JSON.stringify({ reviewEventId: before.review!.eventId, key: "competentAuthority", state: "verified", source: "https://authority.example.invalid/other", verifiedAt: "2026-11-10", version: 2, supersedes: before.evidence.competentAuthority!.eventId })]);
     const after = await loadInstitutionalState(c, s.matter, T("2026-11-12T11:00:00Z"));
     assert.notEqual(after.evidence.competentAuthority?.eventId, before.evidence.competentAuthority?.eventId);
     assert.equal(after.approval, null, "the approval named a different evidence version");
@@ -212,11 +221,11 @@ test("a new review version discards earlier evidence and approval; a rejection b
   const db = await isolatedCanonicalDatabase(migrations());
   try {
     const s = await seed(db), c = client(db);
-    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY"), T("2026-11-12T08:00:00Z"));
+    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc}), T("2026-11-12T08:00:00Z"));
     await fill(c, s.matter, s.operator, "DIRECT_COMPETENT_AUTHORITY", "2026-11-12T09:00:00Z");
     await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
     // Changing the pathway is a new version: nothing carries over.
-    await recordInstitutionalReview(c, s.matter, s.operator, review("DESIGNATED_GOVERNMENT_INTERMEDIARY"), T("2026-11-12T11:00:00Z"));
+    await recordInstitutionalReview(c, s.matter, s.operator, review("DESIGNATED_GOVERNMENT_INTERMEDIARY", {documentVersionId:s.doc}), T("2026-11-12T11:00:00Z"));
     let state = await loadInstitutionalState(c, s.matter, T("2026-11-12T12:00:00Z"));
     assert.deepEqual([state.review?.version, state.history.length, state.approval, state.evaluation?.decision], [2, 0, null, "CONDITIONAL_REVIEW"]);
 
@@ -230,7 +239,7 @@ test("a new review version discards earlier evidence and approval; a rejection b
     assert.equal(await code(() => decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T14:00:00Z"))), "409:PATHWAY_REJECTED");
     assert.equal(await code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("designatedIntermediary"), T("2026-11-12T14:00:00Z"))), "409:PATHWAY_REJECTED");
     // A new review version reopens the Matter with a clean slate.
-    await recordInstitutionalReview(c, s.matter, s.operator, review("HOST_STATE_NOTARIAL_AUTHENTICATION"), T("2026-11-12T15:00:00Z"));
+    await recordInstitutionalReview(c, s.matter, s.operator, review("HOST_STATE_NOTARIAL_AUTHENTICATION", {documentVersionId:s.doc}), T("2026-11-12T15:00:00Z"));
     state = await loadInstitutionalState(c, s.matter, T("2026-11-12T16:00:00Z"));
     assert.deepEqual([state.review?.version, state.rejection, state.evaluation?.decision], [3, null, "CONDITIONAL_REVIEW"]);
   } finally { await db.close(); }
@@ -244,7 +253,7 @@ test("Matter scoping: attachments must belong to the same Matter and carry a has
     const before = await custody();
     assert.equal(await code(() => recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", { documentVersionId: s.foreignDoc }), at)), "404:DOCUMENT_VERSION_NOT_IN_MATTER");
     assert.equal(await code(() => recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", { documentVersionId: "1 or 1=1" }), at)), "400:INVALID_DOCUMENT_VERSION");
-    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY"), at);
+    await recordInstitutionalReview(c, s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc}), at);
     assert.equal(await code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("signatureSealSpecimen", { documentVersionId: s.foreignDoc }), at)), "404:DOCUMENT_VERSION_NOT_IN_MATTER");
     assert.equal(await code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("signatureSealSpecimen", { documentVersionId: randomUUID() }), at)), "404:DOCUMENT_VERSION_NOT_IN_MATTER");
     assert.equal(await code(() => recordInstitutionalEvidence(c, s.matter, s.operator, item("signatureSealSpecimen", { documentVersionId: s.unhashed }), at)), "409:DOCUMENT_VERSION_UNHASHED");
@@ -261,7 +270,7 @@ test("database access: anonymous and client roles cannot read or write instituti
   const db = await isolatedCanonicalDatabase(migrations());
   try {
     const s = await seed(db);
-    await recordInstitutionalReview(client(db), s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY"), T("2026-11-12T09:00:00Z"));
+    await recordInstitutionalReview(client(db), s.matter, s.operator, review("DIRECT_COMPETENT_AUTHORITY", {documentVersionId:s.doc}), T("2026-11-12T09:00:00Z"));
     const insert = "insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,source,new_value) values($1,$2,'authority','operator',$3,'{}')";
     await db.exec("set role anon");
     await assert.rejects(() => db.query(insert, [s.matter, INSTITUTIONAL_EVENTS.approved, INSTITUTIONAL_LEDGER_SOURCE]));
@@ -308,4 +317,125 @@ test("operator screen: linked from the Matter page, honest states, no client-sid
   assert.doesNotMatch(panel, /getPublicUrl|createSignedUrl|supabase/i, "no storage links and no direct database access from the screen");
   const page = fs.readFileSync("app/dashboard/matters/[matterId]/institutional/page.tsx", "utf8");
   assert.match(page, /Nothing on this screen establishes that an authority will act on the document/);
+});
+
+test("execution gate: a Matter under institutional review proceeds only while its route is verified", async () => {
+  const db = await isolatedCanonicalDatabase(migrations());
+  try {
+    const s = await seed(db), c = client(db), p: InstitutionalPathway = "HOST_STATE_NOTARIAL_AUTHENTICATION";
+    // A Matter with no institutional review is not affected at all.
+    assert.deepEqual(await institutionalExecutionGate(c, s.matter), { applies: false });
+    assert.equal(await institutionalRouteRefusal(c, s.other), null);
+
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p, {documentVersionId:s.doc}), T("2026-11-12T08:00:00Z"));
+    const blocked = await institutionalExecutionGate(c, s.matter, T("2026-11-12T08:30:00Z"));
+    assert.deepEqual([blocked.applies, blocked.applies && blocked.allowed, blocked.applies && blocked.decision], [true, false, "CONDITIONAL_REVIEW"]);
+    await fill(c, s.matter, s.operator, p, "2026-11-12T09:00:00Z");
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T09:30:00Z")) as { allowed: boolean }).allowed, false, "complete evidence without approval still blocks");
+    await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T10:00:00Z"));
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T10:30:00Z")) as { allowed: boolean }).allowed, true);
+    assert.equal(await institutionalRouteRefusal(c, s.other), null, "another Matter is never affected");
+
+    // A correction with the SAME timestamp as the approval voids it: ids decide, not times.
+    await db.query(
+      "insert into public.matter_evidence_ledger(matter_id,event_type,domain,actor_type,actor_id,occurred_at,source,new_value) values($1,$2,'authority','operator',$3,$4,$5,$6)",
+      [s.matter, INSTITUTIONAL_EVENTS.evidence, s.operator, "2026-11-12T10:00:00Z", INSTITUTIONAL_LEDGER_SOURCE,
+        JSON.stringify({ reviewEventId: (await loadInstitutionalState(c, s.matter)).review!.eventId, key: "hostStateNotary", state: "verified", source: "https://authority.example.invalid/same-instant", verifiedAt: "2026-11-10", expiresAt: "2026-12-31", version: 2 })]);
+    const lapsed = await institutionalExecutionGate(c, s.matter, T("2026-11-12T11:00:00Z"));
+    assert.deepEqual([lapsed.applies && lapsed.allowed, lapsed.applies && lapsed.decision], [false, "CONDITIONAL_REVIEW"], "superseded evidence can never authorize the route");
+    await decideInstitutionalRoute(c, s.matter, s.approver, "approve", null, T("2026-11-12T12:00:00Z"));
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2026-11-12T13:00:00Z")) as { allowed: boolean }).allowed, true);
+    // Expiry blocks again without anyone touching the record.
+    assert.equal((await institutionalExecutionGate(c, s.matter, T("2027-01-02T00:00:00Z")) as { allowed: boolean }).allowed, false);
+    // A rejection blocks.
+    await decideInstitutionalRoute(c, s.matter, s.approver, "reject", "Notary withdrew.", T("2026-11-13T09:00:00Z"));
+    const rejected = await institutionalExecutionGate(c, s.matter, T("2026-11-13T10:00:00Z"));
+    assert.deepEqual([rejected.applies && rejected.allowed, rejected.applies && rejected.decision], [false, "UNSUPPORTED"]);
+
+    const refusal = await institutionalRouteRefusal(c, s.matter);
+    assert.equal(refusal?.status, 409);
+    assert.equal((await refusal!.json()).error, "INSTITUTIONAL_ROUTE_NOT_VERIFIED");
+    // An unreadable ledger blocks; it is never read as "no review".
+    const unreadable = await institutionalRouteRefusal(client(db, { failRead: true }), s.matter);
+    assert.equal(unreadable?.status, 503);
+    assert.equal((await unreadable!.json()).error, "INSTITUTIONAL_REVIEW_UNAVAILABLE");
+    assert.match(String(await institutionalBlockReason(c, s.matter)), /^INSTITUTIONAL_ROUTE_NOT_VERIFIED/);
+    assert.match(String(await institutionalBlockReason(client(db, { failRead: true }), s.matter)), /^INSTITUTIONAL_REVIEW_UNAVAILABLE/);
+    assert.equal(await institutionalBlockReason(c, s.other), null);
+  } finally { await db.close(); }
+});
+
+test("execution gate wiring: scheduling, execution start and packet actions check it after their existing gates, before writing", () => {
+  for (const file of ["app/api/deals/[id]/schedule/route.ts", "app/api/deals/[id]/execute/route.ts"]) {
+    const source = fs.readFileSync(file, "utf8");
+    const gate = source.indexOf("await institutionalRouteRefusal(supabase, String(deal.id))");
+    assert.ok(gate > 0, file);
+    assert.ok(source.indexOf('error: "PAYMENT_REQUIRED"') < gate, `${file}: the payment gate still runs first and is unchanged`);
+    assert.ok(source.indexOf('error: "EXECUTION_REVIEW_REQUIRED"') < gate, file);
+    assert.ok(gate < source.indexOf(".update("), `${file}: refused before any write`);
+    assert.match(source, /if \(institutionalRefusal\) return institutionalRefusal;/);
+  }
+  const packet = fs.readFileSync("app/api/dashboard/matters/[id]/authority-packet/route.ts", "utf8");
+  const gate = packet.indexOf("await institutionalRouteRefusal(createAdminClient(), loaded.matter.id)");
+  assert.ok(gate > 0 && gate < packet.indexOf('.rpc("record_matter_authority_packet"'), "no packet step is recorded while the route is unverified");
+  assert.match(packet, /if \(action !== "evaluate"\) \{\s*const institutionalRefusal/);
+  // Every other path that can start execution or advance a Matter toward release.
+  const webhook = fs.readFileSync("app/api/webhooks/bluenotary/route.ts", "utf8");
+  const advance = webhook.slice(webhook.indexOf("async function advanceMatterIntoExecution"), webhook.indexOf("export async function POST"));
+  const webhookGate = advance.indexOf("await institutionalBlockReason(supabase, String(matter.id))");
+  assert.ok(webhookGate > 0 && webhookGate < advance.indexOf(".update("), "the provider webhook holds the automatic advance for review");
+  assert.match(advance, /if \(institutionalBlock\) \{\s*await writeTransitionReview\(/);
+  const runStep = fs.readFileSync("app/api/runStep/route.ts", "utf8");
+  assert.match(runStep, /return executeMatter\(/, "legacy execution start delegates to the canonical gate");
+  assert.doesNotMatch(runStep, /createAdminClient|appendLedger|\.update\(/, "the adapter cannot mutate or invent completion evidence");
+  const engine = fs.readFileSync("lib/pipelineEngine.ts", "utf8");
+  const engineGate = engine.indexOf("await institutionalBlockReason(supabase, String(deal.id))");
+  assert.ok(engine.indexOf("evaluatePaymentGate(deal)") < engineGate && engineGate < engine.indexOf(".update("), "moveDeal refuses before writing");
+  const status = fs.readFileSync("app/api/admin/matters/[id]/status/route.ts", "utf8");
+  const statusGate = status.indexOf("await institutionalRouteRefusal(admin, String(matter.id))");
+  assert.ok(status.indexOf('code: "PAYMENT_REQUIRED"') < statusGate && statusGate < status.indexOf(".update("), "admin status refuses release stages before writing");
+  const lib = fs.readFileSync("lib/institutional/executionGate.ts", "utf8").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(lib, /\.insert\(|\.update\(|payment_|wise/i, "the gate only reads and only refuses");
+});
+
+
+test("server-capped ledger reads cannot hide a late correction", async () => {
+  const db = await isolatedCanonicalDatabase(migrations());
+  try {
+    const s = await seed(db), c = client(db), p: InstitutionalPathway = 'DIRECT_COMPETENT_AUTHORITY';
+    await recordInstitutionalReview(c,s.matter,s.operator,review(p, {documentVersionId:s.doc}),T('2026-11-12T08:00:00Z'));
+    await fill(c,s.matter,s.operator,p,'2026-11-12T09:00:00Z');
+    await decideInstitutionalRoute(c,s.matter,s.approver,'approve',null,T('2026-11-12T10:00:00Z'));
+    const capped = client(db,{cap:2});
+    const state = await loadInstitutionalState(capped,s.matter,T('2026-11-12T11:00:00Z'));
+    assert.equal(state.evaluation?.decision,'VERIFIED_ROUTE');
+    await recordInstitutionalEvidence(c,s.matter,s.operator,item('competentAuthority',{state:'rejected',note:'Synthetic authority refusal'}),T('2026-11-12T08:30:00Z'));
+    assert.equal((await loadInstitutionalState(capped,s.matter,T('2026-11-12T11:00:00Z'))).evaluation?.decision,'UNSUPPORTED');
+  } finally {await db.close();}
+});
+
+test("database transition proof rejects stale evidence and revoked approval without trusting the API read", async () => {
+  const db = await isolatedCanonicalDatabase(migrations());
+  try {
+    const s = await seed(db), c = client(db), p: InstitutionalPathway = "DIRECT_COMPETENT_AUTHORITY";
+    const proof = async () => (await db.query<{ok:boolean}>("select public.institutional_route_is_verified($1) ok", [s.matter])).rows[0].ok;
+    assert.equal(await proof(), true, "non-institutional Matters are unaffected");
+    await recordInstitutionalReview(c, s.matter, s.operator, review(p), T("2026-11-12T08:00:00Z"));
+    await fill(c,s.matter,s.operator,p,"2026-11-12T09:00:00Z");
+    assert.equal(await code(()=>decideInstitutionalRoute(c,s.matter,s.approver,"approve",null)), "409:REVIEW_DOCUMENT_REQUIRED");
+    assert.equal(await proof(), false);
+    await recordInstitutionalReview(c,s.matter,s.operator,review(p,{documentVersionId:s.doc}));
+    await fill(c,s.matter,s.operator,p,"2026-11-12T09:00:00Z");
+    await decideInstitutionalRoute(c,s.matter,s.approver,"approve",null);
+    assert.equal(await proof(),true);
+    await db.query("update auth.users set raw_app_meta_data='{\"role\":\"client\"}' where id=$1",[s.approver]);
+    assert.equal(await proof(),false,"role revocation invalidates a recorded approval");
+    await db.query("update auth.users set raw_app_meta_data='{\"role\":\"founder_admin\"}' where id=$1",[s.approver]);
+    assert.equal(await proof(),true);
+    await recordInstitutionalEvidence(c,s.matter,s.operator,item("competentAuthority"),T("2026-11-12T07:00:00Z"));
+    assert.equal(await proof(),false,"a backdated correction invalidates the exact covered event IDs");
+    await assert.rejects(()=>db.query("update public.deals set execution_truth=jsonb_build_object('authority_packet',jsonb_build_object('assembled_at',now())) where id=$1",[s.matter]), /INSTITUTIONAL_ROUTE_NOT_VERIFIED/);
+    assert.equal((await db.query<{allowed:boolean}>("select has_function_privilege('authenticated','public.institutional_route_is_verified(uuid)','EXECUTE') allowed")).rows[0].allowed,false);
+    assert.equal((await db.query<{allowed:boolean}>("select has_function_privilege('anon','public.institutional_route_is_verified(uuid)','EXECUTE') allowed")).rows[0].allowed,false);
+  } finally { await db.close(); }
 });

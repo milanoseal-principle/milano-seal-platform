@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { computeEventHash } from '@/lib/bluenotary/webhook';
+import { computeEventHash, verifyBNWebhookAuth } from '@/lib/bluenotary/webhook';
 import { mapBNEventToMilanoStatus } from '@/lib/bluenotary/status';
 import { getBlueNotarySignedDocuments } from '@/lib/bluenotary/client';
 import { redactBNPayload } from '@/lib/bluenotary/redaction';
 import { captureExecutedRonDocuments } from '@/lib/ron/executedCapture';
 import { isRonLifecycleState, isTerminalRonLifecycle, providerEventLifecycle, type RonLifecycleState } from '@/lib/ron/evidence';
+import { institutionalBlockReason } from '@/lib/institutional/executionGate';
 import type { BNWebhookPayload } from '@/lib/bluenotary/types';
 
 export async function GET() {
@@ -75,6 +76,14 @@ async function advanceMatterIntoExecution(
     return;
   }
 
+  // Provider evidence is still recorded by the caller; only the automatic Matter advance is held
+  // for operator review while an institutional route is not verified.
+  const institutionalBlock = await institutionalBlockReason(supabase, String(matter.id));
+  if (institutionalBlock) {
+    await writeTransitionReview(supabase, matterId, ronSessionId, providerEvent, current, institutionalBlock);
+    return;
+  }
+
   const now = new Date().toISOString();
   let update = supabase
     .from('deals')
@@ -122,13 +131,12 @@ async function advanceMatterIntoExecution(
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.BLUENOTARY_WEBHOOK_SECRET) {
+  const auth = verifyBNWebhookAuth(request);
+  if (!auth.ok && auth.status === 500) {
     console.error('[BN webhook] BLUENOTARY_WEBHOOK_SECRET is not configured');
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.BLUENOTARY_WEBHOOK_SECRET}`) {
+  if (!auth.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

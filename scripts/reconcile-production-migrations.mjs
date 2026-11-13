@@ -27,6 +27,8 @@ export const DEFAULT_TARGETS = [
   '20261112120000_va_task_ledger.sql',
   '20261112130000_alliance_operator_identity.sql',
   '20261112140000_operator_profile_binding.sql',
+  '20261113090000_receiving_authority_requirements.sql',
+  '20261113120000_institutional_transition_integrity.sql',
 ];
 
 // Definition hashes are produced by PostgreSQL's deparser and can differ between server versions
