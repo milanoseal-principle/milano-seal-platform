@@ -17,7 +17,7 @@ export const REQUIRED_RPCS = Object.freeze([
   'begin_wise_payment_attempt','record_wise_attempt_evidence','confirm_wise_payment_for_deal',
   'retention_command','wise_exception_scan_candidates','resolve_wise_exceptions_from_current_truth',
   'missing_required_policy_acceptances','issue_financial_artifact','append_custody_event','record_document_release',
-  'governance_claim','governance_finish','governance_command',
+  'governance_claim','governance_finish','governance_command','institutional_route_is_verified',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};

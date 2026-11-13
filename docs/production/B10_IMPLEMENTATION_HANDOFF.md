@@ -5,7 +5,7 @@ Written 2026-11-13. Facts only; verify against GitHub before relying on SHAs.
 ## Position
 - **Base main:** `f3c2859d` (B09 merged as #495).
 - **Working branch:** `claude/cool-darwin-8r9v7p`, open as #496. The branch carries two changes: the B09 execution gate and B10. This is the only branch the session may push to, so B10 could not be opened as its own PR while #496 is unmerged.
-- **#496 is not authorized to merge.** It needs the owner's explicit request.
+- The founder authorized a reviewed in-scope merge only after required checks and release prerequisites pass. Recovery and fresh hosted reconciliation remain unresolved; this review does not bypass them.
 
 ## What B10 adds
 | File | Purpose |
@@ -42,7 +42,7 @@ Modified:
 - **No rendered browser check** of the new screen was run (needs an authenticated operator session and a database).
 
 ## Production status
-- **Seven migrations are now unapplied in production**: the six from 2026-11-12 (`…090000` to `…140000`) per the 07:54 UTC snapshot, plus `20261113090000`. Nothing has been applied by this work.
+- **Current hosted migration effects are UNVERIFIED.** Reconciliation retains the exact six 2026-11-12 targets and adds `20261113090000` plus forward integrity correction `20261113120000`. Historical snapshots cannot establish which effects are currently pending. Nothing has been applied by this review.
 - The B10 screen will show the "not deployed" message in production until its migration is applied. `20261112110000` must be applied first: the store reads `routing_status` and `manual_review_required`, which that migration adds on the hosted table.
 - B02 still needs a fresh snapshot, a verified recovery point and explicit authorization.
 
@@ -63,3 +63,6 @@ git fetch origin main && git log --oneline -5 origin/main
 ```
 
 Next in the owner's stated order: remaining B04–B06, then B11–B22, then B02 readiness.
+
+## Controlled review follow-up (2026-11-13)
+Active statements now use keyset pagination until an empty page, including short server-capped pages, so a later conflicting statement cannot be silently omitted. Impossible calendar dates are rejected. The forward correction explicitly requires a non-NULL source URL: SQL CHECK otherwise accepts NULL. The constraint is NOT VALID to avoid rewriting or assuming historical rows are valid; existing data must be inspected before validation. No hosted application was performed.

@@ -1,3 +1,4 @@
+import { readAllKeyset } from "@/lib/data/keyset";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   INSTITUTIONAL_DOCUMENT_ORIGIN, INSTITUTIONAL_EVIDENCE, INSTITUTIONAL_PATHWAYS, INSTITUTIONAL_PATHWAY_EVIDENCE,
@@ -71,24 +72,38 @@ export type InstitutionalState = {
 type LedgerRow = { id: string; event_type: string; actor_id: string | null; occurred_at: string; new_value: Record<string, unknown> | null; reason: string | null };
 
 async function readEvents(db: SupabaseClient, matterId: string): Promise<LedgerRow[]> {
-  const { data, error } = await db.from("matter_evidence_ledger")
-    .select("id, event_type, actor_id, occurred_at, new_value, reason")
-    .eq("matter_id", matterId).eq("source", INSTITUTIONAL_LEDGER_SOURCE)
-    .order("occurred_at", { ascending: true }).order("id", { ascending: true });
-  if (error) throw fail("INSTITUTIONAL_LEDGER_UNAVAILABLE", 503, "Institutional evidence is unavailable right now.");
-  return (data ?? []) as LedgerRow[];
+  try {
+    return await readAllKeyset<LedgerRow>(async (cursor) => {
+      let query = db.from("matter_evidence_ledger")
+        .select("id, event_type, actor_id, occurred_at, new_value, reason")
+        .eq("matter_id", matterId).eq("source", INSTITUTIONAL_LEDGER_SOURCE)
+        .order("id", { ascending: true }).limit(250);
+      if (cursor) query = query.gt("id", cursor.id);
+      const { data, error } = await query;
+      if (error || !Array.isArray(data)) throw Error("LEDGER_READ_FAILED");
+      return data as LedgerRow[];
+    }, row => row.id);
+  } catch {
+    throw fail("INSTITUTIONAL_LEDGER_UNAVAILABLE",503,"Institutional evidence is unavailable or incomplete; progression remains blocked.");
+  }
 }
 
 export function deriveInstitutionalState(matterId: string, events: LedgerRow[], now: Date = new Date()): InstitutionalState {
   const today = now.toISOString().slice(0, 10);
-  const reviews = events.filter((e) => e.event_type === INSTITUTIONAL_EVENTS.review);
+  const revision = (event: LedgerRow): number => {
+    const version = event.new_value?.version;
+    if (!Number.isSafeInteger(version) || Number(version) < 1) throw fail("INSTITUTIONAL_LEDGER_AMBIGUOUS",409,"Invalid evidence revision; operator review is required.");
+    return Number(version);
+  };
+  const reviews = events.filter((e) => e.event_type === INSTITUTIONAL_EVENTS.review).sort((a,b)=>revision(a)-revision(b));
+  if (reviews.length > 1 && revision(reviews.at(-1)!) === revision(reviews.at(-2)!)) throw fail("INSTITUTIONAL_LEDGER_AMBIGUOUS",409,"Concurrent review versions require operator reconciliation.");
   const last = reviews.at(-1);
   const state: InstitutionalState = { matterId, review: null, reviewVersions: reviews.length, evidence: {}, required: [], history: [], decisions: [], approval: null, approvalVoided: null, rejection: null, evaluation: null };
   if (!last) return state;
 
   const v = (last.new_value ?? {}) as Record<string, unknown>;
   const review: InstitutionalReview = {
-    eventId: last.id, version: reviews.length, recordedBy: last.actor_id, recordedAt: last.occurred_at,
+    eventId: last.id, version: revision(last), recordedBy: last.actor_id, recordedAt: last.occurred_at,
     issuingOrganisation: String(v.issuingOrganisation ?? ""), issuingOfficial: String(v.issuingOfficial ?? ""), officialCapacity: String(v.officialCapacity ?? ""),
     hostState: String(v.hostState ?? ""), destination: String(v.destination ?? ""), documentCategory: String(v.documentCategory ?? ""),
     documentForm: v.documentForm === "certified_copy" ? "certified_copy" : "original", pathway: v.pathway as InstitutionalPathway,
@@ -99,12 +114,17 @@ export function deriveInstitutionalState(matterId: string, events: LedgerRow[], 
 
   // Evidence and decisions count only for the review version they were recorded against.
   const counts = new Map<string, number>();
-  for (const e of events) {
+  const ordered = [
+    ...events.filter(e=>e.event_type===INSTITUTIONAL_EVENTS.evidence).sort((a,b)=>revision(a)-revision(b) || a.id.localeCompare(b.id)),
+    ...events.filter(e=>e.event_type!==INSTITUTIONAL_EVENTS.evidence).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at) || a.id.localeCompare(b.id)),
+  ];
+  for (const e of ordered) {
     const n = (e.new_value ?? {}) as Record<string, unknown>;
     if (n.reviewEventId !== review.eventId) continue;
     if (e.event_type === INSTITUTIONAL_EVENTS.evidence) {
       const key = n.key as InstitutionalEvidenceKey;
-      const version = (counts.get(key) ?? 0) + 1;
+      const version = revision(e);
+      if (!(key in INSTITUTIONAL_EVIDENCE) || !["verified","rejected"].includes(String(n.state)) || version <= (counts.get(key) ?? 0)) throw fail("INSTITUTIONAL_LEDGER_AMBIGUOUS",409,"Concurrent or malformed evidence requires a new institutional review.");
       counts.set(key, version);
       const expiresAt = (n.expiresAt as string | null) ?? null;
       const record: InstitutionalEvidenceRecord = {
@@ -123,7 +143,11 @@ export function deriveInstitutionalState(matterId: string, events: LedgerRow[], 
     }
   }
 
-  const lastDecision = state.decisions.at(-1) ?? null;
+  // Any rejection of this review remains blocking; timestamps cannot resurrect it.
+  const rejection = state.decisions.filter(d=>d.decision==='rejected').at(-1);
+  const currentIds = Object.fromEntries(Object.values(state.evidence).map(record=>[record!.key,record!.eventId]));
+  const matches = (d: InstitutionalDecisionRecord) => Object.keys(d.coveredEvidence).length === Object.keys(currentIds).length && Object.entries(currentIds).every(([key,id])=>d.coveredEvidence[key]===id);
+  const lastDecision = rejection ?? [...state.decisions].reverse().find(d=>d.decision==='approved' && matches(d)) ?? state.decisions.at(-1) ?? null;
   if (lastDecision?.decision === "rejected") state.rejection = lastDecision;
   if (lastDecision?.decision === "approved") {
     const current = Object.values(state.evidence).filter(Boolean) as InstitutionalEvidenceRecord[];
@@ -155,7 +179,17 @@ export function deriveInstitutionalState(matterId: string, events: LedgerRow[], 
 
 export async function loadInstitutionalState(db: SupabaseClient, matterId: string, now: Date = new Date()): Promise<InstitutionalState> {
   if (!UUID.test(matterId)) throw fail("INVALID_MATTER_ID", 400, "Invalid Matter.");
-  return deriveInstitutionalState(matterId, await readEvents(db, matterId), now);
+  const state = deriveInstitutionalState(matterId, await readEvents(db, matterId), now);
+  if (state.approval) {
+    const proof = await db.rpc('institutional_route_is_verified', {p_matter:matterId});
+    if (proof.error || typeof proof.data !== 'boolean') throw fail('INSTITUTIONAL_PROOF_UNAVAILABLE',503,'Current document and approval integrity could not be verified.');
+    if (!proof.data) {
+      state.approval = null;
+      state.approvalVoided = 'The document-bound approval is no longer valid. Review the document, evidence and current operator authorization.';
+      if (state.evaluation) state.evaluation = {...state.evaluation,decision:'CONDITIONAL_REVIEW',routeActive:false,reasons:[...state.evaluation.reasons,state.approvalVoided]};
+    }
+  }
+  return state;
 }
 
 async function requireMatter(db: SupabaseClient, matterId: string) {
@@ -203,12 +237,14 @@ export async function recordInstitutionalReview(db: SupabaseClient, matterId: st
   if (input.documentForm !== "original" && input.documentForm !== "certified_copy") throw fail("REVIEW_INCOMPLETE", 400, "State whether the original or a certified copy is to be authenticated.", ["documentForm"]);
   if (typeof input.pathway !== "string" || !(input.pathway in INSTITUTIONAL_PATHWAYS)) throw fail("PATHWAY_UNKNOWN", 400, "Select one of the candidate pathways.");
   const file = await attachment(db, matterId, input.documentVersionId);
-  const previous = (await loadInstitutionalState(db, matterId, now)).review;
+  const previousReviews = (await readEvents(db,matterId)).filter(event=>event.event_type===INSTITUTIONAL_EVENTS.review);
+  const maxVersion = Math.max(0,...previousReviews.map(event=>Number(event.new_value?.version)||0));
+  const previousId = previousReviews.find(event=>Number(event.new_value?.version)===maxVersion)?.id;
   const eventId = await append(db, matterId, actorId, INSTITUTIONAL_EVENTS.review, {
     issuingOrganisation, issuingOfficial: text(input.issuingOfficial, 200), officialCapacity: text(input.officialCapacity, 200), hostState,
     destination: resolvePlace(destination), documentCategory, documentForm: input.documentForm, pathway: input.pathway,
-    documentVersionId: file?.id ?? null, documentSha256: file?.sha256 ?? null, version: (previous?.version ?? 0) + 1,
-  }, { priorValue: previous ? { supersedesReview: previous.eventId } : null, evidenceReference: file?.id ?? null, at: now });
+    documentVersionId: file?.id ?? null, documentSha256: file?.sha256 ?? null, version: maxVersion + 1,
+  }, { priorValue: previousId ? { supersedesReview: previousId } : null, evidenceReference: file?.id ?? null, at: now });
   return { eventId };
 }
 
@@ -261,6 +297,7 @@ export async function decideInstitutionalRoute(db: SupabaseClient, matterId: str
     if (!why) throw fail("REJECTION_REASON_REQUIRED", 400, "A reason is required to reject a pathway.");
     return { eventId: await append(db, matterId, actorId, INSTITUTIONAL_EVENTS.rejected, { reviewEventId: state.review.eventId }, { reason: why, at: now }) };
   }
+  if (!state.review.documentVersionId || !state.review.documentSha256) throw fail('REVIEW_DOCUMENT_REQUIRED',409,'Select the exact Matter document version before approving the institutional route.');
   if (state.approval) throw fail("ALREADY_APPROVED", 409, "This pathway is already approved for the current evidence.");
   const evidence: Partial<Record<InstitutionalEvidenceKey, EvidenceItem>> = {};
   for (const [key, r] of Object.entries(state.evidence) as [InstitutionalEvidenceKey, InstitutionalEvidenceRecord][]) evidence[key] = r.expired ? { state: "unverified" } : { state: r.state, source: r.source, verifiedAt: r.verifiedAt };

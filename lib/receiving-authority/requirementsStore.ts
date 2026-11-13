@@ -1,3 +1,4 @@
+import { readAllKeyset } from "@/lib/data/keyset";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   ALL_DOCUMENT_CATEGORIES,
@@ -57,14 +58,21 @@ export async function loadReceivingRequirements(
   now: Date = new Date(),
 ): Promise<{ authority: Awaited<ReturnType<typeof loadAuthority>>; rules: ReceivingRequirementRule[]; evaluation: ReceivingRequirementsEvaluation }> {
   const authority = await loadAuthority(db, authorityId);
-  const { data, error } = await db
-    .from(TABLE)
-    .select(RULE_FIELDS)
-    .eq("authority_id", authorityId)
-    .is("superseded_at", null)
-    .order("created_at", { ascending: true });
-  if (error) throw storageError(error);
-  const rules = (data ?? []) as ReceivingRequirementRule[];
+  let rules: ReceivingRequirementRule[];
+  try {
+    rules = await readAllKeyset<ReceivingRequirementRule>(async (cursor) => {
+      let query = db.from(TABLE).select(RULE_FIELDS).eq("authority_id", authorityId)
+        .is("superseded_at", null).order("id", { ascending: true }).limit(250);
+      if (cursor) query = query.gt("id", cursor.id);
+      const {data,error} = await query;
+      if (error) throw storageError(error);
+      if (!Array.isArray(data)) throw storageError(null);
+      return data as ReceivingRequirementRule[];
+    }, row => row.id);
+  } catch(error) {
+    if (error instanceof ReceivingRequirementError) throw error;
+    throw storageError(null);
+  }
   return { authority, rules, evaluation: evaluateReceivingRequirements({ authority, rules, documentCategory, now }) };
 }
 
@@ -117,7 +125,7 @@ export async function recordReceivingRequirement(
     if (!(RECEIVING_SOURCE_TYPES as readonly string[]).includes(String(input.sourceType))) throw invalid("The source must be the receiving authority or official guidance.");
     if (status === "CONDITIONAL" && !detail) throw invalid("Describe the condition.");
     const due = typeof input.reviewDueAt === "string" ? new Date(input.reviewDueAt) : null;
-    if (!due || Number.isNaN(due.getTime())) throw invalid("A review date is required.");
+    if (!due || Number.isNaN(due.getTime()) || typeof input.reviewDueAt !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(input.reviewDueAt) || new Date(input.reviewDueAt.slice(0,10) + "T00:00:00Z").toISOString().slice(0,10) !== input.reviewDueAt.slice(0,10)) throw invalid("A review date is required.");
     if (due.getTime() <= now.getTime()) throw invalid("The review date must be in the future.");
     if (due.getTime() - now.getTime() > MAX_REVIEW_DAYS * 86_400_000) throw invalid(`The review date must be within ${MAX_REVIEW_DAYS} days.`);
     row.source_url = input.sourceUrl;

@@ -109,9 +109,9 @@ test("an authority record that is itself unverified blocks even with complete st
 
 // ---- database and store ------------------------------------------------------------------
 
-function client(db: Db): SupabaseClient {
+function client(db: Db, cap?:number): SupabaseClient {
   const from = (table: string) => {
-    const state = { op: "select", cols: "*", where: [] as string[], params: [] as unknown[], row: null as Record<string, unknown> | null, order: "" };
+    const state = { op: "select", cols: "*", where: [] as string[], params: [] as unknown[], row: null as Record<string, unknown> | null, order: "", limit: "" };
     const param = (value: unknown) => { state.params.push(value); return `$${state.params.length}`; };
     const run = async () => {
       try {
@@ -123,7 +123,7 @@ function client(db: Db): SupabaseClient {
         } else if (state.op === "update") {
           const sets = Object.keys(state.row!).map((k) => `${k}=${param(state.row![k])}`).join(",");
           sql = `update public.${table} set ${sets}${where} returning ${state.cols}`;
-        } else sql = `select ${state.cols} from public.${table}${where}${state.order}`;
+        } else sql = `select ${state.cols} from public.${table}${where}${state.order}${state.limit || (cap ? " limit " + cap : "")}`;
         const rows = (await db.query<Record<string, unknown>>(sql, state.params)).rows.map((r) =>
           Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v instanceof Date ? v.toISOString() : v])));
         return { data: rows, error: null };
@@ -137,6 +137,8 @@ function client(db: Db): SupabaseClient {
     api.insert = (row: Record<string, unknown>) => { state.op = "insert"; state.row = row; return api; };
     api.update = (row: Record<string, unknown>) => { state.op = "update"; state.row = row; return api; };
     api.eq = (col: string, value: unknown) => { state.where.push(`${col}=${param(value)}`); return api; };
+    api.gt = (col:string,value:unknown) => { state.where.push(`${col}>${param(value)}`); return api; };
+    api.limit = (n:number) => {state.limit=" limit "+Math.min(n,cap??n);return api;};
     api.is = (col: string, value: null) => { void value; state.where.push(`${col} is null`); return api; };
     api.order = (col: string) => { state.order = ` order by ${col}`; return api; };
     const one = async () => { const r = await run(); return r.error ? r : { data: r.data![0] ?? null, error: null }; };
@@ -160,7 +162,7 @@ test("store: recording, evaluating and superseding statements against the replay
   const db = await isolatedCanonicalDatabase(migrations());
   try {
     const s = await seed(db);
-    const c = client(db);
+    const c = client(db,2);
     let state = await loadReceivingRequirements(c, s.active, null, NOW);
     assert.equal(state.evaluation.finalRouteAllowed, false);
     assert.equal(state.rules.length, 0);
@@ -204,6 +206,7 @@ test("store: invalid statements are refused before any write", async () => {
       [sourced("TRANSLATION", { sourceUrl: undefined }), /https source/],
       [sourced("TRANSLATION", { sourceType: "COMMERCIAL_BLOG" }), /receiving authority or official guidance/],
       [sourced("TRANSLATION", { status: "CONDITIONAL" }), /Describe the condition/],
+      [sourced("TRANSLATION", { reviewDueAt: "2027-02-30" }), /review date is required/],
       [sourced("TRANSLATION", { reviewDueAt: undefined }), /review date is required/],
       [sourced("TRANSLATION", { reviewDueAt: "2026-11-13T12:00:00Z" }), /in the future/],
       [sourced("TRANSLATION", { reviewDueAt: "2028-01-01T00:00:00Z" }), /within 365 days/],
@@ -221,6 +224,7 @@ test("database: statements are append-only, sourced by constraint, and closed to
     const s = await seed(db);
     const insert = (cols: string, values: string) => db.query(`insert into public.receiving_authority_requirements(authority_id, requirement, ${cols}) values('${s.active}', 'TRANSLATION', ${values}) returning id`);
     await assert.rejects(() => insert("status", "'REQUIRED'"), /sourced_check/);
+    await assert.rejects(() => insert("status, source_url, source_type, verified_at, verified_by, review_due_at", `'REQUIRED',NULL,'RECEIVING_AUTHORITY',now(),'${s.actor}',now() + interval '30 days'`), /sourced_check/);
     await assert.rejects(() => insert("status, source_url, source_type, verified_at, verified_by, review_due_at", `'REQUIRED','http://x.example.invalid','RECEIVING_AUTHORITY',now(),'${s.actor}',now() + interval '30 days'`), /sourced_check/);
     await assert.rejects(() => insert("status, source_url, source_type, verified_at, verified_by, review_due_at", `'REQUIRED','${SOURCE}','COMMERCIAL_BLOG',now(),'${s.actor}',now() + interval '30 days'`), /source_type_check/);
     await assert.rejects(() => insert("status, source_url, source_type, verified_at, verified_by, review_due_at", `'CONDITIONAL','${SOURCE}','RECEIVING_AUTHORITY',now(),'${s.actor}',now() + interval '30 days'`), /conditional_check/);
@@ -255,7 +259,8 @@ test("store and route: storage that is not deployed is reported, never read as e
     let table = "";
     api.select = () => api; api.eq = () => api; api.is = () => api;
     api.maybeSingle = () => Promise.resolve(authorityRow);
-    api.order = () => Promise.resolve(table === "receiving_authorities" ? authorityRow : { data: null, error: { code, message: "relation does not exist" } });
+    api.order = api.limit = api.gt = () => api;
+    api.then = (resolve: (value:unknown)=>unknown) => Promise.resolve(table === "receiving_authorities" ? authorityRow : { data: null, error: { code, message: "relation does not exist" } }).then(resolve);
     return { from: (t: string) => { table = t; return api; } } as unknown as SupabaseClient;
   };
   await assert.rejects(() => loadReceivingRequirements(failing("42P01"), randomUUID(), null, NOW), (e: ReceivingRequirementError) => e.code === "REQUIREMENTS_STORAGE_NOT_DEPLOYED" && e.status === 503);

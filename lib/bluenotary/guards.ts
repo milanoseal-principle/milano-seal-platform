@@ -1,6 +1,7 @@
 // RON Guards — payment-gated access control for RON operations
 // All guards throw on failure; callers must catch and return 403/400.
 
+import { institutionalBlockReason } from '@/lib/institutional/executionGate';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isRonSigningSessionActive } from '@/lib/bluenotary/projection';
 import { evaluatePaymentIntegrity } from '@/lib/safety/payment-integrity';
@@ -236,6 +237,8 @@ export async function assertCanAdvanceToApostille(
   ronSessionId: string
 ): Promise<void> {
   await verifyExecutionPaymentAuthorized(supabase, matterId);
+  const institutionalBlock = await institutionalBlockReason(supabase, matterId);
+  if (institutionalBlock) throw new RONGuardError('INSTITUTIONAL_ROUTE_NOT_VERIFIED', institutionalBlock);
 
   const { data: session } = await supabase
     .from('ron_sessions')

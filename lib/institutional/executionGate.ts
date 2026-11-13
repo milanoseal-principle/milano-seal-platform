@@ -21,7 +21,13 @@ export type InstitutionalGate =
 export async function institutionalExecutionGate(db: SupabaseClient, matterId: string, now: Date = new Date()): Promise<InstitutionalGate> {
   const state = await loadInstitutionalState(db, matterId, now);
   if (!state.review || !state.evaluation) return { applies: false };
-  return { applies: true, allowed: state.evaluation.decision === "VERIFIED_ROUTE", decision: state.evaluation.decision, reasons: state.evaluation.reasons };
+  let verified = state.evaluation.decision === "VERIFIED_ROUTE";
+  if (verified) {
+    const result = await db.rpc('institutional_route_is_verified', {p_matter:matterId});
+    if (result.error || typeof result.data !== 'boolean') throw new InstitutionalLedgerError('INSTITUTIONAL_PROOF_UNAVAILABLE',503,'Institutional transition integrity is unavailable.');
+    verified = result.data;
+  }
+  return { applies: true, allowed: verified, decision: state.evaluation.decision, reasons: state.evaluation.reasons };
 }
 
 // For transition paths that do not answer with a route response (the provider webhook, the pipeline

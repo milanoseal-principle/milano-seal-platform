@@ -88,7 +88,7 @@ export function InstitutionalReviewPanel({ matterId }: { matterId: string }) {
   const evaluation = state.evaluation;
   const decision = evaluation ? DECISION[evaluation.decision] : null;
   const showForm = !state.review || editing;
-  const complete = Boolean(evaluation && evaluation.outstanding.every((o) => o.key === "operatorApproval"));
+  const complete = Boolean(state.review?.documentVersionId && state.review.documentSha256 && evaluation && evaluation.outstanding.every((o) => o.key === "operatorApproval"));
 
   return (
     <div className="space-y-5">
@@ -133,7 +133,7 @@ export function InstitutionalReviewPanel({ matterId }: { matterId: string }) {
                 <option value="original">Original</option><option value="certified_copy">Certified copy</option>
               </select>
             </label>
-            <label className={label}>Document version (private Matter file)
+            <label className={label}>Document version (required before approval)
               <select className={field} value={review.documentVersionId} onChange={(e) => setReview({ ...review, documentVersionId: e.target.value })}>
                 <option value="">None attached</option>{versions.map((v) => <option key={v.id} value={v.id}>{versionLabel(v)}</option>)}
               </select>
@@ -219,7 +219,7 @@ export function InstitutionalReviewPanel({ matterId }: { matterId: string }) {
             <p className="mt-2 text-sm text-white/55">Your role can record evidence. Approving or rejecting a pathway needs an authorized execution role.</p>
           ) : (
             <>
-              <p className="mt-2 text-xs leading-5 text-white/45">{complete ? "All evidence is in place. Approval confirms you have reviewed it; it is refused if anything is missing, unsourced or out of date." : "Approval is unavailable until every item above is evidenced from a current official source."}</p>
+              <p className="mt-2 text-xs leading-5 text-white/45">{complete ? "All evidence is in place. Approval confirms you have reviewed it; it is refused if anything is missing, unsourced or out of date." : "Approval requires a saved document version and every item above evidenced from a current official source. Select a document when recording the review."}</p>
               <label className={`${label} mt-3`}>Reason (required to reject)
                 <input className={field} value={reason} maxLength={2000} onChange={(e) => setReason(e.target.value)} />
               </label>
