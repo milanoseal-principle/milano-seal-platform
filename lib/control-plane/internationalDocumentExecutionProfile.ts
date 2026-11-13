@@ -105,7 +105,10 @@ export const INTERNATIONAL_CONTROL_DOMAINS = [
 export type ExecutionPathInput = {
   destinationHagueVerified?: boolean | null;
   destinationHagueOperativeForMatter?: boolean | null;
-  documentOriginLevel?: "state" | "federal" | "foreign" | "unknown";
+  documentOriginLevel?: "state" | "federal" | "foreign" | "institutional" | "unknown";
+  // For institutional-origin documents: the decision of evaluateInstitutionalRoute. Anything but
+  // VERIFIED_ROUTE keeps the Matter in review; a verified route still goes to operator routing only.
+  institutionalRouteDecision?: "VERIFIED_ROUTE" | "CONDITIONAL_REVIEW" | "UNSUPPORTED" | "UNKNOWN" | null;
   notarizationRequired?: boolean | null;
   notarialActKnown?: boolean | null;
   ronRequested?: boolean | null;
@@ -125,6 +128,9 @@ export function deriveInternationalExecutionPath(input: ExecutionPathInput): Exe
   if (!input.documentOriginLevel || input.documentOriginLevel === "unknown") {
     reasons.push("Document origin level is unresolved.");
   }
+  if (input.documentOriginLevel === "institutional" && input.institutionalRouteDecision !== "VERIFIED_ROUTE") {
+    reasons.push("Document issued by a supranational or intergovernmental organisation: no authentication pathway has been verified and approved for it.");
+  }
   if (input.destinationHagueVerified !== true) {
     reasons.push("Destination Apostille Convention status is not verified.");
   }
@@ -143,6 +149,12 @@ export function deriveInternationalExecutionPath(input: ExecutionPathInput): Exe
 
   if (reasons.length > 0) {
     return { status: "REVIEW_REQUIRED", lane: "unresolved", reasons };
+  }
+
+  if (input.documentOriginLevel === "institutional") {
+    // The apostille is issued by the host State's Competent Authority, not a U.S. state or federal
+    // office, so no state/federal lane is selected automatically.
+    return { status: "READY_FOR_OPERATOR_ROUTING", lane: "unresolved", reasons: ["Institutional-origin document with a verified, operator-approved host-State pathway; the operator routes it to that host-State authority."] };
   }
 
   if (input.ronRequested === true && input.ronEligible === true && input.receivingAuthorityWetInkRequired !== true) {
