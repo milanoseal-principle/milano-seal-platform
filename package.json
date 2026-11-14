@@ -7,7 +7,7 @@
     "dev": "next dev",
     "postbuild": "node scripts/validate-intake-pricing-privacy.mjs",
     "prebuild": "node scripts/verify-production-schema-capabilities.mjs && node scripts/generate-command-center-workbook-intelligence.mjs",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "lint": "node scripts/validate-lint-coverage.mjs && eslint .",
     "check:local": "node scripts/run-local-validation.mjs",

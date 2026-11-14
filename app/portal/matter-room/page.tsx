@@ -4,6 +4,8 @@ import { Metadata } from "next";
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
 import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
 import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { normalizeUserRole } from "@/lib/auth/roleRedirect";
 
 export const metadata: Metadata = {
   title: "Matter Room | The Milano Seal™",
@@ -31,13 +33,8 @@ export default async function MatterRoomPage({
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name, email")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "client") redirect("/portal");
+  const role = await resolveServerRole(user);
+  if (normalizeUserRole(role) !== "client" || !user.email || !user.email_confirmed_at) redirect("/portal");
 
   type MatterRow = {
     id: string; email?: string | null; status?: string | null; payment_status?: string | null;
@@ -77,7 +74,7 @@ export default async function MatterRoomPage({
             Private Client · Matter Room
           </p>
           <h1 className="font-serif text-2xl text-white tracking-wide">
-            {profile.full_name ?? "Your Matter"}
+            {matter?.client_name ?? "Your Matter"}
           </h1>
           {matter && (
             <p className="font-mono text-xs mt-1" style={{ color: "rgba(212,175,55,0.6)" }}>

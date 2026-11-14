@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
@@ -36,6 +36,7 @@ const PARTICLES = Array.from({ length: 26 }, (_, i) => ({
 const STAGES = [
   {
     number: "01",
+    id: "intake",
     icon: FileInput,
     title: "Submit Your Matter",
     label: "Structured Intake Gate",
@@ -45,6 +46,7 @@ const STAGES = [
   },
   {
     number: "02",
+    id: "compliance-review",
     icon: ShieldCheck,
     title: "Compliance Review",
     label: "Jurisdiction & Route Determination",
@@ -54,6 +56,7 @@ const STAGES = [
   },
   {
     number: "03",
+    id: "payment-gate",
     icon: LockKeyhole,
     title: "Payment-Gated Execution",
     label: "Scope & Payment Confirmation",
@@ -63,6 +66,7 @@ const STAGES = [
   },
   {
     number: "04",
+    id: "execution",
     icon: PenTool,
     title: "Document Execution",
     label: "RON, Mobile Notary & Coordination",
@@ -72,6 +76,7 @@ const STAGES = [
   },
   {
     number: "05",
+    id: "custody",
     icon: Eye,
     title: "Chain-of-Custody Visibility",
     label: "Real-Time Status Through the Secure Portal",
@@ -81,6 +86,7 @@ const STAGES = [
   },
   {
     number: "06",
+    id: "release",
     icon: Send,
     title: "Structured International Release",
     label: "Apostille, Courier & Destination Delivery",
@@ -202,7 +208,7 @@ function StageRow({ stage, reduce, index }: { stage: (typeof STAGES)[number]; re
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const Icon = stage.icon;
   return (
-    <div ref={ref} className="relative grid grid-cols-[44px_1fr] gap-5 sm:gap-7">
+    <div id={stage.id} ref={ref} style={{ scrollMarginTop: "calc(var(--header-total-height) + 2rem)" }} className="relative grid grid-cols-[44px_1fr] gap-5 sm:gap-7">
       {/* spine node */}
       <div className="relative flex flex-col items-center">
         <motion.div
@@ -442,6 +448,27 @@ export function ProcessExperience() {
   const reduce = useMilanoReducedMotion() ?? false;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const hazeY = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-30, 30]);
+
+  useEffect(() => {
+    let frame = 0;
+    const scrollToStage = () => {
+      const anchor = window.location.hash.slice(1);
+      if (!STAGES.some((stage) => stage.id === anchor)) return;
+      cancelAnimationFrame(frame);
+      // Reapply the initial fragment after hydration/router scroll restoration.
+      // Merely adding an ID leaves a first-load mobile deep link at scroll 0.
+      frame = requestAnimationFrame(() => {
+        document.getElementById(anchor)?.scrollIntoView({ block: "start", behavior: "instant" });
+      });
+    };
+    scrollToStage();
+    window.addEventListener("hashchange", scrollToStage);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", scrollToStage);
+    };
+  }, []);
+
 
   return (
     <div ref={ref} className="relative overflow-hidden bg-[#050506]">

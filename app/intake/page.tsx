@@ -167,10 +167,10 @@ export default function IntakePage({
               <Shield className="w-4 h-4 text-[var(--ms-gold)]" />
               <span className="text-sm text-[var(--ms-gold)] font-medium">Secure Records Intake</span>
             </div>
-            <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">Begin Your Execution</h1>
-            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">Matter-first intake with controlled document intelligence, route review, and payment-gated execution.</p>
+            <h1 className="relative font-serif text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-4 text-balance">Tell Us About Your Document</h1>
+            <p className="relative text-[#B0B0B0] text-lg max-w-2xl mx-auto">Tell us what you need, where the document will be used, and your preferred timeline. We will review the requirements and provide your private quote.</p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-2">
-              {["50% Deposit Unlocks Scheduling", "Hague Route Review", "Final 50% Before International Release"].map((c) => (
+              {["Document and Destination Review", "Private Quote After Review", "Scheduling After Verified Payment"].map((c) => (
                 <span key={c} className="rounded-full border border-[var(--ms-gold)]/22 bg-[var(--ms-gold)]/[0.05] px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/80">{c}</span>
               ))}
             </div>

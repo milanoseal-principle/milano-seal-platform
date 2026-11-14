@@ -589,11 +589,12 @@ function ExecutionCopilotContent() {
     void send(chip);
   };
 
+  const compactTrigger = pathname === "/intake" || pathname.endsWith("/apply");
   const empty = messages.length === 0;
   const reviewStatus = journey.status.replaceAll("_", " ");
 
   return (
-    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+86px)] right-4 z-[80] max-sm:bottom-[calc(env(safe-area-inset-bottom)+76px)] max-sm:right-2">
+    <div className={compactTrigger ? "fixed bottom-[calc(env(safe-area-inset-bottom)+12px)] right-4 z-[80]" : "fixed bottom-[calc(env(safe-area-inset-bottom)+86px)] right-4 z-[80] max-sm:bottom-[calc(env(safe-area-inset-bottom)+76px)] max-sm:right-2"}>
       <AnimatePresence mode="wait">
         {!open ? (
           <motion.button
@@ -613,14 +614,14 @@ function ExecutionCopilotContent() {
             <span className="hidden rounded-full border border-[var(--ms-gold)]/22 bg-[#050507]/88 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--ms-gold)]/78 opacity-0 backdrop-blur-xl transition-opacity group-hover:opacity-100 md:block">
               Execution Copilot
             </span>
-            <span className="relative flex h-[72px] w-[72px] items-center justify-center">
+            <span className={compactTrigger ? "relative flex h-11 w-11 items-center justify-center" : "relative flex h-[72px] w-[72px] items-center justify-center"}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/brand/milano-seal-orb-v2.png"
                 alt=""
                 width={72}
                 height={72}
-                className="h-[72px] w-[72px] object-contain drop-shadow-[0_0_12px_rgba(212,175,55,0.35)]"
+                className={compactTrigger ? "h-11 w-11 object-contain" : "h-[72px] w-[72px] object-contain drop-shadow-[0_0_12px_rgba(212,175,55,0.35)]"}
               />
               <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full bg-[var(--ms-gold)] ring-2 ring-[#050507]" />
             </span>

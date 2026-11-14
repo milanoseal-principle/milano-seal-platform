@@ -58,8 +58,9 @@ test("process route uses one cinematic execution experience instead of duplicate
   assert.match(processExperience, /Structured International Release/);
 });
 
-test("homepage exposes one document plus corridor intelligence workspace instead of separate islands", () => {
-  assert.match(homepage, /HomepageRoutingPreview/);
+test("homepage links to the full atlas while the retained preview preserves synchronized intelligence", () => {
+  assert.match(homepage, /href="\/map"/);
+  assert.match(homepage, /Review your destination requirements/);
   assert.doesNotMatch(homepage, /<DocumentIntelligence\s*\/>/);
   assert.match(routingPreview, /DOCUMENTS/);
   assert.match(routingPreview, /data-atlas-corridor-module="unified"/);
