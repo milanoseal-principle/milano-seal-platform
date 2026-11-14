@@ -13,6 +13,17 @@
   7. runs `supabase/verification/restore_drill_checks.sql`: fails if an anonymous caller or an arbitrary signed-in client can read any of 19 sensitive tables in the restored data;
   8. records recovery point, backup age, restore duration, archive hash and counts in the job summary (counts, booleans and hashes only), then destroys the target and all decrypted material.
 - **To run:** Actions → Isolated restore drill → Run workflow (branch `main`; leave the timestamp empty for the newest backup).
+- **Drill run history:**
+  - **#1** ([`43642445323`](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43642445323)): failed installing the CLI, because `version: latest` hit GitHub's release API rate limit. Fixed by `setup-cli@v3` with `v2.stable` (#506).
+  - **#2** ([`43643357454`](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43643357454)): failed at the database restore with `class=UNCLASSIFIED`.
+- **Drill #2 diagnosis.** The run log does not say which production statement failed. A local reproduction with the same CLI line and the drill's exact commands confirmed that restoring as the local `postgres` role cannot apply what a Supabase dump carries for Supabase-managed roles:
+  - `GRANT SET ON PARAMETER ... TO supabase_realtime_admin` fails with `42501`;
+  - objects owned by `supabase_admin` fail with `must be able to SET ROLE`, which was unclassified;
+  - superuser-owned event triggers fail as well, misclassified as a trigger rejection.
+- **Drill #2 fix.**
+  - The drill now restores as the disposable cluster's own superuser (`supabase_admin`). It first asserts the URL is `127.0.0.1` and the role is a superuser.
+  - On failure it prints only the class, SQLSTATE, dump file and line, and for `roles.sql`/`schema.sql` the statement's leading SQL keywords. It never prints message text or values.
+  - The same synthetic backup fails on the old workflow and passes every stage on the new one: database, auth, 124 out of 124 tables with exact row counts, Storage re-hash, RLS checks and cleanup.
 - **Not covered by the drill (still required for full DR certification):** restoring into a separate hosted Supabase project, Auth provider settings and secrets from the vault, Vault/encryption-root continuity, signed-in business-flow checks on test accounts, an independent backup-freshness monitor, and alert delivery. The daily backup schedule stays off until one drill passes.
 - **Expected informational findings on the current production copy:** `founder_admin_helper_reads_user_metadata: true` until migration `20261114100000` is applied. The five tables fixed by `20261114090000` are not in the drill's failing probe list.
 

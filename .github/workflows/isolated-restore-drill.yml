@@ -111,6 +111,16 @@ jobs:
           [[ "$DB_URL" == postgresql://*@127.0.0.1:* ]] || { echo "::error::Restore target is not local"; exit 1; }
           [[ "$API_URL" == http://127.0.0.1:* ]] || { echo "::error::Storage target is not local"; exit 1; }
           [[ -n "${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}" ]] || { echo "::error::Local target key missing"; exit 1; }
+          # Restore as the disposable cluster's own superuser. A Supabase dump re-applies settings and
+          # ownership of Supabase-managed roles (e.g. GRANT SET ON PARAMETER ... TO
+          # supabase_realtime_admin, objects owned by supabase_admin, event triggers), which the
+          # local postgres role is not permitted to do. This target is local and destroyed afterwards.
+          RESTORE_DB_URL="${DB_URL/#postgresql:\/\/postgres:/postgresql://supabase_admin:}"
+          [[ "$RESTORE_DB_URL" == postgresql://supabase_admin:*@127.0.0.1:* ]] || { echo "::error::Restore superuser URL is not local"; exit 1; }
+          docker run --rm --network host -e RESTORE_DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec \
+            'psql "$RESTORE_DB_URL" -v ON_ERROR_STOP=1 -At -c "select rolsuper from pg_roles where rolname = current_user"' > "$DRILL/superuser.out" 2>/dev/null \
+            && grep -qx t "$DRILL/superuser.out" || { echo "::error::Restore role on the local target is not a superuser"; exit 1; }
+          echo "RESTORE_DB_URL=$RESTORE_DB_URL" >> "$DRILL/target.env"
           echo "RESTORE_START=$(date -u +%s)" >> "$GITHUB_ENV"
       - name: Restore database (roles, schema, data) by the documented Supabase procedure
         shell: bash
@@ -118,12 +128,12 @@ jobs:
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
           # Diagnostics can quote restored values, so stdout and stderr go to the protected directory
-          # and only a sanitized failure class is printed.
-          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL postgres:17 sh -ec '
-            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=terse -q \
+          # and only allowlisted facts (class, SQLSTATE, dump file and line, statement keywords) are printed.
+          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
+            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -q \
               --file /backup/roles.sql --file /backup/schema.sql \
               --command "SET session_replication_role = replica" --file /backup/data.sql' > /dev/null 2> "$DRILL/database-restore.err"; then
-            python3 scripts/backups/restore_drill.py classify database-restore "$DRILL/database-restore.err"
+            python3 scripts/backups/restore_drill.py classify database-restore "$DRILL/database-restore.err" "$DRILL/root/database"
             exit 1
           fi
           echo "DATABASE_RESTORE: PASS"
@@ -135,7 +145,7 @@ jobs:
           # Sign-in records only. Storage buckets and objects are recreated through the isolated
           # Storage API in a later step (and every object re-hashed), because hosted Storage tables
           # carry newer columns than a local stack.
-          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec '
+          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
             pg_restore -l /backup/auth-storage-data.dump | grep -E "TABLE DATA auth (users|identities) " > /work/auth.list
             test "$(wc -l < /work/auth.list)" -eq 2
             pg_restore --data-only --no-owner --no-acl -f /work/auth.sql -L /work/auth.list /backup/auth-storage-data.dump
@@ -152,8 +162,8 @@ jobs:
           set -a; . "$DRILL/target.env"; set +a
           python3 scripts/backups/restore_drill.py expected "$DRILL/expected.json" "$DRILL/root/database/schema.sql" "$DRILL/root/database/data.sql" "$DRILL/auth.sql"
           python3 scripts/backups/restore_drill.py count-sql "$DRILL/expected.json" "$DRILL/count.sql"
-          if ! docker run --rm --network host -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec \
-            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=terse -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv' 2> "$DRILL/count.err"; then
+          if ! docker run --rm --network host -v "$DRILL:/work" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv' 2> "$DRILL/count.err"; then
             python3 scripts/backups/restore_drill.py classify row-count "$DRILL/count.err"
             exit 1
           fi
@@ -169,8 +179,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
-          if ! docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL postgres:17 sh -ec \
-            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=terse -At -f /sql/restore_drill_checks.sql' > "$DRILL/checks.out" 2> "$DRILL/checks.err"; then
+          if ! docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -f /sql/restore_drill_checks.sql' > "$DRILL/checks.out" 2> "$DRILL/checks.err"; then
             python3 scripts/backups/restore_drill.py classify restore-checks "$DRILL/checks.err"
             exit 1
           fi

@@ -9,8 +9,9 @@ Subcommands
       SQL that counts the restored rows of every expected table (run against the isolated target).
   compare <expected.json> <restored.tsv> <summary.json>
       Fails unless every expected table exists in the target with exactly the dumped row count.
-  classify <step> <stderr_file>
-      Prints one sanitized failure code for a failed step. Database diagnostics can quote restored
+  classify <step> <stderr_file> [<dump_dir>]
+      Prints sanitized facts for a failed step: failure class, SQLSTATE, dump file and line, and for
+      roles.sql/schema.sql the failing statement's leading SQL keywords. Database diagnostics can quote restored
       values (e.g. "Failing row contains (...)"), so the captured text itself is never printed.
   storage <backup_root> <api_url>
       Recreates the private buckets, uploads every manifest object into the isolated Storage API and downloads it again; fails
@@ -116,33 +117,88 @@ def compare(expected_json, restored_tsv, summary_json):
 
 
 FAILURE_CLASSES = (
+    ("ROLE_MEMBERSHIP_REQUIRED", re.compile(r"must be able to SET ROLE|must be member of role", re.I)),
+    ("SUPERUSER_REQUIRED", re.compile(r"must be superuser|Non-superuser owned event trigger|only superusers? can", re.I)),
+    ("PERMISSION_DENIED", re.compile(r"permission denied|must be owner", re.I)),
     ("UNIQUE_VIOLATION", re.compile(r"duplicate key value|unique constraint", re.I)),
     ("CHECK_OR_NOT_NULL_VIOLATION", re.compile(r"violates (check|not-null) constraint", re.I)),
     ("FOREIGN_KEY_VIOLATION", re.compile(r"violates foreign key constraint", re.I)),
-    ("TRIGGER_REJECTED_ROW", re.compile(r"raise|trigger|function .* line \d", re.I)),
+    ("EXTENSION_UNAVAILABLE", re.compile(r"extension \S+ is not available|could not open extension control file", re.I)),
+    ("UNSUPPORTED_SETTING", re.compile(r"unrecognized configuration parameter", re.I)),
     ("MISSING_OBJECT", re.compile(r"does not exist", re.I)),
     ("ALREADY_EXISTS", re.compile(r"already exists", re.I)),
-    ("PERMISSION_DENIED", re.compile(r"permission denied|must be (owner|superuser)", re.I)),
+    ("SYNTAX_ERROR", re.compile(r"syntax error", re.I)),
     ("TYPE_OR_FORMAT_MISMATCH", re.compile(r"invalid input syntax|invalid byte sequence|extra data after last|missing data for column", re.I)),
+    ("TRIGGER_REJECTED_ROW", re.compile(r"\braise\b|PL/pgSQL function", re.I)),
     ("CONNECTION_FAILED", re.compile(r"could not connect|connection to server|server closed the connection", re.I)),
 )
+# Files whose name and line number may be reported. Their content is never printed.
+DIAGNOSTIC_FILES = {"roles.sql", "schema.sql", "data.sql", "count.sql", "restore_drill_checks.sql"}
+# Statement keywords that may be reported for a failure in a definition-only dump.
+STATEMENT_WORDS = {"ALTER", "CREATE", "DROP", "GRANT", "REVOKE", "COMMENT", "SET", "SELECT", "COPY", "INSERT",
+                   "TABLE", "FUNCTION", "PROCEDURE", "ROLE", "SCHEMA", "EXTENSION", "TRIGGER", "EVENT", "POLICY",
+                   "INDEX", "UNIQUE", "VIEW", "MATERIALIZED", "SEQUENCE", "TYPE", "DOMAIN", "PUBLICATION", "DEFAULT",
+                   "PRIVILEGES", "OR", "REPLACE", "AGGREGATE", "OPERATOR", "CAST", "RULE", "SERVER", "FOREIGN",
+                   "ON", "OWNER", "IF", "NOT", "EXISTS"}
+DEFINITION_FILES = {"roles.sql", "schema.sql"}
+
+
+def _first_error(text):
+    for line in text.splitlines():
+        if re.search(r"\b(ERROR|FATAL):", line):
+            return line
+    return ""
 
 
 def classify_text(text):
+    line = _first_error(text) or text
     for code, pattern in FAILURE_CLASSES:
-        if pattern.search(text):
+        if pattern.search(line):
             return code
     return "UNCLASSIFIED"
 
 
-def classify(step, stderr_file):
+def diagnose(text, dump_root=None):
+    """Sanitized facts about the first error: class, SQLSTATE, dump file and line, and for a
+    definition-only dump the statement's leading keywords. Never message text or values."""
+    line = _first_error(text)
+    facts = {"class": classify_text(text)}
+    state = re.search(r"\b(?:ERROR|FATAL):\s+([0-9A-Z]{5}):", line)
+    if state:
+        facts["sqlstate"] = state.group(1)
+    where = re.match(r"psql:(?:.*/)?([A-Za-z0-9_.-]+):(\d+):", line)
+    if where and where.group(1) in DIAGNOSTIC_FILES:
+        facts["file"], facts["line"] = where.group(1), int(where.group(2))
+        if dump_root and where.group(1) in DEFINITION_FILES:
+            try:
+                with open(Path(dump_root) / where.group(1), encoding="utf-8", errors="replace") as fh:
+                    lines = fh.readlines()
+                # psql reports the line where the failing statement ends; walk back to its start.
+                index = min(int(where.group(2)), len(lines)) - 1
+                while index > 0 and lines[index - 1].strip() and not lines[index - 1].rstrip().endswith(";"):
+                    index -= 1
+                words = []
+                for word in re.findall(r"[A-Za-z]+", lines[index] if lines else ""):
+                    if word.upper() not in STATEMENT_WORDS:
+                        break
+                    words.append(word.upper())
+                if words:
+                    facts["statement"] = " ".join(words[:4])
+            except OSError:
+                pass
+    return facts
+
+
+def classify(step, stderr_file, dump_root=None):
     try:
         text = Path(stderr_file).read_text(errors="replace")
     except OSError:
         text = ""
-    # Only the step name and a fixed code are printed; the diagnostics stay in the protected
-    # temporary directory, which the workflow deletes in its always() cleanup step.
-    print("::error::RESTORE_STEP_FAILED step=%s class=%s" % (re.sub(r"[^a-z0-9_-]", "", step.lower()), classify_text(text)))
+    facts = diagnose(text, dump_root)
+    # Only allowlisted facts are printed; the diagnostics stay in the protected temporary directory,
+    # which the workflow deletes in its always() cleanup step.
+    detail = " ".join("%s=%s" % (k, str(v).replace(" ", "_")) for k, v in facts.items())
+    print("::error::RESTORE_STEP_FAILED step=%s %s" % (re.sub(r"[^a-z0-9_-]", "", step.lower()), detail))
 
 
 def _object_url(api_url, bucket, name):
