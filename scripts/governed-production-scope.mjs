@@ -90,6 +90,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // 2026-11-13 B04: a rejected Alliance referral cannot be linked to a Matter (additive trigger).
  'supabase/migrations/20261113150000_rejected_referral_not_convertible.sql',
  'supabase/migrations/20261113120000_institutional_transition_integrity.sql',
+ // 2026-11-14 P12: replace authenticated allow-all RLS policies with operator / own-partner access.
+ 'supabase/migrations/20261114090000_restrict_authenticated_allow_all_policies.sql','tests/authenticated-allow-all-policy-restriction.test.ts',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
