@@ -92,6 +92,10 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261113120000_institutional_transition_integrity.sql',
  // 2026-11-14 P12: replace authenticated allow-all RLS policies with operator / own-partner access.
  'supabase/migrations/20261114090000_restrict_authenticated_allow_all_policies.sql','tests/authenticated-allow-all-policy-restriction.test.ts',
+ // 2026-11-14 P12: is_founder_or_admin() reads server-issued app_metadata from auth.users, never user_metadata.
+ 'supabase/migrations/20261114100000_founder_admin_server_identity.sql','tests/founder-admin-server-identity.test.ts',
+ // 2026-11-14 B03: all three operator unique indexes are required; duplicates stop the migration.
+ 'supabase/migrations/20261114110000_require_operator_unique_indexes.sql','tests/operator-unique-indexes-required.test.ts',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.
