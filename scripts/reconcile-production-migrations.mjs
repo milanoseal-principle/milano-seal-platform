@@ -30,6 +30,9 @@ export const DEFAULT_TARGETS = [
   '20261113090000_receiving_authority_requirements.sql',
   '20261113120000_institutional_transition_integrity.sql',
   '20261113150000_rejected_referral_not_convertible.sql',
+  '20261114090000_restrict_authenticated_allow_all_policies.sql',
+  '20261114100000_founder_admin_server_identity.sql',
+  '20261114110000_require_operator_unique_indexes.sql',
 ];
 
 // Definition hashes are produced by PostgreSQL's deparser and can differ between server versions
@@ -70,6 +73,8 @@ export function declaredPostconditions(sql) {
     // Row level security is carried on the table entry (rls: true).
     ...[...text.matchAll(/alter\s+table\s+([\w."]+)\s+enable\s+row\s+level\s+security/gi)].map((m) => `tables:public.${name(m[1])}`),
     ...[...text.matchAll(/create\s+policy\s+("[^"]+"|[\w]+)\s+on\s+([\w."]+)/gi)].map((m) => `policies:public.${name(m[2])}.${name(m[1])}`),
+    // Indexes a migration requires (it may only confirm ones an earlier migration created).
+    ...[...text.matchAll(/create\s+(?:unique\s+)?index\s+(?:concurrently\s+)?(?:if\s+not\s+exists\s+)?("?[\w]+"?)\s+on\s+/gi)].map((m) => `indexes:public.${name(m[1])}`),
   ];
   const removed = [...text.matchAll(/drop\s+policy\s+(?:if\s+exists\s+)?("[^"]+"|[\w]+)\s+on\s+([\w."]+)/gi)].map((m) => `policies:public.${name(m[2])}.${name(m[1])}`);
   // Privileges a migration revokes must be absent afterwards, unless it grants them back (the
