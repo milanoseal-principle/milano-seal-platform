@@ -67,3 +67,12 @@ test("a failed read or an unrecorded attachment is reported, not shown as empty 
   assert.match(upload, /Your request was received, but this attachment was not confirmed\./);
   assert.match(upload, /Do not submit a second request\./);
 });
+
+test("the typecheck script sets its own memory limit", () => {
+  // A full typecheck needs about 2.2 GB; Node's default limit on a 16 GB CI runner is about 2.1 GB,
+  // so the bare `tsc --noEmit` ran out of memory whenever its incremental cache was stale.
+  const script = JSON.parse(read("package.json")).scripts.typecheck as string;
+  const limit = Number(/--max-old-space-size=(\d+)/.exec(script)?.[1]);
+  assert.ok(limit >= 4096, script);
+  assert.match(script, /typescript\/bin\/tsc --noEmit$/);
+});
