@@ -44,9 +44,8 @@ async function hostedFixture() {
   await db.exec(fs.readFileSync("supabase/migrations/20261108180000_operator_authority_prerequisite.sql", "utf8"));
   await db.exec(`
     create table public.operators(id uuid primary key, user_id uuid, role text, is_active boolean default true);
+    -- As in a database built from the repository: RLS on, no SELECT policy for authenticated.
     alter table public.operators enable row level security;
-    grant select on public.operators to authenticated;
-    create policy "Operators can view their own record" on public.operators for select using (user_id = auth.uid());
     insert into public.operators(id, user_id, role, is_active) values
       ('${OP.partnerA}', '${ID.partnerA}', 'alliance_partner', true),
       ('${OP.partnerB}', '${ID.partnerB}', 'alliance_partner', false);
@@ -120,7 +119,7 @@ test("anonymous, client, revoked and user_metadata-forged accounts lose all acce
   await db.close();
 });
 
-test("partners read only their own referral rows and nothing else", async () => {
+test("partners read only their own referral rows, even without any operators read policy", async () => {
   const db = await hostedFixture();
   await db.exec(migration);
   assert.deepEqual(await as(db, "authenticated", ID.partnerA, () => ledgerCodes(db)), ["A1"]);
@@ -130,6 +129,9 @@ test("partners read only their own referral rows and nothing else", async () => 
     assert.equal(await as(db, "authenticated", ID.partnerA, () => count(db, table)), 0, `partner cannot read ${table}`);
   }
   await assert.rejects(() => as(db, "authenticated", ID.partnerA, () => db.query("insert into public.referral_ledger(partner_id, referral_code) values ($1, 'forged')", [OP.partnerA])), /permission denied/);
+  // The ownership helper answers only for the caller and is not callable anonymously.
+  assert.equal((await as(db, "authenticated", ID.partnerA, () => db.query<{ ok: boolean }>("select public.is_own_alliance_account($1) ok", [OP.partnerB]))).rows[0].ok, false);
+  assert.equal((await db.query<{ ok: boolean }>("select has_function_privilege('anon', 'public.is_own_alliance_account(uuid)', 'execute') ok")).rows[0].ok, false);
   await db.close();
 });
 
@@ -156,7 +158,6 @@ test("migration is idempotent, drops only the seven named policies and is a no-o
     "liaison_intake_records.liaison_intake_operator_insert",
     "liaison_intake_records.liaison_intake_operator_select",
     "liaison_intake_records.liaison_intake_operator_update",
-    "operators.Operators can view their own record",
     "partner_scorecards.partner_scorecards_operator_read",
     "partner_scorecards.service_role_partner_scorecards",
     "payout_reviews.payout_reviews_operator_read",
@@ -168,8 +169,12 @@ test("migration is idempotent, drops only the seven named policies and is a no-o
     "translation_entries.translation_entries_operator_read",
   ]);
   await db.close();
+  // A bare Supabase database: platform roles and auth schema, none of the application tables.
   const fresh = new PGlite();
+  await fresh.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+    create schema auth; create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`);
   await fresh.exec(migration);
+  assert.equal((await fresh.query("select 1 from pg_policies")).rows.length, 0, "no tables, no policies");
   await fresh.close();
   assert.doesNotMatch(migration.replace(/--.*$/gm, ""), /\b(delete\s+from|truncate\s+(table\s+)?public|drop\s+table|drop\s+column|update\s+public)/i);
 });

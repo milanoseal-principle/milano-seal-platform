@@ -18,7 +18,9 @@
 --   * staff access uses public.is_operator(), which reads auth.users.raw_app_meta_data (never the
 --     client-editable user_metadata) and refuses disabled or banned accounts;
 --   * an active alliance account may read only the referral_ledger rows attributed to its own
---     operators row (partner_id), which the alliance portal pages read with the session client;
+--     operators row (partner_id), which the alliance portal pages read with the session client.
+--     Ownership is checked by public.is_own_alliance_account(), so it works whether or not the
+--     caller can read public.operators;
 --   * payout reviews, scorecards, translation entries and liaison intake become operator-only.
 -- The application writes every one of these tables with the service-role client, which bypasses
 -- RLS, so no server path loses access. Anonymous table privileges are revoked as defence in depth
@@ -26,6 +28,31 @@
 --
 -- Forward-only and idempotent. liaison_intake_records exists only in the hosted database, so
 -- every table is checked with to_regclass; on a fresh replay absent tables are skipped.
+
+-- Ownership check for partner reads. SECURITY DEFINER so it does not depend on the RLS policies or
+-- grants on public.operators (a database built from the repository has no operators SELECT policy
+-- for authenticated). It answers only whether the given account belongs to the caller and returns
+-- nothing else; search_path is empty and every name is schema-qualified.
+create or replace function public.is_own_alliance_account(p_operator uuid)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  -- plpgsql resolves public.operators at call time, so a bare replay can create the function.
+  return p_operator is not null and auth.uid() is not null and exists (
+    select 1 from public.operators o
+    where o.id = p_operator
+      and o.user_id = auth.uid()
+      and coalesce(o.is_active, true)
+      and o.role in ('alliance', 'alliance_partner', 'alliance_member')
+  );
+end;
+$$;
+revoke all on function public.is_own_alliance_account(uuid) from public, anon;
+grant execute on function public.is_own_alliance_account(uuid) to authenticated, service_role;
 
 do $$
 begin
@@ -55,15 +82,7 @@ begin
     create policy referral_ledger_operator_read on public.referral_ledger
       for select to authenticated using (public.is_operator());
     create policy referral_ledger_partner_read_own on public.referral_ledger
-      for select to authenticated using (
-        partner_id is not null and exists (
-          select 1 from public.operators o
-          where o.id = referral_ledger.partner_id
-            and o.user_id = auth.uid()
-            and coalesce(o.is_active, true)
-            and o.role in ('alliance', 'alliance_partner', 'alliance_member')
-        )
-      );
+      for select to authenticated using (public.is_own_alliance_account(partner_id));
     revoke all on public.referral_ledger from anon;
     revoke insert, update, delete, truncate, references, trigger on public.referral_ledger from authenticated;
   end if;
