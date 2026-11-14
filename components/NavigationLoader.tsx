@@ -33,20 +33,22 @@ export function NavigationLoader() {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target : null;
       const anchor = target?.closest<HTMLAnchorElement>("a[href]");
-      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      if (!anchor || (anchor.target && anchor.target !== "_self") || anchor.hasAttribute("download")) return;
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
       begin();
     };
     window.addEventListener(NAV_INTENT_EVENT, begin);
-    document.addEventListener("click", onClick);
+    // Next Link prevents the native click while handling SPA navigation. Observe
+    // before its bubbling handler, or normal internal links never start feedback.
+    document.addEventListener("click", onClick, true);
     window.addEventListener("popstate", finish);
     return () => {
       clearTimeout(revealTimer);
       clearTimeout(safetyTimer);
       window.removeEventListener(NAV_INTENT_EVENT, begin);
-      document.removeEventListener("click", onClick);
+      document.removeEventListener("click", onClick, true);
       window.removeEventListener("popstate", finish);
     };
   }, []);
