@@ -7,7 +7,7 @@
   1. downloads the newest (or a named) archive and verifies its SHA-256;
   2. decrypts it, inspects the TAR safely and re-verifies every exported byte with `verify_backup.py`;
   3. starts a disposable local Supabase stack (PostgreSQL 17, Auth, Storage) in an empty directory, so the repository's migrations are not applied to it;
-  4. restores `roles.sql`, `schema.sql`, `data.sql` by Supabase's documented procedure, then `auth.users` and `auth.identities`;
+  4. restores `roles.sql`, `schema.sql` and every application table in `data.sql` strictly in one transaction; then restores the Supabase-managed tables in `data.sql` (`auth.*`, `storage.*`, ...) only into target tables that have every dumped column. Every managed table it cannot restore is reported by name and row count. The drill fails if `auth.users`, `auth.identities`, `storage.buckets` or `storage.objects` cannot restore, or if any table that cannot restore holds rows;
   5. fails unless every public table exists and **every table's row count equals the dump's own COPY row count**;
   6. recreates the three private buckets and re-uploads every Storage object through the isolated Storage API, then downloads each one and fails unless size and SHA-256 match the manifest;
   7. runs `supabase/verification/restore_drill_checks.sql`: fails if an anonymous caller or an arbitrary signed-in client can read any of 19 sensitive tables in the restored data;
@@ -24,6 +24,20 @@
   - The drill now restores as the disposable cluster's own superuser (`supabase_admin`). It first asserts the URL is `127.0.0.1` and the role is a superuser.
   - On failure it prints only the class, SQLSTATE, dump file and line, and for `roles.sql`/`schema.sql` the statement's leading SQL keywords. It never prints message text or values.
   - The same synthetic backup fails on the old workflow and passes every stage on the new one: database, auth, 124 out of 124 tables with exact row counts, Storage re-hash, RLS checks and cleanup.
+  - **#3**: failed at the database restore with `class=MISSING_OBJECT sqlstate=42P01 file=data.sql line=191125`.
+- **Drill #3 diagnosis (`MANAGED_SCHEMA_COMPATIBILITY`, a restore-target mismatch, not a source-export omission).**
+  - `supabase db dump --data-only` writes rows for Supabase-managed schemas as well as application data. Their table definitions belong to the platform version, so they are not in `schema.sql`.
+  - Hosted Storage on production has `storage.bucket_lifecycle_states` and `storage.lifecycle_abandoned_artifacts` (P12 hosted catalog, 2026-11-14). The local Storage version on the drill target has neither.
+  - The first COPY into such a table fails with `42P01`, even when it carries no rows. In the dump, `storage.bucket_lifecycle_states` is the first Storage table after the application data.
+  - A local reproduction confirmed this: a synthetic source with that hosted-only table failed the old workflow with `42P01` at its COPY line.
+  - `data.sql` also already holds `auth.users` and `auth.identities`. The separate Auth step would have loaded them a second time.
+- **Drill #3 fix.**
+  - The drill splits `data.sql`. Application data restores strictly and in full.
+  - Managed data restores per table where the target matches. Gaps are reported, and archived rows are never left behind on a passing run.
+  - The duplicate Auth load is removed.
+  - On a data error, the failure line now also names the relation, whether it is application or managed, and whether `schema.sql` defines it.
+  - Backup #17 is unchanged.
+  - The same synthetic backup now passes every stage: 124/124 tables with exact row counts, Auth, Storage re-hash, RLS checks and cleanup.
 - **Not covered by the drill (still required for full DR certification):** restoring into a separate hosted Supabase project, Auth provider settings and secrets from the vault, Vault/encryption-root continuity, signed-in business-flow checks on test accounts, an independent backup-freshness monitor, and alert delivery. The daily backup schedule stays off until one drill passes.
 - **Expected informational findings on the current production copy:** `founder_admin_helper_reads_user_metadata: true` until migration `20261114100000` is applied. The five tables fixed by `20261114090000` are not in the drill's failing probe list.
 

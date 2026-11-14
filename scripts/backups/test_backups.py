@@ -584,7 +584,7 @@ class RestoreDrillTests(unittest.TestCase):
         # Each docker command that talks to the restored database must send stderr to the
         # protected drill directory and print only a classification on failure.
         blocks = [b for b in text.split("docker run --rm --network host")[1:] if "then\n" in b.split("fi\n", 1)[0]]
-        self.assertEqual(len(blocks), 4)
+        self.assertEqual(len(blocks), 5)
         for block in blocks:
             command = block.split("then\n", 1)[0]
             self.assertRegex(command, r'2> "\$DRILL/[a-z-]+\.err"', command[:120])
@@ -601,7 +601,8 @@ class RestoreDrillTests(unittest.TestCase):
             data_error = ('psql:/backup/data.sql:2: ERROR:  23514: new row violates check constraint "c"\n'
                           "DETAIL:  Failing row contains (secret-row, jane@example.invalid).\n")
             facts = drill.diagnose(data_error, d)
-            self.assertEqual(facts, {"class": "CHECK_OR_NOT_NULL_VIOLATION", "sqlstate": "23514", "file": "data.sql", "line": 2})
+            self.assertEqual(facts, {"class": "CHECK_OR_NOT_NULL_VIOLATION", "sqlstate": "23514", "file": "data.sql", "line": 2,
+                                     "relation": "public.deals", "relation_schema": "application", "defined_in_schema_dump": False})
             err = self.write(d, "e.err", data_error)
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
@@ -613,6 +614,131 @@ class RestoreDrillTests(unittest.TestCase):
         self.assertEqual(drill.classify_text('ERROR:  extension "x" is not available'), "EXTENSION_UNAVAILABLE")
         # A file outside the allowlist is never named.
         self.assertNotIn("file", drill.diagnose("psql:/backup/customers.csv:9: ERROR:  syntax error at end of input"))
+
+    # Drill #3 (2026-11-14): 42P01 at data.sql line 191125. The data dump carries rows for
+    # Supabase-managed tables, and hosted Storage has tables a local stack lacks
+    # (storage.bucket_lifecycle_states, storage.lifecycle_abandoned_artifacts).
+    HOSTED_DATA = (
+        "SET session_replication_role = replica;\n\n-- \\restrict k\n\nSET statement_timeout = 0;\n"
+        "SELECT pg_catalog.set_config('search_path', '', false);\n\n"
+        "--\n-- Data for Name: users; Type: TABLE DATA; Schema: auth\n--\n\n"
+        'COPY "auth"."users" ("id", "email") FROM stdin;\nu1\tjane@example.invalid\n\\.\n\n'
+        'COPY "auth"."identities" ("id", "user_id") FROM stdin;\ni1\tu1\n\\.\n\n'
+        'COPY "public"."deals" ("id", "client_name") FROM stdin;\nd1\tJane Secret\nd2\t\\N\n\\.\n\n'
+        'COPY "storage"."bucket_lifecycle_states" ("bucket_id", "state") FROM stdin;\n\\.\n\n'
+        'COPY "storage"."buckets" ("id", "name") FROM stdin;\ndocuments\tdocuments\n\\.\n\n'
+        'COPY "storage"."objects" ("id", "bucket_id", "name") FROM stdin;\no1\tdocuments\tmatter/secret.pdf\n\\.\n\n'
+        "SELECT pg_catalog.setval('\"auth\".\"refresh_tokens_id_seq\"', 5, true);\n"
+        "SELECT pg_catalog.setval('\"public\".\"deals_seq\"', 2, true);\n\n"
+        "-- \\unrestrict k\n\nRESET ALL;\n"
+    )
+    LOCAL_CATALOG = "".join("C\t%s\t%s\n" % (t, c) for t, cols in {
+        "auth.users": ("id", "email", "phone"), "auth.identities": ("id", "user_id"),
+        "storage.buckets": ("id", "name"), "storage.objects": ("id", "bucket_id", "name")}.items() for c in cols) + "S\tauth.refresh_tokens_id_seq\t\n"
+
+    def split(self, d, data=None):
+        data_sql = self.write(d, "data.sql", data or self.HOSTED_DATA)
+        with contextlib.redirect_stdout(io.StringIO()):
+            drill.split_data(data_sql, Path(d) / "split")
+        return Path(d) / "split"
+
+    def managed(self, split, catalog):
+        tsv = self.write(split, "target_catalog.tsv", catalog)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            drill.managed_sql(split, tsv, split / "managed_restore.sql", split / "report.json")
+        return out.getvalue()
+
+    def test_data_dump_splits_into_strict_application_data_and_per_table_managed_blocks(self):
+        with tempfile.TemporaryDirectory() as d:
+            split = self.split(d)
+            app = (split / "app.sql").read_text()
+            self.assertTrue(app.startswith("SET session_replication_role = replica;\nSET statement_timeout = 0;"))
+            self.assertIn('COPY "public"."deals"', app)
+            self.assertIn("d2\t\\N\n\\.\n", app, "application rows are kept byte for byte")
+            self.assertIn("deals_seq", app)
+            self.assertTrue(app.endswith("RESET ALL;\n"))
+            for managed in ('"auth"', '"storage"', "refresh_tokens_id_seq"):
+                self.assertNotIn(managed, app)
+            self.assertEqual(drill.copy_counts(split / "app.sql"), {"public.deals": 2})
+            spec = json.loads((split / "managed.json").read_text())
+            self.assertEqual([(b["table"], b["rows"]) for b in spec["blocks"]],
+                             [("auth.users", 1), ("auth.identities", 1), ("storage.bucket_lifecycle_states", 0),
+                              ("storage.buckets", 1), ("storage.objects", 1)])
+            self.assertNotIn("jane@example.invalid", (split / "managed.json").read_text(), "the index holds names and counts only")
+            # Anything other than data between COPY blocks fails closed instead of being dropped.
+            bad = self.HOSTED_DATA.replace("RESET ALL;", "DELETE FROM public.deals;\nRESET ALL;")
+            with self.assertRaises(SystemExit):
+                self.split(d, bad)
+
+    def test_managed_tables_restore_only_into_compatible_target_tables_and_gaps_are_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            split = self.split(d)
+            printed = self.managed(split, self.LOCAL_CATALOG)
+            report = json.loads((split / "report.json").read_text())
+            self.assertEqual(report["managed_tables_restored"], {"auth.users": 1, "auth.identities": 1, "storage.buckets": 1, "storage.objects": 1})
+            self.assertEqual(report["managed_tables_not_restorable"],
+                             [{"table": "storage.bucket_lifecycle_states", "rows": 0, "reason": "TABLE_NOT_IN_TARGET"}])
+            self.assertEqual(report["managed_rows_not_restorable"], 0)
+            sql = (split / "managed_restore.sql").read_text()
+            self.assertNotIn("bucket_lifecycle_states", sql)
+            self.assertIn("refresh_tokens_id_seq", sql)
+            self.assertIn("SET session_replication_role = replica;", sql)
+            # The restored managed rows are what fidelity expects; nothing else is counted.
+            self.assertEqual(drill.copy_counts(split / "managed_restore.sql"), report["managed_tables_restored"])
+            for secret in ("jane@example.invalid", "secret.pdf", "Jane"):
+                self.assertNotIn(secret, printed)
+
+    def test_archived_managed_rows_are_never_left_behind_silently(self):
+        with tempfile.TemporaryDirectory() as d:
+            rows = self.HOSTED_DATA.replace('"state") FROM stdin;\n', '"state") FROM stdin;\ndocuments\tactive\n')
+            split = self.split(d, rows)
+            with self.assertRaises(SystemExit) as failed:
+                self.managed(split, self.LOCAL_CATALOG)
+            self.assertEqual(str(failed.exception), "MANAGED_ROWS_NOT_RESTORABLE")
+            # A dumped column the target lacks is a gap too, reported by column name.
+            split = self.split(d, self.HOSTED_DATA.replace('"auth"."identities" ("id", "user_id")', '"auth"."identities" ("id", "user_id", "provider_id")'))
+            with self.assertRaises(SystemExit) as failed:
+                self.managed(split, self.LOCAL_CATALOG)
+            self.assertEqual(str(failed.exception), "REQUIRED_MANAGED_TABLE_NOT_RESTORABLE")
+            report = json.loads((split / "report.json").read_text())
+            self.assertIn({"table": "auth.identities", "rows": 1, "reason": "COLUMNS_NOT_IN_TARGET", "columns": ["provider_id"]},
+                          report["managed_tables_not_restorable"])
+            # Sign-in records and Storage metadata are required, even when the dump lacks them.
+            split = self.split(d, self.HOSTED_DATA.replace('COPY "storage"."objects"', 'COPY "storage"."objects_renamed"'))
+            with self.assertRaises(SystemExit):
+                self.managed(split, self.LOCAL_CATALOG + "C\tstorage.objects_renamed\tid\n")
+            self.assertEqual(json.loads((split / "report.json").read_text())["required_managed_failures"], ["storage.objects"])
+
+    def test_missing_relation_is_named_with_its_schema_class_and_archive_definition(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, "schema.sql", 'CREATE TABLE IF NOT EXISTS "public"."deals" (\n    "id" uuid\n);\n')
+            self.write(d, "data.sql", self.HOSTED_DATA)
+            line = self.HOSTED_DATA.splitlines().index('COPY "storage"."bucket_lifecycle_states" ("bucket_id", "state") FROM stdin;') + 1
+            err = ('psql:/backup/data.sql:%d: ERROR:  42P01: relation "storage.bucket_lifecycle_states" does not exist\n'
+                   "LOCATION:  parserOpenTable, parse_relation.c:1452\n" % line)
+            self.assertEqual(drill.diagnose(err, d), {"class": "MISSING_OBJECT", "sqlstate": "42P01", "file": "data.sql", "line": line,
+                                                      "relation": "storage.bucket_lifecycle_states", "relation_schema": "managed",
+                                                      "defined_in_schema_dump": False})
+            row_line = self.HOSTED_DATA.splitlines().index("d1\tJane Secret") + 1
+            facts = drill.diagnose("psql:/split/data.sql:%d: ERROR:  22P02: invalid input syntax\n" % row_line, d)
+            self.assertEqual((facts["relation"], facts["relation_schema"]), ("public.deals", "application"))
+            self.assertTrue(facts["defined_in_schema_dump"])
+            setval_line = self.HOSTED_DATA.splitlines().index("SELECT pg_catalog.setval('\"auth\".\"refresh_tokens_id_seq\"', 5, true);") + 1
+            self.assertEqual(drill.diagnose("psql:data.sql:%d: ERROR:  42P01: x\n" % setval_line, d)["relation"], "auth.refresh_tokens_id_seq")
+
+    def test_restore_loads_application_data_strictly_and_managed_data_once(self):
+        text = RESTORE_WORKFLOW.read_text()
+        self.assertIn("restore_drill.py split-data", text)
+        self.assertIn("--file /split/app.sql", text)
+        self.assertNotIn("--file /backup/data.sql", text)
+        self.assertIn("restore_drill.py managed-sql", text)
+        self.assertIn("--single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -q --file /split/managed_restore.sql", text)
+        # data.sql already carries auth.users and auth.identities: a second load from the custom
+        # dump would duplicate them (23505), so it is gone.
+        self.assertNotIn("pg_restore", text)
+        self.assertIn('"$DRILL/split/app.sql" "$DRILL/split/managed_restore.sql"', text)
+        self.assertIn('"managed_tables": json.loads((drill / "managed.json").read_text())', text)
 
     def test_restore_runs_as_the_local_targets_own_superuser_only(self):
         text = RESTORE_WORKFLOW.read_text()
