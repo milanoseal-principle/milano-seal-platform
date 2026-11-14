@@ -1,0 +1,212 @@
+name: Isolated restore drill
+# Manual dispatch only. Recovers the newest (or a named) encrypted backup from the independent
+# bucket and restores it into a disposable local Supabase stack on this runner, which is destroyed
+# when the job ends. Production is never contacted: this job is not given the production database
+# URL or service-role key, and every restore command targets 127.0.0.1.
+# Output is counts, booleans, hashes and timings only.
+on:
+  workflow_dispatch:
+    inputs:
+      backup_stamp:
+        description: "Backup timestamp folder (e.g. 20261114T190000Z). Empty = newest."
+        required: false
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: milano-seal-backup
+  cancel-in-progress: false
+jobs:
+  restore:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+      BACKUP_STAMP_INPUT: ${{ inputs.backup_stamp }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required bindings (archive access and decryption only)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          for name in BACKUP_GPG_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT; do
+            [[ -n "${!name:-}" ]] || { echo "::error::Missing required binding: $name"; missing=1; }
+          done
+          echo "DRILL=$RUNNER_TEMP/restore-drill" >> "$GITHUB_ENV"
+          exit "$missing"
+      - name: Offline backup and restore-helper regressions
+        run: python3 scripts/backups/test_backups.py -v
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install AWS CLI (signature-verified)
+        shell: bash
+        env:
+          AWS_CLI_VERSION: 2.39.0
+          AWS_CLI_SIGNING_FPR: FB5DB77FD5C118B80511ADA8A6310ACC4672475C
+        run: |
+          set -Eeuo pipefail
+          for tool in gpg gpgv unzip curl docker; do command -v "$tool" >/dev/null || { echo "::error::Missing tool: $tool"; exit 1; }; done
+          dl="$RUNNER_TEMP/awscli-download"; rm -rf "$dl"; mkdir -p "$dl"
+          gpg --batch --no-autostart --dearmor --output "$dl/aws-cli-team.gpg" scripts/backups/aws-cli-team-public-key.asc
+          curl --fail --silent --show-error --location --retry 3 "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" --output "$dl/awscliv2.zip"
+          curl --fail --silent --show-error --location --retry 3 "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip.sig" --output "$dl/awscliv2.zip.sig"
+          gpgv --keyring "$dl/aws-cli-team.gpg" --status-fd 1 "$dl/awscliv2.zip.sig" "$dl/awscliv2.zip" 2>/dev/null > "$dl/verify.status"
+          grep -q "^\[GNUPG:\] VALIDSIG ${AWS_CLI_SIGNING_FPR} " "$dl/verify.status"
+          unzip -q "$dl/awscliv2.zip" -d "$dl"
+          "$dl/aws/install" --install-dir "$RUNNER_TEMP/aws-cli" --bin-dir "$RUNNER_TEMP/aws-bin"
+          rm -rf "$dl"
+          echo "$RUNNER_TEMP/aws-bin" >> "$GITHUB_PATH"
+      - name: Retrieve and verify the encrypted archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          mkdir -p "$DRILL"
+          if [[ -n "$BACKUP_STAMP_INPUT" ]]; then
+            STAMP="$BACKUP_STAMP_INPUT"
+          else
+            STAMP="$(aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 ls "s3://$BACKUP_S3_BUCKET/milano-seal/" | awk '$1 == "PRE" { sub("/$", "", $2); print $2 }' | grep -E '^[0-9]{8}T[0-9]{6}Z$' | sort | tail -n 1)"
+          fi
+          [[ "$STAMP" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || { echo "::error::No valid backup timestamp found"; exit 1; }
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.tar.gpg" "$DRILL/backup.tar.gpg" --only-show-errors
+          aws --endpoint-url "$BACKUP_S3_ENDPOINT" s3 cp "s3://$BACKUP_S3_BUCKET/milano-seal/$STAMP/backup.sha256" "$DRILL/backup.sha256" --only-show-errors
+          ACTUAL="$(sha256sum "$DRILL/backup.tar.gpg" | awk '{print $1}')"
+          [[ "$ACTUAL" == "$(tr -d '[:space:]' < "$DRILL/backup.sha256")" ]] || { echo "::error::ARCHIVE_CHECKSUM_MISMATCH"; exit 1; }
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          echo "ARCHIVE_SHA256=$ACTUAL" >> "$GITHUB_ENV"
+          echo "ARCHIVE: $STAMP sha256=$ACTUAL bytes=$(stat -c %s "$DRILL/backup.tar.gpg")"
+      - name: Decrypt, inspect and verify every exported byte
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --decrypt --output "$DRILL/backup.tar" "$DRILL/backup.tar.gpg" 3<<<"$BACKUP_GPG_PASSPHRASE"
+          rm -f "$DRILL/backup.tar.gpg"
+          python3 scripts/backups/verify_backup.py --archive "$DRILL/backup.tar"
+          mkdir -p "$DRILL/root"
+          tar -C "$DRILL/root" --no-same-owner --no-same-permissions -xf "$DRILL/backup.tar"
+          rm -f "$DRILL/backup.tar"
+          python3 scripts/backups/verify_backup.py "$DRILL/root"
+      - name: Start a disposable local Supabase stack (isolated target)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # An empty project directory: the repository's own migrations are NOT applied to the target.
+          mkdir -p "$DRILL/target"
+          cd "$DRILL/target"
+          supabase init --force >/dev/null
+          sed -i -E 's/^major_version = [0-9]+/major_version = 17/' supabase/config.toml
+          grep -q '^major_version = 17' supabase/config.toml
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,supavisor,postgres-meta
+          supabase status -o env > "$DRILL/target.env"
+          set -a; . "$DRILL/target.env"; set +a
+          [[ "$DB_URL" == postgresql://*@127.0.0.1:* ]] || { echo "::error::Restore target is not local"; exit 1; }
+          [[ "$API_URL" == http://127.0.0.1:* ]] || { echo "::error::Storage target is not local"; exit 1; }
+          [[ -n "${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}" ]] || { echo "::error::Local target key missing"; exit 1; }
+          echo "RESTORE_START=$(date -u +%s)" >> "$GITHUB_ENV"
+      - name: Restore database (roles, schema, data) by the documented Supabase procedure
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL postgres:17 sh -ec '
+            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -q \
+              --file /backup/roles.sql --file /backup/schema.sql \
+              --command "SET session_replication_role = replica" --file /backup/data.sql >/dev/null'
+          echo "DATABASE_RESTORE: PASS"
+      - name: Restore Auth users and identities
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          # Sign-in records only. Storage buckets and objects are recreated through the isolated
+          # Storage API in a later step (and every object re-hashed), because hosted Storage tables
+          # carry newer columns than a local stack.
+          docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec '
+            pg_restore -l /backup/auth-storage-data.dump | grep -E "TABLE DATA auth (users|identities) " > /work/auth.list
+            test "$(wc -l < /work/auth.list)" -eq 2
+            pg_restore --data-only --no-owner --no-acl -f /work/auth.sql -L /work/auth.list /backup/auth-storage-data.dump
+            PGOPTIONS="-c session_replication_role=replica" pg_restore --data-only --no-owner --no-acl --single-transaction --exit-on-error \
+              -L /work/auth.list -d "$DB_URL" /backup/auth-storage-data.dump'
+          echo "AUTH_RESTORE: PASS"
+      - name: Verify restored rows match the backup exactly
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          python3 scripts/backups/restore_drill.py expected "$DRILL/expected.json" "$DRILL/root/database/schema.sql" "$DRILL/root/database/data.sql" "$DRILL/auth.sql"
+          python3 scripts/backups/restore_drill.py count-sql "$DRILL/expected.json" "$DRILL/count.sql"
+          docker run --rm --network host -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv'
+          python3 scripts/backups/restore_drill.py compare "$DRILL/expected.json" "$DRILL/restored.tsv" "$DRILL/fidelity.json"
+      - name: Restore and re-serve private Storage objects
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          RESTORE_TARGET_SERVICE_KEY="${SERVICE_ROLE_KEY:-$SECRET_KEY}" python3 scripts/backups/restore_drill.py storage "$DRILL/root" "$API_URL" | tee "$DRILL/storage.json"
+      - name: Verify authorization and integrity on the restored data
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -At -f /sql/restore_drill_checks.sql' | tail -n 1 > "$DRILL/checks.json"
+          echo "RESTORE_END=$(date -u +%s)" >> "$GITHUB_ENV"
+          python3 - "$DRILL" <<'PYTHON'
+          import json, sys
+          from pathlib import Path
+          drill = Path(sys.argv[1])
+          checks = json.loads((drill / "checks.json").read_text())
+          manifest = json.loads((drill / "root/storage/manifest.json").read_text())
+          expected = {bucket: n for bucket, n in manifest["counts"].items() if n}
+          failures = []
+          if checks["rls_probe_rows_visible_to_anon"] != 0: failures.append("anonymous caller can read restored sensitive rows")
+          if checks["rls_probe_rows_visible_to_arbitrary_client"] != 0: failures.append("arbitrary signed-in client can read restored sensitive rows")
+          if checks["rls_probe_tables_checked"] < 10: failures.append("too few sensitive tables probed")
+          if checks["storage_objects_by_bucket"] != expected: failures.append("restored storage objects differ from the backup manifest counts")
+          print(json.dumps(checks, sort_keys=True))
+          if failures:
+              for f in failures: print("::error::" + f)
+              raise SystemExit(1)
+          PYTHON
+      - name: Record recovery evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - "$DRILL" <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          drill = Path(sys.argv[1])
+          stamp = os.environ["STAMP"]
+          point = datetime.strptime(stamp, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+          start, end = int(os.environ["RESTORE_START"]), int(os.environ["RESTORE_END"])
+          evidence = {
+              "result": "ISOLATED_RESTORE_VERIFIED",
+              "recovery_point_utc": point.isoformat(),
+              "backup_age_at_restore_minutes": round((start - point.timestamp()) / 60),
+              "restore_elapsed_seconds": end - start,
+              "archive_sha256": os.environ["ARCHIVE_SHA256"],
+              "fidelity": json.loads((drill / "fidelity.json").read_text()),
+              "storage": json.loads((drill / "storage.json").read_text().strip().splitlines()[-1]),
+              "checks": json.loads((drill / "checks.json").read_text()),
+              "target": "disposable local Supabase stack on the runner (destroyed after this job)",
+              "commit": os.environ["GITHUB_SHA"],
+          }
+          print("## Isolated restore drill\n\n```json\n" + json.dumps(evidence, indent=1, sort_keys=True) + "\n```")
+          PYTHON
+      - name: Destroy the isolated target and all decrypted material
+        if: always()
+        shell: bash
+        run: |
+          if [[ -d "$DRILL/target" ]]; then (cd "$DRILL/target" && supabase stop --no-backup) || true; fi
+          rm -rf "$DRILL" "$RUNNER_TEMP/aws-cli" "$RUNNER_TEMP/aws-bin"
