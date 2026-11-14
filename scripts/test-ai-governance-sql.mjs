@@ -117,7 +117,9 @@ await db.exec('reset role');await db.query(`update auth.users set raw_app_meta_d
 await command('agent',{agent_id:'B13',enabled:false});
 await command('pause',{paused:false,mode:'SHADOW',reason:'Controlled bounded retry fixture'});
 const draft=async id=>{await command('agent',{agent_id:id,enabled:true});return command('task',body(id,{tool_id:'draft_report'}));};
-const draftA=await draft('D01'),draftB=await draft('D02'),draftC=await draft('D03');
+const drafts=[await draft('D01'),await draft('D02'),await draft('D03')];
+// Match the claim queue's ordering, including UUID tie-breaking for equal timestamps.
+const [draftA,draftB,draftC]=(await db.query('select id from governance_tasks where id=any($1::uuid[]) order by created_at,id',[drafts.map(task=>task.id)])).rows;
 const activeA=(await db.query('select governance_claim(100) result')).rows[0].result,activeB=(await db.query('select governance_claim(100) result')).rows[0].result;
 assert.equal(activeA.id,draftA.id);assert.equal(activeB.id,draftB.id);passed++;
 assert.equal((await db.query('select governance_claim(100) result')).rows[0].result.status,'CONCURRENCY_LIMIT');passed++;
