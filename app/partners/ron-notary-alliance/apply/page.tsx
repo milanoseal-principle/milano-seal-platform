@@ -148,13 +148,13 @@ export default function RonNotaryAllianceApplyPage() {
             <section>
               <h2 className="font-serif text-xl text-white/80">Identity & commission</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div><label className={label}>Full legal name *</label><input className={input} value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required /></div>
-                <div><label className={label}>Business name</label><input className={input} value={form.business_name} onChange={(e) => set("business_name", e.target.value)} /></div>
-                <div><label className={label}>Email *</label><input type="email" className={input} value={form.email} onChange={(e) => set("email", e.target.value)} required /></div>
-                <div><label className={label}>Phone *</label><input className={input} value={form.phone} onChange={(e) => set("phone", e.target.value)} required /></div>
-                <div><label className={label}>State commissioned *</label><input className={input} value={form.state_commissioned} onChange={(e) => set("state_commissioned", e.target.value)} required /></div>
-                <div><label className={label}>Commission number *</label><input className={input} value={form.commission_number} onChange={(e) => set("commission_number", e.target.value)} required /></div>
-                <div><label className={label}>Commission expiration</label><input type="date" className={input} value={form.commission_expiration} onChange={(e) => set("commission_expiration", e.target.value)} /></div>
+                <div><label htmlFor="partner-full_name" className={label}>Full legal name *</label><input id="partner-full_name" name="full_name" autoComplete="name" className={input} value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required /></div>
+                <div><label htmlFor="partner-business_name" className={label}>Business name</label><input id="partner-business_name" name="business_name" autoComplete="organization" className={input} value={form.business_name} onChange={(e) => set("business_name", e.target.value)} /></div>
+                <div><label htmlFor="partner-email" className={label}>Email *</label><input id="partner-email" name="email" autoComplete="email" type="email" className={input} value={form.email} onChange={(e) => set("email", e.target.value)} required /></div>
+                <div><label htmlFor="partner-phone" className={label}>Phone *</label><input id="partner-phone" type="tel" autoComplete="tel" className={input} value={form.phone} onChange={(e) => set("phone", e.target.value)} required /></div>
+                <div><label htmlFor="partner-state_commissioned" className={label}>State commissioned *</label><input id="partner-state_commissioned" className={input} value={form.state_commissioned} onChange={(e) => set("state_commissioned", e.target.value)} required /></div>
+                <div><label htmlFor="partner-commission_number" className={label}>Commission number *</label><input id="partner-commission_number" className={input} value={form.commission_number} onChange={(e) => set("commission_number", e.target.value)} required /></div>
+                <div><label htmlFor="partner-commission_expiration" className={label}>Commission expiration</label><input id="partner-commission_expiration" type="date" className={input} value={form.commission_expiration} onChange={(e) => set("commission_expiration", e.target.value)} /></div>
               </div>
             </section>
 
@@ -163,25 +163,25 @@ export default function RonNotaryAllianceApplyPage() {
               <p className="mt-2 text-xs leading-5 text-white/35">Do not select RON authorized unless your current state authorization or registration requirements have been completed.</p>
               <div className="mt-5 space-y-4">
                 <label className={check}><input type="checkbox" checked={form.ron_authorized} onChange={(e) => set("ron_authorized", e.target.checked)} /><span>State RON authorization / registration completed where required</span></label>
-                <div><label className={label}>RON platform(s)</label><input className={input} value={form.ron_platforms_used} onChange={(e) => set("ron_platforms_used", e.target.value)} placeholder="Comma-separated" /></div>
+                <div><label htmlFor="partner-ron_platforms_used" className={label}>RON platform(s)</label><input id="partner-ron_platforms_used" className={input} value={form.ron_platforms_used} onChange={(e) => set("ron_platforms_used", e.target.value)} placeholder="Comma-separated" /></div>
               </div>
             </section>
 
             <section>
               <h2 className="font-serif text-xl text-white/80">Insurance & verification</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div><label className={label}>E&O provider</label><input className={input} value={form.e_and_o_insurance_provider} onChange={(e) => set("e_and_o_insurance_provider", e.target.value)} /></div>
-                <div><label className={label}>E&O policy limit</label><input className={input} value={form.e_and_o_policy_limit} onChange={(e) => set("e_and_o_policy_limit", e.target.value)} /></div>
-                <div><label className={label}>Background check status</label><select className={input} value={form.background_check_status} onChange={(e) => set("background_check_status", e.target.value)}><option value="">Select</option><option value="Cleared">Cleared</option><option value="Pending">Pending</option><option value="Will provide upon approval">Will provide upon approval</option><option value="Not completed">Not completed</option></select></div>
-                <div><label className={label}>Languages</label><input className={input} value={form.languages} onChange={(e) => set("languages", e.target.value)} placeholder="English, Spanish" /></div>
+                <div><label htmlFor="partner-e_and_o_insurance_provider" className={label}>E&O provider</label><input id="partner-e_and_o_insurance_provider" className={input} value={form.e_and_o_insurance_provider} onChange={(e) => set("e_and_o_insurance_provider", e.target.value)} /></div>
+                <div><label htmlFor="partner-e_and_o_policy_limit" className={label}>E&O policy limit</label><input id="partner-e_and_o_policy_limit" className={input} value={form.e_and_o_policy_limit} onChange={(e) => set("e_and_o_policy_limit", e.target.value)} /></div>
+                <div><label htmlFor="partner-background_check_status" className={label}>Background check status</label><select id="partner-background_check_status" className={input} value={form.background_check_status} onChange={(e) => set("background_check_status", e.target.value)}><option value="">Select</option><option value="Cleared">Cleared</option><option value="Pending">Pending</option><option value="Will provide upon approval">Will provide upon approval</option><option value="Not completed">Not completed</option></select></div>
+                <div><label htmlFor="partner-languages" className={label}>Languages</label><input id="partner-languages" className={input} value={form.languages} onChange={(e) => set("languages", e.target.value)} placeholder="English, Spanish" /></div>
               </div>
             </section>
 
             <section>
               <h2 className="font-serif text-xl text-white/80">Coverage & availability</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div><label className={label}>Preferred service area</label><input className={input} value={form.preferred_service_area} onChange={(e) => set("preferred_service_area", e.target.value)} /></div>
-                <div><label className={label}>Availability</label><input className={input} value={form.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Weekdays, evenings by request" /></div>
+                <div><label htmlFor="partner-preferred_service_area" className={label}>Preferred service area</label><input id="partner-preferred_service_area" className={input} value={form.preferred_service_area} onChange={(e) => set("preferred_service_area", e.target.value)} /></div>
+                <div><label htmlFor="partner-availability" className={label}>Availability</label><input id="partner-availability" className={input} value={form.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Weekdays, evenings by request" /></div>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <label className={check}><input type="checkbox" checked={form.mobile_notary_available} onChange={(e) => set("mobile_notary_available", e.target.checked)} /><span>Mobile / wet-ink available</span></label>
@@ -197,8 +197,8 @@ export default function RonNotaryAllianceApplyPage() {
             <section>
               <h2 className="font-serif text-xl text-white/80">Matter boundaries</h2>
               <div className="mt-5 grid gap-4">
-                <div><label className={label}>Documents willing to handle</label><textarea className={`${input} min-h-24`} value={form.documents_willing} onChange={(e) => set("documents_willing", e.target.value)} /></div>
-                <div><label className={label}>Documents you will not handle</label><textarea className={`${input} min-h-24`} value={form.documents_unwilling} onChange={(e) => set("documents_unwilling", e.target.value)} /></div>
+                <div><label htmlFor="partner-documents_willing" className={label}>Documents willing to handle</label><textarea id="partner-documents_willing" className={`${input} min-h-24`} value={form.documents_willing} onChange={(e) => set("documents_willing", e.target.value)} /></div>
+                <div><label htmlFor="partner-documents_unwilling" className={label}>Documents you will not handle</label><textarea id="partner-documents_unwilling" className={`${input} min-h-24`} value={form.documents_unwilling} onChange={(e) => set("documents_unwilling", e.target.value)} /></div>
               </div>
             </section>
 
@@ -212,7 +212,7 @@ export default function RonNotaryAllianceApplyPage() {
               </div>
             </section>
 
-            {result ? <div className={`rounded border p-4 text-sm ${result.ok ? "border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-200/70" : "border-red-400/20 bg-red-400/[0.04] text-red-200/70"}`}>{result.message}</div> : null}
+            {result ? <div role={result.ok ? "status" : "alert"} className={`rounded border p-4 text-sm ${result.ok ? "border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-200/70" : "border-red-400/20 bg-red-400/[0.04] text-red-200/70"}`}>{result.message}</div> : null}
 
             <button disabled={submitting} className="w-full rounded-sm bg-[#C6A55A] px-6 py-4 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#090806] disabled:opacity-50">
               {submitting ? "Submitting…" : "Submit for Credential Review"}

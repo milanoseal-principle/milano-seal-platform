@@ -164,7 +164,9 @@ export default async function RootLayout({
             },
           }}
         />
-        <NavigationLoader />
+        <Suspense fallback={null}>
+          <NavigationLoader />
+        </Suspense>
         <Suspense fallback={null}>
           <MilanoExecutionCopilot />
         </Suspense>

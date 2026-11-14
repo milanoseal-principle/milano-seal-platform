@@ -26,12 +26,12 @@ for (const file of required) {
 const navigation = readFileSync("components/NavigationLoader.tsx", "utf8");
 for (const token of [
   "milano:navigation-intent",
-  "MINIMUM_VISIBLE_MS = 700",
-  "SETTLE_FADE_MS = 220",
-  "SAFETY_RELEASE_MS = 8000",
+  "setTimeout(() => setLoading(true), 150)",
+  "useSearchParams",
+  "pointer-events-none",
+  "setTimeout(finish, 8000)",
   "usePublicTranslations",
-  "t.loading.title",
-  "t.loading.body",
+  "t.loading.aria",
   "z-[9200]",
 ]) {
   if (!navigation.includes(token)) throw new Error(`Navigation continuity missing: ${token}`);
@@ -40,7 +40,10 @@ if (navigation.includes("setTimeout(() => setLoading(false), 900)")) {
   throw new Error("Legacy fixed 900ms route loader must not return");
 }
 if (navigation.includes("<MilanoPageLoader")) {
-  throw new Error("Navigation loader must use the full Milano transition surface, not the legacy top rail only");
+  throw new Error("Navigation loader must not restore a blocking page loader");
+}
+for (const blocking of ["MINIMUM_VISIBLE_MS", "fixed inset-0", "<main", "<h1", "min-h-[100dvh]"]) {
+  if (navigation.includes(blocking)) throw new Error(`Navigation feedback must not block the page: ${blocking}`);
 }
 for (const staleSkeleton of ["h-16 rounded-xl", "h-28 rounded-xl"]) {
   if (navigation.includes(staleSkeleton)) throw new Error(`Navigation loader must not restore gray skeleton cards: ${staleSkeleton}`);

@@ -71,18 +71,35 @@ export function Header() {
     document.body.style.overflow = "hidden";
 
     const focusTimer = window.setTimeout(() => {
-      mobileMenuRef.current?.querySelector<HTMLElement>("a[href]")?.focus();
+      mobileMenuRef.current?.querySelector<HTMLElement>("button, a[href]")?.focus();
     }, reducedMotion ? 0 : 120);
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape") {
+        if (event.key !== "Tab") return;
+        const items = Array.from(mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]',
+        ) ?? []).filter((element) => element.getClientRects().length > 0);
+        const first = items[0], last = items[items.length - 1];
+        if (!first || !last) return;
+        const active = document.activeElement;
+        if (event.shiftKey ? active === first || !mobileMenuRef.current?.contains(active) : active === last || !mobileMenuRef.current?.contains(active)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+        return;
+      }
       event.preventDefault();
       setIsMobileMenuOpen(false);
       menuButtonRef.current?.focus();
     }
 
+    const desktop = window.matchMedia("(min-width: 1360px)");
+    const onDesktop = () => { if (desktop.matches) setIsMobileMenuOpen(false); };
+    desktop.addEventListener("change", onDesktop);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
+      desktop.removeEventListener("change", onDesktop);
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
@@ -196,6 +213,10 @@ export function Header() {
             aria-label="Navigation menu"
           >
             <nav className="flex flex-col space-y-2 p-6 pb-[calc(1.5rem+var(--sa-bottom))]" aria-label={isProfessionalAccess ? "Professional mobile navigation" : "Mobile navigation"}>
+              <button type="button" onClick={() => { setIsMobileMenuOpen(false); menuButtonRef.current?.focus(); }}
+                className="min-h-11 self-end rounded-lg px-3 text-sm text-white focus-visible:ring-2 focus-visible:ring-[var(--ms-gold)]">
+                {t.header.closeMenu}
+              </button>
               {navLinks.map((link) => {
                 const active = isActivePath(pathname ?? "/", link.href);
                 return (

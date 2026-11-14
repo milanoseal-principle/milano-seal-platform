@@ -169,6 +169,9 @@ jobs:
       - name: Install browser for P3 controlled rendered acceptance
         run: npx playwright install --with-deps chromium
 
+      - name: Operational cleanup browser regression
+        run: node scripts/test-operational-cleanup-rendered.mjs
+
       - name: AI governance controlled rendered acceptance
         run: npm run test:ai-governance-rendered
 

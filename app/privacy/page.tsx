@@ -20,15 +20,6 @@ export default function PrivacyPage() {
           </h1>
 
           <div className="prose prose-invert prose-lg max-w-none">
-            <p className="text-[#B0B0B0] leading-relaxed mb-6">
-              Last updated:{" "}
-              {new Date().toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-
             <h2 className="font-serif text-xl font-medium text-white mt-8 mb-4">
               Information We Collect
             </h2>

@@ -1,158 +1,64 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { usePublicTranslations } from "@/components/i18n/PublicI18nProvider";
 
 const NAV_INTENT_EVENT = "milano:navigation-intent";
-const MINIMUM_VISIBLE_MS = 700;
-const SETTLE_FADE_MS = 220;
-const SAFETY_RELEASE_MS = 8000;
 
 export function NavigationLoader() {
   const { t } = usePublicTranslations();
   const pathname = usePathname();
-  const previousPathname = useRef(pathname);
-  const startedAt = useRef<number | null>(null);
-  const activeRef = useRef(false);
-  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const safetyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchParams = useSearchParams();
+  const routeKey = `${pathname}?${searchParams.toString()}`;
+  const finishRef = useRef<() => void>(() => undefined);
   const [loading, setLoading] = useState(false);
-  const [complete, setComplete] = useState(false);
 
-  const clearTimers = useCallback(() => {
-    if (releaseTimer.current) clearTimeout(releaseTimer.current);
-    if (settleTimer.current) clearTimeout(settleTimer.current);
-    if (safetyTimer.current) clearTimeout(safetyTimer.current);
-    releaseTimer.current = null;
-    settleTimer.current = null;
-    safetyTimer.current = null;
-  }, []);
-
-  const finish = useCallback(() => {
-    if (!activeRef.current) return;
-    setComplete(true);
-    settleTimer.current = setTimeout(() => {
+  useEffect(() => {
+    let revealTimer: ReturnType<typeof setTimeout> | undefined;
+    let safetyTimer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      clearTimeout(revealTimer);
+      clearTimeout(safetyTimer);
       setLoading(false);
-      setComplete(false);
-      activeRef.current = false;
-      startedAt.current = null;
-    }, SETTLE_FADE_MS);
-  }, []);
-
-  const releaseWhenReady = useCallback(() => {
-    if (!activeRef.current || startedAt.current === null) return;
-    if (releaseTimer.current) clearTimeout(releaseTimer.current);
-    if (safetyTimer.current) {
-      clearTimeout(safetyTimer.current);
-      safetyTimer.current = null;
-    }
-
-    const elapsed = performance.now() - startedAt.current;
-    const remaining = Math.max(0, MINIMUM_VISIBLE_MS - elapsed);
-    releaseTimer.current = setTimeout(finish, remaining);
-  }, [finish]);
-
-  const begin = useCallback(() => {
-    clearTimers();
-    if (!activeRef.current) {
-      activeRef.current = true;
-      startedAt.current = performance.now();
-    }
-    setComplete(false);
-    setLoading(true);
-    safetyTimer.current = setTimeout(finish, SAFETY_RELEASE_MS);
-  }, [clearTimers, finish]);
-
-  useEffect(() => {
-    window.addEventListener(NAV_INTENT_EVENT, begin);
-    return () => {
-      window.removeEventListener(NAV_INTENT_EVENT, begin);
-      clearTimers();
     };
-  }, [begin, clearTimers]);
-
-  useEffect(() => {
-    if (previousPathname.current === pathname) return;
-    previousPathname.current = pathname;
-
-    if (!activeRef.current) {
-      activeRef.current = true;
-      startedAt.current = performance.now();
-      setComplete(false);
-      setLoading(true);
-    }
-
-    releaseWhenReady();
-  }, [pathname, releaseWhenReady]);
-
-  useEffect(() => {
+    finishRef.current = finish;
+    const begin = () => {
+      clearTimeout(revealTimer);
+      clearTimeout(safetyTimer);
+      revealTimer = setTimeout(() => setLoading(true), 150);
+      safetyTimer = setTimeout(finish, 8000);
+    };
     const onClick = (event: MouseEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-
-      const target = event.target as Element | null;
-      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target instanceof Element ? event.target : null;
+      const anchor = target?.closest<HTMLAnchorElement>("a[href]");
       if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
-      if (
-        url.pathname === window.location.pathname &&
-        url.search === window.location.search &&
-        url.hash
-      ) {
-        return;
-      }
-
-      window.dispatchEvent(new Event(NAV_INTENT_EVENT));
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      begin();
     };
-
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    window.addEventListener(NAV_INTENT_EVENT, begin);
+    document.addEventListener("click", onClick);
+    window.addEventListener("popstate", finish);
+    return () => {
+      clearTimeout(revealTimer);
+      clearTimeout(safetyTimer);
+      window.removeEventListener(NAV_INTENT_EVENT, begin);
+      document.removeEventListener("click", onClick);
+      window.removeEventListener("popstate", finish);
+    };
   }, []);
 
-  if (!loading) return null;
+  useEffect(() => { finishRef.current(); }, [routeKey]);
 
+  if (!loading) return null;
   return (
-    <main
-      className={`fixed inset-0 z-[9200] min-h-[100dvh] bg-[#060608] px-5 py-12 text-[#F4F1EA] transition-opacity duration-300 sm:px-6 ${
-        complete ? "opacity-0" : "opacity-100"
-      }`}
-      role="status"
-      aria-live="polite"
-      aria-busy={!complete}
-      aria-label={t.loading.aria}
-    >
-      <div className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center">
-        <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D8C188]/70">
-          The Milano Seal™
-        </div>
-        <h1 className="mt-3 font-serif text-3xl font-normal sm:text-4xl">
-          {t.loading.title}
-        </h1>
-        <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/42">
-          {t.loading.body}
-        </p>
-        <div className="mt-10 flex items-center gap-4" aria-hidden="true">
-          <span className="relative flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#D8C188]/40 motion-safe:animate-ping motion-reduce:animate-none" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-[#D8C188]" />
-          </span>
-          <div className="relative h-px flex-1 overflow-hidden bg-[#D8C188]/10">
-            <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-[#D8C188] to-transparent motion-safe:animate-[pulse_1.1s_ease-in-out_infinite] motion-reduce:animate-none" />
-          </div>
-        </div>
-      </div>
-    </main>
+    <div role="status" aria-live="polite" aria-label={t.loading.aria}
+      className="pointer-events-none fixed inset-x-0 top-0 z-[9200] h-1 bg-black/20">
+      <span className="sr-only">{t.loading.aria}</span>
+      <div aria-hidden="true" className="h-full w-1/2 bg-[var(--ms-gold)] motion-safe:animate-pulse" />
+    </div>
   );
 }

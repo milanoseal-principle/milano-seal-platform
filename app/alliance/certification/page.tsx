@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
+import { resolveServerRole } from "@/lib/auth/server-role";
+import { normalizeUserRole } from "@/lib/auth/roleRedirect";
 
 export const metadata: Metadata = {
   title: "Partner Certification | The Milano Seal™",
@@ -22,20 +24,20 @@ export default async function CertificationPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const role = await resolveServerRole(user);
+  if (normalizeUserRole(role) !== "alliance") redirect("/alliance/dashboard");
 
-  if (!profile || profile.role !== "alliance") redirect("/alliance/dashboard");
-
-  // Fetch only own certification record
-  const { data: cert } = await supabase
+  // partner_certifications.partner_id is the auth user ID (023 migration and own-read RLS).
+  // It is not operators.id or operator_profiles.id.
+  const { data: cert, error: certificationError } = await supabase
     .from("partner_certifications")
     .select("step_1_identity,step_2_service_scope,step_3_document_handling,step_4_client_communication,step_5_referral_routing,step_6_security_attestation,step_7_compliance_acknowledgement,routing_status,operator_approved_at")
     .eq("partner_id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (certificationError) {
+    return <div role="alert" className="p-6 text-white">Certification details are temporarily unavailable. Please retry or contact your coordinator.</div>;
+  }
 
   const completedCount = cert
     ? STEPS.filter(s => cert[s.key as keyof typeof cert] === true).length
