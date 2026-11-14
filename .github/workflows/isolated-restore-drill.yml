@@ -128,30 +128,46 @@ jobs:
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
           # Diagnostics can quote restored values, so stdout and stderr go to the protected directory
-          # and only allowlisted facts (class, SQLSTATE, dump file and line, statement keywords) are printed.
-          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
+          # and only allowlisted facts (class, SQLSTATE, dump file and line, relation, statement
+          # keywords) are printed.
+          # The data dump also carries Supabase-managed tables (auth.*, storage.*, ...). Their
+          # definitions come from the platform version, and hosted Storage has tables the local
+          # stack lacks (drill #3: 42P01 in data.sql). Application schemas restore strictly and in
+          # full; managed tables restore where the target has the table and every dumped column,
+          # and every managed table that cannot is reported by name and row count. Sign-in records
+          # and Storage metadata are required.
+          python3 scripts/backups/restore_drill.py split-data "$DRILL/root/database/data.sql" "$DRILL/split"
+          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL/split:/split:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
             psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -q \
               --file /backup/roles.sql --file /backup/schema.sql \
-              --command "SET session_replication_role = replica" --file /backup/data.sql' > /dev/null 2> "$DRILL/database-restore.err"; then
-            python3 scripts/backups/restore_drill.py classify database-restore "$DRILL/database-restore.err" "$DRILL/root/database"
+              --command "SET session_replication_role = replica" --file /split/app.sql' > /dev/null 2> "$DRILL/database-restore.err"; then
+            cp "$DRILL/root/database/schema.sql" "$DRILL/split/schema.sql"
+            cp "$DRILL/root/database/roles.sql" "$DRILL/split/roles.sql"
+            python3 scripts/backups/restore_drill.py classify database-restore "$DRILL/database-restore.err" "$DRILL/split"
             exit 1
           fi
           echo "DATABASE_RESTORE: PASS"
-      - name: Restore Auth users and identities
+      - name: Restore Supabase-managed data (Auth, Storage metadata) into compatible target tables
         shell: bash
         run: |
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
-          # Sign-in records only. Storage buckets and objects are recreated through the isolated
-          # Storage API in a later step (and every object re-hashed), because hosted Storage tables
-          # carry newer columns than a local stack.
-          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
-            pg_restore -l /backup/auth-storage-data.dump | grep -E "TABLE DATA auth (users|identities) " > /work/auth.list
-            test "$(wc -l < /work/auth.list)" -eq 2
-            pg_restore --data-only --no-owner --no-acl -f /work/auth.sql -L /work/auth.list /backup/auth-storage-data.dump
-            PGOPTIONS="-c session_replication_role=replica" pg_restore --data-only --no-owner --no-acl --single-transaction --exit-on-error \
-              -L /work/auth.list -d "$DB_URL" /backup/auth-storage-data.dump' > /dev/null 2> "$DRILL/auth-restore.err"; then
-            python3 scripts/backups/restore_drill.py classify auth-restore "$DRILL/auth-restore.err"
+          managed="'auth','storage','realtime','_realtime','supabase_functions','vault','net','cron','pgbouncer','graphql','graphql_public','extensions','supabase_migrations','pgsodium'"
+          # Names only: which managed tables, columns and sequences the target has.
+          if ! docker run --rm --network host -e DB_URL="$RESTORE_DB_URL" -e MANAGED="$managed" postgres:17 sh -ec '
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -F "$(printf "\t")" -c "
+              select '"'C'"', table_schema || '"'.'"' || table_name, column_name from information_schema.columns
+                where table_schema in ($MANAGED)
+              union all
+              select '"'S'"', sequence_schema || '"'.'"' || sequence_name, '"''"' from information_schema.sequences
+                where sequence_schema in ($MANAGED)"' > "$DRILL/split/target_catalog.tsv" 2> "$DRILL/target-catalog.err"; then
+            python3 scripts/backups/restore_drill.py classify target-catalog "$DRILL/target-catalog.err"
+            exit 1
+          fi
+          python3 scripts/backups/restore_drill.py managed-sql "$DRILL/split" "$DRILL/split/target_catalog.tsv" "$DRILL/split/managed_restore.sql" "$DRILL/managed.json"
+          if ! docker run --rm --network host -v "$DRILL/split:/split:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
+            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -q --file /split/managed_restore.sql' > /dev/null 2> "$DRILL/managed-restore.err"; then
+            python3 scripts/backups/restore_drill.py classify managed-restore "$DRILL/managed-restore.err" "$DRILL/split"
             exit 1
           fi
           echo "AUTH_RESTORE: PASS"
@@ -160,7 +176,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
-          python3 scripts/backups/restore_drill.py expected "$DRILL/expected.json" "$DRILL/root/database/schema.sql" "$DRILL/root/database/data.sql" "$DRILL/auth.sql"
+          python3 scripts/backups/restore_drill.py expected "$DRILL/expected.json" "$DRILL/root/database/schema.sql" "$DRILL/split/app.sql" "$DRILL/split/managed_restore.sql"
           python3 scripts/backups/restore_drill.py count-sql "$DRILL/expected.json" "$DRILL/count.sql"
           if ! docker run --rm --network host -v "$DRILL:/work" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec \
             'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv' 2> "$DRILL/count.err"; then
@@ -222,6 +238,7 @@ jobs:
               "restore_elapsed_seconds": end - start,
               "archive_sha256": os.environ["ARCHIVE_SHA256"],
               "fidelity": json.loads((drill / "fidelity.json").read_text()),
+              "managed_tables": json.loads((drill / "managed.json").read_text()),
               "storage": json.loads((drill / "storage.json").read_text().strip().splitlines()[-1]),
               "checks": json.loads((drill / "checks.json").read_text()),
               "target": "disposable local Supabase stack on the runner (destroyed after this job)",
