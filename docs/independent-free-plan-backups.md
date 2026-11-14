@@ -1,6 +1,22 @@
 # The Milano Seal — Independent Supabase Free-plan Backup Runbook
 
-## Current status (2026-11-13): RESTORED FOR MANUAL RUNS / NO BACKUP COMPLETED / NOT DR CERTIFIED
+## Current status (2026-11-14): BACKUP VERIFIED / ISOLATED RESTORE DRILL READY / NOT DR CERTIFIED
+- **First successful backup:** run [`43637237779`](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43637237779) on `main` (`414b39ae`), reported by the operator. Every stage passed: PostgreSQL 17 + TLS check, database and private Storage export, offline export verification, AES-256 encryption, upload, and read-back of the remote ciphertext against its SHA-256.
+- **Restore is not yet verified.** A successful upload is not a successful recovery.
+- **New: `.github/workflows/isolated-restore-drill.yml`** (manual dispatch on `main` only). It never receives the production database URL or service-role key, and every restore command targets `127.0.0.1`. It:
+  1. downloads the newest (or a named) archive and verifies its SHA-256;
+  2. decrypts it, inspects the TAR safely and re-verifies every exported byte with `verify_backup.py`;
+  3. starts a disposable local Supabase stack (PostgreSQL 17, Auth, Storage) in an empty directory, so the repository's migrations are not applied to it;
+  4. restores `roles.sql`, `schema.sql`, `data.sql` by Supabase's documented procedure, then `auth.users` and `auth.identities`;
+  5. fails unless every public table exists and **every table's row count equals the dump's own COPY row count**;
+  6. recreates the three private buckets and re-uploads every Storage object through the isolated Storage API, then downloads each one and fails unless size and SHA-256 match the manifest;
+  7. runs `supabase/verification/restore_drill_checks.sql`: fails if an anonymous caller or an arbitrary signed-in client can read any of 19 sensitive tables in the restored data;
+  8. records recovery point, backup age, restore duration, archive hash and counts in the job summary (counts, booleans and hashes only), then destroys the target and all decrypted material.
+- **To run:** Actions → Isolated restore drill → Run workflow (branch `main`; leave the timestamp empty for the newest backup).
+- **Not covered by the drill (still required for full DR certification):** restoring into a separate hosted Supabase project, Auth provider settings and secrets from the vault, Vault/encryption-root continuity, signed-in business-flow checks on test accounts, an independent backup-freshness monitor, and alert delivery. The daily backup schedule stays off until one drill passes.
+- **Expected informational findings on the current production copy:** `founder_admin_helper_reads_user_metadata: true` until migration `20261114100000` is applied. The five tables fixed by `20261114090000` are not in the drill's failing probe list.
+
+## Earlier status (2026-11-13): RESTORED FOR MANUAL RUNS / NO BACKUP COMPLETED / NOT DR CERTIFIED
 - **Workflow:** `.github/workflows/independent-supabase-backup.yml` is restored from the last reviewed version (the parent of `e5708a1a`). It runs by manual dispatch on `main` only. The daily schedule is not restored until one backup and one isolated restore have been verified.
 - **No backup has completed.** Nothing has been exported, encrypted, uploaded or restored.
 - **Two distinct failure stages have occurred. They are not the same error:**

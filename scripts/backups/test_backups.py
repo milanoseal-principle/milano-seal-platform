@@ -487,5 +487,124 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("cat \"$probe_err\"", text)
 
 
+drill_spec = importlib.util.spec_from_file_location("restore_drill", HERE / "restore_drill.py")
+drill = importlib.util.module_from_spec(drill_spec)
+drill_spec.loader.exec_module(drill)
+RESTORE_WORKFLOW = HERE.parents[1] / ".github" / "workflows" / "isolated-restore-drill.yml"
+
+
+class RestoreDrillTests(unittest.TestCase):
+    SCHEMA = (
+        'CREATE TABLE IF NOT EXISTS "public"."deals" (\n    "id" uuid\n);\n'
+        'CREATE TABLE IF NOT EXISTS "public"."files" (\n    "id" uuid\n);\n'
+        'CREATE TABLE IF NOT EXISTS "storage"."objects" (\n    "id" uuid\n);\n'
+    )
+    DATA = (
+        'COPY "public"."deals" ("id", "notes") FROM stdin;\n'
+        "a\\tline with escaped\\nnewline\n"
+        "b\t\\N\n"
+        "\\.\n"
+        'COPY "public"."files" ("id") FROM stdin;\n'
+        "\\.\n"
+    )
+
+    def write(self, directory, name, text):
+        path = Path(directory) / name
+        path.write_text(text)
+        return path
+
+    def test_expected_counts_come_from_the_dump_itself(self):
+        with tempfile.TemporaryDirectory() as d:
+            schema = self.write(d, "schema.sql", self.SCHEMA)
+            data = self.write(d, "data.sql", self.DATA)
+            auth = self.write(d, "auth.sql", 'COPY auth.users (id) FROM stdin;\nu1\nu2\n\\.\n')
+            out = Path(d) / "expected.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                drill.expected(out, schema, data, auth)
+            spec = json.loads(out.read_text())
+            self.assertEqual(spec["public_tables"], ["public.deals", "public.files"])
+            self.assertEqual(spec["rows"], {"public.deals": 2, "public.files": 0, "auth.users": 2})
+
+    def test_unterminated_copy_block_fails_closed(self):
+        with tempfile.TemporaryDirectory() as d:
+            data = self.write(d, "data.sql", 'COPY "public"."deals" ("id") FROM stdin;\nrow\n')
+            with self.assertRaises(SystemExit):
+                drill.copy_counts(data)
+
+    def test_compare_requires_every_table_and_exact_row_counts(self):
+        with tempfile.TemporaryDirectory() as d:
+            spec = self.write(d, "expected.json", json.dumps({"public_tables": ["public.deals", "public.files"],
+                                                              "rows": {"public.deals": 2, "auth.users": 1}}))
+            good = self.write(d, "good.tsv", "public.deals\t2\npublic.files\t0\nauth.users\t1\n")
+            with contextlib.redirect_stdout(io.StringIO()):
+                drill.compare(spec, good, Path(d) / "summary.json")
+            summary = json.loads((Path(d) / "summary.json").read_text())
+            self.assertEqual((summary["missing_tables"], summary["row_count_mismatches"]), (0, 0))
+            for bad in ("public.deals\t1\npublic.files\t0\nauth.users\t1\n", "public.deals\t2\nauth.users\t1\n"):
+                tsv = self.write(d, "bad.tsv", bad)
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit):
+                    drill.compare(spec, tsv, Path(d) / "summary.json")
+
+    def test_count_sql_quotes_identifiers_and_covers_every_table(self):
+        with tempfile.TemporaryDirectory() as d:
+            spec = self.write(d, "expected.json", json.dumps({"public_tables": ["public.deals"], "rows": {'auth.we"ird': 0}}))
+            out = Path(d) / "count.sql"
+            drill.count_sql(spec, out)
+            sql = out.read_text()
+            self.assertIn('from "public"."deals"', sql)
+            self.assertIn('from "auth"."we""ird"', sql)
+
+    def test_storage_restore_refuses_any_non_local_target(self):
+        with patch.dict(os.environ, {"RESTORE_TARGET_SERVICE_KEY": "local-only"}):
+            for url in ("https://ehqdzfopsrbwewtddiwq.supabase.co", "http://10.0.0.5:54321"):
+                with self.assertRaises(SystemExit):
+                    drill.storage("/nonexistent", url)
+        with patch.dict(os.environ, {"RESTORE_TARGET_SERVICE_KEY": ""}):
+            with self.assertRaises(SystemExit):
+                drill.storage("/nonexistent", "http://127.0.0.1:54321")
+
+    def test_failure_output_is_classified_and_never_quotes_restored_values(self):
+        leaked = ('ERROR:  new row for relation "deals" violates check constraint "deals_status_check"\n'
+                  'DETAIL:  Failing row contains (11111111-aaaa, Jane Secret, jane@example.invalid, 555-0100).\n'
+                  'CONTEXT:  COPY deals, line 7: "11111111-aaaa\tJane Secret\tjane@example.invalid"\n')
+        with tempfile.TemporaryDirectory() as d:
+            err = self.write(d, "restore.err", leaked)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                drill.classify("database-restore", err)
+            printed = out.getvalue()
+        self.assertIn("class=CHECK_OR_NOT_NULL_VIOLATION", printed)
+        for secret in ("Jane", "Secret", "jane@example.invalid", "555-0100", "11111111", "deals_status_check"):
+            self.assertNotIn(secret, printed)
+        self.assertEqual(drill.classify_text('duplicate key value violates unique constraint "x"'), "UNIQUE_VIOLATION")
+        self.assertEqual(drill.classify_text("something unexpected"), "UNCLASSIFIED")
+
+    def test_every_command_against_the_restored_database_keeps_diagnostics_out_of_the_log(self):
+        text = RESTORE_WORKFLOW.read_text()
+        # Each docker command that talks to the restored database must send stderr to the
+        # protected drill directory and print only a classification on failure.
+        blocks = text.split("docker run --rm --network host")[1:]
+        self.assertEqual(len(blocks), 4)
+        for block in blocks:
+            command = block.split("then\n", 1)[0]
+            self.assertRegex(command, r'2> "\$DRILL/[a-z-]+\.err"', command[:120])
+            self.assertIn("restore_drill.py classify", block.split("fi\n", 1)[0])
+        self.assertNotIn("2>&1", text)
+
+    def test_restore_workflow_cannot_reach_production(self):
+        text = RESTORE_WORKFLOW.read_text()
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("schedule:", text)
+        self.assertNotIn("pull_request", text)
+        self.assertIn("if: github.ref == 'refs/heads/main'", text)
+        for production_binding in ("BACKUP_SUPABASE_DB_URL", "BACKUP_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_DB_URL:", "supabase.co"):
+            self.assertNotIn(production_binding, text)
+        self.assertIn('[[ "$DB_URL" == postgresql://*@127.0.0.1:* ]]', text)
+        self.assertNotIn("set -x", text)
+        # Decrypted material and the target are always destroyed.
+        self.assertIn("if: always()", text)
+        self.assertIn("supabase stop --no-backup", text)
+
+
 if __name__ == "__main__":
     unittest.main()
