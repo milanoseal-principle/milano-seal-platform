@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
-import { AllianceMatterQueue, type MatterRow } from "@/components/alliance/AllianceMatterQueue";
+import { AllianceMatterQueue } from "@/components/alliance/AllianceMatterQueue";
+import { loadPartnerReferrals } from "@/lib/alliance/partnerReferrals";
 import { GitBranch } from "lucide-react";
 
 export default async function AllianceReferralsPage() {
@@ -13,16 +14,7 @@ export default async function AllianceReferralsPage() {
 
   const partner = await resolveAlliancePartner(user.id);
 
-  let referrals: MatterRow[] = [];
-  if (partner?.id) {
-    const { data } = await supabase
-      .from("referral_ledger")
-      .select("id, client_name, destination_country, document_type, referral_status, commission_status, submitted_at")
-      .eq("partner_id", partner.id)
-      .order("submitted_at", { ascending: false })
-      .limit(100);
-    referrals = (data ?? []) as MatterRow[];
-  }
+  const { referrals, unavailable } = await loadPartnerReferrals(partner?.id);
 
   return (
     <AllianceShell
@@ -73,7 +65,13 @@ export default async function AllianceReferralsPage() {
               {referrals.length} referral{referrals.length !== 1 ? "s" : ""}
             </div>
           </div>
-          <AllianceMatterQueue matters={referrals} />
+          {unavailable ? (
+            <p role="status" style={{ padding: "20px", fontSize: 13, color: "#C99A3D", margin: 0 }}>
+              Referral history could not be loaded. Please try again shortly.
+            </p>
+          ) : (
+            <AllianceMatterQueue matters={referrals} />
+          )}
         </div>
       </div>
     </AllianceShell>

@@ -2,24 +2,19 @@ import { resolveAlliancePartner } from "@/lib/alliance/partnerContext";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AllianceMatterQueue, type MatterRow } from "@/components/alliance/AllianceMatterQueue";
+import { loadPartnerReferrals } from "@/lib/alliance/partnerReferrals";
 import { AllianceShell } from "@/components/alliance/AllianceShell";
 
-async function getPartnerMatters(userId: string): Promise<{ matters: MatterRow[]; partner: { firm_name: string | null; contact_name: string | null; routing_eligible: boolean } | null }> {
-  const supabase = await createClient();
-
+async function getPartnerMatters(userId: string): Promise<{ matters: MatterRow[]; unavailable: boolean; partner: { firm_name: string | null; contact_name: string | null; routing_eligible: boolean } | null }> {
   const partner = await resolveAlliancePartner(userId);
 
-  if (!partner) return { matters: [], partner: null };
+  if (!partner) return { matters: [], unavailable: false, partner: null };
 
-  const { data: referrals } = await supabase
-    .from("referral_ledger")
-    .select("id, client_name, destination_country, document_type, referral_status, commission_status, submitted_at")
-    .eq("partner_id", partner.id)
-    .order("submitted_at", { ascending: false })
-    .limit(100);
+  const { referrals, unavailable } = await loadPartnerReferrals(partner.id);
 
   return {
-    matters: (referrals ?? []) as MatterRow[],
+    matters: referrals,
+    unavailable,
     partner: {
       firm_name: partner.firm_name,
       contact_name: partner.contact_name,
@@ -33,7 +28,7 @@ export default async function AllianceMattersPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/alliance/login");
 
-  const { matters, partner } = await getPartnerMatters(user.id);
+  const { matters, unavailable, partner } = await getPartnerMatters(user.id);
 
   return (
     <AllianceShell
@@ -67,7 +62,13 @@ export default async function AllianceMattersPage() {
               {matters.length} matter{matters.length !== 1 ? "s" : ""}
             </div>
           </div>
-          <AllianceMatterQueue matters={matters} />
+          {unavailable ? (
+            <p role="status" style={{ padding: "20px", fontSize: 13, color: "#C99A3D", margin: 0 }}>
+              Referral history could not be loaded. Please try again shortly.
+            </p>
+          ) : (
+            <AllianceMatterQueue matters={matters} />
+          )}
         </div>
       </div>
     </AllianceShell>
