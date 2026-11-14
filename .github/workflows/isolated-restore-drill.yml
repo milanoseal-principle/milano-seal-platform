@@ -43,9 +43,9 @@ jobs:
           exit "$missing"
       - name: Offline backup and restore-helper regressions
         run: python3 scripts/backups/test_backups.py -v
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: v2.stable
       - name: Install AWS CLI (signature-verified)
         shell: bash
         env:
