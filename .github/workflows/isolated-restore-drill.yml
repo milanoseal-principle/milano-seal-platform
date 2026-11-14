@@ -117,10 +117,15 @@ jobs:
         run: |
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
-          docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL postgres:17 sh -ec '
-            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -q \
+          # Diagnostics can quote restored values, so stdout and stderr go to the protected directory
+          # and only a sanitized failure class is printed.
+          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -e DB_URL postgres:17 sh -ec '
+            psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=terse -q \
               --file /backup/roles.sql --file /backup/schema.sql \
-              --command "SET session_replication_role = replica" --file /backup/data.sql >/dev/null'
+              --command "SET session_replication_role = replica" --file /backup/data.sql' > /dev/null 2> "$DRILL/database-restore.err"; then
+            python3 scripts/backups/restore_drill.py classify database-restore "$DRILL/database-restore.err"
+            exit 1
+          fi
           echo "DATABASE_RESTORE: PASS"
       - name: Restore Auth users and identities
         shell: bash
@@ -130,12 +135,15 @@ jobs:
           # Sign-in records only. Storage buckets and objects are recreated through the isolated
           # Storage API in a later step (and every object re-hashed), because hosted Storage tables
           # carry newer columns than a local stack.
-          docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec '
+          if ! docker run --rm --network host -v "$DRILL/root/database:/backup:ro" -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec '
             pg_restore -l /backup/auth-storage-data.dump | grep -E "TABLE DATA auth (users|identities) " > /work/auth.list
             test "$(wc -l < /work/auth.list)" -eq 2
             pg_restore --data-only --no-owner --no-acl -f /work/auth.sql -L /work/auth.list /backup/auth-storage-data.dump
             PGOPTIONS="-c session_replication_role=replica" pg_restore --data-only --no-owner --no-acl --single-transaction --exit-on-error \
-              -L /work/auth.list -d "$DB_URL" /backup/auth-storage-data.dump'
+              -L /work/auth.list -d "$DB_URL" /backup/auth-storage-data.dump' > /dev/null 2> "$DRILL/auth-restore.err"; then
+            python3 scripts/backups/restore_drill.py classify auth-restore "$DRILL/auth-restore.err"
+            exit 1
+          fi
           echo "AUTH_RESTORE: PASS"
       - name: Verify restored rows match the backup exactly
         shell: bash
@@ -144,8 +152,11 @@ jobs:
           set -a; . "$DRILL/target.env"; set +a
           python3 scripts/backups/restore_drill.py expected "$DRILL/expected.json" "$DRILL/root/database/schema.sql" "$DRILL/root/database/data.sql" "$DRILL/auth.sql"
           python3 scripts/backups/restore_drill.py count-sql "$DRILL/expected.json" "$DRILL/count.sql"
-          docker run --rm --network host -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec \
-            'psql "$DB_URL" -v ON_ERROR_STOP=1 -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv'
+          if ! docker run --rm --network host -v "$DRILL:/work" -e DB_URL postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=terse -At -F "$(printf "\t")" -f /work/count.sql > /work/restored.tsv' 2> "$DRILL/count.err"; then
+            python3 scripts/backups/restore_drill.py classify row-count "$DRILL/count.err"
+            exit 1
+          fi
           python3 scripts/backups/restore_drill.py compare "$DRILL/expected.json" "$DRILL/restored.tsv" "$DRILL/fidelity.json"
       - name: Restore and re-serve private Storage objects
         shell: bash
@@ -158,8 +169,12 @@ jobs:
         run: |
           set -Eeuo pipefail
           set -a; . "$DRILL/target.env"; set +a
-          docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL postgres:17 sh -ec \
-            'psql "$DB_URL" -v ON_ERROR_STOP=1 -At -f /sql/restore_drill_checks.sql' | tail -n 1 > "$DRILL/checks.json"
+          if ! docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL postgres:17 sh -ec \
+            'psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=terse -At -f /sql/restore_drill_checks.sql' > "$DRILL/checks.out" 2> "$DRILL/checks.err"; then
+            python3 scripts/backups/restore_drill.py classify restore-checks "$DRILL/checks.err"
+            exit 1
+          fi
+          tail -n 1 "$DRILL/checks.out" > "$DRILL/checks.json"
           echo "RESTORE_END=$(date -u +%s)" >> "$GITHUB_ENV"
           python3 - "$DRILL" <<'PYTHON'
           import json, sys

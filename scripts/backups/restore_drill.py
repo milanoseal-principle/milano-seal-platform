@@ -9,6 +9,9 @@ Subcommands
       SQL that counts the restored rows of every expected table (run against the isolated target).
   compare <expected.json> <restored.tsv> <summary.json>
       Fails unless every expected table exists in the target with exactly the dumped row count.
+  classify <step> <stderr_file>
+      Prints one sanitized failure code for a failed step. Database diagnostics can quote restored
+      values (e.g. "Failing row contains (...)"), so the captured text itself is never printed.
   storage <backup_root> <api_url>
       Recreates the private buckets, uploads every manifest object into the isolated Storage API and downloads it again; fails
       unless every served object matches the manifest's size and SHA-256. Reads the service key
@@ -112,6 +115,36 @@ def compare(expected_json, restored_tsv, summary_json):
         raise SystemExit("RESTORE_FIDELITY_FAILED")
 
 
+FAILURE_CLASSES = (
+    ("UNIQUE_VIOLATION", re.compile(r"duplicate key value|unique constraint", re.I)),
+    ("CHECK_OR_NOT_NULL_VIOLATION", re.compile(r"violates (check|not-null) constraint", re.I)),
+    ("FOREIGN_KEY_VIOLATION", re.compile(r"violates foreign key constraint", re.I)),
+    ("TRIGGER_REJECTED_ROW", re.compile(r"raise|trigger|function .* line \d", re.I)),
+    ("MISSING_OBJECT", re.compile(r"does not exist", re.I)),
+    ("ALREADY_EXISTS", re.compile(r"already exists", re.I)),
+    ("PERMISSION_DENIED", re.compile(r"permission denied|must be (owner|superuser)", re.I)),
+    ("TYPE_OR_FORMAT_MISMATCH", re.compile(r"invalid input syntax|invalid byte sequence|extra data after last|missing data for column", re.I)),
+    ("CONNECTION_FAILED", re.compile(r"could not connect|connection to server|server closed the connection", re.I)),
+)
+
+
+def classify_text(text):
+    for code, pattern in FAILURE_CLASSES:
+        if pattern.search(text):
+            return code
+    return "UNCLASSIFIED"
+
+
+def classify(step, stderr_file):
+    try:
+        text = Path(stderr_file).read_text(errors="replace")
+    except OSError:
+        text = ""
+    # Only the step name and a fixed code are printed; the diagnostics stay in the protected
+    # temporary directory, which the workflow deletes in its always() cleanup step.
+    print("::error::RESTORE_STEP_FAILED step=%s class=%s" % (re.sub(r"[^a-z0-9_-]", "", step.lower()), classify_text(text)))
+
+
 def _object_url(api_url, bucket, name):
     quoted = "/".join(urllib.parse.quote(part, safe="") for part in name.split("/"))
     return "%s/storage/v1/object/%s/%s" % (api_url.rstrip("/"), urllib.parse.quote(bucket, safe=""), quoted)
@@ -157,7 +190,7 @@ def storage(root, api_url):
 
 if __name__ == "__main__":
     command, *args = sys.argv[1:] or [""]
-    handlers = {"expected": expected, "count-sql": count_sql, "compare": compare, "storage": storage}
+    handlers = {"expected": expected, "count-sql": count_sql, "compare": compare, "storage": storage, "classify": classify}
     if command not in handlers:
         raise SystemExit(__doc__)
     handlers[command](*args)

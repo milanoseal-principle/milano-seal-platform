@@ -563,6 +563,34 @@ class RestoreDrillTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 drill.storage("/nonexistent", "http://127.0.0.1:54321")
 
+    def test_failure_output_is_classified_and_never_quotes_restored_values(self):
+        leaked = ('ERROR:  new row for relation "deals" violates check constraint "deals_status_check"\n'
+                  'DETAIL:  Failing row contains (11111111-aaaa, Jane Secret, jane@example.invalid, 555-0100).\n'
+                  'CONTEXT:  COPY deals, line 7: "11111111-aaaa\tJane Secret\tjane@example.invalid"\n')
+        with tempfile.TemporaryDirectory() as d:
+            err = self.write(d, "restore.err", leaked)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                drill.classify("database-restore", err)
+            printed = out.getvalue()
+        self.assertIn("class=CHECK_OR_NOT_NULL_VIOLATION", printed)
+        for secret in ("Jane", "Secret", "jane@example.invalid", "555-0100", "11111111", "deals_status_check"):
+            self.assertNotIn(secret, printed)
+        self.assertEqual(drill.classify_text('duplicate key value violates unique constraint "x"'), "UNIQUE_VIOLATION")
+        self.assertEqual(drill.classify_text("something unexpected"), "UNCLASSIFIED")
+
+    def test_every_command_against_the_restored_database_keeps_diagnostics_out_of_the_log(self):
+        text = RESTORE_WORKFLOW.read_text()
+        # Each docker command that talks to the restored database must send stderr to the
+        # protected drill directory and print only a classification on failure.
+        blocks = text.split("docker run --rm --network host")[1:]
+        self.assertEqual(len(blocks), 4)
+        for block in blocks:
+            command = block.split("then\n", 1)[0]
+            self.assertRegex(command, r'2> "\$DRILL/[a-z-]+\.err"', command[:120])
+            self.assertIn("restore_drill.py classify", block.split("fi\n", 1)[0])
+        self.assertNotIn("2>&1", text)
+
     def test_restore_workflow_cannot_reach_production(self):
         text = RESTORE_WORKFLOW.read_text()
         self.assertIn("workflow_dispatch:", text)
