@@ -583,13 +583,45 @@ class RestoreDrillTests(unittest.TestCase):
         text = RESTORE_WORKFLOW.read_text()
         # Each docker command that talks to the restored database must send stderr to the
         # protected drill directory and print only a classification on failure.
-        blocks = text.split("docker run --rm --network host")[1:]
+        blocks = [b for b in text.split("docker run --rm --network host")[1:] if "then\n" in b.split("fi\n", 1)[0]]
         self.assertEqual(len(blocks), 4)
         for block in blocks:
             command = block.split("then\n", 1)[0]
             self.assertRegex(command, r'2> "\$DRILL/[a-z-]+\.err"', command[:120])
             self.assertIn("restore_drill.py classify", block.split("fi\n", 1)[0])
         self.assertNotIn("2>&1", text)
+
+    def test_failure_facts_name_class_sqlstate_and_location_but_never_values(self):
+        with tempfile.TemporaryDirectory() as d:
+            schema = self.write(d, "schema.sql", 'SET x = 1;\n\nALTER TABLE "public"."deals"\n    OWNER TO "supabase_admin";\n')
+            self.write(d, "data.sql", "COPY public.deals (id, email) FROM stdin;\nsecret-row\tjane@example.invalid\n\\.\n")
+            ownership = 'psql:/backup/schema.sql:4: ERROR:  42501: must be able to SET ROLE "supabase_admin"\nLOCATION: x.c:1\n'
+            self.assertEqual(drill.diagnose(ownership, d), {"class": "ROLE_MEMBERSHIP_REQUIRED", "sqlstate": "42501",
+                                                            "file": "schema.sql", "line": 4, "statement": "ALTER TABLE"})
+            data_error = ('psql:/backup/data.sql:2: ERROR:  23514: new row violates check constraint "c"\n'
+                          "DETAIL:  Failing row contains (secret-row, jane@example.invalid).\n")
+            facts = drill.diagnose(data_error, d)
+            self.assertEqual(facts, {"class": "CHECK_OR_NOT_NULL_VIOLATION", "sqlstate": "23514", "file": "data.sql", "line": 2})
+            err = self.write(d, "e.err", data_error)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                drill.classify("database-restore", err, d)
+            for secret in ("secret-row", "jane@example.invalid", "Failing", '"c"'):
+                self.assertNotIn(secret, out.getvalue())
+        self.assertEqual(drill.classify_text("ERROR:  Non-superuser owned event trigger must execute a non-superuser owned function"), "SUPERUSER_REQUIRED")
+        self.assertEqual(drill.classify_text("ERROR:  permission denied for parameter log_min_messages"), "PERMISSION_DENIED")
+        self.assertEqual(drill.classify_text('ERROR:  extension "x" is not available'), "EXTENSION_UNAVAILABLE")
+        # A file outside the allowlist is never named.
+        self.assertNotIn("file", drill.diagnose("psql:/backup/customers.csv:9: ERROR:  syntax error at end of input"))
+
+    def test_restore_runs_as_the_local_targets_own_superuser_only(self):
+        text = RESTORE_WORKFLOW.read_text()
+        self.assertIn("postgresql://supabase_admin:*@127.0.0.1:*", text)
+        self.assertIn("select rolsuper from pg_roles where rolname = current_user", text)
+        database_steps = [b for b in text.split("docker run --rm --network host")[1:] if "then\n" in b.split("fi\n", 1)[0]]
+        for block in database_steps:
+            self.assertIn('-e DB_URL="$RESTORE_DB_URL"', block.split("\n", 1)[0])
+        self.assertNotIn("ON_ERROR_STOP=0", text)
 
     def test_restore_workflow_cannot_reach_production(self):
         text = RESTORE_WORKFLOW.read_text()
