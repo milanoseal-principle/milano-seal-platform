@@ -71,6 +71,7 @@ try {
   for(const anchor of ['compliance-review','payment-gate','execution','custody','release']) {
    await page.goto(new URL(`/process#${anchor}`,base).href,{waitUntil:'domcontentloaded'});
    const target=page.locator(`#${anchor}`);await target.waitFor({state:'visible'});await page.waitForFunction(id=>document.getElementById(id)?.getBoundingClientRect().top>=0&&document.getElementById(id)?.getBoundingClientRect().top<innerHeight,anchor);
+   assert.ok(await page.evaluate(()=>scrollY)>0,`${anchor} actually scrolls on initial navigation`);
    const headerBottom=await page.locator('header').first().evaluate(el=>el.getBoundingClientRect().bottom);
    assert.ok((await target.boundingBox()).y>=headerBottom-2,`${anchor} below fixed header`);checks++;
   }

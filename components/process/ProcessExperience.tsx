@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
@@ -448,6 +448,27 @@ export function ProcessExperience() {
   const reduce = useMilanoReducedMotion() ?? false;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const hazeY = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-30, 30]);
+
+  useEffect(() => {
+    let frame = 0;
+    const scrollToStage = () => {
+      const anchor = window.location.hash.slice(1);
+      if (!STAGES.some((stage) => stage.id === anchor)) return;
+      cancelAnimationFrame(frame);
+      // Reapply the initial fragment after hydration/router scroll restoration.
+      // Merely adding an ID leaves a first-load mobile deep link at scroll 0.
+      frame = requestAnimationFrame(() => {
+        document.getElementById(anchor)?.scrollIntoView({ block: "start", behavior: "instant" });
+      });
+    };
+    scrollToStage();
+    window.addEventListener("hashchange", scrollToStage);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", scrollToStage);
+    };
+  }, []);
+
 
   return (
     <div ref={ref} className="relative overflow-hidden bg-[#050506]">
