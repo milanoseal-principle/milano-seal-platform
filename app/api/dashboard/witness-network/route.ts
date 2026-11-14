@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -8,11 +8,10 @@ const ADMIN_ROLES = new Set(["founder_admin", "admin_operator"]);
 const SAFE_PARTNER_FIELDS = "id, name, partner_type, county, city, state, service_radius_miles, credential_status, availability_status, last_used_at, active, created_at";
 
 export async function GET() {
-  const serverClient = await createClient();
-  const { data: { user }, error } = await serverClient.auth.getUser();
-  if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: profile } = await serverClient.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !ADMIN_ROLES.has(profile.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Role comes from the authoritative server-side guard; there is no profiles table.
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
+  if (!ADMIN_ROLES.has(access.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const supabase = createAdminClient();
   const { data, error: partnerError } = await supabase
@@ -21,16 +20,16 @@ export async function GET() {
     .eq("active", true)
     .order("partner_type");
 
-  if (partnerError) return NextResponse.json({ partners: [], no_data: true });
+  // A failed read is unavailable data, not an empty network.
+  if (partnerError) return NextResponse.json({ error: "WITNESS_NETWORK_UNAVAILABLE", partners: null }, { status: 503 });
   return NextResponse.json({ partners: data ?? [], no_data: false });
 }
 
 export async function POST(req: Request) {
-  const serverClient = await createClient();
-  const { data: { user }, error } = await serverClient.auth.getUser();
-  if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: profile } = await serverClient.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !ADMIN_ROLES.has(profile.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Role comes from the authoritative server-side guard; there is no profiles table.
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
+  if (!ADMIN_ROLES.has(access.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
   const { name, partner_type, county, city, state } = body;
@@ -39,7 +38,7 @@ export async function POST(req: Request) {
   const supabase = createAdminClient();
   const { data, error: insertError } = await supabase
     .from("execution_partners")
-    .insert({ name, partner_type, county, city, state: state ?? "FL", approved_by: user.id, approved_at: new Date().toISOString() })
+    .insert({ name, partner_type, county, city, state: state ?? "FL", approved_by: access.userId, approved_at: new Date().toISOString() })
     .select(SAFE_PARTNER_FIELDS)
     .single();
 

@@ -26,16 +26,26 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
 export function WitnessNetworkPanel() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     fetch("/api/dashboard/witness-network")
-      .then(r => r.json())
-      .then(d => setPartners(d.partners ?? []))
-      .catch(() => setPartners([]))
+      .then(async r => {
+        const d = await r.json().catch(() => null);
+        // A failed read is not an empty network.
+        if (!r.ok || !Array.isArray(d?.partners)) { setUnavailable(true); return; }
+        setPartners(d.partners);
+      })
+      .catch(() => setUnavailable(true))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <p className="font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>Loading…</p>;
+  if (unavailable) return (
+    <div role="alert" className="rounded border px-6 py-10 text-center" style={{ borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.04)" }}>
+      <p className="font-mono text-sm" style={{ color: "rgba(254,202,202,0.9)" }}>The network could not be loaded. This is not an empty list; reload to try again.</p>
+    </div>
+  );
   if (partners.length === 0) return (
     <div className="rounded border px-6 py-10 text-center" style={{ borderColor: "rgba(212,175,55,0.1)", background: "rgba(255,255,255,0.02)" }}>
       <p className="font-mono text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>No partners in network yet.</p>

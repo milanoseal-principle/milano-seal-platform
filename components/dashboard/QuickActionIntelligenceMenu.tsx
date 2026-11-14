@@ -38,8 +38,9 @@ import {
 interface QuickActionSummary {
   actionRequiredCount: number;
   deliveredNotReleasedCount: number;
-  vaTaskCount: number;
-  overdueVaTaskCount: number;
+  // Null when the VA task ledger is unavailable: no badge is shown, never a false zero.
+  vaTaskCount: number | null;
+  overdueVaTaskCount: number | null;
   reviewRequiredCount: number;
   blockedCount: number;
 }
@@ -146,18 +147,18 @@ function computeBadge(
       return null;
 
     case "vaTaskQueue":
-      if (summary.overdueVaTaskCount > 0) {
+      if ((summary.overdueVaTaskCount ?? 0) > 0) {
         return {
           variant: "red-overdue",
           label: "OVERDUE",
-          count: summary.overdueVaTaskCount,
+          count: summary.overdueVaTaskCount ?? 0,
         };
       }
-      if (summary.vaTaskCount > 0) {
+      if ((summary.vaTaskCount ?? 0) > 0) {
         return {
           variant: "gold",
           label: "TASKS",
-          count: summary.vaTaskCount,
+          count: summary.vaTaskCount ?? 0,
         };
       }
       return null;

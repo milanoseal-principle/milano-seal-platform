@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WitnessNetworkPanel } from "@/components/execution-qa/WitnessNetworkPanel";
 import { Metadata } from "next";
+import { resolveServerRole } from "@/lib/auth/server-role";
 
 export const metadata: Metadata = {
   title: "Witness & Backup Network | The Milano Seal™",
@@ -14,8 +15,8 @@ export default async function WitnessNetworkPage() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !ADMIN_ROLES.has(profile.role)) redirect("/dashboard");
+  // Role comes from the authoritative server-side resolver; there is no profiles table.
+  if (!ADMIN_ROLES.has(await resolveServerRole(user))) redirect("/dashboard");
 
   return (
     <div className="min-h-screen p-6" style={{ background: "#060402" }}>
