@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { FounderRevenueCommand } from "@/components/dashboard/revenue/FounderRevenueCommand";
 import { UnifiedRevenueCommandCenter } from "@/components/dashboard/revenue/UnifiedRevenueCommandCenter";
+import { resolveServerRole } from "@/lib/auth/server-role";
 
 export const metadata: Metadata = {
   title: "Revenue Close Desk | The Milano Seal™",
@@ -27,8 +28,8 @@ export default async function RevenuePage() {
   const { data: { user }, error: authError } = await serverClient.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const { data: profile } = await serverClient.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !ADMIN_ROLES.has(profile.role)) redirect("/dashboard");
+  // Role comes from the authoritative server-side resolver; there is no profiles table.
+  if (!ADMIN_ROLES.has(await resolveServerRole(user))) redirect("/dashboard");
 
   const supabase = createAdminClient();
   const { data: deals } = await supabase

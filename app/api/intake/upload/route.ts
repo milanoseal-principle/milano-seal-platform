@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const { data: row } = await admin
+    const { data: row, error: recordError } = await admin
       .from("files")
       .insert({
         deal_id: resolvedDealId,
@@ -107,8 +107,10 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
+    // Stored bytes without a record are not a confirmed attachment: say so instead of returning an empty success.
+    if (recordError || !row) { errors.push(`${file.name}: the attachment was not confirmed`); continue; }
     if(row){try{await persistUploadedVersion(admin,{matterId:resolvedDealId,path:storagePath,bucket:'deal-documents',bytes:new Uint8Array(bytes),mime:file.type,name:file.name,actor:'signed_intake_or_owned_upload',documentId:String(row.id)});uploaded.push(row);}catch{errors.push(file.name+': version evidence was not recorded; contact your coordinator before retrying.');}}
   }
 
-  return NextResponse.json({files:uploaded,errors,owner:errors.length?'MILANO':undefined,next_action:errors.length?'Your Matter remains received. Retry the failed attachment in this browser or use your authenticated portal; do not submit another Matter.':undefined},{status:errors.length&&!uploaded.length?503:200});
+  return NextResponse.json({files:uploaded,errors,owner:errors.length?'MILANO':undefined,next_action:errors.length?'Your request was received, but this attachment was not confirmed. Retry the attachment in this browser or use your secure portal. Do not submit a second request.':undefined},{status:errors.length&&!uploaded.length?503:200});
 }

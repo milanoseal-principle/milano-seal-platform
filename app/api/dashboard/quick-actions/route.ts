@@ -1,17 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 
 export const runtime = "nodejs";
-
-const BLOCKED_FIELDS = [
-  "label_url", "margin", "base_cost", "operator_notes", "wise_payload",
-  "raw_event", "full_signing_url", "bn_signing_url", "base64Doc",
-  "storage_path", "file_path", "file_url", "SHIPPO_API_KEY",
-  "BLUENOTARY_API_KEY", "SUPABASE_SERVICE_ROLE",
-];
-
-const ADMIN_ROLES = new Set(["founder_admin", "admin_operator", "admin", "operator", "ops_manager", "finance", "va_operator", "alliance_partner"]);
+export const dynamic = "force-dynamic";
 
 const GROUPS = [
   { id: "matter", label: "Matter", actions: ["Matter Registry", "Create Matter", "Review Active Matter", "Intake Review", "Matter Pipeline"] },
@@ -24,62 +16,54 @@ const GROUPS = [
   { id: "operations", label: "Operations", actions: ["Operations Desk", "VA Task Queue", "Operational Ledger", "Launch Control", "Control Room", "Admin Validator"] },
 ];
 
+const unavailable = () => NextResponse.json({ error: "QUICK_ACTION_DATA_UNAVAILABLE", summary: null }, { status: 503 });
+
+// GET — badge counts for the operator quick-action menu.
+// Access comes from the authoritative operator guard (there is no profiles table). Every number
+// is an exact database count; a failed count is reported as unavailable, never as zero.
 export async function GET() {
+  const access = await requireOperatorApiAccess();
+  if (!access.ok) return access.response;
+
   try {
-    const serverClient = await createClient();
-    const { data: { user }, error: authError } = await serverClient.auth.getUser();
-    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const admin = createAdminClient();
+    const matters = (statuses: string[]) => admin.from("deals").select("id", { count: "exact", head: true }).in("deal_status", statuses);
 
-    const { data: profile } = await serverClient.from("profiles").select("role").eq("id", user.id).single();
-    if (!profile || !ADMIN_ROLES.has(profile.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const [actionRequired, blocked, reviewRequired, ready, deliveredNotReleased, vaOpen, vaOverdue] = await Promise.all([
+      matters(["awaiting_payment", "payment_failed", "intake_review"]),
+      matters(["on_hold", "blocked", "cancelled"]),
+      matters(["reviewing", "compliance_review", "trust_review"]),
+      matters(["open", "scheduled", "in_execution", "apostille", "shipped", "completed"]),
+      admin.from("deals").select("id", { count: "exact", head: true }).eq("deal_status", "delivered").or("release_status.is.null,release_status.neq.released"),
+      // VA task states and due_at as defined by the VA task ledger (20261112120000).
+      admin.from("va_tasks").select("id", { count: "exact", head: true }).in("status", ["pending", "in_progress", "review", "escalated"]),
+      admin.from("va_tasks").select("id", { count: "exact", head: true }).lt("due_at", new Date().toISOString()).not("status", "in", "(completed,cancelled)"),
+    ]);
 
-    const supabase = createAdminClient();
+    const matterCounts = [actionRequired, blocked, reviewRequired, ready, deliveredNotReleased];
+    if (matterCounts.some((result) => result.error || result.count === null)) return unavailable();
 
-    const { data: statusRows, error: dealsError } = await supabase
-      .from("deals")
-      .select("deal_status, release_status", { count: "exact" });
+    // The VA task ledger may not be deployed yet. Matter counts are still reported; the VA
+    // counts are null and flagged, so the menu shows no VA badge instead of a false zero.
+    const vaTasksAvailable = !vaOpen.error && !vaOverdue.error && vaOpen.count !== null && vaOverdue.count !== null;
 
-    if (dealsError) {
-      return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS, role: profile.role, matterContext: null });
-    }
-
-    const rows = statusRows ?? [];
-    let actionRequiredCount = 0, blockedCount = 0, reviewRequiredCount = 0, readyCount = 0, deliveredNotReleasedCount = 0;
-
-    for (const row of rows) {
-      const s: string = row.deal_status ?? "";
-      if (["awaiting_payment", "payment_failed", "intake_review"].includes(s)) actionRequiredCount++;
-      else if (["on_hold", "blocked", "cancelled"].includes(s)) blockedCount++;
-      else if (["reviewing", "compliance_review", "trust_review"].includes(s)) reviewRequiredCount++;
-      else if (["open", "scheduled", "in_execution", "apostille", "shipped", "completed"].includes(s)) readyCount++;
-      if (s === "delivered" && row.release_status !== "released") deliveredNotReleasedCount++;
-    }
-
-    let vaTaskCount = 0, overdueVaTaskCount = 0;
-    const { data: vaTasks } = await supabase.from("va_tasks").select("status, due_date");
-    if (vaTasks) {
-      const now = new Date();
-      for (const task of vaTasks) {
-        if (task.status === "pending" || task.status === "assigned") vaTaskCount++;
-        if (task.due_date && new Date(task.due_date) < now && task.status !== "complete" && task.status !== "cancelled") overdueVaTaskCount++;
-      }
-    }
-
-    const payload = {
-      summary: { actionRequiredCount, blockedCount, reviewRequiredCount, readyCount, deliveredNotReleasedCount, vaTaskCount, overdueVaTaskCount, no_data: false },
+    return NextResponse.json({
+      summary: {
+        actionRequiredCount: actionRequired.count,
+        blockedCount: blocked.count,
+        reviewRequiredCount: reviewRequired.count,
+        readyCount: ready.count,
+        deliveredNotReleasedCount: deliveredNotReleased.count,
+        vaTaskCount: vaTasksAvailable ? vaOpen.count : null,
+        overdueVaTaskCount: vaTasksAvailable ? vaOverdue.count : null,
+        vaTasksAvailable,
+        no_data: false,
+      },
       groups: GROUPS,
-      role: profile.role,
+      role: access.role,
       matterContext: null,
-    };
-
-    const serialized = JSON.stringify(payload);
-    for (const field of BLOCKED_FIELDS) {
-      if (serialized.includes(`"${field}"`)) return NextResponse.json({ error: "Payload validation failed" }, { status: 500 });
-    }
-
-    return NextResponse.json(payload);
-  } catch (err) {
-    console.error("[quick-actions] unexpected error", err);
-    return NextResponse.json({ summary: { actionRequiredCount: 0, blockedCount: 0, reviewRequiredCount: 0, readyCount: 0, deliveredNotReleasedCount: 0, vaTaskCount: 0, overdueVaTaskCount: 0, no_data: true }, groups: GROUPS, role: 'founder_admin', matterContext: null });
+    });
+  } catch {
+    return unavailable();
   }
 }
