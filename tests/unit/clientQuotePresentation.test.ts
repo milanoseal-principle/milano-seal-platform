@@ -31,3 +31,11 @@ test("portal payment renders the reviewed Matter summary before payment controls
   assert.ok(summaryIndex >= 0);
   assert.ok(paymentIndex > summaryIndex);
 });
+
+
+test("unapproved smart pricing never publishes an invented zero-dollar invoice to the authenticated portal", () => {
+  assert.match(invoiceApi, /quote_approved_at/);
+  assert.match(invoiceApi, /invoice: approved \? buildClientInvoiceSnapshot\(invoiceRow\) : null/);
+  assert.match(summary, /Pricing pending review/);
+  assert.match(summary, /itemized Pro Forma and Wise payment instructions/);
+});
