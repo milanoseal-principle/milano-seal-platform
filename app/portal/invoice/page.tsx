@@ -1,7 +1,7 @@
 "use client";
 
 import { paymentObservationPresentation } from "@/lib/wise/attemptEvidence";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FinancialArtifactDownloads } from '@/components/portal/FinancialArtifactDownloads';
 import { usePortal } from "@/components/portal/portal-context";
 
@@ -82,7 +82,10 @@ function SummaryRow({ label, value, accent, strong }: { label: string; value: st
 export default function ClientInvoicePage() {
   const { deal, isLoading, refresh } = usePortal();
   const [invoice, setInvoice] = useState<InvoiceSnapshot | null>(null);
-  const [pricingPending, setPricingPending] = useState(false);
+  // The Matter whose pricing is pending review; scoped so a superseded response cannot hide another Matter's invoice.
+  const [pricingPendingMatterId, setPricingPendingMatterId] = useState<string | null>(null);
+  const activeMatterId = useRef<string | null>(null);
+  activeMatterId.current = deal?.id ?? null;
   const [paymentFlow, setPaymentFlow] = useState<PaymentObservation | null>(null);
   const [paymentStateAvailable, setPaymentStateAvailable] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
@@ -96,17 +99,18 @@ export default function ClientInvoicePage() {
 
   const loadInvoice = async () => {
     if (!deal?.id) return;
+    const requestedMatterId = deal.id;
     setLoadingInvoice(true);
     try {
-      const response = await fetch(`/api/portal/me/invoice?deal_id=${encodeURIComponent(deal.id)}`, { cache: "no-store" });
+      const response = await fetch(`/api/portal/me/invoice?deal_id=${encodeURIComponent(requestedMatterId)}`, { cache: "no-store" });
       const body = (await response.json()) as { invoice?: InvoiceSnapshot | null; pricingStatus?: string; error?: string };
+      if (activeMatterId.current !== requestedMatterId) return; // superseded by a Matter switch
       if (response.ok && body.pricingStatus === "pending_review") {
-        setPricingPending(true);
-        setInvoice(null);
+        setPricingPendingMatterId(requestedMatterId);
         return;
       }
       if (!response.ok || !body.invoice) throw new Error(body.error || "Invoice unavailable");
-      setPricingPending(false);
+      setPricingPendingMatterId(null);
       setInvoice(body.invoice);
     } catch (err) {
       setDiscountError(err instanceof Error ? err.message : "Invoice unavailable");
@@ -234,7 +238,7 @@ export default function ClientInvoicePage() {
     return <div className="text-sm text-white/40">Verifying invoice state…</div>;
   }
 
-  if (deal && pricingPending) {
+  if (deal && pricingPendingMatterId === deal.id) {
     return (
       <div className="max-w-2xl rounded-xl border border-[#C6A55A]/20 bg-[#0b0b0b] p-6" role="status">
         <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/70">The Milano Seal · Smart Pricing</div>
