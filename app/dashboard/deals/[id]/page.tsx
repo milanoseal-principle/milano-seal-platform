@@ -44,6 +44,7 @@ import { RequestedVsConfirmedRoute } from "@/components/dashboard/RequestedVsCon
 import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
 import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
+import { isPriceIssued } from "@/lib/pricing/priceIssued";
 import {
   ArrowLeft,
   CalendarClock,
@@ -99,6 +100,7 @@ interface MilanoDeal {
   discount_code?: string | null;
   discount_amount?: number | null;
   final_total?: number | null;
+  quote_review_required?: boolean | null;
   invoice_retainer: number | null;
   invoice_balance: number | null;
   payment_link: string;
@@ -530,6 +532,8 @@ export default function DealDetail() {
 
   const isPaid = deal.payment_status === "paid";
   const isComplimentaryAuthorized = deal.payment_disposition === "complimentary" && deal.comp_authorized === true && Number(deal.amount_due ?? 0) === 0;
+  // Settled or authorized-complimentary Matters always show their recorded value.
+  const priceIssued = isPriceIssued(deal) || isPaid || isComplimentaryAuthorized;
   const isPaymentRequirementSatisfied = isPaid || isComplimentaryAuthorized;
   const stage = deal.deal_status;
 
@@ -723,7 +727,7 @@ export default function DealDetail() {
             Total
           </div>
           <div className="font-serif text-4xl text-gold">
-            {formatCurrencyDetailed(deal.total_price)}
+            {priceIssued ? formatCurrencyDetailed(deal.total_price) : <span className="text-2xl">Review required</span>}
           </div>
         </div>
       </div>
@@ -1099,7 +1103,7 @@ export default function DealDetail() {
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Base</span>
-                <span>{formatCurrencyDetailed(deal.base_price)}</span>
+                <span>{priceIssued ? formatCurrencyDetailed(deal.base_price) : "—"}</span>
               </div>
               {Number(deal.witness_total) > 0 && (
                 <div className="flex justify-between text-sm">
@@ -1110,7 +1114,7 @@ export default function DealDetail() {
               <Separator className="bg-border" />
               <div className="flex justify-between font-medium">
                 <span>Matter value</span>
-                <span className="text-gold">{formatCurrencyDetailed(Number(deal.original_total ?? deal.total_price))}</span>
+                <span className="text-gold">{priceIssued ? formatCurrencyDetailed(Number(deal.original_total ?? deal.total_price)) : "Pricing pending review"}</span>
               </div>
               {Number(deal.discount_amount ?? 0) > 0 && (
                 <div className="flex justify-between text-sm text-gold">
@@ -1130,7 +1134,8 @@ export default function DealDetail() {
               original_total: deal.original_total ?? deal.amount_before_adjustment ?? deal.total_price,
               discount_code: deal.discount_code ?? null,
               discount_amount: deal.discount_amount ?? 0,
-              final_total: deal.final_total ?? deal.total_price,
+              final_total: deal.final_total ?? null,
+              quote_review_required: deal.quote_review_required ?? null,
               invoice_retainer: deal.invoice_retainer,
               invoice_balance: deal.invoice_balance,
               amount_due: deal.amount_due,

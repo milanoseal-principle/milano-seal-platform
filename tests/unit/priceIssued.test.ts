@@ -31,3 +31,18 @@ test("invoice API, founder alert and invoice page share the one rule", () => {
   assert.match(page, /pricingPendingMatterId === deal\.id/);
   assert.match(page, /Pricing pending review/);
 });
+
+// 2026-11-15 operator review of MS-2026-8329: the Matter header and pricing sidebar showed $0.00
+// while the canonical quote said "Review required". Unpriced Matters never render as $0.00.
+test("operator Matter page and the shared payment card show pending review, not $0.00, for unpriced Matters", () => {
+  const page = fs.readFileSync("app/dashboard/deals/[id]/page.tsx", "utf8");
+  const card = fs.readFileSync("components/payments/SecurePaymentCard.tsx", "utf8");
+  assert.match(page, /const priceIssued = isPriceIssued\(deal\) \|\| isPaid \|\| isComplimentaryAuthorized;/);
+  assert.match(page, /priceIssued \? formatCurrencyDetailed\(deal\.total_price\) : <span className="text-2xl">Review required<\/span>/);
+  assert.match(page, /priceIssued \? formatCurrencyDetailed\(Number\(deal\.original_total \?\? deal\.total_price\)\) : "Pricing pending review"/);
+  assert.match(page, /final_total: deal\.final_total \?\? null,/, "payment card must not see total_price as an issued final total");
+  assert.match(page, /quote_review_required: deal\.quote_review_required \?\? null,/);
+  assert.match(card, /isPriceIssued\(\{ final_total: deal\.final_total, quote_review_required: deal\.quote_review_required \}\)/);
+  assert.match(card, /Pricing pending review/);
+  assert.match(card, /!isSubmitted && !pricingPending && deal\.payment_link/, "no Wise link while pricing is pending");
+});
