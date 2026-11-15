@@ -1,6 +1,6 @@
 # The Milano Seal™ — Production Release Certification
 
-**Decision: NO-GO.** Recovery is verified. The eight security migrations are not yet applied, and no live transaction has been tested.
+**Decision: NO-GO.** Recovery is verified. The eight security migrations were applied on 2026-11-15 (owner-run, owner-verified). No live transaction has been tested.
 
 Prepared 2026-11-15 UTC from a Claude Code cloud session. That session had GitHub access but **no network route** to `themilanoseal.com`, its DNS, the Vercel API or the production database, and no production credentials. Every item below is labelled by the evidence that actually exists. Nothing is marked PASS on source code alone where a live check is required.
 
@@ -35,12 +35,19 @@ Prepared 2026-11-15 UTC from a Claude Code cloud session. That session had GitHu
 - **Order compatibility.** On a clean replay, the reviewed priority order produced a catalog identical to filename order. Re-applying each of the eight changed nothing. Each file is idempotent and guarded.
 - **Restored-copy rehearsal.** A drill mode for this existed in closed PR #509 and was never run against the real archive. Rehearsal on real production data: NOT TESTED.
 - **History convention.** Production records reviewed migrations as `reviewed_<repo version>_<name>`, with the version set to the time they were actually applied (for example, the 2026-11-13 22:54–22:55 UTC batch). `supabase db push` must not be used, because the hosted history does not match the repository chain.
-- **Execution:** BLOCKED for all eight. No explicit production-write approval has been given in the execution context, and the session has no database connectivity.
+- **Execution: APPLIED (8/8).** The production owner applied all eight on 2026-11-15, in the approved order, through the Supabase SQL editor. History versions are `20261115020849`, `…020903`, `…020906`, `…020908`, `…020911`, `…020914`, `…020916` and `…020919` (02:08:49–02:09:19 UTC).
+- **Post-apply verification (owner-run):**
+  - `migration_rehearsal_checks.sql` returned `failures: []`.
+  - A fresh P12 snapshot (observed 2026-11-15 02:13:43 UTC) shows all eight in history and all three operator unique indexes present.
+  - The Claude Code session did not see that snapshot's full catalog, so this report records the owner's verification and not an independent reconciler run.
+- **Advisor follow-up (non-blocking):** five trigger-only `SECURITY DEFINER` functions are executable by `PUBLIC`/`anon` (`certification_preserve_review`, `document_version_custody_event`, `guard_ron_canonical_version`, `guard_ron_evidence_completion`, `invalidate_ron_evidence_projection`).
+  - All five use an empty `search_path`, and PostgreSQL rejects direct calls to trigger functions, so they are not callable as RPCs.
+  - Revoking that `EXECUTE` is a hygiene item.
 
 ## 10–12. Security, RLS, Alliance and VA
 
 - **Clean replay (code tests):** forged founder/admin roles are denied, disabled and banned accounts are denied, allow-all policies are removed, and partner own-row reads are restricted.
-- **Production:** BLOCKED until the migrations are applied.
+- **Production:** migration postconditions PASS (owner-run `migration_rehearsal_checks.sql`, 2026-11-15). Signed-in negative tests on production: NOT TESTED.
 - **Post-apply verification:** run `supabase/verification/migration_rehearsal_checks.sql`, which is catalog-only and read-only. Every entry in `failures` must be empty, and `operator_unique_indexes_valid` must be 3.
 
 ## 13–21. Synthetic Matter, payment and notifications
@@ -69,8 +76,8 @@ BLOCKED: DNS is not resolvable from the session.
 
 ## 26. Remaining blockers, in order
 
-1. **Production-write approval** for the exact batch: "Approved: apply the eight migrations to ehqdzfopsrbwewtddiwq". Then apply the files one at a time in the Supabase SQL editor (or a connection the owner provides), verifying after each one.
-2. **Preflight refresh:** run `p12_hosted_snapshot.sql` and `b01_operator_binding_audit.sql` (read-only) immediately before applying.
+1. ~~Production-write approval and the eight migrations~~: done 2026-11-15, 8/8 applied, 0 post-apply failures.
+2. ~~Preflight refresh~~: done.
 3. **Vercel production SHA** from the Vercel dashboard.
 4. **One live synthetic Matter** submitted by the owner on a phone. Record its reference, then confirm in the inbox that the founder alert and the client acknowledgement arrived.
 5. **SPF, DKIM and DMARC records** for `themilanoseal.com` (Resend sender).
@@ -83,9 +90,10 @@ BLOCKED: DNS is not resolvable from the session.
 PR #510: PASS (merged)          CI: PASS (43658275241)
 MAIN SHA: 5a7995a93152e993547cd06666c29e31fdad30f9
 VERCEL PRODUCTION SHA: BLOCKED  DOMAIN: BLOCKED  TLS: BLOCKED
-DATABASE: BLOCKED (no approval, no connectivity)
-MIGRATION 1-8: BLOCKED (not applied; preflight status above)
-FOUNDER SECURITY: BLOCKED   RLS: BLOCKED   ALLIANCE: BLOCKED   VA: BLOCKED
+DATABASE: PASS (owner-verified 2026-11-15 02:13 UTC)
+MIGRATION 1-8: PASS (applied 02:08:49-02:09:19 UTC; failures=[])
+FOUNDER SECURITY: PASS (schema)   RLS: PASS (schema)   ALLIANCE: PASS (schema)   VA: PASS (schema)
+  (schema-level postconditions; signed-in live tests NOT TESTED)
 SYNTHETIC MATTER / AUTH / INTAKE / UPLOAD / PERSISTENCE: NOT TESTED
 PRICING / PRO FORMA / WISE INSTRUCTIONS: NOT TESTED
 PAYMENT GATE: code PASS; live NOT TESTED     WISE SETTLEMENT: NOT TESTED
