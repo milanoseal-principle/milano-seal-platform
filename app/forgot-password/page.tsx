@@ -9,19 +9,26 @@ function ForgotPasswordInner() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const expired = searchParams.get("error") === "expired";
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!email.trim() || busy) return;
     setBusy(true);
+    setFailure(null);
     try {
-      await fetch("/api/auth/password/reset-request", {
+      const response = await fetch("/api/auth/password/reset-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-      setSent(true);
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      // Success copy is conditional: the route cannot say whether an email went out without revealing whether the account exists.
+      if (response.ok && result?.ok === true) setSent(true);
+      else setFailure(result?.message || "We could not send a reset email right now. Please try again shortly.");
+    } catch {
+      setFailure("We could not reach the server. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -46,7 +53,7 @@ function ForgotPasswordInner() {
           {sent ? (
             <div className="mt-7 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-5">
               <div className="text-sm font-medium text-emerald-200">Check your email.</div>
-              <p className="mt-2 text-xs leading-5 text-white/45">If that address is registered, you will receive a secure password-reset link. Return to login after setting the new password.</p>
+              <p className="mt-2 text-xs leading-5 text-white/45">If that address is registered, you will receive a secure password-reset link. If nothing arrives within 10 minutes, check spam, then wait at least an hour before requesting another, because reset emails are rate limited. Your Matter coordinator can also help. Return to login after setting the new password.</p>
             </div>
           ) : (
             <form onSubmit={submit} className="mt-7">
@@ -61,6 +68,11 @@ function ForgotPasswordInner() {
                 className="mt-2 min-h-12 w-full rounded-md border border-[#C6A55A]/20 bg-black/30 px-4 text-sm text-white outline-none placeholder:text-white/20 focus:border-[#C6A55A]/60"
                 placeholder="you@example.com"
               />
+              {failure && (
+                <div role="alert" className="mt-3 rounded-md border border-amber-300/20 bg-amber-300/[0.05] px-4 py-3 text-xs leading-5 text-amber-100/80">
+                  {failure}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={busy}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { escapeHtml, operatorIntakeAlertHtml } from "@/lib/notifications/transactionalEmailAlerts";
+import { clientLifecycleEmailHtml, escapeHtml, operatorIntakeAlertHtml } from "@/lib/notifications/transactionalEmailAlerts";
 
 // The new-Matter alert to nicholas@themilanoseal.com rendered client-entered intake fields as raw
 // HTML, so a submitted name or destination could inject links or markup into the founder's inbox.
@@ -44,4 +44,13 @@ test("approved zero-price quote is distinguished from pending pricing", () => {
   const html = operatorIntakeAlertHtml({ matterId: "m3", matterReference: "MS-2026-0003", finalTotal: 0, amountDue: 0, quoteApproved: true });
   assert.match(html, /\$0\.00/);
   assert.doesNotMatch(html, /Pricing pending review/);
+});
+
+test("client lifecycle email carries the Matter reference and a secure portal link, escaped", () => {
+  const html = clientLifecycleEmailHtml("Matter received", "We have received your matter.", 'MS-2026-<b>4578</b>');
+  assert.match(html, /Matter reference: <strong>MS-2026-&lt;b&gt;4578&lt;\/b&gt;<\/strong>/);
+  assert.match(html, /href="https:\/\/www\.themilanoseal\.com\/login\?next=\/portal"/);
+  assert.doesNotMatch(html, /\$0\.00|password=|token=/);
+  const source = fs.readFileSync("lib/notifications/transactionalEmailAlerts.ts", "utf8");
+  assert.match(source, /html:clientLifecycleEmailHtml\(copy\.subject,copy\.body,matter\.data\.deal_id\?\?row\.deal_id\)/);
 });

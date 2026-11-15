@@ -158,6 +158,19 @@ export function operatorIntakeAlertHtml(input: OperatorIntakeAlertInput): string
   );
 }
 
+const SECURE_PORTAL_URL = "https://www.themilanoseal.com/login?next=/portal";
+
+/** Client lifecycle email: the Matter reference and an explicit, secure portal next step. No pricing,
+ *  payment or internal facts beyond the governed copy; every interpolated value is escaped. */
+export function clientLifecycleEmailHtml(subject: string, body: string, matterReference: string): string {
+  return shell(
+    escapeHtml(subject),
+    `<p>${escapeHtml(body)}</p><p>Matter reference: <strong>${escapeHtml(matterReference)}</strong></p>` +
+      `<p><a href="${SECURE_PORTAL_URL}" style="color:#c6a55a">Sign in to your Secure Matter Portal</a> to review your Matter, documents and next steps.</p>` +
+      `<p style="font-size:12px;color:#888">Sign in with the email address used for this Matter. The Milano Seal never asks for passwords or payment details by email.</p>`,
+  );
+}
+
 export async function sendOperatorIntakeAlerts(input: OperatorIntakeAlertInput) {
   const subject = `New Matter Intake — ${input.matterReference}`;
   const html = operatorIntakeAlertHtml(input);
@@ -560,6 +573,6 @@ export async function reconcileCanonicalNotifications() {
  const rows=await admin.from('notifications').select('deal_id,recipient_email,type,metadata').eq('template_id','canonical_matter_lifecycle_v1').in('delivery_status',['pending','failed']).is('send_claim',null).lt('delivery_attempts',3).lte('next_send_at',new Date().toISOString()).order('created_at').order('id').limit(50);
  if(rows.error)throw Error('NOTIFICATION_DELIVERY_QUEUE_UNAVAILABLE');
  for(const row of rows.data??[]){const event=row.metadata?.event as NotificationEvent;const copy=NOTIFICATION_COPY[event];if(!copy||!row.deal_id)continue;const matter=await admin.from('deals').select('id,email,deal_id').eq('id',row.deal_id).maybeSingle();if(matter.error||!matter.data||matter.data.email?.trim().toLowerCase()!==row.recipient_email)continue;
- await sendOne({matterId:row.deal_id,matterReference:matter.data.deal_id??row.deal_id,recipient:row.recipient_email,type:row.type,subject:copy.subject,html:shell(copy.subject,`<p>${copy.body}</p><p>Review your current Matter in the secure portal.</p>`)});}
+ await sendOne({matterId:row.deal_id,matterReference:matter.data.deal_id??row.deal_id,recipient:row.recipient_email,type:row.type,subject:copy.subject,html:clientLifecycleEmailHtml(copy.subject,copy.body,matter.data.deal_id??row.deal_id)});}
  return {queued_batch:pending.data.length,delivery_batch:rows.data?.length??0,scope:'BOUNDED_CANONICAL_EVENT_BATCH'};
 }
