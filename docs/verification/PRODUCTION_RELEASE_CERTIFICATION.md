@@ -1,6 +1,6 @@
 # The Milano Seal™ — Production Release Certification
 
-**Decision: NO-GO.** Recovery is verified. The eight security migrations were applied on 2026-11-15 (owner-run, owner-verified). No live transaction has been tested.
+**Decision: NO-GO.** Recovery, the eight migrations, the production deployment and live email delivery are verified (owner evidence, 2026-11-15). Signed-in client portal tests and Wise settlement are not yet tested.
 
 Prepared 2026-11-15 UTC from a Claude Code cloud session. That session had GitHub access but **no network route** to `themilanoseal.com`, its DNS, the Vercel API or the production database, and no production credentials. Every item below is labelled by the evidence that actually exists. Nothing is marked PASS on source code alone where a live check is required.
 
@@ -12,13 +12,16 @@ Prepared 2026-11-15 UTC from a Claude Code cloud session. That session had GitHu
 | PR #510 | Merged 2026-11-15 00:38 UTC. Founder new-Matter alert HTML-escapes client fields; outreach signature domain corrected | PASS |
 | CI | Run `43658275241`, job `validate`: success, 00:27:46–00:38:56 UTC. All 47 steps green, including typecheck, lint, tests, production build and final production regression | PASS |
 | Codex review | No findings on `db2c6a85` | PASS |
+| PR #512 / #513 (Smart Pricing truth) | #512 stopped unpriced Matters showing $0.00. #513 restored invoices for instantly priced Matters via the shared rule `isPriceIssued` (a real `final_total` with no pending review), and ignores portal responses that arrive after a Matter switch. `main` is `7ddd6cc3e61cf610445895e8cdce903951d5f5a7`. | PASS (code) |
+| CI on `7ddd6cc3` | Run `43692484074` passed at 08:12 UTC (owner-verified). It completed after the merge at 08:08 UTC. | PASS |
+| Codex re-review of `b99dd9a1` | Requested; the outcome is not confirmed in this report | NOT CONFIRMED |
 
 ## 4–6. Vercel, domain, TLS, Supabase target
 
 | Item | Status | Blocker |
 |---|---|---|
-| Vercel production SHA | BLOCKED | No Vercel API access from the session. Check Vercel → Deployments → Production and confirm the commit is `5a7995a9`. |
-| Domain / TLS / routes | BLOCKED | `themilanoseal.com` is unreachable and unresolvable from the session (egress policy). |
+| Vercel production SHA | PASS (owner-verified) | `dpl_4sH1rdAi27kHJeGMMeLMsacBh5g6` is READY at `7ddd6cc3`. |
+| Domain | PASS (owner-verified) | `www.themilanoseal.com` resolves to that deployment. TLS was not separately recorded. |
 | Supabase target | `ehqdzfopsrbwewtddiwq` (from repository configuration and the P12 snapshot of 2026-11-14 16:13 UTC) | Live identity not re-confirmed: no database access. |
 
 ## 7–9. Database preflight and the eight migrations
@@ -52,14 +55,18 @@ Prepared 2026-11-15 UTC from a Claude Code cloud session. That session had GitHu
 
 ## 13–21. Synthetic Matter, payment and notifications
 
-- **Synthetic Matter:** NOT TESTED. A live Matter writes to production and needs the owner, on a device that can reach the site.
-- **Payment gate (code):** `/api/portal/me/payment-observation` sends the payment-cleared alert only when `evaluatePaymentGate` returns `PAYMENT_CONFIRMED`. A client's own report records an observation and cannot settle the Matter.
-- **Wise:** instructions are NOT TESTED live. Live settlement is NOT TESTED and needs approval for that specific transaction.
-- **Founder email:**
-  - New-Matter alerts are sent by `/api/cron/notification-reconcile` (every minute, per `vercel.json`). Each send claims a unique key first, so retries cannot send twice.
-  - Recipients are `nicholas@themilanoseal.com` and `themilanoseal@gmail.com`, plus any addresses in `OPERATOR_NOTIFICATION_EMAILS`.
-  - Delivery is NOT independently verified.
-- **Client email:** NOT independently verified.
+- **Live intake:** PASS (owner-verified). Matter `MS-2026-8869` persisted in production Supabase.
+- **Founder and client email:** PASS (owner-verified).
+  - Resend reports Delivered for the founder alert (`nicholas@themilanoseal.com`), the operator copy and the client acknowledgement.
+  - Supabase records `provider_accepted` with provider message IDs and one attempt per recipient and type.
+  - The founder inbox receipt was confirmed independently.
+- **Pricing display defect found by that test:** the alert showed `$0.00` for an unpriced Matter. It is fixed in #512 and #513 for new Matters; the alert already sent is not re-sent.
+- **Signed-in client portal:** NOT TESTED / BLOCKED.
+  - `MS-2026-8869` belongs to the `founder_admin` account, which by design is not a client portal session, and the founder role must not be changed.
+  - The test needs two separate synthetic client accounts: Client A with an instantly priced Matter, Client B with a review-required Matter.
+  - Creating them is a production write. It needs the owner, or a tool with production access and a network route to the site; this Claude Code session has neither.
+- **Payment gate (code):** PASS in CI. `evaluatePaymentGate` must return `PAYMENT_CONFIRMED` before the payment-cleared alert or scheduling. Client reports, observations and flag-only states cannot settle a Matter.
+- **Wise settlement:** NOT TESTED; it needs approval for one specific transaction.
 
 ## 22. SPF / DKIM / DMARC
 
@@ -78,27 +85,31 @@ BLOCKED: DNS is not resolvable from the session.
 
 1. ~~Production-write approval and the eight migrations~~: done 2026-11-15, 8/8 applied, 0 post-apply failures.
 2. ~~Preflight refresh~~: done.
-3. **Vercel production SHA** from the Vercel dashboard.
-4. **One live synthetic Matter** submitted by the owner on a phone. Record its reference, then confirm in the inbox that the founder alert and the client acknowledgement arrived.
-5. **SPF, DKIM and DMARC records** for `themilanoseal.com` (Resend sender).
+3. ~~Vercel production SHA~~: done (`7ddd6cc3`, READY).
+4. ~~Live synthetic Matter and email delivery~~: done (`MS-2026-8869`, delivered to founder, operator copy and client).
+5. ~~Sender domain authentication~~: Resend reports the domain verified (owner-verified). The SPF, DKIM and DMARC records were not separately captured.
+5a. **Signed-in client portal**, with two separate synthetic client accounts:
+    - Client A (instant price): itemized invoice, Wise instructions, still unpaid, scheduling blocked.
+    - Client B (review required): "Pricing pending review", no payment offered.
+    - Both: cross-client access denied; quick switching between Matters shows the right state.
 6. **Live Wise settlement** with approval for that specific transaction.
 7. The outreach template still contains a placeholder phone number, `+1 (305) 000-0000`.
 
 ## 27. Final status
 
 ```
-PR #510: PASS (merged)          CI: PASS (43658275241)
-MAIN SHA: 5a7995a93152e993547cd06666c29e31fdad30f9
-VERCEL PRODUCTION SHA: BLOCKED  DOMAIN: BLOCKED  TLS: BLOCKED
+PR #510-#513: PASS (merged)     CI: PASS (43692484074 on 7ddd6cc3)
+MAIN SHA: 7ddd6cc3e61cf610445895e8cdce903951d5f5a7
+VERCEL PRODUCTION SHA: PASS (owner-verified, dpl_4sH1rdAi27kHJeGMMeLMsacBh5g6)   DOMAIN: PASS (owner-verified)
 DATABASE: PASS (owner-verified 2026-11-15 02:13 UTC)
 MIGRATION 1-8: PASS (applied 02:08:49-02:09:19 UTC; failures=[])
 FOUNDER SECURITY: PASS (schema)   RLS: PASS (schema)   ALLIANCE: PASS (schema)   VA: PASS (schema)
   (schema-level postconditions; signed-in live tests NOT TESTED)
-SYNTHETIC MATTER / AUTH / INTAKE / UPLOAD / PERSISTENCE: NOT TESTED
-PRICING / PRO FORMA / WISE INSTRUCTIONS: NOT TESTED
+INTAKE / PERSISTENCE: PASS (MS-2026-8869)   UPLOAD: NOT TESTED
+FOUNDER EMAIL: PASS   CLIENT EMAIL: PASS   (Resend Delivered; inbox confirmed)
+PRICING / PRO FORMA / WISE INSTRUCTIONS: code PASS; signed-in live NOT TESTED
 PAYMENT GATE: code PASS; live NOT TESTED     WISE SETTLEMENT: NOT TESTED
-PORTAL: NOT TESTED   FOUNDER EMAIL: NOT TESTED   CLIENT EMAIL: NOT TESTED
-DNS: BLOCKED
+PORTAL (signed-in client): BLOCKED (needs two synthetic client accounts)
 RON / APOSTILLE / COURIER REGRESSION: code PASS (CI); live NOT TESTED
 MOBILE: NOT TESTED   MONITORING: NOT TESTED   RECOVERY: VERIFIED
 FINAL TRANSACTION CERTIFICATION: NO-GO
