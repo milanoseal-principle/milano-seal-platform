@@ -143,14 +143,18 @@ type OperatorIntakeAlertInput = {
   destination?: string | null;
   finalTotal?: number | null;
   amountDue?: number | null;
+  quoteApproved?: boolean;
   currency?: string | null;
 };
 
 export function operatorIntakeAlertHtml(input: OperatorIntakeAlertInput): string {
   const field = (value: string | null | undefined, fallback: string) => escapeHtml(value || fallback);
+  const approved = input.quoteApproved === true && input.finalTotal != null;
+  const finalTotal = approved ? money(input.finalTotal, input.currency || "USD") : "Pricing pending review";
+  const amountDue = approved && input.amountDue != null ? money(input.amountDue, input.currency || "USD") : "Not yet invoiced";
   return shell(
     "New Matter received",
-    `<p><strong>${escapeHtml(input.matterReference)}</strong> has entered production intake.</p><p>Client: ${field(input.clientName, "Not provided")}<br/>Email: ${field(input.clientEmail, "Not provided")}<br/>Document: ${field(input.documentType, "Review required")}<br/>Destination: ${field(input.destination, "Review required")}<br/>Final total: ${money(input.finalTotal, input.currency || "USD")}<br/>Amount due: ${money(input.amountDue, input.currency || "USD")}</p>`,
+    `<p><strong>${escapeHtml(input.matterReference)}</strong> has entered production intake.</p><p>Client: ${field(input.clientName, "Not provided")}<br/>Email: ${field(input.clientEmail, "Not provided")}<br/>Document: ${field(input.documentType, "Review required")}<br/>Destination: ${field(input.destination, "Review required")}<br/>Final total: ${finalTotal}<br/>Amount due: ${amountDue}</p>`,
   );
 }
 
