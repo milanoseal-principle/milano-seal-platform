@@ -143,7 +143,7 @@ Best regards,
 Nicholas Milano
 The Milano Seal™
 +1 (305) 000-0000
-nicholas@themillanoseal.com`,
+nicholas@themilanoseal.com`,
     },
     {
       id: "attorney-followup",
