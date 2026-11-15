@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const { data, error } = await admin
     .from("deals")
-    .select("id,deal_id,client_name,email,document_type,destination_country,final_total,amount_due,amount_paid,currency,payment_status,payment_confirmed,payment_settlement_status,payment_observed_at,payment_confirmed_at,created_at")
+    .select("id,deal_id,client_name,email,document_type,destination_country,final_total,amount_due,quote_approved_at,amount_paid,currency,payment_status,payment_confirmed,payment_settlement_status,payment_observed_at,payment_confirmed_at,created_at")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -54,8 +54,9 @@ export async function GET(req: NextRequest) {
       clientEmail: row.email,
       documentType: row.document_type,
       destination: row.destination_country,
-      finalTotal: Number(row.final_total ?? 0),
-      amountDue: Number(row.amount_due ?? 0),
+      quoteApproved: Boolean(row.quote_approved_at) && row.final_total != null,
+      finalTotal: row.final_total == null ? null : Number(row.final_total),
+      amountDue: row.amount_due == null ? null : Number(row.amount_due),
       currency,
     });
     summary.intake += 1;
