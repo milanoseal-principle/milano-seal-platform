@@ -272,7 +272,8 @@ Sections 1–31 are kept unchanged as historical evidence. The final transaction
 | PR #518: unpriced Matters show "Review required" / "Pricing pending review" instead of $0.00 on the operator page, pro forma and payment card | Merged as `6dc81828`. [CI 43764574747](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43764574747) passed on head `f7abe23`. Codex found nothing. | GitHub (checked in this session) | PASS |
 | PR #518 deployment | Vercel production deployment `EwgcmRiv7` is READY and Current on `6dc8182`, serving `www.themilanoseal.com`. | Owner screenshot | PASS |
 | PR #519: Smart Intake → operator review prefill and provenance | Merged as `e707c331`. [CI 43775378743](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43775378743) passed on head `d3fbf5e`. Codex raised three P2 findings, all fixed and resolved; its final review on `d3fbf5e` found no issues. | GitHub (checked in this session) | PASS |
-| PR #519 deployment | Vercel production on `e707c331`. | Not yet verified (no network access to Vercel from this session; owner to confirm) | PENDING |
+| PR #519 deployment | Deployment `dpl_7wTYRHRKGjT9pNff7yXAxVTZFTKU` for `e707c331` was BUILDING at the owner's check. The public domain was still serving `6dc81828` at that time. | Owner-reported; READY and alias not yet confirmed | PENDING |
+| Supabase Auth custom SMTP | Custom SMTP is configured and password-reset delivery is confirmed. This closes the Section 31 recovery-delivery blocker. | Owner-reported | PASS (owner-verified) |
 
 ### What #519 changed (application-only)
 
@@ -292,12 +293,11 @@ Sections 1–31 are kept unchanged as historical evidence. The final transaction
 
 ### Remaining live acceptance gates, in order
 
-1. Owner confirms Vercel production is on `e707c331`. Then, read-only, open MS-2026-8329 in the operator view and check the labels:
+1. Owner confirms `dpl_7wTYRHRKGjT9pNff7yXAxVTZFTKU` is READY and `www.themilanoseal.com` serves `e707c331`. Then, read-only, open MS-2026-8329 in the operator view and check the labels:
    - Execution method: "Review required" with "From intake: in person".
    - Matter base: "Derived by pricing engine".
    - Authentication: "Review required".
 2. The operator completes execution review and issues the quote for the QA Matter through the governed flow. This needs separate explicit approval.
 3. Client B checks the itemized invoice, pro forma PDF and Wise instructions while the Matter stays unpaid and scheduling stays locked.
-4. Set up custom SMTP for Supabase Auth.
-5. Run one authorized Wise transaction and verify settlement independently.
-6. Certify the downstream scheduling and release gates from the evidence those steps produce.
+4. Run one authorized Wise transaction and verify settlement independently.
+5. Certify the downstream scheduling and release gates from the evidence those steps produce.
