@@ -31,3 +31,17 @@ test("outreach templates sign with the company's real domain", () => {
     assert.doesNotMatch(fs.readFileSync(file, "utf8"), /themillanoseal\.com/i, file);
   }
 });
+
+
+test("unapproved intake pricing is review-pending, never a fabricated free service", () => {
+  const html = operatorIntakeAlertHtml({ matterId: "m2", matterReference: "MS-2026-8869", finalTotal: null, amountDue: 0, quoteApproved: false });
+  assert.match(html, /Pricing pending review/);
+  assert.match(html, /Not yet invoiced/);
+  assert.doesNotMatch(html, /\$0\.00/);
+});
+
+test("approved zero-price quote is distinguished from pending pricing", () => {
+  const html = operatorIntakeAlertHtml({ matterId: "m3", matterReference: "MS-2026-0003", finalTotal: 0, amountDue: 0, quoteApproved: true });
+  assert.match(html, /\$0\.00/);
+  assert.doesNotMatch(html, /Pricing pending review/);
+});
