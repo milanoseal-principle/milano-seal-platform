@@ -263,7 +263,10 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         timeline: form.timelineChoice,
         delivery: form.deliveryChoice,
         pricingApproved: clientPricing.mode === "approved_price" && !form.executionType,
-        executionReviewRequested: Boolean(form.executionType),
+        // Public intake cannot establish operator-approved execution truth.
+        // Match core.ts: all non-operator submissions require review, even
+        // when the pricing preview can calculate an indicative amount.
+        executionReviewRequested: true,
       }),
     [classification, form.timelineChoice, form.deliveryChoice, clientPricing.mode, form.executionType],
   );
