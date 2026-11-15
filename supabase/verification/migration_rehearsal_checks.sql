@@ -48,7 +48,8 @@ facts as (
     'va_tables_rls_enabled', coalesce((select bool_and(relrowsecurity) from pg_class where oid in (to_regclass('public.va_tasks'), to_regclass('public.va_task_events'))), false)
       and to_regclass('public.va_tasks') is not null,
     'va_transition_rpc_present', exists (select 1 from fn where proname = 'va_task_transition'),
-    'va_transition_rpc_executable_by_authenticated', coalesce((select bool_or(has_function_privilege('authenticated', oid, 'execute')) from fn where proname = 'va_task_transition'), false),
+    'va_transition_rpc_executable_by_client_roles', coalesce((select bool_or(has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute'))
+      from fn where proname = 'va_task_transition'), false),
     'operator_identity_columns_present', (select count(*) = 2 from information_schema.columns
       where table_schema = 'public' and table_name = 'operators' and column_name in ('profile_id', 'referral_code')),
     'operator_binding_rpcs_present', (select count(*) = 2 from fn where proname in ('bind_operator_profile', 'rotate_operator_referral_code')),
@@ -58,6 +59,10 @@ facts as (
       where c.oid = to_regclass('public.sales_leads') and t.tgname = 'sales_leads_refuse_rejected_referral_link' and t.tgenabled <> 'D'),
     'partner_ownership_helper_present', exists (select 1 from fn where proname = 'is_own_alliance_account'),
     'authenticated_allow_all_policies', (select coalesce(jsonb_agg(p order by p), '[]') from open_policies),
+    -- RLS must be on for every restricted table that exists; with it off, policies are ignored.
+    'restricted_tables_without_rls', (select coalesce(jsonb_agg(c.relname order by c.relname), '[]') from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity
+        and c.relname in ('liaison_intake_records', 'referral_ledger', 'payout_reviews', 'partner_scorecards', 'translation_entries')),
     'operator_unique_indexes_valid', (select count(*) from idx where indisunique and indisvalid and indisready)
   ) f
 )
@@ -72,13 +77,14 @@ select f || jsonb_build_object('failures', (
     union all select 'va_tables_present' where not (f->>'va_tables_present')::boolean
     union all select 'va_tables_rls_enabled' where not (f->>'va_tables_rls_enabled')::boolean
     union all select 'va_transition_rpc_present' where not (f->>'va_transition_rpc_present')::boolean
-    union all select 'va_transition_rpc_executable_by_authenticated' where (f->>'va_transition_rpc_executable_by_authenticated')::boolean
+    union all select 'va_transition_rpc_executable_by_client_roles' where (f->>'va_transition_rpc_executable_by_client_roles')::boolean
     union all select 'operator_identity_columns_present' where not (f->>'operator_identity_columns_present')::boolean
     union all select 'operator_binding_rpcs_present' where not (f->>'operator_binding_rpcs_present')::boolean
     union all select 'operator_binding_rpcs_executable_by_client_roles' where (f->>'operator_binding_rpcs_executable_by_client_roles')::boolean
     union all select 'rejected_referral_guard_trigger_enabled' where not (f->>'rejected_referral_guard_trigger_enabled')::boolean
     union all select 'partner_ownership_helper_present' where not (f->>'partner_ownership_helper_present')::boolean
     union all select 'authenticated_allow_all_policies' where jsonb_array_length(f->'authenticated_allow_all_policies') > 0
+    union all select 'restricted_tables_without_rls' where jsonb_array_length(f->'restricted_tables_without_rls') > 0
     union all select 'operator_unique_indexes_valid' where (f->>'operator_unique_indexes_valid')::int <> 3
   ) failed)) as migration_rehearsal_checks
 from facts;

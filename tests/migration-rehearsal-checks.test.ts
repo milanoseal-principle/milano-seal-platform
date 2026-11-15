@@ -60,6 +60,19 @@ test("a reintroduced founder metadata trust or allow-all policy is reported", as
   }
 });
 
+test("anonymous VA transition execute and disabled RLS on a restricted table are reported", async () => {
+  const db = await isolatedCanonicalDatabase(files());
+  try {
+    await db.exec(`grant execute on function public.va_task_transition(uuid, uuid, text, text) to anon;
+      alter table public.referral_ledger disable row level security;`);
+    const checks = await run(db);
+    for (const failure of ["va_transition_rpc_executable_by_client_roles", "restricted_tables_without_rls"]) assert.ok(checks.failures.includes(failure), failure);
+    assert.deepEqual(checks.restricted_tables_without_rls, ["referral_ledger"]);
+  } finally {
+    await db.close();
+  }
+});
+
 test("rehearsal checks are catalog-only and never write", () => {
   assert.doesNotMatch(CHECKS, /\b(insert|update|delete|truncate|alter|drop|create|grant|revoke)\b\s/i);
 });
