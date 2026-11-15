@@ -38,6 +38,14 @@
   - On a data error, the failure line now also names the relation, whether it is application or managed, and whether `schema.sql` defines it.
   - Backup #17 is unchanged.
   - The same synthetic backup now passes every stage: 124/124 tables with exact row counts, Auth, Storage re-hash, RLS checks and cleanup.
+  - **#4** ([`43654113448`](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43654113448), `main` at `cb894c7f`, archive `20261114T202511Z`): **PASSED** (109 s).
+- **Migration rehearsal (optional, `rehearse_production_migrations: true`).**
+  - This mode runs after recovery is verified on the unmodified restore. It applies the eight pending production migrations, unchanged, to the disposable restored copy only.
+  - Order is the approved priority order: founder/admin identity first, then legacy RLS cleanup, VA ledger, Alliance identity, operator binding, rejected-referral guard, authenticated RLS restriction and unique indexes.
+  - Each migration runs in its own transaction as `postgres`, the role hosted migrations run as.
+  - It then runs `supabase/verification/migration_rehearsal_checks.sql` (catalog-only postconditions, reusable read-only after the hosted apply) and the RLS probes again.
+  - It fails on the first migration error or any unmet postcondition. It writes no migration ledger and never contacts production.
+- **Custody-chain finding from drill #4 (2 "unlinked" rows).** Each Matter's custody chain starts with `prev_hash = 'GENESIS'` (`append_custody_event`), and the drill check counted those first rows as unlinked. The check now reports `custody_chain_genesis_rows` separately, and counts as unlinked only later rows whose predecessor is missing from the same Matter (with cross-Matter links counted on their own). The next drill run settles whether any real break exists.
 - **Not covered by the drill (still required for full DR certification):** restoring into a separate hosted Supabase project, Auth provider settings and secrets from the vault, Vault/encryption-root continuity, signed-in business-flow checks on test accounts, an independent backup-freshness monitor, and alert delivery. The daily backup schedule stays off until one drill passes.
 - **Expected informational findings on the current production copy:** `founder_admin_helper_reads_user_metadata: true` until migration `20261114100000` is applied. The five tables fixed by `20261114090000` are not in the drill's failing probe list.
 

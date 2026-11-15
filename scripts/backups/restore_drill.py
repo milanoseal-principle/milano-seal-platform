@@ -262,7 +262,10 @@ FAILURE_CLASSES = (
 )
 # Files whose name and line number may be reported. Their content is never printed.
 DIAGNOSTIC_FILES = {"roles.sql", "schema.sql", "data.sql", "app.sql", "managed_restore.sql", "count.sql",
-                    "restore_drill_checks.sql"}
+                    "restore_drill_checks.sql", "migration_rehearsal_checks.sql"}
+# Repository migrations (rehearsed on the restored copy) are reviewed source, never data: their
+# names, lines and statement keywords may be reported like a definition-only dump.
+REPO_MIGRATION = re.compile(r"^\d{14}_[a-z0-9_]+\.sql$")
 DATA_FILES = {"data.sql", "app.sql", "managed_restore.sql"}
 # Statement keywords that may be reported for a failure in a definition-only dump.
 STATEMENT_WORDS = {"ALTER", "CREATE", "DROP", "GRANT", "REVOKE", "COMMENT", "SET", "SELECT", "COPY", "INSERT",
@@ -297,7 +300,7 @@ def diagnose(text, dump_root=None):
     if state:
         facts["sqlstate"] = state.group(1)
     where = re.match(r"psql:(?:.*/)?([A-Za-z0-9_.-]+):(\d+):", line)
-    if where and where.group(1) in DIAGNOSTIC_FILES:
+    if where and (where.group(1) in DIAGNOSTIC_FILES or REPO_MIGRATION.match(where.group(1))):
         facts["file"], facts["line"] = where.group(1), int(where.group(2))
         if dump_root and where.group(1) in DATA_FILES:
             relation = _relation_at(Path(dump_root) / where.group(1), int(where.group(2)))
@@ -308,7 +311,7 @@ def diagnose(text, dump_root=None):
                 schema_sql = Path(dump_root) / "schema.sql"
                 if schema_sql.exists():
                     facts["defined_in_schema_dump"] = relation in created_tables(schema_sql)
-        if dump_root and where.group(1) in DEFINITION_FILES:
+        if dump_root and (where.group(1) in DEFINITION_FILES or REPO_MIGRATION.match(where.group(1))):
             try:
                 with open(Path(dump_root) / where.group(1), encoding="utf-8", errors="replace") as fh:
                     lines = fh.readlines()

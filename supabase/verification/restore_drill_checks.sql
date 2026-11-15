@@ -1,6 +1,7 @@
 -- Run ONLY against the isolated restore target. Counts and booleans only: no row data.
 -- Probes whether RLS on the restored data refuses an anonymous caller and an arbitrary signed-in
 -- client, and records security facts that the restored copy inherits from production.
+drop table if exists pg_temp.restore_probe, pg_temp.restore_facts;  -- session-local scratch only
 create temp table restore_probe(role text, tbl text, visible bigint);
 grant all on restore_probe to public;
 create temp table restore_facts(fact text primary key, value bigint);
@@ -51,8 +52,14 @@ select jsonb_build_object(
   'rls_probe_rows_visible_to_arbitrary_client', (select coalesce(sum(visible) filter (where visible > 0), 0) from restore_probe where role = 'authenticated'),
   'rls_probe_tables_exposed', (select coalesce(jsonb_agg(role || ':' || tbl order by role, tbl), '[]') from restore_probe where visible > 0),
   'rls_probe_tables_checked', (select count(distinct tbl) from restore_probe),
-  'custody_chain_unlinked_rows', (select count(*) from public.custody_ledger c where c.prev_hash is not null
+  -- A chain starts with prev_hash 'GENESIS' (append_custody_event); only a later row whose
+  -- predecessor is absent from its own Matter is unlinked.
+  'custody_chain_genesis_rows', (select count(*) from public.custody_ledger where prev_hash = 'GENESIS'),
+  'custody_chain_unlinked_rows', (select count(*) from public.custody_ledger c where c.prev_hash is not null and c.prev_hash <> 'GENESIS'
       and not exists (select 1 from public.custody_ledger p where p.deal_id = c.deal_id and p.hash = c.prev_hash)),
+  'custody_chain_cross_matter_links', (select count(*) from public.custody_ledger c where c.prev_hash is not null and c.prev_hash <> 'GENESIS'
+      and not exists (select 1 from public.custody_ledger p where p.deal_id = c.deal_id and p.hash = c.prev_hash)
+      and exists (select 1 from public.custody_ledger p where p.deal_id <> c.deal_id and p.hash = c.prev_hash)),
   'founder_admin_helper_reads_user_metadata', (select coalesce(bool_or(pg_get_functiondef(p.oid) ilike '%user_metadata%'), false)
       from pg_proc p join pg_namespace s on s.oid = p.pronamespace where s.nspname = 'public' and p.proname = 'is_founder_or_admin'),
   'migration_ledger_entries', (select value from restore_facts where fact = 'migration_ledger_entries')

@@ -11,6 +11,11 @@ on:
         description: "Backup timestamp folder (e.g. 20261114T190000Z). Empty = newest."
         required: false
         default: ""
+      rehearse_production_migrations:
+        description: "After recovery is verified, rehearse the eight pending production migrations on the restored copy (never production)."
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -219,6 +224,60 @@ jobs:
               for f in failures: print("::error::" + f)
               raise SystemExit(1)
           PYTHON
+      - name: Rehearse the pending production migrations on the restored copy (isolated target only)
+        if: inputs.rehearse_production_migrations
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; . "$DRILL/target.env"; set +a
+          # Runs after recovery is verified, so the recovery evidence above describes the unmodified
+          # restore. Applies the reviewed migration files, unchanged, in the approved priority order
+          # (not filename order), each in its own transaction, as the role hosted migrations run as
+          # (postgres), to the disposable restored copy of production. Stops at the first failure.
+          for migration in \
+            20261114100000_founder_admin_server_identity.sql \
+            20261112090000_revoke_unrestricted_public_rls_policies.sql \
+            20261112120000_va_task_ledger.sql \
+            20261112130000_alliance_operator_identity.sql \
+            20261112140000_operator_profile_binding.sql \
+            20261113150000_rejected_referral_not_convertible.sql \
+            20261114090000_restrict_authenticated_allow_all_policies.sql \
+            20261114110000_require_operator_unique_indexes.sql
+          do
+            if ! docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/migrations:/migrations:ro" -e DB_URL="$RESTORE_DB_URL" -e FILE="$migration" postgres:17 sh -ec '
+              psql "$DB_URL" --single-transaction -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -q --command "SET ROLE postgres" --file "/migrations/$FILE"' > /dev/null 2> "$DRILL/rehearsal.err"; then
+              python3 scripts/backups/restore_drill.py classify migration-rehearsal "$DRILL/rehearsal.err" "$GITHUB_WORKSPACE/supabase/migrations"
+              exit 1
+            fi
+            echo "MIGRATION_REHEARSAL: APPLIED $migration"
+          done
+          if ! docker run --rm --network host -v "$GITHUB_WORKSPACE/supabase/verification:/sql:ro" -e DB_URL="$RESTORE_DB_URL" postgres:17 sh -ec '
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -f /sql/migration_rehearsal_checks.sql > /tmp/post.out
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -At -f /sql/restore_drill_checks.sql > /tmp/probes.out
+            tail -n 1 /tmp/post.out; tail -n 1 /tmp/probes.out' > "$DRILL/rehearsal.out" 2> "$DRILL/rehearsal-checks.err"; then
+            python3 scripts/backups/restore_drill.py classify rehearsal-checks "$DRILL/rehearsal-checks.err"
+            exit 1
+          fi
+          python3 - "$DRILL" <<'PYTHON'
+          import json, sys
+          from pathlib import Path
+          drill = Path(sys.argv[1])
+          post, probes = (json.loads(line) for line in (drill / "rehearsal.out").read_text().strip().splitlines()[-2:])
+          failures = list(post["failures"])
+          if probes["rls_probe_rows_visible_to_anon"] != 0: failures.append("anonymous caller can read sensitive rows after the migrations")
+          if probes["rls_probe_rows_visible_to_arbitrary_client"] != 0: failures.append("arbitrary signed-in client can read sensitive rows after the migrations")
+          if probes["founder_admin_helper_reads_user_metadata"]: failures.append("founder/admin helper still reads user metadata")
+          rehearsal = {"order": "priority", "migrations_applied": 8, "postconditions": post,
+                       "rls_probes_after": {k: probes[k] for k in ("rls_probe_rows_visible_to_anon", "rls_probe_rows_visible_to_arbitrary_client",
+                                                                     "rls_probe_tables_checked", "rls_probe_tables_exposed", "founder_admin_helper_reads_user_metadata")},
+                       "failures": failures}
+          (drill / "rehearsal.json").write_text(json.dumps(rehearsal, sort_keys=True))
+          print(json.dumps(rehearsal, sort_keys=True))
+          if failures:
+              for f in failures: print("::error::MIGRATION_REHEARSAL_POSTCONDITION " + f)
+              raise SystemExit(1)
+          PYTHON
+          echo "MIGRATION_REHEARSAL: PASS"
       - name: Record recovery evidence
         shell: bash
         run: |
@@ -239,6 +298,7 @@ jobs:
               "archive_sha256": os.environ["ARCHIVE_SHA256"],
               "fidelity": json.loads((drill / "fidelity.json").read_text()),
               "managed_tables": json.loads((drill / "managed.json").read_text()),
+              "migration_rehearsal": json.loads((drill / "rehearsal.json").read_text()) if (drill / "rehearsal.json").exists() else "not requested",
               "storage": json.loads((drill / "storage.json").read_text().strip().splitlines()[-1]),
               "checks": json.loads((drill / "checks.json").read_text()),
               "target": "disposable local Supabase stack on the runner (destroyed after this job)",

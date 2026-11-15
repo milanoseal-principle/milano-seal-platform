@@ -96,6 +96,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261114100000_founder_admin_server_identity.sql','tests/founder-admin-server-identity.test.ts',
  // 2026-11-14 B03: all three operator unique indexes are required; duplicates stop the migration.
  'supabase/migrations/20261114110000_require_operator_unique_indexes.sql','tests/operator-unique-indexes-required.test.ts',
+ // 2026-11-15 Recovery: drill checks separate custody GENESIS rows; migration rehearsal postconditions (read-only).
+ 'supabase/verification/restore_drill_checks.sql','supabase/verification/migration_rehearsal_checks.sql','tests/restore-drill-checks.test.ts','tests/migration-rehearsal-checks.test.ts',
 
  'app/api/portal/me/ron/route.ts','scripts/validate-ron-bluenotary-client-journey.mjs',
  // 2026-11-09 user-authorized Wise cancellation remediation; exact paths only.

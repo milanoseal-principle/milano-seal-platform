@@ -584,7 +584,7 @@ class RestoreDrillTests(unittest.TestCase):
         # Each docker command that talks to the restored database must send stderr to the
         # protected drill directory and print only a classification on failure.
         blocks = [b for b in text.split("docker run --rm --network host")[1:] if "then\n" in b.split("fi\n", 1)[0]]
-        self.assertEqual(len(blocks), 5)
+        self.assertEqual(len(blocks), 7)
         for block in blocks:
             command = block.split("then\n", 1)[0]
             self.assertRegex(command, r'2> "\$DRILL/[a-z-]+\.err"', command[:120])
@@ -739,6 +739,27 @@ class RestoreDrillTests(unittest.TestCase):
         self.assertNotIn("pg_restore", text)
         self.assertIn('"$DRILL/split/app.sql" "$DRILL/split/managed_restore.sql"', text)
         self.assertIn('"managed_tables": json.loads((drill / "managed.json").read_text())', text)
+
+    def test_migration_rehearsal_is_opt_in_after_recovery_evidence_and_only_on_the_restored_copy(self):
+        text = RESTORE_WORKFLOW.read_text()
+        self.assertIn("rehearse_production_migrations:", text)
+        self.assertIn("default: false", text.split("rehearse_production_migrations:", 1)[1].split("permissions:", 1)[0])
+        rehearsal = text.split("- name: Rehearse the pending production migrations", 1)[1].split("- name:", 1)[0]
+        self.assertIn("if: inputs.rehearse_production_migrations", rehearsal)
+        # Recovery is verified (and its end time recorded) on the unmodified restore first.
+        self.assertLess(text.index("RESTORE_END="), text.index("- name: Rehearse the pending production migrations"))
+        self.assertIn('--command "SET ROLE postgres" --file "/migrations/$FILE"', rehearsal)
+        self.assertIn('-v "$GITHUB_WORKSPACE/supabase/migrations:/migrations:ro"', rehearsal)
+        self.assertIn("migration_rehearsal_checks.sql", rehearsal)
+        self.assertNotIn("supabase db push", text)
+        self.assertNotIn("schema_migrations", rehearsal, "the rehearsal never writes a migration ledger")
+        # A failing migration is named with its line and statement keywords, never message text.
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, "20261114100000_founder_admin_server_identity.sql", "create or replace function public.f()\nreturns int language sql as $$ select 1 $$;\n")
+            facts = drill.diagnose('psql:/migrations/20261114100000_founder_admin_server_identity.sql:2: ERROR:  42501: must be owner of function f\n', d)
+            self.assertEqual(facts, {"class": "PERMISSION_DENIED", "sqlstate": "42501", "file": "20261114100000_founder_admin_server_identity.sql",
+                                     "line": 2, "statement": "CREATE OR REPLACE FUNCTION"})
+            self.assertNotIn("file", drill.diagnose("psql:/migrations/../customers.sql:2: ERROR:  42501: x\n", d))
 
     def test_restore_runs_as_the_local_targets_own_superuser_only(self):
         text = RESTORE_WORKFLOW.read_text()

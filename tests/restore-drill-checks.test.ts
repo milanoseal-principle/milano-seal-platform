@@ -45,6 +45,29 @@ test("checks detect a table that anonymous and signed-in callers can read", asyn
   }
 });
 
+test("a custody chain's GENESIS row is not reported as unlinked; a broken link is", async () => {
+  const db = await isolatedCanonicalDatabase(files());
+  try {
+    const deal = "30000000-0000-4000-8000-000000000001", other = "30000000-0000-4000-8000-000000000002";
+    await db.exec(`set session_replication_role = replica;
+      insert into public.custody_ledger(deal_id, event, hash, prev_hash) values
+        ('${deal}', 'synthetic', 'h1', 'GENESIS'), ('${deal}', 'synthetic', 'h2', 'h1'),
+        ('${other}', 'synthetic', 'o1', 'GENESIS');
+      set session_replication_role = origin;`);
+    let checks = await run(db);
+    assert.equal(checks.custody_chain_genesis_rows, 2);
+    assert.equal(checks.custody_chain_unlinked_rows, 0, "chain starts are not breaks");
+    await db.exec(`set session_replication_role = replica;
+      insert into public.custody_ledger(deal_id, event, hash, prev_hash) values ('${deal}', 'synthetic', 'h9', 'missing'), ('${other}', 'synthetic', 'o2', 'h2');
+      set session_replication_role = origin;`);
+    checks = await run(db);
+    assert.equal(checks.custody_chain_unlinked_rows, 2);
+    assert.equal(checks.custody_chain_cross_matter_links, 1);
+  } finally {
+    await db.close();
+  }
+});
+
 test("checks output counts and booleans only, never row values", () => {
   const select = CHECKS.slice(CHECKS.lastIndexOf("select jsonb_build_object("));
   assert.doesNotMatch(select, /select\s+(\*|email|client_name|name|metadata|payload)\b/i);
