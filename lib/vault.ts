@@ -30,23 +30,29 @@ export interface VaultDocument {
 export async function getVaultDocumentsForMatter(
   matterId: string,
   actorEmail: string,
+  dependencies = { admin: createAdminClient, audit },
 ): Promise<VaultDocument[]> {
-  const admin = createAdminClient();
+  const admin = dependencies.admin();
 
   const owner=await admin.from('deals').select('id,email,is_paid_and_released,payment_confirmed,payment_status,payment_settlement_status,amount_due,amount_paid').eq('id',matterId).maybeSingle();
   if(owner.error||!owner.data||!emailsMatch(owner.data.email,actorEmail))throw Error('VAULT_MATTER_NOT_AUTHORIZED');
   const rows=await readAllKeyset<Record<string,unknown>>(async cursor=>{
-   let query=admin.from('client_safe_documents_view').select('document_id,matter_id,document_label,storage_path,uploaded_at,verification_status').eq('matter_id',matterId).order('document_id').limit(100);if(cursor)query=query.gt('document_id',String(cursor.document_id));const result=await query;if(result.error)throw Error('VAULT_READ_UNAVAILABLE');return result.data??[];
+   let query=admin.from('client_safe_documents_view').select('document_id,matter_id,document_label,uploaded_at,verification_status').eq('matter_id',matterId).order('document_id').limit(100);if(cursor)query=query.gt('document_id',String(cursor.document_id));const result=await query;if(result.error)throw Error('VAULT_READ_UNAVAILABLE');return result.data??[];
   },row=>String(row.document_id));
 
   const documents = await Promise.all(
     rows.map(async (row) => {
       let signedUrl: string | null = null;
 
-      if (row.storage_path) {
+      // The client-safe view intentionally omits storage paths. Resolve a path
+      // only on the server, for a visible document in this verified Matter.
+      const source = await admin.from("files").select("storage_path")
+        .eq("id", row.document_id).eq("deal_id", matterId).maybeSingle();
+      if (source.error) throw Error("VAULT_READ_UNAVAILABLE");
+      if (source.data?.storage_path) {
         const { data: signed } = await admin.storage
           .from(VAULT_BUCKET)
-          .createSignedUrl(String(row.storage_path), PORTAL_URL_EXPIRY_SECONDS);
+          .createSignedUrl(String(source.data.storage_path), PORTAL_URL_EXPIRY_SECONDS);
         signedUrl = signed?.signedUrl ?? null;
       }
 
@@ -71,7 +77,7 @@ export async function getVaultDocumentsForMatter(
    }
    documents.push({document_id:String(row.id),matter_id:matterId,document_label:String(row.file_name??'Document'),uploaded_at:String(row.created_at),verification_status:row.stage==='final_packet'?'released':'pending',signed_url:`/api/portal/me/documents?deal_id=${encodeURIComponent(matterId)}&version_id=${row.id}`});
   }
-  await audit({
+  await dependencies.audit({
     event: "portal.document_list.accessed",
     actor: actorEmail,
     resource: `matters:${matterId}`,
@@ -93,12 +99,17 @@ export async function generateVaultSignedUrl(
   documentId: string,
   matterId: string,
   actorEmail: string,
+  dependencies = { admin: createAdminClient, audit },
 ): Promise<{ url: string; expires_in: number } | { error: string; status: 403 | 404 }> {
-  const admin = createAdminClient();
+  const admin = dependencies.admin();
+  const owner = await admin.from("deals").select("id,email").eq("id", matterId).maybeSingle();
+  if (owner.error || !owner.data || !emailsMatch(owner.data.email, actorEmail)) {
+    return { error: "Access denied.", status: 403 };
+  }
 
   const { data: row } = await admin
     .from("client_safe_documents_view")
-    .select("document_id, matter_id, storage_path, document_label")
+    .select("document_id, matter_id, document_label")
     .eq("document_id", documentId)
     .maybeSingle();
 
@@ -107,7 +118,7 @@ export async function generateVaultSignedUrl(
   }
 
   if (row.matter_id !== matterId) {
-    await audit({
+    await dependencies.audit({
       event: "portal.document.access_denied",
       actor: actorEmail,
       resource: `documents:${documentId}`,
@@ -116,19 +127,21 @@ export async function generateVaultSignedUrl(
     return { error: "Access denied: document not linked to this matter.", status: 403 };
   }
 
-  if (!row.storage_path) {
+  const source = await admin.from("files").select("storage_path")
+    .eq("id", documentId).eq("deal_id", matterId).maybeSingle();
+  if (source.error || !source.data?.storage_path) {
     return { error: "Document is not yet available for download.", status: 403 };
   }
 
   const { data: signed, error: signErr } = await admin.storage
     .from(VAULT_BUCKET)
-    .createSignedUrl(row.storage_path as string, PORTAL_URL_EXPIRY_SECONDS);
+    .createSignedUrl(source.data.storage_path as string, PORTAL_URL_EXPIRY_SECONDS);
 
   if (signErr || !signed?.signedUrl) {
     return { error: "Failed to generate secure download link.", status: 403 };
   }
 
-  await audit({
+  await dependencies.audit({
     event: "portal.document.downloaded",
     actor: actorEmail,
     resource: `documents:${documentId}`,

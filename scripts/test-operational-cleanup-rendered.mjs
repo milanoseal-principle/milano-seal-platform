@@ -82,6 +82,24 @@ try {
   await page.route('**/api/notary/apply',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Controlled fixture outage'})}));
   await page.getByLabel('Email *',{exact:true}).fill('fixture@example.invalid');await page.getByLabel('Phone *',{exact:true}).fill('5555550100');await page.getByLabel('State commissioned *',{exact:true}).fill('Florida');await page.getByLabel('Commission number *',{exact:true}).fill('FIXTURE');await page.getByLabel('I understand that applying does not guarantee',{exact:false}).check();await page.getByRole('button',{name:'Submit for Credential Review'}).click();await page.getByRole('alert').filter({hasText:'Controlled fixture outage'}).waitFor();assert.equal(await page.getByLabel('Full legal name',{exact:false}).inputValue(),'Disposable browser fixture');checks++;
   await page.goto(new URL('/intake',base).href,{waitUntil:'domcontentloaded'});await page.getByRole('heading',{name:'Tell Us About Your Document',exact:true}).waitFor();assert.equal(await page.getByText('50% Deposit Unlocks Scheduling',{exact:true}).count(),0);checks++;
+  // Reproduce the live mismatch: indicative pricing must not become an issued
+  // client quote before the server's mandatory execution review.
+  await page.route('**/api/intake/quote-preview',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({mode:'approved_price',amount:975,summary:'Indicative scope',lineItems:[{key:'base',label:'Priority Execution Lane',amount:975}],paymentGateRequired:true,schedulingLockedUntilPayment:true})}));
+  await page.locator('#intake-description').fill('One unsigned affidavit for remote online notarization. One signer in Miami, Florida. Domestic use only. No apostille and no translation.');
+  await page.locator('#intake-name').fill('Isolated browser fixture');
+  await page.locator('#intake-email').fill('fixture@example.invalid');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.locator('main select').first().selectOption('United States');
+  await page.getByRole('button',{name:'Confirm',exact:true}).first().click();
+  await page.getByPlaceholder('City and state').fill('Miami, Florida');
+  await page.getByRole('button',{name:'Confirm',exact:true}).first().click();
+  await page.locator('#review-document-title').fill('Affidavit');
+  await page.locator('#review-timeline').selectOption('standard');
+  await page.locator('#review-delivery').selectOption('digital');
+  await page.getByRole('button',{name:'Submit for document review',exact:false}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Complete My Order',exact:false}).count(),0);checks++;
+  assert.equal(await page.getByText('PRO FORMA QUOTE',{exact:false}).count(),0);checks++;
+
   for(const route of ['/privacy','/terms']) {await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded'});assert.equal(await page.getByText('Last updated:',{exact:false}).count(),0);checks++;}
   // Exercise the real navigation listeners without creating any server records.
   await page.evaluate(()=>{const a=document.createElement('a');a.href=location.href;a.id='cleanup-same-link';a.textContent='Same page';document.body.append(a);});await page.locator('#cleanup-same-link').click();await page.waitForTimeout(200);assert.equal(await page.getByRole('status').filter({has:page.locator('.sr-only')}).count(),0);checks++;
