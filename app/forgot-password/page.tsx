@@ -9,19 +9,26 @@ function ForgotPasswordInner() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const expired = searchParams.get("error") === "expired";
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!email.trim() || busy) return;
     setBusy(true);
+    setFailure(null);
     try {
-      await fetch("/api/auth/password/reset-request", {
+      const response = await fetch("/api/auth/password/reset-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-      setSent(true);
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      // Only a request the email provider accepted is reported as sent.
+      if (response.ok && result?.ok === true) setSent(true);
+      else setFailure(result?.message || "We could not send a reset email right now. Please try again shortly.");
+    } catch {
+      setFailure("We could not reach the server. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -61,6 +68,11 @@ function ForgotPasswordInner() {
                 className="mt-2 min-h-12 w-full rounded-md border border-[#C6A55A]/20 bg-black/30 px-4 text-sm text-white outline-none placeholder:text-white/20 focus:border-[#C6A55A]/60"
                 placeholder="you@example.com"
               />
+              {failure && (
+                <div role="alert" className="mt-3 rounded-md border border-amber-300/20 bg-amber-300/[0.05] px-4 py-3 text-xs leading-5 text-amber-100/80">
+                  {failure}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={busy}
