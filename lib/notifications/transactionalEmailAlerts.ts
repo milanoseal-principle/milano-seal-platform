@@ -129,7 +129,12 @@ function shell(title: string, body: string) {
   return `<!doctype html><html><body style="margin:0;background:#090909;color:#ddd;font-family:Arial,sans-serif"><div style="max-width:620px;margin:0 auto;padding:36px 24px"><div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#c6a55a">The Milano Seal™</div><h1 style="font-family:Georgia,serif;color:#fff;font-weight:400">${title}</h1><div style="font-size:14px;line-height:1.7;color:#bbb">${body}</div></div></body></html>`;
 }
 
-export async function sendOperatorIntakeAlerts(input: {
+// Client-entered intake fields are untrusted: escape them before they enter the operator email's HTML.
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
+type OperatorIntakeAlertInput = {
   matterId: string;
   matterReference: string;
   clientName?: string | null;
@@ -139,12 +144,19 @@ export async function sendOperatorIntakeAlerts(input: {
   finalTotal?: number | null;
   amountDue?: number | null;
   currency?: string | null;
-}) {
-  const subject = `New Matter Intake — ${input.matterReference}`;
-  const html = shell(
+};
+
+export function operatorIntakeAlertHtml(input: OperatorIntakeAlertInput): string {
+  const field = (value: string | null | undefined, fallback: string) => escapeHtml(value || fallback);
+  return shell(
     "New Matter received",
-    `<p><strong>${input.matterReference}</strong> has entered production intake.</p><p>Client: ${input.clientName || "Not provided"}<br/>Email: ${input.clientEmail || "Not provided"}<br/>Document: ${input.documentType || "Review required"}<br/>Destination: ${input.destination || "Review required"}<br/>Final total: ${money(input.finalTotal, input.currency || "USD")}<br/>Amount due: ${money(input.amountDue, input.currency || "USD")}</p>`,
+    `<p><strong>${escapeHtml(input.matterReference)}</strong> has entered production intake.</p><p>Client: ${field(input.clientName, "Not provided")}<br/>Email: ${field(input.clientEmail, "Not provided")}<br/>Document: ${field(input.documentType, "Review required")}<br/>Destination: ${field(input.destination, "Review required")}<br/>Final total: ${money(input.finalTotal, input.currency || "USD")}<br/>Amount due: ${money(input.amountDue, input.currency || "USD")}</p>`,
   );
+}
+
+export async function sendOperatorIntakeAlerts(input: OperatorIntakeAlertInput) {
+  const subject = `New Matter Intake — ${input.matterReference}`;
+  const html = operatorIntakeAlertHtml(input);
   await Promise.all(operatorEmails().map((recipient) => sendOne({
     matterId: input.matterId,
     matterReference: input.matterReference,
