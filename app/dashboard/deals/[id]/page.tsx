@@ -45,6 +45,7 @@ import { MilanoReleaseSeal } from "@/components/orbit/MilanoReleaseSeal";
 import { ComplimentaryMatterCard } from "@/components/payments/ComplimentaryMatterCard";
 import { SecurePaymentCard } from "@/components/payments/SecurePaymentCard";
 import { isPriceIssued } from "@/lib/pricing/priceIssued";
+import { clientExecutionRequestFromNotes } from "@/lib/intake/requestedVsConfirmed";
 import {
   ArrowLeft,
   CalendarClock,
@@ -101,6 +102,9 @@ interface MilanoDeal {
   discount_amount?: number | null;
   final_total?: number | null;
   quote_review_required?: boolean | null;
+  quote_approved_at?: string | null;
+  matter_pricing_type?: string | null;
+  customer_execution_preference?: string | null;
   invoice_retainer: number | null;
   invoice_balance: number | null;
   payment_link: string;
@@ -735,14 +739,29 @@ export default function DealDetail() {
       <RequestedVsConfirmedRoute notes={deal.notes} executionTruth={deal.execution_truth ?? null} witnesses={deal.witnesses} />
 
       <OperatorQuoteBuilder
+        // Keyed by Matter: switching Matters never carries form state or edits across.
+        key={deal.id}
         matterId={deal.id}
         paymentStatus={deal.payment_status}
         amountPaid={deal.amount_paid}
         paymentObservedAt={deal.payment_observed_at ?? null}
         initial={{
-          // Execution method comes only from canonical execution truth or an
-          // explicit mobile fact; it is never inferred from lane or document.
-          executionMethod: deal.mobile ? "in_person" : null,
+          // Execution facts come only from canonical execution truth. The client's
+          // intake request (including the legacy mobile flag) is a labelled hint.
+          matterBase: deal.matter_pricing_type ?? null,
+          quoteApproved: Boolean(deal.quote_approved_at) && deal.quote_review_required !== true,
+          clientRequest: (() => {
+            const request = clientExecutionRequestFromNotes(deal.notes);
+            const preference = deal.customer_execution_preference && deal.customer_execution_preference !== "review_required"
+              ? deal.customer_execution_preference : null;
+            return {
+              executionPreference: request?.executionPreference ?? preference,
+              notarizationPreference: request?.notarizationPreference ?? null,
+              authenticationPreference: request?.authenticationPreference ?? null,
+              requestedNotarialAct: request?.requestedNotarialAct ?? null,
+              mobileFlag: Boolean(deal.mobile),
+            };
+          })(),
           documentCount: deal.docs_count,
           apostilleCount: deal.apostille_required ? deal.docs_count : 0,
           signerCount: deal.signers,

@@ -66,3 +66,30 @@ export function confirmedExecutionRoute(executionTruth: Record<string, unknown> 
 export function requestedServiceLabel(intent: SmartIntakeIntent | null): string {
   return intent ? serviceLane(intent).title : "Not captured (pre-dates service lanes or direct entry)";
 }
+
+/**
+ * The client's execution request captured at intake (non-authoritative). Used
+ * only as a labelled hint in operator review; never written into execution truth.
+ */
+export function clientExecutionRequestFromNotes(notes: string | null | undefined): {
+  executionPreference: string | null;
+  notarizationPreference: string | null;
+  authenticationPreference: string | null;
+  requestedNotarialAct: string | null;
+} | null {
+  const meta = notes ? METADATA.exec(notes)?.[1] : undefined;
+  if (!meta) return null;
+  try {
+    const request = (JSON.parse(meta) as { customer_execution_request?: Record<string, unknown> }).customer_execution_request;
+    if (!request || typeof request !== "object") return null;
+    const s = (value: unknown) => (typeof value === "string" && /^[a-z_]{2,40}$/.test(value) ? value : null);
+    return {
+      executionPreference: s(request.execution_preference),
+      notarizationPreference: s(request.notarization_preference),
+      authenticationPreference: s(request.authentication_preference),
+      requestedNotarialAct: s(request.requested_notarial_act),
+    };
+  } catch {
+    return null;
+  }
+}

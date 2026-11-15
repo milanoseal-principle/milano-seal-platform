@@ -8,6 +8,8 @@ import { composeGovernedQuote } from "@/lib/pricing/governedQuotePreview";
 import { canonicalDestinationSlug } from "@/lib/alliance/professionalToolbelt";
 import { isQuoteMutationLocked } from "@/lib/pricing/quoteMutationLock";
 import { applyDiscountToMatter } from "@/src/features/discounts/discountService";
+import { sanitizeRouteEvidence } from "@/lib/pricing/operatorQuotePrefill";
+import { DOCUMENT_ORIGIN_ROUTING_MATRIX } from "@/lib/international-execution/operationalGovernance";
 
 export const runtime = "nodejs";
 
@@ -61,6 +63,30 @@ function resolveRouteFacts(
     },
     conflicts,
   };
+}
+
+// Read-only prefill source for the operator Quote Builder: the operator route
+// facts recorded with this Matter's latest governed quote attempt. Operator
+// session required; scoped to one Matter; returns only the sanitized facts,
+// never the raw ledger row. No writes.
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const operator = await operatorIdentity();
+  if (!operator) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const { id } = await params;
+  const { data, error } = await createAdminClient()
+    .from("matter_evidence_ledger")
+    .select("event_type, occurred_at, new_value")
+    .eq("matter_id", id)
+    .eq("domain", "pricing")
+    .eq("source", "operator_quote_builder")
+    .order("occurred_at", { ascending: false })
+    .limit(1);
+  if (error) return NextResponse.json({ error: "ROUTE_EVIDENCE_UNAVAILABLE" }, { status: 503 });
+  const evidence = sanitizeRouteEvidence(data?.[0] ?? null, DOCUMENT_ORIGIN_ROUTING_MATRIX.map((rule) => rule.category));
+  return NextResponse.json({ route_evidence: evidence }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(
