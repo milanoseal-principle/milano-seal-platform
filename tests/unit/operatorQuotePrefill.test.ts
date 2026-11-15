@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import {
+  provenanceForCurrentValues,
   resolveOperatorPrefill,
   sanitizeRouteEvidence,
   type ClientExecutionRequest,
@@ -174,4 +175,23 @@ test("already-notarized / third-party execution carries its recorded supporting 
   const { executionReviewReasons } = composeGovernedQuote({ ...recorded, destination_country: "Italy", document_type: "Affidavit", document_count: 1, signer_count: 1 });
   assert.ok(!executionReviewReasons.includes("NOTARY_JURISDICTION_REQUIRED"));
   assert.ok(!executionReviewReasons.includes("CERTIFICATE_TYPE_REQUIRED"));
+});
+
+test("an operator edit replaces the source label with an unsaved-edit label", () => {
+  // Codex P2: editing a value prefilled from an approved quote must not keep showing "Confirmed".
+  const evidence = sanitizeRouteEvidence({
+    event_type: "canonical_quote_approved",
+    new_value: { route_intelligence: { issuing_authority: "state", document_category: "notarized_affidavit", document_category_source: "operator" } },
+  }, CATEGORIES);
+  const p = resolveOperatorPrefill({ executionTruth: provisionalTruth, routeEvidence: evidence, matterPricingType: null, quoteApproved: true, clientRequest: clientB });
+  const prefilled = { issuing_authority: "state", execution_method: "review_required" };
+  const unchanged = provenanceForCurrentValues(p.provenance, prefilled, prefilled);
+  assert.equal(unchanged.issuing_authority.status, "confirmed");
+  const edited = provenanceForCurrentValues(p.provenance, { issuing_authority: "federal", execution_method: "in_person" }, prefilled);
+  assert.equal(edited.issuing_authority.status, "edited");
+  assert.equal(edited.execution_method.status, "edited", "a resolved choice no longer shows From intake/Missing");
+  assert.equal(edited.document_category.status, "confirmed", "fields without a current value keep their label");
+  const builder = fs.readFileSync("components/dashboard/OperatorQuoteBuilder.tsx", "utf8");
+  assert.match(builder, /provenanceForCurrentValues\(p, form, prefilled\.current\)/);
+  assert.match(builder, /prefilled\.current\[key\] = value;/);
 });

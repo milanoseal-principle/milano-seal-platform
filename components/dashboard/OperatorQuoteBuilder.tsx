@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { isQuoteMutationLocked } from "@/lib/pricing/quoteMutationLock";
 import {
+  provenanceForCurrentValues,
   resolveOperatorPrefill,
   type BuilderExecutionMethod,
   type ClientExecutionRequest,
@@ -280,6 +281,9 @@ export function OperatorQuoteBuilder({
     assigned_notary: typeof truth?.assigned_notary === "string" ? truth.assigned_notary : "",
   }));
 
+  // Values as prefilled (before any operator edit); provenance labels describe these, not edits.
+  const prefilled = useRef<Partial<QuoteForm>>({ ...form });
+
   // Operator route facts recorded with this Matter's latest governed quote attempt
   // (server-read, sanitized). Applied only to fields the operator has not edited,
   // and only while this Matter is still the mounted one.
@@ -294,7 +298,10 @@ export function OperatorQuoteBuilder({
         setForm((current) => {
           const next = { ...current };
           const apply = <K extends keyof QuoteForm>(key: K, value: QuoteForm[K] | null) => {
-            if (value != null && value !== "" && !touched.current.has(key)) next[key] = value;
+            if (value != null && value !== "" && !touched.current.has(key)) {
+              next[key] = value;
+              prefilled.current[key] = value;
+            }
           };
           apply("document_category", evidence.documentCategory as QuoteForm["document_category"] | null);
           apply("issuing_authority", evidence.issuingAuthority);
@@ -329,9 +336,9 @@ export function OperatorQuoteBuilder({
     if (!prefill.authenticationRequirement && Number(initial?.apostilleCount ?? 0) > 0) {
       p.authentication_requirement = { status: "from_intake", detail: "Intake marked apostille required. Verify the receiving-authority requirement." };
     }
-    return p;
+    return provenanceForCurrentValues(p, form, prefilled.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefill]);
+  }, [prefill, form]);
 
   function patch<K extends keyof QuoteForm>(key: K, value: QuoteForm[K]) {
     touched.current.add(key);
@@ -824,6 +831,7 @@ const PROVENANCE_STYLE: Record<FieldProvenance["status"], [string, string]> = {
   suggested: ["Suggested", "border-[#C6A65B]/35 bg-[#C6A65B]/10 text-[#E8CF8B]"],
   conflict: ["Conflict", "border-red-500/35 bg-red-500/10 text-red-300"],
   missing: ["Missing", "border-amber-500/30 bg-amber-500/10 text-amber-300"],
+  edited: ["Edited", "border-violet-500/30 bg-violet-500/10 text-violet-300"],
 };
 
 function Field({ label, children, provenance }: { label: string; children: React.ReactNode; provenance?: FieldProvenance }) {

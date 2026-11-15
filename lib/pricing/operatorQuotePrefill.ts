@@ -21,7 +21,29 @@ import {
   NOTARIZATION_REQUIREMENTS,
 } from "@/lib/matter/executionTruth";
 
-export type PrefillStatus = "confirmed" | "from_intake" | "suggested" | "conflict" | "missing";
+export type PrefillStatus = "confirmed" | "from_intake" | "suggested" | "conflict" | "missing" | "edited";
+
+/** A field the operator changed in this session is unsaved input, not a recorded fact. */
+export const OPERATOR_EDIT_PROVENANCE: FieldProvenance = {
+  status: "edited",
+  detail: "Operator edit (not saved). Confirm it through execution review / quote approval.",
+};
+
+/**
+ * Displayed provenance follows the current value: once the operator changes a
+ * field away from its prefilled value, the original source label no longer applies.
+ */
+export function provenanceForCurrentValues<K extends string>(
+  provenance: Record<K, FieldProvenance>,
+  current: Readonly<Record<string, unknown>>,
+  prefilled: Readonly<Record<string, unknown>>,
+): Record<K, FieldProvenance> {
+  const result = { ...provenance };
+  for (const key of Object.keys(provenance) as K[]) {
+    if (key in current && key in prefilled && current[key] !== prefilled[key]) result[key] = OPERATOR_EDIT_PROVENANCE;
+  }
+  return result;
+}
 
 export interface FieldProvenance {
   status: PrefillStatus;
