@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { isPriceIssued } from "@/lib/pricing/priceIssued";
 import { financialArtifactPdf } from '@/lib/financial/artifact';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentClientDeal } from "@/lib/portalAuth";
@@ -72,9 +73,9 @@ export async function GET(req: NextRequest) {
 
   const invoiceRow = data as unknown as Record<string, unknown>;
 
-  // Smart pricing is issued only after the existing governed operator approval.
-  // Missing amounts are NOT complimentary invoices and must never project as $0.00.
-  const approved = Boolean(invoiceRow.quote_approved_at) && invoiceRow.quote_review_required !== true && invoiceRow.final_total != null;
+  // Instant canonical pricing and approved operator quotes are both issued prices; a review-required
+  // or unpriced Matter is pending, and a missing amount must never project as a $0.00 invoice.
+  const approved = isPriceIssued(invoiceRow);
   return NextResponse.json({
     success: true,
     pricingStatus: approved ? "approved" : "pending_review",
