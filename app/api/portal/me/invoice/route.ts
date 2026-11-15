@@ -47,6 +47,7 @@ const INVOICE_SELECT = [
   "pricing_version",
   "quote_breakdown",
   "quote_review_required",
+  "quote_approved_at",
   "quote_review_reasons",
 ].join(",");
 
@@ -71,9 +72,13 @@ export async function GET(req: NextRequest) {
 
   const invoiceRow = data as unknown as Record<string, unknown>;
 
+  // Smart pricing is issued only after the existing governed operator approval.
+  // Missing amounts are NOT complimentary invoices and must never project as $0.00.
+  const approved = Boolean(invoiceRow.quote_approved_at) && invoiceRow.quote_review_required !== true && invoiceRow.final_total != null;
   return NextResponse.json({
     success: true,
-    invoice: buildClientInvoiceSnapshot(invoiceRow),
+    pricingStatus: approved ? "approved" : "pending_review",
+    invoice: approved ? buildClientInvoiceSnapshot(invoiceRow) : null,
   });
 }
 // Explicit issuance; GET invoice projection remains a non-mutating display.

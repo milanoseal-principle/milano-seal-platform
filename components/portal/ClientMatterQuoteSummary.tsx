@@ -42,6 +42,7 @@ const humanize = (value: string | null) =>
 
 export function ClientMatterQuoteSummary({ matterId }: { matterId: string }) {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [pricingStatus, setPricingStatus] = useState("unavailable");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +54,8 @@ export function ClientMatterQuoteSummary({ matterId }: { matterId: string }) {
           { cache: "no-store", signal: controller.signal },
         );
         if (!response.ok) return;
-        const body = (await response.json()) as { invoice?: Invoice };
+        const body = (await response.json()) as { invoice?: Invoice | null; pricingStatus?: string };
+        setPricingStatus(body.pricingStatus ?? "unavailable");
         setInvoice(body.invoice ?? null);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -72,7 +74,16 @@ export function ClientMatterQuoteSummary({ matterId }: { matterId: string }) {
     );
   }
 
-  if (!invoice) return null;
+  if (!invoice) {
+    return (
+      <section className="rounded-sm border border-[#C6A55A]/20 bg-[#0b0b0b] p-5" role="status">
+        <div className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#C6A55A]/70">The Milano Seal · Smart Pricing</div>
+        <h2 className="mt-2 font-serif text-xl text-[#F6F1E6]">{pricingStatus === "pending_review" ? "Pricing pending review" : "Matter invoice unavailable"}</h2>
+        <p className="mt-2 text-xs leading-5 text-white/50">{pricingStatus === "pending_review" ? "Your execution scope and receiving-authority requirements are being reviewed. Your itemized Pro Forma and Wise payment instructions will appear here only after the governed quote is approved." : "Your invoice could not be loaded. Please refresh or contact your coordinator."}</p>
+        <p className="mt-3 text-[10px] text-[#C6A55A]/70">No payment is due or authorized from an unapproved quote. Scheduling remains locked until verified Wise settlement.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-sm border border-[#C6A55A]/20 bg-[#0b0b0b]">
