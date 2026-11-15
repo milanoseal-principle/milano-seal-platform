@@ -215,3 +215,50 @@ This supersedes the blocked-account and no-Matter status in sections28–29. The
 Four focused vault regressions pass, exercising the actual hosted projection contract, server-side scoped signing, cross-client denial and failure propagation. A local desktop/mobile browser regression reproduces an approved indicative preview and requires review-only submission without a pro forma. Full-gate and rendered results will be appended after completion. These source corrections are not yet a live production fix.
 
 Private screenshots, test responses and browser state are under ignored artifacts/controlled-qa. Credentials, confirmation URLs and session state must not be committed or published. Both QA accounts and Matters remain retained under the existing production QA procedure; no deletion or cleanup is authorized. Final decision remains NO-GO. The next product decision is whether instant public quoting is intended before operator review: current production policy forbids it. Do not bypass that policy merely to satisfy Client A's planned scenario.
+
+## 31. Post-release reconciliation: PR #515 and PR #516 — 2026-11-15 17:40 UTC
+
+This section supersedes earlier current-state claims about intake quote display, the owned document vault, password recovery and the production SHA. Sections 1–30 are kept unchanged as historical evidence. The final transaction decision remains **NO-GO**.
+
+### Releases
+
+| Item | Evidence | Source | Result |
+|---|---|---|---|
+| PR #515: review-only public intake and owned document vault | Merged 15:47:16 UTC as `94ebd50a`. PR head `2fa091df`. [CI 43730378165](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43730378165) passed. Codex review completed with no findings on the PR head. | GitHub (checked in this session) | PASS |
+| PR #515 post-release check | Production at `94ebd50a`, deployment `dpl_BwLr1gB6p3eWn25E77WLWS4evKNM`. [Smoke test 43732441573](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43732441573) passed on that exact commit. Both clients signed in again:<br>• their own vault returned 200 with `files=[]`; another client's vault returned 404;<br>• intake shows review submission with no pro forma issued;<br>• invoices stay `pending_review`/null and scheduling stays locked.<br>Trigger function MD5 unchanged (`f1c0e77d6cc0c98b17e649464b99f558`, 15:55:53 UTC). | Post-release record on PR #515 (owner session); smoke test result checked in this session | PASS (scoped) |
+| PR #516: password recovery and client lifecycle email | Merged 17:17:12 UTC as `366da0e0`. PR head `0c510d7c`. [CI 43740158501](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43740158501) passed on that head. Codex's account-enumeration finding (P2) on the first head was fixed in `0c510d7c`, and the owner accepted the trade-off by merging. | GitHub (checked in this session) | PASS |
+| Production deployment | `www.themilanoseal.com` and `dpl_E1vAB27eHhYpSezd9VXSWRBe8XT5` are READY on `366da0e0`. | Owner-verified (this session has no network access to Vercel) | PASS |
+
+### Effect on Section 30 findings
+
+- **Instant-price preview/issuance mismatch:** fixed in #515. Public intake now matches the server's mandatory execution review, so no pro forma is shown before an operator issues a quote. Client A's Matter MS-2026-4578 stays in review-required status; it was not repriced.
+- **Owned document vault returning 500:** fixed in #515 and verified post-release. A client's own vault returns 200 and a foreign vault returns 404. Retrieving an actual private file is still NOT TESTED, because neither Matter has a file.
+- **Password recovery (2026-11-15 production Auth log):** Client B's recovery request was rate limited (429 `over_email_send_rate_limit`), but the route still answered `ok:true`. As changed in #516:
+  - Errors that depend on whether an account exists (mail cooldown, send cap, SMTP failure) return the same response as an accepted request. This prevents account enumeration. The error code is logged on the server only.
+  - Refusals that apply to every address are reported to the caller: the per-client request limit (429) and the provider being unreachable (503).
+  - The success copy tells the client what to do if no email arrives.
+  - The root cause is still open: Supabase Auth's built-in email limit. It needs custom SMTP set up in the Supabase dashboard (owner action).
+- **Client lifecycle emails:** emails generated from the canonical notification queue now include the Matter reference and an HTML-escaped link to the secure portal. Already-accepted notifications were not resent, and no live email has been sent with the new template yet.
+
+### Current status
+
+```
+MAIN / PRODUCTION SHA: 366da0e0 (dpl_E1vAB27eHhYpSezd9VXSWRBe8XT5, owner-verified)
+CI: PASS (#515 43730378165; #516 43740158501)   SMOKE: PASS on 94ebd50a (43732441573); not re-run on 366da0e0
+CLIENT A/B AUTHENTICATION: PASS (live, section 30; re-verified after #515)
+CROSS-CLIENT ISOLATION: PASS (scoped live tests)   OWNED VAULT: PASS (empty list; file retrieval NOT TESTED)
+PUBLIC INTAKE REVIEW-ONLY: PASS (live after #515)
+PASSWORD RECOVERY: code PASS (#516); live delivery BLOCKED on Supabase Auth custom SMTP
+OPERATOR-ISSUED QUOTE / PRO FORMA PDF: NOT TESTED
+WISE SETTLEMENT: NOT TESTED      PAYMENT GATE: live locked state PASS; unlock NOT TESTED
+SCHEDULING / RON / APOSTILLE / COURIER EXECUTION: locks PASS; execution NOT TESTED
+FINAL TRANSACTION CERTIFICATION: NO-GO
+```
+
+### Remaining actions, in order
+
+1. Owner sets up custom SMTP for Supabase Auth and the permitted Auth email rate limit (Supabase dashboard). Then do a single recovery test; do not repeat it.
+2. Final authenticated client acceptance: the operator issues a quote for one QA Matter through the governed flow, then the client views the itemized invoice, pro forma PDF and Wise instructions while the Matter stays unpaid and scheduling stays locked.
+3. One explicitly authorized Wise transaction, with settlement checked independently. A submitted payment is not a settlement, and no payment status may be set manually.
+4. Certify the downstream scheduling and release gates from the evidence those steps actually produce.
+5. Replace the placeholder outreach phone number `+1 (305) 000-0000` (Section 26, item 7).
