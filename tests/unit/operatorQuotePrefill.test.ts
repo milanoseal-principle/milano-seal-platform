@@ -147,6 +147,9 @@ test("builder, page and read route wiring: keyed per Matter, edits preserved, se
   assert.match(page, /key=\{deal\.id\}\n\s+matterId=\{deal\.id\}/);
   assert.match(builder, /if \(!active \|\| !evidence\) return;/);
   assert.doesNotMatch(page, /executionMethod: deal\.mobile \? "in_person"/, "mobile flag is not a confirmed method");
+  // Codex P2: the legacy apostille flag never fills an unresolved authentication requirement.
+  assert.match(builder, /authentication_requirement: prefill\.authenticationRequirement \?\? "review_required",/);
+  assert.doesNotMatch(builder, /apostilleCount \?\? 0\) > 0 \? "apostille"/);
   // 18: operator-only, one Matter, sanitized output; quote commit and lock unchanged.
   const get = route.slice(route.indexOf("export async function GET("), route.indexOf("export async function POST("));
   assert.match(get, /const operator = await operatorIdentity\(\);\n\s+if \(!operator\) return NextResponse\.json\(\{ error: "Unauthorized" \}, \{ status: 403 \}\);/);

@@ -165,8 +165,6 @@ type QuoteForm = {
   execution_location: string;
 };
 
-const pickString = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
-  typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 
 // Wire format for the governed composer: canonical execution truth fields plus
 // pricing scope. RON identity checks are stated as provider requirements only;
@@ -265,11 +263,8 @@ export function OperatorQuoteBuilder({
     receiving_authority: initial?.receivingAuthority ?? "",
     notarization_requirement: prefill.notarizationRequirement,
     notarial_act: prefill.notarialAct,
-    authentication_requirement: pickString(
-      prefill.authenticationRequirement,
-      ["apostille", "authentication_legalization", "not_required", "review_required"] as const,
-      Number(initial?.apostilleCount ?? 0) > 0 ? "apostille" : "review_required",
-    ),
+    // Only recorded truth fills authentication; the legacy intake apostille flag is a hint, never a value.
+    authentication_requirement: prefill.authenticationRequirement ?? "review_required",
     signer_location: typeof truth?.signer_location === "string" ? truth.signer_location : "",
     execution_location: typeof truth?.execution_location === "string" ? truth.execution_location : "",
   }));
