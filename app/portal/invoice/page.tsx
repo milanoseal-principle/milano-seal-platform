@@ -82,6 +82,7 @@ function SummaryRow({ label, value, accent, strong }: { label: string; value: st
 export default function ClientInvoicePage() {
   const { deal, isLoading, refresh } = usePortal();
   const [invoice, setInvoice] = useState<InvoiceSnapshot | null>(null);
+  const [pricingPending, setPricingPending] = useState(false);
   const [paymentFlow, setPaymentFlow] = useState<PaymentObservation | null>(null);
   const [paymentStateAvailable, setPaymentStateAvailable] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
@@ -98,8 +99,14 @@ export default function ClientInvoicePage() {
     setLoadingInvoice(true);
     try {
       const response = await fetch(`/api/portal/me/invoice?deal_id=${encodeURIComponent(deal.id)}`, { cache: "no-store" });
-      const body = (await response.json()) as { invoice?: InvoiceSnapshot; error?: string };
+      const body = (await response.json()) as { invoice?: InvoiceSnapshot | null; pricingStatus?: string; error?: string };
+      if (response.ok && body.pricingStatus === "pending_review") {
+        setPricingPending(true);
+        setInvoice(null);
+        return;
+      }
       if (!response.ok || !body.invoice) throw new Error(body.error || "Invoice unavailable");
+      setPricingPending(false);
       setInvoice(body.invoice);
     } catch (err) {
       setDiscountError(err instanceof Error ? err.message : "Invoice unavailable");
@@ -225,6 +232,17 @@ export default function ClientInvoicePage() {
 
   if (isLoading || loadingInvoice) {
     return <div className="text-sm text-white/40">Verifying invoice state…</div>;
+  }
+
+  if (deal && pricingPending) {
+    return (
+      <div className="max-w-2xl rounded-xl border border-[#C6A55A]/20 bg-[#0b0b0b] p-6" role="status">
+        <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-[#C6A55A]/70">The Milano Seal · Smart Pricing</div>
+        <h1 className="mt-2 font-serif text-2xl text-white">Pricing pending review</h1>
+        <p className="mt-3 text-sm leading-6 text-white/50">Your execution scope and receiving-authority requirements are being reviewed. Your itemized Pro Forma and Wise payment instructions will appear here once your quote is issued.</p>
+        <p className="mt-3 text-xs text-[#C6A55A]/70">No payment is due until your quote is issued. Scheduling remains locked until verified Wise settlement.</p>
+      </div>
+    );
   }
 
   if (!deal || !invoice || invoice.matterId !== deal.id) {
