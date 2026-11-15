@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BadgeCheck, ChevronDown, Copy, ExternalLink, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { isPriceIssued } from "@/lib/pricing/priceIssued";
 
 function money(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number.isFinite(value) ? value : 0);
@@ -17,6 +18,7 @@ export interface SecurePaymentDeal {
   discount_code?: string | null;
   discount_amount?: number | null;
   final_total?: number | null;
+  quote_review_required?: boolean | null;
   invoice_retainer?: number | null;
   invoice_balance?: number | null;
   amount_due?: number | null;
@@ -58,6 +60,9 @@ export function SecurePaymentCard({
     && ["observed_pending", "observed_available"].includes(deal.payment_settlement_status ?? "");
   const isComplimentary = deal.payment_disposition === "complimentary";
   const balancePaid = deal.balance_payment_status === "paid";
+  // An unpriced Matter has no total yet: never present it as a $0.00 amount or offer payment.
+  const pricingPending = !isPaid && !isSubmitted && !isComplimentary
+    && !isPriceIssued({ final_total: deal.final_total, quote_review_required: deal.quote_review_required });
 
   async function applyDiscount() {
     const normalized = code.trim();
@@ -110,7 +115,7 @@ export function SecurePaymentCard({
         ? "Refreshing Wise instructions…"
         : "";
 
-  const statusLabel = isPaid ? "Paid" : isSubmitted ? "Payment Submitted" : "Payment Required";
+  const statusLabel = isPaid ? "Paid" : isSubmitted ? "Payment Submitted" : pricingPending ? "Pricing Pending Review" : "Payment Required";
 
   return (
     <section aria-busy={busy} className="overflow-hidden rounded-2xl border border-[#C6A55A]/25 bg-[linear-gradient(180deg,#11110f_0%,#090909_100%)] shadow-[0_22px_80px_rgba(0,0,0,.32)]">
@@ -129,6 +134,13 @@ export function SecurePaymentCard({
       </div>
 
       <div className="space-y-5 px-5 py-5 sm:px-6">
+        {pricingPending ? (
+          <div role="status" className="rounded-2xl border border-[#C6A55A]/25 bg-[#C6A55A]/[0.045] p-5 text-center">
+            <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#A8A29A]">Matter Value</div>
+            <div className="mt-2 font-serif text-2xl text-[#E8CF8B]">Pricing pending review</div>
+            <div className="mt-1 text-xs text-[#8e897f]">No amount is due until a quote is issued. Payment instructions appear after issuance.</div>
+          </div>
+        ) : (<>
         {allowDiscount && !isComplimentary && !isPaid && !isSubmitted && (
           <div className="rounded-xl border border-[#C6A55A]/12 bg-black/20 p-3.5">
             <label htmlFor={`discount-${deal.id}`} className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#A8A29A]">Partner or Courtesy Code</label>
@@ -203,6 +215,7 @@ export function SecurePaymentCard({
             {deal.balance_paid_at && <div className="mt-2 text-[11px] text-[#777169]">Wise reconciled {new Date(deal.balance_paid_at).toLocaleDateString()}</div>}
           </div>
         )}
+        </>)}
 
         {isSubmitted && (
           <div aria-live="polite" className="rounded-xl border border-[#C6A55A]/18 bg-[#C6A55A]/[0.045] p-4">
@@ -211,7 +224,7 @@ export function SecurePaymentCard({
             <p className="mt-2 text-xs leading-5 text-[#C9B77E]">Your submission is processing. Scheduling unlocks only after Wise settlement is verified and the remaining Matter requirements are ready.</p>
           </div>
         )}
-        {!isPaid && !isSubmitted && !isComplimentary && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Payment submission is not payment confirmation. Scheduling unlocks only after verified Wise settlement.</div>}
+        {!isPaid && !isSubmitted && !isComplimentary && !pricingPending && <div className="flex gap-2 rounded-xl border border-[#C6A55A]/10 bg-black/20 p-3 text-xs leading-5 text-[#938d83]"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#C6A55A]" /> Your Matter remains reserved. Payment submission is not payment confirmation. Scheduling unlocks only after verified Wise settlement.</div>}
 
         <div className="border-t border-[#C6A55A]/10 pt-3">
           <button type="button" onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center justify-between text-xs text-[#7f796f] hover:text-[#B8B1A6]">
@@ -220,7 +233,7 @@ export function SecurePaymentCard({
           {advancedOpen && (
             <div className="mt-3 space-y-3 rounded-xl border border-white/5 bg-black/20 p-3 text-xs text-[#8e897f]">
               <div className="flex items-center justify-between gap-3"><span>Powered by Wise Business</span><span className="font-mono text-[#B7A97D]">{deal.deal_id}</span></div>
-              {!isSubmitted && deal.payment_link && <div className="flex items-center gap-2"><code className="min-w-0 flex-1 break-all rounded bg-black/30 p-2 text-[10px] text-[#777169]">{deal.payment_link}</code><button onClick={() => { navigator.clipboard.writeText(deal.payment_link!); toast.success("Copied"); }} aria-label="Copy Wise payment link"><Copy className="h-4 w-4" /></button><a href={deal.payment_link} target="_blank" rel="noreferrer" aria-label="Open Wise payment link"><ExternalLink className="h-4 w-4" /></a></div>}
+              {!isSubmitted && !pricingPending && deal.payment_link && <div className="flex items-center gap-2"><code className="min-w-0 flex-1 break-all rounded bg-black/30 p-2 text-[10px] text-[#777169]">{deal.payment_link}</code><button onClick={() => { navigator.clipboard.writeText(deal.payment_link!); toast.success("Copied"); }} aria-label="Copy Wise payment link"><Copy className="h-4 w-4" /></button><a href={deal.payment_link} target="_blank" rel="noreferrer" aria-label="Open Wise payment link"><ExternalLink className="h-4 w-4" /></a></div>}
               {isSubmitted && <div className="text-[11px] leading-5 text-[#938d83]">Payment link hidden after submission to prevent accidental duplicate payment.</div>}
             </div>
           )}
