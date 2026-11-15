@@ -24,7 +24,7 @@ function ForgotPasswordInner() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
-      // Only a request the email provider accepted is reported as sent.
+      // Success copy is conditional: the route cannot say whether an email went out without revealing whether the account exists.
       if (response.ok && result?.ok === true) setSent(true);
       else setFailure(result?.message || "We could not send a reset email right now. Please try again shortly.");
     } catch {
@@ -53,7 +53,7 @@ function ForgotPasswordInner() {
           {sent ? (
             <div className="mt-7 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-5">
               <div className="text-sm font-medium text-emerald-200">Check your email.</div>
-              <p className="mt-2 text-xs leading-5 text-white/45">If that address is registered, you will receive a secure password-reset link. Return to login after setting the new password.</p>
+              <p className="mt-2 text-xs leading-5 text-white/45">If that address is registered, you will receive a secure password-reset link. If nothing arrives within 10 minutes, check spam, then wait at least an hour before requesting another, because reset emails are rate limited. Your Matter coordinator can also help. Return to login after setting the new password.</p>
             </div>
           ) : (
             <form onSubmit={submit} className="mt-7">
