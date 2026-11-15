@@ -159,3 +159,19 @@ test("builder, page and read route wiring: keyed per Matter, edits preserved, se
   assert.match(route, /approve_reviewed_matter_quote/);
   assert.match(builder, /isQuoteMutationLocked\(/);
 });
+
+test("already-notarized / third-party execution carries its recorded supporting facts", () => {
+  // Codex P2: validateExecutionTruth requires notary_jurisdiction and certificate_type for
+  // already_notarized; the builder must keep the recorded values and let the operator enter them.
+  const builder = fs.readFileSync("components/dashboard/OperatorQuoteBuilder.tsx", "utf8");
+  for (const key of ["notary_jurisdiction", "certificate_type", "assigned_notary"]) {
+    assert.match(builder, new RegExp(`${key}: typeof truth\\?\\.${key} === "string" \\? truth\\.${key} : ""`));
+    assert.match(builder, new RegExp(`${key}: form\\.${key} \\|\\| undefined`));
+  }
+  assert.match(builder, /<Field label="Notary jurisdiction">/);
+  assert.match(builder, /<Field label="Certificate type">/);
+  const recorded = { execution_method: "already_notarized", notarization_requirement: "not_required", notarial_act: "review_required", authentication_requirement: "apostille", notary_jurisdiction: "Florida", certificate_type: "acknowledgment" };
+  const { executionReviewReasons } = composeGovernedQuote({ ...recorded, destination_country: "Italy", document_type: "Affidavit", document_count: 1, signer_count: 1 });
+  assert.ok(!executionReviewReasons.includes("NOTARY_JURISDICTION_REQUIRED"));
+  assert.ok(!executionReviewReasons.includes("CERTIFICATE_TYPE_REQUIRED"));
+});

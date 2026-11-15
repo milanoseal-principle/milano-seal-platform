@@ -163,6 +163,11 @@ type QuoteForm = {
   authentication_requirement: AuthenticationRequirement;
   signer_location: string;
   execution_location: string;
+  // Supporting facts required by validateExecutionTruth for already-notarized /
+  // third-party-notary execution; carried from recorded truth, never invented.
+  notary_jurisdiction: string;
+  certificate_type: string;
+  assigned_notary: string;
 };
 
 
@@ -179,6 +184,9 @@ function quoteRequestBody(form: QuoteForm) {
     ron_credential_analysis_status: form.execution_method === "ron" ? "required" : undefined,
     signer_location: form.signer_location || undefined,
     execution_location: form.execution_location || undefined,
+    notary_jurisdiction: form.notary_jurisdiction || undefined,
+    certificate_type: form.certificate_type || undefined,
+    assigned_notary: form.assigned_notary || undefined,
   };
 }
 
@@ -267,6 +275,9 @@ export function OperatorQuoteBuilder({
     authentication_requirement: prefill.authenticationRequirement ?? "review_required",
     signer_location: typeof truth?.signer_location === "string" ? truth.signer_location : "",
     execution_location: typeof truth?.execution_location === "string" ? truth.execution_location : "",
+    notary_jurisdiction: typeof truth?.notary_jurisdiction === "string" ? truth.notary_jurisdiction : "",
+    certificate_type: typeof truth?.certificate_type === "string" ? truth.certificate_type : "",
+    assigned_notary: typeof truth?.assigned_notary === "string" ? truth.assigned_notary : "",
   }));
 
   // Operator route facts recorded with this Matter's latest governed quote attempt
@@ -557,6 +568,18 @@ export function OperatorQuoteBuilder({
               <Field label="Execution location (in person)">
                 <Input value={form.execution_location} disabled={locked || form.execution_method !== "in_person"} onChange={(e) => patch("execution_location", e.target.value)} />
               </Field>
+              {(form.execution_method === "already_notarized" || form.execution_method === "third_party_notary") && (
+                <>
+                  <Field label="Notary jurisdiction">
+                    <Input value={form.notary_jurisdiction} disabled={locked} onChange={(e) => patch("notary_jurisdiction", e.target.value)} placeholder="State of the notarial certificate" />
+                  </Field>
+                  {form.execution_method === "already_notarized" && (
+                    <Field label="Certificate type">
+                      <Input value={form.certificate_type} disabled={locked} onChange={(e) => patch("certificate_type", e.target.value)} placeholder="Acknowledgment, jurat…" />
+                    </Field>
+                  )}
+                </>
+              )}
             </div>
           </section>
 
