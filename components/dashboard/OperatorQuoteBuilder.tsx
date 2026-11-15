@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Calculator, CheckCircle2, LockKeyhole, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { isQuoteMutationLocked } from "@/lib/pricing/quoteMutationLock";
+import {
+  provenanceForCurrentValues,
+  resolveOperatorPrefill,
+  type BuilderExecutionMethod,
+  type ClientExecutionRequest,
+  type FieldProvenance,
+  type RecordedRouteEvidence,
+} from "@/lib/pricing/operatorQuotePrefill";
 
 type MatterBase =
   | "authentication"
@@ -15,7 +23,7 @@ type MatterBase =
   | "executive"
   | "international_passport_execution";
 
-type ExecutionMethod = "none" | "ron" | "in_person";
+type ExecutionMethod = BuilderExecutionMethod;
 
 type QuoteLine = {
   code: string;
@@ -95,8 +103,11 @@ type OperatorQuoteBuilderProps = {
   amountPaid?: number | null;
   paymentObservedAt?: string | null;
   initial?: {
-    matterBase?: MatterBase | null;
-    executionMethod?: ExecutionMethod | null;
+    // Persisted deals.matter_pricing_type from a prior governed quote attempt.
+    matterBase?: string | null;
+    quoteApproved?: boolean;
+    // Non-authoritative client request from Smart Intake (labelled hint only).
+    clientRequest?: ClientExecutionRequest | null;
     documentCount?: number | null;
     apostilleCount?: number | null;
     signerCount?: number | null;
@@ -117,7 +128,8 @@ type OperatorQuoteBuilderProps = {
 };
 
 type QuoteForm = {
-  matter_base: MatterBase;
+  // "" = let the governed pricing engine derive the Matter base from execution facts.
+  matter_base: MatterBase | "";
   execution_method: ExecutionMethod;
   document_count: number;
   apostille_count: number;
@@ -152,23 +164,13 @@ type QuoteForm = {
   authentication_requirement: AuthenticationRequirement;
   signer_location: string;
   execution_location: string;
+  // Supporting facts required by validateExecutionTruth for already-notarized /
+  // third-party-notary execution; carried from recorded truth, never invented.
+  notary_jurisdiction: string;
+  certificate_type: string;
+  assigned_notary: string;
 };
 
-const pickString = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
-  typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
-
-// Builder execution method is a pricing view of canonical execution truth.
-// It is read only from recorded truth or an explicit fact — never inferred.
-function initialExecutionMethod(
-  truth: Record<string, unknown> | null | undefined,
-  explicit: ExecutionMethod | null | undefined,
-): ExecutionMethod {
-  const method = typeof truth?.execution_method === "string" ? truth.execution_method : "";
-  if (method === "ron") return "ron";
-  if (method === "in_person" || method === "mobile") return "in_person";
-  if (method === "already_notarized" || method === "third_party_notary") return "none";
-  return explicit ?? "none";
-}
 
 // Wire format for the governed composer: canonical execution truth fields plus
 // pricing scope. RON identity checks are stated as provider requirements only;
@@ -176,12 +178,16 @@ function initialExecutionMethod(
 function quoteRequestBody(form: QuoteForm) {
   return {
     ...form,
+    matter_base: form.matter_base || undefined,
     document_category: form.document_category || undefined,
     execution_method: form.execution_method,
     ron_kba_status: form.execution_method === "ron" ? "required" : undefined,
     ron_credential_analysis_status: form.execution_method === "ron" ? "required" : undefined,
     signer_location: form.signer_location || undefined,
     execution_location: form.execution_location || undefined,
+    notary_jurisdiction: form.notary_jurisdiction || undefined,
+    certificate_type: form.certificate_type || undefined,
+    assigned_notary: form.assigned_notary || undefined,
   };
 }
 
@@ -206,9 +212,25 @@ export function OperatorQuoteBuilder({
   const [reviewReason, setReviewReason] = useState("");
   const [reviewDeadline, setReviewDeadline] = useState("");
   const truth = initial?.executionTruth ?? null;
-  const [form, setForm] = useState<QuoteForm>({
-    matter_base: initial?.matterBase ?? "authentication",
-    execution_method: initialExecutionMethod(truth, initial?.executionMethod),
+  const [routeEvidence, setRouteEvidence] = useState<RecordedRouteEvidence | null>(null);
+  const prefill = useMemo(
+    () =>
+      resolveOperatorPrefill({
+        executionTruth: truth,
+        routeEvidence,
+        matterPricingType: initial?.matterBase,
+        quoteApproved: Boolean(initial?.quoteApproved),
+        clientRequest: initial?.clientRequest ?? null,
+      }),
+    // truth/initial are a snapshot for this mounted Matter (the page keys the builder by Matter id).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [routeEvidence],
+  );
+  // Fields the operator has edited in this session; prefill never overwrites them.
+  const touched = useRef(new Set<keyof QuoteForm>());
+  const [form, setForm] = useState<QuoteForm>(() => ({
+    matter_base: prefill.matterBase,
+    execution_method: prefill.executionMethod,
     document_count: Math.max(1, Number(initial?.documentCount ?? 1)),
     apostille_count: Math.max(0, Number(initial?.apostilleCount ?? 0)),
     signer_count: Math.max(1, Number(initial?.signerCount ?? 1)),
@@ -248,24 +270,51 @@ export function OperatorQuoteBuilder({
     issuing_authority: "unknown",
     issuing_agency: "",
     receiving_authority: initial?.receivingAuthority ?? "",
-    notarization_requirement: pickString(
-      truth?.notarization_requirement,
-      ["required", "not_required", "review_required"] as const,
-      "review_required",
-    ),
-    notarial_act: pickString(
-      truth?.notarial_act,
-      ["acknowledgment", "jurat", "oath_affirmation", "signature_witnessing", "other", "review_required"] as const,
-      "review_required",
-    ),
-    authentication_requirement: pickString(
-      truth?.authentication_requirement,
-      ["apostille", "authentication_legalization", "not_required", "review_required"] as const,
-      Number(initial?.apostilleCount ?? 0) > 0 ? "apostille" : "review_required",
-    ),
+    notarization_requirement: prefill.notarizationRequirement,
+    notarial_act: prefill.notarialAct,
+    // Only recorded truth fills authentication; the legacy intake apostille flag is a hint, never a value.
+    authentication_requirement: prefill.authenticationRequirement ?? "review_required",
     signer_location: typeof truth?.signer_location === "string" ? truth.signer_location : "",
     execution_location: typeof truth?.execution_location === "string" ? truth.execution_location : "",
-  });
+    notary_jurisdiction: typeof truth?.notary_jurisdiction === "string" ? truth.notary_jurisdiction : "",
+    certificate_type: typeof truth?.certificate_type === "string" ? truth.certificate_type : "",
+    assigned_notary: typeof truth?.assigned_notary === "string" ? truth.assigned_notary : "",
+  }));
+
+  // Values as prefilled (before any operator edit); provenance labels describe these, not edits.
+  const prefilled = useRef<Partial<QuoteForm>>({ ...form });
+
+  // Operator route facts recorded with this Matter's latest governed quote attempt
+  // (server-read, sanitized). Applied only to fields the operator has not edited,
+  // and only while this Matter is still the mounted one.
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/deals/${matterId}/quote`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { route_evidence?: RecordedRouteEvidence | null } | null) => {
+        const evidence = body?.route_evidence ?? null;
+        if (!active || !evidence) return;
+        setRouteEvidence(evidence);
+        setForm((current) => {
+          const next = { ...current };
+          const apply = <K extends keyof QuoteForm>(key: K, value: QuoteForm[K] | null) => {
+            if (value != null && value !== "" && !touched.current.has(key)) {
+              next[key] = value;
+              prefilled.current[key] = value;
+            }
+          };
+          apply("document_category", evidence.documentCategory as QuoteForm["document_category"] | null);
+          apply("issuing_authority", evidence.issuingAuthority);
+          apply("issuing_agency", evidence.issuingAgency);
+          apply("receiving_authority", evidence.receivingAuthority);
+          return next;
+        });
+      })
+      .catch(() => { /* Prefill is advisory; the builder still works without it. */ });
+    return () => {
+      active = false;
+    };
+  }, [matterId]);
   const [preview, setPreview] = useState<QuotePreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -281,7 +330,18 @@ export function OperatorQuoteBuilder({
     [paymentStatus, amountPaid, paymentObservedAt],
   );
 
+  // Source labels for the prefilled fields. The intake apostille flag is only a client-side hint.
+  const provenance = useMemo(() => {
+    const p = { ...prefill.provenance };
+    if (!prefill.authenticationRequirement && Number(initial?.apostilleCount ?? 0) > 0) {
+      p.authentication_requirement = { status: "from_intake", detail: "Intake marked apostille required. Verify the receiving-authority requirement." };
+    }
+    return provenanceForCurrentValues(p, form, prefilled.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill, form]);
+
   function patch<K extends keyof QuoteForm>(key: K, value: QuoteForm[K]) {
+    touched.current.add(key);
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -431,7 +491,7 @@ export function OperatorQuoteBuilder({
               <Field label="Document type">
                 <Input value={form.document_type} disabled={locked} onChange={(e) => patch("document_type", e.target.value)} />
               </Field>
-              <Field label="Document category">
+              <Field label="Document category" provenance={provenance.document_category}>
                 <Select
                   value={form.document_category}
                   disabled={locked}
@@ -442,7 +502,7 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Issuing authority">
+              <Field label="Issuing authority" provenance={provenance.issuing_authority}>
                 <Select
                   value={form.issuing_authority}
                   disabled={locked}
@@ -457,10 +517,10 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Federal issuing agency">
+              <Field label="Federal issuing agency" provenance={provenance.issuing_agency}>
                 <Input value={form.issuing_agency} disabled={locked} onChange={(e) => patch("issuing_agency", e.target.value)} placeholder="FBI, USCIS, IRS… (federal only)" />
               </Field>
-              <Field label="Receiving authority (if known)">
+              <Field label="Receiving authority (if known)" provenance={provenance.receiving_authority}>
                 <Input value={form.receiving_authority} disabled={locked} onChange={(e) => patch("receiving_authority", e.target.value)} placeholder="Court, comune, bank, counsel…" />
               </Field>
             </div>
@@ -469,7 +529,7 @@ export function OperatorQuoteBuilder({
           <section className="rounded-md border border-border/60 p-4">
             <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Canonical execution truth</div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <Field label="Notarization">
+              <Field label="Notarization" provenance={provenance.notarization_requirement}>
                 <Select
                   value={form.notarization_requirement}
                   disabled={locked}
@@ -481,7 +541,7 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Notarial act">
+              <Field label="Notarial act" provenance={provenance.notarial_act}>
                 <Select
                   value={form.notarial_act}
                   disabled={locked || form.notarization_requirement !== "required"}
@@ -496,7 +556,7 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Authentication">
+              <Field label="Authentication" provenance={provenance.authentication_requirement}>
                 <Select
                   value={form.authentication_requirement}
                   disabled={locked}
@@ -515,6 +575,18 @@ export function OperatorQuoteBuilder({
               <Field label="Execution location (in person)">
                 <Input value={form.execution_location} disabled={locked || form.execution_method !== "in_person"} onChange={(e) => patch("execution_location", e.target.value)} />
               </Field>
+              {(form.execution_method === "already_notarized" || form.execution_method === "third_party_notary") && (
+                <>
+                  <Field label="Notary jurisdiction">
+                    <Input value={form.notary_jurisdiction} disabled={locked} onChange={(e) => patch("notary_jurisdiction", e.target.value)} placeholder="State of the notarial certificate" />
+                  </Field>
+                  {form.execution_method === "already_notarized" && (
+                    <Field label="Certificate type">
+                      <Input value={form.certificate_type} disabled={locked} onChange={(e) => patch("certificate_type", e.target.value)} placeholder="Acknowledgment, jurat…" />
+                    </Field>
+                  )}
+                </>
+              )}
             </div>
           </section>
 
@@ -536,13 +608,16 @@ export function OperatorQuoteBuilder({
           </section>
 
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <Field label="Matter base">
+            <Field label="Matter base" provenance={provenance.matter_base}>
               <select
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.matter_base}
                 disabled={locked}
-                onChange={(e) => patch("matter_base", e.target.value as MatterBase)}
+                onChange={(e) => patch("matter_base", e.target.value as MatterBase | "")}
               >
+                <option value="">
+                  {preview?.matter_base ? `Derived by pricing engine (${preview.matter_base.replaceAll("_", " ")})` : "Derived by pricing engine from execution facts"}
+                </option>
                 <option value="authentication">Authentication Matter</option>
                 <option value="signature">Signature Matter</option>
                 <option value="priority">Priority Matter</option>
@@ -551,16 +626,18 @@ export function OperatorQuoteBuilder({
               </select>
             </Field>
 
-            <Field label="Execution method">
+            <Field label="Execution method" provenance={provenance.execution_method}>
               <select
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={form.execution_method}
                 disabled={locked}
                 onChange={(e) => patch("execution_method", e.target.value as ExecutionMethod)}
               >
-                <option value="none">No new execution</option>
+                <option value="review_required">Review required (not confirmed)</option>
                 <option value="ron">RON</option>
                 <option value="in_person">In person</option>
+                <option value="already_notarized">No new execution (already notarized)</option>
+                <option value="third_party_notary">Third-party notary</option>
               </select>
             </Field>
 
@@ -748,11 +825,29 @@ export function OperatorQuoteBuilder({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+const PROVENANCE_STYLE: Record<FieldProvenance["status"], [string, string]> = {
+  confirmed: ["Confirmed", "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"],
+  from_intake: ["From intake", "border-sky-500/30 bg-sky-500/10 text-sky-300"],
+  suggested: ["Suggested", "border-[#C6A65B]/35 bg-[#C6A65B]/10 text-[#E8CF8B]"],
+  conflict: ["Conflict", "border-red-500/35 bg-red-500/10 text-red-300"],
+  missing: ["Missing", "border-amber-500/30 bg-amber-500/10 text-amber-300"],
+  edited: ["Edited", "border-violet-500/30 bg-violet-500/10 text-violet-300"],
+};
+
+function Field({ label, children, provenance }: { label: string; children: React.ReactNode; provenance?: FieldProvenance }) {
+  const style = provenance ? PROVENANCE_STYLE[provenance.status] : null;
   return (
     <label className="space-y-1.5">
-      <span className="block text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+      <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+        {provenance && style && (
+          <span data-provenance={provenance.status} className={`rounded-full border px-1.5 py-px text-[9px] tracking-[0.08em] ${style[1]}`}>
+            {style[0]}
+          </span>
+        )}
+      </span>
       {children}
+      {provenance && <span className="block text-[11px] leading-4 text-muted-foreground/80">{provenance.detail}</span>}
     </label>
   );
 }
