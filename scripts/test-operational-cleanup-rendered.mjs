@@ -70,7 +70,11 @@ try {
   }
   for(const anchor of ['compliance-review','payment-gate','execution','custody','release']) {
    await page.goto(new URL(`/process#${anchor}`,base).href,{waitUntil:'domcontentloaded'});
-   const target=page.locator(`#${anchor}`);await target.waitFor({state:'visible'});await page.waitForFunction(id=>document.getElementById(id)?.getBoundingClientRect().top>=0&&document.getElementById(id)?.getBoundingClientRect().top<innerHeight,anchor);
+   const target=page.locator(`#${anchor}`);await target.waitFor({state:'visible'});
+   // Wait for the settled deep-link state, not a pre-layout frame: at DOMContentLoaded the target can
+   // briefly report top:0 with scrollY:0 before styles apply, which satisfied a viewport-only wait.
+   // If the page never scrolls, this wait times out and the test still fails.
+   await page.waitForFunction(id=>{const top=document.getElementById(id)?.getBoundingClientRect().top;return scrollY>0&&top!==undefined&&top>=0&&top<innerHeight;},anchor);
    assert.ok(await page.evaluate(()=>scrollY)>0,`${anchor} actually scrolls on initial navigation`);
    const headerBottom=await page.locator('header').first().evaluate(el=>el.getBoundingClientRect().bottom);
    assert.ok((await target.boundingBox()).y>=headerBottom-2,`${anchor} below fixed header`);checks++;

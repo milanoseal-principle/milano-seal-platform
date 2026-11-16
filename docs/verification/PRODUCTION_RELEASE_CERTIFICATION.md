@@ -366,3 +366,64 @@ FINAL TRANSACTION CERTIFICATION: NO-GO
 3. Client invoice, pro forma and Wise instructions are verified while the Matter is unpaid.
 4. One explicitly authorized Wise payment, with settlement verified independently from provider evidence.
 5. Live RON or in-person execution, then apostille (when required), courier, custody, release and delivery evidence.
+
+## 34. Final live transaction acceptance readiness — 2026-11-16
+
+Sections 1–33 are kept unchanged.
+- **Scope:** this section separates (A) engineering, (B) automated integration tests, (C) non-mutating production checks and (D) live provider-backed certification. Nothing below presents A–C as D.
+- **What was done:** no production data, payment record, quote, provider session, government submission, shipment or release was created or changed.
+- **Network limits:** this session's network reaches GitHub only. The production site, Supabase, Vercel and the Wise API refused connections (HTTP 000). Every C and D check below is therefore owner-verified or BLOCKED.
+- **Final decision:** **NO-GO.**
+
+### Status
+
+| # | Item | Status | Evidence reference | Observed result | Next required action |
+|---|---|---|---|---|---|
+| 1 | Repository and CI | PASS | `main` `213f8b2515b7a0c27c4462c871c5c9b09c493c2e`. [CI 43951739050](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43951739050) (#524) and [CI 43948742321](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43948742321) (#523). No open PRs. | #521–#524 merged. The #523 guard is present on `main` (`lib/wise/outOfOrderGuard.ts`, wired once in the Wise webhook). | None |
+| 2 | Vercel production and domains | PASS (owner-verified) | `dpl_afQgNwBFJs126g68s6xTpWNuf1pv`, READY, source `213f8b25`. `www.themilanoseal.com` and `themilanoseal.com` are assigned. | Confirmed by the owner. Not independently reachable from this session. | None; do not redeploy |
+| 3 | Automated gates on `213f8b25` | PASS (A/B) | Run in this session. | `npm test` 1543/1543. Typecheck, lint and build pass. Wise attempt database suite 241 checks. Gap-closure (financial, custody, release, authorization) 85. P3, P4 59, P5 31, retention 35, operational evidence 14. P20 25, P21 21, P22 18, P23 19, all with `live_certification=false`. Settlement-before-scheduling 15/15. Wise recovery 12/12. Reconciliation orchestrator 17/17. Production governance 27/27. Final production regression 17/17. Pricing, intake-privacy, RON corridor, apostille rules, custody schema, courier, cross-system, migration chain and the rendered browser test all pass. | None |
+| 4 | Production configuration: Wise, Supabase, RON, courier, email | BLOCKED (C) | No network path from this session. | Not inspected. Having environment variables set would not count as PASS. | Owner runs the configuration checks below |
+| 5 | Live Matter inventory: MS-2026-4578 and MS-2026-8329 | BLOCKED (C) | Last recorded state (§30, owner-verified 2026-11-16): both unpaid and pending review, with no issued quote and no verified settlement. | No newer evidence is available to this session. | Owner runs the read-only inventory query below |
+| 6 | Quote issuance and financial documents | PASS (A/B); NOT TESTED (D) | `issue_financial_artifact`, gap-closure database suite, `tests/unit/priceIssued.test.ts`. | The engineering rules hold: approved quote required, totals reconcile, SHA-256 versioning, settlement required for a receipt, owner-only access. No live issued QA quote exists. | Owner authorizes operator execution review and quote issuance for one QA Matter |
+| 7 | Wise payment instructions | PASS (A/B); NOT TESTED (D) | Portal payment card, invoice route. | Instructions appear only for an issued price, never while pricing is pending. | Verify after the quote in #6 is issued |
+| 8 | Wise webhook authenticity, matching and out-of-order safety | PASS (A/B) | `verifyWiseSignature`, exact amount/currency/reference matching, attempt correlation, the #523 guard, Wise attempt database suite. | No defect found beyond #523, which is fixed and deployed. | None |
+| 9 | Verified Wise settlement | NOT TESTED / BLOCKED (D) | No authorized live transfer exists. No access to Wise provider evidence. | Settlement must not be inferred from an invoice, email, screenshot or a received webhook alone. | Owner authorizes one specific payment, then verifies provider evidence (below) |
+| 10 | Payment to scheduling | PASS (A/B); NOT TESTED (D) | `20261109090000_verified_settlement_before_scheduling`, settlement-before-scheduling suite. | Scheduling and later stages require verified settlement. An observed or submitted payment is display-only. | Re-check after #9 |
+| 11 | RON or in-person execution | PASS (A/B); NOT TESTED (D) | P4 and P5 database suites, BlueNotary webhook authentication, postpayment RON corridor. | A completed provider session, verified statutory evidence and completed canonical execution remain distinct states. | Live execution after #9 (owner-authorized) |
+| 12 | Apostille or authentication | PASS (A/B); NOT TESTED (D) | Apostille rules and packet validators, authority routing. | Domestic routes do not force an apostille. A required apostille needs real government evidence. | Only if the chosen QA route requires it |
+| 13 | Courier and custody | PASS (A/B); NOT TESTED (D) | Custody ledger schema, Shippo HMAC callback, courier continuity. | A label or an in-transit event is not proof of delivery. | Only if the chosen QA route requires shipping |
+| 14 | Final release and delivery | PASS (A/B); NOT TESTED (D) | Gap-closure release checks, `performFinalRelease`, release-integrity tests. | Release fails closed without settlement, execution, required authentication, custody or a valid recipient. | After #11–#13 |
+| 15 | Client and operator consistency | PASS (A/B) | #518, #519, #521, #522 regressions. | No unpriced Matter shows an approved $0, and operator and client use the same issued-price rule. | Live confirmation with #6 |
+| 16 | Live observability: runtime errors, webhook failures, notification queue | BLOCKED (C) | No Vercel or Supabase access. | Not inspected. | Owner reviews the Vercel runtime logs and the Wise exception queue (Finance, Wise Recovery) |
+
+### Net-new defects in this pass
+None. The only defect found in the lifecycle audit (§33) was fixed by #523 and is deployed.
+
+### Owner checks (read-only; run from an authorized session)
+
+1. **Configuration presence.** In Vercel, open Project Settings, then Environment Variables (Production). Confirm the Wise, Supabase, BlueNotary, Shippo, Resend and SMTP variables exist without opening their values. In Supabase, open Authentication, then SMTP, and confirm it is enabled.
+2. **QA Matter inventory** (read-only SQL, Supabase SQL editor):
+   ```sql
+   select deal_id, status, deal_status, quote_approved_at, quote_review_required, final_total, amount_due,
+          amount_paid, currency, payment_status, payment_confirmed, payment_settlement_status,
+          payment_observed_at, execution_truth->>'review_confirmed_at' as review_confirmed_at,
+          is_paid_and_released,
+          (select count(*) from matter_financial_artifacts a where a.matter_id = d.id) as artifacts,
+          (select count(*) from matter_evidence_ledger l where l.matter_id = d.id) as evidence_rows
+   from deals d where deal_id in ('MS-2026-4578','MS-2026-8329');
+   ```
+3. **Wise exception queue.** Open the operator dashboard, then Finance, then Wise Recovery. Note any open exceptions. Do not resolve them by editing records directly.
+
+### Live acceptance sequence. Each step needs its own explicit authorization.
+1. Choose one QA Matter. Operator completes the execution review and issues the quote through the governed builder.
+2. Client portal: verify the itemized invoice, the pro forma PDF (SHA-256 recorded) and the Wise instructions while the Matter is unpaid and scheduling is locked.
+3. One authorized Wise payment of the exact amount, currency and reference. Verify settlement from Wise provider evidence: transfer ID, state, amount, currency and reference. Then confirm the Matter shows `payment_confirmed`, `paid` and `cleared` through the governed path only, and that scheduling unlocks.
+4. Execution (RON or in person), then authentication and courier only where the route requires them, then custody, release and delivery evidence.
+5. Append the evidence as §35. GO is allowed only when every mandatory item has live evidence.
+
+### Final decision
+```
+ENGINEERING (A/B): PASS on 213f8b25        DEPLOYMENT: PASS (owner-verified)
+LIVE QUOTE / SETTLEMENT / EXECUTION / RELEASE (D): NOT TESTED
+FINAL TRANSACTION CERTIFICATION: NO-GO
+```
