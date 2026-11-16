@@ -262,3 +262,42 @@ FINAL TRANSACTION CERTIFICATION: NO-GO
 3. One explicitly authorized Wise transaction, with settlement checked independently. A submitted payment is not a settlement, and no payment status may be set manually.
 4. Certify the downstream scheduling and release gates from the evidence those steps actually produce.
 5. Replace the placeholder outreach phone number `+1 (305) 000-0000` (Section 26, item 7).
+
+## 32. PR #518 and #519: unpriced display and operator prefill — 2026-11-15 23:50 UTC
+
+Sections 1–31 are kept unchanged as historical evidence. The final transaction decision remains **NO-GO**.
+
+| Item | Evidence | Source | Result |
+|---|---|---|---|
+| PR #518: unpriced Matters show "Review required" / "Pricing pending review" instead of $0.00 on the operator page, pro forma and payment card | Merged as `6dc81828`. [CI 43764574747](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43764574747) passed on head `f7abe23`. Codex found nothing. | GitHub (checked in this session) | PASS |
+| PR #518 deployment | Vercel production deployment `EwgcmRiv7` is READY and Current on `6dc8182`, serving `www.themilanoseal.com`. | Owner screenshot | PASS |
+| PR #519: Smart Intake → operator review prefill and provenance | Merged as `e707c331`. [CI 43775378743](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43775378743) passed on head `d3fbf5e`. Codex raised three P2 findings, all fixed and resolved; its final review on `d3fbf5e` found no issues. | GitHub (checked in this session) | PASS |
+| PR #519 deployment | Deployment `dpl_7wTYRHRKGjT9pNff7yXAxVTZFTKU` is READY on `e707c331`, and the production domain `www.themilanoseal.com` is assigned to it. (It was BUILDING at an earlier check, while the domain still served `6dc81828`.) | Owner-verified | PASS |
+| Supabase Auth custom SMTP | Custom SMTP is configured and password-reset delivery is confirmed. This closes the Section 31 recovery-delivery blocker. | Owner-reported | PASS (owner-verified) |
+
+### What #519 changed (application-only)
+
+- **Route facts:** document category, issuing authority, federal agency and receiving authority are read back from the latest governed quote attempt in the evidence ledger. The read goes through a new operator-only, single-Matter `GET /api/deals/[id]/quote` that returns sanitized fields and performs no writes. These facts previously reset to blank or "unknown".
+- **Matter base:** the builder no longer sends a default of "authentication" that overrode the engine's derivation. A stored `matter_pricing_type` is used if one exists; otherwise the existing engine derives the base.
+- **Execution method:** an unresolved method shows as "Review required" instead of "No new execution". The legacy `mobile` flag and the client's intake requests are labelled hints and are never filled in as values. An already-notarized truth round-trips together with its supporting facts.
+- **Provenance labels:** each field shows Confirmed / From intake / Suggested / Conflict / Missing, and shows Edited when the operator changes it. Edits are never overwritten, and the builder is keyed per Matter.
+- **Unchanged:** quote composition and pricing formulas, `isPriceIssued`, the `approve_reviewed_matter_quote` RPC, execution-review checks, mutation locks, Wise, and the payment and scheduling gates. No schema, RLS or data changes. Client B's Matter was not touched.
+- **Domestic route:** unchanged. A US destination enters domestic execution only after an operator confirms Authentication: Not required.
+
+### Tests
+
+- New `tests/unit/operatorQuotePrefill.test.ts` (10 tests) uses a deterministic fixture mirroring MS-2026-8329.
+- `npm test`: 1530 pass. Typecheck, lint and the production build (including the intake pricing-privacy bundle scan) pass.
+- The intake, pricing, execution, routing, payment and release validators pass.
+- No signed-in operator browser evidence was captured.
+
+### Remaining live acceptance gates, in order
+
+1. Read-only (deployment confirmed above): open MS-2026-8329 in the operator view and check the labels:
+   - Execution method: "Review required" with "From intake: in person".
+   - Matter base: "Derived by pricing engine".
+   - Authentication: "Review required".
+2. The operator completes execution review and issues the quote for the QA Matter through the governed flow. This needs separate explicit approval.
+3. Client B checks the itemized invoice, pro forma PDF and Wise instructions while the Matter stays unpaid and scheduling stays locked.
+4. Run one authorized Wise transaction and verify settlement independently.
+5. Certify the downstream scheduling and release gates from the evidence those steps produce.
