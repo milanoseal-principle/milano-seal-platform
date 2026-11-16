@@ -1,45 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { usePortal } from "@/components/portal/portal-context";
-
-type Question = {
-  fact: string;
-  prompt: string;
-  help?: string;
-  kind: "choice" | "text";
-  options?: Array<{ value: string; label: string }>;
-};
-type View = { status: "closed" | "needs_client_input" | "awaiting_milano_review" | "review_confirmed"; questions: Question[]; answered: string[] };
+import {
+  clarificationComplete,
+  clarificationReducer,
+  initialClarificationState,
+  type ClarificationView,
+} from "@/lib/portal/clarificationCardState";
 
 // Asks only the facts Milano still needs for this Matter. Answers are the client's
 // own statements; Milano confirms them before any quote is issued.
 export function MatterClarificationsCard() {
   const { deal } = usePortal();
   const matterId = deal?.id ?? null;
-  const [view, setView] = useState<View | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const active = useRef<string | null>(null);
+  const [state, dispatch] = useReducer(clarificationReducer, matterId, initialClarificationState);
+  const { view, answers, busy, message } = state;
 
   useEffect(() => {
-    active.current = matterId;
-    setView(null);
-    setAnswers({});
-    setMessage(null);
-    // A submission still in flight belongs to the previous Matter; its response is ignored.
-    setBusy(false);
+    // Resets all per-Matter state, including a submission still in flight for the previous Matter.
+    dispatch({ type: "matter_changed", matterId });
     if (!matterId) return;
     fetch(`/api/portal/me/clarifications?deal_id=${encodeURIComponent(matterId)}`, { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
-      .then((body: View | null) => {
-        if (active.current === matterId && body) setView(body);
+      .then((body: ClarificationView | null) => {
+        if (body) dispatch({ type: "view_loaded", matterId, view: body });
       })
       .catch(() => undefined);
   }, [matterId]);
 
-  if (!matterId || !view || view.status === "closed" || view.status === "review_confirmed") return null;
+  if (!matterId || state.matterId !== matterId || !view || view.status === "closed" || view.status === "review_confirmed") return null;
 
   if (view.status === "awaiting_milano_review") {
     return (
@@ -52,33 +42,29 @@ export function MatterClarificationsCard() {
     );
   }
 
-  const complete = view.questions.every((q) => (answers[q.fact] ?? "").trim().length >= (q.kind === "text" ? 2 : 1));
+  const complete = clarificationComplete(state);
+  const setAnswer = (fact: string, value: string) => dispatch({ type: "answer_changed", matterId, fact, value });
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!complete || busy || !matterId) return;
     const requested = matterId;
-    setBusy(true);
-    setMessage(null);
+    dispatch({ type: "submit_started", matterId: requested });
     try {
       const response = await fetch("/api/portal/me/clarifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deal_id: requested, answers }),
       });
-      const body = (await response.json().catch(() => null)) as (View & { ok?: boolean }) | null;
-      if (active.current !== requested) return;
+      const body = (await response.json().catch(() => null)) as (ClarificationView & { ok?: boolean }) | null;
+      // Results are scoped to `requested`; the reducer ignores them if the client has switched Matters.
       if (!response.ok || !body?.ok) {
-        setMessage("Your answers could not be saved. Please try again, or message your Matter coordinator.");
+        dispatch({ type: "submit_failed", matterId: requested, message: "Your answers could not be saved. Please try again, or message your Matter coordinator." });
         return;
       }
-      setAnswers({});
-      setView(body);
-      setMessage("Thank you. Your answers were received and Milano is reviewing your Matter.");
+      dispatch({ type: "submit_succeeded", matterId: requested, view: body });
     } catch {
-      if (active.current === requested) setMessage("We could not reach the server. Check your connection and try again.");
-    } finally {
-      if (active.current === requested) setBusy(false);
+      dispatch({ type: "submit_failed", matterId: requested, message: "We could not reach the server. Check your connection and try again." });
     }
   }
 
@@ -102,7 +88,7 @@ export function MatterClarificationsCard() {
                       name={q.fact}
                       value={option.value}
                       checked={answers[q.fact] === option.value}
-                      onChange={() => setAnswers((current) => ({ ...current, [q.fact]: option.value }))}
+                      onChange={() => setAnswer(q.fact, option.value)}
                     />
                     {option.label}
                   </label>
@@ -113,7 +99,7 @@ export function MatterClarificationsCard() {
                 aria-label={q.prompt}
                 maxLength={300}
                 value={answers[q.fact] ?? ""}
-                onChange={(event) => setAnswers((current) => ({ ...current, [q.fact]: event.target.value }))}
+                onChange={(event) => setAnswer(q.fact, event.target.value)}
                 className="min-h-11 w-full rounded-md border border-[#C6A55A]/20 bg-black/30 px-3 text-sm text-white outline-none focus:border-[#C6A55A]/60"
               />
             )}
