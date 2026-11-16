@@ -135,13 +135,19 @@ export function resolveMatter(input: MatterResolutionInput): MatterResolution {
   if (input.quoteApproved || input.paymentActivity) {
     return { status: "closed", questions: [], answered, provisionalBlockers: [] };
   }
+  // Once an operator has confirmed the execution review, the facts are settled; nothing more is asked.
+  if (truth.review_confirmed_at) {
+    return { status: "review_confirmed", questions: [], answered, provisionalBlockers: [] };
+  }
 
   const recordedMethod = resolved(truth.execution_method) ? text(truth.execution_method) : null;
   const method = recordedMethod ?? requestedMethod(input);
   const facts: ResolutionFact[] = [];
 
   if (!recordedMethod && !method && !has("execution_preference")) facts.push("execution_preference");
-  if (!resolved(truth.signer_location) && !has("signer_location")) facts.push("signer_location");
+  // A signer location matters only when a new signing will happen.
+  const newSigning = method !== "already_notarized";
+  if (newSigning && !resolved(truth.signer_location) && !has("signer_location")) facts.push("signer_location");
   if ((method === "in_person" || method === "mobile") && !resolved(truth.execution_location) && !has("execution_location")) {
     facts.push("execution_location");
   }
@@ -169,11 +175,7 @@ export function resolveMatter(input: MatterResolutionInput): MatterResolution {
   const provisionalBlockers = [...validation.errors];
   if (validation.reviewRequired && provisionalBlockers.length === 0) provisionalBlockers.push("EXECUTION_REVIEW_REQUIRED");
 
-  const status: ResolutionStatus = facts.length > 0
-    ? "needs_client_input"
-    : truth.review_confirmed_at
-      ? "review_confirmed"
-      : "awaiting_milano_review";
+  const status: ResolutionStatus = facts.length > 0 ? "needs_client_input" : "awaiting_milano_review";
   return { status, questions: facts.map(question), answered, provisionalBlockers };
 }
 

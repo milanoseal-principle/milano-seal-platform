@@ -8,6 +8,14 @@ import {
   type ClientDeclarations,
   type MatterResolutionInput,
 } from "@/lib/matter/matterResolution";
+import {
+  clarificationComplete,
+  clarificationReducer,
+  initialClarificationState,
+  SUBMIT_SUCCESS_MESSAGE,
+  type ClarificationState,
+  type ClarificationView,
+} from "@/lib/portal/clarificationCardState";
 import { resolveOperatorPrefill } from "@/lib/pricing/operatorQuotePrefill";
 
 // Deterministic fixture mirroring QA Matter MS-2026-8329 (Client B) as verified in
@@ -141,8 +149,61 @@ test("portal route: owned Matter only, ledger-only write of unverified declarati
   const portal = fs.readFileSync("app/portal/page.tsx", "utf8");
   assert.match(portal, /<MatterClarificationsCard \/>/);
   const card = fs.readFileSync("components/portal/MatterClarificationsCard.tsx", "utf8");
-  assert.match(card, /if \(active\.current !== requested\) return;/, "a response for a previous Matter is ignored");
-  // Codex P2: switching Matters mid-submission must not leave the new Matter's form stuck on "Sending…".
-  const effect = card.slice(card.indexOf("useEffect(() => {"), card.indexOf("}, [matterId]);"));
-  assert.match(effect, /setBusy\(false\);/);
+  assert.match(card, /useReducer\(clarificationReducer/, "card state transitions are the tested reducer");
+  assert.match(card, /dispatch\(\{ type: "matter_changed", matterId \}\)/);
+  assert.match(card, /dispatch\(\{ type: "submit_succeeded", matterId: requested/);
+});
+
+test("no new signing: an already-notarized Matter is never asked where the signer will be", () => {
+  // Codex P2: apostille-only Matters must not force the client to invent a future signing location.
+  const alreadyNotarized = resolveMatter({
+    ...clientB,
+    executionTruth: { ...provisionalTruth, execution_method: "already_notarized", notarization_requirement: "not_required" },
+  });
+  assert.ok(!alreadyNotarized.questions.some((q) => ["signer_location", "execution_location", "receiving_instructions"].includes(q.fact)));
+  const declared = resolveMatter({ ...clientB, intakeExecutionPreference: "review_required", declarations: { execution_preference: { value: "already_notarized", declaredAt: at } } });
+  assert.ok(!declared.questions.some((q) => q.fact === "signer_location"));
+  const confirmed = resolveMatter({ ...clientB, executionTruth: { ...provisionalTruth, review_confirmed_at: at } });
+  assert.equal(confirmed.status, "review_confirmed");
+  assert.equal(confirmed.questions.length, 0, "nothing is asked after the operator confirms the execution review");
+});
+
+test("switching Matters mid-submission: B is usable at once and A's late result never touches B", () => {
+  // Codex P2 on #521: a pending submission for Matter A must not leave Matter B stuck on "Sending…".
+  const viewA: ClarificationView = { status: "needs_client_input", questions: [{ fact: "signer_location", prompt: "Where?", kind: "text" }], answered: [] };
+  const viewB: ClarificationView = { status: "needs_client_input", questions: [{ fact: "document_origin", prompt: "Which state?", kind: "text" }], answered: [] };
+  let s: ClarificationState = initialClarificationState("A");
+  s = clarificationReducer(s, { type: "view_loaded", matterId: "A", view: viewA });
+  s = clarificationReducer(s, { type: "answer_changed", matterId: "A", fact: "signer_location", value: "Miami, FL" });
+  s = clarificationReducer(s, { type: "submit_started", matterId: "A" });
+  assert.equal(s.busy, true);
+
+  // Switch to B before A completes: B starts clean and usable.
+  s = clarificationReducer(s, { type: "matter_changed", matterId: "B" });
+  assert.deepEqual(s, initialClarificationState("B"));
+  s = clarificationReducer(s, { type: "view_loaded", matterId: "B", view: viewB });
+  s = clarificationReducer(s, { type: "answer_changed", matterId: "B", fact: "document_origin", value: "Florida" });
+  const beforeLate = s;
+  assert.equal(s.busy, false);
+  assert.equal(clarificationComplete(s), true, "B's form can be submitted");
+
+  // A's old request now finishes (success, failure, or a late GET): B is unchanged and still usable.
+  const accepted: ClarificationView = { status: "awaiting_milano_review", questions: [], answered: ["signer_location"] };
+  for (const late of [
+    { type: "submit_succeeded", matterId: "A", view: accepted },
+    { type: "submit_failed", matterId: "A", message: "failed" },
+    { type: "view_loaded", matterId: "A", view: viewA },
+    { type: "answer_changed", matterId: "A", fact: "signer_location", value: "x" },
+  ] as const) {
+    s = clarificationReducer(s, late);
+    assert.equal(s, beforeLate, `${late.type} for A leaves B untouched`);
+  }
+
+  // B's own submission still works end to end.
+  s = clarificationReducer(s, { type: "submit_started", matterId: "B" });
+  assert.equal(s.busy, true);
+  s = clarificationReducer(s, { type: "submit_succeeded", matterId: "B", view: accepted });
+  assert.deepEqual({ busy: s.busy, answers: s.answers, status: s.view?.status, message: s.message },
+    { busy: false, answers: {}, status: "awaiting_milano_review", message: SUBMIT_SUCCESS_MESSAGE });
+  assert.equal(clarificationReducer(s, { type: "matter_changed", matterId: "B" }), s, "same Matter does not reset");
 });
