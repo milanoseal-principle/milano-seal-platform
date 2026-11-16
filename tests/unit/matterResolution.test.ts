@@ -142,4 +142,7 @@ test("portal route: owned Matter only, ledger-only write of unverified declarati
   assert.match(portal, /<MatterClarificationsCard \/>/);
   const card = fs.readFileSync("components/portal/MatterClarificationsCard.tsx", "utf8");
   assert.match(card, /if \(active\.current !== requested\) return;/, "a response for a previous Matter is ignored");
+  // Codex P2: switching Matters mid-submission must not leave the new Matter's form stuck on "Sending…".
+  const effect = card.slice(card.indexOf("useEffect(() => {"), card.indexOf("}, [matterId]);"));
+  assert.match(effect, /setBusy\(false\);/);
 });

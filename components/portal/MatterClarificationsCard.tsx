@@ -28,6 +28,8 @@ export function MatterClarificationsCard() {
     setView(null);
     setAnswers({});
     setMessage(null);
+    // A submission still in flight belongs to the previous Matter; its response is ignored.
+    setBusy(false);
     if (!matterId) return;
     fetch(`/api/portal/me/clarifications?deal_id=${encodeURIComponent(matterId)}`, { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
