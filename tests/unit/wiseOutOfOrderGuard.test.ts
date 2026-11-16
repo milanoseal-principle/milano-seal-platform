@@ -36,3 +36,17 @@ test("webhook uses the guard on the legacy path and reads payment_confirmed", ()
   assert.match(route, /if \(milanoStatus === "PAYMENT_PENDING"\) return;/);
   assert.match(route, /verifyWiseSignature\(rawBody, signature\)/);
 });
+
+test("genuine post-settlement exceptions are not suppressed: the guard applies only to pending events", () => {
+  const route = fs.readFileSync("app/api/webhooks/wise/route.ts", "utf8");
+  assert.equal(route.match(/ignoreLatePendingEvent\(/g)?.length, 1, "used once, on the pending branch only");
+  // Refund, failure and reversal handling remain, still bound to the recorded provider resource.
+  assert.match(route, /if \(milanoStatus === "PAYMENT_FAILED"\) \{/);
+  assert.match(route, /if \(milanoStatus === "PAYMENT_REFUNDED"\) \{/);
+  assert.match(route, /invalidation && resourceId !== deal\.wise_transaction_reference/);
+  assert.match(route, /p_status: invalidation \? \(milanoStatus === "PAYMENT_REFUNDED" \? "REFUNDED" : "FAILED"\) : "SETTLED"/);
+  // Settlement still flows only through the atomic confirmation RPC after exact matching.
+  assert.match(route, /"confirm_wise_payment_for_deal",/);
+  assert.match(route, /if \(eventMinor < dueMinor\) \{/);
+  assert.match(route, /currency_mismatch/);
+});
