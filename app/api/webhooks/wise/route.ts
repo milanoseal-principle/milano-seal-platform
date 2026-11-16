@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity";
 import { appendLedger, CUSTODY_EVENTS } from "@/lib/custodyLedger";
 import { notifyClient } from "@/lib/notifications/orchestrator";
 import { createHash } from "crypto";
+import { ignoreLatePendingEvent } from "@/lib/wise/outOfOrderGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -382,7 +383,7 @@ async function processWiseEvent(opts: {
 
   const { data: deal } = await supabase
     .from("deals")
-    .select("id, deal_id, payment_status, amount_due, amount_paid, wise_reference, currency, payment_attempt_id, payment_attempt_started_at, wise_transaction_reference")
+    .select("id, deal_id, payment_status, payment_confirmed, amount_due, amount_paid, wise_reference, currency, payment_attempt_id, payment_attempt_started_at, wise_transaction_reference")
     .or(`wise_reference.eq.${reference},deal_id.eq.${reference}`)
     .maybeSingle();
 
@@ -500,8 +501,9 @@ async function processWiseEvent(opts: {
   } else if (invalidation && resourceId !== deal.wise_transaction_reference) {
     await flagForReview(supabase, eventRowId, "legacy_provider_attempt_mismatch", reference, deal.id);
     return;
-  } else if (milanoStatus === "PAYMENT_PENDING" && ["failed", "refunded"].includes(deal.payment_status)) {
-    // Out-of-order pending must never reset an invalidated legacy payment.
+  } else if (milanoStatus === "PAYMENT_PENDING" && ignoreLatePendingEvent(deal)) {
+    // Out-of-order pending must never reset an invalidated legacy payment, nor
+    // downgrade one already confirmed by confirm_wise_payment_for_deal.
     return;
   }
 
