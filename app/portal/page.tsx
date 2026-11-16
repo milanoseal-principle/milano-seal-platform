@@ -11,6 +11,7 @@ import { CoordinatorCard } from "@/components/portal/CoordinatorCard";
 import { PreFlightReview } from "@/components/portal/PreFlightReview";
 import { ReadinessSummaryCard } from "@/components/portal/ReadinessSummaryCard";
 import { PortalCourierCustody } from "@/components/portal/PortalCourierCustody";
+import { MatterClarificationsCard } from "@/components/portal/MatterClarificationsCard";
 import { createClient } from "@/lib/supabase/client";
 import type { ClientMatterIntelligence } from "@/lib/matterIntelligence";
 import { PortalTrustOrbit } from "@/components/orbit/PortalTrustOrbit";
@@ -513,6 +514,9 @@ export default function MyMatterPage() {
 
         {/* PORTAL-01: Matter Intelligence Hero */}
         <MatterJourneyCard deal={deal} />
+
+        {/* Autonomous Matter Resolution: only the facts Milano still needs */}
+        <MatterClarificationsCard />
 
         {/* PORTAL-03: Execution Readiness (client-safe) */}
         <ReadinessSummaryCard />

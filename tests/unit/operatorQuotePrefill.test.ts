@@ -146,7 +146,7 @@ test("builder, page and read route wiring: keyed per Matter, edits preserved, se
   assert.match(builder, /!touched\.current\.has\(key\)/);
   // 21/18: a new Matter remounts the builder; a late response for another Matter is ignored.
   assert.match(page, /key=\{deal\.id\}\n\s+matterId=\{deal\.id\}/);
-  assert.match(builder, /if \(!active \|\| !evidence\) return;/);
+  assert.match(builder, /if \(!active \|\| !body\) return;/);
   assert.doesNotMatch(page, /executionMethod: deal\.mobile \? "in_person"/, "mobile flag is not a confirmed method");
   // Codex P2: the legacy apostille flag never fills an unresolved authentication requirement.
   assert.match(builder, /authentication_requirement: prefill\.authenticationRequirement \?\? "review_required",/);

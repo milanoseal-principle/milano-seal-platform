@@ -20,8 +20,9 @@ import {
   NOTARIAL_ACTS,
   NOTARIZATION_REQUIREMENTS,
 } from "@/lib/matter/executionTruth";
+import { declarationLabel, type ClientDeclarations } from "@/lib/matter/matterResolution";
 
-export type PrefillStatus = "confirmed" | "from_intake" | "suggested" | "conflict" | "missing" | "edited";
+export type PrefillStatus = "confirmed" | "from_intake" | "from_client" | "suggested" | "conflict" | "missing" | "edited";
 
 /** A field the operator changed in this session is unsaved input, not a recorded fact. */
 export const OPERATOR_EDIT_PROVENANCE: FieldProvenance = {
@@ -180,6 +181,10 @@ function routeField(
 
 export interface OperatorPrefillInput {
   executionTruth: Record<string, unknown> | null | undefined;
+  // Unverified answers the client gave in the portal (Autonomous Matter Resolution).
+  clientDeclarations?: ClientDeclarations | null;
+  // The Matter's recorded origin (deals.origin_state).
+  originState?: string | null;
   routeEvidence: RecordedRouteEvidence | null;
   matterPricingType: string | null | undefined;
   quoteApproved: boolean;
@@ -196,6 +201,10 @@ export interface OperatorPrefill {
   issuingAuthority: KnownIssuingAuthority | null;
   issuingAgency: string | null;
   receivingAuthority: string | null;
+  // Client-declared text facts for empty Matter fields (labelled From client; never auto-confirmed).
+  originState: string | null;
+  signerLocation: string | null;
+  executionLocation: string | null;
   provenance: Record<
     | "execution_method"
     | "notarization_requirement"
@@ -205,14 +214,52 @@ export interface OperatorPrefill {
     | "document_category"
     | "issuing_authority"
     | "issuing_agency"
-    | "receiving_authority",
+    | "receiving_authority"
+    | "origin_state"
+    | "signer_location"
+    | "execution_location",
     FieldProvenance
   >;
 }
 
+const AUTH_FROM_DECLARATION: Record<string, string> = {
+  apostille: "apostille",
+  legalization: "authentication_legalization",
+  none: "not_required",
+};
+
+/** The client's latest portal answers override their original intake request (both non-authoritative). */
+export function mergeClientDeclarations(
+  request: ClientExecutionRequest | null,
+  declarations: ClientDeclarations | null | undefined,
+): ClientExecutionRequest | null {
+  if (!declarations) return request;
+  const method = declarations.execution_preference?.value;
+  const auth = declarations.authentication_needed?.value;
+  if (!request && !method && !auth) return null;
+  return {
+    executionPreference: method && method !== "not_sure" ? method : request?.executionPreference ?? null,
+    notarizationPreference: request?.notarizationPreference ?? null,
+    authenticationPreference: (auth && AUTH_FROM_DECLARATION[auth]) || (request?.authenticationPreference ?? null),
+    requestedNotarialAct: request?.requestedNotarialAct ?? null,
+    mobileFlag: request?.mobileFlag,
+  };
+}
+
+function textFact(recorded: unknown, declared: string | undefined, name: string): { value: string | null; provenance: FieldProvenance } {
+  if (typeof recorded === "string" && recorded.trim()) {
+    return { value: null, provenance: { status: "confirmed", detail: `Recorded on the Matter.` } };
+  }
+  if (declared) {
+    return { value: declared, provenance: { status: "from_client", detail: `Client declared in the portal (unverified). Confirm through execution review.` } };
+  }
+  return { value: null, provenance: { status: "missing", detail: `No ${name} is recorded.` } };
+}
+
 export function resolveOperatorPrefill(input: OperatorPrefillInput): OperatorPrefill {
   const truth = input.executionTruth ?? {};
-  const request = input.clientRequest;
+  const declared = input.clientDeclarations ?? {};
+  const request = mergeClientDeclarations(input.clientRequest, input.clientDeclarations);
   const requestedMethod = request?.executionPreference ?? (request?.mobileFlag ? "mobile" : null);
 
   const method = truthField(truth.execution_method, EXECUTION_METHODS, requestedMethod, "execution method");
@@ -232,6 +279,20 @@ export function resolveOperatorPrefill(input: OperatorPrefillInput): OperatorPre
     : { status: "suggested", detail: "Derived by the pricing engine from the confirmed execution facts." };
 
   const evidence = input.routeEvidence;
+  const origin = textFact(input.originState, declared.document_origin?.value, "document origin");
+  const signer = textFact(truth.signer_location, declared.signer_location?.value, "signer location");
+  const location = textFact(truth.execution_location, declared.execution_location?.value, "execution location");
+  // Client-answered facts behind legal determinations: shown as hints, never as values.
+  const issuer = declared.document_issuer?.value;
+  const issuingProvenance: FieldProvenance =
+    !evidence?.issuingAuthority && issuer
+      ? { status: "from_client", detail: `Client declared: ${declarationLabel("document_issuer", issuer)}. Verify before selecting.` }
+      : routeField(evidence?.issuingAuthority ?? null, evidence, "issuing authority");
+  const instructions = declared.receiving_instructions?.value;
+  const actProvenance: FieldProvenance =
+    !act.value && instructions
+      ? { status: "from_client", detail: `Client's receiving-party instructions: "${instructions}". Choose the act; do not infer it.` }
+      : act.provenance;
   return {
     executionMethod,
     notarizationRequirement: notarization.value ?? "review_required",
@@ -242,18 +303,24 @@ export function resolveOperatorPrefill(input: OperatorPrefillInput): OperatorPre
     issuingAuthority: evidence?.issuingAuthority ?? null,
     issuingAgency: evidence?.issuingAgency ?? null,
     receivingAuthority: evidence?.receivingAuthority ?? null,
+    originState: origin.value,
+    signerLocation: signer.value,
+    executionLocation: location.value,
     provenance: {
       execution_method: method.provenance,
       notarization_requirement: notarization.provenance,
-      notarial_act: act.provenance,
+      notarial_act: actProvenance,
       authentication_requirement: authentication.provenance,
       matter_base: matterBaseProvenance,
       document_category: evidence?.documentCategory
         ? routeField(evidence.documentCategory, evidence, "document category")
         : { status: "suggested", detail: "Auto-classified by route intelligence from the document type. Verify." },
-      issuing_authority: routeField(evidence?.issuingAuthority ?? null, evidence, "issuing authority"),
+      issuing_authority: issuingProvenance,
       issuing_agency: routeField(evidence?.issuingAgency ?? null, evidence, "federal issuing agency"),
       receiving_authority: routeField(evidence?.receivingAuthority ?? null, evidence, "receiving authority"),
+      origin_state: origin.provenance,
+      signer_location: signer.provenance,
+      execution_location: location.provenance,
     },
   };
 }
