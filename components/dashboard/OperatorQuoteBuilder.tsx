@@ -15,6 +15,7 @@ import {
   type FieldProvenance,
   type RecordedRouteEvidence,
 } from "@/lib/pricing/operatorQuotePrefill";
+import type { ClientDeclarations } from "@/lib/matter/matterResolution";
 
 type MatterBase =
   | "authentication"
@@ -213,18 +214,22 @@ export function OperatorQuoteBuilder({
   const [reviewDeadline, setReviewDeadline] = useState("");
   const truth = initial?.executionTruth ?? null;
   const [routeEvidence, setRouteEvidence] = useState<RecordedRouteEvidence | null>(null);
+  const [clientDeclarations, setClientDeclarations] = useState<ClientDeclarations | null>(null);
+  const [resolution, setResolution] = useState<{ status: string; outstanding: string[]; provisional_blockers: string[] } | null>(null);
   const prefill = useMemo(
     () =>
       resolveOperatorPrefill({
         executionTruth: truth,
         routeEvidence,
+        clientDeclarations,
+        originState: initial?.originState ?? null,
         matterPricingType: initial?.matterBase,
         quoteApproved: Boolean(initial?.quoteApproved),
         clientRequest: initial?.clientRequest ?? null,
       }),
     // truth/initial are a snapshot for this mounted Matter (the page keys the builder by Matter id).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [routeEvidence],
+    [routeEvidence, clientDeclarations],
   );
   // Fields the operator has edited in this session; prefill never overwrites them.
   const touched = useRef(new Set<keyof QuoteForm>());
@@ -291,9 +296,31 @@ export function OperatorQuoteBuilder({
     let active = true;
     fetch(`/api/deals/${matterId}/quote`, { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
-      .then((body: { route_evidence?: RecordedRouteEvidence | null } | null) => {
-        const evidence = body?.route_evidence ?? null;
-        if (!active || !evidence) return;
+      .then((body: {
+        route_evidence?: RecordedRouteEvidence | null;
+        client_declarations?: Record<string, { value: string; declaredAt: string | null }>;
+        resolution?: { status: string; outstanding: string[]; provisional_blockers: string[] } | null;
+      } | null) => {
+        if (!active || !body) return;
+        const declarations = (body.client_declarations ?? {}) as ClientDeclarations;
+        if (Object.keys(declarations).length > 0) setClientDeclarations(declarations);
+        if (body.resolution) setResolution(body.resolution);
+        const evidence = body.route_evidence ?? null;
+        // Client-declared text facts fill only empty, untouched fields (labelled From client).
+        setForm((current) => {
+          const next = { ...current };
+          const fill = (key: "origin_state" | "signer_location" | "execution_location", value: string | undefined) => {
+            if (value && !current[key] && !touched.current.has(key)) {
+              next[key] = value;
+              prefilled.current[key] = value;
+            }
+          };
+          fill("origin_state", declarations.document_origin?.value);
+          fill("signer_location", declarations.signer_location?.value);
+          fill("execution_location", declarations.execution_location?.value);
+          return next;
+        });
+        if (!evidence) return;
         setRouteEvidence(evidence);
         setForm((current) => {
           const next = { ...current };
@@ -479,13 +506,27 @@ export function OperatorQuoteBuilder({
 
       <CardContent className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.8fr)]">
         <div className="space-y-5">
+          {resolution && resolution.status !== "closed" && (
+            <section data-matter-resolution={resolution.status} className="rounded-md border border-cyan-500/20 bg-cyan-500/[0.04] p-3 text-xs leading-5 text-muted-foreground">
+              <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-cyan-300">Client clarification</div>
+              {resolution.status === "needs_client_input"
+                ? `Waiting on the client in the portal for: ${resolution.outstanding.map((fact) => fact.replaceAll("_", " ")).join(", ")}.`
+                : resolution.status === "review_confirmed"
+                  ? "Execution review confirmed."
+                  : "The client has answered every portal question. Answers are unverified declarations; confirm them through execution review."}
+              {resolution.provisional_blockers.length > 0 && (
+                <div className="mt-1">Still to resolve in execution review: {resolution.provisional_blockers.join(", ")}.</div>
+              )}
+            </section>
+          )}
+
           <section className="rounded-md border border-[#C6A65B]/20 bg-[#C6A65B]/[0.03] p-4">
             <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#C6A65B]">Destination & document route</div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <Field label="Destination country">
                 <Input value={form.destination_country} disabled={locked} onChange={(e) => patch("destination_country", e.target.value)} />
               </Field>
-              <Field label="Document origin">
+              <Field label="Document origin" provenance={provenance.origin_state}>
                 <Input value={form.origin_state} disabled={locked} onChange={(e) => patch("origin_state", e.target.value)} placeholder="Issuing / execution state" />
               </Field>
               <Field label="Document type">
@@ -569,10 +610,10 @@ export function OperatorQuoteBuilder({
                   ]}
                 />
               </Field>
-              <Field label="Signer location">
+              <Field label="Signer location" provenance={provenance.signer_location}>
                 <Input value={form.signer_location} disabled={locked} onChange={(e) => patch("signer_location", e.target.value)} />
               </Field>
-              <Field label="Execution location (in person)">
+              <Field label="Execution location (in person)" provenance={provenance.execution_location}>
                 <Input value={form.execution_location} disabled={locked || form.execution_method !== "in_person"} onChange={(e) => patch("execution_location", e.target.value)} />
               </Field>
               {(form.execution_method === "already_notarized" || form.execution_method === "third_party_notary") && (
@@ -828,6 +869,7 @@ export function OperatorQuoteBuilder({
 const PROVENANCE_STYLE: Record<FieldProvenance["status"], [string, string]> = {
   confirmed: ["Confirmed", "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"],
   from_intake: ["From intake", "border-sky-500/30 bg-sky-500/10 text-sky-300"],
+  from_client: ["From client", "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"],
   suggested: ["Suggested", "border-[#C6A65B]/35 bg-[#C6A65B]/10 text-[#E8CF8B]"],
   conflict: ["Conflict", "border-red-500/35 bg-red-500/10 text-red-300"],
   missing: ["Missing", "border-amber-500/30 bg-amber-500/10 text-amber-300"],

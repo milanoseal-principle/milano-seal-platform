@@ -10,6 +10,8 @@ import { isQuoteMutationLocked } from "@/lib/pricing/quoteMutationLock";
 import { applyDiscountToMatter } from "@/src/features/discounts/discountService";
 import { sanitizeRouteEvidence } from "@/lib/pricing/operatorQuotePrefill";
 import { DOCUMENT_ORIGIN_ROUTING_MATRIX } from "@/lib/international-execution/operationalGovernance";
+import { declarationLabel, type ResolutionFact } from "@/lib/matter/matterResolution";
+import { loadMatterResolution, RESOLUTION_MATTER_SELECT, type ResolutionMatterRow } from "@/lib/matter/matterResolutionServer";
 
 export const runtime = "nodejs";
 
@@ -76,7 +78,8 @@ export async function GET(
   const operator = await operatorIdentity();
   if (!operator) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   const { id } = await params;
-  const { data, error } = await createAdminClient()
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("matter_evidence_ledger")
     .select("event_type, occurred_at, new_value")
     .eq("matter_id", id)
@@ -86,7 +89,32 @@ export async function GET(
     .limit(1);
   if (error) return NextResponse.json({ error: "ROUTE_EVIDENCE_UNAVAILABLE" }, { status: 503 });
   const evidence = sanitizeRouteEvidence(data?.[0] ?? null, DOCUMENT_ORIGIN_ROUTING_MATRIX.map((rule) => rule.category));
-  return NextResponse.json({ route_evidence: evidence }, { headers: { "Cache-Control": "no-store" } });
+
+  // Autonomous Matter Resolution: the client's unverified portal answers and the
+  // revalidation result, for operator review. Advisory; failures do not block prefill.
+  let clientDeclarations: Record<string, { value: string; label: string; declaredAt: string | null }> = {};
+  let resolution: { status: string; outstanding: string[]; provisional_blockers: string[] } | null = null;
+  const { data: matter } = await admin.from("deals").select(RESOLUTION_MATTER_SELECT).eq("id", id).maybeSingle();
+  if (matter) {
+    try {
+      const loaded = await loadMatterResolution(admin, matter as ResolutionMatterRow);
+      clientDeclarations = Object.fromEntries(
+        Object.entries(loaded.declarations).map(([fact, entry]) => [
+          fact,
+          { value: entry!.value, label: declarationLabel(fact as ResolutionFact, entry!.value), declaredAt: entry!.declaredAt },
+        ]),
+      );
+      resolution = {
+        status: loaded.resolution.status,
+        outstanding: loaded.resolution.questions.map((q) => q.fact),
+        provisional_blockers: loaded.resolution.provisionalBlockers,
+      };
+    } catch { /* advisory only */ }
+  }
+  return NextResponse.json(
+    { route_evidence: evidence, client_declarations: clientDeclarations, resolution },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(
