@@ -109,12 +109,6 @@ try {
     // Step 6: additive shipment-leg reconciliation after the existing
     // HMAC-verified courier path (HMAC verification unchanged).
     "app/api/courier/webhook/route.ts",
-    // Owner-approved 2026-11-16 (P0 Wise settlement fix): a late Wise pending
-    // event can no longer downgrade a confirmed payment on the legacy path.
-    // Pure guard + its regression test only; signature verification, matching
-    // rules and the atomic confirmation RPC are unchanged.
-    "lib/wise/outOfOrderGuard.ts",
-    "tests/unit/wiseOutOfOrderGuard.test.ts",
   ]);
   const touched = diff
     .split("\n")

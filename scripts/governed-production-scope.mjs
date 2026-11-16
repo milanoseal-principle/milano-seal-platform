@@ -104,6 +104,10 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // Positive/negative authority tests run in test:wise-attempt-database and the
  // existing full release gate. All other protected-path restrictions remain.
  'app/api/webhooks/wise/route.ts',
+ // Owner-approved 2026-11-16 (P0 Wise settlement fix): late pending events
+ // cannot downgrade a confirmed payment on the legacy path.
+ 'lib/wise/outOfOrderGuard.ts',
+ 'tests/unit/wiseOutOfOrderGuard.test.ts',
  'lib/wise/attemptEvidence.ts','lib/wise/reconciliation.ts','lib/wise/reconciliation-exceptions.ts',
  'supabase/migrations/20261109060000_wise_attempt_authority.sql',
  'scripts/test-wise-attempt-sql.mjs','tests/wise-attempt-authority.test.ts',
