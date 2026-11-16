@@ -301,3 +301,68 @@ Sections 1–31 are kept unchanged as historical evidence. The final transaction
 3. Client B checks the itemized invoice, pro forma PDF and Wise instructions while the Matter stays unpaid and scheduling stays locked.
 4. Run one authorized Wise transaction and verify settlement independently.
 5. Certify the downstream scheduling and release gates from the evidence those steps produce.
+
+## 33. Financial transaction and execution finalization audit, and PR #523 — 2026-11-16 20:40 UTC
+
+Sections 1–32 are kept unchanged as historical evidence. This section records engineering and source evidence only. No live Wise transfer, provider session, government submission, shipment or production data change was made. The final transaction decision remains **NO-GO**.
+
+### Releases since Section 32
+
+| Item | Evidence | Source | Result |
+|---|---|---|---|
+| PR #521: post-intake client clarification and revalidation | Merged as `f950b78a`. | GitHub | PASS |
+| PR #522: clarification follow-up (no signer question without a new signing; card state scoped to one Matter) | Merged as `6f5a85dc`. [CI 43802239685](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43802239685) passed. Codex found nothing on the final commit. | GitHub | PASS |
+| PR #523: a late Wise pending event never downgrades a confirmed payment | Merged as `afb0f2b6` (head `6967cae3`). [CI 43948742321](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/43948742321) passed. Codex found nothing on the final commit. | GitHub | PASS |
+| Production deployment of `afb0f2b6` | Not yet verified. This session has no network access to Vercel. | Owner to confirm | PENDING |
+
+### Confirmed defect and fix (PR #523)
+
+- **Defect:** on the legacy webhook path (a Matter with no `payment_attempt_id`), an exact-match transfer "processing" event delivered after `confirm_wise_payment_for_deal` wrote `payment_status='unpaid'` onto a Matter that was `payment_confirmed`, `paid` and `cleared`.
+- **Impact:** this fails closed and cannot create a false "paid". It does corrupt payment truth: the portal shows unpaid and later stages stall.
+- **Fix:** a pure guard, `lib/wise/outOfOrderGuard.ts`, ignores late pending events for confirmed or paid payments, as it already did for failed or refunded ones.
+- **Unchanged:**
+  - Refund, failure and reversal handling, still bound to the recorded provider resource.
+  - The attempt path, signature verification, and exact amount, currency and reference matching.
+  - `confirm_wise_payment_for_deal`, settlement authority, complimentary governance and Smart Pricing.
+- **Governance:** the two new paths were added to `GAP_CLOSURE_PROTECTED_CHANGES` with explicit owner approval, limited to this fix. No validator logic changed.
+
+### Lifecycle audit on `main` `6f5a85dc` (before the fix)
+
+| Area | Evidence | Result |
+|---|---|---|
+| Financial artifacts | `issue_financial_artifact` requires an approved canonical quote whose totals reconcile exactly to the line items. Each artifact is versioned and SHA-256 snapshotted. An identical snapshot returns the existing artifact. RECEIPT and PAID_AND_RELEASED require verified settlement. Access is limited to the Matter's client (exact email) or an operator. | PASS (engineering) |
+| Wise webhook authenticity and matching | RSA signature verification. Underpayment, overpayment, currency mismatch, missing reference and environment mismatch go to review. Provider-attempt mismatches are rejected. 241 PostgreSQL attempt checks pass. | PASS (engineering); out-of-order downgrade FIXED in #523 |
+| Payment to scheduling | `20261109090000_verified_settlement_before_scheduling` makes verified settlement the only payment prerequisite for scheduling and later stages. An observed payment is display-only. The settlement-before-scheduling suite (15/15) and 40 behavioural tests pass. | PASS (engineering) |
+| RON, apostille, courier, custody, release | P3, P4 (59), P5 (31) and gap-closure (85) database suites pass. RON, apostille, custody, courier and cross-system validators pass. BlueNotary and Shippo callbacks are authenticated. | PASS (engineering) |
+| Complimentary path | `compClearMatter` is an existing path gated by owner/operator approval and an audited 100% comp redemption. Not changed. | Existing governance, unchanged |
+| Certification suites | `certify:p20` through `certify:p23` pass, all with `live_certification=false`. | PASS (simulation only) |
+
+### Tests on the final tree
+
+- `npm test`: 1543 pass.
+- Typecheck, lint, build and `git diff --check` pass.
+- Governance validators pass: final-production-regression, canonical-foundation, smart-intake-pricing-engine, final-intelligence-operator-os, production-governance, full-system-hardening and ai-governance.
+- Wise and payment validators pass: payment-release-gates, the Wise recovery, reconciliation and schema-drift checks, settlement-before-scheduling and production-transaction-10of10.
+- Database suites pass: Wise attempt, gap-closure, P3 and P4.
+- `certify:p20`, migration-chain and the rendered browser test pass.
+
+### Current status
+
+```
+MAIN SHA: afb0f2b6   CI: PASS (43948742321)   VERCEL ON afb0f2b6: PENDING owner confirmation
+QUOTE ISSUANCE / PRO FORMA / INVOICE INTEGRITY: PASS (engineering); live issued quote for a QA Matter NOT TESTED
+FINANCIAL PDF AUTHORIZATION / CROSS-CLIENT ISOLATION: PASS (engineering)
+WISE INSTRUCTIONS: PASS (engineering)   OBSERVED PAYMENT: NOT TESTED live   VERIFIED WISE SETTLEMENT: NOT TESTED
+OUT-OF-ORDER WEBHOOK SAFETY: PASS (fixed in #523)   PARTIAL/DEPOSIT HANDLING: PASS (engineering)
+SCHEDULING GATE: PASS (engineering)   RON / APOSTILLE / COURIER / CUSTODY / RELEASE: PASS (engineering); live NOT TESTED
+DELIVERY EVIDENCE: NOT TESTED   LIVE TRANSACTION ACCEPTANCE: NOT TESTED
+FINAL TRANSACTION CERTIFICATION: NO-GO
+```
+
+### Remaining live gates (owner or provider action)
+
+1. Owner confirms Vercel production is READY on `afb0f2b6`.
+2. Operator execution review and quote issuance for a QA Matter. This needs explicit approval.
+3. Client invoice, pro forma and Wise instructions are verified while the Matter is unpaid.
+4. One explicitly authorized Wise payment, with settlement verified independently from provider evidence.
+5. Live RON or in-person execution, then apostille (when required), courier, custody, release and delivery evidence.
