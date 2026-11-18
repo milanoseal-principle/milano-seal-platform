@@ -43,7 +43,7 @@ export function CounselFAQ() {
       ))}
       <p>Nicholas Milano is a commissioned Florida Notary Public.</p>
       <Link className="counsel-button" href="/counsel#inquiry">
-        Send a U.S. Matter
+        Submit a Matter
       </Link>
     </section>
   );

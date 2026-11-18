@@ -322,21 +322,25 @@ export function CounselExperience({
         </p>
         <p className="counsel-eyebrow">For international counsel</p>
         <h1>
-          Your U.S. execution desk
+          Your trusted U.S. execution partner.
           <br />
-          <em>for international matters.</em>
+          <em>For matters that cross borders.</em>
         </h1>
         <p className="counsel-intro">
-          When your client is in the United States and their document must work
-          abroad, The Milano Seal coordinates the U.S. execution side — from
-          execution-readiness review through governed notarization where
-          applicable, apostille or authentication routing, custody, and
-          international release.
+          When international matters require documents to be signed, notarized,
+          authenticated, or prepared for use in the United States or abroad, The
+          Milano Seal™ provides a dedicated U.S. coordination point.
+        </p>
+        <p className="counsel-intro">
+          From document-readiness review and notarization coordination to
+          apostilles, certified translations, secure custody, and international
+          delivery, we bring the essential steps together through one structured
+          process.
         </p>
         <p className="counsel-boundary">
-          You remain counsel.
+          Your firm retains legal responsibility.
           <br />
-          We handle the U.S. execution workflow.
+          We coordinate the U.S. document execution process.
         </p>
         <div className="counsel-actions">
           <a
@@ -344,58 +348,61 @@ export function CounselExperience({
             href="#inquiry"
             onClick={() => open("execution_review")}
           >
-            Send a U.S. Matter <span aria-hidden="true">↗︎</span>
+            Submit a Matter <span aria-hidden="true">↗︎</span>
           </a>
           <a
             className="counsel-text-link"
             href="#inquiry"
             onClick={() => open("question")}
           >
-            Ask about a Matter <span aria-hidden="true">↗︎</span>
+            Discuss Your Requirements <span aria-hidden="true">↗︎</span>
           </a>
         </div>
         <p className="counsel-note">
-          First contact requires no account. Matter-specific scope and quote
-          follow review.
+          Secure intake. Individual Matter review. Transparent pricing before
+          execution.
         </p>
       </section>
       <div className="counsel-trust">
         <div className="counsel-wrap">
           <span>Founder-led coordination</span>
-          <span>Controlled Matter tracking</span>
-          <span>Custody & release controls</span>
+          <span>Secure Matter visibility</span>
+          <span>International document logistics</span>
         </div>
       </div>
       <section className="counsel-wrap counsel-section">
-        <p className="counsel-eyebrow">
-          Across borders. One accountable U.S. point.
-        </p>
         <h2>
-          When your client is here
+          One U.S. partner.
           <br />
-          <em>and the Matter is there.</em>
+          <em>Across borders, documents, and jurisdictions.</em>
         </h2>
+        <p className="counsel-intro">
+          Whether you&apos;re representing an international client, coordinating
+          a cross-border transaction, or preparing U.S. documents for use
+          overseas, The Milano Seal™ connects the people, processes, and service
+          providers needed to move documents forward.
+        </p>
         <div className="counsel-scenarios">
           {[
             [
-              "Italy",
-              "A U.S. client needs a power of attorney executed for Italian use.",
+              "International Legal Matters",
+              "Coordinate affidavits, sworn declarations, powers of attorney, and other U.S. document execution requirements for international counsel and their clients.",
             ],
             [
-              "Spain",
-              "A U.S. signer needs documents executed for an overseas property transaction.",
+              "Citizenship & Civil Records",
+              "Navigate the coordination of birth certificates, marriage records, vital records, and supporting documentation intended for foreign administrative processes.",
             ],
             [
-              "Portugal",
-              "U.S.-origin documents require execution and authentication coordination.",
+              "Global Real Estate & Estates",
+              "Coordinate document execution and authentication for international property transactions, estate administration, inheritances, and cross-border authorizations.",
             ],
             [
-              "International estate",
-              "A beneficiary or principal in the United States must execute documents for foreign counsel.",
+              "Corporate & Commercial Transactions",
+              "Support international businesses with corporate resolutions, authorizations, certificates, and documents requiring U.S. execution or authentication.",
             ],
             [
-              "Corporate",
-              "U.S.-based signatories need governed execution for documents moving abroad.",
+              "Private Clients & Specialized Assets",
+              "Structured coordination for sensitive personal matters, maritime transactions, luxury assets, equine documentation, and other specialized international requirements.",
             ],
           ].map(([title, body], index) => (
             <article key={title}>
@@ -408,8 +415,17 @@ export function CounselExperience({
           ))}
         </div>
         <p className="counsel-note">
-          Each example is subject to document, signer, destination and
-          receiving-authority review.
+          Every Matter is assessed individually. Applicable notarization,
+          authentication, translation, and receiving-authority requirements
+          depend on the document, jurisdiction, and intended use.
+        </p>
+        <p className="counsel-eyebrow">
+          One point of coordination. Every required step accounted for.
+        </p>
+        <p className="counsel-note">
+          The Milano Seal™ provides document execution and administrative
+          coordination services. It is not a law firm and does not provide legal
+          advice.
         </p>
       </section>
       <section className="counsel-control">
@@ -731,7 +747,7 @@ export function CounselExperience({
             className="counsel-button"
             onClick={() => open("execution_review")}
           >
-            Send a Matter <span aria-hidden="true">↗︎</span>
+            Submit a Matter <span aria-hidden="true">↗︎</span>
           </a>
         </div>
       )}

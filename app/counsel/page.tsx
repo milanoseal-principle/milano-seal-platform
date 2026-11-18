@@ -27,7 +27,7 @@ export const metadata: Metadata = {
         url: "https://www.themilanoseal.com/og-image.png",
         width: 1200,
         height: 630,
-        alt: "The Milano Seal — your U.S. execution desk",
+        alt: "The Milano Seal — your trusted U.S. execution partner",
       },
     ],
   },
