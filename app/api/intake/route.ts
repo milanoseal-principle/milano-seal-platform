@@ -1,5 +1,7 @@
 import {bindIntakeUploadCapability} from '@/lib/uploads/authorization';
 import { bindIntakePaymentCapability } from '@/lib/payments/paymentCapability';
+import { guardIntakeSubmission, isAuthorizedOperator } from "@/lib/intake/intakeSubmissionGuard";
+import { defaultRequestLimiterDeps, enforcePublicRequestLimit } from "@/lib/security/publicRequestLimit";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -290,4 +292,13 @@ async function canonicalPost(req: NextRequest) {
   });
 }
 
-export async function POST(request:NextRequest){return bindIntakePaymentCapability(await bindIntakeUploadCapability(await canonicalPost(request)));}
+// Abuse controls (origin, size, JSON shape, durable per-client limit) run before
+// any Matter, invoice, capability or email is created; see intakeSubmissionGuard.
+export async function POST(request: NextRequest) {
+  const guarded = await guardIntakeSubmission(request, {
+    isOperator: () => isAuthorizedOperator(),
+    limit: async (req) => enforcePublicRequestLimit(req, { client: "intake_submit" }, await defaultRequestLimiterDeps()),
+  });
+  if (!guarded.ok) return guarded.response;
+  return bindIntakePaymentCapability(await bindIntakeUploadCapability(await canonicalPost(guarded.request)));
+}

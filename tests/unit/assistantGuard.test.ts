@@ -11,13 +11,14 @@ import {
 } from "@/lib/assistant/assistantHandler";
 
 const ORIGIN = "https://www.themilanoseal.com";
+const allow = async () => ({ allowed: true as const });
 const ENV = { ANTHROPIC_API_KEY: "test-placeholder-not-a-key" };
 
 function provider(reply = "Preliminary route: please continue to secure intake.") {
   const calls: AssistantProviderRequest[] = [];
   return {
     calls,
-    createMessage: async (request: AssistantProviderRequest) => {
+    limit: allow, createMessage: async (request: AssistantProviderRequest) => {
       calls.push(request);
       return { content: [{ type: "text", text: reply }] };
     },
@@ -35,7 +36,7 @@ function req(body: unknown, headers: Record<string, string> = {}) {
 
 test("same-origin public request reaches the provider once with bounded output", async () => {
   const p = provider();
-  const res = await handleAssistantRequest(req({ message: "Apostille for Italy?", role: "PUBLIC", context: { destination_country: "IT", secret: "x" } }), { env: ENV, createMessage: p.createMessage });
+  const res = await handleAssistantRequest(req({ message: "Apostille for Italy?", role: "PUBLIC", context: { destination_country: "IT", secret: "x" } }), { env: ENV, limit: allow, createMessage: p.createMessage });
   assert.equal(res.status, 200);
   assert.equal((await res.json()).reply, "Preliminary route: please continue to secure intake.");
   assert.equal(p.calls.length, 1);
@@ -60,7 +61,7 @@ test("every refusal happens before the paid provider call and carries a readable
   ];
   for (const [name, request, env, status, code] of cases) {
     const p = provider();
-    const res = await handleAssistantRequest(request, { env, createMessage: p.createMessage });
+    const res = await handleAssistantRequest(request, { env, limit: allow, createMessage: p.createMessage });
     const body = await res.json();
     assert.equal(res.status, status, name);
     assert.equal(body.code, code, name);
@@ -78,21 +79,21 @@ test("missing Origin is allowed only with same-origin fetch metadata", async () 
       body: JSON.stringify({ message: "hi" }),
     });
   const denied = provider();
-  assert.equal((await handleAssistantRequest(noOrigin(), { env: ENV, createMessage: denied.createMessage })).status, 403);
+  assert.equal((await handleAssistantRequest(noOrigin(), { env: ENV, limit: allow, createMessage: denied.createMessage })).status, 403);
   assert.equal(denied.calls.length, 0);
   const allowed = provider();
-  assert.equal((await handleAssistantRequest(noOrigin("same-origin"), { env: ENV, createMessage: allowed.createMessage })).status, 200);
+  assert.equal((await handleAssistantRequest(noOrigin("same-origin"), { env: ENV, limit: allow, createMessage: allowed.createMessage })).status, 200);
   assert.equal(allowed.calls.length, 1);
 });
 
 test("empty prompt and unknown role never spend a provider call beyond PUBLIC scope", async () => {
   const empty = provider();
-  const res = await handleAssistantRequest(req({ message: "   " }), { env: ENV, createMessage: empty.createMessage });
+  const res = await handleAssistantRequest(req({ message: "   " }), { env: ENV, limit: allow, createMessage: empty.createMessage });
   assert.equal(res.status, 200);
   assert.equal(empty.calls.length, 0);
 
   const unknown = provider();
-  await handleAssistantRequest(req({ message: "hi", role: "ROOT", context: { matter_id: "MS-1", signer_name: "A" } }), { env: ENV, createMessage: unknown.createMessage });
+  await handleAssistantRequest(req({ message: "hi", role: "ROOT", context: { matter_id: "MS-1", signer_name: "A" } }), { env: ENV, limit: allow, createMessage: unknown.createMessage });
   assert.equal(unknown.calls.length, 1);
   // Unknown roles fall back to PUBLIC: DASHBOARD-only keys are not forwarded.
   assert.doesNotMatch(unknown.calls[0].system, /signer_name|MS-1/);
@@ -101,7 +102,7 @@ test("empty prompt and unknown role never spend a provider call beyond PUBLIC sc
 test("provider failure returns 500 with the unavailable reply", async () => {
   const res = await handleAssistantRequest(req({ message: "hi" }), {
     env: ENV,
-    createMessage: async () => {
+    limit: allow, createMessage: async () => {
       throw new Error("provider down");
     },
   });
@@ -113,4 +114,54 @@ test("route wiring: the provider client is created only inside the guarded handl
   const route = readFileSync("app/api/assistant/route.ts", "utf8");
   assert.match(route, /handleAssistantRequest\(req,/);
   assert.doesNotMatch(route, /^const client = new Anthropic/m);
+});
+
+test("durable limit: 429 with Retry-After and no provider call; limiter outage fails closed", async () => {
+  const limited = provider();
+  const res = await handleAssistantRequest(req({ message: "hi" }), {
+    env: ENV,
+    createMessage: limited.createMessage,
+    limit: async () => ({ allowed: false as const, status: 429 as const, retryAfterSeconds: 37, bucket: "assistant" }),
+  });
+  assert.equal(res.status, 429);
+  assert.equal(res.headers.get("retry-after"), "37");
+  const body = await res.json();
+  assert.equal(body.code, "ASSISTANT_RATE_LIMITED");
+  assert.equal(typeof body.reply, "string");
+  assert.equal(limited.calls.length, 0);
+
+  const down = provider();
+  const unavailable = await handleAssistantRequest(req({ message: "hi" }), {
+    env: ENV,
+    createMessage: down.createMessage,
+    limit: async () => ({ allowed: false as const, status: 503 as const }),
+  });
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).code, "ASSISTANT_LIMIT_UNAVAILABLE");
+  assert.equal(down.calls.length, 0);
+});
+
+test("malformed or oversized requests never consume a caller's allowance", async () => {
+  let consumed = 0;
+  const counting = async () => {
+    consumed += 1;
+    return { allowed: true as const };
+  };
+  for (const request of [
+    req({ message: "hi" }, { origin: "https://evil.example" }),
+    req("{bad"),
+    req({ message: "y".repeat(ASSISTANT_MAX_MESSAGE_CHARS + 1) }),
+    req({ message: "   " }),
+  ]) {
+    await handleAssistantRequest(request, { env: ENV, createMessage: provider().createMessage, limit: counting });
+  }
+  assert.equal(consumed, 0);
+  await handleAssistantRequest(req({ message: "hi" }), { env: ENV, createMessage: provider().createMessage, limit: counting });
+  assert.equal(consumed, 1);
+});
+
+test("route wiring: durable limits and no automatic provider retries", () => {
+  const route = readFileSync("app/api/assistant/route.ts", "utf8");
+  assert.match(route, /client: "assistant", global: "assistant_global"/);
+  assert.match(route, /new Anthropic\(\{ maxRetries: 0 \}\)/);
 });

@@ -119,6 +119,12 @@ jobs:
           P23_CONCURRENCY_SERVICE_CONTAINER: "true"
         run: npm run certify:p23-concurrency
 
+      - name: Public request limits parallel-session concurrency
+        env:
+          PUBLIC_LIMITS_PGHOST: 127.0.0.1
+          PUBLIC_LIMITS_PGUSER: postgres
+        run: npm run test:public-request-limits-concurrency
+
       - name: Clean dependency-aware migration replay
         run: npm run test:migration-replay
 
