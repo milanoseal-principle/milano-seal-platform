@@ -279,3 +279,32 @@ test("dependency graph honors exact tsconfig path aliases before the @/* fallbac
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("imported JSON data is part of the dependency closure and fingerprint", () => {
+  const graph = lib.createGraph(root);
+  assert.ok(
+    graph.closure(["app/dashboard/command-center/page.tsx"]).modules.includes(
+      "data/command-center/workbook-intelligence.generated.json",
+    ),
+  );
+
+  const dir = mkdtempSync(join(tmpdir(), "route-json-"));
+  try {
+    mkdirSync(join(dir, "app/api/d"), { recursive: true });
+    mkdirSync(join(dir, "data"), { recursive: true });
+    writeFileSync(join(dir, "app/api/d/route.ts"), 'import limits from "@/data/limits.json";\nexport function GET() { return limits; }\n');
+    // Data that merely contains import-like text must not be parsed as code.
+    writeFileSync(join(dir, "data/limits.json"), JSON.stringify({ max: 5, note: 'import x from "@/lib/nope"' }));
+    const hash = () => {
+      const g = lib.createGraph(dir);
+      const closure = g.closure(["app/api/d/route.ts"]);
+      return { modules: closure.modules, hash: g.fingerprint(closure) };
+    };
+    const before = hash();
+    assert.deepEqual(before.modules, ["app/api/d/route.ts", "data/limits.json"]);
+    writeFileSync(join(dir, "data/limits.json"), JSON.stringify({ max: 500, note: "" }));
+    assert.notEqual(hash().hash, before.hash);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

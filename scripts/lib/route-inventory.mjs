@@ -45,6 +45,9 @@ const ROUTE_RE = /^route\.(?:js|jsx|ts|tsx)$/;
 const LAYOUT_RE = /^layout\.(?:js|jsx|ts|tsx)$/;
 const HTTP_METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
 const SOURCE_EXTS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
+// Imported runtime data: part of a route's behavior and its evidence fingerprint,
+// but never parsed for imports.
+const DATA_EXTS = [".json"];
 
 const SESSION_GUARD_RE =
   /\brequire\w*(?:Access|Operator|Admin|Role|Professional|Read|User|Client|Session)\s*\(|\bauthorize[A-Z]\w*\s*\(|\b(?:getCurrentClientDeal|getAllClientDeals|getAuthUser|isRouteAllowedForRole)\s*\(|\.auth\.getUser\s*\(|\bverify\w*Capability\s*\(/;
@@ -231,7 +234,7 @@ function resolveLocal(root, fromRel, spec) {
     const candidates = [base, ...SOURCE_EXTS.map((e) => base + e), ...SOURCE_EXTS.map((e) => `${base}/index${e}`)];
     for (const candidate of candidates) {
       const abs = join(root, candidate);
-      if (existsSync(abs) && statSync(abs).isFile() && SOURCE_EXTS.some((e) => candidate.endsWith(e))) return candidate;
+      if (existsSync(abs) && statSync(abs).isFile() && [...SOURCE_EXTS, ...DATA_EXTS].some((e) => candidate.endsWith(e))) return candidate;
     }
   }
   return null;
@@ -262,7 +265,8 @@ export function createGraph(root) {
     if (cache.has(rel)) return cache.get(rel);
     const entry = { local: [], packages: [] };
     cache.set(rel, entry);
-    for (const spec of importSpecifiers(readText(root, rel))) {
+    const specs = DATA_EXTS.some((e) => rel.endsWith(e)) ? [] : importSpecifiers(readText(root, rel));
+    for (const spec of specs) {
       const local = resolveLocal(root, rel, spec);
       if (local) entry.local.push(local);
       else if (!spec.startsWith(".") && !aliasBases(root, spec)) {
