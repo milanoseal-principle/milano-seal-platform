@@ -590,11 +590,15 @@ function ExecutionCopilotContent() {
   };
 
   const compactTrigger = pathname === "/intake" || pathname.endsWith("/apply");
+  const triggerPosition = compactTrigger
+    ? "bottom-[calc(env(safe-area-inset-bottom)+12px)]"
+    : "bottom-[calc(env(safe-area-inset-bottom)+86px)] max-sm:bottom-[calc(env(safe-area-inset-bottom)+76px)] max-sm:right-2";
+  const loginVisibility = pathname === "/login" ? "max-sm:hidden" : "";
   const empty = messages.length === 0;
   const reviewStatus = journey.status.replaceAll("_", " ");
 
   return (
-    <div className={compactTrigger ? "fixed bottom-[calc(env(safe-area-inset-bottom)+12px)] right-4 z-[80]" : "fixed bottom-[calc(env(safe-area-inset-bottom)+86px)] right-4 z-[80] max-sm:bottom-[calc(env(safe-area-inset-bottom)+76px)] max-sm:right-2"}>
+    <div className={`fixed right-4 z-[80] ${triggerPosition} ${loginVisibility}`}>
       <AnimatePresence mode="wait">
         {!open ? (
           <motion.button
