@@ -178,3 +178,65 @@ test("migration is idempotent, drops only the seven named policies and is a no-o
   await fresh.close();
   assert.doesNotMatch(migration.replace(/--.*$/gm, ""), /\b(delete\s+from|truncate\s+(table\s+)?public|drop\s+table|drop\s+column|update\s+public)/i);
 });
+
+
+test("forward reconciliation reproduces hosted legacy helper and restores canonical staff isolation", async () => {
+  const db = await hostedFixture();
+  try {
+    await db.exec(migration);
+    await db.exec(`
+      create table public.deals(id text primary key);
+      alter table public.deals enable row level security;
+      grant all on public.deals to authenticated, service_role;
+      insert into public.deals values ('synthetic-matter');
+      create policy staff_read on public.deals for select to authenticated using (public.is_operator());
+      create policy staff_update on public.deals for update to authenticated using (public.is_operator()) with check (public.is_operator());
+      create or replace function public.is_operator() returns boolean
+      language plpgsql security definer set search_path = public, pg_temp as $$
+      begin return exists(select 1 from operators where user_id=auth.uid() and is_active=true); end;
+      $$;
+    `);
+    const operatorAllowed = (sub: string) => as(db, "authenticated", sub, async () =>
+      (await db.query<{ ok: boolean }>("select public.is_operator() ok")).rows[0].ok);
+    // Reproduce the hosted discrepancy, not only the fresh migration fixture.
+    assert.equal(await operatorAllowed(ID.operator), false);
+    assert.equal(await operatorAllowed(ID.partnerA), true);
+    assert.equal(await as(db, "authenticated", ID.partnerA, () => count(db, "deals")), 1);
+
+    const patch = fs.readFileSync("supabase/migrations/20261125231600_reconcile_hosted_operator_authority.sql", "utf8");
+    await db.exec(patch);
+    await db.exec(patch); // replay safety
+    assert.equal(await operatorAllowed(ID.operator), true);
+    assert.equal(await as(db, "authenticated", ID.operator, () => count(db, "deals")), 1);
+    for (const sub of [ID.client, ID.partnerA, ID.partnerB, ID.revoked, ID.forged]) {
+      assert.equal(await operatorAllowed(sub), false);
+      assert.equal(await as(db, "authenticated", sub, () => count(db, "deals")), 0);
+    }
+    assert.deepEqual(await as(db, "authenticated", ID.partnerA, () => ledgerCodes(db)), ["A1"]);
+    assert.deepEqual(await as(db, "authenticated", ID.partnerB, () => ledgerCodes(db)), []);
+    for (const table of ["liaison_intake_records", "payout_reviews", "partner_scorecards", "translation_entries"]) {
+      assert.equal(await as(db, "authenticated", ID.partnerA, () => count(db, table)), 0);
+      assert.equal(await as(db, "authenticated", ID.operator, () => count(db, table)), 1);
+    }
+    // Disabled/banned or revoked server-side roles win over stale token claims.
+    await db.exec(`update auth.users set banned_until=now()+interval '1 day' where id='${ID.operator}'`);
+    assert.equal(await operatorAllowed(ID.operator), false);
+    await db.exec(`update auth.users set banned_until=null, raw_app_meta_data='{"role":"client"}' where id='${ID.operator}'`);
+    assert.equal(await operatorAllowed(ID.operator), false);
+    await db.exec(`update auth.users set raw_app_meta_data='{"role":"admin_operator"}' where id='${ID.operator}'`);
+    assert.equal(await operatorAllowed(ID.operator), true);
+    await db.exec(`insert into public.operators(id,user_id,role,is_active)
+      values ('10000000-0000-4000-8000-000000000002','${ID.operator}','operator',false)`);
+    assert.equal(await operatorAllowed(ID.operator), false);
+    await db.exec(`update public.operators set is_active=true,role='alliance_partner' where user_id='${ID.operator}'`);
+    assert.equal(await operatorAllowed(ID.operator), false);
+    await db.exec(`update public.operators set role='operator' where user_id='${ID.operator}'`);
+    assert.equal(await operatorAllowed(ID.operator), true);
+    assert.equal((await db.query<{ ok: boolean }>("select has_function_privilege('anon','public.is_operator()','execute') ok")).rows[0].ok, false);
+    await assert.rejects(() => as(db, "authenticated", ID.operator, () => db.query("update public.deals set id='forged'")), /permission denied/);
+    assert.equal(await as(db, "service_role", null, () => count(db, "deals")), 1);
+    assert.equal((await db.query<{ id: string }>("select id from public.deals")).rows[0].id, "synthetic-matter");
+  } finally {
+    await db.close();
+  }
+});
