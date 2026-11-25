@@ -6,7 +6,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
-import ts from "typescript";
+import {
+  INVENTORY_PATH,
+  buildRouteInventory,
+  handlerMethods as explicitHandlerMethods,
+  serializeInventory,
+} from "./lib/route-inventory.mjs";
 
 const ROOT = process.cwd();
 const APP_DIR = join(ROOT, "app");
@@ -88,30 +93,7 @@ function escapeCell(value) {
 }
 
 function handlerMethods(fullPath) {
-  const source = ts.createSourceFile(fullPath, readFileSync(fullPath, "utf8"), ts.ScriptTarget.Latest);
-  const exports = new Set();
-  for (const statement of source.statements) {
-    if (ts.isExportDeclaration(statement)) {
-      const clause = statement.exportClause;
-      if (clause && ts.isNamedExports(clause) && !statement.isTypeOnly) {
-        for (const specifier of clause.elements) {
-          if (!specifier.isTypeOnly) exports.add(specifier.name.text);
-        }
-      }
-      continue;
-    }
-    if (!statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
-    if (statement.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword)) continue;
-    if (ts.isFunctionDeclaration(statement) && statement.name) {
-      exports.add(statement.name.text);
-    }
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name)) exports.add(declaration.name.text);
-      }
-    }
-  }
-  const methods = HTTP_METHODS.filter((method) => exports.has(method));
+  const methods = explicitHandlerMethods(fullPath, readFileSync(fullPath, "utf8"));
   if (!methods.length) fail(`no explicit HTTP method exports in ${relative(ROOT, fullPath)}`);
   return methods.join(", ");
 }
@@ -145,6 +127,14 @@ const rows = CRITICAL_ROUTES.map((route) => {
   return record;
 });
 
+// Certification level per source file comes from the route registry inventory
+// (lib/routes/routeRegistry.ts; scripts/lib/route-inventory.mjs): L0 discovered,
+// L1 registered with an access classification, L2+ only from approved evidence.
+const routeInventory = await buildRouteInventory(ROOT);
+const levelBySource = new Map(routeInventory.routes.map((record) => [record.sourcePath, record.certification.level]));
+const inventoryFile = join(ROOT, INVENTORY_PATH);
+const inventoryText = serializeInventory(routeInventory);
+
 const generated = `# The Milano Seal™ — Generated Canonical Route Map
 
 > **AUTO-GENERATED — DO NOT HAND EDIT**
@@ -167,11 +157,11 @@ ${rows.map((row) => `| \`${escapeCell(row.route)}\` | ${escapeCell(row.kind)} | 
 
 ${inventory.length} source files (${pageCount} pages and ${inventory.length - pageCount} handlers).
 The source path identifies each record. Handler methods list explicit exports, including named re-exports. Next.js may supply implicit methods.
-Every row carries L0 discovery evidence. Higher levels require reviewed ownership, dependency, access, workflow, recovery, or commercial evidence.
+Evidence levels come from the route registry (\`lib/routes/routeRegistry.ts\`, full records in \`lib/routes/routeInventory.generated.json\`): L0 discovered; L1 registered with an access classification, which is not certification; L2–L6 only from approved, source-bound evidence in \`lib/routes/routeCertificationEvidence.json\`.
 
 | Route | Kind | Explicit handler methods | Source file | Evidence level |
 |---|---|---|---|---|
-${inventory.map((row) => `| \`${escapeCell(row.route)}\` | ${row.kind} | ${row.methods} | \`${escapeCell(row.file)}\` | L0 |`).join("\n")}
+${inventory.map((row) => `| \`${escapeCell(row.route)}\` | ${row.kind} | ${row.methods} | \`${escapeCell(row.file)}\` | ${levelBySource.get(row.file) ?? "UNKNOWN"} |`).join("\n")}
 
 ## Governance
 
@@ -195,10 +185,16 @@ if (CHECK_MODE) {
     console.error("Run: node scripts/generate-route-map.mjs");
     process.exit(1);
   }
-  console.log(`PASS route-map: ${inventory.length} source files and ${rows.length} critical routes match source`);
+  if (!existsSync(inventoryFile) || readFileSync(inventoryFile, "utf8") !== inventoryText) {
+    console.error(`FAIL route-map: ${INVENTORY_PATH} does not match current app routes, access rules or certification evidence.`);
+    console.error("Run: node scripts/generate-route-map.mjs  (then review the diff: new/removed routes, access, level changes)");
+    process.exit(1);
+  }
+  console.log(`PASS route-map: ${inventory.length} source files and ${rows.length} critical routes match source; route inventory matches source`);
   process.exit(0);
 }
 
 mkdirSync(dirname(OUTPUT_FILE), { recursive: true });
 writeFileSync(OUTPUT_FILE, generated, "utf8");
-console.log(`GENERATED docs/ROUTE_MAP.md from ${inventory.length} source files`);
+writeFileSync(inventoryFile, inventoryText, "utf8");
+console.log(`GENERATED docs/ROUTE_MAP.md from ${inventory.length} source files and ${INVENTORY_PATH}`);

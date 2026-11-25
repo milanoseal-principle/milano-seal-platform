@@ -1,0 +1,4 @@
+{
+  "description": "L2–L6 certification evidence for lib/routes/routeRegistry.ts. Each entry certifies ONE level for ONE route id and is valid only while the route's sourceSha256 and dependencySha256 match current HEAD. Entries require a human approver; nothing here is generated. L0/L1 are derived and never claimed.",
+  "evidence": []
+}

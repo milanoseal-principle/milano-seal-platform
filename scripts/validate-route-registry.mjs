@@ -1,5 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import {
+  INVENTORY_PATH,
+  buildRouteInventory,
+  loadEvidence,
+  readPreviousInventory,
+  serializeInventory,
+} from "./lib/route-inventory.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -59,12 +66,15 @@ for (const file of changed) {
   if (blocked.some((pattern) => pattern.test(file))) failures.push(`Blocked scope file changed: ${file}`);
 }
 
+// ---- Full route inventory + L0–L6 certification (see scripts/lib/route-inventory.mjs)
+const inventorySummary = await validateRouteInventory(failures);
+
 if (failures.length) {
   console.error("Route registry validation failed:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log("Route registry validation passed.");
+console.log(`Route registry validation passed. ${inventorySummary}`);
 
 function collectFiles(targets) {
   const files = [];
@@ -87,4 +97,68 @@ function getChangedFiles() {
   const env = process.env.VALIDATE_CHANGED_FILES;
   if (env) return env.split("\n").filter(Boolean);
   return [];
+}
+
+async function validateRouteInventory(out) {
+  const committed = readPreviousInventory(root);
+  if (!committed) {
+    out.push(`Missing ${INVENTORY_PATH}; run node scripts/generate-route-map.mjs`);
+    return "";
+  }
+  const fresh = await buildRouteInventory(root, { previous: committed });
+  if (serializeInventory(fresh) !== fs.readFileSync(path.join(root, INVENTORY_PATH), "utf8")) {
+    out.push(`${INVENTORY_PATH} drifted from current routes/access/evidence; run node scripts/generate-route-map.mjs and review the diff`);
+  }
+
+  // Historical baseline: fixed commit, every record preserved.
+  const baselineBlock = registry.match(/HISTORICAL_ROUTE_BASELINE = \{\s*commit: "([0-9a-f]{40})",\s*routeFileCount: (\d+),/);
+  if (!baselineBlock) out.push("routeRegistry.ts must declare HISTORICAL_ROUTE_BASELINE { commit, routeFileCount }");
+  else {
+    const [, commit, count] = baselineBlock;
+    const inBaseline = fresh.routes.filter((r) => r.historical.inBaseline);
+    if (fresh.historicalBaseline.commit !== commit) out.push("Inventory historical baseline commit differs from HISTORICAL_ROUTE_BASELINE");
+    if (inBaseline.length !== Number(count)) {
+      out.push(`Historical baseline records: ${inBaseline.length}, expected ${count} (a baseline record was lost)`);
+    }
+    const kept = new Set(fresh.routes.map((r) => r.sourcePath));
+    for (const r of committed.routes.filter((x) => x.historical?.inBaseline)) {
+      if (!kept.has(r.sourcePath)) out.push(`Historical baseline record dropped: ${r.sourcePath}`);
+    }
+  }
+
+  // Access classification: no new unclassified route; backlog is shrink-only.
+  const backlogBlock = registry.match(/ACCESS_REVIEW_BACKLOG = \[([\s\S]*?)\] as const/);
+  if (!backlogBlock) out.push("routeRegistry.ts must declare ACCESS_REVIEW_BACKLOG");
+  const backlog = new Set(backlogBlock ? [...backlogBlock[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]) : []);
+  const atHead = fresh.routes.filter((r) => r.historical.presentAtHead);
+  const ids = new Map();
+  for (const r of atHead) {
+    if (ids.has(r.id)) out.push(`Duplicate route id ${r.id}: ${ids.get(r.id)} and ${r.sourcePath}`);
+    ids.set(r.id, r.sourcePath);
+    if (r.kind !== "page" && r.kind !== "api") out.push(`Route kind unresolved: ${r.sourcePath}`);
+    if (r.access === "UNKNOWN" && !backlog.has(r.id)) {
+      out.push(`Route has no access classification: ${r.id} (${r.sourcePath}). Add an enforceable guard (proxy.ts or in-route) — do not add new routes to ACCESS_REVIEW_BACKLOG.`);
+    }
+  }
+  for (const id of backlog) {
+    const r = atHead.find((x) => x.id === id);
+    if (!r) out.push(`ACCESS_REVIEW_BACKLOG entry no longer exists at HEAD: ${id} (remove it)`);
+    else if (r.access !== "UNKNOWN") out.push(`ACCESS_REVIEW_BACKLOG entry is now classified as ${r.access}: ${id} (remove it)`);
+  }
+
+  // Certification: nothing above L1 without valid, current, approved evidence.
+  const routeIds = new Set(fresh.routes.map((r) => r.id));
+  for (const entry of loadEvidence(root)) {
+    if (!routeIds.has(entry.routeId)) out.push(`Certification evidence for unknown route: ${entry.routeId}`);
+  }
+  for (const r of fresh.routes) {
+    const idx = ["L0", "L1", "L2", "L3", "L4", "L5", "L6"].indexOf(r.certification.level);
+    if (idx >= 2 && !r.certification.validEvidence.includes(r.certification.level)) {
+      out.push(`Route ${r.id} is ${r.certification.level} without valid evidence`);
+    }
+  }
+
+  const s = fresh.summary;
+  const certified = ["L2", "L3", "L4", "L5", "L6"].reduce((n, l) => n + (s.byLevel[l] ?? 0), 0);
+  return `Inventory: ${s.routeFilesAtHead} route files at HEAD (${s.pages} pages, ${s.apiHandlers} API); historical baseline ${s.historicalPresentAtHead} present / ${s.historicalRemovedAtHead} removed; L0 ${s.byLevel.L0}, L1 ${s.byLevel.L1} (registered, not certified), certified L2+ ${certified}; access review backlog ${backlog.size}.`;
 }
