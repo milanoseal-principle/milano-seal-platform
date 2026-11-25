@@ -281,12 +281,13 @@ test("dependency graph honors exact tsconfig path aliases before the @/* fallbac
 });
 
 test("imported JSON data is part of the dependency closure and fingerprint", () => {
+  // Gitignored generated data is represented by its generator and committed
+  // inputs, never by whichever build output happens to be on disk.
   const graph = lib.createGraph(root);
-  assert.ok(
-    graph.closure(["app/dashboard/command-center/page.tsx"]).modules.includes(
-      "data/command-center/workbook-intelligence.generated.json",
-    ),
-  );
+  const commandCenter = graph.closure(["app/dashboard/command-center/page.tsx"]).modules;
+  assert.ok(commandCenter.includes("scripts/generate-command-center-workbook-intelligence.mjs"));
+  assert.ok(commandCenter.includes("Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx"));
+  assert.ok(!commandCenter.includes("data/command-center/workbook-intelligence.generated.json"));
 
   const dir = mkdtempSync(join(tmpdir(), "route-json-"));
   try {
@@ -304,6 +305,10 @@ test("imported JSON data is part of the dependency closure and fingerprint", () 
     assert.deepEqual(before.modules, ["app/api/d/route.ts", "data/limits.json"]);
     writeFileSync(join(dir, "data/limits.json"), JSON.stringify({ max: 500, note: "" }));
     assert.notEqual(hash().hash, before.hash);
+
+    // An unresolvable data import fails closed instead of silently dropping.
+    writeFileSync(join(dir, "app/api/d/route.ts"), 'import gone from "@/data/missing.generated.json";\nexport function GET() { return gone; }\n');
+    assert.throws(() => lib.createGraph(dir).closure(["app/api/d/route.ts"]), /cannot resolve data import/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

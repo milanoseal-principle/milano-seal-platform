@@ -227,17 +227,46 @@ function aliasBases(root, spec) {
   return wildcard.targets.map((t) => t.replace("*", captured));
 }
 
-function resolveLocal(root, fromRel, spec) {
+/**
+ * Gitignored data generated before dev/test/typecheck/build. Its presence on disk
+ * depends on whether a local build ran, so the graph never reads it: an import
+ * of it resolves to the generator and its committed inputs instead, which fully
+ * determine its content (deterministic in CI, Vercel and locally).
+ */
+export const GENERATED_DATA_PROVENANCE = {
+  "data/command-center/workbook-intelligence.generated.json": [
+    "scripts/generate-command-center-workbook-intelligence.mjs",
+    "Milano_Seal_Command_Center_OS_v3_BRANDED_Damiani_3rd_DAMIANI50_Prefill.xlsx",
+  ],
+};
+
+/** Local files an import stands for ([] when it is not a local import). */
+function resolveTargets(root, fromRel, spec) {
   const bases = spec.startsWith(".") ? [posix(join(dirname(fromRel), spec))] : aliasBases(root, spec);
-  if (!bases) return null;
+  if (!bases) return [];
   for (const base of bases) {
     const candidates = [base, ...SOURCE_EXTS.map((e) => base + e), ...SOURCE_EXTS.map((e) => `${base}/index${e}`)];
     for (const candidate of candidates) {
+      const provenance = GENERATED_DATA_PROVENANCE[candidate];
+      if (provenance) {
+        for (const input of provenance) {
+          if (!existsSync(join(root, input))) throw Error(`route-inventory: generated-data input missing: ${input}`);
+        }
+        return provenance;
+      }
       const abs = join(root, candidate);
-      if (existsSync(abs) && statSync(abs).isFile() && [...SOURCE_EXTS, ...DATA_EXTS].some((e) => candidate.endsWith(e))) return candidate;
+      if (existsSync(abs) && statSync(abs).isFile() && [...SOURCE_EXTS, ...DATA_EXTS].some((e) => candidate.endsWith(e))) return [candidate];
     }
   }
-  return null;
+  if (DATA_EXTS.some((e) => spec.endsWith(e))) {
+    // Fail closed: an unresolvable data import would otherwise drop silently.
+    throw Error(`route-inventory: cannot resolve data import "${spec}" from ${fromRel}; declare it in GENERATED_DATA_PROVENANCE if it is generated`);
+  }
+  return [];
+}
+
+function resolveLocal(root, fromRel, spec) {
+  return resolveTargets(root, fromRel, spec)[0] ?? null;
 }
 
 function importSpecifiers(source) {
@@ -265,10 +294,11 @@ export function createGraph(root) {
     if (cache.has(rel)) return cache.get(rel);
     const entry = { local: [], packages: [] };
     cache.set(rel, entry);
-    const specs = DATA_EXTS.some((e) => rel.endsWith(e)) ? [] : importSpecifiers(readText(root, rel));
+    // Only source modules are parsed for imports; data and binary inputs are hashed only.
+    const specs = SOURCE_EXTS.some((e) => rel.endsWith(e)) ? importSpecifiers(readText(root, rel)) : [];
     for (const spec of specs) {
-      const local = resolveLocal(root, rel, spec);
-      if (local) entry.local.push(local);
+      const targets = resolveTargets(root, rel, spec);
+      if (targets.length) entry.local.push(...targets);
       else if (!spec.startsWith(".") && !aliasBases(root, spec)) {
         const pkg = packageName(spec);
         if (pkg) entry.packages.push(pkg);
@@ -307,7 +337,7 @@ export function createGraph(root) {
     sha256(
       JSON.stringify({
         modules: modules.map((m) => {
-          if (!contentHashes.has(m)) contentHashes.set(m, sha256(readText(root, m)));
+          if (!contentHashes.has(m)) contentHashes.set(m, createHash("sha256").update(readFileSync(join(root, m))).digest("hex"));
           return [m, contentHashes.get(m)];
         }),
         packages: packages.map((p) => [p, lock[`node_modules/${p}`]?.version ?? "UNRESOLVED"]),
