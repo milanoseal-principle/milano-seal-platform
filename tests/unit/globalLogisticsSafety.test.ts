@@ -449,6 +449,9 @@ test("the claim identity is stamped only on entering purchase_pending and the bu
   const sql = read("supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql");
   assert.match(sql, /new\.label_status = 'purchase_pending' and old\.label_status is distinct from 'purchase_pending'/);
   assert.match(sql, /new\.label_claim_id := old\.label_claim_id/);
+  // Backfill of already-pending legs must run before the trigger is installed.
+  assert.ok(sql.indexOf("set label_claim_id = gen_random_uuid()") < sql.indexOf("create trigger matter_shipment_legs_label_claim"));
+  assert.match(sql, /old\.label_claim_id is not null/);
   const schema = read("scripts/verify-production-schema-capabilities.mjs");
   assert.match(schema, /matter_shipment_legs: \['id','label_status','label_claim_id','label_claimed_at'\]/);
   assert.match(schema, /'reconcile_shipment_leg_label'/);

@@ -13,6 +13,13 @@ alter table public.matter_shipment_legs
   add column if not exists label_claim_id uuid,
   add column if not exists label_claimed_at timestamptz;
 
+-- Backfill BEFORE the trigger exists: legs already pending when this ships
+-- get an identity from their last write. (Run after the trigger, the
+-- immutability branch would write the old NULLs straight back.)
+update public.matter_shipment_legs
+set label_claim_id = gen_random_uuid(), label_claimed_at = updated_at
+where label_status = 'purchase_pending' and label_claim_id is null;
+
 create or replace function public.stamp_shipment_leg_label_claim()
 returns trigger
 language plpgsql
@@ -22,8 +29,8 @@ begin
   if new.label_status = 'purchase_pending' and old.label_status is distinct from 'purchase_pending' then
     new.label_claim_id := gen_random_uuid();
     new.label_claimed_at := clock_timestamp();
-  elsif new.label_status = 'purchase_pending' then
-    -- While pending, the attempt identity is immutable.
+  elsif new.label_status = 'purchase_pending' and old.label_claim_id is not null then
+    -- While pending, a stamped attempt identity is immutable.
     new.label_claim_id := old.label_claim_id;
     new.label_claimed_at := old.label_claimed_at;
   end if;
@@ -35,12 +42,6 @@ drop trigger if exists matter_shipment_legs_label_claim on public.matter_shipmen
 create trigger matter_shipment_legs_label_claim
   before update on public.matter_shipment_legs
   for each row execute function public.stamp_shipment_leg_label_claim();
-
--- Legs already pending when this ships get an identity from their last write
--- (the trigger keeps it immutable from here on).
-update public.matter_shipment_legs
-set label_claim_id = gen_random_uuid(), label_claimed_at = updated_at
-where label_status = 'purchase_pending' and label_claim_id is null;
 
 create or replace function public.reconcile_shipment_leg_label(
   p_matter_id uuid,
