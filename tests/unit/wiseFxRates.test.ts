@@ -76,6 +76,11 @@ test("rate responses are accepted only for the exact pair, positive decimal, fre
   assert.equal(parseWiseRateResponse([{ rate: 0.92, source: "USD", target: "EUR" }], "USD", "EUR", NOW), null, "no timestamp");
   const stale = new Date(NOW.getTime() - WISE_RATE_MAX_AGE_MS - 1).toISOString();
   assert.equal(parseWiseRateResponse([{ rate: 0.92, source: "USD", target: "EUR", time: stale }], "USD", "EUR", NOW), null, "stale");
+  const nearFuture = new Date(NOW.getTime() + 4 * 60 * 1000).toISOString();
+  assert.equal(parseWiseRateResponse([{ rate: 0.92, source: "USD", target: "EUR", time: nearFuture }], "USD", "EUR", NOW), null, "near-future");
+  for (const malformed of [["0.92"], { value: "0.92" }, true, null, "", "0.92 ", "NaN", "Infinity"]) {
+    assert.equal(parseWiseRateResponse([{ rate: malformed, source: "USD", target: "EUR", time: fresh }], "USD", "EUR", NOW), null, `malformed ${JSON.stringify(malformed)}`);
+  }
   const future = new Date(NOW.getTime() + 60 * 60 * 1000).toISOString();
   assert.equal(parseWiseRateResponse([{ rate: 0.92, source: "USD", target: "EUR", time: future }], "USD", "EUR", NOW), null, "future");
 });

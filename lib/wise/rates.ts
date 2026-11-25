@@ -57,9 +57,21 @@ export type LocalCurrencyEstimate =
 const ISO_CURRENCY = /^[A-Z]{3}$/;
 const DECIMAL = /^\d+(?:\.\d{1,12})?$/;
 
-/** Plain decimal string from a JSON number/string; rejects exponent forms and non-positive values. */
+/**
+ * Plain positive decimal from a JSON number or an exact decimal string only.
+ * Arrays, objects, booleans, padded strings and exponent forms are rejected
+ * (no generic String() coercion of provider data).
+ */
 function decimalString(value: unknown): string | null {
-  const text = typeof value === "number" ? (Number.isFinite(value) ? String(value) : "") : String(value ?? "").trim();
+  let text: string;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    text = String(value);
+  } else if (typeof value === "string") {
+    text = value;
+  } else {
+    return null;
+  }
   if (!DECIMAL.test(text)) return null;
   return /[1-9]/.test(text) ? text : null;
 }
@@ -78,7 +90,9 @@ export function parseWiseRateResponse(body: unknown, source: string, target: str
     const time = Date.parse(String(entry.time ?? ""));
     if (!rate || !Number.isFinite(time)) return null;
     const age = now.getTime() - time;
-    if (age > WISE_RATE_MAX_AGE_MS || age < -5 * 60 * 1000) return null;
+    // Future-dated rates are rejected outright (no skew window): the safe
+    // outcome of a rejected rate is "estimate unavailable".
+    if (age > WISE_RATE_MAX_AGE_MS || age < 0) return null;
     return { source, target, rate, provider: WISE_RATE_PROVIDER, rateTime: new Date(time).toISOString(), retrievedAt: now.toISOString() };
   }
   return null;
