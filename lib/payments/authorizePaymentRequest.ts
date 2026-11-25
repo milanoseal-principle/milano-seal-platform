@@ -19,7 +19,7 @@ import { isAccountDisabled } from "@/lib/auth/server-role";
 import {
   PAYMENT_CAPABILITY_COOKIE,
   paymentCapabilityKey,
-  verifyPaymentCapability,
+  readPaymentCapabilityTarget,
 } from "@/lib/payments/paymentCapability";
 
 export type PaymentActor =
@@ -96,25 +96,37 @@ export async function authorizePaymentRequest(
   deps?: PaymentAuthorizationDeps,
 ): Promise<{ ok: true; actor: PaymentActor } | { ok: false; response: NextResponse }> {
   const d = deps ?? (await defaultDeps());
-  const capability = readCookie(request, PAYMENT_CAPABILITY_COOKIE);
-  const user = await d.getUser();
-  if (!user && !capability) return { ok: false, response: deny(401) };
+  // Only a cryptographically valid, unexpired capability counts as a
+  // credential; a forged or expired cookie is the same as none.
+  const capabilityTarget = readPaymentCapabilityTarget(
+    readCookie(request, PAYMENT_CAPABILITY_COOKIE),
+    d.capabilityKey(),
+    d.now(),
+  );
+  const rawUser = await d.getUser();
+  const user = rawUser && !isAccountDisabled(rawUser) ? rawUser : null;
+  if (!user && !capabilityTarget) return { ok: false, response: deny(401) };
+
+  const role = (user?.app_metadata?.role as string | undefined) ?? null;
+  const operator = !!user && isRouteAllowedForRole("/dashboard", role);
 
   const matter = matterRef ? await d.loadMatter(matterRef) : null;
-  if (!matter) return { ok: false, response: deny(404) };
+  // Only operators learn that a Matter does not exist; everyone else gets the
+  // same denial as an unauthorized request (no existence oracle).
+  if (!matter) return { ok: false, response: deny(operator ? 404 : 403) };
 
-  if (user && !isAccountDisabled(user)) {
-    const role = (user.app_metadata?.role as string | undefined) ?? null;
-    if (isRouteAllowedForRole("/dashboard", role)) return { ok: true, actor: { kind: "operator", userId: user.id } };
-    if (emailsMatch(user.email, matter.email)) return { ok: true, actor: { kind: "owner", userId: user.id } };
+  if (operator && user) return { ok: true, actor: { kind: "operator", userId: user.id } };
+  // Ownership requires a CONFIRMED email, the same rule as lib/portalAuth.
+  if (user && user.email_confirmed_at && emailsMatch(user.email, matter.email)) {
+    return { ok: true, actor: { kind: "owner", userId: user.id } };
   }
 
   if (
-    capability &&
+    capabilityTarget &&
     paymentType === "retainer" &&
     sameOrigin(request) &&
     typeof matter.deal_id === "string" &&
-    verifyPaymentCapability(capability, matter.deal_id, d.capabilityKey(), d.now())
+    capabilityTarget === matter.deal_id
   ) {
     return { ok: true, actor: { kind: "intake_capability" } };
   }

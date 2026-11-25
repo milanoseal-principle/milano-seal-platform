@@ -29,6 +29,37 @@ export function issuePaymentCapability(target: string, key: string, now = Date.n
   return `${encoded}.${createHmac("sha256", key).update(encoded).digest("base64url")}`;
 }
 
+/**
+ * The Matter target of an untampered, unexpired intake_payment claim, or null.
+ * Lets callers reject a forged/expired cookie before any Matter lookup.
+ */
+export function readPaymentCapabilityTarget(
+  token: string | undefined | null,
+  key: string | null | undefined,
+  now = Date.now(),
+): string | null {
+  if (!token || !key) return null;
+  const [encoded, signature, extra] = token.split(".");
+  if (!encoded || !signature || extra !== undefined) return null;
+  const expected = createHmac("sha256", key).update(encoded).digest();
+  const actual = Buffer.from(signature, "base64url");
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+  try {
+    const claim = JSON.parse(Buffer.from(encoded, "base64url").toString()) as Record<string, unknown>;
+    const expires = Number(claim.expires);
+    const valid =
+      typeof claim.target === "string" &&
+      claim.target.length > 0 &&
+      claim.scope === PAYMENT_CAPABILITY_SCOPE &&
+      Number.isFinite(expires) &&
+      expires > now &&
+      expires <= now + PAYMENT_CAPABILITY_TTL_MS;
+    return valid ? (claim.target as string) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** True only for an untampered, unexpired intake_payment claim for exactly `target`. */
 export function verifyPaymentCapability(
   token: string | undefined | null,
@@ -36,25 +67,7 @@ export function verifyPaymentCapability(
   key: string | null | undefined,
   now = Date.now(),
 ): boolean {
-  if (!token || !target || !key) return false;
-  const [encoded, signature, extra] = token.split(".");
-  if (!encoded || !signature || extra !== undefined) return false;
-  const expected = createHmac("sha256", key).update(encoded).digest();
-  const actual = Buffer.from(signature, "base64url");
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return false;
-  try {
-    const claim = JSON.parse(Buffer.from(encoded, "base64url").toString()) as Record<string, unknown>;
-    const expires = Number(claim.expires);
-    return (
-      claim.target === target &&
-      claim.scope === PAYMENT_CAPABILITY_SCOPE &&
-      Number.isFinite(expires) &&
-      expires > now &&
-      expires <= now + PAYMENT_CAPABILITY_TTL_MS
-    );
-  } catch {
-    return false;
-  }
+  return !!target && readPaymentCapabilityTarget(token, key, now) === target;
 }
 
 /** Attaches the capability cookie to a successful public intake response for the Matter it created. */

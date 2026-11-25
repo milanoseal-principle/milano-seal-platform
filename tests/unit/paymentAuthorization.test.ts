@@ -19,10 +19,11 @@ const NOW = 1_800_000_000_000;
 const ORIGIN = "https://www.themilanoseal.com";
 const MATTER = { deal_id: "MS-ITALY-0001", email: "client@example.com" };
 
-const user = (overrides: Partial<User> & { role?: string; disabled?: boolean } = {}): User =>
+const user = (overrides: Partial<User> & { role?: string; disabled?: boolean; confirmed?: boolean } = {}): User =>
   ({
     id: overrides.id ?? "user-1",
     email: overrides.email ?? "someone@example.com",
+    email_confirmed_at: overrides.confirmed === false ? null : "2026-01-01T00:00:00Z",
     app_metadata: { role: overrides.role, ...(overrides.disabled ? { disabled: true } : {}) },
     user_metadata: {},
     aud: "authenticated",
@@ -83,8 +84,6 @@ test("the intake capability authorizes only this Matter's retainer from the same
     ["foreign origin", payRequest({ cookie: validCap(), origin: "https://evil.example" }), "retainer", deps()],
     ["non-retainer payment", payRequest({ cookie: validCap() }), "final_balance", deps()],
     ["other Matter's capability", payRequest({ cookie: issuePaymentCapability("MS-OTHER-0002", KEY, NOW) }), "retainer", deps()],
-    ["expired", payRequest({ cookie: issuePaymentCapability(MATTER.deal_id, KEY, NOW - PAYMENT_CAPABILITY_TTL_MS - 1) }), "retainer", deps()],
-    ["forged", payRequest({ cookie: issuePaymentCapability(MATTER.deal_id, "attacker-key", NOW) }), "retainer", deps()],
   ];
   for (const [label, request, type, d] of cases) {
     const result = await authorizePaymentRequest(request, MATTER.deal_id, type, d);
@@ -104,7 +103,40 @@ test("operators and the Matter owner are authorized; other signed-in users are n
   const disabled = await authorizePaymentRequest(payRequest(), MATTER.deal_id, "retainer", deps({ user: user({ role: "admin", disabled: true }) }));
   assert.equal(disabled.ok, false, "disabled operator denied");
   const unknown = await authorizePaymentRequest(payRequest(), "MS-NOPE", "retainer", deps({ user: user({ role: "admin" }), matter: null }));
-  assert.equal(!unknown.ok && unknown.response.status, 404);
+  assert.equal(!unknown.ok && unknown.response.status, 404, "operators may learn a Matter does not exist");
+  // Ownership requires a confirmed email (same rule as lib/portalAuth).
+  const unconfirmed = await authorizePaymentRequest(
+    payRequest(), MATTER.deal_id, "final_balance",
+    deps({ user: user({ role: "client", email: MATTER.email, confirmed: false }) }),
+  );
+  assert.equal(!unconfirmed.ok && unconfirmed.response.status, 403, "unconfirmed email is not owner authority");
+});
+
+test("forged, expired or garbage capabilities are no credential and never trigger a lookup", async () => {
+  for (const [label, cookie] of [
+    ["garbage", "garbage"],
+    ["forged", issuePaymentCapability(MATTER.deal_id, "attacker-key", NOW)],
+    ["expired", issuePaymentCapability(MATTER.deal_id, KEY, NOW - PAYMENT_CAPABILITY_TTL_MS - 1)],
+    ["upload scope", issueUploadCapability(MATTER.deal_id, KEY, NOW)],
+  ] as const) {
+    const calls: string[] = [];
+    const result = await authorizePaymentRequest(payRequest({ cookie }), MATTER.deal_id, "retainer", deps({ calls }));
+    assert.equal(!result.ok && result.response.status, 401, label);
+    assert.deepEqual(calls, [], `${label}: no Matter lookup`);
+  }
+});
+
+test("non-operators cannot distinguish a missing Matter from an unauthorized one", async () => {
+  // A valid capability for one Matter probing other identifiers.
+  const probe = (matter: typeof MATTER | null) =>
+    authorizePaymentRequest(payRequest({ cookie: validCap() }), "MS-2026-0042", "retainer", deps({ matter }));
+  const existing = await probe({ deal_id: "MS-2026-0042", email: "x@example.com" });
+  const missing = await probe(null);
+  assert.equal(!existing.ok && existing.response.status, 403);
+  assert.equal(!missing.ok && missing.response.status, 403);
+  // Same for a signed-in non-operator.
+  const client = await authorizePaymentRequest(payRequest(), "MS-NOPE", "retainer", deps({ user: user({ role: "client" }), matter: null }));
+  assert.equal(!client.ok && client.response.status, 403);
 });
 
 test("intake binds an httpOnly, SameSite=Strict capability only on success", async () => {
