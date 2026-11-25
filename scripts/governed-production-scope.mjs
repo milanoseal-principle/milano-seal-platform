@@ -126,6 +126,13 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql',
  'components/portal/WisePaymentCard.tsx','components/portal/WiseTransferInstructions.tsx',
  'tests/unit/wisePaymentCopyAccuracy.test.ts',
+ // 2026-11-25 owner-authorized (explicit three-path approval); exact paths only.
+ // (a) PR #528 additive label-isolated tracking RPC, recorded after merge (7cc323d8).
+ //     Regression: tests/unit/shipmentLegLabelIsolation.sql.test.ts, test:migration-replay.
+ 'supabase/migrations/20261125100000_shipment_leg_tracking_label_isolation.sql',
+ // (b) Wise read-only exchange rates for informational destination-currency
+ //     estimates. No quotes, transfers or payments; USD invoice unchanged.
+ 'lib/wise/rates.ts','tests/unit/wiseFxRates.test.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',
