@@ -14,6 +14,40 @@
 -- shippo_tracking_events under the EVENT's own identifiers (history is never
 -- erased) and changes nothing on the leg. Idempotency is unchanged (event_hash).
 
+-- Production compatibility (verified schema drift). shippo_tracking_events
+-- predates 015's CREATE TABLE IF NOT EXISTS in production, so it lacks the
+-- provider-identity columns that both this wrapper and the existing
+-- record_shipment_leg_tracking RPC (086) write. Additive, nullable, idempotent
+-- (same pattern as 20261112110000_restore_application_column_contract.sql);
+-- existing rows and readers are unaffected.
+alter table public.shippo_tracking_events add column if not exists shippo_shipment_id text;
+alter table public.shippo_tracking_events add column if not exists shippo_transaction_id text;
+
+-- Both RPCs dedupe with ON CONFLICT (event_hash): that requires a unique index
+-- Postgres can use as the conflict arbiter — valid, non-partial, immediate,
+-- with event_hash as its only KEY column (INCLUDE columns are allowed).
+-- Fail the migration clearly (transactionally) instead of creating a live
+-- production index implicitly.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_index i
+    join pg_class t on t.oid = i.indrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    join pg_attribute a on a.attrelid = t.oid and a.attnum = i.indkey[0]
+    where n.nspname = 'public' and t.relname = 'shippo_tracking_events'
+      and i.indisunique and i.indisvalid and i.indimmediate
+      and i.indpred is null and i.indexprs is null
+      and i.indnkeyatts = 1 and a.attname = 'event_hash'
+  ) then
+    raise exception using errcode = '55000',
+      message = 'SHIPPO_TRACKING_EVENT_HASH_UNIQUE_INDEX_REQUIRED',
+      hint = 'public.shippo_tracking_events.event_hash must have a unique index before this migration.';
+  end if;
+end;
+$$;
+
 create or replace function public.record_shipment_leg_label_tracking(
   p_matter_id uuid,
   p_leg_id uuid,
