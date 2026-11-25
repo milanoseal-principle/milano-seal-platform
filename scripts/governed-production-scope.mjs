@@ -115,6 +115,17 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'docs/production/WISE_ATTEMPT_SECURITY_2026-11-09.md',
  'app/api/courier/labels/route.ts','app/api/shipping/create-label/[id]/route.ts',
  'app/api/dashboard/shippo/labels/route.ts','app/api/dashboard/shippo/rates/route.ts','lib/shippo/address.ts','app/api/webhooks/resend/route.ts',
+ // 2026-11-25 owner-authorized global logistics + Wise copy (PR #527, merged 9a065787);
+ // exact paths only, recorded after merge. Label-purchase outcome safety,
+ // attempt-bound reconciliation, currency-safe ranking, customs declarant
+ // integrity, evidence-only client delivery journey, Wise copy accuracy.
+ // Regression: tests/unit/globalLogisticsSafety.test.ts,
+ // tests/unit/wisePaymentCopyAccuracy.test.ts, test:migration-replay.
+ 'lib/shippo/client.ts','lib/shippo/customs.ts','lib/shippo/rateSelection.ts','lib/shippo/types.ts',
+ 'lib/shippo/deliveryJourney.ts','components/portal/PortalCourierCustody.tsx',
+ 'supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql',
+ 'components/portal/WisePaymentCard.tsx','components/portal/WiseTransferInstructions.tsx',
+ 'tests/unit/wisePaymentCopyAccuracy.test.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',
