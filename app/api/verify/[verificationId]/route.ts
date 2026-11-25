@@ -1,16 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { guardPublicEndpoint } from "@/lib/security/publicEndpointGuard";
+
+function documentNotFound() {
+  return NextResponse.json(
+    { verified: false, status: "NOT_FOUND", message: "No verification record found for this ID." },
+    { status: 404 },
+  );
+}
+
+function certificateNotFound() {
+  return NextResponse.json({ valid: false, status: "not_found" });
+}
 
 // Public endpoint — no auth required.
 // Returns only public-safe fields. Never returns PII, pricing, or internal data.
 export async function GET(
-  _req: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ verificationId: string }> }
 ) {
+  const refusal = await guardPublicEndpoint(request, "verify_lookup");
+  if (refusal) return refusal;
   const { verificationId } = await params;
 
   if (!verificationId || verificationId.length > 100) {
-    return NextResponse.json({ error: "Invalid verification ID" }, { status: 400 });
+    return documentNotFound();
   }
 
   try {
@@ -22,17 +36,11 @@ export async function GET(
         "verification_id, custody_ledger_hash, document_count, destination_country, document_type, release_status, released_at, public_summary, created_at"
       )
       .eq("verification_id", verificationId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      return NextResponse.json(
-        {
-          verified: false,
-          status: "NOT_FOUND",
-          message: "No verification record found for this ID.",
-        },
-        { status: 404 }
-      );
+    if (error) throw error;
+    if (!data) {
+      return documentNotFound();
     }
 
     // Log the access (anonymized, no PII)
@@ -68,18 +76,20 @@ export async function GET(
 // Accessible at: /api/verify/<verification_hash>
 // Returns only: valid, status, verificationHash, displayId, releaseDate, documentCount, custodyStatus, releasedAt
 export async function POST(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ verificationId: string }> }
 ) {
   const { verificationId } = await params;
-  const body = (await req.json().catch(() => ({}))) as { mode?: string };
+  const refusal = await guardPublicEndpoint(req, "verify_lookup");
+  if (refusal) return refusal;
+  const body = (await req.json().catch(() => null)) as { mode?: string } | null;
 
-  if (body.mode !== "release_cert") {
+  if (body?.mode !== "release_cert") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!verificationId) {
-    return NextResponse.json({ valid: false, status: "not_found" }, { status: 404 });
+  if (!verificationId || verificationId.length > 100) {
+    return certificateNotFound();
   }
 
   try {
@@ -88,10 +98,11 @@ export async function POST(
       .from("release_certificates")
       .select("deal_id,verification_hash,release_date,document_count,status,created_at")
       .eq("verification_hash", verificationId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      return NextResponse.json({ valid: false, status: "not_found", verificationHash: verificationId });
+    if (error) throw error;
+    if (!data) {
+      return certificateNotFound();
     }
 
     const certStatus = data.status as "valid" | "revoked" | "expired";

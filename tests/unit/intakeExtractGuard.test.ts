@@ -49,14 +49,25 @@ test("same-origin intake pre-read parses files and calls the extractor once", as
 });
 
 test("refusals happen before any parsing or paid provider call", async () => {
-  const big = new File([new Uint8Array(MAX_EXTRACT_BODY_BYTES + 1)], "big.pdf", { type: "application/pdf" });
+  const oversizedBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array(MAX_EXTRACT_BODY_BYTES + 1));
+      controller.close();
+    },
+  });
+  const oversizedRequest = new Request(`${ORIGIN}/api/intake/extract`, {
+    method: "POST",
+    headers: { origin: ORIGIN, "content-type": "multipart/form-data; boundary=fixture" },
+    body: oversizedBody,
+    duplex: "half",
+  } as RequestInit & { duplex: "half" });
   const cases: [string, Request, Record<string, string | undefined>, number, string][] = [
     ["off-switch", form({ message: "hi" }), { INTAKE_EXTRACT_ENABLED: "false" }, 503, "INTAKE_EXTRACT_DISABLED"],
     ["foreign origin", form({ message: "hi" }, { origin: "https://evil.example" }), {}, 403, "INTAKE_EXTRACT_CROSS_SITE_REFUSED"],
     ["cross-site metadata", form({ message: "hi" }, { origin: ORIGIN, "sec-fetch-site": "cross-site" }), {}, 403, "INTAKE_EXTRACT_CROSS_SITE_REFUSED"],
     ["no origin, no fetch metadata", form({ message: "hi" }, {}), {}, 403, "INTAKE_EXTRACT_CROSS_SITE_REFUSED"],
     ["declared oversize", form({ message: "hi" }, { origin: ORIGIN, "content-length": String(MAX_EXTRACT_BODY_BYTES + 1) }), {}, 413, "INTAKE_EXTRACT_TOO_LARGE"],
-    ["actual oversize (streamed)", form({ files: [big] }), {}, 413, "INTAKE_EXTRACT_TOO_LARGE"],
+    ["actual oversize (streamed)", oversizedRequest, {}, 413, "INTAKE_EXTRACT_TOO_LARGE"],
     ["message too long", form({ message: "m".repeat(MAX_EXTRACT_MESSAGE_CHARS + 1) }), {}, 413, "INTAKE_EXTRACT_MESSAGE_TOO_LONG"],
     ["empty", form({ message: "  " }), {}, 400, "INTAKE_EXTRACT_EMPTY"],
   ];

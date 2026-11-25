@@ -106,12 +106,15 @@ export async function POST(req: NextRequest) {
 
     // Mark OTP used (single-use enforcement). otp is NOT NULL, so it is not cleared;
     // used=true plus the used=false lookup above makes the code single-use. Fail closed:
-    // without a confirmed write the code could be replayed until it expires.
+    // bind the write to the same code issuance so a resend cannot authorize an old code.
     const { data: consumed, error: consumeError } = await supabase
       .from("portal_otps")
       .update({ used: true })
       .eq("id", record.id)
       .eq("used", false)
+      .eq("otp", record.otp)
+      .eq("expires_at", record.expires_at)
+      .gt("expires_at", new Date().toISOString())
       .select("id");
     if (consumeError || !consumed?.length) {
       return NextResponse.json({ error: "Verification failed" }, { status: 409 });

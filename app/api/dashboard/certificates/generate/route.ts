@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireDashboardAccess } from "@/lib/dashboardAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { releaseCertificateEligibility } from "@/lib/release/certificateEligibility";
-import { generateCustodyHash, generateVerificationId, generatePublicSummary } from "@/lib/custody/hash";
+import { generatePublicVerificationId } from "@/lib/security/publicVerificationId";
+import { generateCustodyHash, generatePublicSummary } from "@/lib/custody/hash";
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       document_type: document_type ?? null,
     });
 
-    const verificationId = generateVerificationId(matter_id);
+    const verificationId = generatePublicVerificationId();
     const publicSummary = generatePublicSummary(count, destination_country ?? null, document_type ?? null);
 
     const { data: record, error: insertError } = await supabase

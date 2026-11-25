@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { guardPublicEndpoint } from "@/lib/security/publicEndpointGuard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeProfessionalProfileInput } from "@/lib/professional/profile";
 
 export const runtime = "nodejs";
+
+const MAX_BODY_BYTES = 24_000;
 
 const RECEIVED_MESSAGE =
   "Professional profile received. The Milano Seal will review it and send account access to the email provided.";
@@ -12,7 +15,21 @@ const RECEIVED_MESSAGE =
 // the only path to a professional login. Enumeration-safe: an existing email is
 // never overwritten and the response is identical either way.
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const refusal = await guardPublicEndpoint(request, "public_signup");
+  if (refusal) return refusal;
+  const declaredSize = Number(request.headers.get("content-length") ?? 0);
+  const tooLarge = () => NextResponse.json({ ok: false, error: "Profile payload is too large." }, { status: 413 });
+  if (declaredSize > MAX_BODY_BYTES) return tooLarge();
+  const raw = await request.text().catch(() => "");
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return tooLarge();
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw Error("Invalid profile");
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
+  }
   const parsed = normalizeProfessionalProfileInput(body);
   if (!parsed.ok) {
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
