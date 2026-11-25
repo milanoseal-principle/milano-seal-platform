@@ -76,6 +76,9 @@ export interface ShipmentLegRow {
   custody_status: LegCustodyStatus;
   provider_evidence: Record<string, unknown>;
   exception_reason?: string | null;
+  /** Immutable identity of the current purchase claim (set only on entering purchase_pending). */
+  label_claim_id?: string | null;
+  label_claimed_at?: string | null;
   label_created_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
@@ -488,9 +491,10 @@ export function publicShipmentLegProjection(leg: ShipmentLegRow, options: { trac
 
 /**
  * A label purchase attempt is identified by (Matter, leg, persisted rate,
- * claim time). The claim time is the leg's updated_at at purchase_pending:
- * the claim RPC is the only write that sets purchase_pending and the row is
- * not otherwise modified while pending. Every purchase carries this
+ * claim). The claim identity (label_claim_id + label_claimed_at) is stamped by
+ * a database trigger only on the transition into purchase_pending and is
+ * immutable while pending — unlike updated_at, which tracking webhooks for an
+ * earlier (voided) label can still change. Every purchase carries this
  * correlation reference as provider metadata.
  */
 export function purchaseCorrelationRef(matterId: string, legId: string): string {
@@ -504,13 +508,16 @@ export function purchaseCorrelationRef(matterId: string, legId: string): string 
  */
 export const RECONCILE_MIN_PENDING_MS = 15 * 60 * 1000;
 
-export function purchaseAttemptClaimedAt(leg: Pick<ShipmentLegRow, "label_status" | "updated_at">): number | null {
-  if (leg.label_status !== "purchase_pending") return null;
-  const at = Date.parse(String(leg.updated_at ?? ""));
+type ClaimFields = Pick<ShipmentLegRow, "label_status" | "label_claim_id" | "label_claimed_at">;
+
+/** Claim time of the current attempt; null (fail closed) without a stamped claim identity. */
+export function purchaseAttemptClaimedAt(leg: ClaimFields): number | null {
+  if (leg.label_status !== "purchase_pending" || !leg.label_claim_id) return null;
+  const at = Date.parse(String(leg.label_claimed_at ?? ""));
   return Number.isFinite(at) ? at : null;
 }
 
-export function reconciliationWindowOpen(leg: Pick<ShipmentLegRow, "label_status" | "updated_at">, now: Date = new Date()): boolean {
+export function reconciliationWindowOpen(leg: ClaimFields, now: Date = new Date()): boolean {
   const claimedAt = purchaseAttemptClaimedAt(leg);
   return claimedAt !== null && now.getTime() - claimedAt >= RECONCILE_MIN_PENDING_MS;
 }
@@ -624,7 +631,7 @@ const MOVING: ReadonlySet<LegCustodyStatus> = new Set(["carrier_accepted", "fina
 export function detectShipmentLegExceptions(
   leg: Pick<
     ShipmentLegRow,
-    "label_status" | "rate_snapshot" | "tracking_number" | "tracking_status" | "custody_status" | "provider_evidence" | "label_created_at" | "delivered_at" | "updated_at"
+    "label_status" | "rate_snapshot" | "tracking_number" | "tracking_status" | "custody_status" | "provider_evidence" | "label_created_at" | "delivered_at" | "label_claim_id" | "label_claimed_at"
   >,
   now: Date = new Date(),
 ): ShipmentLegException[] {
@@ -690,7 +697,7 @@ export function operatorShipmentLegProjection(leg: ShipmentLegRow, now: Date = n
 // ── Persistence (service-role client injected by the caller) ──
 
 const LEG_COLUMNS =
-  "id, matter_id, shipment_record_id, provider, provider_shipment_id, provider_transaction_id, leg_type, sequence, direction, origin_json, destination_json, rate_snapshot, carrier, service_level, label_status, tracking_number, tracking_status, custody_status, provider_evidence, exception_reason, label_created_at, shipped_at, delivered_at, completed_at, created_by, created_at, updated_at";
+  "id, matter_id, shipment_record_id, provider, provider_shipment_id, provider_transaction_id, leg_type, sequence, direction, origin_json, destination_json, rate_snapshot, carrier, service_level, label_status, tracking_number, tracking_status, custody_status, provider_evidence, exception_reason, label_claim_id, label_claimed_at, label_created_at, shipped_at, delivered_at, completed_at, created_by, created_at, updated_at";
 
 export async function createShipmentLeg(
   db: SupabaseClient,

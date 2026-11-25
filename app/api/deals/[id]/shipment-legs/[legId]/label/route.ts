@@ -99,9 +99,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
     const binding = { matterId: context.matter.id, legId: leg.id, rateId: leg.rate_snapshot.provider_rate_id, claimedAt };
-    // Exact claim timestamp as stored (full precision); the write re-checks it
-    // under the row lock so stale evidence can never unlock a newer attempt.
-    const expectedClaimedAt = String(leg.updated_at);
+    // Immutable claim identity; the write re-checks it under the row lock so
+    // stale evidence can never unlock a newer attempt.
+    const expectedClaimId = String(leg.label_claim_id);
 
     const transactionRef = typeof body.provider_transaction_id === "string" ? body.provider_transaction_id.trim() : "";
     if (transactionRef) {
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           { status: 409 },
         );
       }
-      return recordPurchaseOutcome(context, leg.id, auth.user.id, found, null, expectedClaimedAt);
+      return recordPurchaseOutcome(context, leg.id, auth.user.id, found, null, expectedClaimId);
     }
 
     if (body.confirmed_not_purchased !== true) {
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { data, error } = await context.admin.rpc("reconcile_shipment_leg_label", {
       p_matter_id: context.matter.id,
       p_leg_id: leg.id,
-      p_expected_claimed_at: expectedClaimedAt,
+      p_expected_claim_id: expectedClaimId,
       p_success: false,
       p_transaction_id: null,
       p_tracking_number: null,
@@ -259,7 +259,7 @@ async function recordPurchaseOutcome(
   actorId: string,
   transaction: ShippoTransaction,
   carrier?: string | null,
-  expectedClaimedAt?: string,
+  expectedClaimId?: string,
 ) {
   const status = String(transaction.status ?? "").toUpperCase();
   const success = status === "SUCCESS" && Boolean(transaction.object_id);
@@ -275,11 +275,11 @@ async function recordPurchaseOutcome(
   }
   // Reconciliation writes are attempt-bound (compared under the row lock);
   // the direct purchase path still holds the claim it just made.
-  const rpc = expectedClaimedAt ? "reconcile_shipment_leg_label" : "record_shipment_leg_label";
+  const rpc = expectedClaimId ? "reconcile_shipment_leg_label" : "record_shipment_leg_label";
   const { data, error } = await context.admin.rpc(rpc, {
     p_matter_id: context.matter.id,
     p_leg_id: legId,
-    ...(expectedClaimedAt ? { p_expected_claimed_at: expectedClaimedAt } : {}),
+    ...(expectedClaimId ? { p_expected_claim_id: expectedClaimId } : {}),
     p_success: success,
     p_transaction_id: success ? transaction.object_id : null,
     p_tracking_number: success ? transaction.tracking_number ?? null : null,

@@ -145,8 +145,10 @@ export function buildClientDeliveryJourney(legs: readonly ShipmentLegRow[]): Cli
   const labelCreated = leg.label_status === "created";
   const delivered = labelCreated && leg.custody_status === "delivered" && Boolean(validDate(leg.delivered_at));
   const shipped = labelCreated && (Boolean(leg.shipped_at) || SHIPPED_CUSTODY.has(leg.custody_status));
-  const inTransit = shipped && (leg.custody_status === "in_transit" || tracking.status === "TRANSIT" || delivered);
-  const outForDelivery = delivered || (inTransit && tracking.substatus.includes("out_for_delivery"));
+  const inTransit =
+    shipped && (leg.custody_status === "in_transit" || tracking.status === "TRANSIT" || tracking.status === "OUT_FOR_DELIVERY" || delivered);
+  const outForDelivery =
+    delivered || (inTransit && (tracking.status === "OUT_FOR_DELIVERY" || tracking.substatus.includes("out_for_delivery")));
   const attention =
     !delivered && (leg.custody_status === "exception" || tracking.status === "RETURNED" || tracking.status === "FAILURE");
 

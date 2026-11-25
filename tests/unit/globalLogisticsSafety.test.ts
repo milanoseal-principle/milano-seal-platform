@@ -247,9 +247,9 @@ test("both rate endpoints surface customs review instead of fabricating a declar
 // ── Exceptions ──
 
 test("exception detection is evidence-based and read-only", () => {
-  const settledPending = leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - RECONCILE_MIN_PENDING_MS).toISOString() });
+  const settledPending = leg({ label_status: "purchase_pending", label_claim_id: "claim-1", label_claimed_at: new Date(NOW.getTime() - RECONCILE_MIN_PENDING_MS).toISOString() });
   assert.deepEqual(detectShipmentLegExceptions(settledPending, NOW).map((e) => e.code), ["PURCHASE_OUTCOME_UNKNOWN"]);
-  const activePending = leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - 30_000).toISOString() });
+  const activePending = leg({ label_status: "purchase_pending", label_claim_id: "claim-1", label_claimed_at: new Date(NOW.getTime() - 30_000).toISOString() });
   assert.deepEqual(detectShipmentLegExceptions(activePending, NOW).map((e) => e.code), ["PURCHASE_IN_PROGRESS"]);
   assert.ok(detectShipmentLegExceptions(leg({ label_status: "created", tracking_number: null }), NOW).some((e) => e.code === "TRACKING_NOT_REGISTERED"));
   const stale = leg({
@@ -387,10 +387,16 @@ const txn = (overrides: Record<string, unknown> = {}) => ({
 });
 
 test("an in-flight attempt cannot be reconciled; the window opens only after the bounded attempt", () => {
-  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - 60_000).toISOString() }), NOW), false);
-  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: new Date(CLAIMED).toISOString() }), NOW), true);
-  assert.equal(reconciliationWindowOpen(leg({ label_status: "rate_selected", updated_at: new Date(CLAIMED).toISOString() }), NOW), false);
-  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: "not-a-date" }), NOW), false);
+  const pending = (at: string, extra: Partial<ShipmentLegRow> = {}) =>
+    leg({ label_status: "purchase_pending", label_claim_id: "claim-1", label_claimed_at: at, ...extra });
+  assert.equal(reconciliationWindowOpen(pending(new Date(NOW.getTime() - 60_000).toISOString()), NOW), false);
+  assert.equal(reconciliationWindowOpen(pending(new Date(CLAIMED).toISOString()), NOW), true);
+  assert.equal(reconciliationWindowOpen(pending(new Date(CLAIMED).toISOString(), { label_status: "rate_selected" }), NOW), false);
+  assert.equal(reconciliationWindowOpen(pending("not-a-date"), NOW), false);
+  // No stamped claim identity → fail closed (never reconcilable).
+  assert.equal(reconciliationWindowOpen(pending(new Date(CLAIMED).toISOString(), { label_claim_id: null }), NOW), false);
+  // A later write (e.g. a stale tracking webhook) moving updated_at does not move the claim.
+  assert.equal(reconciliationWindowOpen(pending(new Date(CLAIMED).toISOString(), { updated_at: NOW.toISOString() }), NOW), true);
   assert.ok(RECONCILE_MIN_PENDING_MS > 60_000 * 5, "window must far exceed the 60s purchase timeout");
   assert.match(read("lib/shippo/client.ts"), /timeoutMs: SHIPPO_PURCHASE_TIMEOUT_MS/);
 });
@@ -426,14 +432,33 @@ test("reconciliation writes are compared to the scanned attempt under the databa
   const reconcile = route.slice(route.indexOf('body.action === "reconcile"'), route.indexOf('body.action !== "purchase"'));
   assert.doesNotMatch(reconcile, /rpc\("record_shipment_leg_label"/);
   assert.match(reconcile, /rpc\("reconcile_shipment_leg_label"/);
-  assert.match(reconcile, /recordPurchaseOutcome\(context, leg\.id, auth\.user\.id, found, null, expectedClaimedAt\)/);
-  assert.match(route, /p_expected_claimed_at: expectedClaimedAt/);
+  assert.match(reconcile, /recordPurchaseOutcome\(context, leg\.id, auth\.user\.id, found, null, expectedClaimId\)/);
+  assert.match(route, /p_expected_claim_id: expectedClaimId/);
+  assert.doesNotMatch(reconcile, /updated_at/);
   const sql = read("supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql");
   const lock = sql.indexOf("for update");
-  const compare = sql.indexOf("v_leg.updated_at <> p_expected_claimed_at");
+  const compare = sql.indexOf("v_leg.label_claim_id is distinct from p_expected_claim_id");
   const write = sql.indexOf("public.record_shipment_leg_label(");
   assert.ok(lock > 0 && lock < compare && compare < write, "compare must happen under the lock, before the write");
   assert.match(sql, /RECONCILE_ATTEMPT_CHANGED/);
   assert.match(sql, /revoke all on function public\.reconcile_shipment_leg_label[^;]*from public, anon, authenticated/);
   assert.match(sql, /grant execute on function public\.reconcile_shipment_leg_label[^;]*to service_role/);
+});
+
+test("the claim identity is stamped only on entering purchase_pending and the build requires it", () => {
+  const sql = read("supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql");
+  assert.match(sql, /new\.label_status = 'purchase_pending' and old\.label_status is distinct from 'purchase_pending'/);
+  assert.match(sql, /new\.label_claim_id := old\.label_claim_id/);
+  const schema = read("scripts/verify-production-schema-capabilities.mjs");
+  assert.match(schema, /matter_shipment_legs: \['id','label_status','label_claim_id','label_claimed_at'\]/);
+  assert.match(schema, /'reconcile_shipment_leg_label'/);
+});
+
+test("a carrier OUT_FOR_DELIVERY status (not only the substatus) is shown as out for delivery", () => {
+  const journey = buildClientDeliveryJourney([
+    leg({ label_status: "created", tracking_number: "1234567890", shipped_at: "2026-11-24T00:00:00Z", custody_status: "in_transit", provider_evidence: { last_tracking: { status: "OUT_FOR_DELIVERY" } } }),
+  ]);
+  assert.equal(stateOf(journey).out_for_delivery, "current");
+  assert.equal(stateOf(journey).in_transit, "complete");
+  assert.equal(stateOf(journey).delivered, "upcoming");
 });
