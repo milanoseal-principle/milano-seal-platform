@@ -332,7 +332,8 @@ test("addresses are never invented; operator routes are gated; no second shippin
     assert.doesNotMatch(source, /new Shippo|shippo-node|from "shippo"|express/i, file);
   }
   const label = read("app/api/deals/[id]/shipment-legs/[legId]/label/route.ts");
-  assert.match(label, /purchaseShippoLabel\(leg\.rate_snapshot!\.provider_rate_id\)/);
+  // Only the persisted snapshot rate is purchasable (optional correlation metadata allowed).
+  assert.match(label, /purchaseShippoLabel\(leg\.rate_snapshot!\.provider_rate_id[,)]/);
   assert.doesNotMatch(label, /purchaseShippoLabel\([^)]*\)[\s\S]*purchaseShippoLabel\(/);
   assert.doesNotMatch(label, /NextResponse\.json\([^)]*label_url/);
   assert.match(migration, /revoke all on function public\.record_shipment_leg_tracking[^;]*from public, anon, authenticated/);

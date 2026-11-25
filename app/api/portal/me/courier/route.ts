@@ -6,6 +6,7 @@ import {
   getMatterShipmentLegs,
   publicShipmentLegProjection,
 } from "@/lib/intelligence/execution-brain/authorityLogistics";
+import { buildClientDeliveryJourney } from "@/lib/shippo/deliveryJourney";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +36,14 @@ export async function GET(req: NextRequest) {
 
     // Matter-linked shipment legs, client-safe projection only (after the
     // portal access check above). Tracking numbers are shown for final legs.
-    const legs = (await getMatterShipmentLegs(createAdminClient(), matter.id).catch(() => [])).map((leg) =>
+    const legRows = await getMatterShipmentLegs(createAdminClient(), matter.id).catch(() => []);
+    const legs = legRows.map((leg) =>
       publicShipmentLegProjection(leg, {
         trackingApproved: leg.leg_type === "final_to_client" || leg.leg_type === "final_international",
       }),
     );
+    // One client-safe Document Delivery journey, evidence-only.
+    const journey = buildClientDeliveryJourney(legRows);
 
     const { data: shipment } = await supabase
       .from("shippo_shipments")
@@ -58,6 +62,7 @@ export async function GET(req: NextRequest) {
         last_update: null,
         events: [],
         legs,
+        journey,
         empty_message: "Tracking details will appear once courier activity is created.",
       });
     }
@@ -87,6 +92,7 @@ export async function GET(req: NextRequest) {
       last_update: lastUpdate,
       events: sanitizedEvents,
       legs,
+      journey,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

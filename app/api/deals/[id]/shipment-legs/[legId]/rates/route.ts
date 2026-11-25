@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createShippoCustomsDeclaration, createShippoCustomsItem, createShippoShipment, getShippoShipment } from "@/lib/shippo/client";
-import { buildDocumentCustomsPayload, requiresCustoms } from "@/lib/shippo/customs";
+import { buildDocumentCustomsPayload, CustomsReviewRequiredError, requiresCustoms } from "@/lib/shippo/customs";
 import { buildDocumentParcel, selectPackageTemplate } from "@/lib/shippo/parcel";
 import type { ShippoAddress } from "@/lib/shippo/types";
+import { partitionComparableRates } from "@/lib/shippo/rateSelection";
+import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
 import {
   getShipmentLeg,
   operatorRateOptions,
@@ -41,9 +43,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (body.action === "quote") {
     const template = selectPackageTemplate({ lane: context.matter.tier ?? undefined, documentCount: context.matter.document_count ?? 1 });
+    const parcel = buildDocumentParcel({ templateId: template.id });
     let customsDeclarationId: string | undefined;
     if (destinationCountry && requiresCustoms(destinationCountry)) {
-      const { item, declaration } = await buildDocumentCustomsPayload(context.matter);
+      let customs;
+      try {
+        customs = buildDocumentCustomsPayload(context.matter, parcel);
+      } catch (customsError) {
+        if (customsError instanceof CustomsReviewRequiredError) {
+          return NextResponse.json({ error: customsError.code, reasons: customsError.reasons }, { status: 422 });
+        }
+        throw customsError;
+      }
+      const { item, declaration } = customs;
       const itemRes = await createShippoCustomsItem(item);
       const declRes = await createShippoCustomsDeclaration({ ...declaration, items: [itemRes.object_id] });
       customsDeclarationId = declRes.object_id;
@@ -51,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const shipment = await createShippoShipment({
       address_from: leg.origin_json as unknown as ShippoAddress,
       address_to: destination,
-      parcels: [buildDocumentParcel({ templateId: template.id })],
+      parcels: [parcel],
       ...(customsDeclarationId ? { customs_declaration: customsDeclarationId } : {}),
       async: false,
     });
@@ -62,7 +74,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       selectedBy: auth.user.id,
     });
     if (error) return NextResponse.json({ error }, { status: 422 });
-    return NextResponse.json({ success: true, provider_shipment_ref: shipment.object_id, rates: operatorRateOptions(ranked) });
+    const requiringReview = partitionComparableRates(filterApprovedRates(shipment.rates)).excluded.map(({ rate, reason }) => ({
+      carrier: rate.provider,
+      service: rate.servicelevel.name,
+      amount: rate.amount,
+      currency: rate.currency,
+      reason,
+    }));
+    return NextResponse.json({
+      success: true,
+      provider_shipment_ref: shipment.object_id,
+      rates: operatorRateOptions(ranked),
+      rates_requiring_review: requiringReview,
+    });
   }
 
   if (body.action === "select") {

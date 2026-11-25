@@ -74,14 +74,40 @@ export async function getShippoShipment(
 }
 
 export async function purchaseShippoLabel(
-  rateId: string
+  rateId: string,
+  metadata?: string
 ): Promise<ShippoTransaction> {
   assertShippoMode();
   return shippoRequest<ShippoTransaction>("POST", "/transactions/", {
     rate: rateId,
     label_file_type: "PDF",
     async: false,
+    // Correlation reference (Matter / leg ids only — no client data) so an
+    // ambiguous purchase can be reconciled against the provider record.
+    ...(metadata ? { metadata: metadata.slice(0, 100) } : {}),
   });
+}
+
+/** Read-only provider lookup used to reconcile an ambiguous label purchase. */
+export async function getShippoTransaction(
+  transactionId: string
+): Promise<ShippoTransaction> {
+  return shippoRequest<ShippoTransaction>(
+    "GET",
+    `/transactions/${encodeURIComponent(transactionId)}`
+  );
+}
+
+/**
+ * Classifies a label-purchase failure. Only an explicit provider 4xx
+ * rejection is a definitive "no label was purchased". Network failures,
+ * timeouts and provider 5xx responses leave the outcome UNKNOWN: the provider
+ * may have created the transaction, so the purchase must be reconciled and
+ * never blindly retried.
+ */
+export function classifyShippoPurchaseError(error: unknown): "DEFINITIVE_REJECTION" | "OUTCOME_UNKNOWN" {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /^Shippo POST \/transactions\/ → 4\d\d:/.test(message) ? "DEFINITIVE_REJECTION" : "OUTCOME_UNKNOWN";
 }
 
 export async function getShippoTrackingStatus(

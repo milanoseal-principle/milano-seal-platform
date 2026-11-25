@@ -59,6 +59,9 @@ export interface ShippoShipmentResponse {
 export interface ShippoTransaction {
   object_id: string;
   status: string;
+  /** Provider rate object id this transaction purchased (used for reconciliation). */
+  rate?: string;
+  metadata?: string;
   tracking_number: string;
   tracking_url_provider?: string;
   label_url: string;

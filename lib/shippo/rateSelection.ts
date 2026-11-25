@@ -28,9 +28,53 @@ function normalizeLane(lane?: string | null): string {
     .replace(/[\s-]+/g, "_");
 }
 
+/** Governed comparison currency: courier credits and pricing are USD-denominated. */
+export const RATE_COMPARISON_CURRENCY = "USD";
+
+/**
+ * Integer minor units (cents) for a provider amount string. Returns null for
+ * anything that is not a plain non-negative decimal so malformed provider
+ * amounts are excluded rather than silently ranked.
+ */
+export function rateAmountMinorUnits(amount: unknown): number | null {
+  const text = String(amount ?? "").trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(text)) return null;
+  const [whole, fraction = ""] = text.split(".");
+  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+}
+
+export type RateExclusionReason = "CURRENCY_REVIEW_REQUIRED" | "RATE_AMOUNT_UNAVAILABLE";
+
+export interface ExcludedShippoRate {
+  rate: ShippoRate;
+  reason: RateExclusionReason;
+}
+
+/**
+ * Splits rates into those that can be financially compared under the governed
+ * USD basis and those that cannot. A EUR 50 rate is never treated as USD 50:
+ * without a verified FX basis it is excluded and routed to operator review.
+ */
+export function partitionComparableRates(rates: ShippoRate[]): {
+  comparable: ShippoRate[];
+  excluded: ExcludedShippoRate[];
+} {
+  const comparable: ShippoRate[] = [];
+  const excluded: ExcludedShippoRate[] = [];
+  for (const rate of rates) {
+    if (String(rate.currency ?? "").trim().toUpperCase() !== RATE_COMPARISON_CURRENCY) {
+      excluded.push({ rate, reason: "CURRENCY_REVIEW_REQUIRED" });
+    } else if (rateAmountMinorUnits(rate.amount) === null) {
+      excluded.push({ rate, reason: "RATE_AMOUNT_UNAVAILABLE" });
+    } else {
+      comparable.push(rate);
+    }
+  }
+  return { comparable, excluded };
+}
+
 function money(rate: ShippoRate): number {
-  const parsed = Number.parseFloat(rate.amount);
-  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+  return rateAmountMinorUnits(rate.amount) ?? Number.POSITIVE_INFINITY;
 }
 
 function days(rate: ShippoRate): number {
@@ -74,7 +118,9 @@ export function rankApprovedRates(input: {
   lane?: MilanoShippingLane | null;
   destinationCountry?: string | null;
 }): RankedShippoRate[] {
-  const rates = [...input.rates];
+  // Only rates with a governed, comparable amount are ranked. Excluded rates
+  // (non-USD, malformed) are surfaced separately via partitionComparableRates.
+  const rates = partitionComparableRates(input.rates).comparable;
   if (rates.length === 0) return [];
 
   const policy = getRateSelectionPolicy(input.lane);
@@ -92,7 +138,8 @@ export function rankApprovedRates(input: {
     reason = "Executive lane: fastest approved service, then preferred-carrier reliability, then cost.";
   } else if (policy === "BALANCED_PRIORITY") {
     const cheapest = Math.min(...rates.map(money));
-    const budgetCeiling = Math.max(cheapest * 1.3, cheapest + 25);
+    // Ceiling in cents: 130% of cheapest or cheapest + $25, whichever is higher.
+    const budgetCeiling = Math.max(Math.round(cheapest * 1.3), cheapest + 2_500);
     const valuePool = rates.filter((rate) => money(rate) <= budgetCeiling);
     const candidates = valuePool.length > 0 ? valuePool : rates;
 
