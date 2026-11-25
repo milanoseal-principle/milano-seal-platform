@@ -20,7 +20,7 @@ export const REQUIRED_RPCS = Object.freeze([
   'retention_command','wise_exception_scan_candidates','resolve_wise_exceptions_from_current_truth',
   'missing_required_policy_acceptances','issue_financial_artifact','append_custody_event','record_document_release',
   'governance_claim','governance_finish','governance_command','institutional_route_is_verified',
-  'reconcile_shipment_leg_label',
+  'reconcile_shipment_leg_label','record_shipment_leg_label_tracking',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};

@@ -794,7 +794,9 @@ export async function updateShipmentLegFromProvider(
     statusDate: update.statusDate ?? null,
     substatus: update.substatus ?? null,
   });
-  const { data, error } = await db.rpc("record_shipment_leg_tracking", {
+  // Label-isolated: only an event for the leg's CURRENT purchased label can
+  // move custody. Events for a voided/replaced label are kept as history only.
+  const { data, error } = await db.rpc("record_shipment_leg_label_tracking", {
     p_matter_id: leg.matter_id,
     p_leg_id: leg.id,
     p_event_hash: eventHash,
@@ -804,6 +806,8 @@ export async function updateShipmentLegFromProvider(
     p_status_date: update.statusDate ?? null,
     p_carrier: update.carrier ?? null,
     p_raw: update.raw ?? {},
+    p_event_tracking_number: update.trackingNumber ?? null,
+    p_event_transaction_id: update.transactionId ?? null,
   });
   if (error) throw new Error(error.message);
   const row = (Array.isArray(data) ? data[0] : data) as { outcome: string; custody_status: string };
