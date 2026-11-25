@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { writeMatterAuditEvent } from "@/src/features/audit/eventLedgerService";
 
-test("discount audit events reach the hosted canonical Matter timeline", async (t) => {
+test("discount audit writer targets the canonical Matter timeline", async (t) => {
   const urlName = "NEXT_PUBLIC_SUPABASE_URL";
   const keyName = "SUPABASE_SERVICE_ROLE_KEY";
   const originalUrl = process.env[urlName];
@@ -59,4 +59,44 @@ test("discount audit events reach the hosted canonical Matter timeline", async (
       },
     },
   }]);
+});
+
+test("a guarded discount refusal writes a private event on the same canonical deal", async (t) => {
+  const { applyDiscountToMatter } = await import("@/src/features/discounts/discountService");
+  for (const [name, value] of Object.entries({
+    NEXT_PUBLIC_SUPABASE_URL: "https://matter-audit-fixture.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role-key",
+  })) {
+    const previous = process.env[name];
+    process.env[name] = value;
+    t.after(() => {
+      if (previous === undefined) delete process.env[name];
+      else process.env[name] = previous;
+    });
+  }
+
+  const matterId = "00000000-0000-4000-8000-000000000002";
+  const paths: string[] = [];
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init);
+    const url = new URL(request.url);
+    paths.push(`${request.method} ${url.pathname}`);
+    if (url.pathname === "/rest/v1/deals") {
+      assert.equal(url.searchParams.get("id"), `eq.${matterId}`);
+      return Response.json({ id: matterId, payment_status: "paid" });
+    }
+    assert.equal(url.pathname, "/rest/v1/matter_events");
+    const body = await request.json();
+    assert.equal(body.matter_id, matterId);
+    assert.equal(body.event_type, "DISCOUNT_REJECTED");
+    assert.equal(body.actor, "operator@example.invalid");
+    assert.equal(body.client_visible, false);
+    return Response.json({ id: matterId }, { status: 201 });
+  });
+
+  await assert.rejects(
+    applyDiscountToMatter(matterId, "TEST", "operator@example.invalid"),
+    /Discount cannot be applied after payment has started/,
+  );
+  assert.deepEqual(paths, ["GET /rest/v1/deals", "POST /rest/v1/matter_events"]);
 });

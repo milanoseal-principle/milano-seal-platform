@@ -46,6 +46,16 @@ async function updateMatter(id: string, values: Record<string, unknown>) {
   return supabase.from("deals").update(values).eq("id", id).select("*").single();
 }
 
+async function recordDealDiscountAudit(input: Parameters<typeof writeMatterAuditEvent>[0]) {
+  const result = await writeMatterAuditEvent(input);
+  if (result.error) {
+    console.error("[discount] canonical event write failed", {
+      eventType: input.eventType,
+      code: result.error.code,
+    });
+  }
+}
+
 async function assertNoPaymentInMotion(
   matterId: string,
   actorEmail?: string | null,
@@ -62,7 +72,7 @@ async function assertNoPaymentInMotion(
   if ((data ?? []).length === 0) return;
 
   const payment = data![0];
-  await writeEventLedger({
+  await recordDealDiscountAudit({
     matterId,
     actorEmail,
     eventType: "DISCOUNT_REJECTED",
@@ -99,7 +109,7 @@ async function invalidateAwaitingWiseInstructions(
     .in("id", ids);
   if (deleteError) throw deleteError;
 
-  await writeEventLedger({
+  await recordDealDiscountAudit({
     matterId,
     actorEmail,
     eventType: "PAYMENT_INSTRUCTIONS_INVALIDATED",
@@ -128,7 +138,7 @@ export async function applyDiscountToMatter(
   const matter = matterResult.data as Record<string, unknown>;
 
   if (["paid", "deposit_paid", "payment_confirmed"].includes(String(matter.payment_status))) {
-    await writeEventLedger({
+    await recordDealDiscountAudit({
       matterId,
       actorEmail,
       eventType: "DISCOUNT_REJECTED",
@@ -149,7 +159,7 @@ export async function applyDiscountToMatter(
 
   if (error) throw error;
   if (!data) {
-    await writeEventLedger({
+    await recordDealDiscountAudit({
       matterId,
       actorEmail,
       eventType: "DISCOUNT_REJECTED",
@@ -162,7 +172,7 @@ export async function applyDiscountToMatter(
   const discount = data as DiscountCode;
   const validation = validateCodeRedeemable(discount, matterId);
   if (!validation.ok) {
-    await writeEventLedger({
+    await recordDealDiscountAudit({
       matterId,
       actorEmail,
       eventType: "DISCOUNT_REJECTED",
@@ -324,7 +334,7 @@ export async function removeDiscountFromMatter(
 
   await invalidateAwaitingWiseInstructions(matterId, actorEmail);
 
-  await writeEventLedger({
+  await recordDealDiscountAudit({
     matterId,
     actorEmail,
     eventType: "DISCOUNT_REMOVED",
