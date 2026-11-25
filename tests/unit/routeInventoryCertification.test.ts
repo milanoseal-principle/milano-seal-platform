@@ -313,3 +313,17 @@ test("imported JSON data is part of the dependency closure and fingerprint", () 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("every commercialInventory entry reconciles to its route record by declared file", async () => {
+  const { REVENUE_BEARING_PUBLIC_ROUTES } = await import("@/lib/routes/commercialInventory");
+  const inv = await inventory();
+  for (const entry of REVENUE_BEARING_PUBLIC_ROUTES) {
+    const record = inv.routes.find((r) => r.sourcePath === entry.file);
+    assert.ok(record, `no route record for ${entry.file}`);
+    assert.equal(record.revenueLane, entry.category, entry.route);
+    assert.ok(record.registryReferences.includes(`commercialInventory:${entry.category}`), entry.route);
+  }
+  // Template routes reconcile through the file, not the literal URL.
+  assert.equal((await byId("page:/countries/[country]")).revenueLane, "country");
+  assert.equal((await byId("page:/sarasota/apostille-services")).revenueLane, "local");
+});

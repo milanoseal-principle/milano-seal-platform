@@ -382,8 +382,8 @@ function readRegistries(root) {
   }
   const touchpoints = idBoundRoutes(readText(root, "lib/access/touchpointRegistry.ts"), "role");
   const commercial = [...readText(root, "lib/routes/commercialInventory.ts").matchAll(
-    /route:\s*"([^"]+)",\s*file:\s*"[^"]+",\s*category:\s*"(\w+)"/g,
-  )].map((m) => ({ route: m[1], category: m[2] }));
+    /route:\s*"([^"]+)",\s*file:\s*"([^"]+)",\s*category:\s*"(\w+)"/g,
+  )].map((m) => ({ route: m[1], file: m[2], category: m[3] }));
   const criticalBlock = readText(root, "scripts/generate-route-map.mjs").match(/const CRITICAL_ROUTES = \[([\s\S]*?)\];/);
   return {
     publicLive: listOf("PUBLIC_LIVE_ROUTES"),
@@ -675,6 +675,9 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
       .sort((a, b) => b.route.length - a.route.length)[0]?.key;
     const canonicalModule = authorityBySource ?? authorityByRoute ?? exactModule?.id ?? prefixModule?.id ?? "UNKNOWN";
 
+    // commercialInventory names each entry's governing page file; template routes
+    // (/countries/:country, /:city/apostille-services) only match by that file.
+    const commercialEntries = registries.commercial.filter((c) => c.file === sourcePath || c.route === url);
     const registryReferences = uniqSorted([
       ...(registries.publicLive.includes(url) ? ["routeRegistry:PUBLIC_LIVE_ROUTES"] : []),
       ...(registries.internalDashboard.includes(url) ? ["routeRegistry:INTERNAL_DASHBOARD_ROUTES"] : []),
@@ -683,10 +686,10 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
       ...registries.authorities.filter((a) => a.route === url).map((a) => `systemRegistry:${a.key}`),
       ...registries.authoritySources.filter(ownsSource).map((a) => `systemRegistry:${a.key}`),
       ...registries.touchpoints.filter((t) => t.route === url).map((t) => `touchpointRegistry:${t.key}`),
-      ...registries.commercial.filter((c) => c.route === url).map((c) => `commercialInventory:${c.category}`),
+      ...commercialEntries.map((c) => `commercialInventory:${c.category}`),
       ...(registries.critical.includes(url) ? ["routeMap:CRITICAL_ROUTES"] : []),
     ]);
-    const revenueLane = registries.commercial.find((c) => c.route === url)?.category ?? "UNKNOWN";
+    const revenueLane = commercialEntries[0]?.category ?? "UNKNOWN";
 
     const sourceNoExt = sourcePath.replace(/\.(?:js|jsx|ts|tsx)$/, "");
     const staticUrl = params.length === 0 && url !== "/";
