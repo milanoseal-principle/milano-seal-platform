@@ -139,6 +139,9 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // table + service-role-only RPC. Regression: test:public-request-limits-concurrency,
  // tests/unit/publicRequestLimits.test.ts.
  'supabase/migrations/20261125120000_public_request_limits.sql',
+ // 2026-11-25 owner-authorized portal OTP abuse remediation; forward-only
+ // redeclaration of the same fixed-ceiling RPC. Production DDL remains gated.
+ 'supabase/migrations/20261125130000_public_request_limit_buckets.sql',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',

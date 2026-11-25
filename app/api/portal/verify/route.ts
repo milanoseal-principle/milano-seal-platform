@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes } from "crypto";
+import { defaultRequestLimiterDeps } from "@/lib/security/publicRequestLimit";
+import { parseAndLimitPortalRequest, limitPortalMatter } from "@/lib/security/portalAccessGuard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { token, email } = await req.json();
-    if (!token || !email) {
-      return NextResponse.json({ error: "Missing token or email" }, { status: 400 });
-    }
+    const limiter = await defaultRequestLimiterDeps();
+    const guarded = await parseAndLimitPortalRequest(req, false, limiter);
+    if (guarded.error) return guarded.error;
+    const { token, email } = guarded.body;
 
     const supabase = createAdminClient();
     const { data: deal } = await supabase
@@ -19,17 +21,22 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!deal) {
-      return NextResponse.json({ error: "Invalid portal link" }, { status: 404 });
+      return NextResponse.json({ error: "Unable to verify portal access" }, { status: 403 });
     }
 
     const dealEmail = (deal.email || "").toLowerCase().trim();
     const inputEmail = String(email).toLowerCase().trim();
     if (!dealEmail || dealEmail !== inputEmail) {
       return NextResponse.json(
-        { error: "Email does not match our records for this matter" },
+        { error: "Unable to verify portal access" },
         { status: 403 },
       );
     }
+
+    // Token/email ownership is established; atomically throttle every new code.
+    // No OTP write or Resend call is permitted after a limit refusal.
+    const sendLimit = await limitPortalMatter(req, deal.id, "portal_code_send", limiter);
+    if (sendLimit) return sendLimit;
 
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey) {

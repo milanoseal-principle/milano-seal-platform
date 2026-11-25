@@ -314,17 +314,25 @@
       "access": "capability_token",
       "audience": "A client holding their Matter portal link requesting a one-time code.",
       "controls": [
-        "Requires the Matter's secret access_token AND the Matter email (403 on mismatch)",
-        "Code sent only to the Matter's own email; 15-minute expiry; one active code per Matter"
+        "Requires secret Matter access_token and exact normalized Matter email",
+        "Rejects foreign Origin, oversized and malformed JSON before quota",
+        "Limits public portal access 30 requests/client/hour before Matter lookup",
+        "Limits code sends to 3 per Matter per 15 minutes before OTP write or email",
+        "Code sent to Matter email; 15-minute expiry; one active code per Matter"
       ],
       "openFindings": [
-        "No resend throttle: repeated calls with a valid link re-send email to the Matter's own address"
+        "Existing portal_otps stores six-character codes in plaintext; a separate schema review would be needed for at-rest hashing"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/unit/portalOtpGuard.test.ts"
+      ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/portal/verify/route.ts": "73a5aad7f77b4fcdc583a3e9663b2a718b0df2ec178f79dfdd8b1a40e09c0605"
+        "app/api/portal/verify/route.ts": "01abbab29ee65d460cf3084819165757ea7bc15301f1feb87b29ad0357129ceb",
+        "app/api/portal/confirm/route.ts": "180df4ec1895e933ac79b49f5800214d486f0f8e93f3177359f174a10f63aafd",
+        "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
+        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
       }
     },
     {
@@ -332,19 +340,26 @@
       "access": "capability_token",
       "audience": "A client completing portal sign-in with the emailed code.",
       "controls": [
-        "Requires the secret access_token, the Matter email and the unexpired one-time code",
-        "Single-use consumption confirmed by a conditional update (409 otherwise)",
-        "Issues an HMAC-signed session; PORTAL_SESSION_SECRET missing fails closed (503)"
+        "Requires secret Matter access_token and exact normalized Matter email",
+        "Rejects foreign Origin, oversized and malformed JSON before quota",
+        "Limits public portal access 30 requests/client/hour before Matter lookup",
+        "Limits code attempts to 5 per Matter per 15 minutes; lockout invalidates active code",
+        "Compares fixed-length code with timingSafeEqual",
+        "Single-use OTP consumption and HMAC-signed portal session; missing secret fails closed"
       ],
       "openFindings": [
-        "No failed-attempt limit on the 6-character code within its 15-minute window (needs an attempts column — schema change)",
-        "Code comparison is not constant-time"
+        "Existing portal_otps stores six-character codes in plaintext; a separate schema review would be needed for at-rest hashing"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/unit/portalOtpGuard.test.ts"
+      ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/portal/confirm/route.ts": "19a31f9d2412fe9b69f16a0b7f69be737e47f4ed5a3618a2a9ff308b2d39f4b5"
+        "app/api/portal/verify/route.ts": "01abbab29ee65d460cf3084819165757ea7bc15301f1feb87b29ad0357129ceb",
+        "app/api/portal/confirm/route.ts": "180df4ec1895e933ac79b49f5800214d486f0f8e93f3177359f174a10f63aafd",
+        "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
+        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
       }
     },
     {
