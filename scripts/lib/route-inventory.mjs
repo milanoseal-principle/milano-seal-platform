@@ -168,6 +168,16 @@ function proxyProtects(model, url) {
   return model.protectedPrefixes.some((p) => url === p || url.startsWith(`${p}/`));
 }
 
+/**
+ * Modules whose behavior certification evidence is bound to: the route, its
+ * ancestor layouts and, whenever proxy.ts runs for the URL, the proxy and its
+ * own dependency graph (role rules, disabled-account checks, session client).
+ * A change to any of them must invalidate L2+ evidence.
+ */
+export function evidenceRoots(sourcePath, ancestorLayouts, proxyApplies) {
+  return [sourcePath, ...ancestorLayouts, ...(proxyApplies ? ["proxy.ts"] : [])];
+}
+
 // ----------------------------------------------------- dependency graph
 
 function resolveLocal(root, fromRel, spec) {
@@ -527,7 +537,9 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
         (rule.local && closure.modules.some((m) => rule.local.test(m))) ||
         (rule.pkg && closure.packages.some((p) => rule.pkg.test(p))),
     ).map((rule) => rule.id);
-    const dependencySha256 = graph.fingerprint(closure);
+    const dependencySha256 = graph.fingerprint(
+      graph.closure(evidenceRoots(sourcePath, ancestorLayouts, proxyCovers(proxyModel, url))),
+    );
 
     const tables = uniqSorted([...code.matchAll(/\.from\(\s*["'`]([\w.-]+)["'`]\s*\)/g)].map((m) => m[1]));
     const rpcs = uniqSorted([...code.matchAll(/\.rpc\(\s*["'`](\w+)["'`]/g)].map((m) => m[1]));

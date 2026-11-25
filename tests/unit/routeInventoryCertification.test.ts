@@ -19,6 +19,7 @@ const lib = inventoryLib as {
   evidenceProblems: (entry: Record<string, unknown>, ctx: Record<string, unknown>) => string[];
   certifyRecord: (record: Record<string, unknown>, evidence: unknown[], ctx: Record<string, unknown>) => { level: string; validEvidence: string[] };
   readProxyModel: (root: string) => unknown;
+  evidenceRoots: (sourcePath: string, layouts: string[], proxyApplies: boolean) => string[];
   createGraph: (root: string) => {
     closure: (rels: string[]) => { modules: string[]; packages: string[] };
     fingerprint: (closure: { modules: string[]; packages: string[] }) => string;
@@ -208,6 +209,42 @@ test("dependency fingerprint changes when a dependency's implementation changes 
     // Same code, different resolved package version.
     write("package-lock.json", JSON.stringify({ packages: { "node_modules/zod": { version: "3.0.1" } } }));
     assert.notEqual(fingerprintOf().hash, edited.hash);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("proxy enforcement is part of the evidence fingerprint for proxy-covered routes", () => {
+  assert.deepEqual(lib.evidenceRoots("app/api/intelligence/generate/route.ts", [], true), [
+    "app/api/intelligence/generate/route.ts",
+    "proxy.ts",
+  ]);
+  assert.deepEqual(lib.evidenceRoots("app/sitemap.xml/route.ts", [], false), ["app/sitemap.xml/route.ts"]);
+
+  // The route imports none of the proxy's modules; editing the proxy's
+  // disabled-account check must still change the fingerprint.
+  const graph = lib.createGraph(root);
+  const roots = lib.evidenceRoots("app/api/intelligence/generate/route.ts", [], true);
+  const closure = graph.closure(roots);
+  for (const m of ["proxy.ts", "lib/auth/roleRedirect.ts", "lib/auth/server-role.ts"]) {
+    assert.ok(closure.modules.includes(m), m);
+  }
+  assert.ok(!graph.closure(["app/api/intelligence/generate/route.ts"]).modules.includes("proxy.ts"));
+
+  const dir = mkdtempSync(join(tmpdir(), "route-proxy-fingerprint-"));
+  try {
+    mkdirSync(join(dir, "app/api/x"), { recursive: true });
+    mkdirSync(join(dir, "lib/auth"), { recursive: true });
+    writeFileSync(join(dir, "app/api/x/route.ts"), "export function GET() { return 1; }\n");
+    writeFileSync(join(dir, "proxy.ts"), 'import { isAccountDisabled } from "@/lib/auth/server-role";\nexport const proxy = isAccountDisabled;\n');
+    writeFileSync(join(dir, "lib/auth/server-role.ts"), "export const isAccountDisabled = (u: { disabled?: boolean }) => !!u.disabled;\n");
+    const hash = () => {
+      const g = lib.createGraph(dir);
+      return g.fingerprint(g.closure(lib.evidenceRoots("app/api/x/route.ts", [], true)));
+    };
+    const before = hash();
+    writeFileSync(join(dir, "lib/auth/server-role.ts"), "export const isAccountDisabled = (_u: { disabled?: boolean }) => false;\n");
+    assert.notEqual(hash(), before);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
