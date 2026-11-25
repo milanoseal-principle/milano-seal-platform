@@ -380,7 +380,8 @@ function readRegistries(root) {
   const systemSource = readText(root, "lib/control-plane/systemRegistry.ts");
   const authorities = idBoundRoutes(systemSource, "id");
   const authoritySources = [];
-  for (const m of systemSource.matchAll(/\bid:\s*"([^"]+)"[^{}]*?sourcePaths:\s*\[([^\]]*)\]/g)) {
+  // Array items may contain brackets inside strings (e.g. "app/api/deals/[id]/schedule").
+  for (const m of systemSource.matchAll(/\bid:\s*"([^"]+)"[^{}]*?sourcePaths:\s*\[((?:[^\]"]|"[^"]*")*)\]/g)) {
     for (const p of stringLiterals(m[2])) authoritySources.push({ key: m[1], path: p });
   }
   const touchpoints = idBoundRoutes(readText(root, "lib/access/touchpointRegistry.ts"), "role");

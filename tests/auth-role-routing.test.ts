@@ -75,6 +75,17 @@ test("operator/admin/founder reach dashboard + va + alliance oversight", () => {
   }
 });
 
+test("operator family reaches the release workspace; every other role is refused", () => {
+  for (const r of ["operator", "admin", "owner", "founder", "finance", "compliance_reviewer"]) {
+    assert.ok(isRouteAllowedForRole("/workspace/release", r), `${r} → /workspace/release`);
+  }
+  for (const r of ["client", "virtual_assistant", "va", "alliance_member", "professional", null, "bogus"]) {
+    assert.ok(!isRouteAllowedForRole("/workspace/release", r), `${String(r)} must not reach /workspace/release`);
+  }
+  // Path boundary: a sibling prefix is not the workspace.
+  assert.ok(!isRouteAllowedForRole("/workspaceevil", "operator"));
+});
+
 test("client is isolated to the portal", () => {
   assert.ok(isRouteAllowedForRole("/portal", "client"));
   assert.ok(!isRouteAllowedForRole("/dashboard", "client"));
