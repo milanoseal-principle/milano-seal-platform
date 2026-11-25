@@ -1,4 +1,47 @@
 {
   "description": "L2–L6 certification evidence for lib/routes/routeRegistry.ts. Each entry certifies ONE level for ONE route id and is valid only while the route's sourceSha256 and dependencySha256 match current HEAD. Entries require a human approver; nothing here is generated. L0/L1 are derived and never claimed.",
-  "evidence": []
+  "evidence": [
+    {
+      "routeId": "api:/api/assistant",
+      "level": "L2",
+      "status": "PENDING_OWNER_APPROVAL",
+      "commit": "eb114c8d",
+      "evidenceDate": "2026-11-25",
+      "approvedBy": "",
+      "sourceSha256": "03c7ea8a514810f49c05c6a45a0491c0624cf475eec159e14a8efd765dd63500",
+      "dependencySha256": "ca25b1ae72b46f735d6277aa45e763e915dd5ca735c755287c73cee9a719aacf",
+      "testIds": [
+        "tests/unit/assistantGuard.test.ts"
+      ],
+      "notes": "Guards traced and tested with a mocked provider: cross-site, size, message, context, off-switch and unconfigured refusals make zero provider calls; allowed path calls once with max_tokens 512; unknown roles fall back to PUBLIC context. Open: no durable request/spend limit (migration authorization pending)."
+    },
+    {
+      "routeId": "api:/api/intake/extract",
+      "level": "L2",
+      "status": "PENDING_OWNER_APPROVAL",
+      "commit": "eb114c8d",
+      "evidenceDate": "2026-11-25",
+      "approvedBy": "",
+      "sourceSha256": "6c0e9e512f0fabfb59f2943dfaf3203498e5adc275c82260641d1de4ba2a95cc",
+      "dependencySha256": "1c973f05cfec559cb46f387d871fc1643652797e4a665476baef2452b58857b9",
+      "testIds": [
+        "tests/unit/intakeExtractGuard.test.ts"
+      ],
+      "notes": "Guards traced and tested with mocked parser/provider: cross-site, streamed 4.5 MB body cap, message cap and off-switch refusals parse nothing and call no provider; max 10 files; provider error text never returned. Open: no durable request/spend limit (migration authorization pending)."
+    },
+    {
+      "routeId": "api:/api/sales/capture",
+      "level": "L2",
+      "status": "PENDING_OWNER_APPROVAL",
+      "commit": "eb114c8d",
+      "evidenceDate": "2026-11-25",
+      "approvedBy": "",
+      "sourceSha256": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
+      "dependencySha256": "023d49c0e6c12d6e0ae4dcc21f0ee3f3132467b2cb0f7fe5d041485f51b3c891",
+      "testIds": [
+        "tests/unit/salesCaptureGuard.test.ts"
+      ],
+      "notes": "Guards traced and tested with a fake Supabase client: foreign Origin, declared/actual size, malformed body, missing email and the hourly per-IP limit write no row; accepted capture stores ip_hash and creates a lead only."
+    }
+  ]
 }
