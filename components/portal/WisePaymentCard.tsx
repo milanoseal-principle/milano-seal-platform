@@ -2,6 +2,7 @@
 import { useState } from 'react';
 
 import { WiseTransferInstructions } from "./WiseTransferInstructions";
+import type { LocalCurrencyEstimate } from "@/lib/wise/rates";
 
 export interface WisePaymentCardProps {
   amountDue: number;
@@ -10,6 +11,37 @@ export interface WisePaymentCardProps {
   wiseReference: string; // e.g. "MS-ITALY-TEST-001"
   wisePaymentUrl?: string | null;
   paidAt?: string | null;
+  /** Server-computed, informational destination-currency estimate (never payment authority). */
+  localEstimate?: LocalCurrencyEstimate | null;
+}
+
+function LocalEstimate({ estimate }: { estimate: LocalCurrencyEstimate }) {
+  if (estimate.status !== "available") {
+    // A USD destination needs no estimate; otherwise never guess a rate.
+    if (estimate.reason === "SAME_CURRENCY" || !estimate.currency) return null;
+    return (
+      <p data-testid="local-currency-estimate" style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "6px 0 0", textAlign: "right" }}>
+        Local currency estimate unavailable.
+      </p>
+    );
+  }
+  const updated = new Date(estimate.rateTime).toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
+  });
+  return (
+    <div data-testid="local-currency-estimate" style={{ marginTop: 8, textAlign: "right" }}>
+      <p style={{ fontSize: 10, fontFamily: "monospace", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", margin: 0 }}>
+        Estimated equivalent · {estimate.currency}
+      </p>
+      <p style={{ fontSize: 15, color: "rgba(246,241,230,0.85)", margin: "2px 0 0" }}>
+        ≈ {estimate.formatted} <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{estimate.currencyName}</span>
+      </p>
+      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.38)", lineHeight: 1.5, margin: "4px 0 0" }}>
+        Rate from {estimate.provider}, updated {updated}. Estimate only: your invoice is in USD, and the amount
+        Wise debits depends on its confirmed terms and fees.
+      </p>
+    </div>
+  );
 }
 
 export function WisePaymentCard({
@@ -19,6 +51,7 @@ export function WisePaymentCard({
   wiseReference,
   wisePaymentUrl,
   paidAt,
+  localEstimate,
 }: WisePaymentCardProps) {
   const [copied, setCopied] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -240,6 +273,7 @@ export function WisePaymentCard({
             {formattedAmount}
           </span>
         </div>
+        {currency === "USD" && localEstimate && <LocalEstimate estimate={localEstimate} />}
 
         {/* Divider */}
         <div

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { WisePaymentCard } from "@/components/portal/WisePaymentCard";
 import { buildWisePaymentUrl } from "@/lib/payments/wiseUrl";
+import { buildLocalCurrencyEstimate } from "@/lib/wise/rates";
 import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 import { resolveServerRole } from "@/lib/auth/server-role";
 import { normalizeUserRole } from "@/lib/auth/roleRedirect";
@@ -57,6 +58,13 @@ export default async function MatterRoomPage({
   }
 
   const matterPaid = matter?.payment_status === "paid";
+
+  // Informational destination-currency estimate, computed server-side from the
+  // ownership-checked Matter (read-only Wise rate; never payment authority).
+  const localEstimate =
+    matter && !matterPaid
+      ? await buildLocalCurrencyEstimate({ amountUsd: matter.total_price, destination: matter.destination_country })
+      : null;
 
   const statusColor = (s: string) => {
     if (s === "completed" || s === "released") return "#22c55e";
@@ -129,6 +137,7 @@ export default async function MatterRoomPage({
                   amountDue: matter.total_price ?? 0,
                 })}
                 paidAt={null}
+                localEstimate={localEstimate}
               />
             </div>
 
