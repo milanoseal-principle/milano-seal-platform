@@ -14,6 +14,8 @@ export const REQUIRED_SCHEMA = Object.freeze({
   identifier_locks: ['id','identifier_type','match_status'],
   // Attempt-bound label reconciliation (immutable purchase-claim identity).
   matter_shipment_legs: ['id','label_status','label_claim_id','label_claimed_at'],
+  // Durable public request limits (assistant, intake extract, intake submit).
+  public_request_windows: ['scope_hash','bucket','window_at','requests'],
 });
 export const REQUIRED_RPCS = Object.freeze([
   'begin_wise_payment_attempt','record_wise_attempt_evidence','confirm_wise_payment_for_deal',
@@ -21,6 +23,8 @@ export const REQUIRED_RPCS = Object.freeze([
   'missing_required_policy_acceptances','issue_financial_artifact','append_custody_event','record_document_release',
   'governance_claim','governance_finish','governance_command','institutional_route_is_verified',
   'reconcile_shipment_leg_label','record_shipment_leg_label_tracking',
+  // Public endpoints fail closed without it: a deploy before the migration must not go live.
+  'consume_public_request_limit',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};

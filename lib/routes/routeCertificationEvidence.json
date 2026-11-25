@@ -5,35 +5,37 @@
       "routeId": "api:/api/assistant",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "3312c8fe",
+      "commit": "d488976a",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
-      "sourceSha256": "03c7ea8a514810f49c05c6a45a0491c0624cf475eec159e14a8efd765dd63500",
-      "dependencySha256": "af391df0a0b404fdef3f0f768ee20b0ef943b1f26fc1c5bf093e66d7c9515948",
+      "sourceSha256": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
+      "dependencySha256": "d140cd4b81ba4b5261e095718006bbf43688a8f1084d6bd29cdc1cf37f3d5940",
       "testIds": [
-        "tests/unit/assistantGuard.test.ts"
+        "tests/unit/assistantGuard.test.ts",
+        "tests/unit/publicRequestLimits.test.ts"
       ],
-      "notes": "Guards traced and tested with a mocked provider: cross-site, size, message, context, off-switch and unconfigured refusals make zero provider calls; allowed path calls once with max_tokens 512; unknown roles fall back to PUBLIC context. Open: no durable request/spend limit (migration authorization pending)."
+      "notes": "Reviewed 2026-11-25 against the L2 contract: source and dependency fingerprints current; guards tested with a mocked provider (cross-site, size, message, context, off-switch, unconfigured, durable-limit 429/503 and malformed requests consume no allowance and make zero provider calls; allowed path one call, max_tokens 512, SDK retries off); durable limiter proven on real Postgres (scripts/test-public-request-limits-concurrency.mjs). L2 is dependency verification, not production certification: hosted migration 20261125120000 not yet applied; provider-side spend limit unverified."
     },
     {
       "routeId": "api:/api/intake/extract",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "3312c8fe",
+      "commit": "d488976a",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
-      "sourceSha256": "6c0e9e512f0fabfb59f2943dfaf3203498e5adc275c82260641d1de4ba2a95cc",
-      "dependencySha256": "c794b87c836cceeeb113adc84fad24e459069790bcfff6483de7720b52b185b1",
+      "sourceSha256": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
+      "dependencySha256": "06a6f3d5623f5936fc11a58659e89673d933e1517e9934d2d7fdd74c45a8f5e0",
       "testIds": [
-        "tests/unit/intakeExtractGuard.test.ts"
+        "tests/unit/intakeExtractGuard.test.ts",
+        "tests/unit/publicRequestLimits.test.ts"
       ],
-      "notes": "Guards traced and tested with mocked parser/provider: cross-site, streamed 4.5 MB body cap, message cap and off-switch refusals parse nothing and call no provider; max 10 files; provider error text never returned. Open: no durable request/spend limit (migration authorization pending)."
+      "notes": "Reviewed 2026-11-25 against the L2 contract: fingerprints current; guards tested with mocked parser/provider (cross-site, streamed 4.5 MB cap, message cap, off-switch, durable-limit 429/503 parse nothing and call no provider; max 10 files; provider error text never returned); limiter proven on real Postgres. Not production certification: hosted migration not yet applied; Anthropic failure falls back to Groq."
     },
     {
       "routeId": "api:/api/sales/capture",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "3312c8fe",
+      "commit": "d488976a",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
       "sourceSha256": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
@@ -41,7 +43,7 @@
       "testIds": [
         "tests/unit/salesCaptureGuard.test.ts"
       ],
-      "notes": "Guards traced and tested with a fake Supabase client: foreign Origin, declared/actual size, malformed body, missing email and the hourly per-IP limit write no row; accepted capture stores ip_hash and creates a lead only."
+      "notes": "Reviewed 2026-11-25 against the L2 contract: fingerprints current; guards tested with a fake Supabase client (foreign Origin, declared/actual size, malformed body, missing email and the hourly per-IP limit write no row; accepted capture stores ip_hash and creates a lead only). The per-IP limit is count-then-insert on sales_leads (the existing public-form pattern), not the atomic limiter."
     }
   ]
 }

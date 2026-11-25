@@ -8,12 +8,15 @@
 //   - cross-site callers (the widget is same-origin only)       -> 403
 //   - oversized body / message / context                        -> 413
 //   - malformed JSON                                            -> 400
+//   - durable per-client / global daily limit (Postgres RPC)    -> 429 + Retry-After
+//     (limiter unavailable -> 503: fail closed)
 // Output is bounded by ASSISTANT_MAX_OUTPUT_TOKENS. The model is never given
 // server data: context is client-supplied and reduced to a per-role allow-list.
 
 import { NextResponse } from "next/server";
 import { ROLE_PROMPT_REGISTRY, type AssistantRoleMode } from "@/lib/assistant/assistantPrompts";
 import { enforceSecureProjection, sanitizeTextPayload } from "@/lib/assistant/assistantSafety";
+import { retryAfterHeaders, type RequestLimitDecision } from "@/lib/security/publicRequestLimit";
 import { isSameOriginRequest } from "@/lib/security/sameOriginRequest";
 
 export const ASSISTANT_MODEL = "claude-haiku-4-5-20251001";
@@ -25,6 +28,7 @@ export const ASSISTANT_MAX_CONTEXT_CHARS = 2000;
 const ROLE_MODES = ["PUBLIC", "PORTAL", "DASHBOARD", "ALLIANCE", "VA"] as const;
 const EMPTY_PROMPT_REPLY =
   "Tell me the destination country or the document you are working with, and I can help structure the next operational step.";
+const RATE_LIMITED_REPLY = "The Copilot is receiving many questions right now. Please try again in a few minutes, or continue to secure intake.";
 const UNAVAILABLE_REPLY = "The Milano Execution Copilot is temporarily unavailable. Please try again shortly.";
 
 export interface AssistantProviderRequest {
@@ -35,6 +39,8 @@ export interface AssistantProviderRequest {
 }
 
 export interface AssistantDeps {
+  /** Durable per-client and global daily limit, consumed only for a request that reaches the provider. */
+  limit: (request: Request) => Promise<RequestLimitDecision>;
   /** Calls the model provider. Only reached after every guard passes. */
   createMessage: (request: AssistantProviderRequest) => Promise<{ content: { type: string; text?: string }[] }>;
   env: Record<string, string | undefined>;
@@ -99,6 +105,16 @@ export async function handleAssistantRequest(request: Request, deps: AssistantDe
       if (serialized.length > ASSISTANT_MAX_CONTEXT_CHARS) return refuse(413, "ASSISTANT_CONTEXT_TOO_LARGE");
       contextBlock = `\n\nSafe interface context: ${serialized}`;
     }
+  }
+
+  // Durable limits last: malformed or oversized requests never consume a caller's allowance.
+  const decision = await deps.limit(request);
+  if (!decision.allowed) {
+    if (decision.status === 503) return refuse(503, "ASSISTANT_LIMIT_UNAVAILABLE");
+    return NextResponse.json(
+      { reply: RATE_LIMITED_REPLY, code: "ASSISTANT_RATE_LIMITED" },
+      { status: 429, headers: { "Cache-Control": "no-store", ...retryAfterHeaders(decision) } },
+    );
   }
 
   try {

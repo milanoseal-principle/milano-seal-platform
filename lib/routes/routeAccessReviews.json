@@ -10,21 +10,27 @@
         "Body 8 KB, message 2,000 chars, projected context 2,000 chars; 413 before any provider call",
         "ASSISTANT_ENABLED=false off-switch and missing ANTHROPIC_API_KEY both 503 before any provider call",
         "Output bounded to 512 tokens on claude-haiku-4-5",
-        "No server data: client context reduced to a per-role allow-list; unknown roles fall back to PUBLIC"
+        "No server data: client context reduced to a per-role allow-list; unknown roles fall back to PUBLIC",
+        "Durable limits: 20 per client per 10 min, 2,000 per day globally — Durable server-side limit before any provider call: public.consume_public_request_limit (atomic per-window upsert, Postgres row lock); per client (HMAC of user id or address) then global daily; 429 + Retry-After; limiter or storage failure 503 (fail closed)",
+        "Provider SDK automatic retries disabled (maxRetries 0): one counted request is at most one paid call",
+        "Malformed, oversized or cross-site requests are refused before any allowance is consumed"
       ],
       "openFindings": [
-        "No durable per-client or global request/spend limit: needs shared state (a Supabase migration on the protected path) — owner authorization required",
+        "Hosted migration 20261125120000_public_request_limits.sql not yet applied: until it is, the limiter fails closed (503) and the Copilot is unavailable — apply before deploying this change",
         "Provider-side workspace spend limit not verifiable from the repository (Anthropic Console, owner action)"
       ],
       "evidence": [
-        "tests/unit/assistantGuard.test.ts"
+        "tests/unit/assistantGuard.test.ts",
+        "tests/unit/publicRequestLimits.test.ts",
+        "scripts/test-public-request-limits-concurrency.mjs"
       ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/assistant/route.ts": "03c7ea8a514810f49c05c6a45a0491c0624cf475eec159e14a8efd765dd63500",
-        "lib/assistant/assistantHandler.ts": "7c4d57d5ddc6c60fe792b7bf4d7f2087f8727afc8188aea3f19b7e77d1b8095d",
-        "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f"
+        "app/api/assistant/route.ts": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
+        "lib/assistant/assistantHandler.ts": "5a3518e8e0049f8aa834a46317eeec938b5ae73bb6733db73abdcde7ce8df21f",
+        "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
+        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
       }
     },
     {
@@ -35,20 +41,25 @@
         "Same-origin only; cross-site 403 before parsing or any provider call",
         "Body capped at 4.5 MB while streaming (declared and actual), message 8,000 chars, first 10 files only; 413 before parsing",
         "INTAKE_EXTRACT_ENABLED=false off-switch 503 before parsing",
-        "Provider error text is logged server-side (bounded) and never returned"
+        "Provider error text is logged server-side (bounded) and never returned",
+        "Durable limits: 10 per client per hour, 300 per day globally — Durable server-side limit before any provider call: public.consume_public_request_limit (atomic per-window upsert, Postgres row lock); per client (HMAC of user id or address) then global daily; 429 + Retry-After; limiter or storage failure 503 (fail closed)"
       ],
       "openFindings": [
-        "No durable per-client or global request/spend limit (same shared-state migration as /api/assistant)"
+        "Hosted migration 20261125120000_public_request_limits.sql not yet applied: until it is, document pre-read fails closed (503) — apply before deploying this change",
+        "An Anthropic failure falls back to Groq: one counted request can reach two providers"
       ],
       "evidence": [
-        "tests/unit/intakeExtractGuard.test.ts"
+        "tests/unit/intakeExtractGuard.test.ts",
+        "tests/unit/publicRequestLimits.test.ts",
+        "scripts/test-public-request-limits-concurrency.mjs"
       ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/intake/extract/route.ts": "6c0e9e512f0fabfb59f2943dfaf3203498e5adc275c82260641d1de4ba2a95cc",
-        "lib/ai/intakeExtractHandler.ts": "d1b0926624bb2ade6ec772349cc03de561c274b46befb31106590a35031fea4b",
-        "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f"
+        "app/api/intake/extract/route.ts": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
+        "lib/ai/intakeExtractHandler.ts": "7c6adaeecd6f2110ee773819ea2e3de77f8e8cc75154cef1401e270009073dc2",
+        "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
+        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
       }
     },
     {
@@ -200,16 +211,25 @@
       "audience": "Anonymous clients submitting the public intake (creates the Matter, invoice and confirmation emails).",
       "controls": [
         "Public by design: the canonical Matter-creation entry point",
-        "On success binds the scoped intake_upload and intake_payment capabilities to the created Matter only (httpOnly, SameSite=Strict, 30 min)"
+        "On success binds the scoped intake_upload and intake_payment capabilities to the created Matter only (httpOnly, SameSite=Strict, 30 min)",
+        "Before any Matter, invoice, capability or email: foreign Origin 403; body 64 KB declared/actual 413; JSON object required 400",
+        "Durable limit: 5 submissions per client per hour (HMAC of user id or address) — Durable server-side limit before any provider call: public.consume_public_request_limit (atomic per-window upsert, Postgres row lock); per client (HMAC of user id or address) then global daily; 429 + Retry-After; limiter or storage failure 503 (fail closed)",
+        "Authorized operators (proxy /dashboard role rule) are exempt from the public per-client limit; a failed operator lookup is treated as not-an-operator",
+        "Every refusal returns success:false; nothing is reported received unless canonical intake persisted it"
       ],
       "openFindings": [
-        "No Origin check, body-size cap or per-client rate limit before Matter creation and client/operator email — mass submission can create Matters and send email to arbitrary addresses. Needs a per-client limiter (deals has no ip_hash; schema change required) — highest-priority open finding"
+        "Hosted migration 20261125120000_public_request_limits.sql not yet applied: until it is, public intake fails closed (503) — apply before deploying this change"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/unit/publicRequestLimits.test.ts",
+        "scripts/test-public-request-limits-concurrency.mjs"
+      ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/intake/route.ts": "27b1471b7e9b9ea2c25fd9f62face66981afcdcdde407daf093ae90d09824b7c"
+        "app/api/intake/route.ts": "5fa580e9df6dca9901af2654a52d8218a78585f49bc3a5e3c40bdc37efadbee2",
+        "lib/intake/intakeSubmissionGuard.ts": "d8164535d42aa9f18d3fae7aeefb97411b80a590e944bd8695ad81938efa8f1a",
+        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
       }
     },
     {

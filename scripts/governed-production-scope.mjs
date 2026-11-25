@@ -133,6 +133,12 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // (b) Wise read-only exchange rates for informational destination-currency
  //     estimates. No quotes, transfers or payments; USD invoice unchanged.
  'lib/wise/rates.ts','tests/unit/wiseFxRates.test.ts',
+ // 2026-11-25 owner decisions 1 (durable paid-AI abuse protection) and 2 (public
+ // intake abuse protection): migration implementation approved; applying it to the
+ // hosted database requires separate release approval. Exact path only. Additive
+ // table + service-role-only RPC. Regression: test:public-request-limits-concurrency,
+ // tests/unit/publicRequestLimits.test.ts.
+ 'supabase/migrations/20261125120000_public_request_limits.sql',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',

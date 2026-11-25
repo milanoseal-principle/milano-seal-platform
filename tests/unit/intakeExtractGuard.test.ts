@@ -6,15 +6,17 @@ import {
   MAX_EXTRACT_MESSAGE_CHARS,
   handleIntakeExtract,
 } from "@/lib/ai/intakeExtractHandler";
+import type { RequestLimitDecision } from "@/lib/security/publicRequestLimit";
 
 const ORIGIN = "https://www.themilanoseal.com";
 
-function deps(env: Record<string, string | undefined> = {}, fail?: Error) {
+function deps(env: Record<string, string | undefined> = {}, fail?: Error, limit?: (request: Request) => Promise<RequestLimitDecision>) {
   const seen = { parsed: 0, extracted: 0 };
   return {
     seen,
     deps: {
       env,
+      limit: limit ?? (async () => ({ allowed: true as const })),
       parseFiles: async (files: File[]) => {
         seen.parsed += files.length;
         return files.map((f) => ({ name: f.name, size: f.size, mime: f.type, ok: true, block: { type: "text", text: f.name } }));
@@ -92,4 +94,19 @@ test("provider failure text is never returned to the caller", async () => {
   } finally {
     console.error = original;
   }
+});
+
+test("durable limit: 429 with Retry-After before parsing; outage fails closed", async () => {
+  const limited = deps({}, undefined, async () => ({ allowed: false, status: 429, retryAfterSeconds: 120, bucket: "intake_extract" }));
+  const res = await handleIntakeExtract(form({ message: "hi" }), limited.deps);
+  assert.equal(res.status, 429);
+  assert.equal(res.headers.get("retry-after"), "120");
+  assert.equal((await res.json()).code, "INTAKE_EXTRACT_RATE_LIMITED");
+  assert.equal(limited.seen.parsed + limited.seen.extracted, 0);
+
+  const down = deps({}, undefined, async () => ({ allowed: false, status: 503 }));
+  const unavailable = await handleIntakeExtract(form({ message: "hi" }), down.deps);
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).code, "INTAKE_EXTRACT_LIMIT_UNAVAILABLE");
+  assert.equal(down.seen.parsed + down.seen.extracted, 0);
 });

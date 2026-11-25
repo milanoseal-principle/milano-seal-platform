@@ -5,9 +5,12 @@
 //   - owner off-switch:  INTAKE_EXTRACT_ENABLED=false  -> 503
 //   - cross-site caller (the intake page is same-origin) -> 403
 //   - oversized body (declared or actual) / message     -> 413
+//   - durable per-client / global daily limit           -> 429 + Retry-After
+//     (limiter unavailable -> 503: fail closed)
 // Provider error text is never returned to the caller.
 
 import { NextResponse } from "next/server";
+import { retryAfterHeaders, type RequestLimitDecision } from "@/lib/security/publicRequestLimit";
 import { isSameOriginRequest } from "@/lib/security/sameOriginRequest";
 
 /** Vercel's serverless request-body ceiling; larger bodies never reach us intact. */
@@ -19,6 +22,8 @@ const UNAVAILABLE = "Document reading is temporarily unavailable. You can contin
 
 export interface IntakeExtractDeps<Block> {
   env: Record<string, string | undefined>;
+  /** Durable per-client and global daily limit, consumed only for a request that reaches parsing/provider. */
+  limit: (request: Request) => Promise<RequestLimitDecision>;
   parseFiles: (files: File[]) => Promise<
     { name: string; size: number; mime: string; ok: boolean; error?: string; block: Block; textBlock?: Block }[]
   >;
@@ -85,6 +90,16 @@ export async function handleIntakeExtract<Block>(
   const fileEntries = formData.getAll("files").filter((f): f is File => typeof f === "object" && f !== null && "arrayBuffer" in f);
   if (!message.trim() && fileEntries.length === 0) {
     return refuse(400, "Provide either a message or at least one file", "INTAKE_EXTRACT_EMPTY");
+  }
+
+  // Durable limits last: malformed or oversized requests never consume a caller's allowance.
+  const decision = await deps.limit(request);
+  if (!decision.allowed) {
+    if (decision.status === 503) return refuse(503, UNAVAILABLE, "INTAKE_EXTRACT_LIMIT_UNAVAILABLE");
+    return NextResponse.json(
+      { ok: false, error: "Document reading is busy right now. You can continue your intake without it.", code: "INTAKE_EXTRACT_RATE_LIMITED" },
+      { status: 429, headers: { "Cache-Control": "no-store", ...retryAfterHeaders(decision) } },
+    );
   }
 
   const parsed = await deps.parseFiles(fileEntries.slice(0, MAX_EXTRACT_FILES));
