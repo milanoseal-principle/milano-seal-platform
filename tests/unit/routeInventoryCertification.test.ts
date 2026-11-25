@@ -249,3 +249,33 @@ test("proxy enforcement is part of the evidence fingerprint for proxy-covered ro
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("dependency graph honors exact tsconfig path aliases before the @/* fallback", () => {
+  const graph = lib.createGraph(root);
+  const pricing = graph.closure(["app/api/admin/pricing/quote/route.ts"]).modules;
+  assert.ok(pricing.includes("lib/pricing/canonicalFacade.ts"));
+  assert.ok(pricing.includes("lib/pricing/pricingComposer.ts"));
+
+  const dir = mkdtempSync(join(tmpdir(), "route-alias-"));
+  try {
+    mkdirSync(join(dir, "app/api/q"), { recursive: true });
+    mkdirSync(join(dir, "lib/price"), { recursive: true });
+    writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({
+      compilerOptions: { paths: { "@/lib/price": ["./lib/price/facade.ts"], "@/*": ["./*"] } },
+    }));
+    writeFileSync(join(dir, "app/api/q/route.ts"), 'import { calc } from "@/lib/price";\nexport function POST() { return calc(); }\n');
+    writeFileSync(join(dir, "lib/price.ts"), "export const legacy = 1;\n");
+    writeFileSync(join(dir, "lib/price/facade.ts"), "export const calc = () => 1;\n");
+    const hash = () => {
+      const g = lib.createGraph(dir);
+      const closure = g.closure(["app/api/q/route.ts"]);
+      return { modules: closure.modules, hash: g.fingerprint(closure) };
+    };
+    const before = hash();
+    assert.deepEqual(before.modules, ["app/api/q/route.ts", "lib/price/facade.ts"]);
+    writeFileSync(join(dir, "lib/price/facade.ts"), "export const calc = () => 0;\n");
+    assert.notEqual(hash().hash, before.hash);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

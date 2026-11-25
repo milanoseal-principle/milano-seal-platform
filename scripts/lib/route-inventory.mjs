@@ -181,15 +181,58 @@ export function evidenceRoots(sourcePath, ancestorLayouts, proxyApplies) {
 
 // ----------------------------------------------------- dependency graph
 
+const aliasCache = new Map();
+
+/**
+ * tsconfig.json compilerOptions.paths, resolved as TypeScript does: an exact
+ * (non-wildcard) pattern wins, otherwise the wildcard pattern with the longest
+ * prefix. E.g. "@/lib/pricing" -> lib/pricing/canonicalFacade.ts, not lib/pricing.ts.
+ */
+export function readPathAliases(root) {
+  if (aliasCache.has(root)) return aliasCache.get(root);
+  let paths = { "@/*": ["./*"] };
+  let baseUrl = ".";
+  const configPath = join(root, "tsconfig.json");
+  if (existsSync(configPath)) {
+    const { config, error } = ts.readConfigFile(configPath, ts.sys.readFile);
+    if (error) throw Error(`route-inventory: cannot read tsconfig.json paths (${ts.flattenDiagnosticMessageText(error.messageText, " ")})`);
+    if (config?.compilerOptions?.paths) paths = config.compilerOptions.paths;
+    if (config?.compilerOptions?.baseUrl) baseUrl = config.compilerOptions.baseUrl;
+  }
+  const aliases = Object.entries(paths).map(([pattern, targets]) => {
+    const star = pattern.indexOf("*");
+    return {
+      exact: star === -1,
+      prefix: star === -1 ? pattern : pattern.slice(0, star),
+      suffix: star === -1 ? "" : pattern.slice(star + 1),
+      targets: targets.map((t) => posix(join(baseUrl, t))),
+    };
+  });
+  aliasCache.set(root, aliases);
+  return aliases;
+}
+
+function aliasBases(root, spec) {
+  const aliases = readPathAliases(root);
+  const exact = aliases.find((a) => a.exact && a.prefix === spec);
+  if (exact) return exact.targets;
+  const wildcard = aliases
+    .filter((a) => !a.exact && spec.startsWith(a.prefix) && spec.endsWith(a.suffix) && spec.length >= a.prefix.length + a.suffix.length)
+    .sort((a, b) => b.prefix.length - a.prefix.length)[0];
+  if (!wildcard) return null;
+  const captured = spec.slice(wildcard.prefix.length, spec.length - wildcard.suffix.length);
+  return wildcard.targets.map((t) => t.replace("*", captured));
+}
+
 function resolveLocal(root, fromRel, spec) {
-  let base;
-  if (spec.startsWith("@/")) base = spec.slice(2);
-  else if (spec.startsWith(".")) base = posix(join(dirname(fromRel), spec));
-  else return null;
-  const candidates = [base, ...SOURCE_EXTS.map((e) => base + e), ...SOURCE_EXTS.map((e) => `${base}/index${e}`)];
-  for (const candidate of candidates) {
-    const abs = join(root, candidate);
-    if (existsSync(abs) && statSync(abs).isFile() && SOURCE_EXTS.some((e) => candidate.endsWith(e))) return candidate;
+  const bases = spec.startsWith(".") ? [posix(join(dirname(fromRel), spec))] : aliasBases(root, spec);
+  if (!bases) return null;
+  for (const base of bases) {
+    const candidates = [base, ...SOURCE_EXTS.map((e) => base + e), ...SOURCE_EXTS.map((e) => `${base}/index${e}`)];
+    for (const candidate of candidates) {
+      const abs = join(root, candidate);
+      if (existsSync(abs) && statSync(abs).isFile() && SOURCE_EXTS.some((e) => candidate.endsWith(e))) return candidate;
+    }
   }
   return null;
 }
@@ -222,7 +265,7 @@ export function createGraph(root) {
     for (const spec of importSpecifiers(readText(root, rel))) {
       const local = resolveLocal(root, rel, spec);
       if (local) entry.local.push(local);
-      else if (!spec.startsWith(".") && !spec.startsWith("@/")) {
+      else if (!spec.startsWith(".") && !aliasBases(root, spec)) {
         const pkg = packageName(spec);
         if (pkg) entry.packages.push(pkg);
       }
