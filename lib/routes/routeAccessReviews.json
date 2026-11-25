@@ -485,7 +485,7 @@
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/verify/[verificationId]/route.ts": "0a2d107a7af27751f6d29bcd54a9502fa43fcc9096fd0d96dbfaf99367947328"
+        "app/api/verify/[verificationId]/route.ts": "a7342593f6812717d9f277ec7db65d814b69a0abc29048e719a765006e279eca"
       }
     },
     {

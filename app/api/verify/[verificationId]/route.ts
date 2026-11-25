@@ -36,9 +36,10 @@ export async function GET(
         "verification_id, custody_ledger_hash, document_count, destination_country, document_type, release_status, released_at, public_summary, created_at"
       )
       .eq("verification_id", verificationId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) throw error;
+    if (!data) {
       return documentNotFound();
     }
 
@@ -97,9 +98,10 @@ export async function POST(
       .from("release_certificates")
       .select("deal_id,verification_hash,release_date,document_count,status,created_at")
       .eq("verification_hash", verificationId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) throw error;
+    if (!data) {
       return certificateNotFound();
     }
 
