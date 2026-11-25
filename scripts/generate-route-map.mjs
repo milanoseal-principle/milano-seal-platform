@@ -6,6 +6,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
+import {
+  INVENTORY_PATH,
+  buildRouteInventory,
+  serializeInventory,
+} from "./lib/route-inventory.mjs";
 
 const ROOT = process.cwd();
 const APP_DIR = join(ROOT, "app");
@@ -137,6 +142,11 @@ ${rows.map((row) => `| \`${escapeCell(row.route)}\` | ${escapeCell(row.kind)} | 
 - Live TIFF and Damiani acceptance remain mandatory after code/deployment validation.
 `;
 
+// Full route inventory + L0–L6 certification (lib/routes/routeRegistry.ts).
+// Every current app route file gets one record; see scripts/lib/route-inventory.mjs.
+const inventoryFile = join(ROOT, INVENTORY_PATH);
+const inventory = serializeInventory(await buildRouteInventory(ROOT));
+
 if (CHECK_MODE) {
   if (!existsSync(OUTPUT_FILE)) fail("docs/ROUTE_MAP.md does not exist; regenerate it");
   const existing = readFileSync(OUTPUT_FILE, "utf8");
@@ -145,10 +155,16 @@ if (CHECK_MODE) {
     console.error("Run: node scripts/generate-route-map.mjs");
     process.exit(1);
   }
-  console.log(`PASS route-map: ${rows.length} production-critical routes match source`);
+  if (!existsSync(inventoryFile) || readFileSync(inventoryFile, "utf8") !== inventory) {
+    console.error(`FAIL route-map: ${INVENTORY_PATH} does not match current app routes, access rules or certification evidence.`);
+    console.error("Run: node scripts/generate-route-map.mjs  (then review the diff: new/removed routes, access, level changes)");
+    process.exit(1);
+  }
+  console.log(`PASS route-map: ${rows.length} production-critical routes match source; route inventory matches source`);
   process.exit(0);
 }
 
 mkdirSync(dirname(OUTPUT_FILE), { recursive: true });
 writeFileSync(OUTPUT_FILE, generated, "utf8");
-console.log(`GENERATED docs/ROUTE_MAP.md from ${rows.length} production-critical routes`);
+writeFileSync(inventoryFile, inventory, "utf8");
+console.log(`GENERATED docs/ROUTE_MAP.md from ${rows.length} production-critical routes and ${INVENTORY_PATH}`);
