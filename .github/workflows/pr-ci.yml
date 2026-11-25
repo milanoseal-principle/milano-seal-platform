@@ -58,6 +58,9 @@ jobs:
       - name: Diff check
         run: git diff --check
 
+      - name: Canonical route inventory drift
+        run: node scripts/generate-route-map.mjs --check
+
       - name: Duplicate-source corruption gate
         run: npm run validate:duplicate-source
 
