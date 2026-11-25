@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         clientCtx.deal.id,
         code,
         user.email,
+        "client_invoice",
       )) as Record<string, unknown>;
     }
 

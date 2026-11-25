@@ -33,3 +33,28 @@ export async function writeEventLedger(input: EventLedgerInput) {
   if (error) return { error };
   return { data };
 }
+
+export async function writeMatterAuditEvent(input: EventLedgerInput) {
+  if (!input.matterId) return { skipped: true, reason: "missing_matter_id" };
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("matter_events")
+    .insert({
+      matter_id: input.matterId,
+      actor: input.actorEmail ?? input.actorUserId ?? null,
+      event_type: input.eventType,
+      notes: input.message ?? input.eventType,
+      client_visible: false,
+      metadata: {
+        ...input.metadata,
+        actor_user_id: input.actorUserId ?? null,
+        status_before: input.statusBefore ?? null,
+        status_after: input.statusAfter ?? null,
+      },
+    })
+    .select("id")
+    .single();
+
+  if (error) return { error };
+  return { data };
+}

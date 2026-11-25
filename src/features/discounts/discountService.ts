@@ -6,7 +6,7 @@ import {
   validateCodeRedeemable,
   type DiscountCode,
 } from "@/lib/discountCodes";
-import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
+import { writeEventLedger, writeMatterAuditEvent } from "@/src/features/audit/eventLedgerService";
 
 function money(value: number) {
   return Math.max(0, Math.round(value * 100) / 100);
@@ -120,6 +120,7 @@ export async function applyDiscountToMatter(
   matterId: string,
   rawCode: string,
   actorEmail?: string | null,
+  auditSource?: "client_invoice",
 ) {
   const supabase = createAdminClient();
   const matterResult = await getMatterById(matterId);
@@ -242,11 +243,12 @@ export async function applyDiscountToMatter(
 
   await invalidateAwaitingWiseInstructions(matterId, actorEmail);
 
-  await writeEventLedger({
+  const audit = await writeMatterAuditEvent({
     matterId,
     actorEmail,
     eventType: "DISCOUNT_APPLIED",
     metadata: {
+      ...(auditSource ? { source: auditSource } : {}),
       code: discount.code,
       discountCodeId: discount.id,
       appliesTo: discount.applies_to,
@@ -261,6 +263,9 @@ export async function applyDiscountToMatter(
       redemptionStatus: "not_redeemed",
     },
   });
+  if (audit.error) {
+    console.error("[discount] canonical applied-event write failed", { code: audit.error.code });
+  }
   return updated.data;
 }
 

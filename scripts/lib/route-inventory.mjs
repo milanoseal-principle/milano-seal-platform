@@ -23,6 +23,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import ts from "typescript";
 
 export const INVENTORY_PATH = "lib/routes/routeInventory.generated.json";
 export const EVIDENCE_PATH = "lib/routes/routeCertificationEvidence.json";
@@ -454,18 +455,33 @@ function exposureFor(access) {
   return "authenticated";
 }
 
-function methodsFor(kind, code) {
-  if (kind === "page") return ["GET"];
-  const found = new Set();
-  for (const m of code.matchAll(/export\s+(?:async\s+)?function\s+([A-Z]+)\b/g)) found.add(m[1]);
-  for (const m of code.matchAll(/export\s+(?:const|let|var)\s+([A-Z]+)\b/g)) found.add(m[1]);
-  for (const m of code.matchAll(/export\s*\{([^}]*)\}/g)) {
-    for (const part of m[1].split(",")) {
-      const name = part.trim().split(/\s+as\s+/).at(-1)?.trim();
-      if (name) found.add(name);
+/**
+ * Explicit HTTP method exports of a route handler, read from the TypeScript AST
+ * (named functions, variables and named re-exports; type-only exports and
+ * default exports excluded). Shared with scripts/generate-route-map.mjs so the
+ * route map and the registry can never disagree. Pages list no explicit methods.
+ */
+export function handlerMethods(fileName, source) {
+  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest);
+  const exported = new Set();
+  for (const statement of file.statements) {
+    if (ts.isExportDeclaration(statement)) {
+      const clause = statement.exportClause;
+      if (clause && ts.isNamedExports(clause) && !statement.isTypeOnly) {
+        for (const specifier of clause.elements) if (!specifier.isTypeOnly) exported.add(specifier.name.text);
+      }
+      continue;
+    }
+    if (!statement.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    if (statement.modifiers.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) continue;
+    if (ts.isFunctionDeclaration(statement) && statement.name) exported.add(statement.name.text);
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name)) exported.add(declaration.name.text);
+      }
     }
   }
-  return HTTP_METHODS.filter((method) => found.has(method));
+  return HTTP_METHODS.filter((method) => exported.has(method));
 }
 
 function lifecycleFor(url, registries, moduleMatch) {
@@ -607,7 +623,7 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
       kind,
       url,
       sourcePath,
-      methods: methodsFor(kind, code),
+      methods: kind === "api" ? handlerMethods(sourcePath, source) : [],
       dynamicParams: params,
       parent,
       canonicalModule,
