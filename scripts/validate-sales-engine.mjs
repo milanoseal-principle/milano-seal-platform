@@ -43,11 +43,26 @@ for (const p of ["app/countries/page.tsx", "app/map/page.tsx"]) {
   if (!c.includes("receiving-authority review")) fail(`${p} lacks "receiving-authority review"`);
 }
 
-// Sales capture API must not invent paid state and must parse email
-const api = read("app/api/sales/capture/route.ts");
-if (api) {
-  if (!/email/.test(api)) fail("sales capture API does not reference email");
-  if (/mark.?paid|payment_status\s*=\s*["']paid/.test(api)) fail("sales capture API touches paid state");
+// Verify the effective public sales-capture handler, not just its thin route
+// wrapper. PR #537 delegated parsing, persistence and abuse controls into
+// lib/acquisition/salesCapture.ts; scanning only the wrapper is a false failure.
+const salesRoute = read("app/api/sales/capture/route.ts");
+if (salesRoute) {
+  const delegatesCapture =
+    /from\s*["']@\/lib\/acquisition\/salesCapture["']/.test(salesRoute) &&
+    /\breceiveSalesCapture\s*\(\s*request\s*\)/.test(salesRoute);
+  const handler = delegatesCapture ? read("lib/acquisition/salesCapture.ts") : salesRoute;
+
+  if (delegatesCapture && !handler) {
+    fail("sales capture delegates to a missing handler");
+  } else {
+    if (!/\bbody\.email\b/.test(handler) || !/\bif\s*\(\s*!email\s*\)/.test(handler)) {
+      fail("sales capture handler must parse and require an email");
+    }
+    if (/mark.?paid|payment_status\s*=\s*["']paid/.test(salesRoute + "\n" + handler)) {
+      fail("sales capture API touches paid state");
+    }
+  }
 }
 
 // Access invoice route (if present) must use a Wise reference format
