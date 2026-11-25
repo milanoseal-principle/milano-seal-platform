@@ -155,20 +155,20 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/alliance/partner` | API | GET, POST | `app/api/alliance/partner/route.ts` | L1 |
 | `/api/alliance/referrals/review` | API | POST | `app/api/alliance/referrals/review/route.ts` | L1 |
 | `/api/alliance/referrals` | API | GET, POST | `app/api/alliance/referrals/route.ts` | L1 |
-| `/api/alliance/submit` | API | POST | `app/api/alliance/submit/route.ts` | L0 |
-| `/api/assistant` | API | POST | `app/api/assistant/route.ts` | L0 |
+| `/api/alliance/submit` | API | POST | `app/api/alliance/submit/route.ts` | L1 |
+| `/api/assistant` | API | POST | `app/api/assistant/route.ts` | L1 |
 | `/api/auth/login` | API | POST | `app/api/auth/login/route.ts` | L1 |
 | `/api/auth/password/reset-request` | API | POST | `app/api/auth/password/reset-request/route.ts` | L1 |
 | `/api/auth/signout` | API | POST | `app/api/auth/signout/route.ts` | L1 |
 | `/api/auth/signup` | API | POST | `app/api/auth/signup/route.ts` | L1 |
-| `/api/compliance/[jurisdiction]` | API | GET | `app/api/compliance/[jurisdiction]/route.ts` | L0 |
-| `/api/compliance/country/[country]` | API | GET | `app/api/compliance/country/[country]/route.ts` | L0 |
+| `/api/compliance/[jurisdiction]` | API | GET | `app/api/compliance/[jurisdiction]/route.ts` | L1 |
+| `/api/compliance/country/[country]` | API | GET | `app/api/compliance/country/[country]/route.ts` | L1 |
 | `/api/compliance/intelligence` | API | GET | `app/api/compliance/intelligence/route.ts` | L1 |
 | `/api/compliance/list/[code]` | API | GET | `app/api/compliance/list/[code]/route.ts` | L1 |
 | `/api/compliance/list` | API | GET | `app/api/compliance/list/route.ts` | L1 |
 | `/api/complimentary/report` | API | GET | `app/api/complimentary/report/route.ts` | L1 |
-| `/api/concierge` | API | POST | `app/api/concierge/route.ts` | L0 |
-| `/api/counsel` | API | POST | `app/api/counsel/route.ts` | L0 |
+| `/api/concierge` | API | POST | `app/api/concierge/route.ts` | L1 |
+| `/api/counsel` | API | POST | `app/api/counsel/route.ts` | L1 |
 | `/api/courier/active` | API | GET | `app/api/courier/active/route.ts` | L1 |
 | `/api/courier/labels` | API | POST | `app/api/courier/labels/route.ts` | L1 |
 | `/api/courier/rates` | API | POST | `app/api/courier/rates/route.ts` | L1 |
@@ -278,7 +278,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/dashboard/va/tasks` | API | GET | `app/api/dashboard/va/tasks/route.ts` | L1 |
 | `/api/dashboard/witness-network` | API | GET, POST | `app/api/dashboard/witness-network/route.ts` | L1 |
 | `/api/deals/[id]/activity` | API | GET | `app/api/deals/[id]/activity/route.ts` | L1 |
-| `/api/deals/[id]/apostille` | API | POST | `app/api/deals/[id]/apostille/route.ts` | L0 |
+| `/api/deals/[id]/apostille` | API | POST | `app/api/deals/[id]/apostille/route.ts` | L1 |
 | `/api/deals/[id]/apply-discount` | API | POST, DELETE | `app/api/deals/[id]/apply-discount/route.ts` | L1 |
 | `/api/deals/[id]/custody` | API | GET | `app/api/deals/[id]/custody/route.ts` | L1 |
 | `/api/deals/[id]/execute` | API | POST | `app/api/deals/[id]/execute/route.ts` | L1 |
@@ -314,13 +314,13 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/health/database` | API | GET | `app/api/health/database/route.ts` | L1 |
 | `/api/health/dispatch` | API | GET | `app/api/health/dispatch/route.ts` | L1 |
 | `/api/health/payment` | API | GET | `app/api/health/payment/route.ts` | L1 |
-| `/api/health` | API | GET | `app/api/health/route.ts` | L0 |
+| `/api/health` | API | GET | `app/api/health/route.ts` | L1 |
 | `/api/health/storage` | API | GET | `app/api/health/storage/route.ts` | L1 |
 | `/api/health/webhooks` | API | GET | `app/api/health/webhooks/route.ts` | L1 |
-| `/api/intake/analytics` | API | POST | `app/api/intake/analytics/route.ts` | L0 |
-| `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L0 |
-| `/api/intake/quote-preview` | API | POST | `app/api/intake/quote-preview/route.ts` | L0 |
-| `/api/intake` | API | POST | `app/api/intake/route.ts` | L0 |
+| `/api/intake/analytics` | API | POST | `app/api/intake/analytics/route.ts` | L1 |
+| `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L1 |
+| `/api/intake/quote-preview` | API | POST | `app/api/intake/quote-preview/route.ts` | L1 |
+| `/api/intake` | API | POST | `app/api/intake/route.ts` | L1 |
 | `/api/intake/upload` | API | POST | `app/api/intake/upload/route.ts` | L1 |
 | `/api/intel` | API | GET, POST | `app/api/intel/route.ts` | L1 |
 | `/api/intelligence/generate` | API | POST | `app/api/intelligence/generate/route.ts` | L1 |
@@ -332,13 +332,13 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/matters/[matterId]/complimentary/request` | API | POST | `app/api/matters/[matterId]/complimentary/request/route.ts` | L1 |
 | `/api/matters/[matterId]/complimentary/revoke` | API | POST | `app/api/matters/[matterId]/complimentary/revoke/route.ts` | L1 |
 | `/api/matters/[matterId]/complimentary` | API | GET | `app/api/matters/[matterId]/complimentary/route.ts` | L1 |
-| `/api/notary/apply` | API | POST | `app/api/notary/apply/route.ts` | L0 |
+| `/api/notary/apply` | API | POST | `app/api/notary/apply/route.ts` | L1 |
 | `/api/notary/credentials` | API | GET, PATCH | `app/api/notary/credentials/route.ts` | L1 |
-| `/api/policy/active/[id]` | API | GET | `app/api/policy/active/[id]/route.ts` | L0 |
-| `/api/policy/active` | API | GET | `app/api/policy/active/route.ts` | L0 |
+| `/api/policy/active/[id]` | API | GET | `app/api/policy/active/[id]/route.ts` | L1 |
+| `/api/policy/active` | API | GET | `app/api/policy/active/route.ts` | L1 |
 | `/api/portal/assistant` | API | POST | `app/api/portal/assistant/route.ts` | L1 |
-| `/api/portal/check-email` | API | GET, POST | `app/api/portal/check-email/route.ts` | L0 |
-| `/api/portal/confirm` | API | POST | `app/api/portal/confirm/route.ts` | L0 |
+| `/api/portal/check-email` | API | GET, POST | `app/api/portal/check-email/route.ts` | L1 |
+| `/api/portal/confirm` | API | POST | `app/api/portal/confirm/route.ts` | L1 |
 | `/api/portal/files/[id]/download` | API | GET | `app/api/portal/files/[id]/download/route.ts` | L1 |
 | `/api/portal/files` | API | GET | `app/api/portal/files/route.ts` | L1 |
 | `/api/portal/me/certificate` | API | GET | `app/api/portal/me/certificate/route.ts` | L1 |
@@ -359,23 +359,23 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/portal/me/timeline` | API | GET | `app/api/portal/me/timeline/route.ts` | L1 |
 | `/api/portal/me/tracking` | API | GET | `app/api/portal/me/tracking/route.ts` | L1 |
 | `/api/portal/me/upload` | API | POST | `app/api/portal/me/upload/route.ts` | L1 |
-| `/api/portal/verify` | API | POST | `app/api/portal/verify/route.ts` | L0 |
+| `/api/portal/verify` | API | POST | `app/api/portal/verify/route.ts` | L1 |
 | `/api/pricing/quote` | API | POST | `app/api/pricing/quote/route.ts` | L1 |
-| `/api/pricing/request` | API | POST | `app/api/pricing/request/route.ts` | L0 |
-| `/api/pricing/request/upload` | API | POST | `app/api/pricing/request/upload/route.ts` | L0 |
+| `/api/pricing/request` | API | POST | `app/api/pricing/request/route.ts` | L1 |
+| `/api/pricing/request/upload` | API | POST | `app/api/pricing/request/upload/route.ts` | L1 |
 | `/api/professional/account` | API | GET, PATCH | `app/api/professional/account/route.ts` | L1 |
 | `/api/professional/handoff` | API | POST | `app/api/professional/handoff/route.ts` | L1 |
 | `/api/professional/matters` | API | GET, POST | `app/api/professional/matters/route.ts` | L1 |
-| `/api/professional/profile` | API | POST | `app/api/professional/profile/route.ts` | L0 |
+| `/api/professional/profile` | API | POST | `app/api/professional/profile/route.ts` | L1 |
 | `/api/public/payment-status` | API | GET | `app/api/public/payment-status/route.ts` | L1 |
 | `/api/revenue/intelligence` | API | GET | `app/api/revenue/intelligence/route.ts` | L1 |
 | `/api/review-requests/[id]/link-matter` | API | POST | `app/api/review-requests/[id]/link-matter/route.ts` | L1 |
 | `/api/review-requests/[id]` | API | PATCH | `app/api/review-requests/[id]/route.ts` | L1 |
 | `/api/review-requests` | API | GET, POST | `app/api/review-requests/route.ts` | L1 |
-| `/api/reviews/request` | API | POST | `app/api/reviews/request/route.ts` | L0 |
+| `/api/reviews/request` | API | POST | `app/api/reviews/request/route.ts` | L1 |
 | `/api` | API | POST | `app/api/route.ts` | L1 |
 | `/api/runStep` | API | POST | `app/api/runStep/route.ts` | L1 |
-| `/api/sales/capture` | API | POST | `app/api/sales/capture/route.ts` | L0 |
+| `/api/sales/capture` | API | POST | `app/api/sales/capture/route.ts` | L1 |
 | `/api/shipping/create-label/[id]` | API | POST | `app/api/shipping/create-label/[id]/route.ts` | L1 |
 | `/api/tools/courier` | API | POST | `app/api/tools/courier/route.ts` | L1 |
 | `/api/tools/embassy` | API | POST | `app/api/tools/embassy/route.ts` | L1 |
@@ -401,10 +401,10 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/va/tasks/[id]` | API | GET | `app/api/va/tasks/[id]/route.ts` | L1 |
 | `/api/va/tasks` | API | GET | `app/api/va/tasks/route.ts` | L1 |
 | `/api/va/uploads` | API | GET | `app/api/va/uploads/route.ts` | L1 |
-| `/api/verify/[verificationId]` | API | GET, POST | `app/api/verify/[verificationId]/route.ts` | L0 |
-| `/api/webhooks/alliance/credential` | API | GET, POST | `app/api/webhooks/alliance/credential/route.ts` | L0 |
-| `/api/webhooks/alliance/job` | API | GET, POST | `app/api/webhooks/alliance/job/route.ts` | L0 |
-| `/api/webhooks/alliance/toolbelt` | API | GET, POST | `app/api/webhooks/alliance/toolbelt/route.ts` | L0 |
+| `/api/verify/[verificationId]` | API | GET, POST | `app/api/verify/[verificationId]/route.ts` | L1 |
+| `/api/webhooks/alliance/credential` | API | GET, POST | `app/api/webhooks/alliance/credential/route.ts` | L1 |
+| `/api/webhooks/alliance/job` | API | GET, POST | `app/api/webhooks/alliance/job/route.ts` | L1 |
+| `/api/webhooks/alliance/toolbelt` | API | GET, POST | `app/api/webhooks/alliance/toolbelt/route.ts` | L1 |
 | `/api/webhooks/bluenotary` | API | GET, POST | `app/api/webhooks/bluenotary/route.ts` | L1 |
 | `/api/webhooks/resend` | API | POST | `app/api/webhooks/resend/route.ts` | L1 |
 | `/api/webhooks/wise` | API | GET, POST | `app/api/webhooks/wise/route.ts` | L1 |

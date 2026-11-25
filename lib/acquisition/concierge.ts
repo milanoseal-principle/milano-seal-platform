@@ -33,7 +33,8 @@ type Dependencies = {
   hashIp: (headers: Headers) => string;
 };
 
-function hashClientIp(headers: Headers) {
+/** HMAC of the caller's address; the shared per-IP key for public lead forms (sales_leads.ip_hash). */
+export function hashClientIp(headers: Headers) {
   const address = headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || headers.get("x-real-ip")
     || "unknown";
