@@ -16,6 +16,10 @@ const PROTECTED_PREFIXES = [
   "/api/admin",
   "/api/dashboard",
   "/api/follow-ups",
+  // Operator-only intelligence APIs: /api/intelligence/generate calls a paid
+  // model provider; /api/intel reads and writes document event history.
+  "/api/intelligence",
+  "/api/intel",
   "/api/compliance/list",
   "/api/portal/me",
   "/api/va",
@@ -150,7 +154,11 @@ export async function proxy(request: NextRequest) {
       pathname === "/api/admin" ||
       pathname.startsWith("/api/admin/") ||
       pathname === "/api/follow-ups" ||
-      pathname.startsWith("/api/follow-ups/")) &&
+      pathname.startsWith("/api/follow-ups/") ||
+      pathname === "/api/intel" ||
+      pathname.startsWith("/api/intel/") ||
+      pathname === "/api/intelligence" ||
+      pathname.startsWith("/api/intelligence/")) &&
     !isRouteAllowedForRole("/dashboard", role)
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -66,8 +66,27 @@ function safeJson<T>(text: string, fallback: T): T {
   }
 }
 
+/** Bounded input: refuse oversized bodies before parsing or any provider call. */
+const MAX_GENERATE_BODY_BYTES = 16 * 1024;
+
+// Operator-only: proxy.ts rejects anonymous (401) and non-operator (403)
+// callers before this handler runs, so no request reaches the model provider
+// without an authorized operator session.
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as Body;
+  const declared = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > MAX_GENERATE_BODY_BYTES) {
+    return NextResponse.json({ ok: false, error: "payload_too_large" }, { status: 413 });
+  }
+  const raw = await req.text().catch(() => "");
+  if (raw.length > MAX_GENERATE_BODY_BYTES) {
+    return NextResponse.json({ ok: false, error: "payload_too_large" }, { status: 413 });
+  }
+  let body: Body = {};
+  try {
+    body = raw ? (JSON.parse(raw) as Body) : {};
+  } catch {
+    body = {};
+  }
   const mode = body.mode;
   if (mode !== "dm" && mode !== "content" && mode !== "lead_score") {
     return NextResponse.json({ ok: false, error: "invalid_mode" }, { status: 400 });
