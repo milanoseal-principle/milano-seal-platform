@@ -71,7 +71,10 @@ export function Header() {
     document.body.style.overflow = "hidden";
 
     const focusTimer = window.setTimeout(() => {
-      mobileMenuRef.current?.querySelector<HTMLElement>("button, a[href]")?.focus();
+      const menu = mobileMenuRef.current;
+      if (menu && !menu.contains(document.activeElement)) {
+        menu.querySelector<HTMLElement>("button, a[href]")?.focus();
+      }
     }, reducedMotion ? 0 : 120);
 
     function handleKeyDown(event: KeyboardEvent) {
