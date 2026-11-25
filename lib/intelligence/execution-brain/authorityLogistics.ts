@@ -14,7 +14,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { MATTER_STATES } from "@/data/matter-state-machine";
 import { validateMilanoShippingAddress } from "@/lib/shippo/address";
 import { APPROVED_CARRIERS, filterApprovedRates } from "@/lib/shippo/carrierPolicy";
-import { rankApprovedRates, type RankedShippoRate } from "@/lib/shippo/rateSelection";
+import {
+  partitionComparableRates,
+  RATE_COMPARISON_CURRENCY,
+  rankApprovedRates,
+  type RankedShippoRate,
+} from "@/lib/shippo/rateSelection";
 import type { ShippoAddress, ShippoRate } from "@/lib/shippo/types";
 import type { AuthorityPacketProjection } from "./authorityPacket";
 
@@ -71,6 +76,9 @@ export interface ShipmentLegRow {
   custody_status: LegCustodyStatus;
   provider_evidence: Record<string, unknown>;
   exception_reason?: string | null;
+  /** Immutable identity of the current purchase claim (set only on entering purchase_pending). */
+  label_claim_id?: string | null;
+  label_claimed_at?: string | null;
   label_created_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
@@ -118,7 +126,9 @@ export type LegGateCode =
   | "FINAL_PAYMENT_REQUIRED"
   | "RELEASE_GATE_NOT_SATISFIED"
   | "FINAL_DESTINATION_MISMATCH"
-  | "EXCEPTION_REASON_REQUIRED";
+  | "EXCEPTION_REASON_REQUIRED"
+  | "RATE_EXPIRED"
+  | "COURIER_CURRENCY_REVIEW_REQUIRED";
 
 export interface LegGateResult {
   allowed: boolean;
@@ -235,6 +245,29 @@ export function evaluateShipmentLegReadiness(input: LegReadinessInput): LegGateR
 }
 
 /**
+ * Milano governance window for a persisted rate snapshot. A snapshot older
+ * than this must be re-quoted before purchase: provider rates can change or
+ * expire, and an old snapshot is not current evidence of the price Milano
+ * approved. This is Milano policy, not a provider guarantee of validity.
+ */
+export const RATE_SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Freshness + governed-currency checks on the exact snapshot to be purchased. */
+export function rateSnapshotChecks(
+  snapshot: Pick<RateSnapshot, "selected_at" | "currency"> | null | undefined,
+  now: Date = new Date(),
+): Array<[boolean, LegGateCode, string]> {
+  if (!snapshot) return [];
+  const selectedAt = Date.parse(String(snapshot.selected_at ?? ""));
+  const fresh = Number.isFinite(selectedAt) && now.getTime() - selectedAt <= RATE_SNAPSHOT_MAX_AGE_MS && selectedAt <= now.getTime() + 60_000;
+  const currencyOk = String(snapshot.currency ?? "").trim().toUpperCase() === RATE_COMPARISON_CURRENCY;
+  return [
+    [fresh, "RATE_EXPIRED", "The selected rate snapshot is older than the governed 24-hour window; re-quote before purchase."],
+    [currencyOk, "COURIER_CURRENCY_REVIEW_REQUIRED", `The selected rate is not in ${RATE_COMPARISON_CURRENCY}; courier credit and cost review is required.`],
+  ];
+}
+
+/**
  * GENERATE RETURN LABEL gate. Any missing prerequisite yields
  * RETURN_LABEL_REVIEW_REQUIRED; success is never fabricated.
  */
@@ -243,6 +276,7 @@ export function evaluateReturnLabelReadiness(input: {
   matterId: string;
   packet: Pick<AuthorityPacketProjection, "packetStatus" | "returnShippingRequired"> | null;
   explicitRequest: boolean;
+  now?: Date;
 }): LegGateResult {
   const { leg, packet } = input;
   const result = gate([
@@ -256,6 +290,7 @@ export function evaluateReturnLabelReadiness(input: {
     ],
     [input.explicitRequest, "RETURN_LABEL_REVIEW_REQUIRED", "The operator must explicitly request the return label."],
     [leg.label_status === "rate_selected" && Boolean(leg.rate_snapshot), "RETURN_LABEL_REVIEW_REQUIRED", "A governed rate snapshot must be selected before purchase."],
+    ...rateSnapshotChecks(leg.rate_snapshot, input.now),
   ]);
   return result;
 }
@@ -266,10 +301,12 @@ export function evaluateLabelPurchaseReadiness(input: {
   matterId: string;
   operatorAuthorized: boolean;
   currentGate: LegGateResult;
+  now?: Date;
 }): LegGateResult {
   return gate([
     [input.leg.matter_id === input.matterId, "OPERATOR_REQUEST_REQUIRED", "The leg is not linked to this Matter."],
     [input.leg.label_status === "rate_selected" && Boolean(input.leg.rate_snapshot), "RETURN_LABEL_REVIEW_REQUIRED", "No persisted rate snapshot; a label cannot be purchased."],
+    ...rateSnapshotChecks(input.leg.rate_snapshot, input.now),
     [input.operatorAuthorized, "OPERATOR_REQUEST_REQUIRED", "Explicit operator authorization is required to purchase a label."],
     [input.currentGate.allowed, input.currentGate.code ?? "OPERATOR_REQUEST_REQUIRED", input.currentGate.reasons.join(" ") || "The leg gate no longer passes."],
   ]);
@@ -293,6 +330,20 @@ export function selectGovernedRate(input: {
     lane: input.lane,
     destinationCountry: input.destinationCountry,
   });
+  if (input.selectedRateId && !ranked.some((entry) => entry.rate.object_id === input.selectedRateId)) {
+    // An approved-carrier rate that was excluded for currency/amount is a
+    // review case, not an unapproved carrier.
+    const excluded = partitionComparableRates(filterApprovedRates(input.rates)).excluded.find(
+      (entry) => entry.rate.object_id === input.selectedRateId,
+    );
+    if (excluded) {
+      return {
+        ranked,
+        snapshot: null,
+        error: excluded.reason === "CURRENCY_REVIEW_REQUIRED" ? "COURIER_CURRENCY_REVIEW_REQUIRED" : "SHIPPO_RATE_UNAVAILABLE",
+      };
+    }
+  }
   if (ranked.length === 0) return { ranked, snapshot: null, error: "NO_APPROVED_CARRIER_RATE" };
   const chosen = input.selectedRateId ? ranked.find((entry) => entry.rate.object_id === input.selectedRateId) : ranked[0];
   if (!chosen) return { ranked, snapshot: null, error: "SELECTED_RATE_NOT_APPROVED" };
@@ -436,8 +487,198 @@ export function publicShipmentLegProjection(leg: ShipmentLegRow, options: { trac
   };
 }
 
+// ── Purchase-attempt binding and reconciliation (no purchase ever happens here) ──
+
+/**
+ * A label purchase attempt is identified by (Matter, leg, persisted rate,
+ * claim). The claim identity (label_claim_id + label_claimed_at) is stamped by
+ * a database trigger only on the transition into purchase_pending and is
+ * immutable while pending — unlike updated_at, which tracking webhooks for an
+ * earlier (voided) label can still change. Every purchase carries this
+ * correlation reference as provider metadata.
+ */
+export function purchaseCorrelationRef(matterId: string, legId: string): string {
+  return `matter:${matterId};leg:${legId}`;
+}
+
+/**
+ * Reconciliation opens only once the attempt cannot still be in flight. The
+ * provider call is hard-bounded (60s) and this window is far longer, so a
+ * concurrent operator can never unlock a leg whose purchase is still running.
+ */
+export const RECONCILE_MIN_PENDING_MS = 15 * 60 * 1000;
+
+type ClaimFields = Pick<ShipmentLegRow, "label_status" | "label_claim_id" | "label_claimed_at">;
+
+/** Claim time of the current attempt; null (fail closed) without a stamped claim identity. */
+export function purchaseAttemptClaimedAt(leg: ClaimFields): number | null {
+  if (leg.label_status !== "purchase_pending" || !leg.label_claim_id) return null;
+  const at = Date.parse(String(leg.label_claimed_at ?? ""));
+  return Number.isFinite(at) ? at : null;
+}
+
+export function reconciliationWindowOpen(leg: ClaimFields, now: Date = new Date()): boolean {
+  const claimedAt = purchaseAttemptClaimedAt(leg);
+  return claimedAt !== null && now.getTime() - claimedAt >= RECONCILE_MIN_PENDING_MS;
+}
+
+export interface PurchaseAttemptBinding {
+  matterId: string;
+  legId: string;
+  rateId: string;
+  claimedAt: number;
+}
+
+export interface ProviderTransactionFacts {
+  object_id?: string;
+  rate?: string;
+  metadata?: string;
+  object_created?: string;
+  status?: string;
+}
+
+/**
+ * A provider transaction belongs to the CURRENT attempt only if it bought the
+ * persisted rate, carries this leg's correlation metadata and was created at
+ * or after this attempt's claim. A transaction from an earlier attempt on the
+ * same rate is rejected. Missing facts fail closed.
+ */
+export function transactionBelongsToAttempt(txn: ProviderTransactionFacts, binding: PurchaseAttemptBinding): boolean {
+  const created = Date.parse(String(txn.object_created ?? ""));
+  return (
+    Boolean(txn.object_id) &&
+    txn.rate === binding.rateId &&
+    String(txn.metadata ?? "") === purchaseCorrelationRef(binding.matterId, binding.legId) &&
+    Number.isFinite(created) &&
+    created >= binding.claimedAt
+  );
+}
+
+/** Same leg (rate + correlation) regardless of attempt — used to refuse a no-purchase attestation. */
+function transactionTouchesLeg(txn: ProviderTransactionFacts, binding: PurchaseAttemptBinding): boolean {
+  return txn.rate === binding.rateId || String(txn.metadata ?? "") === purchaseCorrelationRef(binding.matterId, binding.legId);
+}
+
+export type ProviderScanResult =
+  | { outcome: "FOUND"; transactions: ProviderTransactionFacts[] }
+  | { outcome: "NONE_SINCE_CLAIM" }
+  | { outcome: "INCOMPLETE"; reason: string };
+
+/**
+ * Evaluates provider transaction pages (newest first) for a reconciliation.
+ * NONE_SINCE_CLAIM is returned only when the scan provably covered every
+ * transaction created since the claim: pages must be in non-increasing
+ * creation order and the scan must reach a transaction older than the claim
+ * or the end of the list. Anything else is INCOMPLETE (fail closed).
+ */
+export function evaluateProviderTransactionScan(
+  pages: Array<{ results: ProviderTransactionFacts[]; next?: string | null }>,
+  binding: PurchaseAttemptBinding,
+): ProviderScanResult {
+  const found: ProviderTransactionFacts[] = [];
+  let previous = Number.POSITIVE_INFINITY;
+  for (const [index, page] of pages.entries()) {
+    // Validate the whole page's ordering BEFORE any early exit: an
+    // oldest-first page must never yield a false "none since claim".
+    const stamps = (page.results ?? []).map((txn) => Date.parse(String(txn.object_created ?? "")));
+    if (stamps.some((stamp) => !Number.isFinite(stamp))) return { outcome: "INCOMPLETE", reason: "A provider transaction has no creation time." };
+    for (const stamp of stamps) {
+      if (stamp > previous) return { outcome: "INCOMPLETE", reason: "Provider transactions are not ordered newest-first." };
+      previous = stamp;
+    }
+    for (const [position, txn] of (page.results ?? []).entries()) {
+      const created = stamps[position];
+      if (created < binding.claimedAt) {
+        return found.length > 0 ? { outcome: "FOUND", transactions: found } : { outcome: "NONE_SINCE_CLAIM" };
+      }
+      if (transactionTouchesLeg(txn, binding)) found.push(txn);
+    }
+    const lastPage = index === pages.length - 1;
+    if (!page.next) return found.length > 0 ? { outcome: "FOUND", transactions: found } : { outcome: "NONE_SINCE_CLAIM" };
+    if (lastPage) break;
+  }
+  if (found.length > 0) return { outcome: "FOUND", transactions: found };
+  return { outcome: "INCOMPLETE", reason: "The provider scan did not reach the purchase claim time." };
+}
+
+// ── Exception autopilot (detection only; never purchases, re-routes or closes) ──
+
+export type ShipmentLegExceptionCode =
+  | "PURCHASE_IN_PROGRESS"
+  | "PURCHASE_OUTCOME_UNKNOWN"
+  | "LABEL_PURCHASE_FAILED"
+  | "RATE_EXPIRED"
+  | "COURIER_CURRENCY_REVIEW_REQUIRED"
+  | "TRACKING_NOT_REGISTERED"
+  | "TRACKING_STALE"
+  | "RETURN_TO_SENDER"
+  | "DELIVERY_EXCEPTION";
+
+export interface ShipmentLegException {
+  code: ShipmentLegExceptionCode;
+  action: string;
+}
+
+/** Carrier movement with no verified tracking event for this long is flagged. */
+export const TRACKING_STALE_AFTER_MS = 5 * 24 * 60 * 60 * 1000;
+const MOVING: ReadonlySet<LegCustodyStatus> = new Set(["carrier_accepted", "final_handoff", "in_transit", "return_in_transit"]);
+
+/**
+ * Derives actionable operator exceptions from persisted leg evidence. Pure
+ * and read-only: it never changes custody, never purchases a replacement
+ * label, never changes a destination and never completes a Matter.
+ */
+export function detectShipmentLegExceptions(
+  leg: Pick<
+    ShipmentLegRow,
+    "label_status" | "rate_snapshot" | "tracking_number" | "tracking_status" | "custody_status" | "provider_evidence" | "label_created_at" | "delivered_at" | "label_claim_id" | "label_claimed_at"
+  >,
+  now: Date = new Date(),
+): ShipmentLegException[] {
+  const out: ShipmentLegException[] = [];
+  const evidence = (leg.provider_evidence ?? {}) as Record<string, unknown>;
+  const lastTracking = (evidence.last_tracking ?? null) as { status?: string; status_date?: string } | null;
+
+  if (leg.label_status === "purchase_pending") {
+    out.push(
+      reconciliationWindowOpen(leg, now)
+        ? { code: "PURCHASE_OUTCOME_UNKNOWN", action: "Reconcile against the provider transaction before any further purchase. Do not retry blindly." }
+        : { code: "PURCHASE_IN_PROGRESS", action: "A purchase attempt may still be running. Reconciliation opens 15 minutes after the attempt started." },
+    );
+  }
+  if (leg.label_status === "rate_selected") {
+    if (evidence.last_purchase_failure) {
+      out.push({ code: "LABEL_PURCHASE_FAILED", action: "Review the provider rejection, then re-quote or select an approved alternative." });
+    }
+    for (const [ok, code] of rateSnapshotChecks(leg.rate_snapshot, now)) {
+      if (!ok && (code === "RATE_EXPIRED" || code === "COURIER_CURRENCY_REVIEW_REQUIRED")) {
+        out.push({
+          code,
+          action: code === "RATE_EXPIRED" ? "Re-quote the leg; the persisted rate is outside the governed window." : "Review the non-USD rate before purchase.",
+        });
+      }
+    }
+  }
+  if (leg.label_status === "created" && !leg.tracking_number) {
+    out.push({ code: "TRACKING_NOT_REGISTERED", action: "Confirm the carrier tracking number with the provider and register tracking." });
+  }
+  const rawStatus = String(lastTracking?.status ?? leg.tracking_status ?? "").toUpperCase();
+  if (rawStatus === "RETURNED") {
+    out.push({ code: "RETURN_TO_SENDER", action: "Confirm packet custody on return. Any replacement shipment is a new governed leg." });
+  } else if (leg.custody_status === "exception" || rawStatus === "FAILURE") {
+    out.push({ code: "DELIVERY_EXCEPTION", action: "Contact the carrier and the recipient. The exception stays open until resolved with evidence." });
+  }
+  if (leg.label_status === "created" && MOVING.has(leg.custody_status) && !leg.delivered_at) {
+    const last = Date.parse(String(lastTracking?.status_date ?? leg.label_created_at ?? ""));
+    if (Number.isFinite(last) && now.getTime() - last > TRACKING_STALE_AFTER_MS) {
+      out.push({ code: "TRACKING_STALE", action: "No verified carrier update in 5 days. Open a carrier trace; do not assume delivery." });
+    }
+  }
+  return out;
+}
+
 /** Operator projection: everything except the raw label URL and provider secrets. */
-export function operatorShipmentLegProjection(leg: ShipmentLegRow) {
+export function operatorShipmentLegProjection(leg: ShipmentLegRow, now: Date = new Date()) {
   const evidence = leg.provider_evidence ?? {};
   const label = (evidence.label ?? {}) as Record<string, unknown>;
   return {
@@ -448,13 +689,15 @@ export function operatorShipmentLegProjection(leg: ShipmentLegRow) {
     },
     label_available: typeof label.label_url === "string" && leg.label_status === "created",
     completion: completeShipmentLegEvidence(leg),
+    exceptions: detectShipmentLegExceptions(leg, now),
+    reconcile_available: reconciliationWindowOpen(leg, now),
   };
 }
 
 // ── Persistence (service-role client injected by the caller) ──
 
 const LEG_COLUMNS =
-  "id, matter_id, shipment_record_id, provider, provider_shipment_id, provider_transaction_id, leg_type, sequence, direction, origin_json, destination_json, rate_snapshot, carrier, service_level, label_status, tracking_number, tracking_status, custody_status, provider_evidence, exception_reason, label_created_at, shipped_at, delivered_at, completed_at, created_by, created_at, updated_at";
+  "id, matter_id, shipment_record_id, provider, provider_shipment_id, provider_transaction_id, leg_type, sequence, direction, origin_json, destination_json, rate_snapshot, carrier, service_level, label_status, tracking_number, tracking_status, custody_status, provider_evidence, exception_reason, label_claim_id, label_claimed_at, label_created_at, shipped_at, delivered_at, completed_at, created_by, created_at, updated_at";
 
 export async function createShipmentLeg(
   db: SupabaseClient,

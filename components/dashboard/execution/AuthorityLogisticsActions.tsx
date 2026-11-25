@@ -23,6 +23,7 @@ type LegSummary = {
   custodyStatus: string;
   shipped: boolean;
   labelAvailable: boolean;
+  reconcileAvailable: boolean;
   trackingUrl: string | null;
 };
 
@@ -49,6 +50,7 @@ export function AuthorityLogisticsActions(props: {
   const [exceptionReason, setExceptionReason] = useState("");
   const [finalType, setFinalType] = useState("final_international");
   const [quote, setQuote] = useState<{ ref: string; rates: RateOption[] } | null>(null);
+  const [transactionRef, setTransactionRef] = useState("");
   const base = `/api/deals/${props.matterId}/shipment-legs`;
 
   async function call(url: string, body: Record<string, unknown>, success: string) {
@@ -64,8 +66,15 @@ export function AuthorityLogisticsActions(props: {
         reasons?: string[];
         rates?: RateOption[];
         provider_shipment_ref?: string;
+        provider_transaction_ref?: string;
       };
-      if (!response.ok) throw new Error([payload.error, ...(payload.reasons ?? [])].filter(Boolean).join(" — ") || "Action was not recorded.");
+      if (!response.ok) {
+        if (payload.provider_transaction_ref) setTransactionRef(payload.provider_transaction_ref);
+        // Ambiguous purchase outcomes leave the leg locked; refresh so the
+        // operator sees the exception and reconcile controls.
+        if (["PURCHASE_OUTCOME_UNKNOWN", "LABEL_PERSIST_FAILED_RECONCILE_REQUIRED", "PROVIDER_TRANSACTION_EXISTS"].includes(payload.error ?? "")) router.refresh();
+        throw new Error([payload.error, ...(payload.reasons ?? [])].filter(Boolean).join(" — ") || "Action was not recorded.");
+      }
       if (payload.rates && payload.provider_shipment_ref) {
         setQuote({ ref: payload.provider_shipment_ref, rates: payload.rates });
         toast.success("Governed rates loaded.");
@@ -143,6 +152,7 @@ export function AuthorityLogisticsActions(props: {
   const isReturn = leg.legType === "return_from_authority";
   const isFinal = leg.legType.startsWith("final_");
   const canDispatch = leg.labelStatus === "created" && !isReturn && ["not_started", "prepared", "handoff_ready"].includes(leg.custodyStatus);
+  const needsReconcile = leg.labelStatus === "purchase_pending" && leg.reconcileAvailable;
 
   return (
     <div className="mt-3 space-y-2">
@@ -162,7 +172,26 @@ export function AuthorityLogisticsActions(props: {
           ))}
         </ul>
       )}
-      {(canRate || canPurchase || canDispatch || leg.labelStatus === "created") && noteField}
+      {(canRate || canPurchase || canDispatch || needsReconcile || leg.labelStatus === "created") && noteField}
+      {needsReconcile && (
+        <div className="space-y-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.03] p-3">
+          <p className="text-[11px] leading-5 text-white/55">
+            Purchase outcome unknown. Enter the provider transaction id to verify it against this attempt, or request a provider scan; the lock is released only if the provider shows no transaction for this leg since the attempt began. No label is purchased here.
+          </p>
+          <label className="block space-y-1 text-[11px] text-white/45">
+            Provider transaction id
+            <input className={fieldClass} value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={buttonClass} disabled={busy || !transactionRef.trim()} onClick={() => call(`${legUrl}/label`, { action: "reconcile", provider_transaction_id: transactionRef.trim() }, "Provider transaction reconciled.")}>
+              Verify transaction
+            </button>
+            <button type="button" className={buttonClass} disabled={busy} onClick={() => call(`${legUrl}/label`, { action: "reconcile", confirmed_not_purchased: true }, "Provider scan found no transaction; leg unlocked.")}>
+              Scan provider and confirm none
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {canRate && (
           <button type="button" className={buttonClass} disabled={busy} onClick={() => call(`${legUrl}/rates`, { action: "quote" }, "Rates loaded.")}>

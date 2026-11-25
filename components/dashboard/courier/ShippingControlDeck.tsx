@@ -7,7 +7,7 @@ import { TierRatePolicy } from "./TierRatePolicy";
 const journey = [
   { label: "Release Review", detail: "Final payment, execution, apostille/authentication, custody and destination readiness remain authoritative.", icon: ShieldCheck },
   { label: "Rate Optimization", detail: "Shippo live rates are filtered to approved carriers and ranked by the Matter's canonical execution lane.", icon: Globe2 },
-  { label: "Label Purchase", detail: "The recommended rate can be auto-selected or operator-confirmed. Purchase remains Matter-linked and server-controlled.", icon: Box },
+  { label: "Label Purchase", detail: "The recommended rate is pre-selected; purchase is always an explicit operator action. Ambiguous provider outcomes lock the leg until reconciled — never blindly retried.", icon: Box },
   { label: "Custody Handoff", detail: "Tracking registration and custody evidence bind shipment movement to the same canonical Matter.", icon: PackageCheck },
   { label: "International Transit", detail: "Provider events update transit, exception, return and delivery visibility without inventing ETA or GPS truth.", icon: Plane },
   { label: "Delivery Review", detail: "Delivered is evidence of delivery. It never auto-releases or auto-completes the Matter.", icon: LockKeyhole },

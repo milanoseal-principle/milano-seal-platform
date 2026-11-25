@@ -12,7 +12,7 @@ const when = (value: string | null) => (value ? value.slice(0, 16).replace('T', 
 export async function AuthorityLogisticsPanel({ matterId }: { matterId: string }) {
   const context = await loadLogisticsContext(matterId);
   if (!context) return null;
-  const legs = context.legs.map(operatorShipmentLegProjection);
+  const legs = context.legs.map((leg) => operatorShipmentLegProjection(leg));
   const returnRequired = context.packet?.returnShippingRequired === true;
   const hasReturnLeg = legs.some((leg) => leg.leg_type === 'return_from_authority' && leg.custody_status !== 'exception');
 
@@ -71,6 +71,16 @@ export async function AuthorityLogisticsPanel({ matterId }: { matterId: string }
                     </div>
                   ))}
                 </dl>
+                {leg.exceptions.length > 0 && (
+                  <ul aria-label="Shipment exceptions" className="mt-3 space-y-1.5">
+                    {leg.exceptions.map((exception) => (
+                      <li key={exception.code} className="rounded-lg border border-amber-300/25 bg-amber-300/[0.04] px-3 py-2 text-[11px] leading-5">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-amber-200/80">{label(exception.code)}</span>
+                        <span className="block text-white/60">{exception.action}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <AuthorityLogisticsActions
                   matterId={context.matter.id}
                   mode="leg"
@@ -81,6 +91,7 @@ export async function AuthorityLogisticsPanel({ matterId }: { matterId: string }
                     custodyStatus: leg.custody_status,
                     shipped: Boolean(leg.shipped_at),
                     labelAvailable: leg.label_available,
+                    reconcileAvailable: leg.reconcile_available,
                     trackingUrl: trackingUrl ?? null,
                   }}
                 />

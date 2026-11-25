@@ -18,9 +18,10 @@ import {
   requiresCustoms,
   buildDocumentCustomsPayload,
   getCustomsAdvisory,
+  CustomsReviewRequiredError,
 } from "@/lib/shippo/customs";
 import { filterApprovedRates } from "@/lib/shippo/carrierPolicy";
-import { rankApprovedRates } from "@/lib/shippo/rateSelection";
+import { partitionComparableRates, rankApprovedRates } from "@/lib/shippo/rateSelection";
 import { calculateCourierCharge } from "@/lib/shippo/courierCredit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
@@ -77,7 +78,16 @@ export async function POST(req: NextRequest) {
     let customsDeclarationId: string | undefined;
     const needsCustoms = requiresCustoms(destCountry);
     if (needsCustoms) {
-      const { item: itemPayload, declaration: declPayload } = await buildDocumentCustomsPayload(matter);
+      let customsPayload;
+      try {
+        customsPayload = buildDocumentCustomsPayload(matter, parcel);
+      } catch (customsError) {
+        if (customsError instanceof CustomsReviewRequiredError) {
+          return NextResponse.json({ error: customsError.code, reasons: customsError.reasons }, { status: 422 });
+        }
+        throw customsError;
+      }
+      const { item: itemPayload, declaration: declPayload } = customsPayload;
       const itemRes = await createShippoCustomsItem(itemPayload);
       const declRes = await createShippoCustomsDeclaration({ ...declPayload, items: [itemRes.object_id] });
       customsDeclarationId = declRes.object_id;
@@ -92,6 +102,7 @@ export async function POST(req: NextRequest) {
     });
 
     const approvedRates = filterApprovedRates(shipment.rates);
+    const { excluded: excludedRates } = partitionComparableRates(approvedRates);
     const rankedRates = rankApprovedRates({
       rates: approvedRates,
       lane: matter.tier,
@@ -131,6 +142,16 @@ export async function POST(req: NextRequest) {
       auto_selection_available: Boolean(recommendation),
       package_template_used: packageTemplate.id,
       shipping_option_used: "milano_international_release",
+      // Approved-carrier rates that cannot be compared or credited under the
+      // governed USD basis (e.g. non-USD) are held for operator review.
+      rates_requiring_review: excludedRates.map(({ rate, reason }) => ({
+        rate_id: rate.object_id,
+        provider: rate.provider,
+        servicelevel_name: rate.servicelevel.name,
+        amount: rate.amount,
+        currency: rate.currency,
+        reason,
+      })),
       customs_required: needsCustoms,
       customs_advisory: needsCustoms ? getCustomsAdvisory(destCountry) : null,
     });
@@ -212,6 +233,9 @@ export async function PATCH(req: NextRequest) {
     const approved = filterApprovedRates(shipment.rates);
     const selected = approved.find((rate) => rate.object_id === selected_rate_id);
     if (!selected) return NextResponse.json({ error: "SHIPPO_RATE_UNAVAILABLE" }, { status: 422 });
+    if (partitionComparableRates([selected]).comparable.length === 0) {
+      return NextResponse.json({ error: "COURIER_CURRENCY_REVIEW_REQUIRED" }, { status: 422 });
+    }
 
     const destinationCountry = matter.shipping_country ?? matter.destination_country ?? matter.country ?? "US";
     const ranked = rankApprovedRates({ rates: approved, lane: matter.tier, destinationCountry });

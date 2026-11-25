@@ -1,17 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { purchaseShippoLabel, registerShippoTrackingWebhook, shippoRequest } from "@/lib/shippo/client";
+import {
+  classifyShippoPurchaseError,
+  getShippoTransaction,
+  listShippoTransactions,
+  purchaseShippoLabel,
+  registerShippoTrackingWebhook,
+  shippoRequest,
+} from "@/lib/shippo/client";
+import type { ShippoTransaction } from "@/lib/shippo/types";
 import type { ShippoAddress } from "@/lib/shippo/types";
 import {
   evaluateLabelPurchaseReadiness,
   evaluateReturnLabelReadiness,
   evaluateShipmentLegReadiness,
+  evaluateProviderTransactionScan,
   getShipmentLeg,
   operatorShipmentLegProjection,
+  purchaseAttemptClaimedAt,
+  purchaseCorrelationRef,
+  reconciliationWindowOpen,
+  transactionBelongsToAttempt,
 } from "@/lib/intelligence/execution-brain/authorityLogistics";
+
+const RECONCILE_SCAN_MAX_PAGES = 5;
 import {
   authorizeLogisticsOperator,
   legRpcError,
   loadLogisticsContext,
+  type LogisticsContext,
 } from "@/lib/intelligence/execution-brain/authorityLogisticsServer";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +84,94 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ success: true, leg: operatorShipmentLegProjection(Array.isArray(data) ? data[0] : data) });
   }
 
+  if (body.action === "reconcile") {
+    // RECONCILE AMBIGUOUS PURCHASE. Nothing is purchased here. Only a leg
+    // whose current attempt can no longer be in flight is eligible, and every
+    // outcome must be bound to THIS attempt (rate + correlation + claim time).
+    const claimedAt = purchaseAttemptClaimedAt(leg);
+    if (claimedAt === null || !leg.rate_snapshot) {
+      return NextResponse.json({ error: "LABEL_PURCHASE_NOT_PENDING" }, { status: 409 });
+    }
+    if (!reconciliationWindowOpen(leg)) {
+      return NextResponse.json(
+        { error: "PURCHASE_ATTEMPT_MAY_BE_ACTIVE", reasons: ["Reconciliation opens 15 minutes after the purchase attempt started."] },
+        { status: 409 },
+      );
+    }
+    const binding = { matterId: context.matter.id, legId: leg.id, rateId: leg.rate_snapshot.provider_rate_id, claimedAt };
+    // Immutable claim identity; the write re-checks it under the row lock so
+    // stale evidence can never unlock a newer attempt.
+    const expectedClaimId = String(leg.label_claim_id);
+
+    const transactionRef = typeof body.provider_transaction_id === "string" ? body.provider_transaction_id.trim() : "";
+    if (transactionRef) {
+      let found: ShippoTransaction;
+      try {
+        found = await getShippoTransaction(transactionRef);
+      } catch {
+        return NextResponse.json({ error: "PROVIDER_TRANSACTION_LOOKUP_FAILED" }, { status: 502 });
+      }
+      if (!transactionBelongsToAttempt(found, binding)) {
+        return NextResponse.json(
+          {
+            error: "PROVIDER_TRANSACTION_NOT_THIS_ATTEMPT",
+            reasons: ["The transaction must match this leg's rate and correlation reference and be created after the current purchase attempt began."],
+          },
+          { status: 409 },
+        );
+      }
+      return recordPurchaseOutcome(context, leg.id, auth.user.id, found, null, expectedClaimId);
+    }
+
+    if (body.confirmed_not_purchased !== true) {
+      return NextResponse.json({ error: "RECONCILIATION_EVIDENCE_REQUIRED" }, { status: 400 });
+    }
+    // An operator attestation alone never unlocks the leg: the provider record
+    // must provably show no transaction for this leg since the claim.
+    const pages: Array<{ results: ShippoTransaction[]; next?: string | null }> = [];
+    try {
+      for (let page = 1; page <= RECONCILE_SCAN_MAX_PAGES; page += 1) {
+        const result = await listShippoTransactions(page);
+        pages.push(result);
+        const oldest = result.results?.[result.results.length - 1]?.object_created;
+        if (!result.next || (oldest && Date.parse(oldest) < claimedAt)) break;
+      }
+    } catch {
+      return NextResponse.json({ error: "PROVIDER_TRANSACTION_SCAN_FAILED" }, { status: 502 });
+    }
+    const scan = evaluateProviderTransactionScan(pages, binding);
+    if (scan.outcome === "FOUND") {
+      return NextResponse.json(
+        {
+          error: "PROVIDER_TRANSACTION_EXISTS",
+          provider_transaction_ref: scan.transactions[0]?.object_id ?? null,
+          reasons: ["The provider shows a transaction for this leg. Verify that transaction instead of confirming none."],
+        },
+        { status: 409 },
+      );
+    }
+    if (scan.outcome === "INCOMPLETE") {
+      return NextResponse.json({ error: "PROVIDER_SCAN_INCOMPLETE", reasons: [scan.reason] }, { status: 409 });
+    }
+    const { data, error } = await context.admin.rpc("reconcile_shipment_leg_label", {
+      p_matter_id: context.matter.id,
+      p_leg_id: leg.id,
+      p_expected_claim_id: expectedClaimId,
+      p_success: false,
+      p_transaction_id: null,
+      p_tracking_number: null,
+      p_evidence: {
+        reconciliation: "provider_scan_no_transaction_since_claim",
+        claimed_at: new Date(claimedAt).toISOString(),
+        pages_scanned: pages.length,
+        note: evidenceNote.slice(0, 1000),
+      },
+      p_actor_id: auth.user.id,
+    });
+    if (error) return legRpcError(error.message);
+    return NextResponse.json({ success: true, leg: operatorShipmentLegProjection(Array.isArray(data) ? data[0] : data) });
+  }
+
   if (body.action !== "purchase") return NextResponse.json({ error: "INVALID_LABEL_ACTION" }, { status: 400 });
 
   // Re-run the leg's own gate against current canonical truth.
@@ -112,10 +216,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   if (claimError) return legRpcError(claimError.message);
 
-  let transaction;
+  let transaction: ShippoTransaction;
   try {
-    transaction = await purchaseShippoLabel(leg.rate_snapshot!.provider_rate_id);
+    transaction = await purchaseShippoLabel(leg.rate_snapshot!.provider_rate_id, purchaseCorrelationRef(context.matter.id, leg.id));
   } catch (error) {
+    if (classifyShippoPurchaseError(error) === "OUTCOME_UNKNOWN") {
+      // Timeout / network / provider 5xx: the provider may have created the
+      // transaction. The leg stays purchase_pending, which blocks any further
+      // claim, until an operator reconciles it. Never blindly retried.
+      return NextResponse.json(
+        {
+          error: "PURCHASE_OUTCOME_UNKNOWN",
+          reasons: ["The provider did not confirm the outcome. Reconcile against the provider transaction before any further action."],
+        },
+        { status: 409 },
+      );
+    }
     await context.admin.rpc("record_shipment_leg_label", {
       p_matter_id: context.matter.id,
       p_leg_id: leg.id,
@@ -128,10 +244,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "LABEL_PURCHASE_FAILED" }, { status: 502 });
   }
 
-  const success = transaction.status === "SUCCESS" && Boolean(transaction.object_id);
-  const { data, error } = await context.admin.rpc("record_shipment_leg_label", {
+  return recordPurchaseOutcome(context, leg.id, auth.user.id, transaction, leg.carrier);
+}
+
+/**
+ * Persists a provider transaction outcome for a purchase_pending leg.
+ * SUCCESS → label created. ERROR → definitive failure (leg returns to
+ * rate_selected). Any other status (QUEUED / WAITING) is still pending at the
+ * provider, so the leg stays locked and must be reconciled later.
+ */
+async function recordPurchaseOutcome(
+  context: LogisticsContext,
+  legId: string,
+  actorId: string,
+  transaction: ShippoTransaction,
+  carrier?: string | null,
+  expectedClaimId?: string,
+) {
+  const status = String(transaction.status ?? "").toUpperCase();
+  const success = status === "SUCCESS" && Boolean(transaction.object_id);
+  if (!success && status !== "ERROR") {
+    return NextResponse.json(
+      {
+        error: "PURCHASE_OUTCOME_UNKNOWN",
+        provider_transaction_ref: transaction.object_id ?? null,
+        reasons: [`Provider transaction status is ${status || "unknown"}. Reconcile with this transaction reference once it settles.`],
+      },
+      { status: 409 },
+    );
+  }
+  // Reconciliation writes are attempt-bound (compared under the row lock);
+  // the direct purchase path still holds the claim it just made.
+  const rpc = expectedClaimId ? "reconcile_shipment_leg_label" : "record_shipment_leg_label";
+  const { data, error } = await context.admin.rpc(rpc, {
     p_matter_id: context.matter.id,
-    p_leg_id: leg.id,
+    p_leg_id: legId,
+    ...(expectedClaimId ? { p_expected_claim_id: expectedClaimId } : {}),
     p_success: success,
     p_transaction_id: success ? transaction.object_id : null,
     p_tracking_number: success ? transaction.tracking_number ?? null : null,
@@ -143,17 +291,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           eta: transaction.eta ?? null,
         }
       : { status: transaction.status, messages: (transaction.messages ?? []).map((message) => message.text).slice(0, 5) },
-    p_actor_id: auth.user.id,
+    p_actor_id: actorId,
   });
-  if (error) return legRpcError(error.message);
+  if (error) {
+    if (success) {
+      // Provider purchased but persistence failed: the leg remains
+      // purchase_pending (no second purchase is possible) and the provider
+      // reference is returned so the operator can reconcile it.
+      return NextResponse.json(
+        { error: "LABEL_PERSIST_FAILED_RECONCILE_REQUIRED", provider_transaction_ref: transaction.object_id },
+        { status: 500 },
+      );
+    }
+    return legRpcError(error.message);
+  }
   if (!success) return NextResponse.json({ error: "LABEL_PURCHASE_FAILED" }, { status: 502 });
 
-  if (transaction.tracking_number && leg.carrier) {
+  const row = Array.isArray(data) ? data[0] : data;
+  const trackingCarrier = carrier ?? (row as { carrier?: string | null } | null)?.carrier ?? null;
+  if (transaction.tracking_number && trackingCarrier) {
     try {
-      await registerShippoTrackingWebhook(leg.carrier.toLowerCase(), transaction.tracking_number, context.matter.id);
+      await registerShippoTrackingWebhook(trackingCarrier.toLowerCase(), transaction.tracking_number, context.matter.id);
     } catch {
-      // Tracking registration failure never blocks the persisted label.
+      // Tracking registration failure never blocks the persisted label; the
+      // leg exception detector surfaces missing tracking to the operator.
     }
   }
-  return NextResponse.json({ success: true, leg: operatorShipmentLegProjection(Array.isArray(data) ? data[0] : data) });
+  return NextResponse.json({ success: true, leg: operatorShipmentLegProjection(row) });
 }

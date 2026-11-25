@@ -1,5 +1,10 @@
 "use client";
 
+// The receiving account holder's exact name as registered with Wise. Set
+// NEXT_PUBLIC_WISE_BENEFICIARY_NAME from the verified Wise account; it is
+// never guessed (the DBA is not necessarily the account holder).
+const WISE_BENEFICIARY_NAME = process.env.NEXT_PUBLIC_WISE_BENEFICIARY_NAME?.trim() || null;
+
 interface WiseTransferInstructionsProps {
   wiseReference: string;
   currency?: string;
@@ -68,7 +73,7 @@ export function WiseTransferInstructions({
             Account Name
           </p>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>
-            The Milano Seal LLC
+            {WISE_BENEFICIARY_NAME ?? "As stated on your Milano invoice"}
           </p>
         </div>
 
@@ -149,8 +154,9 @@ export function WiseTransferInstructions({
             lineHeight: 1.6,
           }}
         >
-          After payment, Wise typically notifies us within minutes. Scheduling
-          unlocks automatically once confirmed.
+          Your payment is confirmed only after Wise settlement is independently
+          verified. Scheduling opens once payment is verified and every other
+          requirement for your Matter is met.
         </p>
         <p
           style={{

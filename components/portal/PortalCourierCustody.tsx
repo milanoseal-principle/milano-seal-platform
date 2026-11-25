@@ -301,7 +301,7 @@ export function PortalCourierCustody(_props: { matterId?: string } = {}) {
                 }}
               >
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
-                  A delivery exception has been flagged. Your coordinator has been alerted and is following up with the carrier.
+                  The carrier reported a delivery exception. Your coordinator reviews every exception and will contact you if anything is needed.
                 </p>
               </div>
             )}

@@ -12,12 +12,15 @@ export const REQUIRED_SCHEMA = Object.freeze({
   portal_otps: ['id','deal_id','email','otp','expires_at','used'],
   wise_webhook_events: ['id','delivery_id','idempotency_hash'],
   identifier_locks: ['id','identifier_type','match_status'],
+  // Attempt-bound label reconciliation (immutable purchase-claim identity).
+  matter_shipment_legs: ['id','label_status','label_claim_id','label_claimed_at'],
 });
 export const REQUIRED_RPCS = Object.freeze([
   'begin_wise_payment_attempt','record_wise_attempt_evidence','confirm_wise_payment_for_deal',
   'retention_command','wise_exception_scan_candidates','resolve_wise_exceptions_from_current_truth',
   'missing_required_policy_acceptances','issue_financial_artifact','append_custody_event','record_document_release',
   'governance_claim','governance_finish','governance_command','institutional_route_is_verified',
+  'reconcile_shipment_leg_label',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};

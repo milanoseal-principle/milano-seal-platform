@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     matter_id: context.matter.id,
     packet_status: context.packet?.packetStatus ?? null,
     return_label_required: context.packet?.returnShippingRequired === true,
-    legs: context.legs.map(operatorShipmentLegProjection),
+    legs: context.legs.map((leg) => operatorShipmentLegProjection(leg)),
   });
 }
 
