@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { defaultRequestLimiterDeps } from "@/lib/security/publicRequestLimit";
 import { parseAndLimitPortalRequest, limitPortalMatter } from "@/lib/security/portalAccessGuard";
 
 export const dynamic = "force-dynamic";
+
+/** Compare fixed-length mailed codes without leaking matching prefix timing. */
+function matchesPortalOtp(expected: string, submitted: string): boolean {
+  const a = Buffer.from(expected.trim().toUpperCase(), "utf8");
+  const b = Buffer.from(submitted.trim().toUpperCase(), "utf8");
+  return a.length === 6 && b.length === 6 && timingSafeEqual(a, b);
+}
 
 // SECURITY-06: Portal session is now HMAC-signed.
 // Token structure: base64(payload).hex(hmac-sha256-sig)
@@ -93,7 +100,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (record.otp !== (otp ?? "").toUpperCase().trim()) {
+    if (!matchesPortalOtp(record.otp, otp ?? "")) {
       return NextResponse.json({ error: "Unable to verify portal access" }, { status: 403 });
     }
 
