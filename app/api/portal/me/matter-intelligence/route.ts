@@ -59,7 +59,7 @@ function deriveNextAction(params: {
   }
   if (status === "quoted" || status === "awaiting_payment") {
     if (params.paymentSubmitted && !params.settlementVerified) {
-      return "Your Wise payment is submitted and processing. Scheduling unlocks automatically once Wise settlement is verified.";
+      return "Your Wise payment is submitted and processing. Scheduling opens once Wise settlement is verified and every other requirement for your Matter is met.";
     }
     if (params.settlementVerified) {
       return "Verified Wise settlement is recorded and scheduling authority is available.";

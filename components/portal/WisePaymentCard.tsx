@@ -102,7 +102,7 @@ export function WisePaymentCard({
               Payment Confirmed
             </p>
             <p style={{ fontSize: 12, color: "#22c55e", fontWeight: 500 }}>
-              Scheduling Unlocked
+              Scheduling opens once every Matter requirement is met
             </p>
           </div>
         </div>
@@ -426,8 +426,8 @@ export function WisePaymentCard({
             lineHeight: 1.6,
           }}
         >
-          Scheduling locked. Scheduling unlocks automatically once Wise confirms
-          your payment.
+          Scheduling is locked. It opens after Wise settlement is verified and
+          every other requirement for your Matter is met.
         </p>
       </div>
 

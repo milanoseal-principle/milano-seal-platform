@@ -75,7 +75,7 @@ export function clientSafePaymentLabel(
   isPlatformFeeOnly: boolean
 ): string {
   if (isPlatformFeeOnly) {
-    return paymentConfirmed ? "Scheduling Unlocked" : "Platform Fee Required";
+    return paymentConfirmed ? "Platform Fee Confirmed" : "Platform Fee Required";
   }
   return paymentConfirmed ? "Payment Confirmed" : "Awaiting Payment";
 }
