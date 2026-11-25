@@ -420,3 +420,20 @@ test("'none purchased' requires a complete provider scan with no transaction for
   assert.equal(evaluateProviderTransactionScan([{ results: [older, unrelatedNew], next: null }], binding).outcome, "INCOMPLETE");
   assert.equal(evaluateProviderTransactionScan([{ results: [txn({ object_created: undefined })] }], binding).outcome, "INCOMPLETE");
 });
+
+test("reconciliation writes are compared to the scanned attempt under the database row lock", () => {
+  const route = read("app/api/deals/[id]/shipment-legs/[legId]/label/route.ts");
+  const reconcile = route.slice(route.indexOf('body.action === "reconcile"'), route.indexOf('body.action !== "purchase"'));
+  assert.doesNotMatch(reconcile, /rpc\("record_shipment_leg_label"/);
+  assert.match(reconcile, /rpc\("reconcile_shipment_leg_label"/);
+  assert.match(reconcile, /recordPurchaseOutcome\(context, leg\.id, auth\.user\.id, found, null, expectedClaimedAt\)/);
+  assert.match(route, /p_expected_claimed_at: expectedClaimedAt/);
+  const sql = read("supabase/migrations/20261125090000_shipment_leg_reconcile_attempt_binding.sql");
+  const lock = sql.indexOf("for update");
+  const compare = sql.indexOf("v_leg.updated_at <> p_expected_claimed_at");
+  const write = sql.indexOf("public.record_shipment_leg_label(");
+  assert.ok(lock > 0 && lock < compare && compare < write, "compare must happen under the lock, before the write");
+  assert.match(sql, /RECONCILE_ATTEMPT_CHANGED/);
+  assert.match(sql, /revoke all on function public\.reconcile_shipment_leg_label[^;]*from public, anon, authenticated/);
+  assert.match(sql, /grant execute on function public\.reconcile_shipment_leg_label[^;]*to service_role/);
+});
