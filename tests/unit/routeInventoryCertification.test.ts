@@ -20,6 +20,8 @@ const lib = inventoryLib as {
   certifyRecord: (record: Record<string, unknown>, evidence: unknown[], ctx: Record<string, unknown>) => { level: string; validEvidence: string[] };
   readProxyModel: (root: string) => unknown;
   evidenceRoots: (sourcePath: string, layouts: string[], proxyApplies: boolean) => string[];
+  accessReviewProblems: (review: Record<string, unknown>, ctx: Record<string, unknown>) => string[];
+  REVIEWABLE_ACCESS: string[];
   createGraph: (root: string) => {
     closure: (rels: string[]) => { modules: string[]; packages: string[] };
     fingerprint: (closure: { modules: string[]; packages: string[] }) => string;
@@ -94,11 +96,15 @@ test("access classification follows the rules proxy.ts and in-route guards enfor
   assert.equal((await byId("page:/alliance/apply")).access, "public");
 });
 
-test("an unguarded public API is UNKNOWN (L0), never assumed public", async () => {
+test("an unguarded public API is never assumed public: only a current human review classifies it", async () => {
+  // /api/assistant has no guard the scanner recognizes; it is public_api only
+  // because a current access review says so (a stale review returns it to UNKNOWN/L0).
   const assistant = await byId("api:/api/assistant");
-  assert.equal(assistant.access, "UNKNOWN");
-  assert.equal(assistant.certification.level, "L0");
-  assert.deepEqual(assistant.certification.nextLevelBlockers, ["ACCESS_UNCLASSIFIED"]);
+  assert.equal(assistant.access, "public_api");
+  assert.equal(assistant.accessSource, "reviewed");
+  assert.equal(assistant.accessReview?.status, "current");
+  assert.deepEqual(assistant.guards, []);
+  assert.equal(assistant.certification.level, "L1");
 });
 
 test("registration is not certification: nothing is above L1 without evidence", async () => {
@@ -326,4 +332,51 @@ test("every commercialInventory entry reconciles to its route record by declared
   // Template routes reconcile through the file, not the literal URL.
   assert.equal((await byId("page:/countries/[country]")).revenueLane, "country");
   assert.equal((await byId("page:/sarasota/apostille-services")).revenueLane, "local");
+});
+
+test("every formerly unclassified route has a current access review and none stay UNKNOWN", async () => {
+  const inv = await inventory();
+  const reviews = JSON.parse(readFileSync(join(root, "lib/routes/routeAccessReviews.json"), "utf8")).reviews as { routeId: string }[];
+  assert.equal(inv.routes.filter((r) => r.historical.presentAtHead && r.access === "UNKNOWN").length, 0);
+  for (const review of reviews) {
+    const record = await byId(review.routeId);
+    assert.equal(record.accessReview?.status, "current", `${review.routeId}: ${record.accessReview?.problems.join("; ")}`);
+    assert.equal(record.accessSource, "reviewed");
+    assert.equal(record.certification.level, "L1", "a review classifies; it never certifies");
+  }
+  assert.equal((await byId("api:/api/assistant")).access, "public_api");
+  assert.equal((await byId("api:/api/portal/confirm")).access, "capability_token");
+  assert.equal((await byId("api:/api/webhooks/alliance/job")).access, "signed_webhook");
+  assert.equal((await byId("api:/api/deals/[id]/apostille")).access, "disabled");
+  assert.equal((await byId("api:/api/portal/check-email")).access, "retired");
+});
+
+test("an access review is bound to its reviewed files and fails closed", () => {
+  const review = {
+    routeId: "api:/api/x",
+    access: "public_api",
+    audience: "Anyone",
+    controls: ["Read-only"],
+    reviewedBy: "reviewer",
+    reviewedAt: "2026-11-25",
+    files: { "app/api/x/route.ts": "a".repeat(64), "lib/x.ts": "b".repeat(64) },
+    evidence: ["tests/unit/x.test.ts"],
+  };
+  const ctx = (over: Record<string, unknown> = {}) => ({
+    derivedAccess: "UNKNOWN",
+    sourcePath: "app/api/x/route.ts",
+    fileSha256: (rel: string) => (rel === "app/api/x/route.ts" ? "a".repeat(64) : rel === "lib/x.ts" ? "b".repeat(64) : null),
+    fileExists: (rel: string) => rel === "tests/unit/x.test.ts",
+    ...over,
+  });
+  assert.deepEqual(lib.accessReviewProblems(review, ctx()), []);
+  // Editing a delegated guard module makes the review stale.
+  assert.match(lib.accessReviewProblems(review, ctx({ fileSha256: (rel: string) => (rel === "lib/x.ts" ? "c".repeat(64) : "a".repeat(64)) })).join(), /stale: lib\/x\.ts changed/);
+  // A review cannot override access the proxy or source already determines.
+  assert.match(lib.accessReviewProblems(review, ctx({ derivedAccess: "operator" })).join(), /reviews only classify UNKNOWN routes/);
+  assert.match(lib.accessReviewProblems({ ...review, access: "operator" }, ctx()).join(), /access must be one of/);
+  assert.match(lib.accessReviewProblems({ ...review, files: { "lib/x.ts": "b".repeat(64) } }, ctx()).join(), /must include the route source/);
+  assert.match(lib.accessReviewProblems({ ...review, controls: [] }, ctx()).join(), /missing controls/);
+  assert.match(lib.accessReviewProblems({ ...review, evidence: ["tests/unit/gone.test.ts"] }, ctx()).join(), /evidence not found/);
+  assert.deepEqual(lib.REVIEWABLE_ACCESS, ["public_api", "capability_token", "signed_webhook", "disabled", "retired"]);
 });

@@ -17,6 +17,9 @@ const ROOT = process.cwd();
 const APP_DIR = join(ROOT, "app");
 const OUTPUT_FILE = join(ROOT, "docs", "ROUTE_MAP.md");
 const CHECK_MODE = process.argv.includes("--check");
+// `--fingerprint <routeId>` prints the current sourceSha256 / dependencySha256 an
+// L2+ evidence entry in lib/routes/routeCertificationEvidence.json must carry.
+const FINGERPRINT_ROUTE = process.argv.includes("--fingerprint") ? process.argv[process.argv.indexOf("--fingerprint") + 1] : null;
 
 const CRITICAL_ROUTES = [
   "/",
@@ -131,6 +134,12 @@ const rows = CRITICAL_ROUTES.map((route) => {
 // (lib/routes/routeRegistry.ts; scripts/lib/route-inventory.mjs): L0 discovered,
 // L1 registered with an access classification, L2+ only from approved evidence.
 const routeInventory = await buildRouteInventory(ROOT);
+if (FINGERPRINT_ROUTE) {
+  const fingerprint = routeInventory.fingerprints.get(FINGERPRINT_ROUTE);
+  if (!fingerprint) fail(`unknown route id ${FINGERPRINT_ROUTE}`);
+  console.log(JSON.stringify({ routeId: FINGERPRINT_ROUTE, ...fingerprint }, null, 2));
+  process.exit(0);
+}
 const levelBySource = new Map(routeInventory.routes.map((record) => [record.sourcePath, record.certification.level]));
 const inventoryFile = join(ROOT, INVENTORY_PATH);
 const inventoryText = serializeInventory(routeInventory);

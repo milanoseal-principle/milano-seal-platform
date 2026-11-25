@@ -117,3 +117,19 @@ classification (the `ACCESS_REVIEW_BACKLOG` of pre-existing unclassified public
 APIs is shrink-only), when evidence names an unknown route, or when any record
 of the historical baseline tree (`HISTORICAL_ROUTE_BASELINE`) is lost — a
 baseline route removed at HEAD stays as `removed_at_head`.
+
+## Access reviews
+
+A route whose access cannot be derived from proxy.ts or its own source is
+`UNKNOWN` (L0). It is classified only by a human access review in
+`lib/routes/routeAccessReviews.json`, which records the intended audience, the
+controls traced in source, open findings and test evidence. Each review is bound
+to the sha256 of every file the reviewer read (the route and the modules holding
+its guards). If any of those files changes, the review becomes stale, the route
+returns to `UNKNOWN`, and CI fails until it is re-reviewed. Reviews may assign
+only `public_api`, `capability_token`, `signed_webhook`, `disabled` or `retired`,
+and never override access that is already derived. A review is a classification
+(L1), never a certification.
+
+`node scripts/generate-route-map.mjs --fingerprint <routeId>` prints the current
+`sourceSha256` / `dependencySha256` an L2+ evidence entry must carry.

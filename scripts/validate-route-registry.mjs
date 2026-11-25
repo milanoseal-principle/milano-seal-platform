@@ -3,6 +3,7 @@ import path from "node:path";
 import {
   INVENTORY_PATH,
   buildRouteInventory,
+  loadAccessReviews,
   loadEvidence,
   readPreviousInventory,
   serializeInventory,
@@ -144,6 +145,16 @@ async function validateRouteInventory(out) {
     const r = atHead.find((x) => x.id === id);
     if (!r) out.push(`ACCESS_REVIEW_BACKLOG entry no longer exists at HEAD: ${id} (remove it)`);
     else if (r.access !== "UNKNOWN") out.push(`ACCESS_REVIEW_BACKLOG entry is now classified as ${r.access}: ${id} (remove it)`);
+  }
+
+  // Access reviews: every review must name a route and be current.
+  for (const review of loadAccessReviews(root)) {
+    if (!fresh.routes.some((r) => r.id === review.routeId)) out.push(`Access review for unknown route: ${review.routeId}`);
+  }
+  for (const r of atHead) {
+    if (r.accessReview?.status === "invalid") {
+      out.push(`Access review for ${r.id} is not current: ${r.accessReview.problems.join("; ")}. Re-review the route and update lib/routes/routeAccessReviews.json.`);
+    }
   }
 
   // Certification: nothing above L1 without valid, current, approved evidence.

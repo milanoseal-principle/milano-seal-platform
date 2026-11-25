@@ -27,6 +27,9 @@ import ts from "typescript";
 
 export const INVENTORY_PATH = "lib/routes/routeInventory.generated.json";
 export const EVIDENCE_PATH = "lib/routes/routeCertificationEvidence.json";
+export const ACCESS_REVIEWS_PATH = "lib/routes/routeAccessReviews.json";
+/** Access classes a human access review may assign (only to routes whose derived access is UNKNOWN). */
+export const REVIEWABLE_ACCESS = ["public_api", "capability_token", "signed_webhook", "disabled", "retired"];
 export const HISTORICAL_BASELINE_COMMIT = "93ce11c18c8bab4a2ac515dcbcc4a68aa4df0263";
 export const VENTURE = "milano-seal";
 
@@ -398,6 +401,47 @@ function readRegistries(root) {
   };
 }
 
+// -------------------------------------------------------- access reviews
+
+export function loadAccessReviews(root) {
+  const text = readText(root, ACCESS_REVIEWS_PATH);
+  if (!text) return [];
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed.reviews)) throw Error(`route-inventory: ${ACCESS_REVIEWS_PATH} must contain a "reviews" array`);
+  return parsed.reviews;
+}
+
+export function fileSha256(root, rel) {
+  const abs = join(root, rel);
+  return existsSync(abs) ? createHash("sha256").update(readFileSync(abs)).digest("hex") : null;
+}
+
+/**
+ * Why an access review does not hold for the route as it exists now ([] = valid).
+ * A review is bound to the exact files the reviewer read (the route and the
+ * modules holding its guards): any change to them makes it stale.
+ */
+export function accessReviewProblems(review, context) {
+  const problems = [];
+  if (!REVIEWABLE_ACCESS.includes(review.access)) problems.push(`access must be one of ${REVIEWABLE_ACCESS.join(", ")}`);
+  if (context.derivedAccess !== "UNKNOWN") problems.push(`derived access is ${context.derivedAccess}; reviews only classify UNKNOWN routes`);
+  for (const field of ["audience", "reviewedBy", "reviewedAt"]) {
+    if (typeof review[field] !== "string" || !review[field].trim()) problems.push(`missing ${field}`);
+  }
+  if (!Array.isArray(review.controls) || !review.controls.length) problems.push("missing controls");
+  const files = review.files && typeof review.files === "object" ? review.files : {};
+  if (!(context.sourcePath in files)) problems.push(`files must include the route source ${context.sourcePath}`);
+  for (const [file, hash] of Object.entries(files)) {
+    const current = context.fileSha256(file);
+    if (!current) problems.push(`reviewed file missing: ${file}`);
+    else if (current !== hash) problems.push(`stale: ${file} changed since review`);
+  }
+  for (const test of Array.isArray(review.evidence) ? review.evidence : []) {
+    if (!context.fileExists(test)) problems.push(`evidence not found: ${test}`);
+  }
+  return problems;
+}
+
 // ------------------------------------------------------------ evidence
 
 export function loadEvidence(root) {
@@ -528,6 +572,7 @@ function exposureFor(access) {
   if (access === "UNKNOWN") return "UNKNOWN";
   if (["public", "public_auth_flow"].includes(access)) return "public";
   if (["signed_webhook", "cron_secret", "environment_gated"].includes(access)) return "machine";
+  if (["public_api", "capability_token", "disabled", "retired"].includes(access)) return "public";
   if (access === "operator" || access === "denied_all_roles") return "internal";
   return "authenticated";
 }
@@ -576,6 +621,7 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
   const proxyModel = readProxyModel(root);
   const registries = readRegistries(root);
   const evidence = loadEvidence(root);
+  const accessReviews = loadAccessReviews(root);
   const graph = createGraph(root);
   const { tsImport } = await import("tsx/esm/api");
   const roleModule = await tsImport(pathToFileURL(join(root, "lib/auth/roleRedirect.ts")).href, import.meta.url);
@@ -598,6 +644,7 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
 
   const urls = new Set(routeFiles.map((f) => urlFromAppPath(f.slice("app/".length))));
   const routes = [];
+  const fingerprints = new Map();
   for (const sourcePath of routeFiles) {
     const leaf = sourcePath.split("/").at(-1);
     const kind = PAGE_RE.test(leaf) ? "page" : ROUTE_RE.test(leaf) ? "api" : "UNKNOWN";
@@ -622,6 +669,33 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
       .map((rel) => stripComments(readText(root, rel)));
     const scanText = [code, ...reExported, ...ancestorLayouts.filter((l) => l !== "app/layout.tsx").map((l) => stripComments(readText(root, l)))].join("\n");
     const access = accessFor(url, kind, scanText, proxyModel, roles, isAllowed);
+    const reviewEntry = accessReviews.find((r) => r.routeId === `${kind}:${url}`);
+    let accessReview;
+    if (reviewEntry) {
+      const problems = accessReviewProblems(reviewEntry, {
+        derivedAccess: access.access,
+        sourcePath,
+        fileSha256: (rel) => fileSha256(root, rel),
+        fileExists: (rel) => existsSync(join(root, rel)),
+      });
+      accessReview = {
+        status: problems.length ? "invalid" : "current",
+        access: reviewEntry.access,
+        audience: reviewEntry.audience ?? null,
+        controls: reviewEntry.controls ?? [],
+        openFindings: reviewEntry.openFindings ?? [],
+        evidence: reviewEntry.evidence ?? [],
+        reviewedBy: reviewEntry.reviewedBy ?? null,
+        reviewedAt: reviewEntry.reviewedAt ?? null,
+        problems,
+      };
+      // Only a current review classifies; an invalid or stale one leaves UNKNOWN.
+      if (!problems.length) {
+        access.access = reviewEntry.access;
+        access.accessSource = "reviewed";
+        access.roles = reviewEntry.access === "capability_token" ? ["capability_holder"] : [];
+      }
+    }
 
     const direct = graph.direct(sourcePath);
     const closure = graph.closure([sourcePath, ...ancestorLayouts]);
@@ -733,7 +807,9 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
       revenueLane,
       owner: "UNKNOWN",
       historical: { inBaseline: baseline.paths.has(sourcePath), presentAtHead: true },
+      ...(accessReview ? { accessReview } : {}),
     };
+    fingerprints.set(record.id, { sourceSha256: sha256(source), dependencySha256 });
     record.certification = certifyRecord(record, evidence, {
       sourceSha256: sha256(source),
       dependencySha256,
@@ -765,7 +841,7 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
   const byLevel = Object.fromEntries(["UNKNOWN", ...CERTIFICATION_LEVELS].map((l) => [l, count((r) => r.certification.level === l)]));
   const byAccess = {};
   for (const r of all) byAccess[r.access ?? "UNKNOWN"] = (byAccess[r.access ?? "UNKNOWN"] ?? 0) + 1;
-  return {
+  const inventory = {
     schemaVersion: 1,
     generatedBy: "scripts/generate-route-map.mjs",
     venture: VENTURE,
@@ -786,6 +862,10 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
     },
     routes: all,
   };
+  // Current evidence fingerprints per route id (not serialized): what an L2+
+  // evidence entry must carry to be valid for the route as it exists now.
+  Object.defineProperty(inventory, "fingerprints", { value: fingerprints, enumerable: false });
+  return inventory;
 }
 
 export function readPreviousInventory(root) {

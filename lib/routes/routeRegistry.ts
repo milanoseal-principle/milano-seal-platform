@@ -165,6 +165,11 @@ export type RouteAccess =
   | "cron_secret"
   | "in_route_guard"
   | "environment_gated"
+  // Assigned only by a current human access review (routeAccessReviews.json):
+  | "public_api"
+  | "capability_token"
+  | "disabled"
+  | "retired"
   | "UNKNOWN";
 
 export interface RouteInventoryRecord {
@@ -182,8 +187,8 @@ export interface RouteInventoryRecord {
   lifecycle: string;
   exposure: "public" | "authenticated" | "internal" | "machine" | "UNKNOWN";
   access: RouteAccess;
-  /** proxy = enforced by proxy.ts; static_heuristic = read from source, unverified. */
-  accessSource: "proxy" | "static_heuristic" | "none";
+  /** proxy = enforced by proxy.ts; static_heuristic = read from source, unverified; reviewed = current human access review. */
+  accessSource: "proxy" | "static_heuristic" | "reviewed" | "none";
   guards: string[];
   roles: string[];
   workspaceGrants: string;
@@ -201,6 +206,18 @@ export interface RouteInventoryRecord {
   revenueLane: string;
   owner: string;
   historical: { inBaseline: boolean; presentAtHead: boolean };
+  /** Present when routeAccessReviews.json has an entry for this route. */
+  accessReview?: {
+    status: "current" | "invalid";
+    access: RouteAccess;
+    audience: string | null;
+    controls: string[];
+    openFindings: string[];
+    evidence: string[];
+    reviewedBy: string | null;
+    reviewedAt: string | null;
+    problems: string[];
+  };
   certification: {
     level: CertificationLevel | "UNKNOWN";
     validEvidence: CertificationLevel[];
@@ -220,37 +237,11 @@ export interface RouteInventory {
 
 /**
  * Public API handlers with no recognized guard whose access has not yet been
- * reviewed. Shrink-only: CI fails if a route outside this list is UNKNOWN, or
+ * reviewed. Empty since the 2026-11-25 access review: every such route now has
+ * a current entry in routeAccessReviews.json (see docs/architecture/ROUTE_REGISTRY.md). Shrink-only: CI fails if a route outside this list is UNKNOWN, or
  * if a listed route is no longer UNKNOWN (remove it once classified).
  */
 export const ACCESS_REVIEW_BACKLOG = [
-  "api:/api/alliance/submit",
-  "api:/api/assistant",
-  "api:/api/compliance/[jurisdiction]",
-  "api:/api/compliance/country/[country]",
-  "api:/api/concierge",
-  "api:/api/counsel",
-  "api:/api/deals/[id]/apostille",
-  "api:/api/health",
-  "api:/api/intake",
-  "api:/api/intake/analytics",
-  "api:/api/intake/extract",
-  "api:/api/intake/quote-preview",
-  "api:/api/notary/apply",
-  "api:/api/policy/active",
-  "api:/api/policy/active/[id]",
-  "api:/api/portal/check-email",
-  "api:/api/portal/confirm",
-  "api:/api/portal/verify",
-  "api:/api/pricing/request",
-  "api:/api/pricing/request/upload",
-  "api:/api/professional/profile",
-  "api:/api/reviews/request",
-  "api:/api/sales/capture",
-  "api:/api/verify/[verificationId]",
-  "api:/api/webhooks/alliance/credential",
-  "api:/api/webhooks/alliance/job",
-  "api:/api/webhooks/alliance/toolbelt",
 ] as const;
 
 /** Loaded lazily so the generated inventory never enters a client bundle. */
