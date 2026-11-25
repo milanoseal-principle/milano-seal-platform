@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
+import {
+  PAYMENT_CAPABILITY_COOKIE,
+  paymentCapabilityKey,
+  verifyPaymentCapability,
+} from "@/lib/payments/paymentCapability";
 
-// SECURITY-06: Requires both deal_id and access_token.
+// SECURITY-06: Requires deal_id plus access_token (or this deal's own intake payment capability).
 // Knowing only the deal_id string is insufficient to poll payment status.
 // Both params must match the same deals row — mismatch returns 404
 // (no information leak about which field is wrong).
@@ -11,7 +16,15 @@ export async function GET(req: NextRequest) {
   const dealId = req.nextUrl.searchParams.get("deal_id");
   const accessToken = req.nextUrl.searchParams.get("access_token");
 
-  if (!dealId || !accessToken) {
+  // The public intake confirmation page has no access_token; it may instead
+  // present this Matter's own intake payment capability (httpOnly cookie,
+  // HMAC-bound to exactly this deal_id, never sent cross-site).
+  const capabilityValid =
+    !!dealId &&
+    req.headers.get("sec-fetch-site") !== "cross-site" &&
+    verifyPaymentCapability(req.cookies.get(PAYMENT_CAPABILITY_COOKIE)?.value, dealId, paymentCapabilityKey());
+
+  if (!dealId || (!accessToken && !capabilityValid)) {
     return NextResponse.json(
       { error: "deal_id and access_token are required" },
       { status: 400 }
@@ -20,16 +33,16 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Validate both deal_id AND access_token in a single query.
+  // Validate deal_id AND (access_token or a capability bound to this deal_id).
   // Select only the fields needed — never fetch the full deal row.
-  const { data } = await admin
+  let query = admin
     .from("deals")
     .select(
       "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal"
     )
-    .eq("deal_id", dealId)
-    .eq("access_token", accessToken)
-    .maybeSingle();
+    .eq("deal_id", dealId);
+  if (accessToken) query = query.eq("access_token", accessToken);
+  const { data } = await query.maybeSingle();
 
   if (!data) {
     // Unified 404 — do not differentiate between wrong deal_id vs wrong access_token

@@ -1,4 +1,5 @@
 import {bindIntakeUploadCapability} from '@/lib/uploads/authorization';
+import { bindIntakePaymentCapability } from '@/lib/payments/paymentCapability';
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -289,4 +290,4 @@ async function canonicalPost(req: NextRequest) {
   });
 }
 
-export async function POST(request:NextRequest){return bindIntakeUploadCapability(await canonicalPost(request));}
+export async function POST(request:NextRequest){return bindIntakePaymentCapability(await bindIntakeUploadCapability(await canonicalPost(request)));}
