@@ -188,7 +188,15 @@ const EXPLICIT_REGISTRY: SystemRegistryEntry[] = [
     authorityIds: ["scheduling", "payment", "execution", "matter"],
     authorityMode: "canonical",
     mutationPolicy: "governed_write",
-    sourcePaths: ["lib/scheduling", "app/api"],
+    // The actual scheduling authority: the gate evaluator, the two routes that
+    // enforce it, and the database gates. (Was "app/api", which claimed every API route.)
+    sourcePaths: [
+      "lib/scheduling",
+      "app/api/deals/[id]/schedule",
+      "app/api/deals/[id]/execute",
+      "supabase/migrations/079_wise_observed_scheduling_gate.sql",
+      "supabase/migrations/089_verified_settlement_scheduling_gate.sql",
+    ],
     dependencies: ["wise_payment_authority", "matter_state_machine"],
     validation: ["scripts/validate-cross-system-gates.mjs", "scripts/validate-production-governance.mjs"],
     status: "GATED",

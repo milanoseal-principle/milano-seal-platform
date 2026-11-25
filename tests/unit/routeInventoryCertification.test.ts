@@ -91,8 +91,11 @@ test("access classification follows the rules proxy.ts and in-route guards enfor
   assert.equal((await byId("page:/login")).access, "public_auth_flow");
   // Re-exported handlers are classified by the module that implements them.
   assert.equal((await byId("api:/api/deals/[id]/payment/confirm-final")).access, "in_route_guard");
-  // A protected page no role may reach is reported, not hidden.
-  assert.equal((await byId("page:/workspace/release")).access, "denied_all_roles");
+  // The release workspace was protected but reachable by no role (denied_all_roles);
+  // the operator family now reaches it, matching its requireDashboardAccess guard.
+  const release = await byId("page:/workspace/release");
+  assert.equal(release.access, "operator");
+  assert.deepEqual(release.roles, ["admin", "operator", "owner"]);
   assert.equal((await byId("page:/alliance/apply")).access, "public");
 });
 

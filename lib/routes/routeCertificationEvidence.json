@@ -5,11 +5,11 @@
       "routeId": "api:/api/assistant",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "eb114c8d",
+      "commit": "3312c8fe",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
       "sourceSha256": "03c7ea8a514810f49c05c6a45a0491c0624cf475eec159e14a8efd765dd63500",
-      "dependencySha256": "ca25b1ae72b46f735d6277aa45e763e915dd5ca735c755287c73cee9a719aacf",
+      "dependencySha256": "af391df0a0b404fdef3f0f768ee20b0ef943b1f26fc1c5bf093e66d7c9515948",
       "testIds": [
         "tests/unit/assistantGuard.test.ts"
       ],
@@ -19,11 +19,11 @@
       "routeId": "api:/api/intake/extract",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "eb114c8d",
+      "commit": "3312c8fe",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
       "sourceSha256": "6c0e9e512f0fabfb59f2943dfaf3203498e5adc275c82260641d1de4ba2a95cc",
-      "dependencySha256": "1c973f05cfec559cb46f387d871fc1643652797e4a665476baef2452b58857b9",
+      "dependencySha256": "c794b87c836cceeeb113adc84fad24e459069790bcfff6483de7720b52b185b1",
       "testIds": [
         "tests/unit/intakeExtractGuard.test.ts"
       ],
@@ -33,11 +33,11 @@
       "routeId": "api:/api/sales/capture",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "eb114c8d",
+      "commit": "3312c8fe",
       "evidenceDate": "2026-11-25",
       "approvedBy": "",
       "sourceSha256": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
-      "dependencySha256": "023d49c0e6c12d6e0ae4dcc21f0ee3f3132467b2cb0f7fe5d041485f51b3c891",
+      "dependencySha256": "4ab333040786348f2a11c972865c8c9ac8ccca02a291be704fd52fcafcd3035a",
       "testIds": [
         "tests/unit/salesCaptureGuard.test.ts"
       ],

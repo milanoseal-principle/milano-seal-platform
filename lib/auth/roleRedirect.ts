@@ -106,7 +106,11 @@ export function isRouteAllowedForRole(
     return (
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/va") ||
-      pathname.startsWith("/alliance")
+      pathname.startsWith("/alliance") ||
+      // Operator release workspace (app/workspace/release, requireDashboardAccess).
+      // proxy.ts protects /workspace; without this every role was redirected away.
+      pathname === "/workspace" ||
+      pathname.startsWith("/workspace/")
     );
   }
   if (normalized === "va") return pathname.startsWith("/va");
