@@ -4,6 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   detectShipmentLegExceptions,
+  evaluateProviderTransactionScan,
+  purchaseCorrelationRef,
+  RECONCILE_MIN_PENDING_MS,
+  reconciliationWindowOpen,
+  transactionBelongsToAttempt,
   evaluateLabelPurchaseReadiness,
   evaluateReturnLabelReadiness,
   operatorShipmentLegProjection,
@@ -191,8 +196,12 @@ test("label route keeps ambiguous purchases locked and reconciles read-only agai
   const unknownBranch = route.slice(route.indexOf('classifyShippoPurchaseError(error) === "OUTCOME_UNKNOWN"'));
   // The OUTCOME_UNKNOWN branch returns before the failure RPC that would re-arm the leg.
   assert.ok(unknownBranch.indexOf("PURCHASE_OUTCOME_UNKNOWN") < unknownBranch.indexOf("record_shipment_leg_label"));
-  assert.match(route, /found\.rate !== leg\.rate_snapshot\.provider_rate_id/);
-  assert.match(route, /PROVIDER_TRANSACTION_RATE_MISMATCH/);
+  assert.match(route, /transactionBelongsToAttempt\(found, binding\)/);
+  assert.match(route, /PROVIDER_TRANSACTION_NOT_THIS_ATTEMPT/);
+  assert.match(route, /PURCHASE_ATTEMPT_MAY_BE_ACTIVE/);
+  // The no-purchase unlock requires a provider scan; an attestation alone cannot unlock.
+  const unlock = route.slice(route.indexOf("confirmed_not_purchased !== true"));
+  assert.ok(unlock.indexOf("evaluateProviderTransactionScan") < unlock.indexOf("record_shipment_leg_label"));
   assert.match(route, /LABEL_PERSIST_FAILED_RECONCILE_REQUIRED/);
   assert.match(route, /status !== "ERROR"/);
   // Reconcile never purchases.
@@ -238,7 +247,10 @@ test("both rate endpoints surface customs review instead of fabricating a declar
 // ── Exceptions ──
 
 test("exception detection is evidence-based and read-only", () => {
-  assert.deepEqual(detectShipmentLegExceptions(leg({ label_status: "purchase_pending" }), NOW).map((e) => e.code), ["PURCHASE_OUTCOME_UNKNOWN"]);
+  const settledPending = leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - RECONCILE_MIN_PENDING_MS).toISOString() });
+  assert.deepEqual(detectShipmentLegExceptions(settledPending, NOW).map((e) => e.code), ["PURCHASE_OUTCOME_UNKNOWN"]);
+  const activePending = leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - 30_000).toISOString() });
+  assert.deepEqual(detectShipmentLegExceptions(activePending, NOW).map((e) => e.code), ["PURCHASE_IN_PROGRESS"]);
   assert.ok(detectShipmentLegExceptions(leg({ label_status: "created", tracking_number: null }), NOW).some((e) => e.code === "TRACKING_NOT_REGISTERED"));
   const stale = leg({
     label_status: "created",
@@ -253,8 +265,10 @@ test("exception detection is evidence-based and read-only", () => {
   assert.deepEqual(detectShipmentLegExceptions(failure, NOW).map((e) => e.code), ["DELIVERY_EXCEPTION"]);
   const delivered = leg({ label_status: "created", tracking_number: "1234567890", custody_status: "delivered", delivered_at: "2026-11-01T00:00:00Z" });
   assert.deepEqual(detectShipmentLegExceptions(delivered, NOW), []);
-  const projected = operatorShipmentLegProjection(leg({ label_status: "purchase_pending" }), NOW);
+  const projected = operatorShipmentLegProjection(settledPending, NOW);
   assert.equal(projected.exceptions[0].code, "PURCHASE_OUTCOME_UNKNOWN");
+  assert.equal(projected.reconcile_available, true);
+  assert.equal(operatorShipmentLegProjection(activePending, NOW).reconcile_available, false);
   assert.equal(projected.completion.matterCompleted, false);
 });
 
@@ -357,4 +371,52 @@ test("existing USD courier credits are unchanged and non-USD still fails closed"
   assert.equal(calculateCourierCharge({ providerRateAmount: "72.00", currency: "USD", tier: "executive" }).clientCourierCharge, "0.00");
   assert.equal(calculateCourierCharge({ providerRateAmount: "72.00", currency: "USD", tier: "signature" }).clientCourierCharge, "72.00");
   assert.throws(() => calculateCourierCharge({ providerRateAmount: "72.00", currency: "EUR", tier: "priority" }), /COURIER_CURRENCY_REVIEW_REQUIRED/);
+});
+
+// ── Codex P1: reconciliation is bound to the current, settled attempt ──
+
+const CLAIMED = NOW.getTime() - 20 * 60 * 1000;
+const binding = { matterId: "m1", legId: "leg-1", rateId: "rate_internal", claimedAt: CLAIMED };
+const txn = (overrides: Record<string, unknown> = {}) => ({
+  object_id: "txn_current",
+  rate: "rate_internal",
+  metadata: purchaseCorrelationRef("m1", "leg-1"),
+  object_created: new Date(CLAIMED + 5_000).toISOString(),
+  status: "SUCCESS",
+  ...overrides,
+});
+
+test("an in-flight attempt cannot be reconciled; the window opens only after the bounded attempt", () => {
+  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: new Date(NOW.getTime() - 60_000).toISOString() }), NOW), false);
+  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: new Date(CLAIMED).toISOString() }), NOW), true);
+  assert.equal(reconciliationWindowOpen(leg({ label_status: "rate_selected", updated_at: new Date(CLAIMED).toISOString() }), NOW), false);
+  assert.equal(reconciliationWindowOpen(leg({ label_status: "purchase_pending", updated_at: "not-a-date" }), NOW), false);
+  assert.ok(RECONCILE_MIN_PENDING_MS > 60_000 * 5, "window must far exceed the 60s purchase timeout");
+  assert.match(read("lib/shippo/client.ts"), /timeoutMs: SHIPPO_PURCHASE_TIMEOUT_MS/);
+});
+
+test("an earlier attempt's transaction on the same rate cannot settle the current attempt", () => {
+  assert.equal(transactionBelongsToAttempt(txn(), binding), true);
+  const earlierError = txn({ object_id: "txn_old", status: "ERROR", object_created: new Date(CLAIMED - 60_000).toISOString() });
+  assert.equal(transactionBelongsToAttempt(earlierError, binding), false);
+  assert.equal(transactionBelongsToAttempt(txn({ metadata: purchaseCorrelationRef("m1", "other-leg") }), binding), false);
+  assert.equal(transactionBelongsToAttempt(txn({ metadata: undefined }), binding), false);
+  assert.equal(transactionBelongsToAttempt(txn({ rate: "rate_other" }), binding), false);
+  assert.equal(transactionBelongsToAttempt(txn({ object_created: undefined }), binding), false);
+});
+
+test("'none purchased' requires a complete provider scan with no transaction for the leg since the claim", () => {
+  const older = txn({ object_id: "txn_unrelated", rate: "r_x", metadata: "matter:z;leg:z", object_created: new Date(CLAIMED - 1_000).toISOString() });
+  const unrelatedNew = txn({ object_id: "txn_other", rate: "r_y", metadata: "matter:z;leg:y", object_created: new Date(CLAIMED + 9_000).toISOString() });
+  assert.deepEqual(evaluateProviderTransactionScan([{ results: [unrelatedNew, older], next: "p2" }], binding), { outcome: "NONE_SINCE_CLAIM" });
+  assert.deepEqual(evaluateProviderTransactionScan([{ results: [unrelatedNew], next: null }], binding), { outcome: "NONE_SINCE_CLAIM" });
+  const hit = evaluateProviderTransactionScan([{ results: [unrelatedNew, txn(), older], next: null }], binding);
+  assert.equal(hit.outcome, "FOUND");
+  // A transaction on the leg's rate still blocks the unlock even without metadata (pre-correlation purchase).
+  assert.equal(evaluateProviderTransactionScan([{ results: [txn({ metadata: undefined }), older] }], binding).outcome, "FOUND");
+  // Did not reach the claim time → fail closed.
+  assert.equal(evaluateProviderTransactionScan([{ results: [unrelatedNew], next: "p2" }], binding).outcome, "INCOMPLETE");
+  // Oldest-first ordering → fail closed rather than a false "none".
+  assert.equal(evaluateProviderTransactionScan([{ results: [older, unrelatedNew], next: null }], binding).outcome, "INCOMPLETE");
+  assert.equal(evaluateProviderTransactionScan([{ results: [txn({ object_created: undefined })] }], binding).outcome, "INCOMPLETE");
 });

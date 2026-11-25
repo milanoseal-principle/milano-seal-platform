@@ -62,6 +62,8 @@ export interface ShippoTransaction {
   /** Provider rate object id this transaction purchased (used for reconciliation). */
   rate?: string;
   metadata?: string;
+  /** Provider creation time (ISO 8601). */
+  object_created?: string;
   tracking_number: string;
   tracking_url_provider?: string;
   label_url: string;

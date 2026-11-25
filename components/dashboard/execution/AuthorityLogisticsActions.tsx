@@ -23,6 +23,7 @@ type LegSummary = {
   custodyStatus: string;
   shipped: boolean;
   labelAvailable: boolean;
+  reconcileAvailable: boolean;
   trackingUrl: string | null;
 };
 
@@ -71,7 +72,7 @@ export function AuthorityLogisticsActions(props: {
         if (payload.provider_transaction_ref) setTransactionRef(payload.provider_transaction_ref);
         // Ambiguous purchase outcomes leave the leg locked; refresh so the
         // operator sees the exception and reconcile controls.
-        if (payload.error === "PURCHASE_OUTCOME_UNKNOWN" || payload.error === "LABEL_PERSIST_FAILED_RECONCILE_REQUIRED") router.refresh();
+        if (["PURCHASE_OUTCOME_UNKNOWN", "LABEL_PERSIST_FAILED_RECONCILE_REQUIRED", "PROVIDER_TRANSACTION_EXISTS"].includes(payload.error ?? "")) router.refresh();
         throw new Error([payload.error, ...(payload.reasons ?? [])].filter(Boolean).join(" — ") || "Action was not recorded.");
       }
       if (payload.rates && payload.provider_shipment_ref) {
@@ -151,7 +152,7 @@ export function AuthorityLogisticsActions(props: {
   const isReturn = leg.legType === "return_from_authority";
   const isFinal = leg.legType.startsWith("final_");
   const canDispatch = leg.labelStatus === "created" && !isReturn && ["not_started", "prepared", "handoff_ready"].includes(leg.custodyStatus);
-  const needsReconcile = leg.labelStatus === "purchase_pending";
+  const needsReconcile = leg.labelStatus === "purchase_pending" && leg.reconcileAvailable;
 
   return (
     <div className="mt-3 space-y-2">
@@ -175,7 +176,7 @@ export function AuthorityLogisticsActions(props: {
       {needsReconcile && (
         <div className="space-y-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.03] p-3">
           <p className="text-[11px] leading-5 text-white/55">
-            Purchase outcome unknown. Check the provider dashboard for a transaction on this rate. Enter its transaction id to verify and record it, or confirm that none exists to release the lock. No label is purchased here.
+            Purchase outcome unknown. Enter the provider transaction id to verify it against this attempt, or request a provider scan; the lock is released only if the provider shows no transaction for this leg since the attempt began. No label is purchased here.
           </p>
           <label className="block space-y-1 text-[11px] text-white/45">
             Provider transaction id
@@ -185,8 +186,8 @@ export function AuthorityLogisticsActions(props: {
             <button type="button" className={buttonClass} disabled={busy || !transactionRef.trim()} onClick={() => call(`${legUrl}/label`, { action: "reconcile", provider_transaction_id: transactionRef.trim() }, "Provider transaction reconciled.")}>
               Verify transaction
             </button>
-            <button type="button" className={buttonClass} disabled={busy} onClick={() => call(`${legUrl}/label`, { action: "reconcile", confirmed_not_purchased: true }, "Confirmed no provider transaction; leg unlocked.")}>
-              Confirm none purchased
+            <button type="button" className={buttonClass} disabled={busy} onClick={() => call(`${legUrl}/label`, { action: "reconcile", confirmed_not_purchased: true }, "Provider scan found no transaction; leg unlocked.")}>
+              Scan provider and confirm none
             </button>
           </div>
         </div>

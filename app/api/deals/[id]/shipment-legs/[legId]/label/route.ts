@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   classifyShippoPurchaseError,
   getShippoTransaction,
+  listShippoTransactions,
   purchaseShippoLabel,
   registerShippoTrackingWebhook,
   shippoRequest,
@@ -12,9 +13,16 @@ import {
   evaluateLabelPurchaseReadiness,
   evaluateReturnLabelReadiness,
   evaluateShipmentLegReadiness,
+  evaluateProviderTransactionScan,
   getShipmentLeg,
   operatorShipmentLegProjection,
+  purchaseAttemptClaimedAt,
+  purchaseCorrelationRef,
+  reconciliationWindowOpen,
+  transactionBelongsToAttempt,
 } from "@/lib/intelligence/execution-brain/authorityLogistics";
+
+const RECONCILE_SCAN_MAX_PAGES = 5;
 import {
   authorizeLogisticsOperator,
   legRpcError,
@@ -77,14 +85,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (body.action === "reconcile") {
-    // RECONCILE AMBIGUOUS PURCHASE. Only a leg stuck in purchase_pending (the
-    // provider outcome is unknown) can be reconciled. The operator either
-    // supplies the provider transaction id — which is fetched read-only and
-    // must match the leg's persisted rate — or attests, with evidence, that
-    // the provider shows no transaction for this rate. Nothing is purchased.
-    if (leg.label_status !== "purchase_pending" || !leg.rate_snapshot) {
+    // RECONCILE AMBIGUOUS PURCHASE. Nothing is purchased here. Only a leg
+    // whose current attempt can no longer be in flight is eligible, and every
+    // outcome must be bound to THIS attempt (rate + correlation + claim time).
+    const claimedAt = purchaseAttemptClaimedAt(leg);
+    if (claimedAt === null || !leg.rate_snapshot) {
       return NextResponse.json({ error: "LABEL_PURCHASE_NOT_PENDING" }, { status: 409 });
     }
+    if (!reconciliationWindowOpen(leg)) {
+      return NextResponse.json(
+        { error: "PURCHASE_ATTEMPT_MAY_BE_ACTIVE", reasons: ["Reconciliation opens 15 minutes after the purchase attempt started."] },
+        { status: 409 },
+      );
+    }
+    const binding = { matterId: context.matter.id, legId: leg.id, rateId: leg.rate_snapshot.provider_rate_id, claimedAt };
+
     const transactionRef = typeof body.provider_transaction_id === "string" ? body.provider_transaction_id.trim() : "";
     if (transactionRef) {
       let found: ShippoTransaction;
@@ -93,14 +108,47 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       } catch {
         return NextResponse.json({ error: "PROVIDER_TRANSACTION_LOOKUP_FAILED" }, { status: 502 });
       }
-      if (!found.rate || found.rate !== leg.rate_snapshot.provider_rate_id) {
-        return NextResponse.json({ error: "PROVIDER_TRANSACTION_RATE_MISMATCH" }, { status: 409 });
+      if (!transactionBelongsToAttempt(found, binding)) {
+        return NextResponse.json(
+          {
+            error: "PROVIDER_TRANSACTION_NOT_THIS_ATTEMPT",
+            reasons: ["The transaction must match this leg's rate and correlation reference and be created after the current purchase attempt began."],
+          },
+          { status: 409 },
+        );
       }
-      const outcome = await recordPurchaseOutcome(context, leg.id, auth.user.id, found);
-      return outcome;
+      return recordPurchaseOutcome(context, leg.id, auth.user.id, found);
     }
+
     if (body.confirmed_not_purchased !== true) {
       return NextResponse.json({ error: "RECONCILIATION_EVIDENCE_REQUIRED" }, { status: 400 });
+    }
+    // An operator attestation alone never unlocks the leg: the provider record
+    // must provably show no transaction for this leg since the claim.
+    const pages: Array<{ results: ShippoTransaction[]; next?: string | null }> = [];
+    try {
+      for (let page = 1; page <= RECONCILE_SCAN_MAX_PAGES; page += 1) {
+        const result = await listShippoTransactions(page);
+        pages.push(result);
+        const oldest = result.results?.[result.results.length - 1]?.object_created;
+        if (!result.next || (oldest && Date.parse(oldest) < claimedAt)) break;
+      }
+    } catch {
+      return NextResponse.json({ error: "PROVIDER_TRANSACTION_SCAN_FAILED" }, { status: 502 });
+    }
+    const scan = evaluateProviderTransactionScan(pages, binding);
+    if (scan.outcome === "FOUND") {
+      return NextResponse.json(
+        {
+          error: "PROVIDER_TRANSACTION_EXISTS",
+          provider_transaction_ref: scan.transactions[0]?.object_id ?? null,
+          reasons: ["The provider shows a transaction for this leg. Verify that transaction instead of confirming none."],
+        },
+        { status: 409 },
+      );
+    }
+    if (scan.outcome === "INCOMPLETE") {
+      return NextResponse.json({ error: "PROVIDER_SCAN_INCOMPLETE", reasons: [scan.reason] }, { status: 409 });
     }
     const { data, error } = await context.admin.rpc("record_shipment_leg_label", {
       p_matter_id: context.matter.id,
@@ -108,7 +156,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       p_success: false,
       p_transaction_id: null,
       p_tracking_number: null,
-      p_evidence: { reconciliation: "operator_confirmed_no_provider_transaction", note: evidenceNote.slice(0, 1000) },
+      p_evidence: {
+        reconciliation: "provider_scan_no_transaction_since_claim",
+        claimed_at: new Date(claimedAt).toISOString(),
+        pages_scanned: pages.length,
+        note: evidenceNote.slice(0, 1000),
+      },
       p_actor_id: auth.user.id,
     });
     if (error) return legRpcError(error.message);
@@ -161,7 +214,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   let transaction: ShippoTransaction;
   try {
-    transaction = await purchaseShippoLabel(leg.rate_snapshot!.provider_rate_id, `matter:${context.matter.id};leg:${leg.id}`);
+    transaction = await purchaseShippoLabel(leg.rate_snapshot!.provider_rate_id, purchaseCorrelationRef(context.matter.id, leg.id));
   } catch (error) {
     if (classifyShippoPurchaseError(error) === "OUTCOME_UNKNOWN") {
       // Timeout / network / provider 5xx: the provider may have created the

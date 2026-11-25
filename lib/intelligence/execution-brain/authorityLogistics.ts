@@ -484,9 +484,120 @@ export function publicShipmentLegProjection(leg: ShipmentLegRow, options: { trac
   };
 }
 
+// ── Purchase-attempt binding and reconciliation (no purchase ever happens here) ──
+
+/**
+ * A label purchase attempt is identified by (Matter, leg, persisted rate,
+ * claim time). The claim time is the leg's updated_at at purchase_pending:
+ * the claim RPC is the only write that sets purchase_pending and the row is
+ * not otherwise modified while pending. Every purchase carries this
+ * correlation reference as provider metadata.
+ */
+export function purchaseCorrelationRef(matterId: string, legId: string): string {
+  return `matter:${matterId};leg:${legId}`;
+}
+
+/**
+ * Reconciliation opens only once the attempt cannot still be in flight. The
+ * provider call is hard-bounded (60s) and this window is far longer, so a
+ * concurrent operator can never unlock a leg whose purchase is still running.
+ */
+export const RECONCILE_MIN_PENDING_MS = 15 * 60 * 1000;
+
+export function purchaseAttemptClaimedAt(leg: Pick<ShipmentLegRow, "label_status" | "updated_at">): number | null {
+  if (leg.label_status !== "purchase_pending") return null;
+  const at = Date.parse(String(leg.updated_at ?? ""));
+  return Number.isFinite(at) ? at : null;
+}
+
+export function reconciliationWindowOpen(leg: Pick<ShipmentLegRow, "label_status" | "updated_at">, now: Date = new Date()): boolean {
+  const claimedAt = purchaseAttemptClaimedAt(leg);
+  return claimedAt !== null && now.getTime() - claimedAt >= RECONCILE_MIN_PENDING_MS;
+}
+
+export interface PurchaseAttemptBinding {
+  matterId: string;
+  legId: string;
+  rateId: string;
+  claimedAt: number;
+}
+
+export interface ProviderTransactionFacts {
+  object_id?: string;
+  rate?: string;
+  metadata?: string;
+  object_created?: string;
+  status?: string;
+}
+
+/**
+ * A provider transaction belongs to the CURRENT attempt only if it bought the
+ * persisted rate, carries this leg's correlation metadata and was created at
+ * or after this attempt's claim. A transaction from an earlier attempt on the
+ * same rate is rejected. Missing facts fail closed.
+ */
+export function transactionBelongsToAttempt(txn: ProviderTransactionFacts, binding: PurchaseAttemptBinding): boolean {
+  const created = Date.parse(String(txn.object_created ?? ""));
+  return (
+    Boolean(txn.object_id) &&
+    txn.rate === binding.rateId &&
+    String(txn.metadata ?? "") === purchaseCorrelationRef(binding.matterId, binding.legId) &&
+    Number.isFinite(created) &&
+    created >= binding.claimedAt
+  );
+}
+
+/** Same leg (rate + correlation) regardless of attempt — used to refuse a no-purchase attestation. */
+function transactionTouchesLeg(txn: ProviderTransactionFacts, binding: PurchaseAttemptBinding): boolean {
+  return txn.rate === binding.rateId || String(txn.metadata ?? "") === purchaseCorrelationRef(binding.matterId, binding.legId);
+}
+
+export type ProviderScanResult =
+  | { outcome: "FOUND"; transactions: ProviderTransactionFacts[] }
+  | { outcome: "NONE_SINCE_CLAIM" }
+  | { outcome: "INCOMPLETE"; reason: string };
+
+/**
+ * Evaluates provider transaction pages (newest first) for a reconciliation.
+ * NONE_SINCE_CLAIM is returned only when the scan provably covered every
+ * transaction created since the claim: pages must be in non-increasing
+ * creation order and the scan must reach a transaction older than the claim
+ * or the end of the list. Anything else is INCOMPLETE (fail closed).
+ */
+export function evaluateProviderTransactionScan(
+  pages: Array<{ results: ProviderTransactionFacts[]; next?: string | null }>,
+  binding: PurchaseAttemptBinding,
+): ProviderScanResult {
+  const found: ProviderTransactionFacts[] = [];
+  let previous = Number.POSITIVE_INFINITY;
+  for (const [index, page] of pages.entries()) {
+    // Validate the whole page's ordering BEFORE any early exit: an
+    // oldest-first page must never yield a false "none since claim".
+    const stamps = (page.results ?? []).map((txn) => Date.parse(String(txn.object_created ?? "")));
+    if (stamps.some((stamp) => !Number.isFinite(stamp))) return { outcome: "INCOMPLETE", reason: "A provider transaction has no creation time." };
+    for (const stamp of stamps) {
+      if (stamp > previous) return { outcome: "INCOMPLETE", reason: "Provider transactions are not ordered newest-first." };
+      previous = stamp;
+    }
+    for (const [position, txn] of (page.results ?? []).entries()) {
+      const created = stamps[position];
+      if (created < binding.claimedAt) {
+        return found.length > 0 ? { outcome: "FOUND", transactions: found } : { outcome: "NONE_SINCE_CLAIM" };
+      }
+      if (transactionTouchesLeg(txn, binding)) found.push(txn);
+    }
+    const lastPage = index === pages.length - 1;
+    if (!page.next) return found.length > 0 ? { outcome: "FOUND", transactions: found } : { outcome: "NONE_SINCE_CLAIM" };
+    if (lastPage) break;
+  }
+  if (found.length > 0) return { outcome: "FOUND", transactions: found };
+  return { outcome: "INCOMPLETE", reason: "The provider scan did not reach the purchase claim time." };
+}
+
 // ── Exception autopilot (detection only; never purchases, re-routes or closes) ──
 
 export type ShipmentLegExceptionCode =
+  | "PURCHASE_IN_PROGRESS"
   | "PURCHASE_OUTCOME_UNKNOWN"
   | "LABEL_PURCHASE_FAILED"
   | "RATE_EXPIRED"
@@ -513,7 +624,7 @@ const MOVING: ReadonlySet<LegCustodyStatus> = new Set(["carrier_accepted", "fina
 export function detectShipmentLegExceptions(
   leg: Pick<
     ShipmentLegRow,
-    "label_status" | "rate_snapshot" | "tracking_number" | "tracking_status" | "custody_status" | "provider_evidence" | "label_created_at" | "delivered_at"
+    "label_status" | "rate_snapshot" | "tracking_number" | "tracking_status" | "custody_status" | "provider_evidence" | "label_created_at" | "delivered_at" | "updated_at"
   >,
   now: Date = new Date(),
 ): ShipmentLegException[] {
@@ -522,10 +633,11 @@ export function detectShipmentLegExceptions(
   const lastTracking = (evidence.last_tracking ?? null) as { status?: string; status_date?: string } | null;
 
   if (leg.label_status === "purchase_pending") {
-    out.push({
-      code: "PURCHASE_OUTCOME_UNKNOWN",
-      action: "Reconcile against the provider transaction before any further purchase. Do not retry blindly.",
-    });
+    out.push(
+      reconciliationWindowOpen(leg, now)
+        ? { code: "PURCHASE_OUTCOME_UNKNOWN", action: "Reconcile against the provider transaction before any further purchase. Do not retry blindly." }
+        : { code: "PURCHASE_IN_PROGRESS", action: "A purchase attempt may still be running. Reconciliation opens 15 minutes after the attempt started." },
+    );
   }
   if (leg.label_status === "rate_selected") {
     if (evidence.last_purchase_failure) {
@@ -571,6 +683,7 @@ export function operatorShipmentLegProjection(leg: ShipmentLegRow, now: Date = n
     label_available: typeof label.label_url === "string" && leg.label_status === "created",
     completion: completeShipmentLegEvidence(leg),
     exceptions: detectShipmentLegExceptions(leg, now),
+    reconcile_available: reconciliationWindowOpen(leg, now),
   };
 }
 

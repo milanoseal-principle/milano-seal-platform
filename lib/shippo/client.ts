@@ -38,10 +38,12 @@ export function assertShippoMode(): void {
 export async function shippoRequest<T>(
   method: "GET" | "POST",
   path: string,
-  body?: unknown
+  body?: unknown,
+  options: { timeoutMs?: number } = {}
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
+    ...(options.timeoutMs ? { signal: AbortSignal.timeout(options.timeoutMs) } : {}),
     headers: {
       Authorization: `ShippoToken ${getKey()}`,
       "Content-Type": "application/json",
@@ -78,14 +80,35 @@ export async function purchaseShippoLabel(
   metadata?: string
 ): Promise<ShippoTransaction> {
   assertShippoMode();
-  return shippoRequest<ShippoTransaction>("POST", "/transactions/", {
-    rate: rateId,
-    label_file_type: "PDF",
-    async: false,
-    // Correlation reference (Matter / leg ids only — no client data) so an
-    // ambiguous purchase can be reconciled against the provider record.
-    ...(metadata ? { metadata: metadata.slice(0, 100) } : {}),
-  });
+  return shippoRequest<ShippoTransaction>(
+    "POST",
+    "/transactions/",
+    {
+      rate: rateId,
+      label_file_type: "PDF",
+      async: false,
+      // Correlation reference (Matter / leg ids only — no client data) so an
+      // ambiguous purchase can be reconciled against the provider record.
+      ...(metadata ? { metadata: metadata.slice(0, 100) } : {}),
+    },
+    // Hard upper bound on an in-flight purchase. An abort is OUTCOME_UNKNOWN
+    // (never a failure); it bounds how long an attempt can stay active so the
+    // reconciliation window cannot open while the request is still running.
+    { timeoutMs: SHIPPO_PURCHASE_TIMEOUT_MS }
+  );
+}
+
+export const SHIPPO_PURCHASE_TIMEOUT_MS = 60_000;
+
+/** One page of provider transactions (read-only; used for reconciliation scans). */
+export async function listShippoTransactions(
+  page: number,
+  results = 100
+): Promise<{ results: ShippoTransaction[]; next?: string | null }> {
+  return shippoRequest<{ results: ShippoTransaction[]; next?: string | null }>(
+    "GET",
+    `/transactions/?results=${results}&page=${page}`
+  );
 }
 
 /** Read-only provider lookup used to reconcile an ambiguous label purchase. */

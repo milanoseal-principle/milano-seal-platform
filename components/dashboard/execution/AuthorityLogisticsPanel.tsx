@@ -91,6 +91,7 @@ export async function AuthorityLogisticsPanel({ matterId }: { matterId: string }
                     custodyStatus: leg.custody_status,
                     shipped: Boolean(leg.shipped_at),
                     labelAvailable: leg.label_available,
+                    reconcileAvailable: leg.reconcile_available,
                     trackingUrl: trackingUrl ?? null,
                   }}
                 />
