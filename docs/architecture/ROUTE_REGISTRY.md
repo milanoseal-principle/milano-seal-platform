@@ -133,3 +133,16 @@ and never override access that is already derived. A review is a classification
 
 `node scripts/generate-route-map.mjs --fingerprint <routeId>` prints the current
 `sourceSha256` / `dependencySha256` an L2+ evidence entry must carry.
+
+## Certification entry points
+
+The Master Engineering Directive (§02) refers to `enterprise_certification/certify.py`.
+That script has never existed in this repository (no file or commit on any
+branch). The equivalent, existing commands are:
+
+- Route inventory and L0–L6 certification: `node scripts/generate-route-map.mjs --check`
+  and `npm run validate:route-registry` (both run in PR CI; `--check` also in the
+  Vercel merge gate).
+- Phase certification (P19–P23, simulation only, commit-bound manifest at
+  `artifacts/certification/source-manifest.json`): `npm run certify:source`.
+  It never performs live, provider or production certification.
