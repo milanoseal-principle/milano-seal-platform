@@ -195,14 +195,6 @@ if (CHECK_MODE) {
     process.exit(1);
   }
   if (!existsSync(inventoryFile) || readFileSync(inventoryFile, "utf8") !== inventoryText) {
-    // TEMPORARY READ-ONLY DIAGNOSTIC: emit only changed route records so the
-    // generated inventory can be restored through the authenticated GitHub API.
-    const prior = JSON.parse(readFileSync(inventoryFile, "utf8"));
-    const oldById = new Map(prior.routes.map((r) => [r.id, r]));
-    const changed = routeInventory.routes.filter((r) => JSON.stringify(r) !== JSON.stringify(oldById.get(r.id)));
-    console.error("ROUTE_DELTA_JSON_START");
-    console.error(JSON.stringify({ summary: routeInventory.summary, changed }));
-    console.error("ROUTE_DELTA_JSON_END");
     console.error(`FAIL route-map: ${INVENTORY_PATH} does not match current app routes, access rules or certification evidence.`);
     console.error("Run: node scripts/generate-route-map.mjs  (then review the diff: new/removed routes, access, level changes)");
     process.exit(1);
