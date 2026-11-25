@@ -9,8 +9,8 @@
 --
 -- This wrapper locks the leg and forwards an event to the existing tracking
 -- RPC only when it belongs to the label the leg currently holds (label_status
--- 'created' and every identifier the event carries matches the leg's current
--- tracking number / provider transaction). Any other event is preserved in
+-- 'created', the event matches the current provider transaction or tracking
+-- number, and carries no conflicting identifier). Any other event is kept in
 -- shippo_tracking_events under the EVENT's own identifiers (history is never
 -- erased) and changes nothing on the leg. Idempotency is unchanged (event_hash).
 
@@ -37,6 +37,8 @@ declare
   v_tracking text := nullif(btrim(coalesce(p_event_tracking_number, '')), '');
   v_transaction text := nullif(btrim(coalesce(p_event_transaction_id, '')), '');
   v_current boolean;
+  v_txn_match boolean;
+  v_trk_match boolean;
   v_inserted uuid;
 begin
   if coalesce(p_event_hash, '') = '' then
@@ -47,11 +49,16 @@ begin
     raise exception using errcode = 'P0002', message = 'SHIPMENT_LEG_NOT_FOUND';
   end if;
 
-  v_current :=
-    v_leg.label_status = 'created'
-    and (v_tracking is not null or v_transaction is not null)
-    and (v_tracking is null or v_tracking = v_leg.tracking_number)
-    and (v_transaction is null or v_transaction = v_leg.provider_transaction_id);
+  -- NULL-safe identity: an exact transaction match identifies the label even
+  -- when the purchase recorded no tracking number; a tracking-only event needs
+  -- a stored tracking number to match; any conflicting non-null identifier
+  -- isolates the event.
+  v_txn_match := v_transaction is not null and v_transaction is not distinct from v_leg.provider_transaction_id;
+  v_trk_match := v_tracking is not null and v_tracking is not distinct from v_leg.tracking_number;
+  v_current := v_leg.label_status = 'created' and (
+    (v_txn_match and (v_tracking is null or v_leg.tracking_number is null or v_trk_match))
+    or (v_trk_match and v_transaction is null)
+  );
 
   if v_current then
     -- Same transaction; the row lock above is held through the existing RPC.

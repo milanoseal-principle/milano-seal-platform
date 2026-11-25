@@ -115,3 +115,15 @@ test("reconciliation is bound to the immutable claim under the row lock", { time
   await assert.rejects(reconcile(claim1!), /RECONCILE_ATTEMPT_CHANGED/);
   assert.equal((await leg(db)).label_status, "purchase_pending");
 });
+
+test("a label recorded without a tracking number still accepts its own transaction-matched events", { timeout: 240_000 }, async () => {
+  const db = await freshDb();
+  // Purchase succeeded but the provider returned no tracking number.
+  await db.exec(`update public.matter_shipment_legs set tracking_number = null, provider_transaction_id = 'txn_only' where id = '${LEG}'`);
+  assert.equal((await track(db, "t1", "TRANSIT", "LATETRACK9", "txn_only")).outcome, "applied");
+  assert.equal((await leg(db)).custody_status, "in_transit");
+  // A conflicting transaction is still rejected, and a tracking-only event cannot claim an untracked label.
+  assert.equal((await track(db, "t2", "DELIVERED", "LATETRACK9", "txn_other")).outcome, "isolated_not_current_label");
+  assert.equal((await track(db, "t3", "DELIVERED", "LATETRACK9", null)).outcome, "isolated_not_current_label");
+  assert.equal((await leg(db)).custody_status, "in_transit");
+});
