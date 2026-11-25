@@ -14,7 +14,7 @@
 
 import { createHmac } from "node:crypto";
 
-export type PublicRequestBucket = "assistant" | "intake_extract" | "intake_submit";
+export type PublicRequestBucket = "assistant" | "intake_extract" | "intake_submit" | "verify_lookup" | "public_signup";
 export type PublicGlobalBucket = "assistant_global" | "intake_extract_global";
 
 export type RequestLimitDecision =
@@ -41,11 +41,11 @@ function limitSecret(env: Record<string, string | undefined>): string | null {
 }
 
 /** HMAC scope key for a caller (64 hex), or null when no secret is configured. */
-export function requestLimitScope(request: Request, userId: string | null, env: Record<string, string | undefined>): string | null {
+export function requestLimitScope(request: Request, userId: string | null, env: Record<string, string | undefined>, namespace?: string): string | null {
   const secret = limitSecret(env);
   if (!secret) return null;
   const subject = userId ? `user:${userId}` : `ip:${clientAddress(request.headers)}`;
-  return createHmac("sha256", secret).update(subject).digest("hex");
+  return createHmac("sha256", secret).update(namespace ? `${namespace}:${subject}` : subject).digest("hex");
 }
 
 /**

@@ -30,7 +30,7 @@
         "app/api/assistant/route.ts": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
         "lib/assistant/assistantHandler.ts": "5a3518e8e0049f8aa834a46317eeec938b5ae73bb6733db73abdcde7ce8df21f",
         "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
-        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
+        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
       }
     },
     {
@@ -59,7 +59,7 @@
         "app/api/intake/extract/route.ts": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
         "lib/ai/intakeExtractHandler.ts": "7c6adaeecd6f2110ee773819ea2e3de77f8e8cc75154cef1401e270009073dc2",
         "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
-        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
+        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
       }
     },
     {
@@ -113,17 +113,17 @@
         "Honeypot field",
         "Fields length-bounded",
         "10 per client address per hour on alliance_observations.ip_hash; 429",
+        "Server-keyed, Alliance-scoped HMAC for new address fingerprints",
         "Duplicate fingerprint upsert"
       ],
       "openFindings": [
-        "ip_hash is an unkeyed SHA-256 of the address (other forms use an HMAC); privacy hardening recommended",
         "No Origin check"
       ],
       "evidence": [],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/alliance/submit/route.ts": "1bbbc148bd8016f20f273d6e577dbda3d3f8070b30abb1fbd3cef1557c3fd29e"
+        "app/api/alliance/submit/route.ts": "a24f658ea0ffd374247325ff082f44ae8c5ee6700497aa95ffddee58d8f29e88"
       }
     },
     {
@@ -229,7 +229,7 @@
       "files": {
         "app/api/intake/route.ts": "5fa580e9df6dca9901af2654a52d8218a78585f49bc3a5e3c40bdc37efadbee2",
         "lib/intake/intakeSubmissionGuard.ts": "d8164535d42aa9f18d3fae7aeefb97411b80a590e944bd8695ad81938efa8f1a",
-        "lib/security/publicRequestLimit.ts": "19bfcd8187097e600b78f03663d29846c443e4eacb6ffeaa66589293e8137342"
+        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
       }
     },
     {
@@ -278,16 +278,16 @@
         "Body 24 KB (declared and actual) 413",
         "Honeypot / obvious-spam rejection",
         "Length-bounded fields",
-        "One application per email (409)"
+        "One application per email (409)",
+        "Same-origin registration and shared durable signup limit",
+        "Forward migration removes direct public application inserts"
       ],
-      "openFindings": [
-        "No Origin check or per-client rate limit"
-      ],
+      "openFindings": [],
       "evidence": [],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/notary/apply/route.ts": "cb3285cf040e243814d09b86f011a4849db121fa75f20ad367a73bd7c4de069a"
+        "app/api/notary/apply/route.ts": "f1a2136df8dbb8301e2e67e11453aaa581118b13d9505aa1b96c35c7470d1f5f"
       }
     },
     {
@@ -297,16 +297,15 @@
       "controls": [
         "Creates a prospect profile only: no account, role or Matter visibility",
         "Never overwrites an existing email; enumeration-safe identical response",
-        "Input normalized by normalizeProfessionalProfileInput"
+        "Input normalized by normalizeProfessionalProfileInput",
+        "Same-origin registration, 24 KB body cap and shared durable signup limit"
       ],
-      "openFindings": [
-        "No Origin check, size cap or per-client rate limit"
-      ],
+      "openFindings": [],
       "evidence": [],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/professional/profile/route.ts": "8b503a4e478a1bd2e6c6e5ec32c9fa6be4bf5fe03460d06dcbd93509f7c725ca"
+        "app/api/professional/profile/route.ts": "79d0c7ef004e2c1656ec6fc375f1d95484f7ccc2b4347a2733edb0144a67a33d"
       }
     },
     {
@@ -314,17 +313,25 @@
       "access": "capability_token",
       "audience": "A client holding their Matter portal link requesting a one-time code.",
       "controls": [
-        "Requires the Matter's secret access_token AND the Matter email (403 on mismatch)",
-        "Code sent only to the Matter's own email; 15-minute expiry; one active code per Matter"
+        "Requires secret Matter access_token and exact normalized Matter email",
+        "Rejects foreign Origin, oversized and malformed JSON before quota",
+        "Limits public portal access 30 requests/client/hour before Matter lookup",
+        "Limits code sends to 3 per Matter per 15 minutes before OTP write or email",
+        "Code sent to Matter email; 15-minute expiry; one active code per Matter"
       ],
       "openFindings": [
-        "No resend throttle: repeated calls with a valid link re-send email to the Matter's own address"
+        "Existing portal_otps stores six-character codes in plaintext; a separate schema review would be needed for at-rest hashing"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/unit/portalOtpGuard.test.ts"
+      ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/portal/verify/route.ts": "73a5aad7f77b4fcdc583a3e9663b2a718b0df2ec178f79dfdd8b1a40e09c0605"
+        "app/api/portal/verify/route.ts": "93483cbdb5c04b1adf08588bf26b7a93a19a9e9aef89448b7318af0400e7c0fb",
+        "app/api/portal/confirm/route.ts": "db8f52a074b0780e4323dc47ecd9436a04cfc80adea1121c8ea1bb21d3850a0b",
+        "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
+        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
       }
     },
     {
@@ -332,19 +339,26 @@
       "access": "capability_token",
       "audience": "A client completing portal sign-in with the emailed code.",
       "controls": [
-        "Requires the secret access_token, the Matter email and the unexpired one-time code",
-        "Single-use consumption confirmed by a conditional update (409 otherwise)",
-        "Issues an HMAC-signed session; PORTAL_SESSION_SECRET missing fails closed (503)"
+        "Requires secret Matter access_token and exact normalized Matter email",
+        "Rejects foreign Origin, oversized and malformed JSON before quota",
+        "Limits public portal access 30 requests/client/hour before Matter lookup",
+        "Limits code attempts to 5 per Matter per 15 minutes; lockout invalidates active code",
+        "Compares fixed-length code with timingSafeEqual",
+        "Single-use OTP consumption and HMAC-signed portal session; missing secret fails closed"
       ],
       "openFindings": [
-        "No failed-attempt limit on the 6-character code within its 15-minute window (needs an attempts column — schema change)",
-        "Code comparison is not constant-time"
+        "Existing portal_otps stores six-character codes in plaintext; a separate schema review would be needed for at-rest hashing"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/unit/portalOtpGuard.test.ts"
+      ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/portal/confirm/route.ts": "19a31f9d2412fe9b69f16a0b7f69be737e47f4ed5a3618a2a9ff308b2d39f4b5"
+        "app/api/portal/verify/route.ts": "93483cbdb5c04b1adf08588bf26b7a93a19a9e9aef89448b7318af0400e7c0fb",
+        "app/api/portal/confirm/route.ts": "db8f52a074b0780e4323dc47ecd9436a04cfc80adea1121c8ea1bb21d3850a0b",
+        "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
+        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
       }
     },
     {
@@ -461,16 +475,17 @@
       "controls": [
         "Lookup requires the exact verification ID/hash (length-bounded)",
         "Returns public-safe fields only (no Matter, client, pricing or notes)",
-        "Release-certificate mode only with mode=release_cert"
+        "Release-certificate mode only with mode=release_cert",
+        "Shared durable lookup limit for both methods and the public verification page",
+        "Consistent missing-record response per lookup mode",
+        "Forward migration removes direct public verification-table reads"
       ],
-      "openFindings": [
-        "VERIFY_LOOKUP_RATE_LIMITED is declared but no lookup rate limit exists; each GET inserts a verification_logs row"
-      ],
+      "openFindings": [],
       "evidence": [],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
       "reviewedAt": "2026-11-25",
       "files": {
-        "app/api/verify/[verificationId]/route.ts": "e531c1f87e4c7bf007004312a78d05b8144e451fb404cf8e3230da1424a0f4f9"
+        "app/api/verify/[verificationId]/route.ts": "a7342593f6812717d9f277ec7db65d814b69a0abc29048e719a765006e279eca"
       }
     },
     {

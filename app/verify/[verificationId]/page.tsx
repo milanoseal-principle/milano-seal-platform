@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import { headers } from "next/headers";
+import { GET as lookupVerification } from "@/app/api/verify/[verificationId]/route";
 
 export const metadata: Metadata = {
   title: "Document Verification | The Milano Seal™",
@@ -19,16 +21,25 @@ interface VerificationRecord {
   issuer: string;
 }
 
-async function getVerification(verificationId: string): Promise<VerificationRecord | null> {
+type VerificationResult =
+  | { kind: "record"; record: VerificationRecord }
+  | { kind: "missing" | "unavailable" }
+  | { kind: "throttled"; retryAfterSeconds: number | null };
+
+async function getVerification(verificationId: string): Promise<VerificationResult> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.milanoseal.com";
-    const res = await fetch(`${baseUrl}/api/verify/${verificationId}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
+    // Keep the visitor's request identity when sharing the API lookup on the server.
+    const request = new Request("https://www.themilanoseal.com", { headers: await headers() });
+    const res = await lookupVerification(request, { params: Promise.resolve({ verificationId }) });
+    if (res.status === 404) return { kind: "missing" };
+    if (res.status === 429) {
+      const retryAfterSeconds = Number(res.headers.get("Retry-After"));
+      return { kind: "throttled", retryAfterSeconds: retryAfterSeconds > 0 ? retryAfterSeconds : null };
+    }
+    if (!res.ok) return { kind: "unavailable" };
+    return { kind: "record", record: await res.json() };
   } catch {
-    return null;
+    return { kind: "unavailable" };
   }
 }
 
@@ -47,7 +58,8 @@ export default async function VerifyPage({
   params: Promise<{ verificationId: string }>;
 }) {
   const { verificationId } = await params;
-  const record = await getVerification(verificationId);
+  const result = await getVerification(verificationId);
+  const record = result.kind === "record" ? result.record : null;
 
   const containerStyle = {
     minHeight: "100vh",
@@ -69,6 +81,20 @@ export default async function VerifyPage({
   };
 
   if (!record || !record.verified) {
+    let title = "Verification Unavailable";
+    let message = "The verification service is temporarily unavailable. Please try again later.";
+    if (result.kind === "missing") {
+      title = "Verification Not Found";
+      message = `No verification record was found for ID: ${verificationId}`;
+    } else if (result.kind === "throttled") {
+      title = "Too Many Verification Requests";
+      message = result.retryAfterSeconds
+        ? `Please try again in ${result.retryAfterSeconds} seconds.`
+        : "Please try again later.";
+    } else if (record) {
+      title = "Verification Record Inactive";
+      message = "The record does not confirm a valid custody release.";
+    }
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
@@ -91,10 +117,10 @@ export default async function VerifyPage({
           }}>
             <div style={{ color: "#ef4444", fontSize: 24, marginBottom: 8 }}>✗</div>
             <div style={{ color: "#ef4444", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-              Verification Not Found
+              {title}
             </div>
             <div style={{ color: "#6b7280", fontSize: 12 }}>
-              No verification record was found for ID: {verificationId}
+              {message}
             </div>
           </div>
           <p style={{ color: "#374151", fontSize: 10, textAlign: "center", marginTop: 24 }}>

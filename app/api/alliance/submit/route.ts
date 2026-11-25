@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { requestLimitScope } from "@/lib/security/publicRequestLimit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_BODY_BYTES = 16_384;
@@ -37,11 +38,10 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient();
-    const forwardedFor =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const ipHash = createHash("sha256")
-      .update(`alliance:${forwardedFor}`)
-      .digest("hex");
+    const ipHash = requestLimitScope(req, null, process.env, "alliance");
+    if (!ipHash) {
+      return NextResponse.json({ error: "Submission temporarily unavailable" }, { status: 503 });
+    }
     const fingerprint = createHash("sha256")
       .update(`${email}:${partner_name.toLowerCase()}:${observation.toLowerCase()}`)
       .digest("hex");
