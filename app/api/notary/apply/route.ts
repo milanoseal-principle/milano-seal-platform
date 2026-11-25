@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardPublicEndpoint } from "@/lib/security/publicEndpointGuard";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -37,6 +38,8 @@ function obviousSpam(body: Record<string, unknown>) {
 }
 
 export async function POST(request: Request) {
+  const refusal = await guardPublicEndpoint(request, "public_signup");
+  if (refusal) return refusal;
   try {
     const contentLength = Number(request.headers.get("content-length") ?? 0);
     if (contentLength > MAX_BODY_BYTES) {

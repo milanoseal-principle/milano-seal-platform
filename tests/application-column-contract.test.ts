@@ -35,9 +35,20 @@ test("portal sign-in: issuing a code fails on the hosted shape and works after t
   await issueCode(db, "BBB222"); // re-issue replaces, never duplicates
   const rows = (await db.query<{ otp: string; used: boolean }>("select otp, used from public.portal_otps where deal_id=$1", [DEAL])).rows;
   assert.deepEqual(rows, [{ otp: "BBB222", used: false }]);
-  // Confirm marks the code used without nulling otp (NOT NULL); a second consume finds nothing.
-  assert.equal((await db.query("update public.portal_otps set used=true where deal_id=$1 and used=false returning id", [DEAL])).rows.length, 1);
-  assert.equal((await db.query("update public.portal_otps set used=true where deal_id=$1 and used=false returning id", [DEAL])).rows.length, 0);
+  const [first] = (await db.query<{ otp: string; expires_at: Date }>(
+    "select otp, expires_at from public.portal_otps where deal_id=$1", [DEAL]
+  )).rows;
+  await issueCode(db, "CCC333");
+  const consume = (otp: string, expiresAt: Date) => db.query(
+    "update public.portal_otps set used=true where deal_id=$1 and used=false and otp=$2 and expires_at=$3 and expires_at>now() returning id",
+    [DEAL, otp, expiresAt.toISOString()],
+  );
+  assert.equal((await consume(first.otp, first.expires_at)).rows.length, 0);
+  const [replacement] = (await db.query<{ otp: string; expires_at: Date }>(
+    "select otp, expires_at from public.portal_otps where deal_id=$1", [DEAL]
+  )).rows;
+  assert.equal((await consume(replacement.otp, replacement.expires_at)).rows.length, 1);
+  assert.equal((await consume(replacement.otp, replacement.expires_at)).rows.length, 0);
   await db.close();
 });
 
@@ -68,6 +79,7 @@ test("portal confirm consumes the code without nulling otp and fails closed", ()
   const source = fs.readFileSync("app/api/portal/confirm/route.ts", "utf8");
   assert.doesNotMatch(source, /otp:\s*null/);
   assert.match(source, /\.update\(\{ used: true \}\)\s*\.eq\("id", record\.id\)\s*\.eq\("used", false\)/);
+  assert.match(source, /\.eq\("otp", record\.otp\)\s*\.eq\("expires_at", record\.expires_at\)\s*\.gt\("expires_at",/);
   assert.match(source, /if \(consumeError \|\| !consumed\?\.length\)/);
   assert.ok(source.indexOf("consumeError") < source.indexOf("const session = buildSession("), "session is issued only after the code is consumed");
 });

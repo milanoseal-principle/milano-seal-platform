@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import { headers } from "next/headers";
+import { GET as lookupVerification } from "@/app/api/verify/[verificationId]/route";
 
 export const metadata: Metadata = {
   title: "Document Verification | The Milano Seal™",
@@ -21,10 +23,9 @@ interface VerificationRecord {
 
 async function getVerification(verificationId: string): Promise<VerificationRecord | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.milanoseal.com";
-    const res = await fetch(`${baseUrl}/api/verify/${verificationId}`, {
-      cache: "no-store",
-    });
+    // Keep the visitor's request identity when sharing the API lookup on the server.
+    const request = new Request("https://www.themilanoseal.com", { headers: await headers() });
+    const res = await lookupVerification(request, { params: Promise.resolve({ verificationId }) });
     if (!res.ok) return null;
     return res.json();
   } catch {

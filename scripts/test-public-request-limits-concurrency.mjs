@@ -16,7 +16,11 @@ const env = (name, fallback) => process.env[`PUBLIC_LIMITS_${name}`] ?? process.
 const host = env("PGHOST", "");
 const port = Number(env("PGPORT", "5432"));
 const user = env("PGUSER", "postgres");
-const MIGRATION = "supabase/migrations/20261125120000_public_request_limits.sql";
+const migrations = [
+  "20261125120000_public_request_limits.sql",
+  "20261125130000_public_request_limit_buckets.sql",
+  "20261125140000_public_verification_signup_limits.sql",
+];
 
 if (!host) throw Error("PUBLIC_LIMITS_PGHOST_REQUIRED: a local socket directory or loopback host");
 if (!host.startsWith("/") && !["localhost", "127.0.0.1", "::1"].includes(host)) throw Error("NON_LOCAL_DATABASE_REFUSED");
@@ -54,8 +58,35 @@ try {
   for (const role of ["anon", "authenticated", "service_role"]) {
     await db.query(`do $$ begin if not exists (select 1 from pg_roles where rolname = '${role}') then create role ${role} nologin; end if; end $$`);
   }
+  // Match the public verification grants that the hardening migration must revoke.
+  await db.query("create table public.verification_records (release_status text)");
+  await db.query("create table public.release_certificates (status text)");
+  await db.query(`grant select on public.verification_records, public.release_certificates to public, anon, authenticated, service_role`);
+  await db.query("create table public.notary_applications (id uuid)");
+  await db.query("alter table public.notary_applications enable row level security");
+  await db.query('create policy "Public can submit notary applications" on public.notary_applications for insert to anon, authenticated with check (true)');
+  await db.query("grant insert on public.notary_applications to anon, authenticated, service_role");
   // Apply the migration file exactly as written (its own BEGIN/COMMIT).
-  execFileSync("psql", ["-h", host, "-p", String(port), "-U", user, "-d", database, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", MIGRATION], { stdio: ["ignore", "ignore", "inherit"] });
+  for (const migration of migrations) {
+    execFileSync("psql", ["-h", host, "-p", String(port), "-U", user, "-d", database, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", `supabase/migrations/${migration}`], { stdio: ["ignore", "ignore", "inherit"] });
+  }
+
+  for (const table of ["verification_records", "release_certificates"]) {
+    const rights = (await db.query(`select
+      has_table_privilege('anon', 'public.${table}', 'SELECT') as anon,
+      has_table_privilege('authenticated', 'public.${table}', 'SELECT') as authenticated,
+      has_table_privilege('service_role', 'public.${table}', 'SELECT') as service
+    `)).rows[0];
+    assert.deepEqual(rights, { anon: false, authenticated: false, service: true }, table);
+  }
+
+  const signupRights = (await db.query(`select
+    has_table_privilege('anon', 'public.notary_applications', 'INSERT') as anon,
+    has_table_privilege('service_role', 'public.notary_applications', 'INSERT') as service,
+    exists (select 1 from pg_policies where schemaname='public' and tablename='notary_applications'
+      and policyname='Public can submit notary applications') as public_policy
+  `)).rows[0];
+  assert.deepEqual(signupRights, { anon: false, service: true, public_policy: false });
 
   const scope = () => createHash("sha256").update(randomBytes(16)).digest("hex");
   const consume = async (session, scopeHash, bucket) =>
@@ -80,6 +111,11 @@ try {
     ["intake_submit", 5, scope(), 2],
     ["intake_extract", 10, scope(), 2],
     ["assistant", 20, scope(), 3],
+    ["portal_auth_client", 30, scope(), 2],
+    ["portal_code_send", 3, scope(), 1],
+    ["portal_code_attempt", 5, scope(), 1],
+    ["verify_lookup", 60, scope(), 3],
+    ["public_signup", 5, scope(), 1],
     ["intake_extract_global", 300, "global", 12],
   ]) {
     const r = await burst(scopeHash, bucket, perWorker);

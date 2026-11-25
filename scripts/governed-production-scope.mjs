@@ -142,6 +142,8 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // 2026-11-25 owner-authorized portal OTP abuse remediation; forward-only
  // redeclaration of the same fixed-ceiling RPC. Production DDL remains gated.
  'supabase/migrations/20261125130000_public_request_limit_buckets.sql',
+ // Owner-authorized public verification and professional signup abuse hardening.
+ 'supabase/migrations/20261125140000_public_verification_signup_limits.sql',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',

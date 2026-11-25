@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!provider.ok) {
-      await supabase.from("portal_otps").delete().eq("deal_id", deal.id).eq("otp", otp);
+      await supabase.from("portal_otps").delete().eq("deal_id", deal.id).eq("otp", otp).eq("expires_at", expires_at);
       return NextResponse.json(
         { error: "Verification email could not be accepted by the provider" },
         { status: 502 },
