@@ -202,7 +202,7 @@ function packageName(spec) {
   return spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
 }
 
-function createGraph(root) {
+export function createGraph(root) {
   const cache = new Map();
   const direct = (rel) => {
     if (cache.has(rel)) return cache.get(rel);
@@ -234,7 +234,28 @@ function createGraph(root) {
     }
     return { modules: [...seen].sort(), packages: [...packages].sort() };
   };
-  return { direct, closure };
+  // Evidence fingerprint: every transitive module's CONTENT and every package's
+  // resolved (lockfile) version, so an implementation change in a dependency
+  // invalidates evidence even when the import graph is unchanged.
+  const contentHashes = new Map();
+  const lock = (() => {
+    try {
+      return JSON.parse(readText(root, "package-lock.json")).packages ?? {};
+    } catch {
+      return {};
+    }
+  })();
+  const fingerprint = ({ modules, packages }) =>
+    sha256(
+      JSON.stringify({
+        modules: modules.map((m) => {
+          if (!contentHashes.has(m)) contentHashes.set(m, sha256(readText(root, m)));
+          return [m, contentHashes.get(m)];
+        }),
+        packages: packages.map((p) => [p, lock[`node_modules/${p}`]?.version ?? "UNRESOLVED"]),
+      }),
+    );
+  return { direct, closure, fingerprint };
 }
 
 // ------------------------------------------------- existing registries
@@ -506,7 +527,7 @@ export async function buildRouteInventory(root = process.cwd(), { previous, base
         (rule.local && closure.modules.some((m) => rule.local.test(m))) ||
         (rule.pkg && closure.packages.some((p) => rule.pkg.test(p))),
     ).map((rule) => rule.id);
-    const dependencySha256 = sha256(JSON.stringify(closure));
+    const dependencySha256 = graph.fingerprint(closure);
 
     const tables = uniqSorted([...code.matchAll(/\.from\(\s*["'`]([\w.-]+)["'`]\s*\)/g)].map((m) => m[1]));
     const rpcs = uniqSorted([...code.matchAll(/\.rpc\(\s*["'`](\w+)["'`]/g)].map((m) => m[1]));

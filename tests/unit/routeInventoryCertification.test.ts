@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -19,6 +19,10 @@ const lib = inventoryLib as {
   evidenceProblems: (entry: Record<string, unknown>, ctx: Record<string, unknown>) => string[];
   certifyRecord: (record: Record<string, unknown>, evidence: unknown[], ctx: Record<string, unknown>) => { level: string; validEvidence: string[] };
   readProxyModel: (root: string) => unknown;
+  createGraph: (root: string) => {
+    closure: (rels: string[]) => { modules: string[]; packages: string[] };
+    fingerprint: (closure: { modules: string[]; packages: string[] }) => string;
+  };
   SECURITY_CASES: string[];
   CERTIFICATION_LEVELS: string[];
 };
@@ -175,4 +179,36 @@ test("the access model fails closed when proxy.ts changes shape", () => {
     rmSync(dir, { recursive: true, force: true });
   }
   assert.equal(createHash("sha256").update("").digest("hex").length, 64);
+});
+
+test("dependency fingerprint changes when a dependency's implementation changes with identical imports", () => {
+  const dir = mkdtempSync(join(tmpdir(), "route-fingerprint-"));
+  const write = (rel: string, text: string) => {
+    mkdirSync(join(dir, rel, ".."), { recursive: true });
+    writeFileSync(join(dir, rel), text);
+  };
+  const fingerprintOf = () => {
+    const graph = lib.createGraph(dir);
+    const closure = graph.closure(["app/api/x/route.ts"]);
+    return { closure, hash: graph.fingerprint(closure) };
+  };
+  try {
+    write("app/api/x/route.ts", 'import { allow } from "@/lib/guard";\nexport function POST() { return allow(); }\n');
+    write("lib/guard.ts", 'import { z } from "zod";\nexport const allow = () => z.string().safeParse("x").success;\n');
+    write("package-lock.json", JSON.stringify({ packages: { "node_modules/zod": { version: "3.0.0" } } }));
+    const before = fingerprintOf();
+    assert.deepEqual(before.closure, { modules: ["app/api/x/route.ts", "lib/guard.ts"], packages: ["zod"] });
+
+    // Same imports, different implementation (e.g. a weakened authorization check).
+    write("lib/guard.ts", 'import { z } from "zod";\nexport const allow = () => true;\n');
+    const edited = fingerprintOf();
+    assert.deepEqual(edited.closure, before.closure);
+    assert.notEqual(edited.hash, before.hash);
+
+    // Same code, different resolved package version.
+    write("package-lock.json", JSON.stringify({ packages: { "node_modules/zod": { version: "3.0.1" } } }));
+    assert.notEqual(fingerprintOf().hash, edited.hash);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
