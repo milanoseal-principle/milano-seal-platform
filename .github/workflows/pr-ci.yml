@@ -123,6 +123,7 @@ jobs:
         env:
           PUBLIC_LIMITS_PGHOST: 127.0.0.1
           PUBLIC_LIMITS_PGUSER: postgres
+          PUBLIC_LIMITS_SERVICE_CONTAINER: "true"
         run: npm run test:public-request-limits-concurrency
 
       - name: Clean dependency-aware migration replay

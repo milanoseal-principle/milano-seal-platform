@@ -35,8 +35,18 @@ const admin = await connect("postgres");
 const sessions = [];
 let ok = false;
 try {
+  // Same isolation proof as scripts/certification/p23-concurrency.mjs: the server
+  // must report a loopback/socket address for this session; a GitHub Actions
+  // service container on the Docker bridge (172.16.0.0/12) is accepted only
+  // inside Actions and only when the workflow declares the service.
   const addr = (await admin.query("select coalesce(inet_server_addr()::text, 'socket') as addr")).rows[0].addr;
-  assert.ok(addr === "socket" || addr.startsWith("127.") || addr === "::1", `server address must be local, got ${addr}`);
+  const dockerService =
+    process.env.GITHUB_ACTIONS === "true" &&
+    env("SERVICE_CONTAINER", "") === "true" &&
+    /^172\.(1[6-9]|2\d|3[01])\./.test(addr);
+  assert.ok(addr === "socket" || /^(127\.|::1)/.test(addr) || dockerService, `server address must be local, got ${addr}`);
+  const hosted = (await admin.query("select count(*)::int as n from pg_namespace where nspname = 'supabase_migrations'")).rows[0].n;
+  assert.equal(hosted, 0, "HOSTED_SUPABASE_CATALOG_REFUSED");
   await admin.query(`create database ${database}`);
 
   const db = await connect(database);
