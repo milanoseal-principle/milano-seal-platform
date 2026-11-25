@@ -161,22 +161,41 @@ test("production-shaped replay: migration 2 restores the identity columns and is
   assert.equal(stored.shippo_transaction_id, "txn_old");
 });
 
-test("migration 2 fails closed when the event_hash unique index is missing", { timeout: 240_000 }, async () => {
+/** Replays with the event_hash uniqueness replaced by `replacement` SQL right before migration 2. */
+async function replayWithEventHashIndex(replacement: string) {
   const db = (await migrationFixture()) as Db;
-  await assert.rejects(
-    replay(db, {
-      before: async (name) => {
-        if (name !== ISOLATION_MIGRATION) return;
-        const constraint = (await db.query<{ conname: string }>(
-          `select conname from pg_constraint where conrelid = 'public.shippo_tracking_events'::regclass and contype = 'u'`,
-        )).rows;
-        for (const { conname } of constraint) await db.exec(`alter table public.shippo_tracking_events drop constraint ${conname}`);
-        const indexes = (await db.query<{ indexname: string }>(
-          `select indexname from pg_indexes where schemaname = 'public' and tablename = 'shippo_tracking_events' and indexdef ilike '%unique%event_hash%'`,
-        )).rows;
-        for (const { indexname } of indexes) await db.exec(`drop index public.${indexname}`);
-      },
-    }),
-    /SHIPPO_TRACKING_EVENT_HASH_UNIQUE_INDEX_REQUIRED/,
+  await replay(db, {
+    before: async (name) => {
+      if (name !== ISOLATION_MIGRATION) return;
+      const constraint = (await db.query<{ conname: string }>(
+        `select conname from pg_constraint where conrelid = 'public.shippo_tracking_events'::regclass and contype = 'u'`,
+      )).rows;
+      for (const { conname } of constraint) await db.exec(`alter table public.shippo_tracking_events drop constraint ${conname}`);
+      const indexes = (await db.query<{ indexname: string }>(
+        `select indexname from pg_indexes where schemaname = 'public' and tablename = 'shippo_tracking_events' and indexdef ilike '%unique%event_hash%'`,
+      )).rows;
+      for (const { indexname } of indexes) await db.exec(`drop index public.${indexname}`);
+      if (replacement) await db.exec(replacement);
+    },
+  });
+  return db;
+}
+
+test("migration 2 fails closed unless event_hash has an ON CONFLICT-usable unique index", { timeout: 600_000 }, async () => {
+  for (const [label, replacement] of [
+    ["missing", ""],
+    ["partial", "create unique index ste_hash_partial on public.shippo_tracking_events (event_hash) where event_hash is not null"],
+    ["deferrable", "alter table public.shippo_tracking_events add constraint ste_hash_deferrable unique (event_hash) deferrable"],
+    ["composite", "create unique index ste_hash_composite on public.shippo_tracking_events (event_hash, matter_id)"],
+  ] as const) {
+    await assert.rejects(replayWithEventHashIndex(replacement), /SHIPPO_TRACKING_EVENT_HASH_UNIQUE_INDEX_REQUIRED/, label);
+  }
+  // A unique index with INCLUDE columns is a valid arbiter and must be accepted.
+  const db = await replayWithEventHashIndex(
+    "create unique index ste_hash_include on public.shippo_tracking_events (event_hash) include (matter_id)",
   );
+  const arbiter = await db.query(
+    `insert into public.shippo_tracking_events (event_hash, status) values ('x1', 'TRANSIT'), ('x1', 'TRANSIT') on conflict (event_hash) do nothing returning id`,
+  );
+  assert.equal(arbiter.rows.length, 1);
 });

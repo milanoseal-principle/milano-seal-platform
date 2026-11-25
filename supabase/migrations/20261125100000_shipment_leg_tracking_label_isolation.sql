@@ -23,7 +23,9 @@
 alter table public.shippo_tracking_events add column if not exists shippo_shipment_id text;
 alter table public.shippo_tracking_events add column if not exists shippo_transaction_id text;
 
--- Both RPCs dedupe with ON CONFLICT (event_hash): that requires a unique index.
+-- Both RPCs dedupe with ON CONFLICT (event_hash): that requires a unique index
+-- Postgres can use as the conflict arbiter — valid, non-partial, immediate,
+-- with event_hash as its only KEY column (INCLUDE columns are allowed).
 -- Fail the migration clearly (transactionally) instead of creating a live
 -- production index implicitly.
 do $$
@@ -33,9 +35,11 @@ begin
     from pg_index i
     join pg_class t on t.oid = i.indrelid
     join pg_namespace n on n.oid = t.relnamespace
-    join pg_attribute a on a.attrelid = t.oid and a.attnum = any (i.indkey)
+    join pg_attribute a on a.attrelid = t.oid and a.attnum = i.indkey[0]
     where n.nspname = 'public' and t.relname = 'shippo_tracking_events'
-      and i.indisunique and i.indnatts = 1 and a.attname = 'event_hash'
+      and i.indisunique and i.indisvalid and i.indimmediate
+      and i.indpred is null and i.indexprs is null
+      and i.indnkeyatts = 1 and a.attname = 'event_hash'
   ) then
     raise exception using errcode = '55000',
       message = 'SHIPPO_TRACKING_EVENT_HASH_UNIQUE_INDEX_REQUIRED',
