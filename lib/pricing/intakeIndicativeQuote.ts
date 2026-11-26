@@ -29,7 +29,7 @@ export function previewInputFromIntake(raw: Record<string, unknown>) {
     const numeric = typeof value === "number" || typeof value === "string" ? Number(value) : NaN;
     return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
   };
-  return {
+  const input = {
     text: text(raw.document_description ?? raw.message) ?? "",
     structured: {
       documentType: text(raw.document_type),
@@ -50,6 +50,13 @@ export function previewInputFromIntake(raw: Record<string, unknown>) {
     timeline: text(raw.timeline_preference),
     delivery: text(raw.delivery_method),
   };
+  // The Smart Intake wizard submits the same facts it passed to preview. Preserve
+  // its unknown and already-completed choices instead of reconstructing them from
+  // the legacy booleans used for Matter capture. The route validates this input.
+  const facts = raw.pricing_preview_facts;
+  if (!facts || typeof facts !== "object") return input;
+  const { structured, ai } = facts as Record<string, unknown>;
+  return { ...input, structured, ai };
 }
 
 export function indicativeQuoteFromPreview(preview: IntakeQuotePreview): IntakeIndicativeQuote | null {

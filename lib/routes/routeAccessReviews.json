@@ -233,7 +233,7 @@
         "lib/intake/intakeSubmissionGuard.ts": "d8164535d42aa9f18d3fae7aeefb97411b80a590e944bd8695ad81938efa8f1a",
         "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3",
         "app/api/intake/core.ts": "5123b2ef8f00f593e43a452fe5655b4d582afcb55a8e6bbf29d46f92364acc25",
-        "lib/pricing/intakeIndicativeQuote.ts": "07954714d35b75347584b8684945c0a3dba9e5ced3f29f8183c52bb6546a7056",
+        "lib/pricing/intakeIndicativeQuote.ts": "0b2aba34faaf6fcacf163f5ab1c939501c6f7612f2be35e2b15913f989573767",
         "lib/pricing/intakeQuotePreview.ts": "11139663d8c1aa89699c248f35f8e528850918d614c9d3ea95d5ba0228c03e49"
       }
     },

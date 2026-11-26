@@ -42,9 +42,24 @@ test("submitted affidavit facts use the same engine and ignore client totals", (
 });
 
 test("an unanswered destination stays absent and review-only previews carry no amount", () => {
-  assert.equal(previewInputFromIntake({ destination_country: "", country: "United States" }).structured.destinationCountry, undefined);
+  const input = intakeQuotePreviewSchema.parse(previewInputFromIntake({ destination_country: "", country: "United States" }));
+  assert.equal(input.structured.destinationCountry, undefined);
   assert.equal(indicativeQuoteFromPreview({
     mode: "quote_after_review", summary: "", lineItems: [], amount: 100,
     paymentGateRequired: true, schedulingLockedUntilPayment: true,
   }), null);
+});
+
+test("wizard preview facts preserve completed notarization and unresolved selections", () => {
+  const structured = { destinationCountry: "Italy", notarization: "already_completed" };
+  const ai = { documentType: "Affidavit" };
+  const input = intakeQuotePreviewSchema.parse(previewInputFromIntake({
+    document_description: "Affidavit for Italy",
+    tier: "priority",
+    notarization_required: false,
+    translation: false,
+    pricing_preview_facts: { structured, ai },
+  }));
+  assert.deepEqual(input.structured, structured);
+  assert.deepEqual(input.ai, ai);
 });

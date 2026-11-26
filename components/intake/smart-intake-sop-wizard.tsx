@@ -452,6 +452,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         notarial_act: "review_required",
       } : {}),
       tier: initialTier,
+      pricing_preview_facts: { structured: classificationInput.structured, ai: classificationInput.ai },
       client_quoted_total: quoteReady ? clientPricing.amount : undefined,
       pricing_engine_version: "canonical-pricing-v1",
       name: form.name,
