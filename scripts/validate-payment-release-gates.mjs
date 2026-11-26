@@ -1,7 +1,23 @@
 const { readFileSync }=await import('fs');
-const files=['src/features/payments/paymentGateService.ts','app/api/deals/[id]/payment/manual-confirm/route.ts','app/api/webhooks/wise/route.ts','src/features/release/releaseGateService.ts'];
+const files=['src/features/payments/paymentGateService.ts','app/api/webhooks/wise/route.ts','src/features/release/releaseGateService.ts'];
 const all=files.map(f=>readFileSync(f,'utf8')).join('\n');
-for (const k of ['Wise','MANUAL_PAYMENT_CONFIRMED','finalPaymentConfirmed','RELEASE_BLOCKED']) if(!all.includes(k)) throw new Error('payment/release missing '+k);
+for (const k of ['Wise','finalPaymentConfirmed','RELEASE_BLOCKED']) if(!all.includes(k)) throw new Error('payment/release missing '+k);
+
+// Owner-authorized 2026-11-26: the legacy direct payment writers are retired.
+// Each answers 410 and performs no data access of any kind; manual-confirm and
+// request-final still authenticate first, and manual-confirm keeps its founder check.
+const retired={
+  'app/api/deals/[id]/payment/route.ts':[],
+  'app/api/deals/[id]/payment/manual-confirm/route.ts':['requireOperatorApiAccess','confirm_payment_manual','FOUNDER_ADMIN_REQUIRED'],
+  'app/api/deals/[id]/payment/request-final/route.ts':['requireOperatorApiAccess'],
+};
+for (const [f,required] of Object.entries(retired)){
+  const src=readFileSync(f,'utf8');
+  if(!/status:\s*410/.test(src)) throw new Error(f+' must answer 410');
+  for (const k of required) if(!src.includes(k)) throw new Error(f+' missing '+k);
+  if(/createClient|createAdminClient|supabaseServer|getMatterById|updateMatter|writeEventLedger|logActivity|\.from\(|\.update\(|\.insert\(|\.rpc\(|req(uest)?\.json\(/.test(src)) throw new Error(f+' must not read or write data');
+}
+if(readFileSync('app/api/deals/[id]/payment/confirm-final/route.ts','utf8').trim()!=='export { POST } from "../manual-confirm/route";') throw new Error('confirm-final must only re-export the retired manual-confirm handler');
 if(/searchParams.*paid|client.*mark.*paid/i.test(all)) throw new Error('paid bypass pattern');
 
 // Settlement clearance hardening lives in the shared release gate; the route

@@ -144,6 +144,11 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  'supabase/migrations/20261125130000_public_request_limit_buckets.sql',
  // Owner-authorized public verification and professional signup abuse hardening.
  'supabase/migrations/20261125140000_public_verification_signup_limits.sql',
+ // 2026-11-26 owner authorization (Final Release Reconciliation, item 3-4): retire the
+ // legacy direct payment writer with HTTP 410 and no data access. Exact path only;
+ // manual-confirm and request-final are already listed above. Regression:
+ // tests/unit/legacyPaymentRoutesRetired.test.ts, validate:payment-release-gates.
+ 'app/api/deals/[id]/payment/route.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',
