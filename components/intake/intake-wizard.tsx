@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Loader2, Check } from "lucide-react";
@@ -400,6 +400,7 @@ export function IntakeWizard({
   >({});
   const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionLocked = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [showAiHelper, setShowAiHelper] = useState(false);
@@ -479,7 +480,8 @@ export function IntakeWizard({
   };
 
   const handleSubmit = async () => {
-    if (!validate(3)) return;
+    if (submissionLocked.current || !validate(3)) return;
+    submissionLocked.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -573,6 +575,7 @@ export function IntakeWizard({
           ? e.message
           : "Something went wrong. Please try again.",
       );
+      submissionLocked.current = false;
       setIsSubmitting(false);
     }
   };
