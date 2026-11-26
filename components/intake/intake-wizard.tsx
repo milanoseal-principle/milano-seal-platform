@@ -551,7 +551,7 @@ export function IntakeWizard({
         try{const upload=await fetch('/api/intake/upload',{method:'POST',body:fd});const receipt=await upload.json().catch(()=>null);json.upload_warning=!upload.ok||Boolean(receipt?.errors?.length)||receipt?.files?.length!==files.length;}catch{json.upload_warning=true;}
       }
 
-      if (typeof sessionStorage !== "undefined") {
+      try {
         if (json.payment_link)
           sessionStorage.setItem("ms_payment_link", json.payment_link);
         if (json.wise_invoice)
@@ -560,6 +560,8 @@ export function IntakeWizard({
             JSON.stringify(json.wise_invoice),
           );
         sessionStorage.setItem("ms_intake_response", JSON.stringify(json));
+      } catch {
+        // The Matter is already saved. Confirmation and portal access can continue.
       }
 
       router.push(

@@ -75,3 +75,22 @@ test("a failed status lookup is 'unavailable', never 'no payment due' (Codex rev
   assert.match(unavailable, /href="\/portal"/, "points the owner to the authenticated portal");
   assert.doesNotMatch(unavailable, /No payment is due/, "makes no payment claim");
 });
+
+test("indicative confirmation is Matter-bound and a review response does not schedule payment polling", () => {
+  const page = fs.readFileSync("app/intake/confirmation/page.tsx", "utf8");
+  assert.match(page, /storedIntake\?\.deal_id === dealId \? storedIntake : null/);
+  assert.match(page, /quoteLookup\?\.matterId === dealId/);
+  assert.match(page, /if \(!stopped && body\.quote_issued === true\) nextPoll = setTimeout/);
+  assert.doesNotMatch(page, /setInterval\(/);
+  const portal = fs.readFileSync("app/api/portal/me/invoice/route.ts", "utf8");
+  assert.match(portal, /await getCurrentClientDeal\(requestedId\)/);
+  assert.match(portal, /indicativeQuote: approved \? null : indicativeQuoteFromNotes/);
+});
+
+test("the server saves indicative metadata in the first Matter insert before returning it", () => {
+  const core = fs.readFileSync("app/api/intake/core.ts", "utf8");
+  const review = core.slice(core.indexOf("const indicativeQuote ="), core.indexOf('stage = "EXECUTION_VALIDATED"'));
+  assert.match(review, /internal_notes: JSON\.stringify\(indicativeQuote\s*\? \{ \.\.\.reviewMetadata, indicative_quote: indicativeQuote \}/);
+  assert.match(review, /\.insert\(\[reviewPayload\]\)[\s\S]*if \(reviewError\)[\s\S]*indicative_quote: indicativeQuote/);
+  assert.doesNotMatch(review, /\.update\(|invoice_retainer:|invoice_balance:|total_price:/);
+});
