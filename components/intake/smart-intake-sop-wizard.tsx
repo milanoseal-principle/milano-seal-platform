@@ -452,6 +452,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
         notarial_act: "review_required",
       } : {}),
       tier: initialTier,
+      pricing_preview_facts: { structured: classificationInput.structured, ai: classificationInput.ai },
       client_quoted_total: quoteReady ? clientPricing.amount : undefined,
       pricing_engine_version: "canonical-pricing-v1",
       name: form.name,
@@ -510,10 +511,12 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       try { sessionStorage.removeItem(INTAKE_DRAFT_KEY); } catch {}
       track("intake_submitted", { uploadCount: files.length, pricingState: clientPricing.mode }, id);
 
-      if (typeof sessionStorage !== "undefined") {
+      try {
         if (json.payment_link) sessionStorage.setItem("ms_payment_link", json.payment_link);
         if (json.wise_invoice) sessionStorage.setItem("ms_wise_invoice", JSON.stringify(json.wise_invoice));
         sessionStorage.setItem("ms_intake_response", JSON.stringify(json));
+      } catch {
+        // The Matter is already saved. Confirmation and portal access can continue.
       }
 
       const seeded = Object.fromEntries(files.map((file) => [fileKey(file), "pending" as UploadState]));

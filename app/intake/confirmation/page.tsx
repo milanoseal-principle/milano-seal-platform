@@ -1,5 +1,7 @@
 "use client";
 
+import { IntakeIndicativeEstimate } from "@/components/pricing/IntakeIndicativeEstimate";
+import { parseIndicativeQuote, type IntakeIndicativeQuote } from "@/lib/pricing/intakeIndicativeQuote";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/landing/header";
@@ -66,7 +68,7 @@ function ConfirmationInner() {
   const hasMatterId = dealId.startsWith("MS-");
   const matterIdLabel = hasMatterId ? dealId : "Matter ID pending";
   const statusLabel = normalizeStatusLabel(rawStatus);
-  const [intakeData, setIntakeData] = useState<Record<string, unknown> | null>(
+  const [storedIntake, setIntakeData] = useState<Record<string, unknown> | null>(
     null,
   );
   const [visible, setVisible] = useState(false);
@@ -75,7 +77,12 @@ function ConfirmationInner() {
   // Review-required intake has no payable obligation, so no payment UI.
   // "unavailable": the status lookup failed (e.g. the 30-minute intake
   // capability expired). That is never treated as "no payment due".
-  const [quoteState, setQuoteState] = useState<"unknown" | "issued" | "pending_review" | "unavailable">("unknown");
+  const [quoteLookup, setQuoteLookup] = useState<{
+    matterId: string;
+    state: "issued" | "pending_review" | "unavailable";
+    estimate: IntakeIndicativeQuote | null;
+  } | null>(null);
+  const quoteState = quoteLookup?.matterId === dealId ? quoteLookup.state : "unknown";
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -84,6 +91,10 @@ function ConfirmationInner() {
     if (!dealId.startsWith("MS-")) return;
 
     let stopped = false;
+    const setQuoteState = (state: "issued" | "pending_review" | "unavailable", estimate: IntakeIndicativeQuote | null = null) => {
+      setQuoteLookup({ matterId: dealId, state, estimate });
+    };
+    let nextPoll: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       try {
         const r = await fetch(
@@ -94,24 +105,25 @@ function ConfirmationInner() {
           if (!stopped) setQuoteState("unavailable");
           return;
         }
-        const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean };
-        if (!stopped) setQuoteState(body.quote_issued === true ? "issued" : "pending_review");
+        const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean; indicative_quote?: unknown };
+        if (!stopped) setQuoteState(
+          body.quote_issued === true ? "issued" : "pending_review",
+          body.quote_issued === true ? null : parseIndicativeQuote(body.indicative_quote),
+        );
         if (body.payment_status === "paid" && !stopped) {
           stopped = true;
           router.push("/portal");
         }
+        if (!stopped && body.quote_issued === true) nextPoll = setTimeout(poll, 5000);
       } catch {
         if (!stopped) setQuoteState("unavailable");
       }
     };
 
     void poll();
-    const id = setInterval(() => {
-      void poll();
-    }, 5000);
     return () => {
       stopped = true;
-      clearInterval(id);
+      clearTimeout(nextPoll);
     };
   }, [dealId, router]);
 
@@ -143,6 +155,8 @@ function ConfirmationInner() {
     } catch {}
   }, []);
 
+  const intakeData = hasMatterId && storedIntake?.deal_id === dealId ? storedIntake : null;
+  const indicativeQuote = quoteLookup?.matterId === dealId ? quoteLookup.estimate : null;
   const displayId = dealId ? dealId.slice(0, 12).toUpperCase() : null;
   const lane = intakeData?.lane as string | undefined;
   const amount = intakeData?.estimated_value as number | undefined;
@@ -317,6 +331,7 @@ function ConfirmationInner() {
             due after apostille completion and before international release.
             No payment is due yet.
           </p>
+          {indicativeQuote && <IntakeIndicativeEstimate quote={indicativeQuote} />}
         </div>
       ) : dealId?.startsWith("MS-") && quoteState === "issued" ? (
         <div className="mb-6">

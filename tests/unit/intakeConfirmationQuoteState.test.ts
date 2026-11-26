@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { test, type TestContext } from "node:test";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/public/payment-status/route";
+import { issuePaymentCapability, PAYMENT_CAPABILITY_COOKIE } from "@/lib/payments/paymentCapability";
 
 // Live acceptance MS-2026-9166 (affidavit → Italy, public intake): the Matter was
 // correctly captured as review-required with no canonical quote, but the
@@ -56,7 +57,7 @@ test("a complimentary Matter never reports a payable quote", async (t) => {
 
 test("the confirmation page gates the PaymentGate and payment polling banner on an issued quote", () => {
   const page = fs.readFileSync("app/intake/confirmation/page.tsx", "utf8").replace(/\s+/g, " ");
-  assert.match(page, /setQuoteState\(body\.quote_issued === true \? "issued" : "pending_review"\)/);
+  assert.match(page, /setQuoteState\( body\.quote_issued === true \? "issued" : "pending_review",/);
   assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState === "pending_review" \?/, "review copy only on a confirmed pending-review answer");
   assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState === "issued" \? \( <div className="mb-6"> <PaymentGate/, "PaymentGate is only the issued branch");
   assert.match(page, /\) : dealId\?\.startsWith\("MS-"\) \? null : \(/, "no payment copy for an MS- Matter while status is loading");
@@ -74,4 +75,52 @@ test("a failed status lookup is 'unavailable', never 'no payment due' (Codex rev
   const unavailable = page.slice(page.indexOf('quoteState === "unavailable" ? ('), page.indexOf('quoteState === "pending_review" ? ('));
   assert.match(unavailable, /href="\/portal"/, "points the owner to the authenticated portal");
   assert.doesNotMatch(unavailable, /No payment is due/, "makes no payment claim");
+});
+
+test("indicative confirmation is Matter-bound and a review response does not schedule payment polling", () => {
+  const page = fs.readFileSync("app/intake/confirmation/page.tsx", "utf8");
+  assert.match(page, /storedIntake\?\.deal_id === dealId \? storedIntake : null/);
+  assert.match(page, /quoteLookup\?\.matterId === dealId/);
+  assert.match(page, /if \(!stopped && body\.quote_issued === true\) nextPoll = setTimeout/);
+  assert.doesNotMatch(page, /setInterval\(/);
+  const portal = fs.readFileSync("app/api/portal/me/invoice/route.ts", "utf8");
+  assert.match(portal, /await getCurrentClientDeal\(requestedId\)/);
+  assert.match(portal, /indicativeQuote: approved \? null : indicativeQuoteFromNotes/);
+});
+
+test("the server saves indicative metadata in the first Matter insert before returning it", () => {
+  const core = fs.readFileSync("app/api/intake/core.ts", "utf8");
+  const review = core.slice(core.indexOf("const indicativeQuote ="), core.indexOf('stage = "EXECUTION_VALIDATED"'));
+  assert.match(review, /internal_notes: JSON\.stringify\(indicativeQuote\s*\? \{ \.\.\.reviewMetadata, indicative_quote: indicativeQuote \}/);
+  assert.match(review, /\.insert\(\[reviewPayload\]\)[\s\S]*if \(reviewError\)[\s\S]*indicative_quote: indicativeQuote/);
+  assert.doesNotMatch(review, /\.update\(|invoice_retainer:|invoice_balance:|total_price:/);
+});
+
+test("only the matching intake capability receives the stored estimate projection", async (t) => {
+  const dealId = "MS-2026-0000";
+  const quote = {
+    basis: "indicative_not_payable", engine: "intake-quote-preview", mode: "approved_price",
+    summary: "Fixture estimate", computed_at: "2026-11-26T12:00:00.000Z",
+    total: 13.75, retainer_estimate: 6.88, final_balance_estimate: 6.87,
+    line_items: [{ key: "base", label: "Fixture execution", amount: 13.75 }],
+  };
+  supabaseFixture(t, {
+    deal_id: dealId, payment_status: "unpaid", total_price: null, payment_disposition: "standard_payment",
+    internal_notes: JSON.stringify({ quote_state: "review_required", indicative_quote: quote, private_note: "operator only" }),
+  });
+  const url = `https://www.themilanoseal.com/api/public/payment-status?deal_id=${dealId}`;
+  const cookie = (matter: string, now?: number) => ({
+    cookie: `${PAYMENT_CAPABILITY_COOKIE}=${issuePaymentCapability(matter, "synthetic-service-role-key", now)}`,
+  });
+  const owner = await GET(new NextRequest(url, { headers: cookie(dealId) }));
+  assert.equal(owner.status, 200);
+  const body = await owner.json();
+  assert.deepEqual(body.indicative_quote, quote);
+  assert.equal("internal_notes" in body, false);
+  const accessToken = await GET(new NextRequest(`${url}&access_token=fixture`));
+  assert.equal("indicative_quote" in await accessToken.json(), false);
+  const wrongMatter = await GET(new NextRequest(url, { headers: cookie("MS-2026-OTHER") }));
+  assert.equal(wrongMatter.status, 400);
+  const expired = await GET(new NextRequest(url, { headers: cookie(dealId, 0) }));
+  assert.equal(expired.status, 400);
 });

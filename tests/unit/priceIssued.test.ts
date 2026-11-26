@@ -28,7 +28,7 @@ test("invoice API, founder alert and invoice page share the one rule", () => {
   assert.match(page, /pricingStatus === "pending_review"/);
   // A superseded response (client switched Matters) must not hide the active Matter's invoice.
   assert.match(page, /if \(activeMatterId\.current !== requestedMatterId\) return;/);
-  assert.match(page, /pricingPendingMatterId === deal\.id/);
+  assert.match(page, /pendingPricing\?\.matterId === deal\.id/);
   assert.match(page, /Pricing pending review/);
 });
 
