@@ -15,7 +15,7 @@ const migrationFixture = async (): Promise<PGlite> =>
 
 const MIGRATION_FILE = "20261126050000_current_account_authorization_hardening.sql";
 const MIGRATION = fs.readFileSync(`supabase/migrations/${MIGRATION_FILE}`, "utf8");
-const CLAIM = /auth\.jwt\(\)|request\.jwt\.claims|auth\.email\(\)/;
+const CLAIM = /auth\.jwt\(\)|request\.jwt\.claims|request\.jwt\.claim\.(email|app_metadata|user_metadata)|auth\.email\(\)/;
 
 const uid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 type Person = { id: string; email: string | null; app: Record<string, unknown>; user?: Record<string, unknown>; banned?: boolean; jwtApp?: Record<string, unknown>; jwtEmail?: string; noAccount?: boolean };
@@ -61,7 +61,14 @@ async function replayBefore(): Promise<PGlite> {
     insert into public.translation_entries(content_key, locale, source_hash, source_text, translated_text, translation_method, risk_level, review_status)
       values ('home.hero', 'it', 'h1', 'Hello', 'Ciao', 'ai', 'LOW', 'AUTO_TRANSLATED');
     insert into storage.buckets(id, name) values ('documents', 'documents');
+    -- A hosted-only shape: the legacy individual claim setting (Codex review on #550).
+    create table public.hosted_only_notes(owner_email text, note text);
+    alter table public.hosted_only_notes enable row level security;
+    grant select on public.hosted_only_notes to authenticated;
+    create policy hosted_only_notes_own on public.hosted_only_notes for select to authenticated
+      using (owner_email = current_setting('request.jwt.claim.email', true));
   `);
+  await db.query("insert into public.hosted_only_notes values ($1, 'synthetic')", [P.clientA.email]);
   for (const owner of ["clientA", "clientB"] as const) {
     const deal = (await db.query<{ id: string }>("insert into public.deals(email) values ($1) returning id::text", [P[owner].email])).rows[0].id;
     await db.query("insert into storage.objects(bucket_id, name) values ('documents', $1)", [`${deal}/synthetic-${owner}.pdf`]);
@@ -76,12 +83,12 @@ async function as<T>(db: PGlite, who: Person | "anon", fn: () => Promise<T>): Pr
   } else {
     const claims = { sub: who.id, role: "authenticated", email: who.jwtEmail ?? who.email, app_metadata: who.jwtApp ?? who.app, user_metadata: who.user ?? {} };
     await db.exec("set role authenticated");
-    await db.query("select set_config('request.jwt.claims', $1, false)", [JSON.stringify(claims)]);
+    await db.query("select set_config('request.jwt.claims', $1, false), set_config('request.jwt.claim.email', $2, false)", [JSON.stringify(claims), claims.email ?? ""]);
   }
   try {
     return await fn();
   } finally {
-    await db.exec("reset role; select set_config('request.jwt.claims', '', false)");
+    await db.exec("reset role; select set_config('request.jwt.claims', '', false), set_config('request.jwt.claim.email', '', false)");
   }
 }
 
@@ -101,6 +108,8 @@ const visibleDeals = (db: PGlite, who: Person | "anon") =>
   as(db, who, async () => (await db.query<{ email: string }>("select email from public.deals order by email")).rows.map((r) => r.email));
 const visibleObjects = (db: PGlite, who: Person | "anon") =>
   as(db, who, async () => (await db.query<{ name: string }>("select name from storage.objects order by name")).rows.map((r) => r.name.split("/")[1]));
+const visibleNotes = (db: PGlite, who: Person) =>
+  as(db, who, async () => (await db.query("select 1 from public.hosted_only_notes")).rows.length);
 const visibleProfiles = (db: PGlite, who: Person | "anon") =>
   as(db, who, async () => (await db.query<{ client_email: string }>("select client_email from public.client_profiles")).rows.map((r) => r.client_email));
 
@@ -113,7 +122,7 @@ async function snapshot(db: PGlite): Promise<Snapshot> {
 
 // The exact substitution the migration makes, expressed on the deparsed text.
 const ROLE_CLAIM = "((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text)";
-const EMAIL_CLAIMS = ["((current_setting('request.jwt.claims'::text, true))::jsonb ->> 'email'::text)", "(auth.jwt() ->> 'email'::text)", "auth.email()"];
+const EMAIL_CLAIMS = ["((current_setting('request.jwt.claims'::text, true))::jsonb ->> 'email'::text)", "(auth.jwt() ->> 'email'::text)", "auth.email()", "current_setting('request.jwt.claim.email'::text, true)"];
 const normaliseBefore = (e: string | null) => e === null ? null : EMAIL_CLAIMS.reduce((s, c) => s.split(c).join("<EMAIL>"), e.split(ROLE_CLAIM).join("<ROLE>"));
 const normaliseAfter = (e: string | null) => e === null ? null
   : e.split("( SELECT current_account_role() AS current_account_role)").join("<ROLE>").split("( SELECT current_account_email() AS current_account_email)").join("<EMAIL>");
@@ -133,6 +142,7 @@ test("defect reproduced on the replayed chain: stale token claims keep access", 
   assert.equal(await updateTranslation(db, P.disabledFounder), 1, "disabled account still rewrites translations");
   assert.deepEqual(await visibleDeals(db, P.staleEmail), [P.clientA.email], "stale email reads the former owner's Matter");
   assert.deepEqual(await visibleObjects(db, P.staleEmail), ["synthetic-clientA.pdf"], "and the former owner's documents");
+  assert.equal(await visibleNotes(db, P.staleEmail), 1, "legacy individual claim setting is stale too");
   assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email ?? undefined }), [P.clientA.email], "a disabled account presenting the owner's address");
   assert.ok([...before.values()].filter((p) => CLAIM.test(`${p.qual} ${p.check}`)).length >= 50, "the replayed catalog holds the claim-based policies");
 });
@@ -179,6 +189,9 @@ test("client ownership follows the current account email; stale, disabled, cross
   assert.deepEqual(await visibleObjects(db, P.clientB), ["synthetic-clientB.pdf"], "no cross-client documents");
   assert.deepEqual(await visibleProfiles(db, P.clientA), [P.clientA.email]);
   assert.deepEqual(await visibleDeals(db, P.staleEmail), [], "a stale email claim restores nothing");
+  assert.equal(await visibleNotes(db, P.clientA), 1, "legacy individual email setting rewritten to the current account");
+  assert.equal(await visibleNotes(db, P.staleEmail), 0);
+  assert.equal(await visibleNotes(db, { ...P.disabledClientA, jwtEmail: P.clientA.email ?? undefined }), 0);
   assert.deepEqual(await visibleObjects(db, P.staleEmail), []);
   assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email ?? undefined }), [], "disabled account with the owner's address");
   await assert.rejects(visibleDeals(db, "anon"), /permission denied for table deals/, "anon holds no Matter privilege at all");
@@ -195,6 +208,17 @@ test("authenticated still cannot write canonical Matters; service role is unaffe
   } finally {
     await db.exec("reset role");
   }
+});
+
+test("an unrecognised claim read fails the migration and rolls back", async () => {
+  const fresh = await migrationFixture();
+  await fresh.exec(`create table public.t(x text); alter table public.t enable row level security;
+    create policy legacy_role on public.t for select to authenticated using ((current_setting('request.jwt.claim.app_metadata', true))::jsonb ->> 'role' = 'admin');
+    create policy user_meta on public.t for select to authenticated using ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');`);
+  await assert.rejects(fresh.exec(MIGRATION), /CURRENT_ACCOUNT_AUTHORIZATION_UNRECOGNISED_CLAIM_POLICY: public\.t\.legacy_role, public\.t\.user_meta/);
+  await fresh.exec("rollback");
+  assert.equal((await fresh.query("select 1 from pg_proc where proname = 'current_account_role'")).rows.length, 0, "nothing committed");
+  await fresh.close();
 });
 
 test("idempotent, and a no-op on a bare database", async () => {

@@ -5,6 +5,9 @@
 --   ((auth.jwt() -> 'app_metadata') ->> 'role')          server-issued role
 --   (auth.jwt() ->> 'email'), auth.email(),
 --   (current_setting('request.jwt.claims')::jsonb ->> 'email')   account email
+-- (the legacy individual setting request.jwt.claim.email is rewritten too; any
+-- other read of request.jwt.claim.email / .app_metadata / .user_metadata fails
+-- the migration for review)
 -- None checked the account's current state. An account disabled with
 -- app_metadata.disabled keeps its role on every token refresh, so it kept
 -- every one of these grants indefinitely (writes included: discount_codes,
@@ -100,7 +103,7 @@ begin
     select schemaname, tablename, policyname, qual, with_check
     from pg_catalog.pg_policies
     where schemaname in ('public', 'storage')
-      and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) ~ 'auth\.jwt\(\)|request\.jwt\.claims|auth\.email\(\)'
+      and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) ~ 'auth\.jwt\(\)|request\.jwt\.claims|request\.jwt\.claim\.(email|app_metadata|user_metadata)|auth\.email\(\)'
   loop
     v_qual := r.qual;
     v_check := r.with_check;
@@ -113,6 +116,9 @@ begin
     v_check := replace(v_check, '(auth.jwt() ->> ''email''::text)', '( SELECT public.current_account_email())');
     v_qual := replace(v_qual, 'auth.email()', '( SELECT public.current_account_email())');
     v_check := replace(v_check, 'auth.email()', '( SELECT public.current_account_email())');
+    -- Legacy individual claim setting (pre-v10 PostgREST): request.jwt.claim.email.
+    v_qual := replace(v_qual, 'current_setting(''request.jwt.claim.email''::text, true)', '( SELECT public.current_account_email())');
+    v_check := replace(v_check, 'current_setting(''request.jwt.claim.email''::text, true)', '( SELECT public.current_account_email())');
 
     v_sql := format('alter policy %I on %I.%I', r.policyname, r.schemaname, r.tablename);
     if r.qual is not null then
@@ -128,7 +134,7 @@ begin
     into v_left
   from pg_catalog.pg_policies
   where schemaname in ('public', 'storage')
-    and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) ~ 'auth\.jwt\(\)|request\.jwt\.claims|auth\.email\(\)';
+    and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) ~ 'auth\.jwt\(\)|request\.jwt\.claims|request\.jwt\.claim\.(email|app_metadata|user_metadata)|auth\.email\(\)';
   if v_left is not null then
     raise exception 'CURRENT_ACCOUNT_AUTHORIZATION_UNRECOGNISED_CLAIM_POLICY: %', v_left;
   end if;
