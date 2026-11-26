@@ -51,8 +51,10 @@ test("unknown / missing role normalizes to null (not defaulted)", () => {
 
 // ── Home-route matrix ────────────────────────────────────────────────────────
 test("home route per role", () => {
-  assert.equal(getHomeRouteForRole("founder"), "/dashboard");
-  assert.equal(getHomeRouteForRole("admin"), "/dashboard");
+  assert.equal(getHomeRouteForRole("founder"), "/dashboard/founder");
+  assert.equal(getHomeRouteForRole("Founder_Admin"), "/dashboard/founder");
+  assert.equal(getHomeRouteForRole("owner"), "/dashboard/founder");
+  assert.equal(getHomeRouteForRole("admin"), "/dashboard/admin");
   assert.equal(getHomeRouteForRole("operator"), "/dashboard");
   assert.equal(getHomeRouteForRole("compliance_reviewer"), "/dashboard");
   assert.equal(getHomeRouteForRole("virtual_assistant"), "/va/dashboard");

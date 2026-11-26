@@ -10,8 +10,8 @@ export type UserRole =
 export const roleHomeRoute: Record<UserRole, string> = {
   client: "/portal",
   operator: "/dashboard",
-  admin: "/dashboard",
-  owner: "/dashboard",
+  admin: "/dashboard/admin",
+  owner: "/dashboard/founder",
   va: "/va/dashboard",
   alliance: "/alliance/dashboard",
   professional: "/professional/matters",
@@ -82,6 +82,8 @@ export function getHomeRouteForRole(role?: string | null): string {
   const normalized = normalizeUserRole(role);
   // Missing / unrecognized role → safe denied route, never a protected default.
   if (!normalized) return DENIED_ROUTE;
+  const configuredRole = role?.trim().toLowerCase();
+  if (configuredRole === "founder" || configuredRole === "founder_admin") return roleHomeRoute.owner;
   return roleHomeRoute[normalized];
 }
 

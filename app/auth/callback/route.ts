@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { getHomeRouteForRole, normalizeUserRole } from "@/lib/auth/roleRedirect";
 import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
 
 export async function GET(request: Request) {
@@ -50,8 +51,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/alliance/dashboard`);
   }
 
-  // Admin/operator roles → dashboard (respect a safe next= override)
-  if (["admin", "ops_manager", "finance", "operator", "founder_admin", "admin_operator", "execution_coordinator", "apostille_coordinator", "finance_operator", "client_support"].includes(actualRole)) {
+  // Staff deep links retain their existing routing behavior.
+  const roleFamily = normalizeUserRole(actualRole);
+  if (roleFamily === "admin" || roleFamily === "operator" || roleFamily === "owner") {
     if (nextOverride) {
       const safe =
         nextOverride.startsWith("/dashboard") ||
@@ -61,7 +63,7 @@ export async function GET(request: Request) {
         nextOverride.startsWith("/va");
       if (safe) return NextResponse.redirect(`${origin}${nextOverride}`);
     }
-    return NextResponse.redirect(`${origin}/dashboard`);
+    return NextResponse.redirect(new URL(getHomeRouteForRole(actualRole), origin));
   }
 
   // Explicit client hint (magic link) or client role → portal

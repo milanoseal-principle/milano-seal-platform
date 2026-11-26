@@ -1,16 +1,18 @@
 import Link from "next/link";
 
 const PORTALS = [
-  { label: "Operator Dashboard", href: "/dashboard", tag: "OPS" },
-  { label: "Secure Matter Portal", href: "/portal", tag: "CLIENT" },
-  { label: "Alliance Oversight", href: "/dashboard/alliance", tag: "ALLIANCE" },
-  { label: "Alliance Partner Portal", href: "/alliance/dashboard", tag: "PARTNER" },
-  { label: "Operations Desk", href: "/va/dashboard", tag: "VA" },
+  { label: "Founder Command", href: "/dashboard/founder" },
+  { label: "Admin Control Center", href: "/dashboard/admin" },
+  { label: "Operator Dashboard", href: "/dashboard" },
+  { label: "Alliance Oversight", href: "/dashboard/alliance" },
+  { label: "Alliance Partner Portal", href: "/alliance/dashboard" },
+  { label: "VA Task Management", href: "/dashboard/va" },
+  { label: "VA Workspace", href: "/va/dashboard" },
 ];
 
 export function FounderAccessBar() {
   return (
-    <div style={{
+    <nav aria-label="Founder workspaces" style={{
       display: "flex",
       alignItems: "center",
       gap: 8,
@@ -44,6 +46,6 @@ export function FounderAccessBar() {
           {p.label}
         </Link>
       ))}
-    </div>
+    </nav>
   );
 }
