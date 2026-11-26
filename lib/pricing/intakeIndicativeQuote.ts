@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { IntakeQuotePreview } from "./intakeQuotePreviewTypes";
+import { splitFiftyFifty } from "./paymentSplit";
 
 const lineSchema = z.object({
   key: z.string(),
@@ -22,9 +23,8 @@ const quoteSchema = z.object({
 export type IntakeIndicativeQuote = z.infer<typeof quoteSchema>;
 
 export function fiftyFiftySplit(total: number) {
-  const cents = Math.round(total * 100);
-  const retainerCents = Math.round(cents / 2);
-  return { total: cents / 100, retainer: retainerCents / 100, balance: (cents - retainerCents) / 100 };
+  const { total: exact, retainer, finalBalance } = splitFiftyFifty(total);
+  return { total: exact, retainer, balance: finalBalance };
 }
 
 export function previewInputFromIntake(raw: Record<string, unknown>) {

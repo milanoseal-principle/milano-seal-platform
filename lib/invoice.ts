@@ -1,3 +1,4 @@
+import { splitFiftyFifty } from "@/lib/pricing/paymentSplit";
 export interface InvoiceLineItem {
   label: string;
   amount: number | "Included";
@@ -23,8 +24,8 @@ export function generateInvoice(
   opts?: { lane?: string; courierSurcharge?: number }
 ): InvoiceResult {
   const subtotal = total;
-  const retainer = Math.round(subtotal * 0.5 * 100) / 100;
-  const balance = Math.round((subtotal - retainer) * 100) / 100;
+  // Canonical integer-cent 50/50 split (lib/pricing/paymentSplit.ts).
+  const { retainer, finalBalance: balance } = splitFiftyFifty(subtotal);
 
   const laneLabel =
     opts?.lane === "executive" ? "Executive Lane"

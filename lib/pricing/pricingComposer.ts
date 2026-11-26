@@ -1,3 +1,4 @@
+import { splitFiftyFifty } from "./paymentSplit";
 import {
   DOCUMENT_FEES,
   LANGUAGE_PREP_FEES,
@@ -294,8 +295,9 @@ export function composeCanonicalPrivateQuote(
   const subtotal = money(lineItems.reduce((sum, item) => sum + item.amount, 0));
   const discountAmount = Math.min(subtotal, positiveMoney(input.discountAmount));
   const total = money(subtotal - discountAmount);
-  const depositAmount = money(total / 2);
-  const balanceDue = money(total - depositAmount);
+  // Canonical integer-cent split (lib/pricing/paymentSplit.ts); never divide
+  // dollars and round afterwards.
+  const { retainer: depositAmount, finalBalance: balanceDue } = splitFiftyFifty(total);
 
   if (travelReviewRequired && !reviewOnlyItems.includes("mobile_travel_over_50_miles")) {
     reviewOnlyItems.push("mobile_travel_over_50_miles");
