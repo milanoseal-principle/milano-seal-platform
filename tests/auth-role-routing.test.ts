@@ -6,6 +6,7 @@ import {
   normalizeUserRole,
   getHomeRouteForRole,
   isRouteAllowedForRole,
+  isWorkspaceLoginRedirect,
   DENIED_ROUTE,
 } from "../lib/auth/roleRedirect";
 
@@ -107,4 +108,22 @@ test("missing / unknown role is blocked on every protected surface", () => {
     assert.ok(!isRouteAllowedForRole(path, null), `null role must not reach ${path}`);
     assert.ok(!isRouteAllowedForRole(path, "bogus"), `unknown role must not reach ${path}`);
   }
+});
+
+test("password login accepts deep links only inside the role workspace", () => {
+  assert.ok(isWorkspaceLoginRedirect("/dashboard/matter-ops?tab=queue#open", "founder_admin"));
+  assert.ok(isWorkspaceLoginRedirect("/professional/account", "professional"));
+  for (const path of ["/portal", "/dashboard-old", "//example.com", "/dashboard/../portal", "/dashboard/%2e%2e/portal", "/dashboard/%2Fportal"]) {
+    assert.equal(isWorkspaceLoginRedirect(path, "admin"), false, path);
+  }
+  assert.equal(isWorkspaceLoginRedirect("/professional/italy", "professional"), false);
+  assert.equal(isWorkspaceLoginRedirect("/dashboard", "unknown"), false);
+});
+
+test("password login uses the shared role resolver and ignores interface tabs", () => {
+  const route = readFileSync("app/api/auth/login/route.ts", "utf8");
+  assert.ok(route.includes("getHomeRouteForRole(role)"));
+  assert.ok(route.includes("isWorkspaceLoginRedirect(body.next, role) ? body.next : home"));
+  assert.ok(route.includes("await supabase.auth.signOut()"));
+  assert.doesNotMatch(route, /tabHint|TAB_DEST|FOUNDER_ROLES/);
 });
