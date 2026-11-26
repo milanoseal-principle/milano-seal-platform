@@ -38,12 +38,6 @@ const ADDITIVE = [
   "app/api/admin/discounts/comp-clear/route.ts",
 ];
 
-// The comp-clear path is the ONLY additive code allowed to write payment state,
-// and only through an audited redemption. Everything else must not.
-const COMP_CLEAR_FILES = new Set([
-  "lib/discounts/compClear.ts",
-  "app/api/admin/discounts/comp-clear/route.ts",
-]);
 for (const p of ADDITIVE) {
   if (!existsSync(p)) errors.push(`additive discount-engine file missing: ${p}`);
 }
@@ -77,37 +71,27 @@ if (!/Math\.max\(0/.test(read("src/features/discounts/discountService.ts"))) {
 }
 
 // 5. Payment hard-locks.
-//    (a) Only the comp-clear path may write payment state; everything else must not.
+//    (a) The discount-request layer may not write payment state.
 //    (b) No file may introduce a `paid_comped` status (we reuse the existing
 //        'confirmed' clear — no new status, no CHECK-constraint migration).
 for (const p of ADDITIVE.filter((f) => f.startsWith("lib/discounts") || f.startsWith("app/api"))) {
   const src = read(p);
-  if (!COMP_CLEAR_FILES.has(p) && /payment_status\s*[:=]/.test(src)) {
-    errors.push(`non-comp-clear additive file writes payment_status: ${p}`);
+  if (/payment_status\s*[:=]/.test(src)) {
+    errors.push(`additive discount file writes payment_status: ${p}`);
   }
   if (/paid_comped/.test(src)) {
     errors.push(`additive file introduces paid_comped (must reuse existing 'confirmed' clear): ${p}`);
   }
 }
 
-// 5b. Comp-clear must be audited + backed by a redemption, and reuse 'confirmed'.
+// 5b. The retired path keeps the access check and cannot access Matter data.
 const compClear = read("lib/discounts/compClear.ts");
-if (compClear) {
-  for (const ev of ["PAYMENT_COMPED", "PAYMENT_BALANCE_UPDATED", "SCHEDULING_UNLOCKED"]) {
-    if (!compClear.includes(ev)) errors.push(`compClear.ts does not write the ${ev} audit event`);
-  }
-  if (!/discount_redemptions/.test(compClear)) {
-    errors.push("compClear.ts does not record an audited discount_redemptions row");
-  }
-  if (!/["']confirmed["']/.test(compClear)) {
-    errors.push("compClear.ts does not reuse the existing 'confirmed' payment status");
-  }
-  if (!/Math\.max\(0/.test(compClear)) {
-    errors.push("compClear.ts does not clamp the final amount to >= 0");
-  }
-}
-if (!/canApproveComp/.test(read("app/api/admin/discounts/comp-clear/route.ts"))) {
-  errors.push("comp-clear route does not enforce canApproveComp (owner/operator gate)");
+const retiredRoute = read("app/api/admin/discounts/comp-clear/route.ts");
+if (!/canApproveComp/.test(compClear) || !/USE_GOVERNED_COMPLIMENTARY_AUTHORIZATION/.test(compClear) ||
+    !/status: 410/.test(compClear) || !/no-store/.test(compClear) ||
+    !/auth\.getUser/.test(retiredRoute) || !/retiredCompClearResponse\(user\)/.test(retiredRoute) ||
+    /createAdminClient|\.from\(|\.rpc\(|SCHEDULING_UNLOCKED|observed_available|compClearMatter/.test(compClear + retiredRoute)) {
+  errors.push("comp-clear retirement lost its access guard, 410 contract, or no-data boundary");
 }
 
 // Release gate must be untouched by this branch (no paid_comped, no comp edits).

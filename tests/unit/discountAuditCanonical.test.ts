@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import { recordDiscountAuditEvent } from "@/lib/discounts/audit";
-import { compClearMatter } from "@/lib/discounts/compClear";
+import { retiredCompClearResponse } from "@/lib/discounts/compClear";
+import { readFileSync } from "node:fs";
 
 const DEAL_ID = "00000000-0000-4000-8000-0000000000d1";
 const CODE_ID = "00000000-0000-4000-8000-0000000000c1";
-const APPROVER = "00000000-0000-4000-8000-0000000000a1";
 
 type Call = { path: string; method: string; query: string; body: unknown };
 
@@ -97,35 +97,25 @@ test("a canonical write failure is reported, never treated as persisted", async 
   }
 });
 
-test("comp clear writes its three events to the canonical Matter timeline and reports them recorded", async (t) => {
-  const calls = supabaseFixture(t);
-  const result = await compClearMatter({ dealId: DEAL_ID, discountCodeId: CODE_ID, approverUserId: APPROVER, approverEmail: "owner@example.invalid" } as Parameters<typeof compClearMatter>[0]);
-  assert.equal(result.ok, true);
-  assert.equal(result.auditRecorded, true);
-  assert.deepEqual(result.auditFailures, []);
-  const types = eventWrites(calls).map((w) => (w.body as { event_type: string; matter_id: string }).event_type);
-  assert.deepEqual(types, ["PAYMENT_COMPED", "PAYMENT_BALANCE_UPDATED", "SCHEDULING_UNLOCKED"]);
-  assert.ok(eventWrites(calls).every((w) => (w.body as { matter_id: string }).matter_id === DEAL_ID));
-  assert.ok(!calls.some((c) => c.path === "/rest/v1/event_ledger"));
-});
-
-test("comp clear never reports audit success when canonical writes fail", async (t) => {
-  supabaseFixture(t, { failEvents: true });
-  const original = console.error;
-  console.error = () => undefined;
-  try {
-    const result = await compClearMatter({ dealId: DEAL_ID, discountCodeId: CODE_ID, approverUserId: APPROVER, approverEmail: "owner@example.invalid" } as Parameters<typeof compClearMatter>[0]);
-    assert.equal(result.auditRecorded, false);
-    assert.deepEqual(result.auditFailures, ["PAYMENT_COMPED", "PAYMENT_BALANCE_UPDATED", "SCHEDULING_UNLOCKED"]);
-  } finally {
-    console.error = original;
-  }
-});
-
-test("an already-cleared Matter writes no duplicate events", async (t) => {
-  const calls = supabaseFixture(t, { paymentConfirmed: true });
-  const result = await compClearMatter({ dealId: DEAL_ID, discountCodeId: CODE_ID, approverUserId: APPROVER, approverEmail: "owner@example.invalid" } as Parameters<typeof compClearMatter>[0]);
-  assert.deepEqual(result, { ok: true, alreadyCleared: true });
-  assert.equal(eventWrites(calls).length, 0);
-  assert.ok(!calls.some((c) => c.path === "/rest/v1/discount_redemptions"));
+test("retired comp clear is access-gated and does not call downstream services", async (t) => {
+  const previous = process.env.DISCOUNT_ALLOW_OPERATOR_COMP;
+  process.env.DISCOUNT_ALLOW_OPERATOR_COMP = "true";
+  t.after(() => {
+    if (previous === undefined) delete process.env.DISCOUNT_ALLOW_OPERATOR_COMP;
+    else process.env.DISCOUNT_ALLOW_OPERATOR_COMP = previous;
+  });
+  const fetch = t.mock.method(globalThis, "fetch", () => { throw Error("unexpected downstream call"); });
+  assert.equal(retiredCompClearResponse(null).status, 401);
+  assert.equal(retiredCompClearResponse({ app_metadata: { role: "client" } }).status, 403);
+  const retired = retiredCompClearResponse({ app_metadata: { role: "founder" } });
+  assert.equal(retired.status, 410);
+  assert.equal(retired.headers.get("cache-control"), "no-store");
+  assert.equal((await retired.json()).code, "USE_GOVERNED_COMPLIMENTARY_AUTHORIZATION");
+  assert.equal(fetch.mock.callCount(), 0);
+  const route = readFileSync("app/api/admin/discounts/comp-clear/route.ts", "utf8");
+  assert.match(route, /auth\.getUser\(\)/);
+  assert.match(route, /return retiredCompClearResponse\(user\)/);
+  assert.doesNotMatch(route, /createAdminClient|\.from\(|\.rpc\(|request\.(json|text)|recordSecurityEvent/);
+  const control = readFileSync("components/dashboard/OperatorCompClearControl.tsx", "utf8");
+  assert.doesNotMatch(control, /comp-clear|fetch\(/);
 });
