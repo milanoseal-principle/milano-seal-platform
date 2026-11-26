@@ -107,7 +107,7 @@ test("an unguarded public API is never assumed public: only a current human revi
   assert.equal(assistant.accessSource, "reviewed");
   assert.equal(assistant.accessReview?.status, "current");
   assert.deepEqual(assistant.guards, []);
-  assert.equal(lib.certifyRecord(assistant, [], {}).level, "L1");
+  assert.equal(lib.certifyRecord({ access: assistant.access }, [], {}).level, "L1");
 });
 
 test("registration is not certification: nothing is above L1 without evidence", async () => {
@@ -345,7 +345,7 @@ test("every formerly unclassified route has a current access review and none sta
     const record = await byId(review.routeId);
     assert.equal(record.accessReview?.status, "current", `${review.routeId}: ${record.accessReview?.problems.join("; ")}`);
     assert.equal(record.accessSource, "reviewed");
-    assert.equal(lib.certifyRecord(record, [], {}).level, "L1", review.routeId);
+    assert.equal(lib.certifyRecord({ access: record.access }, [], {}).level, "L1", review.routeId);
   }
   assert.equal((await byId("api:/api/assistant")).access, "public_api");
   assert.equal((await byId("api:/api/portal/confirm")).access, "capability_token");
