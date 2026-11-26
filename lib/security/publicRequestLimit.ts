@@ -51,15 +51,16 @@ export function requestLimitScope(request: Request, userId: string | null, env: 
 /**
  * Consumes the client bucket, then (only if that allowed) the global bucket.
  * A request denied by its own client limit never spends global budget.
+ * A namespace gives an endpoint its own counter within a shared bucket ceiling.
  */
 export async function enforcePublicRequestLimit(
   request: Request,
-  buckets: { client: PublicRequestBucket; global?: PublicGlobalBucket },
+  buckets: { client: PublicRequestBucket; global?: PublicGlobalBucket; namespace?: string },
   deps: RequestLimiterDeps,
 ): Promise<RequestLimitDecision> {
   try {
     const userId = await deps.resolveUserId(request).catch(() => null);
-    const scope = requestLimitScope(request, userId, deps.env);
+    const scope = requestLimitScope(request, userId, deps.env, buckets.namespace);
     if (!scope) return { allowed: false, status: 503 };
     const client = await deps.consume(scope, buckets.client);
     if (!client.allowed) return { allowed: false, status: 429, retryAfterSeconds: Math.max(1, client.retryAfterSeconds), bucket: buckets.client };

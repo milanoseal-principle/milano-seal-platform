@@ -1,21 +1,37 @@
 // Public lead capture for the alliance and VA application pages
 // (app/alliance/apply, app/(public)/va/apply). Anonymous by design; it creates
 // a sales_leads row only (no account, role, Matter or payment). Same abuse
-// controls as the other public lead forms (lib/acquisition/concierge.ts,
-// pricingRequest.ts): a foreign Origin is refused, the body is size-capped,
-// and each client address is limited per hour on sales_leads.ip_hash.
+// controls as the other public lead forms: a foreign Origin is refused and the
+// body is size-capped. Each client is limited by the atomic durable limiter
+// (public.consume_public_request_limit, bucket public_signup: 5 per hour) under
+// its own sales_capture namespace, so parallel requests cannot exceed the
+// ceiling and the counter is independent of the other signup forms. A limiter
+// or storage failure is 503 (fail closed).
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { hashClientIp } from "@/lib/acquisition/concierge";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  defaultRequestLimiterDeps,
+  enforcePublicRequestLimit,
+  retryAfterHeaders,
+  type RequestLimitDecision,
+} from "@/lib/security/publicRequestLimit";
 
 export const MAX_SALES_CAPTURE_BODY_BYTES = 16 * 1024;
-export const MAX_SALES_CAPTURE_PER_IP_PER_HOUR = 10;
+export const SALES_CAPTURE_LIMIT = { client: "public_signup", namespace: "sales_capture" } as const;
 
 export type SalesCaptureDeps = {
   admin: () => SupabaseClient;
   hashIp: (headers: Headers) => string;
+  limit: (request: Request) => Promise<RequestLimitDecision>;
+};
+
+const defaultDeps: SalesCaptureDeps = {
+  admin: createAdminClient,
+  hashIp: hashClientIp,
+  limit: async (request) => enforcePublicRequestLimit(request, SALES_CAPTURE_LIMIT, await defaultRequestLimiterDeps()),
 };
 
 type CaptureBody = {
@@ -64,7 +80,7 @@ export function deriveLeadType(body: CaptureBody): string {
 
 export async function receiveSalesCapture(
   request: Request,
-  deps: SalesCaptureDeps = { admin: createAdminClient, hashIp: hashClientIp },
+  deps: SalesCaptureDeps = defaultDeps,
 ) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
@@ -99,22 +115,23 @@ export async function receiveSalesCapture(
 
   const leadType = deriveLeadType(body);
 
+  const decision = await deps.limit(request);
+  if (!decision.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: decision.status === 429 ? "Please wait before sending another request." : "Your request could not be saved. Please try again.",
+      },
+      { status: decision.status, headers: { "Cache-Control": "no-store", ...retryAfterHeaders(decision) } },
+    );
+  }
+
   let leadId: string | null = null;
 
   // Receipt requires persistence. Missing infrastructure returns a retryable 503.
   try {
     const supabase = deps.admin();
     const ipHash = deps.hashIp(request.headers);
-    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count, error: rateError } = await supabase
-      .from("sales_leads")
-      .select("id", { count: "exact", head: true })
-      .eq("ip_hash", ipHash)
-      .gte("created_at", since);
-    if (rateError) throw rateError;
-    if ((count ?? 0) >= MAX_SALES_CAPTURE_PER_IP_PER_HOUR) {
-      return NextResponse.json({ ok: false, error: "Please wait before sending another request." }, { status: 429 });
-    }
     const { data, error } = await supabase
       .from("sales_leads")
       .insert({

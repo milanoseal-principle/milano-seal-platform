@@ -30,7 +30,7 @@
         "app/api/assistant/route.ts": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
         "lib/assistant/assistantHandler.ts": "5a3518e8e0049f8aa834a46317eeec938b5ae73bb6733db73abdcde7ce8df21f",
         "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
-        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
       }
     },
     {
@@ -59,7 +59,7 @@
         "app/api/intake/extract/route.ts": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
         "lib/ai/intakeExtractHandler.ts": "7c6adaeecd6f2110ee773819ea2e3de77f8e8cc75154cef1401e270009073dc2",
         "lib/security/sameOriginRequest.ts": "0dac61af169db37592bb8eb800557ef1fbeef1c84181653a6a3f84af159af34f",
-        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
       }
     },
     {
@@ -68,19 +68,19 @@
       "audience": "Anonymous applicants on /alliance/apply and /va/apply (creates a sales_leads row only).",
       "controls": [
         "Foreign Origin 403",
-        "Body 16 KB (declared and actual) 413",
-        "10 per client address per hour on sales_leads.ip_hash, shared with the other public lead forms; 429 before insert",
-        "Creates no account, role, Matter or payment"
+        "Body 16 KB (declared and actual) 413; malformed body or missing email 400 before any allowance is consumed",
+        "Durable atomic limit: public.consume_public_request_limit bucket public_signup (5 per client per hour) under its own sales_capture namespace; 429 + Retry-After before insert; limiter or storage failure 503 (fail closed)",
+        "Creates a sales_leads row only (ip_hash stored); no account, role, Matter or payment"
       ],
       "openFindings": [],
       "evidence": [
         "tests/unit/salesCaptureGuard.test.ts"
       ],
       "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
-      "reviewedAt": "2026-11-25",
+      "reviewedAt": "2026-11-26",
       "files": {
         "app/api/sales/capture/route.ts": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
-        "lib/acquisition/salesCapture.ts": "caa91fc7e3e6754e3f4d8310f47e76148908b0a50d41194bd7fd4a37e91d212e"
+        "lib/acquisition/salesCapture.ts": "9b57c2d3ccfcb76d663bd2141d3926f67f5862043a0f0bd56ea947d74df3d5a3"
       }
     },
     {
@@ -229,7 +229,7 @@
       "files": {
         "app/api/intake/route.ts": "5fa580e9df6dca9901af2654a52d8218a78585f49bc3a5e3c40bdc37efadbee2",
         "lib/intake/intakeSubmissionGuard.ts": "d8164535d42aa9f18d3fae7aeefb97411b80a590e944bd8695ad81938efa8f1a",
-        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
       }
     },
     {
@@ -331,7 +331,7 @@
         "app/api/portal/verify/route.ts": "93483cbdb5c04b1adf08588bf26b7a93a19a9e9aef89448b7318af0400e7c0fb",
         "app/api/portal/confirm/route.ts": "db8f52a074b0780e4323dc47ecd9436a04cfc80adea1121c8ea1bb21d3850a0b",
         "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
-        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
       }
     },
     {
@@ -358,7 +358,7 @@
         "app/api/portal/verify/route.ts": "93483cbdb5c04b1adf08588bf26b7a93a19a9e9aef89448b7318af0400e7c0fb",
         "app/api/portal/confirm/route.ts": "db8f52a074b0780e4323dc47ecd9436a04cfc80adea1121c8ea1bb21d3850a0b",
         "lib/security/portalAccessGuard.ts": "8a8a0f97ce07d8b259cc3f908045e23ffc4a36331a8b845d230ec84744321db8",
-        "lib/security/publicRequestLimit.ts": "1df86094eb8cfc5205b2d73dfcbad60e6c66598f4fe452ef1568884ca213bf34"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
       }
     },
     {
