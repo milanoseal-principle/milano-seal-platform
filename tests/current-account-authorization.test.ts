@@ -133,7 +133,7 @@ test("defect reproduced on the replayed chain: stale token claims keep access", 
   assert.equal(await updateTranslation(db, P.disabledFounder), 1, "disabled account still rewrites translations");
   assert.deepEqual(await visibleDeals(db, P.staleEmail), [P.clientA.email], "stale email reads the former owner's Matter");
   assert.deepEqual(await visibleObjects(db, P.staleEmail), ["synthetic-clientA.pdf"], "and the former owner's documents");
-  assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email }), [P.clientA.email], "a disabled account presenting the owner's address");
+  assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email ?? undefined }), [P.clientA.email], "a disabled account presenting the owner's address");
   assert.ok([...before.values()].filter((p) => CLAIM.test(`${p.qual} ${p.check}`)).length >= 50, "the replayed catalog holds the claim-based policies");
 });
 
@@ -180,7 +180,7 @@ test("client ownership follows the current account email; stale, disabled, cross
   assert.deepEqual(await visibleProfiles(db, P.clientA), [P.clientA.email]);
   assert.deepEqual(await visibleDeals(db, P.staleEmail), [], "a stale email claim restores nothing");
   assert.deepEqual(await visibleObjects(db, P.staleEmail), []);
-  assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email }), [], "disabled account with the owner's address");
+  assert.deepEqual(await visibleDeals(db, { ...P.disabledClientA, jwtEmail: P.clientA.email ?? undefined }), [], "disabled account with the owner's address");
   await assert.rejects(visibleDeals(db, "anon"), /permission denied for table deals/, "anon holds no Matter privilege at all");
   assert.deepEqual(await visibleObjects(db, "anon"), []);
   assert.deepEqual(await visibleProfiles(db, "anon"), []);
