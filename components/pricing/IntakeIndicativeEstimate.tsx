@@ -8,7 +8,7 @@ export function IntakeIndicativeEstimate({ quote }: { quote: IntakeIndicativeQuo
       <h2 className="font-semibold text-white">Indicative estimate</h2>
       <p className="mt-1">This estimate is for planning. No payment is due. The final amount depends on confirmed execution requirements.</p>
       <dl className="mt-4 space-y-2 tabular-nums">
-        {quote.lineItems.map((item, index) => (
+        {quote.line_items.map((item, index) => (
           <div key={`${item.key}-${index}`} className="flex justify-between gap-4">
             <dt>{item.label}</dt><dd>{usd.format(item.amount)}</dd>
           </div>
@@ -17,10 +17,10 @@ export function IntakeIndicativeEstimate({ quote }: { quote: IntakeIndicativeQuo
           <dt>Estimated total</dt><dd>{usd.format(quote.total)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>Estimated 50% engagement retainer</dt><dd>{usd.format(quote.retainer)}</dd>
+          <dt>Estimated 50% engagement retainer</dt><dd>{usd.format(quote.retainer_estimate)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>Estimated 50% final balance</dt><dd>{usd.format(quote.balance)}</dd>
+          <dt>Estimated 50% final balance</dt><dd>{usd.format(quote.final_balance_estimate)}</dd>
         </div>
       </dl>
     </section>

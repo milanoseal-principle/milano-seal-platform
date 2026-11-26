@@ -152,7 +152,7 @@ async function canonicalPost(req: NextRequest) {
     const input = intakeQuotePreviewSchema.safeParse(previewInputFromIntake(raw));
     if (!input.success || !input.data.structured.destinationCountry) return null;
     try {
-      return indicativeQuoteFromPreview(buildIntakeQuotePreview(input.data));
+      return indicativeQuoteFromPreview(buildIntakeQuotePreview(input.data), new Date().toISOString());
     } catch {
       return null;
     }

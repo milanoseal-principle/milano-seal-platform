@@ -1,7 +1,7 @@
 "use client";
 
 import { IntakeIndicativeEstimate } from "@/components/pricing/IntakeIndicativeEstimate";
-import { parseIndicativeQuote } from "@/lib/pricing/intakeIndicativeQuote";
+import { parseIndicativeQuote, type IntakeIndicativeQuote } from "@/lib/pricing/intakeIndicativeQuote";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/landing/header";
@@ -80,6 +80,7 @@ function ConfirmationInner() {
   const [quoteLookup, setQuoteLookup] = useState<{
     matterId: string;
     state: "issued" | "pending_review" | "unavailable";
+    estimate: IntakeIndicativeQuote | null;
   } | null>(null);
   const quoteState = quoteLookup?.matterId === dealId ? quoteLookup.state : "unknown";
 
@@ -90,8 +91,8 @@ function ConfirmationInner() {
     if (!dealId.startsWith("MS-")) return;
 
     let stopped = false;
-    const setQuoteState = (state: "issued" | "pending_review" | "unavailable") => {
-      setQuoteLookup({ matterId: dealId, state });
+    const setQuoteState = (state: "issued" | "pending_review" | "unavailable", estimate: IntakeIndicativeQuote | null = null) => {
+      setQuoteLookup({ matterId: dealId, state, estimate });
     };
     let nextPoll: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
@@ -104,8 +105,11 @@ function ConfirmationInner() {
           if (!stopped) setQuoteState("unavailable");
           return;
         }
-        const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean };
-        if (!stopped) setQuoteState(body.quote_issued === true ? "issued" : "pending_review");
+        const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean; indicative_quote?: unknown };
+        if (!stopped) setQuoteState(
+          body.quote_issued === true ? "issued" : "pending_review",
+          body.quote_issued === true ? null : parseIndicativeQuote(body.indicative_quote),
+        );
         if (body.payment_status === "paid" && !stopped) {
           stopped = true;
           router.push("/portal");
@@ -152,7 +156,7 @@ function ConfirmationInner() {
   }, []);
 
   const intakeData = hasMatterId && storedIntake?.deal_id === dealId ? storedIntake : null;
-  const indicativeQuote = parseIndicativeQuote(intakeData?.indicative_quote);
+  const indicativeQuote = quoteLookup?.matterId === dealId ? quoteLookup.estimate : null;
   const displayId = dealId ? dealId.slice(0, 12).toUpperCase() : null;
   const lane = intakeData?.lane as string | undefined;
   const amount = intakeData?.estimated_value as number | undefined;

@@ -8,10 +8,15 @@ const lineSchema = z.object({
 });
 
 const quoteSchema = z.object({
-  lineItems: z.array(lineSchema).min(1),
+  basis: z.literal("indicative_not_payable"),
+  engine: z.literal("intake-quote-preview"),
+  mode: z.literal("approved_price"),
+  summary: z.string(),
+  computed_at: z.string().datetime(),
+  line_items: z.array(lineSchema).min(1),
   total: z.number().finite().positive(),
-  retainer: z.number().finite().nonnegative(),
-  balance: z.number().finite().nonnegative(),
+  retainer_estimate: z.number().finite().nonnegative(),
+  final_balance_estimate: z.number().finite().nonnegative(),
 });
 
 export type IntakeIndicativeQuote = z.infer<typeof quoteSchema>;
@@ -59,18 +64,23 @@ export function previewInputFromIntake(raw: Record<string, unknown>) {
   return { ...input, structured, ai };
 }
 
-export function indicativeQuoteFromPreview(preview: IntakeQuotePreview): IntakeIndicativeQuote | null {
+export function indicativeQuoteFromPreview(preview: IntakeQuotePreview, computedAt: string): IntakeIndicativeQuote | null {
   if (preview.mode !== "approved_price" || typeof preview.amount !== "number") return null;
-  return parseIndicativeQuote({ lineItems: preview.lineItems, ...fiftyFiftySplit(preview.amount) });
+  const { total, retainer, balance } = fiftyFiftySplit(preview.amount);
+  return parseIndicativeQuote({
+    basis: "indicative_not_payable", engine: "intake-quote-preview", mode: preview.mode,
+    summary: preview.summary, computed_at: computedAt, line_items: preview.lineItems,
+    total, retainer_estimate: retainer, final_balance_estimate: balance,
+  });
 }
 
 export function parseIndicativeQuote(input: unknown): IntakeIndicativeQuote | null {
   const parsed = quoteSchema.safeParse(input);
   if (!parsed.success) return null;
-  const { total, retainer, balance, lineItems } = parsed.data;
+  const { total, retainer_estimate, final_balance_estimate, line_items } = parsed.data;
   const expected = fiftyFiftySplit(total);
-  if (expected.total !== total || expected.retainer !== retainer || expected.balance !== balance) return null;
-  if (lineItems.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) !== Math.round(total * 100)) return null;
+  if (expected.total !== total || expected.retainer !== retainer_estimate || expected.balance !== final_balance_estimate) return null;
+  if (line_items.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) !== Math.round(total * 100)) return null;
   return parsed.data;
 }
 

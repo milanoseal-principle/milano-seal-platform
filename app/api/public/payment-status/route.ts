@@ -1,3 +1,4 @@
+import { indicativeQuoteFromNotes } from "@/lib/pricing/intakeIndicativeQuote";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
@@ -38,7 +39,9 @@ export async function GET(req: NextRequest) {
   let query = admin
     .from("deals")
     .select(
-      "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition"
+      capabilityValid
+        ? "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition, internal_notes"
+        : "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition"
     )
     .eq("deal_id", dealId);
   if (accessToken) query = query.eq("access_token", accessToken);
@@ -64,8 +67,9 @@ export async function GET(req: NextRequest) {
     // Logging failure must never block production flow
   }
 
-  // Strictly minimal response — no internal fields, no pricing breakdown,
-  // no operator-only fields, no document paths, no client notes.
+  const quoteIssued = Number(data.total_price) > 0 && data.payment_disposition !== "complimentary";
+  // Only the short-lived intake capability may retrieve the client-safe estimate.
+  // Never return the underlying notes or internal pricing fields.
   return NextResponse.json(
     {
       deal_id: data.deal_id ?? dealId,
@@ -80,8 +84,10 @@ export async function GET(req: NextRequest) {
       // (operator-approved total persisted; see app/api/deals/[id]/quote).
       // A review-required intake has no payable obligation yet, so the client
       // must not be shown payment instructions or payment polling.
-      quote_issued:
-        Number(data.total_price) > 0 && data.payment_disposition !== "complimentary",
+      quote_issued: quoteIssued,
+      ...(capabilityValid && !quoteIssued && data.payment_disposition !== "complimentary" && "internal_notes" in data
+        ? { indicative_quote: indicativeQuoteFromNotes(data.internal_notes) }
+        : {}),
     },
     {
       headers: { "Cache-Control": "no-store" },

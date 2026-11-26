@@ -27,9 +27,9 @@ test("submitted affidavit facts use the same engine and ignore client totals", (
   }));
   const preview = buildIntakeQuotePreview(server);
   assert.deepEqual(preview, buildIntakeQuotePreview(intakeQuotePreviewSchema.parse(inputs)));
-  const estimate = indicativeQuoteFromPreview(preview);
+  const estimate = indicativeQuoteFromPreview(preview, "2026-11-26T12:00:00.000Z");
   assert.ok(estimate && estimate.total > 1);
-  assert.equal(estimate.total, estimate.retainer + estimate.balance);
+  assert.equal(estimate.total, estimate.retainer_estimate + estimate.final_balance_estimate);
   assert.deepEqual(indicativeQuoteFromNotes(JSON.stringify({
     quote_state: "review_required", indicative_quote: estimate, operator_notes: "private",
   })), estimate);
@@ -37,7 +37,7 @@ test("submitted affidavit facts use the same engine and ignore client totals", (
     quote_state: "issued", indicative_quote: estimate,
   })), null);
   assert.equal(indicativeQuoteFromNotes(JSON.stringify({
-    quote_state: "review_required", indicative_quote: { ...estimate, retainer: 1 },
+    quote_state: "review_required", indicative_quote: { ...estimate, retainer_estimate: 1 },
   })), null);
 });
 
@@ -47,7 +47,7 @@ test("an unanswered destination stays absent and review-only previews carry no a
   assert.equal(indicativeQuoteFromPreview({
     mode: "quote_after_review", summary: "", lineItems: [], amount: 100,
     paymentGateRequired: true, schedulingLockedUntilPayment: true,
-  }), null);
+  }, "2026-11-26T12:00:00.000Z"), null);
 });
 
 test("wizard preview facts preserve completed notarization and unresolved selections", () => {
