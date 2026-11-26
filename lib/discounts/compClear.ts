@@ -1,7 +1,7 @@
 import { canApproveComp } from "./permissions";
 
 export function retiredCompClearResponse(
-  user: { app_metadata?: { role?: unknown }; email?: string | null } | null,
+  user: { app_metadata?: Record<string, unknown>; email?: string | null } | null,
 ): Response {
   const headers = { "Cache-Control": "no-store" };
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401, headers });
