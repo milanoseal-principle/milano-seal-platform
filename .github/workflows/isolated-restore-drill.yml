@@ -45,7 +45,9 @@ jobs:
         run: python3 scripts/backups/test_backups.py -v
       - uses: supabase/setup-cli@v3
         with:
-          version: v2.stable
+          # CLI 3.4.0 ships Auth 2.198.0, including upstream migration 20260911120000.
+          # Auth 2.197.0 cannot restore one_time_tokens.link_token_hash from hosted dumps.
+          version: 3.4.0
       - name: Install AWS CLI (signature-verified)
         shell: bash
         env:
@@ -103,8 +105,7 @@ jobs:
           mkdir -p "$DRILL/target"
           cd "$DRILL/target"
           supabase init --force >/dev/null
-          sed -i -E 's/^major_version = [0-9]+/major_version = 17/' supabase/config.toml
-          grep -q '^major_version = 17' supabase/config.toml
+          grep -Eq '^[[:space:]]*"major_version":[[:space:]]*17([[:space:],]|$)' supabase/config.jsonc
           supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,supavisor,postgres-meta
           supabase status -o env > "$DRILL/target.env"
           set -a; . "$DRILL/target.env"; set +a
