@@ -30,6 +30,7 @@ export type WiseReconciliationResult = {
   statementChecked: boolean;
   statementScaRequired: boolean;
   reason: string;
+  statementAccessStatus?: 403 | 404;
 };
 
 type DealPaymentRow = {
@@ -103,6 +104,7 @@ type StatementConfirmation = {
   scaRequired: boolean;
   checked: boolean;
   transactionReference: string | null;
+  accessStatus?: 403 | 404;
 };
 
 class WiseApiError extends Error {
@@ -298,6 +300,7 @@ function isOptionalActivityCapabilityError(error: unknown): boolean {
 export async function listWiseAcquiringActivities(params: {
   since: string;
   until?: string;
+  onCapabilityError?: (status: number) => void;
 }): Promise<WiseActivity[]> {
   const { token, profileId } = await resolveWiseConfig();
   const activities: WiseActivity[] = [];
@@ -322,7 +325,10 @@ export async function listWiseAcquiringActivities(params: {
       if (!nextCursor) break;
     }
   } catch (error) {
-    if (isOptionalActivityCapabilityError(error)) return [];
+    if (error instanceof WiseApiError && isOptionalActivityCapabilityError(error)) {
+      params.onCapabilityError?.(error.status);
+      return [];
+    }
     throw error;
   }
 
@@ -492,7 +498,7 @@ async function confirmFromStatement(params: {
       return { confirmed: false, scaRequired: true, checked: true, transactionReference: null };
     }
     if (error instanceof WiseApiError && (error.status === 403 || error.status === 404)) {
-      return { confirmed: false, scaRequired: false, checked: false, transactionReference: null };
+      return { confirmed: false, scaRequired: false, checked: false, transactionReference: null, accessStatus: error.status };
     }
     throw error;
   }
@@ -628,6 +634,7 @@ export async function reconcileLoadedDeal(
       providerResourceId: activityResource,
       settlementConfirmed: false,
       alreadyConfirmed: false,
+      statementAccessStatus: settlement.accessStatus,
       statementChecked: settlement.checked,
       statementScaRequired: false,
       reason:
@@ -646,6 +653,7 @@ export async function reconcileLoadedDeal(
     providerResourceId: null,
     settlementConfirmed: false,
     alreadyConfirmed: false,
+    statementAccessStatus: settlement.accessStatus,
     statementChecked: settlement.checked,
     statementScaRequired: false,
     reason: settlement.checked
@@ -688,12 +696,28 @@ export async function reconcileObservedWisePayments(): Promise<{
     const candidate = Date.parse(searchStart(deal));
     return Number.isFinite(candidate) && candidate < earliest ? candidate : earliest;
   }, Date.now());
-  const activities = await listWiseAcquiringActivities({ since: new Date(oldest).toISOString() });
+  let activityAccessStatus: number | undefined;
+  const activities = await listWiseAcquiringActivities({
+    since: new Date(oldest).toISOString(),
+    onCapabilityError: (status) => { activityAccessStatus = status; },
+  });
 
   const results: WiseReconciliationResult[] = [];
   for (const deal of deals) {
     try {
-      results.push(await reconcileLoadedDeal(deal, activities));
+      const result = await reconcileLoadedDeal(deal, activities);
+      if (!result.settlementConfirmed) {
+        console.info("[wise-reconciliation] settlement pending", {
+          matterId: deal.id,
+          activityAccessStatus,
+          statementAccessStatus: result.statementAccessStatus,
+          statementScaRequired: result.statementScaRequired,
+          statementChecked: result.statementChecked,
+          hasAttemptAuthority: Boolean(deal.payment_attempt_id && deal.payment_attempt_started_at),
+          activityMatched: result.providerEvidence,
+        });
+      }
+      results.push(result);
     } catch (error) {
       results.push({
         ok: false,
