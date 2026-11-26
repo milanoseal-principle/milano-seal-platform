@@ -112,16 +112,16 @@ check(
   ]),
 );
 
-for (const [label, block] of [
-  ["canonical intake insert", fullInsert],
-  ["review-required intake capture", reviewInsert],
+for (const [label, block, legacyStatus] of [
+  ["canonical intake insert", fullInsert, "awaiting_payment"],
+  ["review-required intake capture", reviewInsert, "reviewing"],
 ]) {
   check(
     `${label} separates lifecycle payment and legacy states`,
     containsAll(block, [
       'status: "intake_received"',
       'payment_status: "unpaid"',
-      'deal_status: "awaiting_payment"',
+      `deal_status: "${legacyStatus}"`,
     ]),
   );
 }
