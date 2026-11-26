@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { activityMatchesAttempt } from "../lib/wise/attemptEvidence";
 
 // P0 regression: Milano uses a Wise Business personal API token, not partner OAuth/clientID.
 // Acquiring Activity may be unavailable to this token. Activity is enrichment only;
@@ -15,10 +16,17 @@ test("Wise personal-token reconciliation treats Activity as optional enrichment"
   assert.match(reconciliation, /monetaryResourceType:\s*"ACQUIRING_PAYMENT"/);
   assert.match(reconciliation, /isOptionalActivityCapabilityError/);
   assert.match(reconciliation, /error\.status === 403 \|\| error\.status === 404/);
-  assert.match(reconciliation, /if \(isOptionalActivityCapabilityError\(error\)\) return \[\]/);
+  assert.match(reconciliation, /isOptionalActivityCapabilityError\(error\)[\s\S]*onCapabilityError\?\.\(error\.status\);[\s\S]*return \[\]/);
   assert.match(reconciliation, /exactReferencePresent\(candidate, reference\)/);
   assert.match(observation, /export async function PUT/);
   assert.match(observation, /reconcileWiseMatter\(ctx\.deal\.id\)/);
+});
+
+test("Wise Activity uses its versioned v1 endpoint independently of the configured API version", () => {
+  assert.ok(reconciliation.includes(
+    'new URL(`/v1/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`, WISE_API_BASE).href',
+  ));
+  assert.ok(!reconciliation.includes('wiseUrl(`/profiles/${encodeURIComponent(profileId)}/activities?'));
 });
 
 test("Wise profile authority is token-validated, business-specific, and cached per runtime", () => {
@@ -71,4 +79,29 @@ test("automatic reconciliation runs every minute behind the cron secret", () => 
   assert.match(cron, /reconcileObservedWisePayments/);
   assert.match(vercel, /\/api\/cron\/wise-payment-reconcile/);
   assert.match(vercel, /"schedule"\s*:\s*"\* \* \* \* \*"/);
+});
+
+test("legacy observation cannot gain positive activity authority from a stored acquiring UUID", () => {
+  const activity = {
+    type: "ACQUIRING_TRANSACTION",
+    createdOn: "2026-08-29T20:10:00Z",
+    resource: { id: "9858e4b0-7dd5-4ed8-8bc5-7a3e850c2597", amount: { value: 6.88, currency: "USD" } },
+  };
+  const legacy = {
+    id: "ee2e3dad-a95f-412d-ae87-15f634beed8e",
+    wise_reference: "MS-SYNTHETIC-1",
+    deal_id: "MS-SYNTHETIC-1",
+    amount_due: 6.88,
+    currency: "USD",
+    payment_observed_at: "2026-08-29T20:08:02Z",
+    wise_transaction_reference: activity.resource.id,
+    wise_provider_evidence: null,
+    payment_attempt_id: null,
+    payment_attempt_started_at: null,
+  };
+  assert.equal(activityMatchesAttempt(activity, legacy), false);
+  assert.equal(activityMatchesAttempt(activity, { ...legacy, payment_attempt_id: "synthetic-attempt" }), false);
+  assert.equal(activityMatchesAttempt(activity, {
+    ...legacy, payment_attempt_id: "synthetic-attempt", payment_attempt_started_at: legacy.payment_observed_at,
+  }), true);
 });
