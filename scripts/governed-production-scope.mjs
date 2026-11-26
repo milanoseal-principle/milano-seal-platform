@@ -35,6 +35,11 @@ export const AI_GOVERNANCE_PROTECTED_CHANGES = [
 // evidence and bounded sends. Exercised by test:gap-closure-database, test:upgrade-restore,
 // test:ai-governance-database and gapClosureSecurity.test.ts.
 export const GAP_CLOSURE_PROTECTED_CHANGES = [
+ // Owner approved the three exact Section 05 paths in the 2026-11-26
+ // production recovery conversation (protected-source approval only).
+ 'supabase/migrations/20261125231600_reconcile_hosted_operator_authority.sql',
+ 'supabase/migrations/20261126050000_current_account_authorization_hardening.sql',
+ 'supabase/migrations/20261126060000_atomic_complimentary_authorization.sql',
   'supabase/migrations/20261109215307_no_auth_execution_proof_all_release_states.sql',
  'supabase/migrations/20261109211027_release_identifier_matter_type_compatibility.sql',
  'scripts/certification/p19-no-auth-release.mjs',
