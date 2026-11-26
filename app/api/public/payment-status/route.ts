@@ -36,14 +36,12 @@ export async function GET(req: NextRequest) {
 
   // Validate deal_id AND (access_token or a capability bound to this deal_id).
   // Select only the fields needed — never fetch the full deal row.
-  let query = admin
-    .from("deals")
-    .select(
-      capabilityValid
-        ? "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition, internal_notes"
-        : "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition"
-    )
-    .eq("deal_id", dealId);
+  const fields = "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition" as const;
+  const deals = admin.from("deals");
+  let query = (capabilityValid
+    ? deals.select(`${fields}, internal_notes`)
+    : deals.select(fields)
+  ).eq("deal_id", dealId);
   if (accessToken) query = query.eq("access_token", accessToken);
   const { data } = await query.maybeSingle();
 
