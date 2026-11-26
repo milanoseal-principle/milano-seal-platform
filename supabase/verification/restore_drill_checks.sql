@@ -51,7 +51,10 @@ select jsonb_build_object(
   'rls_probe_rows_visible_to_arbitrary_client', (select coalesce(sum(visible) filter (where visible > 0), 0) from restore_probe where role = 'authenticated'),
   'rls_probe_tables_exposed', (select coalesce(jsonb_agg(role || ':' || tbl order by role, tbl), '[]') from restore_probe where visible > 0),
   'rls_probe_tables_checked', (select count(distinct tbl) from restore_probe),
+  -- 'GENESIS' is the canonical chain root (lib/custodyLedger.ts, migrations 074/086/20261108201000),
+  -- not a missing predecessor.
   'custody_chain_unlinked_rows', (select count(*) from public.custody_ledger c where c.prev_hash is not null
+      and c.prev_hash <> 'GENESIS'
       and not exists (select 1 from public.custody_ledger p where p.deal_id = c.deal_id and p.hash = c.prev_hash)),
   'founder_admin_helper_reads_user_metadata', (select coalesce(bool_or(pg_get_functiondef(p.oid) ilike '%user_metadata%'), false)
       from pg_proc p join pg_namespace s on s.oid = p.pronamespace where s.nspname = 'public' and p.proname = 'is_founder_or_admin'),
