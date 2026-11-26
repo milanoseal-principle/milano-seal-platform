@@ -208,28 +208,33 @@
     {
       "routeId": "api:/api/intake",
       "access": "public_api",
-      "audience": "Anonymous clients submitting the public intake (creates the Matter, invoice and confirmation emails).",
+      "audience": "Anonymous clients submitting the public intake and authorized operator intake.",
       "controls": [
         "Public by design: the canonical Matter-creation entry point",
         "On success binds the scoped intake_upload and intake_payment capabilities to the created Matter only (httpOnly, SameSite=Strict, 30 min)",
         "Before any Matter, invoice, capability or email: foreign Origin 403; body 64 KB declared/actual 413; JSON object required 400",
         "Durable limit: 5 submissions per client per hour (HMAC of user id or address) — Durable server-side limit before any provider call: public.consume_public_request_limit (atomic per-window upsert, Postgres row lock); per client (HMAC of user id or address) then global daily; 429 + Retry-After; limiter or storage failure 503 (fail closed)",
         "Authorized operators (proxy /dashboard role rule) are exempt from the public per-client limit; a failed operator lookup is treated as not-an-operator",
-        "Every refusal returns success:false; nothing is reported received unless canonical intake persisted it"
+        "Every refusal returns success:false; nothing is reported received unless canonical intake persisted it",
+        "Public intake estimates use client-safe server pricing and persist only as review metadata in the initial Matter insert. Indicative amounts have no payment authority."
       ],
       "openFindings": [
         "Hosted migration 20261125120000_public_request_limits.sql not yet applied: until it is, public intake fails closed (503) — apply before deploying this change"
       ],
       "evidence": [
         "tests/unit/publicRequestLimits.test.ts",
-        "scripts/test-public-request-limits-concurrency.mjs"
+        "scripts/test-public-request-limits-concurrency.mjs",
+        "tests/unit/intakeIndicativeQuote.test.ts"
       ],
-      "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
-      "reviewedAt": "2026-11-25",
+      "reviewedBy": "Engineering access review (Codex) — classification only, not certification",
+      "reviewedAt": "2026-11-26",
       "files": {
-        "app/api/intake/route.ts": "5fa580e9df6dca9901af2654a52d8218a78585f49bc3a5e3c40bdc37efadbee2",
+        "app/api/intake/route.ts": "bcbbede3cfba0c572513bcac7488a378204d1f15449029b950629b280fc9633f",
         "lib/intake/intakeSubmissionGuard.ts": "d8164535d42aa9f18d3fae7aeefb97411b80a590e944bd8695ad81938efa8f1a",
-        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3"
+        "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3",
+        "app/api/intake/core.ts": "5123b2ef8f00f593e43a452fe5655b4d582afcb55a8e6bbf29d46f92364acc25",
+        "lib/pricing/intakeIndicativeQuote.ts": "a7af719019cdce1c5bbd4e27832fdd7ece4ceb87d7db0702e8fea679e81d1d5f",
+        "lib/pricing/intakeQuotePreview.ts": "11139663d8c1aa89699c248f35f8e528850918d614c9d3ea95d5ba0228c03e49"
       }
     },
     {

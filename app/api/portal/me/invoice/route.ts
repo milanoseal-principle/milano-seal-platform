@@ -1,3 +1,4 @@
+import { indicativeQuoteFromNotes } from "@/lib/pricing/intakeIndicativeQuote";
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { isPriceIssued } from "@/lib/pricing/priceIssued";
@@ -80,7 +81,8 @@ export async function GET(req: NextRequest) {
     success: true,
     pricingStatus: approved ? "approved" : "pending_review",
     invoice: approved ? buildClientInvoiceSnapshot(invoiceRow) : null,
-  });
+    indicativeQuote: approved ? null : indicativeQuoteFromNotes(invoiceRow.internal_notes),
+  }, { headers: { "Cache-Control": "private, no-store" } });
 }
 // Explicit issuance; GET invoice projection remains a non-mutating display.
 export async function POST(request:NextRequest) {

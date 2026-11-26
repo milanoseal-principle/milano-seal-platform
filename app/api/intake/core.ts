@@ -1,3 +1,4 @@
+import type { IntakeIndicativeQuote } from "@/lib/pricing/intakeIndicativeQuote";
 import { normalizeSmartIntakeIntent } from "@/lib/intake/serviceIntent";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
@@ -255,7 +256,10 @@ async function notifyHighValue(
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  estimateForReview?: (raw: Record<string, unknown>) => IntakeIndicativeQuote | null,
+) {
   const correlationId = createIntakeCorrelationId();
   let stage: IntakeStage = "REQUEST_RECEIVED";
   let currentDealId: string | undefined;
@@ -406,6 +410,7 @@ export async function POST(req: NextRequest) {
       currentDealId = deal_id;
       currentSource = source;
 
+      const indicativeQuote = estimateForReview?.(raw) ?? null;
       const reviewMetadata = {
         source,
         // Non-authoritative acquisition context; never overwritten by review.
@@ -455,7 +460,7 @@ export async function POST(req: NextRequest) {
         amount_paid: 0,
         currency: "USD",
         status: "intake_received",
-        deal_status: "awaiting_payment",
+        deal_status: "reviewing",
         conversion_score,
         priority_tier,
         notes: [
@@ -465,7 +470,9 @@ export async function POST(req: NextRequest) {
         ]
           .filter(Boolean)
           .join("\n"),
-        internal_notes: JSON.stringify(reviewMetadata),
+        internal_notes: JSON.stringify(indicativeQuote
+          ? { ...reviewMetadata, indicative_quote: indicativeQuote }
+          : reviewMetadata),
         ...referralFields,
       };
 
@@ -514,6 +521,7 @@ export async function POST(req: NextRequest) {
           correlation_id: correlationId,
           deal_id: (reviewDeal as { deal_id?: string })?.deal_id || deal_id,
           quote_state: "review_required",
+          ...(indicativeQuote ? { indicative_quote: indicativeQuote } : {}),
           execution_truth: executionTruth,
           execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
           status: "intake_received",

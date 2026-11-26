@@ -69,8 +69,7 @@ check(
 );
 check(
   "review-required intake is not awaiting payment",
-  /update\(\{\s*deal_status:\s*"reviewing"\s*\}\)/.test(intakeRoute) &&
-    /INTAKE_REVIEW_STATUS_PERSISTENCE_FAILED/.test(intakeRoute),
+  /const reviewPayload = \{[\s\S]*?deal_status:\s*"reviewing"[\s\S]*?\.insert\(\[reviewPayload\]\)/.test(intake),
 );
 check(
   "discount source restriction enforced",

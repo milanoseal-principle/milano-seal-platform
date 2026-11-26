@@ -9,6 +9,8 @@ import {
   persistedMatterHasQuote,
 } from "@/lib/pricing/matterQuoteSnapshot";
 import { POST as handleCanonicalIntakePost } from "./core";
+import { buildIntakeQuotePreview, intakeQuotePreviewSchema } from "@/lib/pricing/intakeQuotePreview";
+import { indicativeQuoteFromPreview, previewInputFromIntake } from "@/lib/pricing/intakeIndicativeQuote";
 
 interface IntakeSuccessBody {
   success?: boolean;
@@ -118,19 +120,18 @@ async function enforceCourtesySourceRestriction(
 
 async function canonicalizeRequest(req: NextRequest): Promise<{
   request: NextRequest;
-  sourceChannel: string;
   failure: NextResponse | null;
 }> {
   let body: IntakeRequestBody;
   try {
     body = (await req.clone().json()) as IntakeRequestBody;
   } catch {
-    return { request: req, sourceChannel: "Website Form", failure: null };
+    return { request: req, failure: null };
   }
 
   const sourceChannel = normalizedSourceChannel(req, body);
   const failure = await enforceCourtesySourceRestriction(body, sourceChannel);
-  if (failure) return { request: req, sourceChannel, failure };
+  if (failure) return { request: req, failure };
 
   const headers = new Headers(req.headers);
   headers.delete("content-length");
@@ -140,14 +141,22 @@ async function canonicalizeRequest(req: NextRequest): Promise<{
     body: JSON.stringify({ ...body, source_channel: sourceChannel }),
   });
 
-  return { request, sourceChannel, failure: null };
+  return { request, failure: null };
 }
 
 async function canonicalPost(req: NextRequest) {
   const normalized = await canonicalizeRequest(req);
   if (normalized.failure) return normalized.failure;
 
-  const response = await handleCanonicalIntakePost(normalized.request);
+  const response = await handleCanonicalIntakePost(normalized.request, (raw) => {
+    const input = intakeQuotePreviewSchema.safeParse(previewInputFromIntake(raw));
+    if (!input.success || !input.data.structured.destinationCountry) return null;
+    try {
+      return indicativeQuoteFromPreview(buildIntakeQuotePreview(input.data), new Date().toISOString());
+    } catch {
+      return null;
+    }
+  });
   if (!response.ok) return response;
 
   let body: IntakeSuccessBody;
@@ -161,36 +170,7 @@ async function canonicalPost(req: NextRequest) {
 
   const dealId = String(body.deal_id ?? "");
 
-  // Review-required capture is intentionally pre-price. It must persist as
-  // reviewing, never as awaiting_payment, because there is no approved payment
-  // obligation yet. Fail closed if that legacy state cannot be reconciled.
-  if (body.quote_state === "review_required") {
-    if (!dealId) return response;
-    const supabase = createAdminClient();
-    const { error } = await supabase
-      .from("deals")
-      .update({ deal_status: "reviewing" })
-      .eq("deal_id", dealId);
-    if (error) {
-      console.error("[intake] review status reconciliation failed", {
-        dealId,
-        sourceChannel: normalized.sourceChannel,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      });
-      return NextResponse.json(
-        {
-          success: false,
-          error: "The Matter was captured but its review state could not be verified.",
-          code: "INTAKE_REVIEW_STATUS_PERSISTENCE_FAILED",
-          correlation_id: body.correlation_id ?? null,
-          deal_id: dealId,
-        },
-        { status: 500 },
-      );
-    }
-    return response;
-  }
+  if (body.quote_state === "review_required") return response;
 
   if (!dealId) {
     return NextResponse.json(
