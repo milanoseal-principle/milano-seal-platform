@@ -1,3 +1,4 @@
+import { splitFiftyFifty } from "@/lib/pricing/paymentSplit";
 import { createWisePaymentRequest } from "@/lib/wise";
 import { APOSTILLE_FEES, URGENCY_FEES } from "@/lib/pricing";
 import {
@@ -89,13 +90,16 @@ export function calculatePaymentAmount(
       if (due > 0) return due;
       const retainer = money(deal.invoice_retainer);
       if (retainer > 0) return retainer;
-      return Math.round(total * 0.5 * 100) / 100;
+      // Fallback only when no obligation is persisted: the canonical
+      // integer-cent split (lib/pricing/paymentSplit.ts). A zero total stays 0
+      // and the payment instruction fails closed.
+      return splitFiftyFifty(total).retainer;
     }
 
     case "final_balance": {
       const balance = money(deal.invoice_balance);
       if (balance > 0) return balance;
-      return Math.round(total * 0.5 * 100) / 100;
+      return splitFiftyFifty(total).finalBalance;
     }
 
     case "rush_upgrade":

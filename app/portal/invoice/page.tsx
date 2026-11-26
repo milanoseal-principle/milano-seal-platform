@@ -101,6 +101,8 @@ export default function ClientInvoicePage() {
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [settlementCheckBusy, setSettlementCheckBusy] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
+  // Invoice-load failures are shown on their own, never inside the discount panel.
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const loadInvoice = async () => {
     if (!deal?.id) return;
@@ -116,9 +118,10 @@ export default function ClientInvoicePage() {
       }
       if (!response.ok || !body.invoice) throw new Error(body.error || "Invoice unavailable");
       setPendingPricing(null);
+      setInvoiceError(null);
       setInvoice(body.invoice);
     } catch (err) {
-      setDiscountError(err instanceof Error ? err.message : "Invoice unavailable");
+      if (activeMatterId.current === requestedMatterId) setInvoiceError(err instanceof Error ? err.message : "Invoice unavailable");
     } finally {
       setLoadingInvoice(false);
     }
@@ -234,6 +237,9 @@ export default function ClientInvoicePage() {
         : "Payment submission remains recorded. Settlement continues in the background."));
       await loadInvoice();
       await refresh();
+    } catch {
+      // Network failure: never leave "Checking…" on screen or imply a result.
+      setPaymentMessage("Settlement could not be checked right now. Your recorded submission is unchanged and automatic checks will continue.");
     } finally {
       setSettlementCheckBusy(false);
     }
@@ -256,7 +262,16 @@ export default function ClientInvoicePage() {
   }
 
   if (!deal || !invoice || invoice.matterId !== deal.id) {
-    return <div className="text-sm text-white/50">No invoice is available for this account.</div>;
+    return (
+      <div className="text-sm text-white/50" role="status">
+        {invoiceError ? `Your invoice could not be loaded: ${invoiceError}` : "No invoice is available for this account."}
+        {invoiceError && deal && (
+          <button type="button" className="mt-3 block min-h-11 rounded border border-white/20 px-3 text-white/70" onClick={() => void loadInvoice()}>
+            Try again
+          </button>
+        )}
+      </div>
+    );
   }
 
   const currency = invoice.currency || "USD";
@@ -420,7 +435,7 @@ export default function ClientInvoicePage() {
           )}
 
           {paymentConfirmed && (
-            <div className="mt-5 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-4 text-sm text-emerald-300/85">Payment verified. Paid state is confirmed and all verified-payment-only release controls may proceed.</div>
+            <div className="mt-5 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.05] p-4 text-sm text-emerald-300/85">Wise payment verified for this obligation. Scheduling still requires compliance clearance; international release requires the verified final balance and release clearance.</div>
           )}
 
           {paymentMessage && <div className="mt-4 rounded-md border border-white/[0.07] bg-white/[0.02] p-3 text-xs leading-5 text-white/55">{paymentMessage}</div>}
