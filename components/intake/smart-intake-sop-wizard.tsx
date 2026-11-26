@@ -140,6 +140,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const draftContext = JSON.stringify([initialTier, prefill?.country, prefill?.document, prefill?.matter, courtesyCode, professionalReferral?.profileId]);
   const startedRef = useRef(false);
   const submittedRef = useRef(false);
+  const submissionLocked = useRef(false);
   const reviewViewedRef = useRef(false);
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -424,6 +425,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   };
 
   const submit = async () => {
+    if (submissionLocked.current || submittedRef.current) return;
     // Gate on client-resolvable facts, NOT on pricing approval: matters that
     // intentionally price as quote_after_review (mobile / authentication /
     // translation coordination) must still be submittable so a Matter is
@@ -439,6 +441,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
       return;
     }
     if (!consent) { setError("Confirm the review notice before submitting."); focusField("review-consent"); return; }
+    submissionLocked.current = true;
     setSubmitting(true);
     setError(null);
     markStarted();
@@ -532,6 +535,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     } catch (cause) {
       track("intake_error", { failureCategory: "matter_submission" });
       setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
+      submissionLocked.current = false;
       setSubmitting(false);
     }
   };
