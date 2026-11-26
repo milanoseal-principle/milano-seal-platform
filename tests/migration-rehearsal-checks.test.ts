@@ -30,12 +30,19 @@ test("the eight migrations exist in the repository", () => {
 });
 
 test("all postconditions hold after the eight migrations are applied in priority order", async () => {
-  const db = await isolatedCanonicalDatabase(files().filter((f) => !PRIORITY_ORDER.includes(f)));
+  // The "before" state is the database the eight were rehearsed against: every
+  // migration up to the latest of them, minus the eight. Later migrations
+  // presume the eight (e.g. 20261125231600 defines a SQL function over
+  // public.operators), so they are applied after them, as in the real chain,
+  // and must not regress any postcondition.
+  const latest = [...PRIORITY_ORDER].sort().at(-1)!;
+  const db = await isolatedCanonicalDatabase(files().filter((f) => !PRIORITY_ORDER.includes(f) && f < latest));
   try {
     const before = await run(db);
     for (const unmet of ["va_transition_rpc_present", "operator_binding_rpcs_present", "rejected_referral_guard_trigger_enabled",
       "partner_ownership_helper_present", "operator_unique_indexes_valid"]) assert.ok(before.failures.includes(unmet), unmet);
     for (const file of PRIORITY_ORDER) await db.exec(fs.readFileSync(`supabase/migrations/${file}`, "utf8"));
+    for (const file of files().filter((f) => f > latest)) await db.exec(fs.readFileSync(`supabase/migrations/${file}`, "utf8"));
     const after = await run(db);
     assert.deepEqual(after.failures, []);
     assert.equal(after.founder_helper_reads_user_metadata, false);
