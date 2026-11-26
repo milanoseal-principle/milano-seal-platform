@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   let query = admin
     .from("deals")
     .select(
-      "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal"
+      "deal_id, payment_status, status, invoice_balance, payment_reference, invoice_subtotal, total_price, payment_disposition"
     )
     .eq("deal_id", dealId);
   if (accessToken) query = query.eq("access_token", accessToken);
@@ -76,6 +76,12 @@ export async function GET(req: NextRequest) {
           ? data.invoice_balance
           : (data.invoice_subtotal ?? null),
       invoice_reference: data.payment_reference ?? null,
+      // True only once the canonical quote has been issued for this Matter
+      // (operator-approved total persisted; see app/api/deals/[id]/quote).
+      // A review-required intake has no payable obligation yet, so the client
+      // must not be shown payment instructions or payment polling.
+      quote_issued:
+        Number(data.total_price) > 0 && data.payment_disposition !== "complimentary",
     },
     {
       headers: { "Cache-Control": "no-store" },

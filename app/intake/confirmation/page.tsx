@@ -71,6 +71,9 @@ function ConfirmationInner() {
   );
   const [visible, setVisible] = useState(false);
   const [bypassing, setBypassing] = useState(false);
+  // Server truth for this Matter: "issued" only once a canonical quote exists.
+  // Review-required intake has no payable obligation, so no payment UI.
+  const [quoteState, setQuoteState] = useState<"unknown" | "issued" | "pending_review">("unknown");
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -86,7 +89,8 @@ function ConfirmationInner() {
           { cache: "no-store" },
         );
         if (!r.ok) return;
-        const body = (await r.json()) as { payment_status?: string };
+        const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean };
+        if (!stopped) setQuoteState(body.quote_issued === true ? "issued" : "pending_review");
         if (body.payment_status === "paid" && !stopped) {
           stopped = true;
           router.push("/portal");
@@ -94,6 +98,7 @@ function ConfirmationInner() {
       } catch {}
     };
 
+    void poll();
     const id = setInterval(() => {
       void poll();
     }, 5000);
@@ -269,7 +274,28 @@ function ConfirmationInner() {
         <CreateAccountCard />
       </div>
 
-      {dealId?.startsWith("MS-") ? (
+      {dealId?.startsWith("MS-") && quoteState !== "issued" ? (
+        <div className="bg-[#111111] border border-[#C6A55A]/20 rounded-2xl p-6 mb-6" aria-live="polite">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-[#C6A55A]" />
+            <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+              Pricing Under Review
+            </h2>
+          </div>
+          <p className="text-[#B0B0B0] text-sm leading-relaxed">
+            Your Matter has been received. Our team is confirming your execution
+            requirements and pricing. Payment instructions will become available
+            in your secure portal once your review is complete, within one
+            business day.
+          </p>
+          <p className="mt-3 text-[13px] leading-relaxed text-[#8A8A8A]">
+            Your quote will show the total investment, the 50% engagement
+            retainer due before execution scheduling, and the 50% final balance
+            due after apostille completion and before international release.
+            No payment is due yet.
+          </p>
+        </div>
+      ) : dealId?.startsWith("MS-") ? (
         <div className="mb-6">
           <PaymentGate
             matterId={dealId}
@@ -295,7 +321,7 @@ function ConfirmationInner() {
         </div>
       )}
 
-      {dealId?.startsWith("MS-") && (
+      {dealId?.startsWith("MS-") && quoteState === "issued" && (
         <div className="flex items-center justify-center gap-2 mb-6 text-[#8A8A8A] text-xs">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C6A55A] opacity-75" />
