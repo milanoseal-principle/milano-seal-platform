@@ -5,45 +5,45 @@
       "routeId": "api:/api/assistant",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "d488976a",
-      "evidenceDate": "2026-11-25",
+      "commit": "fc380e59",
+      "evidenceDate": "2026-11-26",
       "approvedBy": "",
       "sourceSha256": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
-      "dependencySha256": "d140cd4b81ba4b5261e095718006bbf43688a8f1084d6bd29cdc1cf37f3d5940",
+      "dependencySha256": "94909d14c9e29a223d857596a2b7923032d63139386cff7e69b7927c825bdf3c",
       "testIds": [
         "tests/unit/assistantGuard.test.ts",
         "tests/unit/publicRequestLimits.test.ts"
       ],
-      "notes": "Reviewed 2026-11-25 against the L2 contract: source and dependency fingerprints current; guards tested with a mocked provider (cross-site, size, message, context, off-switch, unconfigured, durable-limit 429/503 and malformed requests consume no allowance and make zero provider calls; allowed path one call, max_tokens 512, SDK retries off); durable limiter proven on real Postgres (scripts/test-public-request-limits-concurrency.mjs). L2 is dependency verification, not production certification: hosted migration 20261125120000 not yet applied; provider-side spend limit unverified."
+      "notes": "Re-reviewed 2026-11-26 at fc380e59 against the L2 contract. Dependency fingerprint changed since d488976a only through lib/security/publicRequestLimit.ts (additive bucket names and an optional namespace that this route does not pass, so its scope keys are unchanged); tests/unit/assistantGuard.test.ts and publicRequestLimits.test.ts rerun and pass. Guards (cross-site, size, message, context, off-switch, unconfigured, durable-limit 429/503, malformed) consume no allowance and make zero provider calls; allowed path makes one call, max_tokens 512, SDK retries off. Durable limiter proven on real PostgreSQL 16 (scripts/test-public-request-limits-concurrency.mjs, 30 parallel backends, 20/90 allowed). Not production certification: hosted presence of the limiter migrations is unverified from this session; provider-side spend limit unverified."
     },
     {
       "routeId": "api:/api/intake/extract",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "d488976a",
-      "evidenceDate": "2026-11-25",
+      "commit": "fc380e59",
+      "evidenceDate": "2026-11-26",
       "approvedBy": "",
       "sourceSha256": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
-      "dependencySha256": "06a6f3d5623f5936fc11a58659e89673d933e1517e9934d2d7fdd74c45a8f5e0",
+      "dependencySha256": "138fd1cf30efd3531947162216ebb8511aefe099c9c240d0b32225c7d9f0f562",
       "testIds": [
         "tests/unit/intakeExtractGuard.test.ts",
         "tests/unit/publicRequestLimits.test.ts"
       ],
-      "notes": "Reviewed 2026-11-25 against the L2 contract: fingerprints current; guards tested with mocked parser/provider (cross-site, streamed 4.5 MB cap, message cap, off-switch, durable-limit 429/503 parse nothing and call no provider; max 10 files; provider error text never returned); limiter proven on real Postgres. Not production certification: hosted migration not yet applied; Anthropic failure falls back to Groq."
+      "notes": "Re-reviewed 2026-11-26 at fc380e59 against the L2 contract. Dependency fingerprint changed since d488976a only through lib/security/publicRequestLimit.ts (additive; no namespace passed, scope keys unchanged); tests/unit/intakeExtractGuard.test.ts and publicRequestLimits.test.ts rerun and pass. Cross-site, streamed 4.5 MB cap, message cap, off-switch, durable-limit 429/503 parse nothing and call no provider; max 10 files; provider error text never returned. Extraction output is advisory and creates no Matter, approval, payment or execution authority. Limiter proven on real PostgreSQL 16 (10/60 allowed). Not production certification: hosted limiter migration presence unverified from this session; Anthropic failure falls back to Groq."
     },
     {
       "routeId": "api:/api/sales/capture",
       "level": "L2",
       "status": "PENDING_OWNER_APPROVAL",
-      "commit": "d488976a",
-      "evidenceDate": "2026-11-25",
+      "commit": "fc380e59",
+      "evidenceDate": "2026-11-26",
       "approvedBy": "",
       "sourceSha256": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
-      "dependencySha256": "4ab333040786348f2a11c972865c8c9ac8ccca02a291be704fd52fcafcd3035a",
+      "dependencySha256": "96e9668c1680b0cf1b80178d3f2085588b5e09ea3318864fbbf7abfec55b6e97",
       "testIds": [
         "tests/unit/salesCaptureGuard.test.ts"
       ],
-      "notes": "Reviewed 2026-11-25 against the L2 contract: fingerprints current; guards tested with a fake Supabase client (foreign Origin, declared/actual size, malformed body, missing email and the hourly per-IP limit write no row; accepted capture stores ip_hash and creates a lead only). The per-IP limit is count-then-insert on sales_leads (the existing public-form pattern), not the atomic limiter."
+      "notes": "Re-reviewed 2026-11-26 at fc380e59 against the L2 contract. The count-then-insert per-IP limit found in the 2026-11-25 review is replaced by the existing atomic limiter (public_signup bucket, 5/hour, own sales_capture namespace); no new limiter or migration. tests/unit/salesCaptureGuard.test.ts: foreign Origin, declared/actual size, malformed body and missing email write nothing and consume no allowance; 429 carries Retry-After; limiter outage 503; accepted capture stores ip_hash and creates a lead only (no role, Matter or payment fields); namespace gives a scope independent of the other signup forms. public_signup proven on real PostgreSQL 16 (5/30 parallel allowed). Not production certification: hosted presence of migration 20261125140000 unverified from this session."
     }
   ]
 }
