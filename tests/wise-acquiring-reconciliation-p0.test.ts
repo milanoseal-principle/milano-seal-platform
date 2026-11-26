@@ -81,6 +81,7 @@ test("legacy observation cannot gain positive activity authority from a stored a
     resource: { id: "9858e4b0-7dd5-4ed8-8bc5-7a3e850c2597", amount: { value: 6.88, currency: "USD" } },
   };
   const legacy = {
+    id: "ee2e3dad-a95f-412d-ae87-15f634beed8e",
     wise_reference: "MS-SYNTHETIC-1",
     deal_id: "MS-SYNTHETIC-1",
     amount_due: 6.88,
