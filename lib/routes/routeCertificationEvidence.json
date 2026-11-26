@@ -4,10 +4,10 @@
     {
       "routeId": "api:/api/assistant",
       "level": "L2",
-      "status": "PENDING_OWNER_APPROVAL",
+      "status": "APPROVED",
       "commit": "fc380e59",
       "evidenceDate": "2026-11-26",
-      "approvedBy": "",
+      "approvedBy": "Nicholas Milano, Founder, The Milano Seal™",
       "sourceSha256": "533df462604f690bf48de6c3e4f1f83df4a37bdb935ec9514ca656850d21a09a",
       "dependencySha256": "94909d14c9e29a223d857596a2b7923032d63139386cff7e69b7927c825bdf3c",
       "testIds": [
@@ -19,10 +19,10 @@
     {
       "routeId": "api:/api/intake/extract",
       "level": "L2",
-      "status": "PENDING_OWNER_APPROVAL",
+      "status": "APPROVED",
       "commit": "fc380e59",
       "evidenceDate": "2026-11-26",
-      "approvedBy": "",
+      "approvedBy": "Nicholas Milano, Founder, The Milano Seal™",
       "sourceSha256": "a9fba181deb65ab7b9e5055c1cc81569f8f0da56492ee4a69afe0ec331c8e4ca",
       "dependencySha256": "138fd1cf30efd3531947162216ebb8511aefe099c9c240d0b32225c7d9f0f562",
       "testIds": [
@@ -34,10 +34,10 @@
     {
       "routeId": "api:/api/sales/capture",
       "level": "L2",
-      "status": "PENDING_OWNER_APPROVAL",
+      "status": "APPROVED",
       "commit": "fc380e59",
       "evidenceDate": "2026-11-26",
-      "approvedBy": "",
+      "approvedBy": "Nicholas Milano, Founder, The Milano Seal™",
       "sourceSha256": "aa348dad063446ac4679c5b43a565bef59890958236412d1fa559a0ffad106af",
       "dependencySha256": "96e9668c1680b0cf1b80178d3f2085588b5e09ea3318864fbbf7abfec55b6e97",
       "testIds": [

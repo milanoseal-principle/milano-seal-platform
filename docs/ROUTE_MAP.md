@@ -156,7 +156,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/alliance/referrals/review` | API | POST | `app/api/alliance/referrals/review/route.ts` | L1 |
 | `/api/alliance/referrals` | API | GET, POST | `app/api/alliance/referrals/route.ts` | L1 |
 | `/api/alliance/submit` | API | POST | `app/api/alliance/submit/route.ts` | L1 |
-| `/api/assistant` | API | POST | `app/api/assistant/route.ts` | L1 |
+| `/api/assistant` | API | POST | `app/api/assistant/route.ts` | L2 |
 | `/api/auth/login` | API | POST | `app/api/auth/login/route.ts` | L1 |
 | `/api/auth/password/reset-request` | API | POST | `app/api/auth/password/reset-request/route.ts` | L1 |
 | `/api/auth/signout` | API | POST | `app/api/auth/signout/route.ts` | L1 |
@@ -318,7 +318,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/health/storage` | API | GET | `app/api/health/storage/route.ts` | L1 |
 | `/api/health/webhooks` | API | GET | `app/api/health/webhooks/route.ts` | L1 |
 | `/api/intake/analytics` | API | POST | `app/api/intake/analytics/route.ts` | L1 |
-| `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L1 |
+| `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L2 |
 | `/api/intake/quote-preview` | API | POST | `app/api/intake/quote-preview/route.ts` | L1 |
 | `/api/intake` | API | POST | `app/api/intake/route.ts` | L1 |
 | `/api/intake/upload` | API | POST | `app/api/intake/upload/route.ts` | L1 |
@@ -375,7 +375,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/reviews/request` | API | POST | `app/api/reviews/request/route.ts` | L1 |
 | `/api` | API | POST | `app/api/route.ts` | L1 |
 | `/api/runStep` | API | POST | `app/api/runStep/route.ts` | L1 |
-| `/api/sales/capture` | API | POST | `app/api/sales/capture/route.ts` | L1 |
+| `/api/sales/capture` | API | POST | `app/api/sales/capture/route.ts` | L2 |
 | `/api/shipping/create-label/[id]` | API | POST | `app/api/shipping/create-label/[id]/route.ts` | L1 |
 | `/api/tools/courier` | API | POST | `app/api/tools/courier/route.ts` | L1 |
 | `/api/tools/embassy` | API | POST | `app/api/tools/embassy/route.ts` | L1 |
