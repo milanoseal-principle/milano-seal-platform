@@ -22,6 +22,13 @@ test("Wise personal-token reconciliation treats Activity as optional enrichment"
   assert.match(observation, /reconcileWiseMatter\(ctx\.deal\.id\)/);
 });
 
+test("Wise Activity uses its versioned v1 endpoint independently of the configured API version", () => {
+  assert.ok(reconciliation.includes(
+    'new URL(`/v1/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`, WISE_API_BASE).href',
+  ));
+  assert.ok(!reconciliation.includes('wiseUrl(`/profiles/${encodeURIComponent(profileId)}/activities?'));
+});
+
 test("Wise profile authority is token-validated, business-specific, and cached per runtime", () => {
   assert.match(reconciliation, /wiseGetJson<WiseProfile\[]>\(wiseUrl\("\/profiles"\), token\)/);
   assert.match(reconciliation, /businessProfiles\.length === 1/);

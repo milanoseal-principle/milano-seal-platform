@@ -316,8 +316,9 @@ export async function listWiseAcquiringActivities(params: {
       });
       if (nextCursor) query.set("nextCursor", nextCursor);
 
+      // Activity has its own API version. The configured version applies to balance reads.
       const payload = await wiseGetJson<{ cursor?: string | null; activities?: WiseActivity[] }>(
-        wiseUrl(`/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`),
+        new URL(`/v1/profiles/${encodeURIComponent(profileId)}/activities?${query.toString()}`, WISE_API_BASE).href,
         token,
       );
       activities.push(...(payload.activities ?? []));
