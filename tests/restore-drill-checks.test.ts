@@ -50,3 +50,32 @@ test("checks output counts and booleans only, never row values", () => {
   assert.doesNotMatch(select, /select\s+(\*|email|client_name|name|metadata|payload)\b/i);
   assert.doesNotMatch(CHECKS, /\b(insert|update|delete)\s+(into\s+)?public\./i, "checks never write application tables");
 });
+
+test("a GENESIS chain root is not an unlinked custody row; a missing predecessor still is", async () => {
+  const db = await isolatedCanonicalDatabase(files());
+  try {
+    const required = (await db.query<{ column_name: string }>(
+      "select column_name from information_schema.columns where table_schema = 'public' and table_name = 'custody_ledger' and is_nullable = 'NO' and column_default is null",
+    )).rows.map((r) => r.column_name);
+    const deal = (await db.query<{ id: string }>("insert into public.deals(email) values ('drill@example.invalid') returning id::text")).rows[0].id;
+    const insert = async (hash: string, prev: string) => {
+      const values: Record<string, string> = { deal_id: deal, hash, prev_hash: prev };
+      for (const c of required) values[c] ??= "synthetic";
+      const keys = Object.keys(values);
+      const params = keys.map((_, i) => "$" + String(i + 1)).join(",");
+      await db.query("insert into public.custody_ledger(" + keys.join(",") + ") values (" + params + ")", Object.values(values));
+    };
+    // Fixture rows only: bypass the append-only evidence triggers for this disposable database.
+    await db.exec("set session_replication_role = replica");
+    await insert("h1", "GENESIS");
+    await insert("h2", "h1");
+    await insert("h3", "missing-parent");
+    const legacy = (await db.query<{ n: number }>(
+      "select count(*)::int n from public.custody_ledger c where c.prev_hash is not null and not exists (select 1 from public.custody_ledger p where p.deal_id = c.deal_id and p.hash = c.prev_hash)",
+    )).rows[0].n;
+    assert.equal(legacy, 2, "the previous diagnostic miscounted the genesis root");
+    assert.equal((await run(db)).custody_chain_unlinked_rows, 1, "only the genuinely missing predecessor is counted");
+  } finally {
+    await db.close();
+  }
+});
