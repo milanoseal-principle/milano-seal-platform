@@ -68,3 +68,19 @@ test("invalid amounts are refused, never split", () => {
   for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY]) assert.throws(() => splitFiftyFifty(bad), /PAYMENT_SPLIT_INVALID_AMOUNT/);
   for (const bad of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1]) assert.throws(() => splitFiftyFiftyCents(bad), /PAYMENT_SPLIT_INVALID_CENTS/);
 });
+
+test("Wise fallback split: canonical when nothing is persisted, persisted obligations still win", async () => {
+  const { calculatePaymentAmount } = await import("@/lib/wise/payments");
+  for (let cents = 1; cents <= 500_000; cents += 1) {
+    const total = cents / 100;
+    const expected = splitFiftyFifty(total);
+    assert.equal(calculatePaymentAmount({ total_price: total }, "retainer"), expected.retainer, `retainer ${total}`);
+    assert.equal(calculatePaymentAmount({ total_price: total }, "final_balance"), expected.finalBalance, `balance ${total}`);
+  }
+  // Persisted values are authoritative and never recomputed.
+  assert.equal(calculatePaymentAmount({ total_price: 1.15, amount_due: 0.57 }, "retainer"), 0.57);
+  assert.equal(calculatePaymentAmount({ total_price: 1.15, invoice_retainer: 0.57 }, "retainer"), 0.57);
+  assert.equal(calculatePaymentAmount({ total_price: 1.15, invoice_balance: 0.58 }, "final_balance"), 0.58);
+  // No total: fails closed at zero.
+  assert.equal(calculatePaymentAmount({}, "retainer"), 0);
+});

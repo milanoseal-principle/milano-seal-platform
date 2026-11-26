@@ -154,6 +154,10 @@ export const GAP_CLOSURE_PROTECTED_CHANGES = [
  // manual-confirm and request-final are already listed above. Regression:
  // tests/unit/legacyPaymentRoutesRetired.test.ts, validate:payment-release-gates.
  'app/api/deals/[id]/payment/route.ts',
+ // 2026-11-26 owner authorization (exact path): the Wise fallback 50/50 split
+ // uses the canonical integer-cent helper (lib/pricing/paymentSplit.ts).
+ // Persisted obligations still take precedence. Regression: tests/unit/paymentSplit.test.ts.
+ 'lib/wise/payments.ts',
  'app/api/dashboard/custody/[matterId]/route.ts','app/api/deals/[id]/custody/route.ts',
  'app/api/deals/[id]/release/route.ts','lib/release/performFinalRelease.ts','lib/custodyLedger.ts',
  'supabase/migrations/20261108200000_governance_execution_revalidation.sql',
