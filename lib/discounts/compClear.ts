@@ -17,7 +17,7 @@
 // Permission (canApproveComp) is enforced by the route before calling this.
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
+import { writeMatterAuditEvent, type EventLedgerInput } from "@/src/features/audit/eventLedgerService";
 
 export interface CompClearInput {
   dealId: string;            // deals.id (the matter)
@@ -32,6 +32,10 @@ export interface CompClearResult {
   alreadyCleared?: boolean;
   originalAmount?: number;
   finalAmount?: number;
+  /** False when any canonical Matter audit event failed to persist (never reported as recorded). */
+  auditRecorded?: boolean;
+  /** Event types whose canonical audit write did not persist. */
+  auditFailures?: string[];
 }
 
 function money(v: number) {
@@ -130,28 +134,42 @@ export async function compClearMatter(input: CompClearInput): Promise<CompClearR
     payment_reference: `DISCOUNT-COMP-${input.dealId}`,
     payment_method: "operator_comp",
   };
-  await writeEventLedger({
-    matterId: input.dealId,
-    actorEmail: input.approverEmail,
-    eventType: "PAYMENT_COMPED",
-    message: "Matter cleared by owner/operator-approved 100% comp.",
-    metadata: meta,
-  });
-  await writeEventLedger({
-    matterId: input.dealId,
-    actorEmail: input.approverEmail,
-    eventType: "PAYMENT_BALANCE_UPDATED",
-    statusBefore: String(deal.amount_due ?? ""),
-    statusAfter: "0",
-    metadata: meta,
-  });
-  await writeEventLedger({
-    matterId: input.dealId,
-    actorEmail: input.approverEmail,
-    eventType: "SCHEDULING_UNLOCKED",
-    message: "Scheduling unlocked by audited comp-cleared payment state.",
-    metadata: meta,
-  });
+  // Canonical Matter timeline (public.matter_events, keyed on the deals.id loaded
+  // above). Each write is checked: a failed audit write is reported, never
+  // treated as recorded. The deal state above is already committed, so the
+  // clearing itself stands; the response says exactly which events are missing.
+  const audit: EventLedgerInput[] = [
+    {
+      matterId: input.dealId,
+      actorEmail: input.approverEmail,
+      eventType: "PAYMENT_COMPED",
+      message: "Matter cleared by owner/operator-approved 100% comp.",
+      metadata: meta,
+    },
+    {
+      matterId: input.dealId,
+      actorEmail: input.approverEmail,
+      eventType: "PAYMENT_BALANCE_UPDATED",
+      statusBefore: String(deal.amount_due ?? ""),
+      statusAfter: "0",
+      metadata: meta,
+    },
+    {
+      matterId: input.dealId,
+      actorEmail: input.approverEmail,
+      eventType: "SCHEDULING_UNLOCKED",
+      message: "Scheduling unlocked by audited comp-cleared payment state.",
+      metadata: meta,
+    },
+  ];
+  const auditFailures: string[] = [];
+  for (const event of audit) {
+    const result = await writeMatterAuditEvent(event);
+    if (!("data" in result) || !result.data) auditFailures.push(event.eventType);
+  }
+  if (auditFailures.length) {
+    console.error("[comp-clear] AUDIT_EVENTS_NOT_PERSISTED", { dealId: input.dealId, events: auditFailures });
+  }
 
-  return { ok: true, originalAmount, finalAmount };
+  return { ok: true, originalAmount, finalAmount, auditRecorded: auditFailures.length === 0, auditFailures };
 }
