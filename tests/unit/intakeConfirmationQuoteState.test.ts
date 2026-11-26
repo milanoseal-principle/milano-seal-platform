@@ -57,11 +57,21 @@ test("a complimentary Matter never reports a payable quote", async (t) => {
 test("the confirmation page gates the PaymentGate and payment polling banner on an issued quote", () => {
   const page = fs.readFileSync("app/intake/confirmation/page.tsx", "utf8").replace(/\s+/g, " ");
   assert.match(page, /setQuoteState\(body\.quote_issued === true \? "issued" : "pending_review"\)/);
-  assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState !== "issued" \?/, "review state renders before any PaymentGate");
-  assert.ok(page.indexOf('quoteState !== "issued"') < page.indexOf("<PaymentGate"), "PaymentGate is only the issued branch");
+  assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState === "pending_review" \?/, "review copy only on a confirmed pending-review answer");
+  assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState === "issued" \? \( <div className="mb-6"> <PaymentGate/, "PaymentGate is only the issued branch");
+  assert.match(page, /\) : dealId\?\.startsWith\("MS-"\) \? null : \(/, "no payment copy for an MS- Matter while status is loading");
   assert.match(page, /dealId\?\.startsWith\("MS-"\) && quoteState === "issued" && \(/, "polling banner only for an issued quote");
   assert.match(page, /Pricing Under Review/);
   assert.match(page, /50% engagement retainer/);
   assert.match(page, /50% final balance/);
   assert.doesNotMatch(page, /\$\s*750|\b375\b/, "no hardcoded prices");
+});
+
+test("a failed status lookup is 'unavailable', never 'no payment due' (Codex review on #556)", () => {
+  const page = fs.readFileSync("app/intake/confirmation/page.tsx", "utf8").replace(/\s+/g, " ");
+  assert.match(page, /if \(!r\.ok\) \{ if \(!stopped\) setQuoteState\("unavailable"\); return; \}/);
+  assert.match(page, /catch \{ if \(!stopped\) setQuoteState\("unavailable"\); \}/);
+  const unavailable = page.slice(page.indexOf('quoteState === "unavailable" ? ('), page.indexOf('quoteState === "pending_review" ? ('));
+  assert.match(unavailable, /href="\/portal"/, "points the owner to the authenticated portal");
+  assert.doesNotMatch(unavailable, /No payment is due/, "makes no payment claim");
 });

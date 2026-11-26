@@ -73,7 +73,9 @@ function ConfirmationInner() {
   const [bypassing, setBypassing] = useState(false);
   // Server truth for this Matter: "issued" only once a canonical quote exists.
   // Review-required intake has no payable obligation, so no payment UI.
-  const [quoteState, setQuoteState] = useState<"unknown" | "issued" | "pending_review">("unknown");
+  // "unavailable": the status lookup failed (e.g. the 30-minute intake
+  // capability expired). That is never treated as "no payment due".
+  const [quoteState, setQuoteState] = useState<"unknown" | "issued" | "pending_review" | "unavailable">("unknown");
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -88,14 +90,19 @@ function ConfirmationInner() {
           `/api/public/payment-status?deal_id=${encodeURIComponent(dealId)}`,
           { cache: "no-store" },
         );
-        if (!r.ok) return;
+        if (!r.ok) {
+          if (!stopped) setQuoteState("unavailable");
+          return;
+        }
         const body = (await r.json()) as { payment_status?: string; quote_issued?: boolean };
         if (!stopped) setQuoteState(body.quote_issued === true ? "issued" : "pending_review");
         if (body.payment_status === "paid" && !stopped) {
           stopped = true;
           router.push("/portal");
         }
-      } catch {}
+      } catch {
+        if (!stopped) setQuoteState("unavailable");
+      }
     };
 
     void poll();
@@ -274,7 +281,23 @@ function ConfirmationInner() {
         <CreateAccountCard />
       </div>
 
-      {dealId?.startsWith("MS-") && quoteState !== "issued" ? (
+      {dealId?.startsWith("MS-") && quoteState === "unavailable" ? (
+        <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 mb-6" aria-live="polite">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-4 h-4 text-[#C6A55A]" />
+            <h2 className="text-[#C6A55A] text-xs font-semibold tracking-[0.2em] uppercase">
+              Quote &amp; Payment Status
+            </h2>
+          </div>
+          <p className="text-[#B0B0B0] text-sm leading-relaxed">
+            We can&rsquo;t show your quote or payment status on this page right now.{" "}
+            <Link href="/portal" className="text-[#C6A55A] underline">
+              Sign in to your secure portal
+            </Link>{" "}
+            to see your current quote and any payment instructions for this Matter.
+          </p>
+        </div>
+      ) : dealId?.startsWith("MS-") && quoteState === "pending_review" ? (
         <div className="bg-[#111111] border border-[#C6A55A]/20 rounded-2xl p-6 mb-6" aria-live="polite">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-4 h-4 text-[#C6A55A]" />
@@ -295,7 +318,7 @@ function ConfirmationInner() {
             No payment is due yet.
           </p>
         </div>
-      ) : dealId?.startsWith("MS-") ? (
+      ) : dealId?.startsWith("MS-") && quoteState === "issued" ? (
         <div className="mb-6">
           <PaymentGate
             matterId={dealId}
@@ -303,7 +326,7 @@ function ConfirmationInner() {
             paymentType="retainer"
           />
         </div>
-      ) : (
+      ) : dealId?.startsWith("MS-") ? null : (
         <div className="bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-5">
             <CreditCard className="w-4 h-4 text-[#C6A55A]" />
