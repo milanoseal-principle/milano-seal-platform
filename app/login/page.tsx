@@ -10,21 +10,8 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getHomeRouteForRole } from "@/lib/auth/roleRedirect";
+import { getHomeRouteForRole, isWorkspaceLoginRedirect } from "@/lib/auth/roleRedirect";
 import { RitualEntryLock } from "@/components/ritual/RitualEntryLock";
-
-function isNextAllowedForRole(next: string | null, role: string): next is string {
-  if (!next) return false;
-  const destination = getHomeRouteForRole(role);
-  if (destination.startsWith("/dashboard")) return next.startsWith("/dashboard");
-  if (destination === "/portal") return next.startsWith("/portal");
-  if (destination === "/alliance/dashboard") return next.startsWith("/alliance");
-  if (destination === "/va/dashboard") return next.startsWith("/va");
-  if (destination === "/professional/matters") {
-    return next.startsWith("/professional/matters") || next.startsWith("/professional/account");
-  }
-  return false;
-}
 
 interface RitualConfig {
   eyebrow: string;
@@ -180,14 +167,7 @@ function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const rawNext = searchParams.get("next") || "";
-  const safeNext =
-    rawNext.startsWith("/portal") ||
-    rawNext.startsWith("/alliance") ||
-    rawNext.startsWith("/va") ||
-    rawNext.startsWith("/dashboard")
-      ? rawNext
-      : null;
+  const requestedNext = searchParams.get("next");
 
   useEffect(() => {
     if (searchParams.get("error") === "access_denied") return;
@@ -205,7 +185,7 @@ function LoginInner() {
     } catch {
       // Browser runtime may not have public Supabase variables during static diagnostics.
     }
-  }, [router, safeNext, searchParams]);
+  }, [router, searchParams]);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -257,8 +237,7 @@ function LoginInner() {
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           password,
-          next: safeNext,
-          tabHint: accessType,
+          next: requestedNext,
         }),
       });
       const json = (await response.json()) as {
@@ -274,7 +253,7 @@ function LoginInner() {
 
       const canonicalDestination = getHomeRouteForRole(json.role ?? "");
       const requestedDestination = json.redirect ?? canonicalDestination;
-      const redirect = isNextAllowedForRole(requestedDestination, json.role ?? "")
+      const redirect = isWorkspaceLoginRedirect(requestedDestination, json.role ?? "")
         ? requestedDestination
         : canonicalDestination;
 

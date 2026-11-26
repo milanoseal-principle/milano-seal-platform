@@ -87,6 +87,19 @@ export function getHomeRouteForRole(role?: string | null): string {
   return roleHomeRoute[normalized];
 }
 
+/** Password sign-in may return to a deep link within the user's home workspace. */
+export function isWorkspaceLoginRedirect(next: unknown, role?: string | null): next is string {
+  if (typeof next !== "string" || !next.startsWith("/") || next.startsWith("//")) return false;
+  if ([...next].some((character) => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127 || character === "\\")) return false;
+  const path = next.split(/[?#]/, 1)[0];
+  // Reject encoded path characters and paths the browser would normalize before navigation.
+  if (path.includes("%") || path.split("/").some((segment) => segment === "." || segment === "..")) return false;
+  const home = getHomeRouteForRole(role);
+  if (home === DENIED_ROUTE) return false;
+  const workspace = "/" + home.split("/")[1];
+  return (path === workspace || path.startsWith(workspace + "/")) && isRouteAllowedForRole(path, role);
+}
+
 export function isRouteAllowedForRole(
   pathname: string,
   role?: string | null,
