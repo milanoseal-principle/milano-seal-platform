@@ -135,7 +135,7 @@ I wanted to introduce The Milano Seal™ — a Florida-based international docum
 
 Our process includes [DOCUMENT TYPE] notarization, apostille coordination through the [${ctx.authority}], and certified delivery with full chain of custody documentation. We handle every jurisdiction covered under the Hague Convention and provide direct-submission protocols for non-Hague countries.
 
-Attorneys who refer international matters to us receive a dedicated point of contact, transparent status updates, and guaranteed turnaround timelines — so you can advise your clients with confidence.
+Attorneys who refer international matters to us receive a dedicated point of contact, transparent status updates, and transparent estimated turnaround timelines, subject to document requirements, receiving authority processing and courier availability — so you can plan with your clients.
 
 I'd welcome a brief 15-minute call to discuss how we might support your international practice. We're structured specifically for high-volume legal referrals.
 

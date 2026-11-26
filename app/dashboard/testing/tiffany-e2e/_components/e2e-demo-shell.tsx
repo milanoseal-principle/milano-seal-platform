@@ -228,44 +228,29 @@ export function E2EDemoShell() {
       return;
     }
 
+    // A demo can never establish payment truth. Confirmed payment is written
+    // only by the signature-verified Wise reconciliation path, so the demo
+    // records the observation and shows scheduling as locked until verified
+    // settlement exists. (The legacy POST /api/deals/[id]/payment direct write
+    // is retired and returns 410.)
     setStep("confirm-payment", "active");
-    try {
-      const res = await fetch(`/api/deals/${demo.deal.id}/payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_method: "wise",
-          payment_status: "paid",
-          payment_reference: reference,
-          payment_amount_received: receivedAmount,
-        }),
-      });
-      const data = await res.json() as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Payment confirmation failed");
-
-      // Log scheduling unlocked event
-      await fetch("/api/internal/e2e/log-event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deal_ref: DEMO_REF,
-          action: "SCHEDULING_UNLOCKED",
-          detail: `Payment confirmed ${fmt(receivedAmount)} · ref ${reference} → scheduling unlocked`,
-          meta: { amount: receivedAmount, reference },
-        }),
-      });
-
-      setStep(
-        "confirm-payment",
-        "done",
-        `Paid · ${fmt(receivedAmount)} · ref ${reference}`,
-      );
-      toast.success("Payment confirmed — scheduling unlocked");
-      await fetchStatus();
-    } catch (err) {
-      setStep("confirm-payment", "error", err instanceof Error ? err.message : "Error");
-      toast.error("Payment failed: " + (err instanceof Error ? err.message : "unknown"));
-    }
+    await fetch("/api/internal/e2e/log-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        deal_ref: DEMO_REF,
+        action: "PAYMENT_SETTLEMENT_REQUIRED",
+        detail: `Demo transfer reference ${reference} for ${fmt(receivedAmount)} recorded as an observation only — verified Wise settlement required before scheduling`,
+        meta: { expected: expectedAmount, observed: receivedAmount, reference, verified_settlement: false },
+      }),
+    }).catch(() => undefined);
+    setStep(
+      "confirm-payment",
+      "blocked",
+      `Awaiting verified Wise settlement · ${fmt(receivedAmount)} · ref ${reference} — scheduling locked`,
+    );
+    toast.info("Payment is confirmed only by verified Wise settlement — scheduling remains locked");
+    await fetchStatus();
   }
 
   // ── Stage Transitions ────────────────────────────────────────────────────────
