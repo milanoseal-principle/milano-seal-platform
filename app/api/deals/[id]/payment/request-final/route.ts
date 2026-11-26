@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { updateMatter } from "@/src/features/matters/matterRepository";
-import { writeEventLedger } from "@/src/features/audit/eventLedgerService";
 import { requireOperatorApiAccess } from "@/lib/auth/operatorApiAccess";
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+// Retired. It used to set a Milano OS `matters` record to
+// final_payment_required (a parallel entity, not the canonical deals Matter)
+// and write to the legacy event_ledger. Access is still checked first; the
+// handler reads and writes nothing.
+export async function POST() {
   const access = await requireOperatorApiAccess();
   if (!access.ok) return access.response;
-  const { id } = await params;
-  const actorEmail = access.actor;
-  const updated = await updateMatter(id, { status: "final_payment_required" });
-  if (updated.error) return NextResponse.json({ error: updated.error.message }, { status: 400 });
-  await writeEventLedger({ matterId: id, actorEmail, eventType: "FINAL_PAYMENT_REQUESTED", statusAfter: "final_payment_required" });
-  return NextResponse.json({ matter: updated.data });
+  return NextResponse.json(
+    {
+      error: "This legacy final-payment request is retired. Use the governed Matter payment workflow.",
+      code: "USE_GOVERNED_PAYMENT_WORKFLOW",
+    },
+    { status: 410, headers: { "Cache-Control": "no-store" } },
+  );
 }

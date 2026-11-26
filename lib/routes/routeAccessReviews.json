@@ -544,6 +544,23 @@
         "app/api/webhooks/alliance/toolbelt/route.ts": "6b4ff32592cec75100b0faa629298582a9177caa690ef91292a9e7ad4968ff56",
         "lib/alliance/webhookEvidence.ts": "327ff2e541614282c8c15f27d40143bf8833d5b82578d97931d97106b8630a98"
       }
+    },
+    {
+      "routeId": "api:/api/deals/[id]/payment",
+      "access": "disabled",
+      "audience": "None — legacy direct payment writer retired (owner authorization 2026-11-26).",
+      "controls": [
+        "POST always returns 410 USE_GOVERNED_WISE_RECONCILIATION with Cache-Control: no-store; no session, database, Matter or audit access"
+      ],
+      "openFindings": [],
+      "evidence": [
+        "tests/unit/legacyPaymentRoutesRetired.test.ts"
+      ],
+      "reviewedBy": "Engineering access review (Claude Code) — classification only, not certification",
+      "reviewedAt": "2026-11-26",
+      "files": {
+        "app/api/deals/[id]/payment/route.ts": "1b683007d2b7268aa4902f4b4a7112c2facf72a379653d661b51f5caa01f88fa"
+      }
     }
   ]
 }
