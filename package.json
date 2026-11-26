@@ -173,6 +173,7 @@
     "test:ai-governance-rendered": "node scripts/test-ai-governance-rendered.mjs",
     "test:migration-replay": "node scripts/test-migration-replay.mjs",
     "test:public-request-limits-concurrency": "node scripts/test-public-request-limits-concurrency.mjs",
+    "test:complimentary-authorization-concurrency": "node scripts/test-complimentary-authorization-concurrency.mjs",
     "validate:ai-governance": "node --import tsx scripts/validate-ai-governance.mjs",
     "test:ai-governance-regressions": "node scripts/test-ai-governance-regressions.mjs",
     "observe:ai-governance-hosted": "node scripts/observe-governance-hosted-certification.mjs",

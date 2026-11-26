@@ -116,7 +116,11 @@ export async function authorizeComplimentaryMatter(params: {
   const auth = createComplimentaryAuthorization({ quote, reasonCode: params.reasonCode, reasonDetail: params.reasonDetail, authorizedByUserId: params.actor.userId, authorizedByRole: params.actor.role ?? "unknown" });
   const snapshot = buildComplimentaryAccountingSnapshot(auth);
 
-  const { error: insertError } = await admin.from("complimentary_authorizations").insert({
+  // One transaction (public.authorize_complimentary_matter, 20261126060000): the
+  // authorization row, the Matter's complimentary zero state and the canonical
+  // COMPLIMENTARY_AUTHORIZATION_APPROVED event commit together or not at all. The
+  // database refuses any Matter patch that is not this zero state.
+  const authorizationRow = {
     id: auth.id,
     matter_id: auth.matterId,
     quote_id: auth.quoteId,
@@ -135,10 +139,8 @@ export async function authorizeComplimentaryMatter(params: {
     status: auth.status,
     authorized_at: auth.authorizedAt,
     audit_event_id: auth.auditEventId,
-  });
-  if (insertError) throw insertError;
-
-  const { error: updateError } = await admin.from("deals").update({
+  };
+  const dealPatch = {
     payment_disposition: "complimentary",
     amount_before_adjustment: snapshot.amountBeforeAdjustment,
     complimentary_adjustment_amount: snapshot.discountAmount,
@@ -154,30 +156,44 @@ export async function authorizeComplimentaryMatter(params: {
     comp_reason_code: snapshot.compReasonCode,
     comp_reason_detail: snapshot.compReasonDetail,
     comp_authorization_id: snapshot.compAuthorizationId,
-  }).eq("id", params.matterId);
-  if (updateError) throw updateError;
+  };
+  const { data: committed, error: rpcError } = await admin.rpc("authorize_complimentary_matter", {
+    p_authorization: authorizationRow,
+    p_deal: dealPatch,
+    p_actor: params.actor.email ?? params.actor.userId,
+  });
+  if (rpcError) throw rpcError;
+  const row = (Array.isArray(committed) ? committed[0] : committed) as { authorization_id?: string; matter_event_id?: string | null; already_authorized?: boolean } | null;
+  if (!row?.authorization_id || !row.matter_event_id) throw new Error("COMPLIMENTARY_AUTHORIZATION_NOT_COMMITTED");
 
-  await audit({ event: "COMPLIMENTARY_AUTHORIZATION_APPROVED", actor: params.actor.email ?? params.actor.userId, resource: params.matterId, payload: { authorizationId: auth.id, quoteVersion: auth.quoteVersion, originalTotal: auth.originalTotal, discountAmount: auth.discountAmount, amountDue: 0, amountPaid: 0, verifiedRevenue: 0, reasonCode: auth.reasonCode, reasonDetail: auth.reasonDetail, actorRole: params.actor.role } });
-  await logActivity({ deal_id: params.matterId, actor: params.actor.email ?? params.actor.userId, action: "complimentary_authorization_approved", detail: "Complimentary Matter authorized. Payment is not required; verified revenue remains $0.", meta: { authorization_id: auth.id, quote_version: auth.quoteVersion, original_total: auth.originalTotal, verified_revenue: 0 } });
-  return { ok: true, authorization: auth, accounting: snapshot };
+  // Secondary operator logs (audit_logs, activity). The mandatory canonical event
+  // committed above with the authorization; these are supplementary.
+  if (!row.already_authorized) {
+    await audit({ event: "COMPLIMENTARY_AUTHORIZATION_APPROVED", actor: params.actor.email ?? params.actor.userId, resource: params.matterId, payload: { authorizationId: auth.id, matterEventId: row.matter_event_id, quoteVersion: auth.quoteVersion, originalTotal: auth.originalTotal, discountAmount: auth.discountAmount, amountDue: 0, amountPaid: 0, verifiedRevenue: 0, reasonCode: auth.reasonCode, reasonDetail: auth.reasonDetail, actorRole: params.actor.role } });
+    await logActivity({ deal_id: params.matterId, actor: params.actor.email ?? params.actor.userId, action: "complimentary_authorization_approved", detail: "Complimentary Matter authorized. Payment is not required; verified revenue remains $0.", meta: { authorization_id: auth.id, quote_version: auth.quoteVersion, original_total: auth.originalTotal, verified_revenue: 0 } });
+  }
+  return { ok: true, authorization: auth, accounting: snapshot, matterEventId: row.matter_event_id, alreadyAuthorized: row.already_authorized === true };
 }
 
 export async function revokeComplimentaryMatter(params: { matterId: string; authorizationId: string; reason: string; actor: AuthenticatedCompActor }) {
   if (!canRevokeComplimentaryMatter(params.actor)) throw new Error("Actor is not permitted to revoke a complimentary authorization.");
   const admin = createAdminClient();
-  const now = new Date().toISOString();
-  const { data: existing, error: loadError } = await admin
-    .from("complimentary_authorizations")
-    .select("original_total")
-    .eq("id", params.authorizationId)
-    .eq("matter_id", params.matterId)
-    .single();
-  if (loadError) throw loadError;
-  const { error: authError } = await admin.from("complimentary_authorizations").update({ status: "revoked", revoked_at: now, revoked_by_user_id: params.actor.userId, revocation_reason: params.reason }).eq("id", params.authorizationId).eq("matter_id", params.matterId);
-  if (authError) throw authError;
-  const { error: dealError } = await admin.from("deals").update({ payment_disposition: "standard_payment", amount_due: Number(existing?.original_total ?? 0), comp_authorized: false, comp_revoked_at: now }).eq("id", params.matterId);
-  if (dealError) throw dealError;
-  await audit({ event: "COMPLIMENTARY_AUTHORIZATION_REVOKED", actor: params.actor.email ?? params.actor.userId, resource: params.matterId, payload: { authorizationId: params.authorizationId, reason: params.reason } });
-  await logActivity({ deal_id: params.matterId, actor: params.actor.email ?? params.actor.userId, action: "complimentary_authorization_revoked", detail: params.reason, meta: { authorization_id: params.authorizationId } });
-  return { ok: true, revokedAt: now };
+  // One transaction (public.revoke_complimentary_matter, 20261126060000): the
+  // authorization, the Matter and the canonical COMPLIMENTARY_AUTHORIZATION_REVOKED
+  // event commit together. Only an active authorization of this Matter can be revoked.
+  const { data: committed, error: rpcError } = await admin.rpc("revoke_complimentary_matter", {
+    p_matter_id: params.matterId,
+    p_authorization_id: params.authorizationId,
+    p_reason: params.reason,
+    p_actor_user_id: params.actor.userId,
+    p_actor: params.actor.email ?? params.actor.userId,
+  });
+  if (rpcError) throw rpcError;
+  const row = (Array.isArray(committed) ? committed[0] : committed) as { revoked_at?: string; matter_event_id?: string | null; already_revoked?: boolean } | null;
+  if (!row?.revoked_at || !row.matter_event_id) throw new Error("COMPLIMENTARY_REVOCATION_NOT_COMMITTED");
+  if (!row.already_revoked) {
+    await audit({ event: "COMPLIMENTARY_AUTHORIZATION_REVOKED", actor: params.actor.email ?? params.actor.userId, resource: params.matterId, payload: { authorizationId: params.authorizationId, matterEventId: row.matter_event_id, reason: params.reason } });
+    await logActivity({ deal_id: params.matterId, actor: params.actor.email ?? params.actor.userId, action: "complimentary_authorization_revoked", detail: params.reason, meta: { authorization_id: params.authorizationId } });
+  }
+  return { ok: true, revokedAt: row.revoked_at, matterEventId: row.matter_event_id, alreadyRevoked: row.already_revoked === true };
 }

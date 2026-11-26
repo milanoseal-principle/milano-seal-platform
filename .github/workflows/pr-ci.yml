@@ -126,6 +126,13 @@ jobs:
           PUBLIC_LIMITS_SERVICE_CONTAINER: "true"
         run: npm run test:public-request-limits-concurrency
 
+      - name: Complimentary authorization parallel-session concurrency
+        env:
+          PUBLIC_LIMITS_PGHOST: 127.0.0.1
+          PUBLIC_LIMITS_PGUSER: postgres
+          PUBLIC_LIMITS_SERVICE_CONTAINER: "true"
+        run: npm run test:complimentary-authorization-concurrency
+
       - name: Clean dependency-aware migration replay
         run: npm run test:migration-replay
 
