@@ -13,6 +13,10 @@ import {
   assertSystemRegistryIntegrity,
   evaluateSystemPlacement,
 } from "@/lib/control-plane/placementGate";
+import {
+  getDependencyEvidence,
+  type DependencyEdge,
+} from "@/lib/control-plane/architectureGovernance";
 
 test("control plane preserves exactly five parent systems", () => {
   assert.deepEqual(PARENT_SYSTEMS, [
@@ -41,6 +45,23 @@ test("system registry is internally valid", () => {
   const result = assertSystemRegistryIntegrity();
   assert.equal(result.valid, true, result.errors.join("\n"));
   assert.ok(result.count >= 30);
+});
+
+test("dependency explorer separates direct and transitive edges and remains cycle-safe", () => {
+  const evidence = getDependencyEvidence("platform_public_demand");
+  assert.deepEqual(evidence.direct.map((edge) => edge.to), ["matter_intake"]);
+  assert.ok(evidence.transitive.includes("matter_state_machine"));
+  assert.ok(evidence.transitive.includes("wise_payment_authority"));
+  assert.ok(!evidence.transitive.includes("platform_public_demand"));
+
+  const cycle: DependencyEdge[] = [
+    { from: "alpha", to: "beta", type: "data", blocking: true, mode: "canonical", validation: [] },
+    { from: "beta", to: "gamma", type: "gate", blocking: true, mode: "canonical", validation: [] },
+    { from: "gamma", to: "alpha", type: "evidence", blocking: false, mode: "derived", validation: [] },
+  ];
+  const cyclicEvidence = getDependencyEvidence("alpha", cycle);
+  assert.deepEqual(cyclicEvidence.direct.map((edge) => edge.to), ["beta"]);
+  assert.deepEqual(cyclicEvidence.transitive, ["gamma"]);
 });
 
 test("every legacy internal module is surfaced in the master registry", () => {

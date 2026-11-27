@@ -45,7 +45,7 @@ export function VAUploadsClient() {
           </p>
         </div>
         <a
-          href="/dashboard"
+          href="/va/dashboard"
           className="flex items-center gap-1 text-xs"
           style={{ color: "rgba(212,175,55,0.6)" }}
         >

@@ -84,12 +84,16 @@ const envExample = readFileSync(".env.example", "utf8");
 for (const required of [
   'client: "/portal"',
   'operator: "/dashboard"',
-  'admin: "/dashboard"',
-  'owner: "/dashboard"',
+  'admin: "/dashboard/admin"',
+  'owner: "/dashboard/founder"',
   'va: "/va/dashboard"',
   'alliance: "/alliance/dashboard"',
 ]) {
   assert.ok(roleMap.includes(required), `Canonical portal topology missing: ${required}`);
+}
+
+for (const routePage of ["app/dashboard/admin/page.tsx", "app/dashboard/founder/page.tsx"]) {
+  assert.ok(existsSync(routePage), `Canonical role landing route is missing: ${routePage}`);
 }
 
 assert.ok(

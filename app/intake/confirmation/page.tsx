@@ -73,6 +73,8 @@ function ConfirmationInner() {
   );
   const [visible, setVisible] = useState(false);
   const [bypassing, setBypassing] = useState(false);
+  const [startingAnotherIntake, setStartingAnotherIntake] = useState(false);
+  const [newIntakeError, setNewIntakeError] = useState<string | null>(null);
   // Server truth for this Matter: "issued" only once a canonical quote exists.
   // Review-required intake has no payable obligation, so no payment UI.
   // "unavailable": the status lookup failed (e.g. the 30-minute intake
@@ -126,6 +128,23 @@ function ConfirmationInner() {
       clearTimeout(nextPoll);
     };
   }, [dealId, router]);
+
+  async function beginAnotherIntake() {
+    setStartingAnotherIntake(true);
+    setNewIntakeError(null);
+    try {
+      const response = await fetch("/api/intake/idempotency", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!response.ok) throw new Error("A new secure request could not be started. Please try again.");
+      router.push("/intake");
+    } catch (error) {
+      setNewIntakeError(error instanceof Error ? error.message : "A new secure request could not be started.");
+      setStartingAnotherIntake(false);
+    }
+  }
 
   async function bypassPayment() {
     if (!dealId) return;
@@ -429,6 +448,7 @@ function ConfirmationInner() {
         </div>
       )}
 
+      {newIntakeError && <p role="alert" className="mb-3 text-center text-sm text-rose-300">{newIntakeError}</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/"
@@ -444,12 +464,15 @@ function ConfirmationInner() {
             Open Secure Portal
           </Link>
         )}
-        <Link
-          href="/intake"
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#2A2A2A] px-5 py-2.5 text-sm text-[#B0B0B0] transition-colors hover:border-[#C6A55A]/40 hover:text-[#C6A55A]"
+        <button
+          type="button"
+          onClick={beginAnotherIntake}
+          disabled={startingAnotherIntake}
+          aria-busy={startingAnotherIntake}
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#2A2A2A] px-5 py-2.5 text-sm text-[#B0B0B0] transition-colors hover:border-[#C6A55A]/40 hover:text-[#C6A55A] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Begin Another Intake
-        </Link>
+          {startingAnotherIntake ? "Starting Secure Intake…" : "Begin Another Intake"}
+        </button>
       </div>
     </div>
   );

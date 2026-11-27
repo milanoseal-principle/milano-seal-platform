@@ -7,9 +7,10 @@ per-surface server guards. Role comes ONLY from `app_metadata.role`.
 ## Role families (normalized)
 | Raw roles → family | Home route | May reach |
 |---|---|---|
-| founder, founder_admin, admin_operator, ops_manager, execution_coordinator, apostille_coordinator, finance_operator, client_support, **compliance_reviewer**, operator → **operator** | `/dashboard` | `/dashboard`, `/va`, `/alliance` (oversight) |
-| admin → **admin** | `/dashboard` | `/dashboard`, `/va`, `/alliance` |
-| owner → **owner** | `/dashboard` | `/dashboard`, `/va`, `/alliance` |
+| founder, founder_admin → **operator family; founder landing override** | `/dashboard/founder` | `/dashboard`, `/va`, `/alliance` (oversight) |
+| admin_operator, ops_manager, execution_coordinator, apostille_coordinator, finance_operator, client_support, **compliance_reviewer**, operator → **operator** | `/dashboard` | `/dashboard`, `/va`, `/alliance` (oversight) |
+| admin → **admin** | `/dashboard/admin` | `/dashboard`, `/va`, `/alliance` |
+| owner → **owner** | `/dashboard/founder` | `/dashboard`, `/va`, `/alliance` |
 | va, va_manager, intake/scheduling/document/translation/courier/followup/escalation assistants, alliance_support_assistant → **va** | `/va/dashboard` | `/va` only |
 | alliance, alliance_partner, alliance_member → **alliance** | `/alliance/dashboard` | `/alliance` only |
 | client → **client** | `/portal` | `/portal` only |

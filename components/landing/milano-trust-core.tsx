@@ -115,6 +115,14 @@ const ORBIT_NODES = [
   { angle: 348, radius: 92, size: 3, opacity: 0.65 },
 ];
 
+function orbitPosition(radius: number, angle: number, diameter: number) {
+  const radians = (angle * Math.PI) / 180;
+  return {
+    left: `${(50 + (radius / diameter) * 100 * Math.cos(radians)).toFixed(4)}%`,
+    top: `${(50 + (radius / diameter) * 100 * Math.sin(radians)).toFixed(4)}%`,
+  };
+}
+
 function Pillar({
   icon: Icon,
   title,
@@ -469,13 +477,12 @@ export function MilanoTrustCore() {
                     key={i}
                     className="absolute rounded-full bg-[var(--ms-gold)]"
                     style={{
-                      width: n.size,
-                      height: n.size,
-                      opacity: n.opacity,
-                      left: `${50 + (n.radius / 240) * 100 * Math.cos((n.angle * Math.PI) / 180)}%`,
-                      top: `${50 + (n.radius / 240) * 100 * Math.sin((n.angle * Math.PI) / 180)}%`,
-                      marginLeft: -n.size / 2,
-                      marginTop: -n.size / 2,
+                      width: `${n.size}px`,
+                      height: `${n.size}px`,
+                      opacity: String(n.opacity),
+                      ...orbitPosition(n.radius, n.angle, 240),
+                      marginLeft: `${-n.size / 2}px`,
+                      marginTop: `${-n.size / 2}px`,
                       boxShadow: "0 0 6px rgba(198,165,90,0.6)",
                     }}
                   />
@@ -494,13 +501,12 @@ export function MilanoTrustCore() {
                     key={`inner${i}`}
                     className="absolute rounded-full bg-[var(--ms-gold)]"
                     style={{
-                      width: 2,
-                      height: 2,
-                      opacity: 0.5,
-                      left: `${50 + (78 / 200) * 100 * Math.cos(((n.angle + 40) * Math.PI) / 180)}%`,
-                      top: `${50 + (78 / 200) * 100 * Math.sin(((n.angle + 40) * Math.PI) / 180)}%`,
-                      marginLeft: -1,
-                      marginTop: -1,
+                      width: "2px",
+                      height: "2px",
+                      opacity: "0.5",
+                      ...orbitPosition(78, n.angle + 40, 200),
+                      marginLeft: "-1px",
+                      marginTop: "-1px",
                       boxShadow: "0 0 5px rgba(198,165,90,0.6)",
                     }}
                   />

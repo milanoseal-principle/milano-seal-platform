@@ -155,7 +155,9 @@ test("authorized operators creating Matters are not subject to the public per-cl
 test("wiring: the intake route guards before canonical intake; the migration owns ceilings", () => {
   const route = readFileSync("app/api/intake/route.ts", "utf8");
   assert.match(route, /const guarded = await guardIntakeSubmission\(request,/);
-  assert.match(route, /if \(!guarded\.ok\) return guarded\.response;[\s\S]*canonicalPost\(guarded\.request\)/);
+  assert.match(route, /guardIntakeSubmission\(request,[\s\S]*findReplay/);
+  assert.match(route, /runDurableIntakeSubmission\([\s\S]*canonicalPost\(guarded\.request\)/);
+  assert.match(route, /if \(guarded\.replay\)[\s\S]*bindIntakePaymentCapability/);
   assert.match(route, /client: "intake_submit"/);
   const migration = readFileSync("supabase/migrations/20261125120000_public_request_limits.sql", "utf8");
   for (const bucket of ["assistant", "assistant_global", "intake_extract", "intake_extract_global", "intake_submit"]) {

@@ -22,6 +22,7 @@ export const MAX_INTAKE_BODY_BYTES = 64 * 1024;
 export interface IntakeSubmissionDeps {
   isOperator: (request: Request) => Promise<boolean>;
   limit: (request: Request) => Promise<RequestLimitDecision>;
+  findReplay?: (request: NextRequest, body: Record<string, unknown>) => Promise<NextResponse | null>;
 }
 
 function refuse(status: 400 | 403 | 413 | 429 | 503, code: string, error: string, headers: Record<string, string> = {}) {
@@ -34,7 +35,10 @@ function refuse(status: 400 | 403 | 413 | 429 | 503, code: string, error: string
 export async function guardIntakeSubmission(
   request: NextRequest,
   deps: IntakeSubmissionDeps,
-): Promise<{ ok: true; request: NextRequest } | { ok: false; response: NextResponse }> {
+): Promise<
+  | { ok: true; request: NextRequest; operator: boolean }
+  | { ok: false; response: NextResponse; replay?: true }
+> {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
     return { ok: false, response: refuse(403, "INTAKE_FOREIGN_ORIGIN", "Please submit from the Milano website.") };
@@ -57,8 +61,22 @@ export async function guardIntakeSubmission(
   }
 
   const operator = await deps.isOperator(request).catch(() => false);
+  const headers = new Headers(request.headers);
+  headers.delete("content-length");
+  const guardedRequest = new NextRequest(request.url, { method: "POST", headers, body: raw });
+
+  if (!operator && deps.findReplay) {
+    let replay: NextResponse | null;
+    try {
+      replay = await deps.findReplay(guardedRequest, body as Record<string, unknown>);
+    } catch {
+      return { ok: false, response: refuse(503, "INTAKE_IDEMPOTENCY_UNAVAILABLE", "We could not verify this request safely. Please retry shortly.") };
+    }
+    if (replay) return { ok: false, response: replay, replay: true };
+  }
+
   if (!operator) {
-    const decision = await deps.limit(request);
+    const decision = await deps.limit(guardedRequest);
     if (!decision.allowed) {
       if (decision.status === 503) {
         return { ok: false, response: refuse(503, "INTAKE_LIMIT_UNAVAILABLE", "We could not receive your request right now. Please try again shortly.") };
@@ -70,9 +88,7 @@ export async function guardIntakeSubmission(
     }
   }
 
-  const headers = new Headers(request.headers);
-  headers.delete("content-length");
-  return { ok: true, request: new NextRequest(request.url, { method: "POST", headers, body: raw }) };
+  return { ok: true, request: guardedRequest, operator };
 }
 
 /** Production operator check: same rule proxy.ts applies to operator APIs. */

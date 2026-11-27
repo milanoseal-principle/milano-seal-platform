@@ -98,7 +98,7 @@ Authorization is derived only from service-controlled authentication metadata an
 - Clients stay inside `/portal`.
 - Alliance users stay inside `/alliance`.
 - VA / execution-support users stay inside `/va`.
-- Operators, admins, and owners use `/dashboard` and explicitly authorized oversight surfaces.
+- Operators default to `/dashboard`, admins to `/dashboard/admin`, and owners/founders to `/dashboard/founder`; each may access only explicitly authorized oversight surfaces.
 - Missing or unknown roles fail closed.
 
 A page-level shell must not create a second permission model that conflicts with the proxy or canonical role map.

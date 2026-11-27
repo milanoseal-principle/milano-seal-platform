@@ -25,6 +25,9 @@ export const REQUIRED_RPCS = Object.freeze([
   'reconcile_shipment_leg_label','record_shipment_leg_label_tracking',
   // Public endpoints fail closed without it: a deploy before the migration must not go live.
   'consume_public_request_limit',
+  // Intake replay receipts are accessible only through service-role RPCs; the
+  // backing table intentionally has no direct PostgREST grants.
+  'lookup_intake_submission','claim_intake_submission','complete_intake_submission',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};

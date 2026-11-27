@@ -48,7 +48,7 @@ It protects the production-critical Milano Seal client, operator, payment, intak
 
 ## Application Route Inventory
 
-734 source files (411 pages and 323 handlers).
+735 source files (411 pages and 324 handlers).
 The source path identifies each record. Handler methods list explicit exports, including named re-exports. Next.js may supply implicit methods.
 Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, full records in `lib/routes/routeInventory.generated.json`): L0 discovered; L1 registered with an access classification, which is not certification; L2–L6 only from approved, source-bound evidence in `lib/routes/routeCertificationEvidence.json`.
 
@@ -319,6 +319,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/health/webhooks` | API | GET | `app/api/health/webhooks/route.ts` | L1 |
 | `/api/intake/analytics` | API | POST | `app/api/intake/analytics/route.ts` | L1 |
 | `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L1 |
+| `/api/intake/idempotency` | API | GET, POST | `app/api/intake/idempotency/route.ts` | L1 |
 | `/api/intake/quote-preview` | API | POST | `app/api/intake/quote-preview/route.ts` | L1 |
 | `/api/intake` | API | POST | `app/api/intake/route.ts` | L1 |
 | `/api/intake/upload` | API | POST | `app/api/intake/upload/route.ts` | L1 |

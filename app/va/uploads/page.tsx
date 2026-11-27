@@ -16,7 +16,7 @@ export default async function VAUploadsPage() {
           Document Uploads
         </h1>
         <p className="text-[10px] font-mono mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
-          Client-submitted documents pending verification. Review and update status in the operator dashboard.
+          Client-submitted document metadata is available here; authorized operators manage verification status.
         </p>
       </div>
       <VAUploadsClient />
