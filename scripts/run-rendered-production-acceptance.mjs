@@ -83,13 +83,20 @@ try {
       });
       page.on("requestfailed", (request) => {
         const url = request.url();
-        // Next intentionally cancels speculative RSC prefetches as viewport
-        // links change. Only a positively identified cancelled prefetch is not
-        // an application transport failure; navigation/API/asset failures stay fatal.
-        if (request.failure()?.errorText === "net::ERR_ABORTED"
+        const errorText = request.failure()?.errorText;
+        const requestUrl = new URL(url);
+        // The public secure-portal entry redirects to the authenticated portal;
+        // its pre-redirect logo fetch is canceled while the final login page loads.
+        if (route.hosted
+          && route.path === "/secure-portal"
+          && request.resourceType() === "image"
+          && requestUrl.pathname === "/brand/milano-seal-orb-v2.png"
+          && errorText === "net::ERR_ABORTED") return;
+        // Next also cancels speculative RSC prefetches as viewport links change.
+        if (errorText === "net::ERR_ABORTED"
           && request.headers()["next-router-prefetch"] === "1"
-          && new URL(url).searchParams.has("_rsc")) return;
-        errors.push(`requestfailed: ${url} ${request.failure()?.errorText || ""}`);
+          && requestUrl.searchParams.has("_rsc")) return;
+        errors.push(`requestfailed: ${url} ${errorText || ""}`);
       });
 
       const routeBaseUrl = route.hosted ? productionBaseUrl : baseUrl;
