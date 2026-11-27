@@ -2,6 +2,13 @@
 
 Evidence is scoped to the repository and external state inspected on 2026-11-26. A passing local test, merged PR, Ready deployment, or authenticated live test is recorded separately; none substitutes for another.
 
+## 2026-11-27 production intake migration evidence
+
+- Repository migration `20261126100000_public_intake_idempotency.sql` from `44d7e419c763fe2b79f4ec4f00fe3f5d7fbf4ca2` maps to Supabase hosted migration `20261127094442` (`public_intake_idempotency`) on `ehqdzfopsrbwewtddiwq`. Source SHA-256: `1c901f4a763b09d6f75623f34c47b15e2e5b9967cbd7450947f0f869f4ff0950`. This is an evidence mapping for an already-applied migration. Do not rerun the SQL or rewrite the hosted ledger from this mapping.
+- Fresh encrypted archive `20261127T094218Z` passed remote ciphertext verification and its isolated restore. [Backup](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/45975672578) · [Restore](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/45975969213)
+- Hosted catalog inspection confirmed table RLS, denied direct table reads for `service_role`, and service-role-only execution for `lookup_intake_submission(text,text)`, `claim_intake_submission(text,text)`, and `complete_intake_submission(text,text,integer,jsonb,text)`.
+- The exact migration passed isolated catalog checks and a test with two independent PostgreSQL 17 sessions (one reservation owner, one processing result, one reservation). Hosted CI passed clean migration replay and upgrade/restore. Authenticated route replay, crash-window recovery, and live commercial acceptance remain open. [CI](https://github.com/milanoseal-principle/milano-seal-platform/actions/runs/45918983650)
+
 ## 1. Preview and route-topology release repair
 
 - [x] Workspace preview service is listening on port 3000; the public homepage renders at `http://localhost:3000` in the workspace browser. `agent-browser` found no page-level startup failure.
