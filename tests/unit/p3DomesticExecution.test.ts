@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { generateInvoice } from "@/lib/invoice";
+import { buildWisePaymentRequest } from "@/lib/payments/wise-payment-request";
+import { evaluatePaymentGates } from "@/src/features/payments/paymentGateService";
 import { buildExecutionPath } from "@/lib/intake/executionPath";
 import { customerExecutionPreference, provisionalExecutionTruth } from "@/lib/matter/executionPreference";
 import { normalizeExecutionTruth, validateExecutionTruth } from "@/lib/matter/executionTruth";
@@ -47,6 +50,41 @@ for (const execution_method of ["ron", "in_person", "mobile"] as const) {
   });
 }
 
+test("reviewed domestic quote, invoice, Wise request, and portal agree on the retainer", () => {
+  const approved = composeGovernedQuote({ ...facts, execution_method: "in_person" }).preview;
+  assert.equal(approved.review_required, false);
+  assert.ok(typeof approved.total === "number" && approved.total > 0);
+  const invoice = generateInvoice(approved.total);
+  const wise = buildWisePaymentRequest({
+    matterReference: "MS-SYNTHETIC-CHECKOUT",
+    paymentReference: "MS-SYNTHETIC-CHECKOUT",
+    amountDue: invoice.retainer,
+    currency: "USD",
+    description: "Synthetic checkout",
+  });
+  const matter = {
+    id: "synthetic-checkout",
+    payment_status: "unpaid",
+    payment_confirmed: false,
+    amount_due: wise.amountDue,
+    amount_paid: 0,
+    final_total: approved.total,
+    currency: wise.currency,
+    wise_reference: wise.paymentReference,
+    invoice_retainer: invoice.retainer,
+    invoice_balance: invoice.balance,
+  };
+  const portal = projectMatterForPortal(matter);
+  assert.equal(portal.amount_due, approved.deposit_amount);
+  assert.equal(portal.wise_reference, wise.paymentReference);
+  assert.equal(portal.final_total, invoice.subtotal);
+  assert.equal(serializeDealMS(matter).invoice_balance, approved.balance_due);
+  assert.equal(evaluateSchedulingGate({ matter }).schedulingEligible, false);
+  const retainerCleared = { ...matter, payment_status: "paid", payment_confirmed: true, payment_settlement_status: "cleared", amount_paid: invoice.retainer, amount_received: invoice.retainer, balance_due: invoice.balance };
+  assert.equal(evaluatePaymentGates(retainerCleared).scheduling_unlocked, true);
+  assert.equal(evaluatePaymentGates(retainerCleared).release_unlocked, false);
+});
+
 test("domestic destination cannot clear unresolved execution or authentication", () => {
   for (const patch of [{ authentication_requirement: "review_required" }, { notarial_act: "review_required" }, { execution_method: "review_required" }]) {
     assert.equal(composeGovernedQuote({ ...facts, execution_method: "in_person", ...patch }).preview.review_required, true);
@@ -59,6 +97,18 @@ test("portal receives only governed authentication applicability, never raw exec
   assert.equal("execution_truth" in safe, false);
   assert.doesNotMatch(JSON.stringify(safe), /secret|private_recording/);
   assert.equal(projectMatterForPortal({ id: "legacy" }).authentication_requirement, null);
+});
+
+test("portal confirmation and release come from their separate canonical evidence", () => {
+  const legacy = { id: "fixture", status: "completed", payment_status: "paid", amount_due: 200, amount_paid: 200 };
+  const settled = { ...legacy, payment_confirmed: true, payment_settlement_status: "cleared" };
+  assert.equal(projectMatterForPortal(legacy).payment_confirmed, false);
+  assert.equal(projectMatterForPortal(legacy).is_paid_and_released, false);
+  assert.equal(projectMatterForPortal({ ...settled, payment_settlement_status: "observed_pending" }).payment_confirmed, false);
+  assert.equal(projectMatterForPortal({ ...settled, amount_paid: 199 }).payment_confirmed, false);
+  assert.equal(projectMatterForPortal(settled).payment_confirmed, true);
+  assert.equal(projectMatterForPortal(settled).is_paid_and_released, false);
+  assert.equal(projectMatterForPortal({ ...settled, is_paid_and_released: true }).is_paid_and_released, true);
 });
 
 test("dashboard reads recorded truth and preference without conflating them", () => {
