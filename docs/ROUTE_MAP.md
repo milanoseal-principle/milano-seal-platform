@@ -321,7 +321,7 @@ Evidence levels come from the route registry (`lib/routes/routeRegistry.ts`, ful
 | `/api/intake/extract` | API | POST | `app/api/intake/extract/route.ts` | L1 |
 | `/api/intake/idempotency` | API | GET, POST | `app/api/intake/idempotency/route.ts` | L1 |
 | `/api/intake/quote-preview` | API | POST | `app/api/intake/quote-preview/route.ts` | L1 |
-| `/api/intake` | API | POST | `app/api/intake/route.ts` | L1 |
+| `/api/intake` | API | POST | `app/api/intake/route.ts` | L0 |
 | `/api/intake/upload` | API | POST | `app/api/intake/upload/route.ts` | L1 |
 | `/api/intel` | API | GET, POST | `app/api/intel/route.ts` | L1 |
 | `/api/intelligence/generate` | API | POST | `app/api/intelligence/generate/route.ts` | L1 |
