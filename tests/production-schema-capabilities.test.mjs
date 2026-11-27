@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {REQUIRED_SCHEMA,REQUIRED_RPCS,verifyProductionSchemaCapabilities} from '../scripts/verify-production-schema-capabilities.mjs';
 const config={VERCEL_ENV:'production',NEXT_PUBLIC_SUPABASE_URL:'https://synthetic-project.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'isolated-not-a-credential'};
 function spec(){return {definitions:Object.fromEntries(Object.entries(REQUIRED_SCHEMA).map(([table,columns])=>[table,{properties:Object.fromEntries(columns.map(name=>[name,{}]))}])),paths:Object.fromEntries([...Object.keys(REQUIRED_SCHEMA).map(table=>['/'+table,{}]),...REQUIRED_RPCS.map(name=>['/rpc/'+name,{}])])};}
@@ -12,6 +13,14 @@ test('production fails closed on missing bindings, metadata, tables, columns and
  for(const omit of [value=>delete value.definitions.deals.properties.payment_attempt_id,value=>delete value.paths['/retention_records'],value=>delete value.paths['/rpc/begin_wise_payment_attempt']]){
   const value=spec();omit(value);await assert.rejects(()=>verifyProductionSchemaCapabilities(config,async()=>({ok:true,json:async()=>value})),/CAPABILITIES_MISSING/);
  }
+});
+test('intake idempotency RPCs are required while their response table stays off direct REST',()=>{
+ const required=['lookup_intake_submission','claim_intake_submission','complete_intake_submission'];
+ for(const rpc of required)assert.ok(REQUIRED_RPCS.includes(rpc),`${rpc} must block deployment when absent`);
+ assert.equal(Object.hasOwn(REQUIRED_SCHEMA,'intake_submission_idempotency'),false,'cached portal and payment response bodies remain RPC-only');
+ const migration=readFileSync('supabase/migrations/20261126100000_public_intake_idempotency.sql','utf8');
+ assert.ok(migration.includes('revoke all on table public.intake_submission_idempotency from public, anon, authenticated, service_role;'));
+ for(const rpc of required)assert.match(migration,new RegExp(`grant execute on function public\\.${rpc}\\(`));
 });
 test('compatible metadata makes one bounded read-only request and never claims live certification',async()=>{
  const calls=[];const result=await verifyProductionSchemaCapabilities(config,async(url,options)=>{calls.push({url:String(url),options});return {ok:true,json:async()=>spec()};});

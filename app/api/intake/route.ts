@@ -5,6 +5,18 @@ import { defaultRequestLimiterDeps, enforcePublicRequestLimit } from "@/lib/secu
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  createIntakeSubmissionToken,
+  INTAKE_SUBMISSION_COOKIE,
+  INTAKE_SUBMISSION_COOKIE_PATH,
+  INTAKE_SUBMISSION_TTL_SECONDS,
+  inspectIntakeSubmission,
+  isIntakeSubmissionToken,
+  runDurableIntakeSubmission,
+  type DurableIntakeSubmissionStore,
+  type IntakeSubmissionDecision,
+  type StoredIntakeResponse,
+} from "@/lib/intake/durableSubmissionIdempotency";
+import {
   buildMatterQuoteSnapshot,
   persistedMatterHasQuote,
 } from "@/lib/pricing/matterQuoteSnapshot";
@@ -272,13 +284,189 @@ async function canonicalPost(req: NextRequest) {
   });
 }
 
-// Abuse controls (origin, size, JSON shape, durable per-client limit) run before
-// any Matter, invoice, capability or email is created; see intakeSubmissionGuard.
+function rpcDecision(data: unknown): IntakeSubmissionDecision {
+  const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+  if (!row || typeof row.decision !== "string") throw new Error("INTAKE_IDEMPOTENCY_RPC_INVALID");
+  const decision = row.decision;
+  if (["missing", "owner", "processing", "conflict", "expired"].includes(decision)) {
+    return { decision } as IntakeSubmissionDecision;
+  }
+  if (decision === "replay") {
+    if (!Number.isInteger(row.response_status) || !row.response_body || typeof row.response_body !== "object") {
+      throw new Error("INTAKE_IDEMPOTENCY_RESPONSE_INVALID");
+    }
+    return {
+      decision: "replay",
+      response: {
+        status: Number(row.response_status),
+        body: row.response_body as Record<string, unknown>,
+        dealId: typeof row.deal_id === "string" ? row.deal_id : null,
+      },
+    };
+  }
+  throw new Error("INTAKE_IDEMPOTENCY_DECISION_INVALID");
+}
+
+function createIntakeSubmissionStore(): DurableIntakeSubmissionStore {
+  const admin = createAdminClient();
+  return {
+    async lookup(tokenHash, payloadHash) {
+      const { data, error } = await admin.rpc("lookup_intake_submission", {
+        p_token_hash: tokenHash,
+        p_payload_hash: payloadHash,
+      });
+      if (error) throw error;
+      return rpcDecision(data);
+    },
+    async claim(tokenHash, payloadHash) {
+      const { data, error } = await admin.rpc("claim_intake_submission", {
+        p_token_hash: tokenHash,
+        p_payload_hash: payloadHash,
+      });
+      if (error) throw error;
+      return rpcDecision(data);
+    },
+    async complete(tokenHash, payloadHash, response) {
+      const { data, error } = await admin.rpc("complete_intake_submission", {
+        p_token_hash: tokenHash,
+        p_payload_hash: payloadHash,
+        p_response_status: response.status,
+        p_response_body: response.body,
+        p_deal_id: response.dealId,
+      });
+      if (error || data !== true) throw error ?? new Error("INTAKE_IDEMPOTENCY_COMPLETION_FAILED");
+    },
+  };
+}
+
+function submissionCookie(response: NextResponse, token = createIntakeSubmissionToken()) {
+  response.cookies.set(INTAKE_SUBMISSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: INTAKE_SUBMISSION_TTL_SECONDS,
+    path: INTAKE_SUBMISSION_COOKIE_PATH,
+  });
+  return response;
+}
+
+function storedResponse(response: StoredIntakeResponse) {
+  return NextResponse.json(response.body, {
+    status: response.status,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+function replayDecisionResponse(decision: IntakeSubmissionDecision): NextResponse | null {
+  if (decision.decision === "replay") return storedResponse(decision.response);
+  if (decision.decision === "conflict") {
+    return submissionCookie(NextResponse.json({
+      success: false,
+      error: "This browser already has a different intake submission in progress. Review this request and submit again to start a separate Matter.",
+      code: "INTAKE_IDEMPOTENCY_CONFLICT",
+      retryable: true,
+    }, { status: 409, headers: { "Cache-Control": "no-store" } }));
+  }
+  if (decision.decision === "expired") {
+    return NextResponse.json({
+      success: false,
+      error: "The saved submission response is no longer available. Contact Milano with the original request details before starting another Matter.",
+      code: "INTAKE_REPLAY_EXPIRED",
+      retryable: false,
+    }, { status: 409, headers: { "Cache-Control": "no-store" } });
+  }
+  if (decision.decision === "processing") {
+    return NextResponse.json({
+      success: false,
+      error: "This submission is still being processed. Retry this same request shortly.",
+      code: "INTAKE_SUBMISSION_IN_PROGRESS",
+      retryable: true,
+    }, { status: 409, headers: { "Cache-Control": "no-store", "Retry-After": "2" } });
+  }
+  return null;
+}
+
+async function findPublicIntakeReplay(
+  request: NextRequest,
+  body: IntakeRequestBody,
+  getStore: () => DurableIntakeSubmissionStore,
+) {
+  const token = request.cookies.get(INTAKE_SUBMISSION_COOKIE)?.value;
+  if (!isIntakeSubmissionToken(token)) return null;
+  const decision = await inspectIntakeSubmission(getStore(), token, body, { waitMs: 2500, pollMs: 100 });
+  return replayDecisionResponse(decision);
+}
+
+function missingIntakeSubmissionKey() {
+  return submissionCookie(NextResponse.json({
+    success: false,
+    error: "Secure submission was initialized. Please submit this same request again.",
+    code: "INTAKE_IDEMPOTENCY_KEY_REQUIRED",
+    retryable: true,
+  }, { status: 428, headers: { "Cache-Control": "no-store" } }));
+}
+
+function outcomeUnknown() {
+  return NextResponse.json({
+    success: false,
+    error: "We could not confirm the saved request. Retry this same submission; do not start another request.",
+    code: "INTAKE_IDEMPOTENCY_UNAVAILABLE",
+    retryable: true,
+  }, { status: 503, headers: { "Cache-Control": "no-store" } });
+}
+
+// Abuse controls (origin, size, JSON shape and durable rate limit) run before
+// any Matter, invoice, capability or email is created. Public submissions also
+// claim a durable idempotency record before the canonical intake writer runs.
 export async function POST(request: NextRequest) {
+  let store: DurableIntakeSubmissionStore | null = null;
+  const getStore = () => (store ??= createIntakeSubmissionStore());
   const guarded = await guardIntakeSubmission(request, {
     isOperator: () => isAuthorizedOperator(),
     limit: async (req) => enforcePublicRequestLimit(req, { client: "intake_submit" }, await defaultRequestLimiterDeps()),
+    findReplay: (req, body) => findPublicIntakeReplay(req, body, getStore),
   });
-  if (!guarded.ok) return guarded.response;
-  return bindIntakePaymentCapability(await bindIntakeUploadCapability(await canonicalPost(guarded.request)));
+
+  if (!guarded.ok) {
+    if (guarded.replay) {
+      return bindIntakePaymentCapability(await bindIntakeUploadCapability(guarded.response));
+    }
+    return guarded.response;
+  }
+
+  if (guarded.operator) {
+    return bindIntakePaymentCapability(await bindIntakeUploadCapability(await canonicalPost(guarded.request)));
+  }
+
+  const token = guarded.request.cookies.get(INTAKE_SUBMISSION_COOKIE)?.value;
+  if (!isIntakeSubmissionToken(token)) return missingIntakeSubmissionKey();
+
+  let payload: IntakeRequestBody;
+  try {
+    payload = (await guarded.request.clone().json()) as IntakeRequestBody;
+  } catch {
+    return NextResponse.json({ success: false, error: "Invalid request.", code: "INTAKE_INVALID_JSON" }, { status: 400 });
+  }
+
+  try {
+    const outcome = await runDurableIntakeSubmission(getStore(), token, payload, async () => {
+      const response = await canonicalPost(guarded.request);
+      const body = (await response.clone().json().catch(() => null)) as IntakeSuccessBody | null;
+      if (!body || typeof body !== "object") throw new Error("INTAKE_RESPONSE_INVALID");
+      const dealId = typeof body.deal_id === "string" ? body.deal_id : null;
+      return { status: response.status, body: body as Record<string, unknown>, dealId };
+    }, { waitMs: 2500, pollMs: 100 });
+
+    if (outcome.decision === "replay") {
+      return bindIntakePaymentCapability(await bindIntakeUploadCapability(storedResponse(outcome.response)));
+    }
+    const response = replayDecisionResponse(outcome);
+    return response ?? outcomeUnknown();
+  } catch (error) {
+    console.error("[intake] durable idempotency could not be completed", {
+      error: error instanceof Error ? error.message : "unknown",
+      timestamp: new Date().toISOString(),
+    });
+    return outcomeUnknown();
+  }
 }

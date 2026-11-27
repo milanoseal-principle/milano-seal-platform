@@ -1,13 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
-import { getHomeRouteForRole, normalizeUserRole } from "@/lib/auth/roleRedirect";
-import { emailsMatch, normalizeEmail } from "@/lib/auth/clientAccount";
+import { DENIED_ROUTE, getHomeRouteForRole, isWorkspaceLoginRedirect, normalizeUserRole } from "@/lib/auth/roleRedirect";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const roleHint = searchParams.get("role"); // "client" | "operator" — UI hint only
   const nextOverride = searchParams.get("next");
   const flow = searchParams.get("flow");
 
@@ -36,58 +33,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?confirmed=1&next=/portal`);
   }
 
-  // Virtual assistants → VA portal
-  if ([
-    "virtual_assistant", "va_manager",
-    "intake_assistant", "scheduling_assistant", "document_coordinator",
-    "translation_coordinator", "courier_assistant", "followup_coordinator",
-    "alliance_support_assistant", "escalation_assistant",
-  ].includes(actualRole)) {
-    return NextResponse.redirect(`${origin}/va/dashboard`);
+  // Callback, password API and login UI share the same canonical role-home and
+  // deep-link policy. Query-string role hints and email matches never grant a role.
+  if (!normalizeUserRole(actualRole)) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL(DENIED_ROUTE, origin));
   }
 
-  // Alliance roles → alliance portal
-  if (["alliance", "alliance_partner", "alliance_member"].includes(actualRole)) {
-    return NextResponse.redirect(`${origin}/alliance/dashboard`);
-  }
-
-  // Staff deep links retain their existing routing behavior.
-  const roleFamily = normalizeUserRole(actualRole);
-  if (roleFamily === "admin" || roleFamily === "operator" || roleFamily === "owner") {
-    if (nextOverride) {
-      const safe =
-        nextOverride.startsWith("/dashboard") ||
-        nextOverride.startsWith("/portal") ||
-        nextOverride.startsWith("/admin") ||
-        nextOverride.startsWith("/alliance") ||
-        nextOverride.startsWith("/va");
-      if (safe) return NextResponse.redirect(`${origin}${nextOverride}`);
-    }
-    return NextResponse.redirect(new URL(getHomeRouteForRole(actualRole), origin));
-  }
-
-  // Explicit client hint (magic link) or client role → portal
-  if (roleHint === "client" || actualRole === "client") {
-    return NextResponse.redirect(`${origin}/portal`);
-  }
-
-  // Fallback: check email against deals (new client with no role metadata yet)
-  const userEmail = normalizeEmail(user.email);
-  if (userEmail && user.email_confirmed_at) {
-    try {
-      const admin = createAdminClient();
-      const { data: dealMatch } = await admin
-        .from("deals")
-        .select("id, email")
-        .eq("email", userEmail)
-        .limit(1)
-        .maybeSingle();
-      if (dealMatch && emailsMatch(dealMatch.email, userEmail)) {
-        return NextResponse.redirect(`${origin}/portal`);
-      }
-    } catch {}
-  }
-
-  // No matching role — reject with invalid_role
-  return NextResponse.redirect(`${origin}/login?error=invalid_role`);
+  const home = getHomeRouteForRole(actualRole);
+  const destination = nextOverride && isWorkspaceLoginRedirect(nextOverride, actualRole)
+    ? nextOverride
+    : home;
+  return NextResponse.redirect(new URL(destination, origin));
 }

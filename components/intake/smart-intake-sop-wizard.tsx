@@ -22,6 +22,7 @@ import {
 import { getSmartIntakeQuestionPlan, normalizeSmartIntakeIntent, toConciergeServiceIntent, type TriState } from "@/lib/intake/serviceIntent";
 import { commercialHref } from "@/lib/conversion/commercialCta";
 import { INTAKE_DRAFT_KEY, intakeFormSchema, intakeAnalysisSchema, restoreIntakeDraft, type IntakeFormState as FormState } from "@/lib/intake/intakeDraft";
+import { withIntakeSubmissionCookieLock } from "@/lib/intake/submissionCookieLock";
 
 interface IntakePrefill {
   country?: string;
@@ -141,7 +142,21 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
   const startedRef = useRef(false);
   const submittedRef = useRef(false);
   const submissionLocked = useRef(false);
+  const submissionCookieRequest = useRef<Promise<void> | null>(null);
   const reviewViewedRef = useRef(false);
+
+  const ensureSubmissionCookie = () => {
+    if (!submissionCookieRequest.current) {
+      submissionCookieRequest.current = withIntakeSubmissionCookieLock(async () => {
+        const response = await fetch("/api/intake/idempotency", { method: "GET", cache: "no-store" });
+        if (!response.ok) throw new Error("Secure submission could not be initialized. Please try again.");
+      }).catch((error) => {
+        submissionCookieRequest.current = null;
+        throw error;
+      });
+    }
+    return submissionCookieRequest.current;
+  };
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -500,6 +515,7 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
     };
 
     try {
+      await ensureSubmissionCookie();
       const response = await fetch("/api/intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -587,7 +603,10 @@ export function SmartIntakeSOPWizard({ initialTier = "priority", prefill, courte
 
 
   return (
-    <div className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <div
+      onFocusCapture={() => { void ensureSubmissionCookie().catch(() => {}); }}
+      className="mx-auto min-w-0 w-full max-w-2xl pb-[calc(2rem+env(safe-area-inset-bottom))]"
+    >
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9A9488]">
           <span>Your Matter</span><span>Execution</span><span>Review</span>

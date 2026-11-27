@@ -174,6 +174,30 @@ export const DEPENDENCY_GRAPH: readonly DependencyEdge[] = [
   { from: "operator_intelligence", to: "workspace_operator", type: "presentation", authorityId: "intelligence", blocking: false, mode: "derived", validation: ["scripts/validate-milano-os-surface-unification.mjs"] },
 ] as const;
 
+export function getDependencyEvidence(
+  capabilityId: string,
+  edges: readonly DependencyEdge[] = DEPENDENCY_GRAPH,
+) {
+  const direct = edges.filter((edge) => edge.from === capabilityId);
+  const directTargets = new Set(direct.map((edge) => edge.to));
+  const visited = new Set<string>([capabilityId, ...directTargets]);
+  const pending = [...directTargets];
+
+  for (let index = 0; index < pending.length; index += 1) {
+    const current = pending[index];
+    for (const edge of edges) {
+      if (edge.from !== current || visited.has(edge.to)) continue;
+      visited.add(edge.to);
+      pending.push(edge.to);
+    }
+  }
+
+  return {
+    direct,
+    transitive: [...visited].filter((id) => id !== capabilityId && !directTargets.has(id)),
+  };
+}
+
 export const ENVIRONMENT_DEPENDENCIES: readonly EnvironmentDependency[] = [
   { id: "supabase", provider: "Supabase", purpose: "Canonical database, auth and storage", parentSystem: "governance_platform", environmentVariables: ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"], requiredInProduction: true, requiredInPreview: true, secretOwner: "Platform", healthCheckType: "api_health", status: "UNVERIFIED", failureImpact: "Canonical Matter/auth/storage operations unavailable", relatedCapabilities: ["matter_intake", "workspace_client", "workspace_operator"] },
   { id: "wise", provider: "Wise", purpose: "Canonical payment settlement evidence", parentSystem: "matter_control", environmentVariables: ["WISE_API_TOKEN"], requiredInProduction: true, requiredInPreview: false, secretOwner: "Platform", healthCheckType: "webhook_evidence", status: "UNVERIFIED", failureImpact: "Payment verification and payment-gated progression blocked", relatedCapabilities: ["wise_payment_authority", "scheduling_gate"] },

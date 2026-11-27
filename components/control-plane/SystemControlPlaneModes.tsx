@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CANONICAL_AUTHORITIES, DELIVERY_STATUSES, PARENT_SYSTEMS, SYSTEM_LABELS, type DeliveryStatus, type ParentSystem } from "@/lib/control-plane/systemRegistry";
 import { FULL_SYSTEM_REGISTRY } from "@/lib/control-plane/hardeningRegistry";
-import { ARCHITECTURE_DECISIONS, CAPABILITY_OWNERSHIP, DEPENDENCY_GRAPH, ENVIRONMENT_DEPENDENCIES, TECHNICAL_DEBT, WEBHOOK_REGISTRY, detectDependencyCycles } from "@/lib/control-plane/architectureGovernance";
+import { ARCHITECTURE_DECISIONS, CAPABILITY_OWNERSHIP, DEPENDENCY_GRAPH, ENVIRONMENT_DEPENDENCIES, TECHNICAL_DEBT, WEBHOOK_REGISTRY, detectDependencyCycles, getDependencyEvidence } from "@/lib/control-plane/architectureGovernance";
 import { AUTHORITY_EVIDENCE_REGISTRY, DOCUMENT_ORIGIN_ROUTING_MATRIX, evaluateAuthorityFreshness, summarizeHagueCoverage } from "@/lib/international-execution/operationalGovernance";
 
 export type ControlPlaneMode = "EXECUTIVE" | "CTO" | "OPERATOR";
@@ -41,7 +41,8 @@ export function SystemControlPlaneModes({ runtimeSha, environment }: { runtimeSh
       if (systemFilter !== "all" && entry.parentSystem !== systemFilter) return false;
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
       if (!q) return true;
-      return [entry.id, entry.name, entry.route ?? "", ...entry.sourcePaths, ...entry.authorityIds, ...entry.dependencies, ...entry.validation].join(" ").toLowerCase().includes(q);
+      const dependencyEvidence = getDependencyEvidence(entry.id);
+      return [entry.id, entry.name, entry.route ?? "", ...entry.sourcePaths, ...entry.authorityIds, ...entry.dependencies, ...dependencyEvidence.direct.map((edge) => edge.to), ...dependencyEvidence.transitive, ...entry.validation].join(" ").toLowerCase().includes(q);
     });
   }, [query, systemFilter, statusFilter]);
 
@@ -95,7 +96,7 @@ function CtoView({ query, setQuery, systemFilter, setSystemFilter, statusFilter,
     </Section>
     <Section eyebrow="Registry Explorer" title="Search the entire operating system">
       <div className="grid gap-3 md:grid-cols-3"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search capability, route, source, authority, validator…" className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-[var(--ms-gold)]" /><select value={systemFilter} onChange={(e) => setSystemFilter(e.target.value as ParentSystem | "all")} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white"><option value="all">All parent systems</option>{PARENT_SYSTEMS.map((s) => <option key={s} value={s}>{SYSTEM_LABELS[s]}</option>)}</select><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as DeliveryStatus | "all")} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white"><option value="all">All statuses</option>{DELIVERY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-      <div className="grid gap-3 xl:grid-cols-2">{filteredRegistry.map((entry) => <article key={entry.id} className="rounded-2xl border border-white/8 bg-[#0e0e0e] p-5"><div className="flex flex-wrap items-start justify-between gap-2"><div><div className="text-xs uppercase tracking-[0.14em] text-[var(--ms-gold)]">{SYSTEM_LABELS[entry.parentSystem]}</div><div className="mt-1 text-lg font-semibold text-white">{entry.name}</div></div><div className="text-xs font-semibold text-white/50">{entry.status}</div></div><p className="mt-2 text-sm leading-6 text-white/55">{entry.purpose}</p><div className="mt-3 grid gap-1 text-xs text-white/40"><div>Authority: {entry.authorityIds.join(", ")}</div><div>Write: {entry.mutationPolicy}</div><div>Owner: {entry.owner}</div><div>Sources: {entry.sourcePaths.join(", ")}</div><div>Validators: {entry.validation.join(", ")}</div></div>{entry.route ? <Link href={entry.route} className="mt-3 inline-flex text-xs text-[var(--ms-gold)]">{entry.route} →</Link> : null}</article>)}</div>
+      <div className="grid gap-3 xl:grid-cols-2">{filteredRegistry.map((entry) => <RegistryEntryCard key={entry.id} entry={entry} />)}</div>
     </Section>
     <Section eyebrow="Governance" title="Architecture decisions, external dependencies and webhooks">
       <div className="grid gap-3 xl:grid-cols-2">{ARCHITECTURE_DECISIONS.map((adr) => <article key={adr.id} className="rounded-xl border border-white/8 bg-black/25 p-4"><div className="flex justify-between gap-3"><div className="font-medium text-white">{adr.id} · {adr.title}</div><div className="text-xs text-[var(--ms-gold)]">{adr.status}</div></div><p className="mt-2 text-sm leading-6 text-white/55">{adr.decision}</p></article>)}</div>
@@ -103,6 +104,60 @@ function CtoView({ query, setQuery, systemFilter, setSystemFilter, statusFilter,
       <div className="text-xs text-white/35">Webhook registry: {WEBHOOK_REGISTRY.length} governed inbound provider surface(s). Ownership mappings: {CAPABILITY_OWNERSHIP.length}.</div>
     </Section>
   </div>;
+}
+
+type FullRegistryEntry = (typeof FULL_SYSTEM_REGISTRY)[number];
+
+function RegistryEntryCard({ entry }: { entry: FullRegistryEntry }) {
+  const dependencyEvidence = getDependencyEvidence(entry.id);
+
+  return (
+    <article className="rounded-2xl border border-white/8 bg-[#0e0e0e] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <div className="text-xs uppercase tracking-[0.14em] text-[var(--ms-gold)]">{SYSTEM_LABELS[entry.parentSystem]}</div>
+          <div className="mt-1 text-lg font-semibold text-white">{entry.name}</div>
+        </div>
+        <div className="text-xs font-semibold text-white/50">{entry.status}</div>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-white/55">{entry.purpose}</p>
+      <div className="mt-3 grid gap-1 text-xs text-white/40">
+        <div>Authority: {entry.authorityIds.join(", ")}</div>
+        <div>Write: {entry.mutationPolicy}</div>
+        <div>Owner: {entry.owner}</div>
+        <div>Sources: {entry.sourcePaths.join(", ")}</div>
+        <div>Validators: {entry.validation.join(", ")}</div>
+      </div>
+      {entry.route ? <Link href={entry.route} className="mt-3 inline-flex text-xs text-[var(--ms-gold)]">{entry.route} →</Link> : null}
+      <details className="mt-4 border-t border-white/8 pt-3">
+        <summary className="cursor-pointer text-xs font-medium text-white/55 hover:text-white">Dependency drill-down · declared relationships</summary>
+        <div className="mt-3 grid gap-3 text-xs text-white/45 md:grid-cols-2">
+          <div>
+            <div className="font-mono uppercase tracking-[0.12em] text-[var(--ms-gold)]/75">Registry references</div>
+            <p className="mt-1">{entry.dependencies.length ? entry.dependencies.join(", ") : "No references recorded."}</p>
+          </div>
+          <div>
+            <div className="font-mono uppercase tracking-[0.12em] text-[var(--ms-gold)]/75">Direct architecture edges</div>
+            {dependencyEvidence.direct.length ? (
+              <ul className="mt-1 flex flex-col gap-1">
+                {dependencyEvidence.direct.map((edge) => (
+                  <li key={`${edge.from}:${edge.to}`}>
+                    {edge.to} · {edge.type} · {edge.blocking ? "blocking" : "non-blocking"}
+                    {edge.validation.length ? ` · ${edge.validation.join(", ")}` : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-1">No curated direct edge recorded.</p>}
+          </div>
+          <div>
+            <div className="font-mono uppercase tracking-[0.12em] text-[var(--ms-gold)]/75">Transitive architecture nodes</div>
+            <p className="mt-1">{dependencyEvidence.transitive.length ? dependencyEvidence.transitive.join(" → ") : "No transitive node recorded."}</p>
+          </div>
+          <p className="md:col-span-2">These are curated registry declarations, not source-import, runtime, authorization, or production evidence. Validate each edge against the listed source paths and test IDs before certification.</p>
+        </div>
+      </details>
+    </article>
+  );
 }
 
 function OperatorView({ staleAuthorities, runtimeSha }: { staleAuthorities: number; runtimeSha: string }) {

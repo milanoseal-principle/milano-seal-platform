@@ -73,14 +73,18 @@ function safeFailure(
   correlationId: string,
   status = 500,
   reason?: string,
+  persistedDealId?: string,
 ) {
   return NextResponse.json(
     {
       success: false,
-      error: "Unable to create Matter",
+      error: persistedDealId
+        ? `Matter ${persistedDealId} was saved, but we could not confirm the full response. Contact support before submitting again.`
+        : "Unable to create Matter",
       code,
       correlation_id: correlationId,
-      retryable: code === "PAYMENT_REQUEST_FAILED",
+      retryable: code === "PAYMENT_REQUEST_FAILED" && !persistedDealId,
+      ...(persistedDealId ? { deal_id: persistedDealId } : {}),
       ...(reason ? { reason } : {}),
     },
     { status },
@@ -263,6 +267,7 @@ export async function POST(
   const correlationId = createIntakeCorrelationId();
   let stage: IntakeStage = "REQUEST_RECEIVED";
   let currentDealId: string | undefined;
+  let persistedDealId: string | undefined;
   let currentSource: string | undefined;
 
   try {
@@ -494,6 +499,7 @@ export async function POST(
         return safeFailure("PERSISTENCE_FAILED", correlationId, 500);
       }
       stage = "MATTER_PERSISTED";
+      persistedDealId = (reviewDeal as { deal_id?: string })?.deal_id || deal_id;
 
       const reviewRowId = (reviewDeal as { id?: string })?.id;
       if (reviewRowId) {
@@ -988,6 +994,7 @@ export async function POST(
 
     deal = persistedDeal as Record<string, unknown>;
     stage = "MATTER_PERSISTED";
+    persistedDealId = String(deal.deal_id || deal_id);
 
     void notifyHighValue(deal_id, country, effectiveTotal, priority_tier);
 
@@ -1193,6 +1200,6 @@ export async function POST(
       dealId: currentDealId,
       source: currentSource,
     });
-    return safeFailure(code, correlationId, 500);
+    return safeFailure(code, correlationId, 500, undefined, persistedDealId);
   }
 }

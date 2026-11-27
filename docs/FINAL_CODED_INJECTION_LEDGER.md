@@ -30,7 +30,7 @@ Preserve the homepage, professional lane, country and document intelligence, cou
 Supabase Auth remains canonical. Preserve login, recovery, reset, sessions, route guards, dashboard authorization, and portal ownership checks.
 
 - Clients route to `/portal` and may access only owned Matter projections and permitted client actions.
-- Operators, admins, and founders route to `/dashboard`.
+- Operators route to `/dashboard`, admins to `/dashboard/admin`, and owners/founders to `/dashboard/founder`; shared oversight routes remain separately authorized.
 - RON operators use `/dashboard/ron`.
 - Matter ownership never grants operator authority.
 - Tiffany may test client and operator experiences only as distinct authorization contexts.

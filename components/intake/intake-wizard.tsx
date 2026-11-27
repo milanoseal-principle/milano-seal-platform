@@ -10,6 +10,7 @@ import { FileUploadZone } from "@/components/intake/FileUploadZone";
 import { classifyIntake } from "@/lib/intake/smartClassification";
 import { priceSmartIntake } from "@/lib/pricing/milanoPricingTruth";
 import { projectClientPricing } from "@/lib/pricing/pricingProjections";
+import { withIntakeSubmissionCookieLock } from "@/lib/intake/submissionCookieLock";
 
 interface IntakeData {
   client_name: string;
@@ -401,6 +402,7 @@ export function IntakeWizard({
   const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLocked = useRef(false);
+  const submissionCookieRequest = useRef<Promise<void> | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [showAiHelper, setShowAiHelper] = useState(false);
@@ -479,6 +481,19 @@ export function IntakeWizard({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const ensureSubmissionCookie = () => {
+    if (!submissionCookieRequest.current) {
+      submissionCookieRequest.current = withIntakeSubmissionCookieLock(async () => {
+        const response = await fetch("/api/intake/idempotency", { method: "GET", cache: "no-store" });
+        if (!response.ok) throw new Error("Secure submission could not be initialized. Please try again.");
+      }).catch((error) => {
+        submissionCookieRequest.current = null;
+        throw error;
+      });
+    }
+    return submissionCookieRequest.current;
+  };
+
   const handleSubmit = async () => {
     if (submissionLocked.current || !validate(3)) return;
     submissionLocked.current = true;
@@ -535,6 +550,7 @@ export function IntakeWizard({
     };
 
     try {
+      await ensureSubmissionCookie();
       const res = await fetch("/api/intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -648,7 +664,10 @@ export function IntakeWizard({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div
+      onFocusCapture={() => { void ensureSubmissionCookie().catch(() => {}); }}
+      className="w-full max-w-2xl mx-auto"
+    >
       <div className="mb-10 relative">
         <div className="absolute top-3.5 left-0 right-0 h-px bg-[rgba(198,165,90,0.12)]" />
         <motion.div

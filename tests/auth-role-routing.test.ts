@@ -127,3 +127,13 @@ test("password login uses the shared role resolver and ignores interface tabs", 
   assert.ok(route.includes("await supabase.auth.signOut()"));
   assert.doesNotMatch(route, /tabHint|TAB_DEST|FOUNDER_ROLES/);
 });
+
+test("email callback and password login UI share authorized deep-link and fail-closed role policy", () => {
+  const callback = readFileSync("app/auth/callback/route.ts", "utf8");
+  const loginUi = readFileSync("app/login/page.tsx", "utf8");
+  assert.match(callback, /getHomeRouteForRole\(actualRole\)/);
+  assert.match(callback, /isWorkspaceLoginRedirect\(nextOverride, actualRole\)/);
+  assert.match(callback, /if \(!normalizeUserRole\(actualRole\)\)[\s\S]*?supabase\.auth\.signOut\(\)/);
+  assert.doesNotMatch(callback, /roleHint|dealMatch|normalizeEmail/);
+  assert.match(loginUi, /isWorkspaceLoginRedirect\(requestedDestination, json\.role/);
+});
