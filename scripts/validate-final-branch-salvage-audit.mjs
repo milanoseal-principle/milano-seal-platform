@@ -32,6 +32,8 @@ const APPROVED_ADDITIVE_MIGRATIONS = new Set([
     ...P5_PROTECTED_CHANGES,
     ...SETTLEMENT_SCHEDULING_PROTECTED_CHANGES, ...HOSTED_RECOVERY_PROTECTED_CHANGES, ...NO_AUTH_RELEASE_PROTECTED_CHANGES,
   "supabase/migrations/20261107094755_counsel_inquiry_capture.sql",
+  // Public intake replay receipts: additive server-role RPCs only; isolated PGlite replay passed.
+  "supabase/migrations/20261126100000_public_intake_idempotency.sql",
 ]);
 const PROTECTED = /wise|webhook|payment-?confirm|paymentConfirm|release-?gate|releaseGate|performFinalRelease|custody|supabase\/(migrations|rls)|rls|serviceRole|service-role|shippo|bluenotary|pip-intel|liaison/i;
 // Base resolution never fabricates a merge base. Candidates, in order:
