@@ -1,3 +1,5 @@
+import { evaluatePaymentGate } from "@/lib/safety/payment-integrity";
+
 // Portal-safe projection — defines what operator data can safely surface in the client portal.
 // Operators see full deal records. Portal actors see only this subset.
 
@@ -41,6 +43,8 @@ export function projectMatterForPortal(deal: {
   wise_payment_url?: string | null;
   payment_link?: string | null;
   payment_confirmed?: boolean | null;
+  payment_settlement_status?: string | null;
+  is_paid_and_released?: boolean | null;
   amount_due?: number | null;
   payment_amount_due?: number | null;
   amount_paid?: number | null;
@@ -71,12 +75,10 @@ export function projectMatterForPortal(deal: {
     destination_country: deal.destination_country ?? null,
     total_price: deal.total_price ?? deal.final_total ?? null,
     courier_tracking_id: deal.courier_tracking_id ?? null,
-    is_paid_and_released:
-      deal.payment_status === "paid" && deal.status === "completed",
+    is_paid_and_released: deal.is_paid_and_released === true,
     wise_reference: deal.wise_reference ?? null,
     wise_payment_url: deal.wise_payment_url ?? deal.payment_link ?? null,
-    payment_confirmed:
-      deal.payment_confirmed ?? deal.payment_status === "paid",
+    payment_confirmed: evaluatePaymentGate(deal) === "PAYMENT_CONFIRMED",
     amount_due:
       deal.amount_due ??
       deal.payment_amount_due ??

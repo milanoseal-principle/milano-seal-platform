@@ -478,10 +478,7 @@ export default function MyMatterPage() {
     );
   }
 
-  const paymentConfirmed =
-    deal.payment_status === "paid" ||
-    deal.payment_status === "confirmed" ||
-    deal.matter_status === "payment_confirmed";
+  const paymentConfirmed = deal.payment_confirmed === true;
 
   return (
     <>

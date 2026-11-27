@@ -17,6 +17,9 @@ export interface PortalDeal {
   status: string | null;
   payment_status: string | null;
   payment_confirmed: boolean | null;
+  payment_settlement_status?: string | null;
+  payment_observed_at?: string | null;
+  amount_paid?: number | null;
   amount: number | null;
   amount_due: number | null;
   payment_amount_received: number | null;
@@ -67,7 +70,7 @@ export async function getAllClientDeals(
   const data=await readAllKeyset<PortalDeal>(async cursor=>{
   let query=admin.from("deals")
     .select(
-      "id, execution_truth, client_name, email, phone, document_type, destination_country, country:destination_country, status, payment_status, payment_confirmed, amount:total_price, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
+      "id, execution_truth, client_name, email, phone, document_type, destination_country, country:destination_country, status, payment_status, payment_confirmed, payment_settlement_status, payment_observed_at, amount_paid, is_paid_and_released, amount:total_price, amount_due, payment_amount_received, invoice_subtotal, invoice_retainer, invoice_balance, original_total, final_total, discount_code, discount_value, discount_amount, wise_reference, payment_link, currency, tracking_number, carrier, delivery_status, delivery_eta, delivery_timestamp, signed_by, ship_to, evidence_url, evidence_generated_at, created_at",
     )
     .ilike("email", emailPattern)
     .order('id',{ascending:false}).limit(250);
