@@ -224,5 +224,15 @@ test("concurrent service calls execute once and recover the exact saved response
 
   const conflict = await runDurableIntakeSubmission(store, token, { ...payload, country: "France" }, execute);
   assert.equal(conflict.decision, "conflict");
+  const recoveredAfterConflict = await runDurableIntakeSubmission(store, token, payload, execute);
+  assert.deepEqual(recoveredAfterConflict, first);
   assert.equal(sideEffectCount, 1);
+});
+
+test("changed-payload response preserves the original browser submission cookie", () => {
+  const route = readFileSync("app/api/intake/route.ts", "utf8");
+  const conflict = route.split('if (decision.decision === "conflict")')[1]?.split('if (decision.decision === "expired")')[0];
+  assert.ok(conflict?.includes("INTAKE_IDEMPOTENCY_CONFLICT"));
+  assert.ok(conflict.includes("retryable: false"));
+  assert.doesNotMatch(conflict, /submissionCookie|cookies\.set/);
 });

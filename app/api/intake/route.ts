@@ -360,12 +360,14 @@ function storedResponse(response: StoredIntakeResponse) {
 function replayDecisionResponse(decision: IntakeSubmissionDecision): NextResponse | null {
   if (decision.decision === "replay") return storedResponse(decision.response);
   if (decision.decision === "conflict") {
-    return submissionCookie(NextResponse.json({
+    // Keep the original replay capability. A changed request must never
+    // silently initialize a new Matter while the original can still resolve.
+    return NextResponse.json({
       success: false,
-      error: "This browser already has a different intake submission in progress. Review this request and submit again to start a separate Matter.",
+      error: "This request differs from the one already submitted in this browser. Restore the original details to recover that request, or contact Milano if you need help.",
       code: "INTAKE_IDEMPOTENCY_CONFLICT",
-      retryable: true,
-    }, { status: 409, headers: { "Cache-Control": "no-store" } }));
+      retryable: false,
+    }, { status: 409, headers: { "Cache-Control": "no-store" } });
   }
   if (decision.decision === "expired") {
     return NextResponse.json({
