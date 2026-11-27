@@ -260,9 +260,15 @@ async function notifyHighValue(
   }
 }
 
+export type PersistReviewIntake = (
+  deal: Record<string, unknown>,
+  receipt: Record<string, unknown>,
+) => Promise<{ data: { id: string; deal_id: string } | null; error: unknown }>;
+
 export async function POST(
   req: NextRequest,
   estimateForReview?: (raw: Record<string, unknown>) => IntakeIndicativeQuote | null,
+  persistReview?: PersistReviewIntake,
 ) {
   const correlationId = createIntakeCorrelationId();
   let stage: IntakeStage = "REQUEST_RECEIVED";
@@ -481,11 +487,26 @@ export async function POST(
         ...referralFields,
       };
 
-      const { data: reviewDeal, error: reviewError } = await supabase
-        .from("deals")
-        .insert([reviewPayload])
-        .select()
-        .single();
+      const reviewReceipt = {
+        success: true,
+        correlation_id: correlationId,
+        deal_id,
+        quote_state: "review_required",
+        ...(indicativeQuote ? { indicative_quote: indicativeQuote } : {}),
+        execution_truth: executionTruth,
+        execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
+        status: "intake_received",
+        payment_status: "unpaid",
+        payment_confirmed: false,
+        scheduled: false,
+        message:
+          "Matter saved. An approved payment amount will become available after the remaining execution facts are resolved.",
+        remaining: reviewReasons,
+      };
+
+      const { data: reviewDeal, error: reviewError } = persistReview
+        ? await persistReview(reviewPayload, reviewReceipt)
+        : await supabase.from("deals").insert([reviewPayload]).select().single();
 
       if (reviewError) {
         logIntakeFailure({
@@ -521,25 +542,7 @@ export async function POST(
       }).catch(() => {});
 
       stage = "RESPONSE_SENT";
-      return NextResponse.json(
-        {
-          success: true,
-          correlation_id: correlationId,
-          deal_id: (reviewDeal as { deal_id?: string })?.deal_id || deal_id,
-          quote_state: "review_required",
-          ...(indicativeQuote ? { indicative_quote: indicativeQuote } : {}),
-          execution_truth: executionTruth,
-          execution_review: { required: true, owner: "MILANO", action_state: "WAITING ON MILANO", reasons: reviewReasons },
-          status: "intake_received",
-          payment_status: "unpaid",
-          payment_confirmed: false,
-          scheduled: false,
-          message:
-            "Matter saved. An approved payment amount will become available after the remaining execution facts are resolved.",
-          remaining: reviewReasons,
-        },
-        { status: 200 },
-      );
+      return NextResponse.json({ ...reviewReceipt, deal_id: persistedDealId }, { status: 200 });
     }
 
     stage = "EXECUTION_VALIDATED";
