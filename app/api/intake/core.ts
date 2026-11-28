@@ -367,7 +367,7 @@ export async function POST(
     // Wise request while execution facts are unresolved: they enter operator
     // review and receive a Matter-specific quote afterwards.
     const clientExecutionPreference = typeof raw.execution_method === "string" && sourceHint !== "admin" && sourceHint !== "professional";
-    const executionReviewRequired = clientExecutionPreference || !verifiedOperator || (
+    const executionReviewRequired = clientExecutionPreference || !verifiedOperator || Boolean(persistReview) || (
       (sourceHint === "admin" || sourceHint === "professional") &&
       (!executionValidation.valid || executionValidation.reviewRequired)
     );
