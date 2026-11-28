@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { mapProviderEvent, notificationIdempotencyKey, verifySvixSignature } from "../lib/notifications/deliveryTruth";
+import { classifyResendSendError, mapProviderEvent, notificationIdempotencyKey, verifySvixSignature } from "../lib/notifications/deliveryTruth";
 
 const read = (path: string) => readFileSync(path, "utf8");
 const migration = read("supabase/migrations/20261108130000_p16_notification_truth.sql");
@@ -55,4 +55,17 @@ test("P16 webhook authenticity fails closed", () => {
 test("P16 no sensitive document payload leaks into notification evidence", () => {
   assert.match(alerts, /message: `\$\{input\.type\} for \$\{input\.matterReference\}`/);
   assert.doesNotMatch(alerts, /base64_content|signed_storage_path|storage_path/);
+});
+
+
+test("ambiguous Resend responses retain the send claim for reconciliation", () => {
+  for (const status of [undefined, null, 200, 408, 409, 500, 502, 503]) {
+    assert.equal(classifyResendSendError(status), "transport_error", String(status));
+  }
+  for (const status of [400, 401, 403, 422, 429]) {
+    assert.equal(classifyResendSendError(status), "provider_rejected", String(status));
+  }
+  assert.match(alerts, /errorClassification: classifyResendSendError\(result\.error\?\.statusCode\)/);
+  assert.match(alerts, /send_claim:input\.errorClassification==='transport_error'\?claimed\.token:null/);
+  assert.match(alerts, /errorClassification==='transport_error'\?\{delivery_status:'unknown'\}/);
 });

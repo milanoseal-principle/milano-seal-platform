@@ -46,3 +46,13 @@ export function mapProviderEvent(type: string, at: string): ProviderDeliveryUpda
 export function notificationIdempotencyKey(matterId: string, type: string, recipient: string) {
   return `${matterId}:${type}:${recipient.trim().toLowerCase()}`;
 }
+
+
+// Only a definitive client error permits the existing bounded retry policy.
+// A timeout or idempotency conflict may refer to an already accepted send.
+export function classifyResendSendError(statusCode: number | null | undefined) {
+  return typeof statusCode === "number" && statusCode >= 400 && statusCode < 500
+    && statusCode !== 408 && statusCode !== 409
+    ? "provider_rejected"
+    : "transport_error";
+}
