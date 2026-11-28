@@ -156,7 +156,11 @@ test("wiring: the intake route guards before canonical intake; the migration own
   const route = readFileSync("app/api/intake/route.ts", "utf8");
   assert.match(route, /const guarded = await guardIntakeSubmission\(request,/);
   assert.match(route, /guardIntakeSubmission\(request,[\s\S]*findReplay/);
-  assert.match(route, /runDurableIntakeSubmission\([\s\S]*canonicalPost\(guarded\.request\)/);
+  const post = route.slice(route.indexOf("export async function POST("));
+  assert.match(post, /await guardIntakeSubmission\(request,\s*\{\s*isOperator: \(\) => isAuthorizedOperator\(\),\s*limit: async \(req\) => enforcePublicRequestLimit\(req,/);
+  assert.match(post, /if \(!guarded\.ok\) \{[\s\S]*return guarded\.response;\s*\}\s*if \(guarded\.operator\) \{[\s\S]*canonicalPost\(guarded\.request\)/);
+  assert.match(post, /if \(!isIntakeSubmissionToken\(token\)\) return missingIntakeSubmissionKey\(\);[\s\S]*runDurableIntakeSubmission\(getStore\(\), token, payload, async \(\) => \{\s*const response = await canonicalPost\(guarded\.request, async \(deal, receipt\) => \{/);
+  assert.match(post, /rpc\("persist_review_intake_receipt", \{\s*p_token_hash: hashIntakeSubmissionToken\(token\),\s*p_payload_hash: hashIntakeSubmissionPayload\(payload\),\s*p_deal: deal,\s*p_response_body: receipt,/);
   assert.match(route, /if \(guarded\.replay\)[\s\S]*bindIntakePaymentCapability/);
   assert.match(route, /client: "intake_submit"/);
   const migration = readFileSync("supabase/migrations/20261125120000_public_request_limits.sql", "utf8");
