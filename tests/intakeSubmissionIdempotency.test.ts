@@ -224,5 +224,83 @@ test("concurrent service calls execute once and recover the exact saved response
 
   const conflict = await runDurableIntakeSubmission(store, token, { ...payload, country: "France" }, execute);
   assert.equal(conflict.decision, "conflict");
+  const recoveredAfterConflict = await runDurableIntakeSubmission(store, token, payload, execute);
+  assert.deepEqual(recoveredAfterConflict, first);
   assert.equal(sideEffectCount, 1);
+});
+
+test("changed-payload response preserves the original browser submission cookie", () => {
+  const route = readFileSync("app/api/intake/route.ts", "utf8");
+  const conflict = route.split('if (decision.decision === "conflict")')[1]?.split('if (decision.decision === "expired")')[0];
+  assert.ok(conflict?.includes("INTAKE_IDEMPOTENCY_CONFLICT"));
+  assert.ok(conflict.includes("retryable: false"));
+  assert.doesNotMatch(conflict, /submissionCookie|cookies\.set/);
+});
+
+test("public review Matter and receipt share a transaction and survive a lost response", async () => {
+  const db = await fixture();
+  try {
+    await db.exec(`
+      create table public.deals (
+        id uuid default gen_random_uuid(), deal_id text unique, access_token text,
+        client_name text, client_type text, company_name text, email text, phone text,
+        document_type text, use_case text, destination_country text, origin_state text,
+        apostille_required boolean, execution_truth jsonb, customer_execution_preference text,
+        docs_count int, urgency text, mobile boolean, miles numeric, signers int,
+        witnesses int, witness_type text, after_hours boolean, translation boolean,
+        multi_country boolean, payment_status text, payment_confirmed boolean,
+        amount_paid numeric, currency text, status text, deal_status text,
+        conversion_score numeric, priority_tier text, notes text, internal_notes text,
+        professional_profile_id uuid, referral_source_type text, referral_source_id text,
+        referral_reference text
+      );
+    `);
+    await db.exec(readFileSync("supabase/migrations/20261127225503_persist_review_intake_receipt.sql", "utf8"));
+    const tokenHash = hashIntakeSubmissionToken(token);
+    const payloadHash = hashIntakeSubmissionPayload(payload);
+    const store = pgStore(db);
+    const deal = {
+      deal_id: body.deal_id,
+      status: "intake_received",
+      deal_status: "reviewing",
+      payment_status: "unpaid",
+      payment_confirmed: false,
+      amount_paid: 0,
+      currency: "USD",
+    };
+    const receipt = { success: true, deal_id: body.deal_id, quote_state: "review_required" };
+    const persist = () => db.query(
+      "select * from public.persist_review_intake_receipt($1, $2, $3::jsonb, $4::jsonb)",
+      [tokenHash, payloadHash, JSON.stringify(deal), JSON.stringify(receipt)],
+    );
+
+    assert.equal((await store.claim(tokenHash, payloadHash)).decision, "owner");
+    await db.exec("set role anon");
+    await assert.rejects(persist, /permission denied/);
+    await db.exec("reset role");
+    await db.exec(`
+      alter table public.intake_submission_idempotency
+      add constraint test_receipt_failure check (state <> 'completed');
+      set role service_role;
+    `);
+    await assert.rejects(persist, /test_receipt_failure/);
+    await db.exec("reset role");
+    assert.deepEqual((await db.query("select deal_id from public.deals")).rows, []);
+    assert.equal((await store.lookup(tokenHash, payloadHash)).decision, "processing");
+
+    await db.exec(`
+      alter table public.intake_submission_idempotency drop constraint test_receipt_failure;
+      set role service_role;
+    `);
+    await persist();
+    await assert.rejects(persist, /INTAKE_IDEMPOTENCY_RESERVATION_NOT_ACTIVE/);
+    assert.deepEqual(await store.lookup(tokenHash, payloadHash), {
+      decision: "replay",
+      response: { status: 200, body: receipt, dealId: body.deal_id },
+    });
+    await db.exec("reset role");
+    assert.deepEqual((await db.query("select deal_id from public.deals")).rows, [{ deal_id: body.deal_id }]);
+  } finally {
+    await db.close();
+  }
 });

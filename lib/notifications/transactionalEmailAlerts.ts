@@ -1,7 +1,7 @@
 import {NOTIFICATION_COPY,type NotificationEvent} from '@/lib/notifications/orchestrator';
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
+import { classifyResendSendError, notificationIdempotencyKey, RESEND_NOTIFICATION_TAG } from "@/lib/notifications/deliveryTruth";
 
 const FROM = process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const DEFAULT_OPERATOR_EMAILS = [
@@ -110,9 +110,14 @@ async function sendOne(input: NotificationInput & { html: string }) {
       to: recipient,
       subject: input.subject,
       html: input.html,
+      tags: [{ name: RESEND_NOTIFICATION_TAG, value: claimed.id }],
     },{idempotencyKey:notificationIdempotencyKey(input.matterId??'corporate',input.type,recipient)});
     if (result.error || !result.data?.id) {
-      await record(claimed, { status: "failed", errorMessage: result.error?.message ?? "Resend acceptance not observed" });
+      await record(claimed, {
+        status: "failed",
+        errorMessage: result.error?.message ?? "Resend acceptance not observed",
+        errorClassification: classifyResendSendError(result.error?.statusCode),
+      });
       return;
     }
     await record(claimed, { status: "sent", providerMessageId: result.data?.id ?? null });
@@ -565,14 +570,40 @@ export async function sendGovernanceHealthAlerts(observation:{observation_id?:st
  await Promise.all(operatorEmails().map(recipient=>sendOne({matterId:null,matterReference:reference,recipient,type:`operator_governance_alert_${reference}`,subject:'Governance monitoring requires operator review',html:shell('Governance monitoring requires review',`<p>Observation ${reference} has a governed queue, outcome or budget alert. Review the authenticated Board Room security/history and Notification Center. No agent output establishes payment, execution or release authority.</p>`)})));
 }
 
+const STALLED_SEND_AGE_MS = 15 * 60 * 1000;
+
+async function flagStalledNotificationSends(admin: ReturnType<typeof createAdminClient>) {
+  const cutoff = new Date(Date.now() - STALLED_SEND_AGE_MS).toISOString();
+  const stalled = await admin.from("notifications").select("id")
+    .eq("delivery_status", "pending").is("provider_message_id", null)
+    .lt("send_claimed_at", cutoff).not("send_claim", "is", null)
+    .order("send_claimed_at").order("id").limit(50);
+  if (stalled.error) throw Error("NOTIFICATION_STALLED_CLAIMS_UNAVAILABLE");
+  const ids = (stalled.data ?? []).map((row) => row.id);
+  if (!ids.length) return 0;
+
+  // Keep the claim so neither the dispatcher nor another worker retries an
+  // uncertain send. A late response can still record the outcome.
+  const flagged = await admin.from("notifications").update({
+    delivery_status: "unknown",
+    error_classification: "send_outcome_unrecorded",
+    error_message: "Provider acceptance is unknown. Reconcile the existing send before retrying.",
+  }).in("id", ids).eq("delivery_status", "pending").is("provider_message_id", null)
+    .lt("send_claimed_at", cutoff).not("send_claim", "is", null).select("id");
+  if (flagged.error) throw Error("NOTIFICATION_STALLED_CLAIMS_NOT_RECORDED");
+  return flagged.data?.length ?? 0;
+}
+
 /** Bounded replay from actual canonical state events and the existing notification rows. */
 export async function reconcileCanonicalNotifications() {
- const admin=createAdminClient();const pending=await admin.rpc('pending_matter_notification_events');
+ const admin=createAdminClient();
+ const newlyUncertain = await flagStalledNotificationSends(admin);
+ const pending=await admin.rpc('pending_matter_notification_events');
  if(pending.error||!Array.isArray(pending.data))throw Error('NOTIFICATION_EVENT_READ_UNAVAILABLE');
  for(const entry of pending.data){const copy=NOTIFICATION_COPY[entry.event as NotificationEvent];if(!copy)continue;const queued=await admin.rpc('queue_matter_notification',{p_matter:entry.matter_id,p_event:entry.event,p_subject:copy.subject,p_body:copy.body,p_state_event:entry.id});if(queued.error)throw Error('NOTIFICATION_QUEUE_NOT_CONFIRMED');}
  const rows=await admin.from('notifications').select('deal_id,recipient_email,type,metadata').eq('template_id','canonical_matter_lifecycle_v1').in('delivery_status',['pending','failed']).is('send_claim',null).lt('delivery_attempts',3).lte('next_send_at',new Date().toISOString()).order('created_at').order('id').limit(50);
  if(rows.error)throw Error('NOTIFICATION_DELIVERY_QUEUE_UNAVAILABLE');
  for(const row of rows.data??[]){const event=row.metadata?.event as NotificationEvent;const copy=NOTIFICATION_COPY[event];if(!copy||!row.deal_id)continue;const matter=await admin.from('deals').select('id,email,deal_id').eq('id',row.deal_id).maybeSingle();if(matter.error||!matter.data||matter.data.email?.trim().toLowerCase()!==row.recipient_email)continue;
  await sendOne({matterId:row.deal_id,matterReference:matter.data.deal_id??row.deal_id,recipient:row.recipient_email,type:row.type,subject:copy.subject,html:clientLifecycleEmailHtml(copy.subject,copy.body,matter.data.deal_id??row.deal_id)});}
- return {queued_batch:pending.data.length,delivery_batch:rows.data?.length??0,scope:'BOUNDED_CANONICAL_EVENT_BATCH'};
+ return {queued_batch:pending.data.length,delivery_batch:rows.data?.length??0,newly_uncertain:newlyUncertain,scope:'BOUNDED_CANONICAL_EVENT_BATCH'};
 }
