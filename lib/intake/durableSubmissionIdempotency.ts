@@ -76,12 +76,12 @@ export async function runDurableIntakeSubmission(
   token: string,
   payload: unknown,
   execute: () => Promise<StoredIntakeResponse>,
-  options: { waitMs?: number; pollMs?: number } = {},
+  options: { waitMs?: number; pollMs?: number; recoverProcessing?: boolean } = {},
 ): Promise<IntakeSubmissionDecision> {
   const tokenHash = hashIntakeSubmissionToken(token);
   const payloadHash = hashIntakeSubmissionPayload(payload);
   const existing = await inspectIntakeSubmission(store, token, payload, options);
-  if (existing.decision !== "missing") return existing;
+  if (existing.decision !== "missing" && !(options.recoverProcessing && existing.decision === "processing")) return existing;
 
   const claim = await store.claim(tokenHash, payloadHash);
   if (claim.decision !== "owner") {

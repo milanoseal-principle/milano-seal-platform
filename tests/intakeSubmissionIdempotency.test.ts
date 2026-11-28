@@ -300,6 +300,48 @@ test("public review Matter and receipt share a transaction and survive a lost re
     });
     await db.exec("reset role");
     assert.deepEqual((await db.query("select deal_id from public.deals")).rows, [{ deal_id: body.deal_id }]);
+
+    await db.exec(readFileSync("supabase/migrations/20261128044258_fence_abandoned_review_intake.sql", "utf8"));
+    const legacy = "c".repeat(64);
+    const leased = "d".repeat(64);
+    const original = "11111111-1111-4111-8111-111111111111";
+    const replacement = "22222222-2222-4222-8222-222222222222";
+    const claim = async (key: string, worker: string, hash = payloadHash) =>
+      (await db.query<{ decision: string }>("select decision from public.claim_fenced_review_intake($1,$2,$3)", [key, hash, worker])).rows[0]?.decision;
+    const leasedDeal = { ...deal, deal_id: "MS-LEASE-TEST" };
+    const leasedReceipt = { ...receipt, deal_id: leasedDeal.deal_id };
+    const write = (worker: string) => db.query(
+      "select * from public.persist_fenced_review_intake($1,$2,$3,$4,$5)",
+      [leased, payloadHash, worker, JSON.stringify(leasedDeal), JSON.stringify(leasedReceipt)],
+    );
+    assert.equal((await store.claim(legacy, payloadHash)).decision, "owner");
+    assert.equal(await claim(legacy, replacement), "processing");
+    await db.exec("set role anon");
+    await assert.rejects(() => claim(leased, original), /permission denied/);
+    await db.exec("reset role; set role service_role");
+    assert.equal(await claim(leased, original), "owner");
+    assert.equal(await claim(leased, replacement), "processing");
+    assert.equal(await claim(leased, replacement, "e".repeat(64)), "conflict");
+    await assert.rejects(() => db.query(
+      "select * from public.persist_review_intake_receipt($1,$2,$3,$4)",
+      [leased, payloadHash, JSON.stringify(leasedDeal), JSON.stringify(leasedReceipt)],
+    ), /INTAKE_REVIEW_LEASE_NOT_OWNED/);
+    await db.exec("reset role");
+    await db.query("update public.intake_submission_idempotency set review_lease_until = now() - interval '1 second' where token_hash = $1", [leased]);
+    await db.exec("set role service_role");
+    await assert.rejects(() => write(original), /INTAKE_REVIEW_LEASE_NOT_OWNED/);
+    assert.equal(await claim(leased, replacement), "owner");
+    await assert.rejects(() => write(original), /INTAKE_REVIEW_LEASE_NOT_OWNED/);
+    await assert.rejects(() => db.query("select public.complete_fenced_review_intake($1,$2,$3,422,$4)", [
+      leased, payloadHash, original, JSON.stringify({ success: false }),
+    ]), /INTAKE_REVIEW_LEASE_NOT_OWNED/);
+    await write(replacement);
+    assert.deepEqual(await store.lookup(leased, payloadHash), {
+      decision: "replay", response: { status: 200, body: leasedReceipt, dealId: leasedDeal.deal_id },
+    });
+    await assert.rejects(() => write(replacement), /INTAKE_REVIEW_LEASE_NOT_OWNED/);
+    await db.exec("reset role");
+    assert.equal((await db.query("select id from public.deals where deal_id = $1", [leasedDeal.deal_id])).rows.length, 1);
   } finally {
     await db.close();
   }

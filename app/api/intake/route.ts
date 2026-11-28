@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import {bindIntakeUploadCapability} from '@/lib/uploads/authorization';
 import { bindIntakePaymentCapability } from '@/lib/payments/paymentCapability';
 import { guardIntakeSubmission, isAuthorizedOperator } from "@/lib/intake/intakeSubmissionGuard";
@@ -309,7 +311,7 @@ function rpcDecision(data: unknown): IntakeSubmissionDecision {
   throw new Error("INTAKE_IDEMPOTENCY_DECISION_INVALID");
 }
 
-function createIntakeSubmissionStore(): DurableIntakeSubmissionStore {
+function createIntakeSubmissionStore(worker: string): DurableIntakeSubmissionStore {
   const admin = createAdminClient();
   return {
     async lookup(tokenHash, payloadHash) {
@@ -321,7 +323,8 @@ function createIntakeSubmissionStore(): DurableIntakeSubmissionStore {
       return rpcDecision(data);
     },
     async claim(tokenHash, payloadHash) {
-      const { data, error } = await admin.rpc("claim_intake_submission", {
+      const { data, error } = await admin.rpc("claim_fenced_review_intake", {
+        p_worker: worker,
         p_token_hash: tokenHash,
         p_payload_hash: payloadHash,
       });
@@ -329,12 +332,22 @@ function createIntakeSubmissionStore(): DurableIntakeSubmissionStore {
       return rpcDecision(data);
     },
     async complete(tokenHash, payloadHash, response) {
-      const { data, error } = await admin.rpc("complete_intake_submission", {
+      if (response.dealId) {
+        const saved = await this.lookup(tokenHash, payloadHash);
+        if (saved.decision !== "replay" || saved.response.dealId !== response.dealId
+          || saved.response.status !== response.status
+          || !isDeepStrictEqual(saved.response.body, response.body)) {
+          throw new Error("INTAKE_IDEMPOTENCY_COMPLETION_FAILED");
+        }
+        return;
+      }
+      if (response.status >= 500) throw new Error("INTAKE_REVIEW_OUTCOME_UNCERTAIN");
+      const { data, error } = await admin.rpc("complete_fenced_review_intake", {
+        p_worker: worker,
         p_token_hash: tokenHash,
         p_payload_hash: payloadHash,
         p_response_status: response.status,
         p_response_body: response.body,
-        p_deal_id: response.dealId,
       });
       if (error || data !== true) throw error ?? new Error("INTAKE_IDEMPOTENCY_COMPLETION_FAILED");
     },
@@ -398,7 +411,7 @@ async function findPublicIntakeReplay(
   const token = request.cookies.get(INTAKE_SUBMISSION_COOKIE)?.value;
   if (!isIntakeSubmissionToken(token)) return null;
   const decision = await inspectIntakeSubmission(getStore(), token, body, { waitMs: 2500, pollMs: 100 });
-  return replayDecisionResponse(decision);
+  return decision.decision === "processing" ? null : replayDecisionResponse(decision);
 }
 
 function missingIntakeSubmissionKey() {
@@ -423,8 +436,9 @@ function outcomeUnknown() {
 // any Matter, invoice, capability or email is created. Public submissions also
 // claim a durable idempotency record before the canonical intake writer runs.
 export async function POST(request: NextRequest) {
+  const worker = randomUUID();
   let store: DurableIntakeSubmissionStore | null = null;
-  const getStore = () => (store ??= createIntakeSubmissionStore());
+  const getStore = () => (store ??= createIntakeSubmissionStore(worker));
   const guarded = await guardIntakeSubmission(request, {
     isOperator: () => isAuthorizedOperator(),
     limit: async (req) => enforcePublicRequestLimit(req, { client: "intake_submit" }, await defaultRequestLimiterDeps()),
@@ -455,9 +469,10 @@ export async function POST(request: NextRequest) {
   try {
     const outcome = await runDurableIntakeSubmission(getStore(), token, payload, async () => {
       const response = await canonicalPost(guarded.request, async (deal, receipt) => {
-        return createAdminClient().rpc("persist_review_intake_receipt", {
+        return createAdminClient().rpc("persist_fenced_review_intake", {
           p_token_hash: hashIntakeSubmissionToken(token),
           p_payload_hash: hashIntakeSubmissionPayload(payload),
+          p_worker: worker,
           p_deal: deal,
           p_response_body: receipt,
         }).single<{ id: string; deal_id: string }>();
@@ -466,7 +481,7 @@ export async function POST(request: NextRequest) {
       if (!body || typeof body !== "object") throw new Error("INTAKE_RESPONSE_INVALID");
       const dealId = typeof body.deal_id === "string" ? body.deal_id : null;
       return { status: response.status, body: body as Record<string, unknown>, dealId };
-    }, { waitMs: 2500, pollMs: 100 });
+    }, { waitMs: 2500, pollMs: 100, recoverProcessing: true });
 
     if (outcome.decision === "replay") {
       return bindIntakePaymentCapability(await bindIntakeUploadCapability(storedResponse(outcome.response)));

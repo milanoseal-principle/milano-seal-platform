@@ -28,6 +28,7 @@ export const REQUIRED_RPCS = Object.freeze([
   // Intake replay receipts are accessible only through service-role RPCs; the
   // backing table intentionally has no direct PostgREST grants.
   'lookup_intake_submission','claim_intake_submission','complete_intake_submission','persist_review_intake_receipt',
+  'claim_fenced_review_intake','persist_fenced_review_intake','complete_fenced_review_intake',
 ]);
 export async function verifyProductionSchemaCapabilities(env=process.env,fetcher=fetch) {
   if(env.VERCEL_ENV!=='production')return {status:'NOT_RUN_NON_PRODUCTION_BUILD'};
