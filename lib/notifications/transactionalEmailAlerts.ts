@@ -1,7 +1,7 @@
 import {NOTIFICATION_COPY,type NotificationEvent} from '@/lib/notifications/orchestrator';
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
+import { classifyResendSendError, notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
 
 const FROM = process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const DEFAULT_OPERATOR_EMAILS = [
@@ -112,7 +112,11 @@ async function sendOne(input: NotificationInput & { html: string }) {
       html: input.html,
     },{idempotencyKey:notificationIdempotencyKey(input.matterId??'corporate',input.type,recipient)});
     if (result.error || !result.data?.id) {
-      await record(claimed, { status: "failed", errorMessage: result.error?.message ?? "Resend acceptance not observed" });
+      await record(claimed, {
+        status: "failed",
+        errorMessage: result.error?.message ?? "Resend acceptance not observed",
+        errorClassification: classifyResendSendError(result.error?.statusCode),
+      });
       return;
     }
     await record(claimed, { status: "sent", providerMessageId: result.data?.id ?? null });
