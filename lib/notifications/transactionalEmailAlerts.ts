@@ -1,7 +1,7 @@
 import {NOTIFICATION_COPY,type NotificationEvent} from '@/lib/notifications/orchestrator';
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { classifyResendSendError, notificationIdempotencyKey } from "@/lib/notifications/deliveryTruth";
+import { classifyResendSendError, notificationIdempotencyKey, RESEND_NOTIFICATION_TAG } from "@/lib/notifications/deliveryTruth";
 
 const FROM = process.env.RESEND_FROM ?? "The Milano Seal™ <hello@themilanoseal.com>";
 const DEFAULT_OPERATOR_EMAILS = [
@@ -110,6 +110,7 @@ async function sendOne(input: NotificationInput & { html: string }) {
       to: recipient,
       subject: input.subject,
       html: input.html,
+      tags: [{ name: RESEND_NOTIFICATION_TAG, value: claimed.id }],
     },{idempotencyKey:notificationIdempotencyKey(input.matterId??'corporate',input.type,recipient)});
     if (result.error || !result.data?.id) {
       await record(claimed, {

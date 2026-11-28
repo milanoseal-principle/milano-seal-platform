@@ -56,3 +56,5 @@ export function classifyResendSendError(statusCode: number | null | undefined) {
     ? "provider_rejected"
     : "transport_error";
 }
+
+export const RESEND_NOTIFICATION_TAG = "milano_notification";
