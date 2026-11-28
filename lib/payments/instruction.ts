@@ -130,6 +130,10 @@ export async function receivePaymentInstruction(
         error: reviewRequired ? "RETAINER_REVIEW_REQUIRED" : "WISE_INSTRUCTION_UNAVAILABLE",
       }, { status: reviewRequired ? 409 : 503 });
     }
+    if (data.payment_url !== session.paymentUrl || data.reference !== session.reference
+      || Number(data.amount) !== amount || data.currency !== currency) {
+      return NextResponse.json({ error: "RETAINER_REVIEW_REQUIRED" }, { status: 409 });
+    }
     return NextResponse.json({
       paymentUrl: data.payment_url,
       reference: data.reference,

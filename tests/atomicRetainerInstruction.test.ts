@@ -75,3 +75,67 @@ test("approved retainer issuance is atomic, replayable and service-only", async 
     await db.close();
   }
 });
+
+test("the isolated endpoint refuses a replay that differs from its canonical instruction", async (t) => {
+  const [{ NextRequest }, { receivePaymentInstruction }] = await Promise.all([
+    import("next/server"), import("@/lib/payments/instruction"),
+  ]);
+  const env = {
+    NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+    SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-key",
+    MS_LOCAL_APPROVED_CHECKOUT: "true",
+    NEXT_PUBLIC_WISE_HANDLE: "synthetic-beneficiary",
+  };
+  const original = Object.fromEntries(Object.keys(env).map((key) => [key, process.env[key]]));
+  Object.assign(process.env, env);
+  t.after(() => {
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const matterId = "11111111-1111-4111-8111-111111111111";
+  let mismatch: Record<string, unknown> = {};
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init);
+    const url = new URL(request.url);
+    assert.equal(url.origin, env.NEXT_PUBLIC_SUPABASE_URL);
+    if (url.pathname.endsWith("/deals")) {
+      return Response.json([{
+        id: matterId, deal_id: "MS-FIXTURE", currency: "USD", amount_due: 6.88,
+        quote_review_required: false, quote_approved_at: "2026-11-27T12:00:00Z",
+      }]);
+    }
+    assert.ok(url.pathname.endsWith("/rpc/issue_approved_retainer_instruction"));
+    const payload = await request.json();
+    assert.equal(payload.p_quote_approved_at, "2026-11-27T12:00:00Z");
+    assert.equal(payload.p_reference, "MS-FIXTURE-R");
+    const link = new URL(payload.p_url);
+    assert.equal(link.pathname, "/pay/r/synthetic-beneficiary");
+    assert.equal(link.searchParams.get("amount"), "6.88");
+    assert.equal(link.searchParams.get("currency"), "USD");
+    assert.equal(link.searchParams.get("reference"), "MS-FIXTURE-R");
+    return Response.json({
+      payment_url: payload.p_url, reference: payload.p_reference, amount: payload.p_amount,
+      currency: "USD", description: "fixture", payment_status: "awaiting_payment", existing: true,
+      ...mismatch,
+    });
+  });
+  const pay = () => receivePaymentInstruction(new NextRequest("http://localhost/api/pay", {
+    method: "POST", body: JSON.stringify({ paymentType: "retainer" }),
+  }), { params: Promise.resolve({ id: matterId }) });
+
+  for (const altered of [
+    { payment_url: "https://wise.com/pay/r/another-beneficiary?amount=6.88&currency=USD&reference=MS-FIXTURE-R" },
+    { amount: 6.87 }, { currency: "EUR" }, { reference: "MS-OTHER-R" },
+  ]) {
+    mismatch = altered;
+    const response = await pay();
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), { error: "RETAINER_REVIEW_REQUIRED" });
+  }
+  mismatch = {};
+  const response = await pay();
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).existing, true);
+});
