@@ -218,6 +218,7 @@
         "A 256-bit HttpOnly SameSite=Strict key binds one stable JSON hash of the submitted request body to one stored response; an exact replay returns the same Matter/response, while a changed payload returns 409 and preserves the existing replay cookie",
         "The reservation is committed before canonical intake runs, preventing a duplicate Matter, invoice, discount effect, notification, or Wise request for the same key",
         "Cached responses are readable only through service-role RPCs and are pruned after 30 days; an idempotency tombstone remains to prevent expired replay from creating a second Matter",
+        "Review-required public Matter creation and its successful replay receipt share one service-role database transaction",
         "Public intake estimates remain indicative-only review metadata and are never payment authority",
         "Every refusal returns success:false; no request is reported received unless canonical intake persisted it"
       ],
@@ -236,12 +237,13 @@
       "reviewedBy": "Codex source-level access review — independent human approval pending",
       "reviewedAt": "2026-11-27",
       "files": {
-        "app/api/intake/route.ts": "e42a9ca0f9b9dff9a119fd7d95a68da1c00e4897250204042a3e22979f7ae449",
+        "app/api/intake/route.ts": "9f5359a29742cec0d82ed4f6766d7d3b8ae0cacc584150a1f0460cb76bb84733",
         "lib/intake/intakeSubmissionGuard.ts": "9f1cf15c2917be5487003d33edb32c575bf8887dab6dea513c298cffb4aeec2d",
         "lib/intake/durableSubmissionIdempotency.ts": "6e5e511e216b4cd2299e1c29cb932bffb46ca438f156d81ccf0cc7eb0b6da7e1",
         "supabase/migrations/20261126100000_public_intake_idempotency.sql": "1c901f4a763b09d6f75623f34c47b15e2e5b9967cbd7450947f0f869f4ff0950",
         "lib/security/publicRequestLimit.ts": "68f1bf91edd17b5eed5643c242dba71d229fc533ba09a593be34b16f75b454b3",
-        "app/api/intake/core.ts": "faa59e64bf5b916397149dbc5aad50c13d2fb6020fb75090025250e261f525c7",
+        "app/api/intake/core.ts": "2ab872de5ed83e250026da2d07735d9aa49c6f3d98e4903c3ecf7b6f0653f912",
+        "supabase/migrations/20261127225503_persist_review_intake_receipt.sql": "0b25bf3a852492fd1025779da98757f5e295850ff9a0fb6d6add835459d0efe1",
         "lib/pricing/intakeIndicativeQuote.ts": "21f06331d633270e13fce8979f2674ad0545e3973a24077e1f02ae9b69c48d8c",
         "lib/pricing/intakeQuotePreview.ts": "11139663d8c1aa89699c248f35f8e528850918d614c9d3ea95d5ba0228c03e49"
       }

@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createIntakeSubmissionToken,
+  hashIntakeSubmissionPayload,
+  hashIntakeSubmissionToken,
   INTAKE_SUBMISSION_COOKIE,
   INTAKE_SUBMISSION_COOKIE_PATH,
   INTAKE_SUBMISSION_TTL_SECONDS,
@@ -20,7 +22,7 @@ import {
   buildMatterQuoteSnapshot,
   persistedMatterHasQuote,
 } from "@/lib/pricing/matterQuoteSnapshot";
-import { POST as handleCanonicalIntakePost } from "./core";
+import { POST as handleCanonicalIntakePost, type PersistReviewIntake } from "./core";
 import { buildIntakeQuotePreview, intakeQuotePreviewSchema } from "@/lib/pricing/intakeQuotePreview";
 import { indicativeQuoteFromPreview, previewInputFromIntake } from "@/lib/pricing/intakeIndicativeQuote";
 
@@ -156,7 +158,7 @@ async function canonicalizeRequest(req: NextRequest): Promise<{
   return { request, failure: null };
 }
 
-async function canonicalPost(req: NextRequest) {
+async function canonicalPost(req: NextRequest, persistReview?: PersistReviewIntake) {
   const normalized = await canonicalizeRequest(req);
   if (normalized.failure) return normalized.failure;
 
@@ -168,7 +170,7 @@ async function canonicalPost(req: NextRequest) {
     } catch {
       return null;
     }
-  });
+  }, persistReview);
   if (!response.ok) return response;
 
   let body: IntakeSuccessBody;
@@ -452,7 +454,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const outcome = await runDurableIntakeSubmission(getStore(), token, payload, async () => {
-      const response = await canonicalPost(guarded.request);
+      const response = await canonicalPost(guarded.request, async (deal, receipt) => {
+        return createAdminClient().rpc("persist_review_intake_receipt", {
+          p_token_hash: hashIntakeSubmissionToken(token),
+          p_payload_hash: hashIntakeSubmissionPayload(payload),
+          p_deal: deal,
+          p_response_body: receipt,
+        }).single<{ id: string; deal_id: string }>();
+      });
       const body = (await response.clone().json().catch(() => null)) as IntakeSuccessBody | null;
       if (!body || typeof body !== "object") throw new Error("INTAKE_RESPONSE_INVALID");
       const dealId = typeof body.deal_id === "string" ? body.deal_id : null;
