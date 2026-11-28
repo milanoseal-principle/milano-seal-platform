@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test, type TestContext } from "node:test";
 import { NextRequest } from "next/server";
+import { POST as intakeCore } from "@/app/api/intake/core";
 import { GET } from "@/app/api/public/payment-status/route";
 import { issuePaymentCapability, PAYMENT_CAPABILITY_COOKIE } from "@/lib/payments/paymentCapability";
 
@@ -88,12 +89,49 @@ test("indicative confirmation is Matter-bound and a review response does not sch
   assert.match(portal, /indicativeQuote: approved \? null : indicativeQuoteFromNotes/);
 });
 
-test("the server saves indicative metadata in the first Matter insert before returning it", () => {
-  const core = fs.readFileSync("app/api/intake/core.ts", "utf8");
-  const review = core.slice(core.indexOf("const indicativeQuote ="), core.indexOf('stage = "EXECUTION_VALIDATED"'));
-  assert.match(review, /internal_notes: JSON\.stringify\(indicativeQuote\s*\? \{ \.\.\.reviewMetadata, indicative_quote: indicativeQuote \}/);
-  assert.match(review, /\.insert\(\[reviewPayload\]\)[\s\S]*if \(reviewError\)[\s\S]*indicative_quote: indicativeQuote/);
-  assert.doesNotMatch(review, /\.update\(|invoice_retainer:|invoice_balance:|total_price:/);
+test("public review intake persists the indicative estimate with its unpaid Matter before returning it", async (t) => {
+  supabaseFixture(t, {});
+  const quote = {
+    basis: "indicative_not_payable", engine: "intake-quote-preview", mode: "approved_price",
+    summary: "Fixture estimate", computed_at: "2026-11-26T12:00:00.000Z",
+    total: 13.75, retainer_estimate: 6.88, final_balance_estimate: 6.87,
+    line_items: [{ key: "base", label: "Fixture execution", amount: 13.75 }],
+  } as const;
+  const estimate = { ...quote, line_items: [...quote.line_items] };
+  const request = () => new NextRequest("https://www.themilanoseal.com/api/intake", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Fixture Client", email: "intake@example.invalid", document_type: "affidavit", country: "Italy" }),
+  });
+
+  let writes = 0;
+  let savedReceipt: Record<string, unknown> | undefined;
+  const response = await intakeCore(request(), () => estimate, async (deal, receipt) => {
+    writes += 1;
+    assert.deepEqual(JSON.parse(String(deal.internal_notes)).indicative_quote, estimate);
+    assert.equal(deal.payment_status, "unpaid");
+    assert.equal(deal.payment_confirmed, false);
+    assert.equal(deal.amount_paid, 0);
+    for (const field of ["invoice_retainer", "invoice_balance", "total_price"]) {
+      assert.equal(field in deal, false, field);
+    }
+    assert.equal(receipt.deal_id, deal.deal_id);
+    assert.equal(receipt.quote_state, "review_required");
+    assert.deepEqual(receipt.indicative_quote, estimate);
+    savedReceipt = receipt;
+    return { data: { id: "fixture-row", deal_id: String(deal.deal_id) }, error: null };
+  });
+  assert.equal(writes, 1);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), savedReceipt);
+
+  const failed = await intakeCore(request(), () => estimate, async () => ({
+    data: null, error: new Error("fixture transaction rolled back"),
+  }));
+  assert.equal(failed.status, 500);
+  const failedBody = await failed.json();
+  assert.equal(failedBody.success, false);
+  assert.equal("indicative_quote" in failedBody, false);
 });
 
 test("only the matching intake capability receives the stored estimate projection", async (t) => {
