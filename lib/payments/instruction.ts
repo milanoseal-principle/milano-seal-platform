@@ -90,6 +90,57 @@ export async function receivePaymentInstruction(
 
   const currency = String(deal.currency || "USD").toUpperCase();
 
+  // Exercise the new transactional path only against a local development
+  // database. Hosted payment policy and existing callers keep their path.
+  if (paymentType === "retainer" && process.env.MS_LOCAL_APPROVED_CHECKOUT === "true"
+    && process.env.NODE_ENV !== "production"
+    && /^http:\/\/(?:localhost|127[.]0[.]0[.]1):[0-9]+\/?$/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) {
+    const quoteApprovedAt = deal.quote_approved_at;
+    if (typeof quoteApprovedAt !== "string" || deal.quote_review_required !== false) {
+      return NextResponse.json({ error: "APPROVED_RETAINER_REQUIRED" }, { status: 409 });
+    }
+    let session;
+    try {
+      session = await generateWisePaymentSession({
+        matterId: deal.id,
+        matterReference: deal.deal_id,
+        paymentType,
+        amount,
+        currency,
+        founderName: deal.assigned_operator || "Nicholas Milano",
+      });
+    } catch {
+      return NextResponse.json({ error: "WISE_INSTRUCTION_UNAVAILABLE" }, { status: 503 });
+    }
+
+    const { data, error } = await supabase.rpc("issue_approved_retainer_instruction", {
+      p_matter_id: deal.id,
+      p_quote_approved_at: quoteApprovedAt,
+      p_amount: amount,
+      p_reference: session.reference,
+      p_url: session.paymentUrl,
+      p_description: session.description,
+    }).single<{
+      payment_url: string; reference: string; amount: number; currency: string;
+      description: string; payment_status: string; existing: boolean;
+    }>();
+    if (error || !data) {
+      const reviewRequired = error?.code === "22023" || error?.code === "P0002";
+      return NextResponse.json({
+        error: reviewRequired ? "RETAINER_REVIEW_REQUIRED" : "WISE_INSTRUCTION_UNAVAILABLE",
+      }, { status: reviewRequired ? 409 : 503 });
+    }
+    return NextResponse.json({
+      paymentUrl: data.payment_url,
+      reference: data.reference,
+      amount: Number(data.amount),
+      currency: data.currency,
+      description: data.description,
+      status: data.payment_status,
+      existing: data.existing,
+    }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const { data: activePayments, error: activeError } = await supabase
     .from("payments")
     .select("*")
